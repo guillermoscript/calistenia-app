@@ -1,0 +1,266 @@
+import { useMemo, useState, useEffect } from 'react'
+import { WORKOUTS } from '../data/workouts'
+import { Card, CardContent } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
+import { Separator } from '../components/ui/separator'
+import { Progress } from '../components/ui/progress'
+import { cn } from '../lib/utils'
+
+const LS_LUMBAR = 'calistenia_lumbar_checks'
+
+function getLumbarChecks() {
+  try { return JSON.parse(localStorage.getItem(LS_LUMBAR) || '[]') } catch { return [] }
+}
+
+// Phase id → semantic classes
+const PHASE_CLASSES = {
+  1: { text: 'text-lime',     bg: 'bg-lime/10',     badge: 'border-lime/30 text-lime bg-lime/10' },
+  2: { text: 'text-sky-500',  bg: 'bg-sky-500/10',  badge: 'border-sky-500/30 text-sky-500 bg-sky-500/10' },
+  3: { text: 'text-pink-500', bg: 'bg-pink-500/10', badge: 'border-pink-500/30 text-pink-500 bg-pink-500/10' },
+  4: { text: 'text-amber-400',bg: 'bg-amber-400/10',badge: 'border-amber-400/30 text-amber-400 bg-amber-400/10' },
+}
+
+// Lumbar score → semantic color class
+function lumbarColor(score) {
+  if (score >= 4) return 'text-emerald-500'
+  if (score >= 2.5) return 'text-amber-400'
+  return 'text-red-500'
+}
+
+export default function ProgressPage({ progress, settings, activeProgram }) {
+  const allLogs = useMemo(() => {
+    return Object.entries(progress)
+      .filter(([k]) => k.startsWith('done_'))
+      .map(([key, val]) => {
+        const parts = key.split('_')
+        const date = parts[1]
+        const workoutKey = parts.slice(2).join('_')
+        const workout = WORKOUTS[workoutKey]
+        return {
+          type: 'session', date, workoutKey,
+          title: workout?.title || workoutKey,
+          phase: workout?.phase,
+          note: val.note || '',
+        }
+      })
+      .sort((a, b) => b.date.localeCompare(a.date))
+  }, [progress])
+
+  const exerciseLogs = useMemo(() => {
+    const logs = {}
+    Object.values(progress).forEach(val => {
+      if (val.exerciseId && val.sets) {
+        if (!logs[val.exerciseId]) logs[val.exerciseId] = []
+        logs[val.exerciseId].push(val)
+      }
+    })
+    return logs
+  }, [progress])
+
+  const lumbarChecks = useMemo(() => {
+    const checks = getLumbarChecks()
+    return checks.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 14)
+  }, [])
+
+  const totalSetsCount = Object.values(exerciseLogs).reduce((acc, logs) => acc + logs.reduce((a, l) => a + l.sets.length, 0), 0)
+
+  const byDate = useMemo(() => {
+    const groups = {}
+    allLogs.forEach(log => { if (!groups[log.date]) groups[log.date] = []; groups[log.date].push(log) })
+    return groups
+  }, [allLogs])
+
+  const avgLumbar = useMemo(() => {
+    if (!lumbarChecks.length) return null
+    const last7 = lumbarChecks.slice(0, 7)
+    const avg = last7.reduce((s, c) => s + (c.lumbarScore || 0), 0) / last7.length
+    return Math.round(avg * 10) / 10
+  }, [lumbarChecks])
+
+  const programName = activeProgram?.name || null
+
+  return (
+    <div className="max-w-[860px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">Historial</div>
+      <div className="flex items-end gap-4 mb-8 flex-wrap">
+        <div className="font-bebas text-[36px] md:text-[52px] leading-none">PROGRESO</div>
+        {programName && (
+          <Badge variant="outline" className="border-lime/25 text-lime bg-lime/5 mb-1.5">
+            {programName.toUpperCase()}
+          </Badge>
+        )}
+      </div>
+
+      {allLogs.length === 0 ? (
+        <div className="text-center py-20 px-5 text-muted-foreground">
+          <div className="text-6xl mb-5">📊</div>
+          <div className="font-bebas text-3xl mb-2">Aún no hay datos</div>
+          <div className="text-sm leading-relaxed">Cuando completes tu primer entrenamiento y marques las series, aquí verás todo tu historial.</div>
+          <Card className="mt-6 inline-block text-left border-lime/20">
+            <CardContent className="px-6 py-4">
+              <div className="text-[11px] text-lime mb-2 tracking-[2px] uppercase">Cómo usar:</div>
+              <div className="text-[13px] text-muted-foreground leading-relaxed">
+                1. Ve a "Entrenar" y selecciona tu día<br/>
+                2. En cada ejercicio haz clic en "+ ANOTAR SERIE"<br/>
+                3. Escribe las reps que hiciste y guarda<br/>
+                4. Al terminar haz clic en "MARCAR COMPLETADO"
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div>
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            {[
+              { val: allLogs.length, label:'Sesiones completadas', accent:'text-lime' },
+              { val: Object.keys(exerciseLogs).length, label:'Ejercicios registrados', accent:'text-sky-500' },
+              { val: totalSetsCount, label:'Series totales', accent:'text-amber-400' },
+            ].map(s => (
+              <Card key={s.label}>
+                <CardContent className="p-5">
+                  <div className={cn('font-bebas text-[40px] leading-none', s.accent)}>{s.val}</div>
+                  <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">{s.label}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Session History */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Historial de sesiones</div>
+              {programName && (
+                <Badge variant="outline" className="text-[9px] tracking-[1.5px]">
+                  {programName.toUpperCase()}
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              {Object.entries(byDate).slice(0, 30).map(([date, logs]) => (
+                <Card key={date}>
+                  <CardContent className="px-4 py-3.5">
+                    <div className="flex gap-4 items-center flex-wrap md:flex-nowrap">
+                      <div className="text-[11px] text-sky-600 dark:text-sky-400 font-mono whitespace-nowrap">{date}</div>
+                      <div className="flex-1 flex gap-2 flex-wrap">
+                        {logs.map((log, i) => {
+                          const pc = PHASE_CLASSES[log.phase] || { badge: 'border-border text-muted-foreground bg-transparent' }
+                          return (
+                            <Badge key={i} variant="outline" className={cn('text-[11px] font-mono', pc.badge)}>
+                              {log.title}
+                            </Badge>
+                          )
+                        })}
+                      </div>
+                      {programName && (
+                        <Badge variant="outline" className="text-[8px] tracking-wide whitespace-nowrap flex-shrink-0">
+                          {programName.toUpperCase()}
+                        </Badge>
+                      )}
+                      <div className="text-emerald-500 text-base">✓</div>
+                    </div>
+                    {logs.some(l => l.note) && (
+                      <div className="mt-2.5 pt-2.5 border-t border-border/60">
+                        {logs.filter(l => l.note).map((log, i) => (
+                          <div key={i} className="text-[12px] text-muted-foreground leading-relaxed italic pl-1 border-l-2 border-lime/25">
+                            "{log.note}"
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Lumbar Trend */}
+          {lumbarChecks.length > 0 && (
+            <div className="mb-8">
+              <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Tendencia Lumbar</div>
+              <Card>
+                <CardContent className="px-6 py-5">
+                  <div className="flex gap-6 items-center mb-5">
+                    <div>
+                      <div className={cn('font-bebas text-5xl leading-none', lumbarColor(avgLumbar))}>
+                        {avgLumbar ?? '–'}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">Promedio (últimas 7)</div>
+                    </div>
+                    <div className="flex-1">
+                      <Progress value={((avgLumbar || 0) / 5) * 100} className="h-1.5 mb-1.5" />
+                      <div className="text-[11px] text-muted-foreground">
+                        {avgLumbar >= 4 ? 'Lumbar en buen estado' : avgLumbar >= 2.5 ? 'Lumbar con molestias moderadas' : 'Lumbar necesita atención'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-1.5 flex-wrap">
+                    {lumbarChecks.map((c, i) => {
+                      const score = c.lumbarScore || 0
+                      const col = lumbarColor(score)
+                      return (
+                        <div key={i}
+                          title={`${c.date} — Lumbar: ${score}/5, Sueño: ${c.sleptWell ? 'Sí' : 'No'}, Sentado: ${c.sittingHours}h`}
+                          className="text-center px-2.5 py-2 bg-muted/30 rounded-md min-w-[48px] border border-border/50">
+                          <div className={cn('font-bebas text-xl leading-none', col)}>{score}</div>
+                          <div className="text-[9px] text-muted-foreground mt-0.5 font-mono">{c.date?.slice(5) || ''}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {lumbarChecks.length >= 3 && (() => {
+                    const recent = lumbarChecks.slice(0, 7)
+                    const sleptWellPct = Math.round((recent.filter(c => c.sleptWell).length / recent.length) * 100)
+                    const avgSitting = Math.round(recent.reduce((s, c) => s + (c.sittingHours || 0), 0) / recent.length)
+                    return (
+                      <div className="flex gap-4 mt-4 pt-4 border-t border-border/60">
+                        <div className="text-[12px] text-muted-foreground">
+                          <span className={sleptWellPct >= 70 ? 'text-emerald-500' : 'text-amber-400'}>{sleptWellPct}%</span> de noches con buen sueño
+                        </div>
+                        <div className="text-[12px] text-muted-foreground">
+                          Promedio sentado: <span className={avgSitting <= 6 ? 'text-emerald-500' : avgSitting <= 9 ? 'text-amber-400' : 'text-red-500'}>{avgSitting}h/día</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Exercise PR Tracker */}
+          {Object.keys(exerciseLogs).length > 0 && (
+            <div>
+              <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Registro por ejercicio</div>
+              <div className="flex flex-col gap-2.5">
+                {Object.entries(exerciseLogs).map(([exId, logs]) => {
+                  const allSets = logs.flatMap(l => l.sets)
+                  const latest = logs.sort((a, b) => b.date.localeCompare(a.date))[0]
+                  return (
+                    <Card key={exId}>
+                      <CardContent className="px-4 py-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="font-medium text-sm capitalize">{exId.replace(/_/g, ' ')}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">{allSets.length} series totales</div>
+                        </div>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {latest?.sets.map((s, i) => (
+                            <span key={i} className="px-2.5 py-1 bg-lime/5 border border-lime/15 rounded font-mono text-[11px] text-lime">
+                              S{i + 1}: {s.reps}
+                            </span>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

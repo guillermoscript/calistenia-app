@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment — never commit real values
+.env
+*.local
+
+# PocketBase runtime data (database, uploads, logs)
+# Contains user data and auth tokens — never public
+pb_data/
+
+# PocketBase binary — large (~32MB), platform-specific, download from pocketbase.io
+pocketbase
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# AI agent config — project-specific tooling, not needed by contributors
+.agents/
+.agent/
+.claude/
+
+# Screenshot files generated during development/testing
+*.png
+*.jpg
+*.jpeg
+
+# OpenCode AI agent config
+opencode.json
+skills-lock.json
+
+# Editor
+.vscode/
+.idea/
