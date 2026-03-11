@@ -1,0 +1,31 @@
+# docker-compose.yml — local development / smoke-test of the production image
+#
+# Usage:
+#   docker compose up --build          # build & run
+#   docker compose up -d               # detached
+#   docker compose down -v             # stop & remove volumes
+#
+# The app will be available at http://localhost:8090
+# PocketBase admin UI: http://localhost:8090/_/
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # For local testing the URL is localhost; on production this is injected
+        # by the GitHub Actions workflow as the real public domain.
+        VITE_POCKETBASE_URL: http://localhost:8090
+    image: calistenia-app:local
+    container_name: calistenia-app
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      # Bind-mount a local directory for persistent data.
+      # Change ./pb_data_local to any path you prefer.
+      - ./pb_data_local:/app/pb_data
+    environment:
+      # Optional: override at runtime if needed
+      - PB_ENCRYPTION_KEY=${PB_ENCRYPTION_KEY:-}

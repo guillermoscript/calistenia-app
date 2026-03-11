@@ -158,6 +158,76 @@ src/
   App.jsx                 # Root with routing and theme toggle
 ```
 
+## Deployment (Dokploy + GitHub Actions)
+
+### How it works
+
+The included `Dockerfile` is a three-stage build:
+
+1. **`frontend-builder`** — installs Node deps and runs `vite build`. The compiled assets land in `dist/`.
+2. **`pb-downloader`** — downloads the PocketBase `linux/amd64` binary from GitHub Releases.
+3. **Runtime** — copies the binary + `dist/` (mounted as `pb_public`) into a minimal Debian image. PocketBase starts and serves both the API (`/_/`) and the static frontend from a single port (`8090`).
+
+Migrations in `pb_migrations/` are auto-applied on every container start.
+
+### 1. GitHub Actions setup
+
+The workflow at `.github/workflows/docker.yml` triggers on every push to `main` (and on version tags). It:
+
+- Builds the Docker image for `linux/amd64`
+- Pushes it to **GitHub Container Registry** (`ghcr.io/<owner>/<repo>:main`)
+- Uses layer caching so rebuilds are fast
+
+**Required secret** — add this in your GitHub repo under *Settings → Secrets and variables → Actions*:
+
+| Secret | Value |
+|---|---|
+| `VITE_POCKETBASE_URL` | Your public app URL, e.g. `https://calistenia.example.com` |
+
+This is baked into the Vite build so the browser JS knows where to call the API.
+
+### 2. Dokploy setup
+
+In your Dokploy dashboard, create a new **App** and configure it as follows:
+
+**Source**
+- Type: Docker image
+- Image: `ghcr.io/<your-github-username>/calistenia-app:main`
+- Registry: GitHub Container Registry (add your GHCR token in Dokploy's registry settings)
+
+**Port**
+- Container port: `8090`
+- Expose via Traefik/reverse-proxy on `443` (HTTPS)
+
+**Volumes (bind mount)**
+- Host path: `/opt/calistenia-app/pb_data` (or any path you control on the server)
+- Container path: `/app/pb_data`
+
+**Domain**
+- Set your domain (e.g. `calistenia.example.com`) — make sure it matches the `VITE_POCKETBASE_URL` secret
+
+**Redeploy trigger**
+- Enable "Deploy webhook" in Dokploy and paste the URL into your GitHub repo under *Settings → Webhooks*, or use the Dokploy GitHub integration for automatic redeploys on push.
+
+### 3. First boot
+
+On first run, PocketBase will:
+1. Create `pb_data/data.db` (SQLite)
+2. Apply all migrations automatically
+3. Prompt you to create an admin account at `https://your-domain/_/`
+
+Visit `https://your-domain/_/` to finish setup and create your admin credentials.
+
+### Local smoke-test with Docker Compose
+
+```bash
+docker compose up --build
+# App + API: http://localhost:8090
+# Admin UI:  http://localhost:8090/_/
+```
+
+Data is stored in `./pb_data_local/` (git-ignored).
+
 ## Notes
 
 - If PocketBase is not running, the app automatically falls back to `localStorage` for all reads and writes. No data is lost.
