@@ -11,6 +11,8 @@ dist/
 # PocketBase runtime data (database, uploads, logs)
 # Contains user data and auth tokens — never public
 pb_data/
+# Local docker-compose bind-mount data directory
+pb_data_local/
 
 # PocketBase binary — large (~32MB), platform-specific, download from pocketbase.io
 pocketbase
