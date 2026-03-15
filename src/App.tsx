@@ -11,6 +11,10 @@ import NutritionPage from './pages/NutritionPage'
 import ProfilePage from './pages/ProfilePage'
 import AuthPage from './pages/AuthPage'
 import ProgramEditorPage from './pages/ProgramEditorPage'
+import OfflineBanner from './components/OfflineBanner'
+import InstallPrompt from './components/InstallPrompt'
+import { setupAutoSync } from './lib/offlineQueue'
+import { pb } from './lib/pocketbase'
 import { cn } from './lib/utils'
 import type { Settings } from './types'
 import {
@@ -255,6 +259,12 @@ export default function App() {
   const [dark, setDark] = useState(false)
   const { user, authReady, authError, isLoading, signIn, signUp, signOut } = useAuth()
 
+  // Setup offline queue auto-sync
+  useEffect(() => {
+    const cleanup = setupAutoSync(pb)
+    return cleanup
+  }, [])
+
   const toggleDark = () => {
     setDark(d => {
       const next = !d
@@ -324,6 +334,7 @@ export default function App() {
 
   return (
     <>
+    <OfflineBanner />
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppShell
@@ -377,6 +388,8 @@ export default function App() {
         </AppShell>
       </div>
     </SidebarProvider>
+
+    <InstallPrompt />
 
     {/* Program Editor Overlay */}
     {showEditor && (
