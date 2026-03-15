@@ -1,6 +1,6 @@
 import PocketBase from 'pocketbase'
 
-const PB_URL = import.meta.env.VITE_POCKETBASE_URL || 'http://127.0.0.1:8090'
+const PB_URL = import.meta.env.VITE_POCKETBASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8090' : window.location.origin)
 
 // Singleton — una sola instancia por toda la app
 export const pb = new PocketBase(PB_URL)

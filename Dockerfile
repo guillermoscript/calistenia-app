@@ -15,7 +15,7 @@ COPY . .
 # VITE_POCKETBASE_URL must point to the same origin so the browser
 # can reach PocketBase through Dokploy's reverse-proxy (no port in URL).
 # Pass it as a build arg so the GA workflow can inject the real domain.
-ARG VITE_POCKETBASE_URL=http://localhost:8090
+ARG VITE_POCKETBASE_URL=""
 ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL
 
 RUN npm run build

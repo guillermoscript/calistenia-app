@@ -23,6 +23,17 @@ export default defineConfig({
   plugins: [pocketbaseAliasPlugin(), react()],
   server: {
     port: 5173,
+    allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8090',
+        changeOrigin: true,
+      },
+      '/_': {
+        target: 'http://127.0.0.1:8090',
+        changeOrigin: true,
+      },
+    },
   },
   resolve: {
     alias: {
