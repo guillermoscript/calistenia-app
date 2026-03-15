@@ -86,7 +86,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros }: Nutritio
             key={i}
             className={cn(
               'h-1 flex-1 rounded-full transition-colors',
-              i <= step ? 'bg-lime' : 'bg-zinc-800'
+              i <= step ? 'bg-lime' : 'bg-muted'
             )}
           />
         ))}

@@ -190,7 +190,7 @@ export default function MealLogger({ onAnalyze, onSave }: MealLoggerProps) {
                   <img src={imagePreview} alt="Preview" className="w-full rounded-lg" />
                   <button
                     onClick={() => { setImagePreview(null); setImageFile(null) }}
-                    className="absolute top-2 right-2 size-7 rounded-full bg-zinc-900/80 text-white flex items-center justify-center"
+                    className="absolute top-2 right-2 size-7 rounded-full bg-background/80 text-foreground flex items-center justify-center"
                   >
                     X
                   </button>
@@ -252,7 +252,7 @@ export default function MealLogger({ onAnalyze, onSave }: MealLoggerProps) {
             <div className="space-y-3 py-8">
               <div className="text-center text-sm text-muted-foreground mb-4">Analizando tu comida...</div>
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-10 bg-zinc-800 rounded-lg animate-pulse" />
+                <div key={i} className="h-10 bg-muted rounded-lg animate-pulse" />
               ))}
             </div>
           )}
@@ -334,7 +334,7 @@ export default function MealLogger({ onAnalyze, onSave }: MealLoggerProps) {
               </Button>
 
               {/* Totals */}
-              <div className="p-3 bg-zinc-800/50 rounded-lg">
+              <div className="p-3 bg-muted/50 rounded-lg">
                 <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-2">Total</div>
                 <div className="grid grid-cols-4 gap-2 text-center text-sm">
                   <div>

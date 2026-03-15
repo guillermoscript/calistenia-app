@@ -141,10 +141,10 @@ function SharedLanding({
     return (
       <div className="max-w-3xl mx-auto px-4 md:px-6 py-12 md:py-20">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-zinc-800 rounded w-1/3" />
-          <div className="h-16 bg-zinc-800 rounded w-2/3" />
-          <div className="h-4 bg-zinc-800 rounded w-1/2" />
-          <div className="h-12 bg-zinc-800 rounded w-48" />
+          <div className="h-8 bg-muted rounded w-1/3" />
+          <div className="h-16 bg-muted rounded w-2/3" />
+          <div className="h-4 bg-muted rounded w-1/2" />
+          <div className="h-12 bg-muted rounded w-48" />
         </div>
       </div>
     )
@@ -153,15 +153,15 @@ function SharedLanding({
   if (!program) {
     return (
       <div className="max-w-3xl mx-auto px-4 md:px-6 py-12 md:py-20 text-center">
-        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center">
-          <svg className="size-8 text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
+          <svg className="size-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <circle cx="12" cy="12" r="10" />
             <line x1="15" y1="9" x2="9" y2="15" />
             <line x1="9" y1="9" x2="15" y2="15" />
           </svg>
         </div>
-        <p className="text-zinc-400 text-sm mb-4">Programa no encontrado</p>
-        <button onClick={onBack} className="text-[11px] font-mono tracking-widest text-zinc-500 hover:text-foreground transition-colors uppercase">
+        <p className="text-muted-foreground text-sm mb-4">Programa no encontrado</p>
+        <button onClick={onBack} className="text-[11px] font-mono tracking-widest text-muted-foreground hover:text-foreground transition-colors uppercase">
           <ArrowLeftIcon className="size-4 inline mr-1.5" />
           Volver
         </button>
@@ -172,7 +172,7 @@ function SharedLanding({
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-12 md:py-20">
       {/* Back */}
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-foreground transition-colors mb-10">
+      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-10">
         <ArrowLeftIcon className="size-4" />
         <span className="font-mono text-[11px] tracking-widest uppercase">Volver</span>
       </button>
@@ -188,7 +188,7 @@ function SharedLanding({
       <h1 className="font-bebas text-4xl md:text-7xl leading-none tracking-wide mb-4">{program.name}</h1>
 
       {program.description && (
-        <p className="text-sm text-zinc-400 leading-relaxed max-w-xl mb-6">{program.description}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-xl mb-6">{program.description}</p>
       )}
 
       {/* Stats */}
@@ -196,24 +196,24 @@ function SharedLanding({
         {program.duration_weeks > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-lime-400 font-bebas text-xl">{program.duration_weeks}</span>
-            <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">semanas</span>
+            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">semanas</span>
           </div>
         )}
         {phaseCount > 0 && (
           <>
-            <div className="w-px h-5 bg-zinc-800" />
+            <div className="w-px h-5 bg-muted" />
             <div className="flex items-center gap-2">
               <span className="text-lime-400 font-bebas text-xl">{phaseCount}</span>
-              <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">fase{phaseCount !== 1 ? 's' : ''}</span>
+              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">fase{phaseCount !== 1 ? 's' : ''}</span>
             </div>
           </>
         )}
         {exercises.length > 0 && (
           <>
-            <div className="w-px h-5 bg-zinc-800" />
+            <div className="w-px h-5 bg-muted" />
             <div className="flex items-center gap-2">
               <span className="text-lime-400 font-bebas text-xl">{exercises.length}+</span>
-              <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">ejercicios</span>
+              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">ejercicios</span>
             </div>
           </>
         )}
@@ -222,8 +222,8 @@ function SharedLanding({
       {/* Exercise preview list */}
       {exercises.length > 0 && (
         <div className="mb-10">
-          <h2 className="font-bebas text-xl tracking-widest mb-4 uppercase text-zinc-400">Vista previa de ejercicios</h2>
-          <div className="rounded-xl bg-zinc-900/60 overflow-hidden divide-y divide-zinc-800/50">
+          <h2 className="font-bebas text-xl tracking-widest mb-4 uppercase text-muted-foreground">Vista previa de ejercicios</h2>
+          <div className="rounded-xl bg-muted/60 overflow-hidden divide-y divide-border/50">
             {exercises.map((ex, idx) => (
               <div key={idx} className="flex items-center gap-4 px-5 py-3.5">
                 <span className="font-bebas text-base text-lime-400 w-14 text-center shrink-0 tracking-wide">
@@ -232,7 +232,7 @@ function SharedLanding({
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium text-foreground truncate">{ex.name}</div>
                   {ex.muscles && (
-                    <div className="text-[11px] text-zinc-500">
+                    <div className="text-[11px] text-muted-foreground">
                       {ex.muscles.split(',').map(m => m.trim()).filter(Boolean).join(' · ')}
                     </div>
                   )}
@@ -254,7 +254,7 @@ function SharedLanding({
         <Button
           variant="outline"
           onClick={onLogin}
-          className="font-mono text-[11px] tracking-widest h-12 px-6 border-zinc-700 hover:border-zinc-500 hover:text-foreground"
+          className="font-mono text-[11px] tracking-widest h-12 px-6 border-border hover:border-muted-foreground hover:text-foreground"
         >
           YA TENGO CUENTA
         </Button>

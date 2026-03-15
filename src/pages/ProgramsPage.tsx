@@ -69,8 +69,8 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
   return (
     <div
       className={cn(
-        'group relative cursor-pointer rounded-xl bg-zinc-900/80 p-5 transition-all duration-200',
-        'hover:bg-zinc-800/80 hover:shadow-lg hover:shadow-lime-400/5',
+        'group relative cursor-pointer rounded-xl bg-muted/80 p-5 transition-all duration-200',
+        'hover:bg-muted/80 hover:shadow-lg hover:shadow-lime-400/5',
         isActive && 'ring-1 ring-lime-400/30 bg-lime-400/[0.03]',
       )}
       onClick={onSelect}
@@ -97,7 +97,7 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
 
       {/* Description */}
       {program.description && (
-        <p className="text-[12px] text-zinc-400 leading-relaxed mb-4 line-clamp-2">
+        <p className="text-[12px] text-muted-foreground leading-relaxed mb-4 line-clamp-2">
           {program.description}
         </p>
       )}
@@ -105,7 +105,7 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
       {/* Meta row */}
       <div className="flex items-center gap-3 flex-wrap mb-4">
         {program.duration_weeks > 0 && (
-          <span className="text-[10px] font-mono tracking-wide text-zinc-500 uppercase">
+          <span className="text-[10px] font-mono tracking-wide text-muted-foreground uppercase">
             {program.duration_weeks} semanas
           </span>
         )}
@@ -119,7 +119,7 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
           {defaultDifficulty.toUpperCase()}
         </Badge>
         {defaultTotalDuration > 0 && (
-          <span className="text-[10px] font-mono tracking-wide text-zinc-500">
+          <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
             ~{formatDuration(defaultTotalDuration)} total
           </span>
         )}
@@ -143,7 +143,7 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
           variant="outline"
           size="sm"
           onClick={(e) => { e.stopPropagation(); onShare() }}
-          className="h-8 px-3 text-[10px] font-mono tracking-widest border-zinc-700 text-zinc-400 hover:border-pink-500/50 hover:text-pink-400"
+          className="h-8 px-3 text-[10px] font-mono tracking-widest border-border text-muted-foreground hover:border-pink-500/50 hover:text-pink-400"
         >
           <ShareIcon className="size-3 mr-1.5" />
           COMPARTIR
@@ -234,7 +234,7 @@ export default function ProgramsPage({
       <div className="flex items-end justify-between gap-4 mb-8 flex-wrap">
         <div>
           <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">PROGRAMAS</h1>
-          <p className="text-sm text-zinc-500 mt-1 font-mono tracking-wide">
+          <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
             {filteredPrograms.length} programa{filteredPrograms.length !== 1 ? 's' : ''} disponible{filteredPrograms.length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -249,13 +249,13 @@ export default function ProgramsPage({
 
       {/* Search bar */}
       <div className="relative mb-6">
-        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-zinc-500" />
+        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar programas..."
-          className="w-full h-12 pl-11 pr-4 rounded-xl bg-zinc-900 border border-zinc-800 text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-lime-400/30 focus:ring-1 focus:ring-lime-400/20 transition-all text-sm"
+          className="w-full h-12 pl-11 pr-4 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-lime-400/30 focus:ring-1 focus:ring-lime-400/20 transition-all text-sm"
         />
       </div>
 
@@ -269,7 +269,7 @@ export default function ProgramsPage({
               'px-5 py-2.5 rounded-full text-[12px] font-mono tracking-widest transition-all whitespace-nowrap border uppercase',
               activeFilter === pill.id
                 ? 'bg-lime-400/10 border-lime-400/30 text-lime-400'
-                : 'bg-transparent border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300',
+                : 'bg-transparent border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground',
             )}
           >
             {pill.label}
@@ -282,7 +282,7 @@ export default function ProgramsPage({
         {(activeFilter !== 'todos' || search) && (
           <button
             onClick={() => { setActiveFilter('todos'); setSearch('') }}
-            className="ml-auto text-[11px] font-mono tracking-widest text-zinc-600 hover:text-zinc-400 transition-colors uppercase"
+            className="ml-auto text-[11px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase"
           >
             Limpiar filtros
           </button>
@@ -292,15 +292,15 @@ export default function ProgramsPage({
       {/* Programs Grid */}
       {filteredPrograms.length === 0 ? (
         <div className="text-center py-24">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center">
-            <svg className="size-8 text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
+            <svg className="size-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <rect x="3" y="3" width="18" height="18" rx="3" />
               <line x1="8" y1="9" x2="16" y2="9" />
               <line x1="8" y1="13" x2="14" y2="13" />
               <line x1="8" y1="17" x2="11" y2="17" />
             </svg>
           </div>
-          <p className="text-zinc-400 text-sm mb-2">
+          <p className="text-muted-foreground text-sm mb-2">
             {activeFilter === 'mis'
               ? 'No has creado ningun programa todavia.'
               : search
@@ -311,7 +311,7 @@ export default function ProgramsPage({
             <Button
               variant="outline"
               onClick={onCreateProgram}
-              className="mt-4 text-[11px] font-mono tracking-widest border-zinc-700 hover:border-lime-400/40 hover:text-lime-400"
+              className="mt-4 text-[11px] font-mono tracking-widest border-border hover:border-lime-400/40 hover:text-lime-400"
             >
               <PlusIcon className="size-3 mr-2" />
               CREAR TU PRIMER PROGRAMA

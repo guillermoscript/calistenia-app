@@ -273,7 +273,7 @@ export default function DashboardPage({
             <div className="flex items-center gap-4 flex-wrap">
               <div className="relative size-14 shrink-0">
                 <svg width="56" height="56" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" className="text-zinc-800" strokeWidth="5" />
+                  <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" className="text-muted" strokeWidth="5" />
                   <circle
                     cx="28" cy="28" r="22"
                     fill="none" stroke="currentColor"

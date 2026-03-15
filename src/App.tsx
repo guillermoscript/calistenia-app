@@ -351,7 +351,12 @@ function SharedProgramPageRoute({
 
 // ── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [dark, setDark] = useState(false)
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('calistenia_dark_mode')
+    const isDark = saved !== null ? saved === 'true' : true // default dark
+    document.documentElement.classList.toggle('dark', isDark)
+    return isDark
+  })
   const navigate = useNavigate()
   const location = useLocation()
   const { user, authReady, authError, isLoading, signIn, signUp, signOut } = useAuth()
@@ -366,6 +371,7 @@ export default function App() {
     setDark(d => {
       const next = !d
       document.documentElement.classList.toggle('dark', next)
+      localStorage.setItem('calistenia_dark_mode', String(next))
       return next
     })
   }

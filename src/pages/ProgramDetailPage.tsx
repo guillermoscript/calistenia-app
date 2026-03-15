@@ -334,16 +334,16 @@ export default function ProgramDetailPage({
     return (
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
         <div className="animate-pulse space-y-6">
-          <div className="h-6 bg-zinc-800 rounded w-24" />
-          <div className="h-14 bg-zinc-800 rounded w-2/3" />
-          <div className="h-4 bg-zinc-800 rounded w-1/2" />
+          <div className="h-6 bg-muted rounded w-24" />
+          <div className="h-14 bg-muted rounded w-2/3" />
+          <div className="h-4 bg-muted rounded w-1/2" />
           <div className="flex gap-3">
-            <div className="h-10 bg-zinc-800 rounded w-40" />
-            <div className="h-10 bg-zinc-800 rounded w-32" />
+            <div className="h-10 bg-muted rounded w-40" />
+            <div className="h-10 bg-muted rounded w-32" />
           </div>
-          <div className="h-[1px] bg-zinc-800" />
+          <div className="h-[1px] bg-muted" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-zinc-800 rounded-xl" />)}
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-muted rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -353,19 +353,19 @@ export default function ProgramDetailPage({
   if (error || !program) {
     return (
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-foreground transition-colors mb-8">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
           <ArrowLeftIcon className="size-4" />
           <span className="font-mono text-[11px] tracking-widest uppercase">Volver</span>
         </button>
         <div className="text-center py-20">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center">
-            <svg className="size-8 text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
+            <svg className="size-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="12" cy="12" r="10" />
               <line x1="15" y1="9" x2="9" y2="15" />
               <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
           </div>
-          <p className="text-zinc-400 text-sm">{error || 'Programa no encontrado.'}</p>
+          <p className="text-muted-foreground text-sm">{error || 'Programa no encontrado.'}</p>
         </div>
       </div>
     )
@@ -375,19 +375,19 @@ export default function ProgramDetailPage({
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
 
       {/* Back button */}
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-foreground transition-colors mb-8 -ml-1">
+      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 -ml-1">
         <ArrowLeftIcon className="size-4" />
         <span className="font-mono text-[11px] tracking-widest uppercase">Volver a programas</span>
       </button>
 
       {/* Hero section */}
       <div className="mb-10">
-        <div className="text-[11px] text-zinc-500 tracking-[0.3em] mb-2 uppercase font-mono">
+        <div className="text-[11px] text-muted-foreground tracking-[0.3em] mb-2 uppercase font-mono">
           {isSharedView ? 'Programa Compartido' : 'Detalle del Programa'}
         </div>
         <h1 className="font-bebas text-4xl md:text-6xl leading-none mb-4 tracking-wide">{program.name}</h1>
         {program.description && (
-          <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-6">{program.description}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6">{program.description}</p>
         )}
 
         {/* Meta stats */}
@@ -395,29 +395,29 @@ export default function ProgramDetailPage({
           {program.duration_weeks > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-lime-400 font-bebas text-xl">{program.duration_weeks}</span>
-              <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">semanas</span>
+              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">semanas</span>
             </div>
           )}
-          <div className="w-px h-5 bg-zinc-800" />
+          <div className="w-px h-5 bg-muted" />
           <div className="flex items-center gap-2">
             <span className="text-lime-400 font-bebas text-xl">{phases.length}</span>
-            <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">fase{phases.length !== 1 ? 's' : ''}</span>
+            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">fase{phases.length !== 1 ? 's' : ''}</span>
           </div>
-          <div className="w-px h-5 bg-zinc-800" />
+          <div className="w-px h-5 bg-muted" />
           <div className="flex items-center gap-2">
             <span className="text-lime-400 font-bebas text-xl">{totalExercises}</span>
-            <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">ejercicios</span>
+            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">ejercicios</span>
           </div>
           {totalDurationMinutes > 0 && (
             <>
-              <div className="w-px h-5 bg-zinc-800" />
+              <div className="w-px h-5 bg-muted" />
               <div className="flex items-center gap-2">
                 <span className="text-lime-400 font-bebas text-xl">{formatDuration(totalDurationMinutes)}</span>
-                <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">total est.</span>
+                <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">total est.</span>
               </div>
             </>
           )}
-          <div className="w-px h-5 bg-zinc-800" />
+          <div className="w-px h-5 bg-muted" />
           <Badge
             variant="outline"
             className={cn(
@@ -429,13 +429,13 @@ export default function ProgramDetailPage({
           </Badge>
           {isOwn && (
             <>
-              <div className="w-px h-5 bg-zinc-800" />
+              <div className="w-px h-5 bg-muted" />
               <span className="text-[10px] font-mono tracking-widest text-sky-400/70 uppercase">Creado por ti</span>
             </>
           )}
           {isActive && (
             <>
-              <div className="w-px h-5 bg-zinc-800" />
+              <div className="w-px h-5 bg-muted" />
               <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full uppercase">Activo</span>
             </>
           )}
@@ -473,7 +473,7 @@ export default function ProgramDetailPage({
                   variant="outline"
                   onClick={handleDuplicate}
                   disabled={actionLoading === 'duplicate'}
-                  className="font-mono text-[11px] tracking-widest h-11 px-5 border-zinc-700 hover:border-sky-500/50 hover:text-sky-400"
+                  className="font-mono text-[11px] tracking-widest h-11 px-5 border-border hover:border-sky-500/50 hover:text-sky-400"
                 >
                   <CopyIcon className="size-3.5 mr-2" />
                   {actionLoading === 'duplicate' ? 'DUPLICANDO...' : 'DUPLICAR'}
@@ -482,7 +482,7 @@ export default function ProgramDetailPage({
               <Button
                 variant="outline"
                 onClick={() => shareProgram(programId, program.name)}
-                className="font-mono text-[11px] tracking-widest h-11 px-5 border-zinc-700 hover:border-pink-500/50 hover:text-pink-400"
+                className="font-mono text-[11px] tracking-widest h-11 px-5 border-border hover:border-pink-500/50 hover:text-pink-400"
               >
                 <ShareIcon className="size-3.5 mr-2" />
                 COMPARTIR
@@ -493,13 +493,13 @@ export default function ProgramDetailPage({
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-zinc-800/60 mb-8" />
+      <div className="h-px bg-muted/60 mb-8" />
 
       {/* Phase Tabs + Exercise List */}
       {phases.length > 0 && (
         <div className="mb-10">
           <Tabs value={selectedPhase} onValueChange={setSelectedPhase}>
-            <TabsList className="mb-6 bg-zinc-900/80 border border-zinc-800 p-1 gap-1">
+            <TabsList className="mb-6 bg-muted/80 border border-border p-1 gap-1">
               {phases.map(phase => (
                 <TabsTrigger
                   key={phase.id}
@@ -507,7 +507,7 @@ export default function ProgramDetailPage({
                   className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2"
                 >
                   {phase.name}
-                  <span className="ml-2 text-[9px] text-zinc-500">({phase.weeks})</span>
+                  <span className="ml-2 text-[9px] text-muted-foreground">({phase.weeks})</span>
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -516,46 +516,46 @@ export default function ProgramDetailPage({
               <TabsContent key={phase.id} value={String(phase.id)}>
                 {/* Phase info */}
                 <div className="mb-5">
-                  <div className="text-[10px] text-zinc-500 tracking-[0.3em] uppercase font-mono">
+                  <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase font-mono">
                     Fase {phase.id} · Semanas {phase.weeks}
                   </div>
                 </div>
 
                 {/* Day workouts */}
                 {phaseWorkouts.length === 0 ? (
-                  <div className="text-center py-16 text-zinc-500 text-sm">
+                  <div className="text-center py-16 text-muted-foreground text-sm">
                     No hay ejercicios en esta fase.
                   </div>
                 ) : (
                   <div className="space-y-6">
                     {phaseWorkouts.map(workout => (
-                      <div key={`${workout.phase}_${workout.day}`} className="rounded-xl bg-zinc-900/60 overflow-hidden">
+                      <div key={`${workout.phase}_${workout.day}`} className="rounded-xl bg-muted/60 overflow-hidden">
                         {/* Day header */}
-                        <div className="px-5 py-4 border-b border-zinc-800/60">
+                        <div className="px-5 py-4 border-b border-border/60">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <span className="font-bebas text-xl tracking-widest text-foreground uppercase">
                                 {workout.dayName}
                               </span>
                               {workout.dayFocus && (
-                                <span className="text-[11px] text-zinc-500 font-mono tracking-wide">
+                                <span className="text-[11px] text-muted-foreground font-mono tracking-wide">
                                   {workout.dayFocus}
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center gap-3">
                               {workoutDurations[`${workout.phase}_${workout.day}`] > 0 && (
-                                <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">
+                                <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">
                                   ~{workoutDurations[`${workout.phase}_${workout.day}`]} min
                                 </span>
                               )}
-                              <span className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase">
+                              <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase">
                                 {workout.exercises.length} ejercicio{workout.exercises.length !== 1 ? 's' : ''}
                               </span>
                             </div>
                           </div>
                           {workout.title && workout.title !== workout.dayFocus && (
-                            <div className="text-[11px] text-zinc-500 mt-1">{workout.title}</div>
+                            <div className="text-[11px] text-muted-foreground mt-1">{workout.title}</div>
                           )}
                         </div>
 
@@ -565,14 +565,14 @@ export default function ProgramDetailPage({
                             <div
                               key={`${exercise.id}_${idx}`}
                               className={cn(
-                                'px-5 py-4 border-l-[3px] flex items-center gap-4 hover:bg-zinc-800/30 transition-colors',
-                                PRIORITY_STRIPE[exercise.priority] || 'border-l-zinc-700',
-                                idx < workout.exercises.length - 1 && 'border-b border-zinc-800/40',
+                                'px-5 py-4 border-l-[3px] flex items-center gap-4 hover:bg-muted/30 transition-colors',
+                                PRIORITY_STRIPE[exercise.priority] || 'border-l-border',
+                                idx < workout.exercises.length - 1 && 'border-b border-border/40',
                               )}
                             >
                               {/* Demo thumbnail */}
                               {exercise.demoImages && exercise.demoImages.length > 0 && exercise.demoImages[0] && (
-                                <div className="w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden shrink-0">
+                                <div className="w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0">
                                   <img
                                     src={exercise.demoImages[0]}
                                     alt={exercise.name}
@@ -612,18 +612,18 @@ export default function ProgramDetailPage({
                                   </Badge>
                                 </div>
                                 {exercise.muscles && (
-                                  <div className="text-[11px] text-zinc-500">
+                                  <div className="text-[11px] text-muted-foreground">
                                     {exercise.muscles.split(',').map(m => m.trim()).filter(Boolean).join(' · ')}
                                   </div>
                                 )}
-                                <div className="flex items-center gap-3 mt-1 text-[10px] text-zinc-600 font-mono">
+                                <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/60 font-mono">
                                   {exercise.rest > 0 && <span>Descanso: {exercise.rest}s</span>}
                                   {exercise.isTimer && exercise.timerSeconds && (
                                     <span>Timer: {exercise.timerSeconds}s</span>
                                   )}
                                 </div>
                                 {exercise.note && (
-                                  <div className="text-[10px] text-zinc-600 mt-1 italic">{exercise.note}</div>
+                                  <div className="text-[10px] text-muted-foreground/60 mt-1 italic">{exercise.note}</div>
                                 )}
                               </div>
                             </div>
@@ -647,17 +647,17 @@ export default function ProgramDetailPage({
             {relatedPrograms.slice(0, 3).map(rp => (
               <div
                 key={rp.id}
-                className="group cursor-pointer rounded-xl bg-zinc-900/60 p-5 transition-all hover:bg-zinc-800/60"
+                className="group cursor-pointer rounded-xl bg-muted/60 p-5 transition-all hover:bg-muted/60"
                 onClick={() => onNavigateToProgram?.(rp.id)}
               >
                 <h3 className="font-bebas text-lg tracking-wide text-foreground group-hover:text-lime-400 transition-colors mb-2 uppercase">
                   {rp.name}
                 </h3>
                 {rp.description && (
-                  <p className="text-[11px] text-zinc-500 line-clamp-2 mb-3">{rp.description}</p>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2 mb-3">{rp.description}</p>
                 )}
                 {rp.duration_weeks > 0 && (
-                  <span className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase">
+                  <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase">
                     {rp.duration_weeks} semanas
                   </span>
                 )}

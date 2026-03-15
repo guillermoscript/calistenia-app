@@ -129,9 +129,9 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
                       {CATEGORIES.find(c => c.value === photo.category)?.label || photo.category}
                     </Badge>
                   </div>
-                  <div className="text-[10px] text-zinc-300 font-mono">{photo.date}</div>
+                  <div className="text-[10px] text-foreground font-mono">{photo.date}</div>
                   {photo.note && (
-                    <div className="text-[9px] text-zinc-400 mt-0.5 truncate">{photo.note}</div>
+                    <div className="text-[9px] text-muted-foreground mt-0.5 truncate">{photo.note}</div>
                   )}
                 </div>
                 <button

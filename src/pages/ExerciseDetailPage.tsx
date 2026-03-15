@@ -361,21 +361,21 @@ export default function ExerciseDetailPage() {
   if (!exercise) {
     return (
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12 text-center py-24">
-        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center">
-          <svg className="size-8 text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
+          <svg className="size-8 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <circle cx="12" cy="12" r="10" />
             <line x1="15" y1="9" x2="9" y2="15" />
             <line x1="9" y1="9" x2="15" y2="15" />
           </svg>
         </div>
         <p className="text-lg font-bebas tracking-wide text-foreground mb-2 uppercase">Ejercicio no encontrado</p>
-        <p className="text-sm text-zinc-500 mb-6">
+        <p className="text-sm text-muted-foreground mb-6">
           No se encontro un ejercicio con el identificador "{id}"
         </p>
         <Button
           variant="outline"
           onClick={() => navigate('/exercises')}
-          className="gap-2 border-zinc-700 hover:border-lime-400/40 hover:text-lime-400"
+          className="gap-2 border-border hover:border-lime-400/40 hover:text-lime-400"
         >
           <ArrowLeftIcon className="size-4" />
           Volver a la biblioteca
@@ -393,7 +393,7 @@ export default function ExerciseDetailPage() {
       {/* ── Back button ─────────────────────────────────────────────────── */}
       <button
         onClick={() => navigate('/exercises')}
-        className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-foreground transition-colors mb-8"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
       >
         <ArrowLeftIcon className="size-4" />
         <span className="font-mono text-[11px] tracking-widest uppercase">Biblioteca</span>
@@ -441,7 +441,7 @@ export default function ExerciseDetailPage() {
           </h1>
 
           {/* Muscles dot-separated */}
-          <p className="text-sm text-zinc-500 mb-6">
+          <p className="text-sm text-muted-foreground mb-6">
             {muscleList.join(' · ')}
           </p>
 
@@ -450,7 +450,7 @@ export default function ExerciseDetailPage() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-red-400 border-zinc-700 hover:border-red-500/30 hover:bg-red-500/5 font-mono text-[11px] tracking-widest"
+              className="gap-1.5 text-red-400 border-border hover:border-red-500/30 hover:bg-red-500/5 font-mono text-[11px] tracking-widest"
               onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.youtube || exercise.name + ' tutorial')}`, '_blank')}
             >
               <span className="text-sm">&#9654;</span>
@@ -460,7 +460,7 @@ export default function ExerciseDetailPage() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 border-zinc-700 text-zinc-400 hover:text-foreground font-mono text-[11px] tracking-widest"
+              className="gap-1.5 border-border text-muted-foreground hover:text-foreground font-mono text-[11px] tracking-widest"
               onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(exercise.name + ' ejercicio calistenia tutorial')}`, '_blank')}
             >
               GOOGLE
@@ -472,7 +472,7 @@ export default function ExerciseDetailPage() {
         {/* Media - shown on right on desktop */}
         <div className="md:w-[320px] shrink-0">
           {hasImages ? (
-            <div className="relative rounded-xl overflow-hidden bg-zinc-900">
+            <div className="relative rounded-xl overflow-hidden bg-muted">
               <img
                 src={images[imageIndex]}
                 alt={`${exercise.name} - imagen ${imageIndex + 1}`}
@@ -508,7 +508,7 @@ export default function ExerciseDetailPage() {
               )}
             </div>
           ) : hasVideo ? (
-            <div className="rounded-xl overflow-hidden bg-zinc-900">
+            <div className="rounded-xl overflow-hidden bg-muted">
               <video
                 src={exercise.demoVideo}
                 controls
@@ -517,8 +517,8 @@ export default function ExerciseDetailPage() {
               />
             </div>
           ) : (
-            <div className="rounded-xl bg-zinc-900/50 h-48 flex items-center justify-center">
-              <svg className="size-12 text-zinc-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <div className="rounded-xl bg-muted/50 h-48 flex items-center justify-center">
+              <svg className="size-12 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <rect x="3" y="8" width="4" height="8" rx="1" />
                 <rect x="17" y="8" width="4" height="8" rx="1" />
                 <line x1="7" y1="12" x2="17" y2="12" />
@@ -529,7 +529,7 @@ export default function ExerciseDetailPage() {
           )}
           {/* Show video below images when both exist */}
           {hasImages && hasVideo && (
-            <div className="rounded-xl overflow-hidden bg-zinc-900 mt-3">
+            <div className="rounded-xl overflow-hidden bg-muted mt-3">
               <video
                 src={exercise.demoVideo}
                 controls
@@ -543,7 +543,7 @@ export default function ExerciseDetailPage() {
 
       {/* ── Tabs section ─────────────────────────────────────────────────── */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="bg-zinc-900/80 border border-zinc-800 p-1 gap-1 mb-6">
+        <TabsList className="bg-muted/80 border border-border p-1 gap-1 mb-6">
           <TabsTrigger value="descripcion" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
             Descripcion
           </TabsTrigger>
@@ -566,26 +566,26 @@ export default function ExerciseDetailPage() {
         {/* Description tab */}
         <TabsContent value="descripcion">
           {(exercise.description || exercise.note) ? (
-            <div className="rounded-xl bg-zinc-900/60 p-6">
+            <div className="rounded-xl bg-muted/60 p-6">
               <p className="text-sm text-foreground leading-relaxed">
                 {exercise.description || exercise.note}
               </p>
             </div>
           ) : (
-            <div className="rounded-xl bg-zinc-900/40 p-8 text-center">
-              <p className="text-sm text-zinc-500">Sin descripcion disponible</p>
+            <div className="rounded-xl bg-muted/40 p-8 text-center">
+              <p className="text-sm text-muted-foreground">Sin descripcion disponible</p>
             </div>
           )}
         </TabsContent>
 
         {/* Muscles tab */}
         <TabsContent value="musculos">
-          <div className="rounded-xl bg-zinc-900/60 p-6">
+          <div className="rounded-xl bg-muted/60 p-6">
             <div className="flex flex-wrap gap-3">
               {muscleList.map((muscle, i) => (
                 <div
                   key={i}
-                  className="px-4 py-2.5 rounded-xl bg-zinc-800/60 text-sm text-foreground font-medium"
+                  className="px-4 py-2.5 rounded-xl bg-muted/60 text-sm text-foreground font-medium"
                 >
                   {muscle}
                 </div>
@@ -596,7 +596,7 @@ export default function ExerciseDetailPage() {
 
         {/* Material tab */}
         <TabsContent value="material">
-          <div className="rounded-xl bg-zinc-900/60 p-6">
+          <div className="rounded-xl bg-muted/60 p-6">
             <div className="flex flex-wrap gap-3">
               {equipment.map((item, i) => (
                 <div
@@ -605,7 +605,7 @@ export default function ExerciseDetailPage() {
                     'px-4 py-2.5 rounded-xl text-sm font-medium',
                     item === 'Sin equipo'
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-zinc-800/60 text-foreground'
+                      : 'bg-muted/60 text-foreground'
                   )}
                 >
                   {item}
@@ -618,21 +618,21 @@ export default function ExerciseDetailPage() {
         {/* Config tab */}
         <TabsContent value="config">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl bg-zinc-900/60 p-5 text-center">
-              <div className="text-[10px] font-mono tracking-widest text-zinc-500 mb-2 uppercase">Series</div>
+            <div className="rounded-xl bg-muted/60 p-5 text-center">
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">Series</div>
               <div className="text-2xl font-bebas text-lime-400">{exercise.sets}</div>
             </div>
-            <div className="rounded-xl bg-zinc-900/60 p-5 text-center">
-              <div className="text-[10px] font-mono tracking-widest text-zinc-500 mb-2 uppercase">Reps</div>
+            <div className="rounded-xl bg-muted/60 p-5 text-center">
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">Reps</div>
               <div className="text-2xl font-bebas text-lime-400">{exercise.reps}</div>
             </div>
-            <div className="rounded-xl bg-zinc-900/60 p-5 text-center">
-              <div className="text-[10px] font-mono tracking-widest text-zinc-500 mb-2 uppercase">Descanso</div>
+            <div className="rounded-xl bg-muted/60 p-5 text-center">
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">Descanso</div>
               <div className="text-2xl font-bebas text-lime-400">{exercise.rest}s</div>
             </div>
             {exercise.isTimer && exercise.timerSeconds && (
               <div className="rounded-xl bg-sky-500/5 border border-sky-500/20 p-5 text-center">
-                <div className="text-[10px] font-mono tracking-widest text-zinc-500 mb-2 uppercase">Timer</div>
+                <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">Timer</div>
                 <div className="text-2xl font-bebas text-sky-400">{exercise.timerSeconds}s</div>
               </div>
             )}
@@ -642,7 +642,7 @@ export default function ExerciseDetailPage() {
         {/* Progression tab */}
         {!progressionsLoading && chain.length > 0 && (
           <TabsContent value="progresion">
-            <div className="rounded-xl bg-zinc-900/60 p-6">
+            <div className="rounded-xl bg-muted/60 p-6">
               <div className="overflow-x-auto -mx-6 px-6 pb-2">
                 <div className="flex items-center gap-1.5 min-w-max py-2">
                   {chain.map((prog, i) => {
@@ -659,18 +659,18 @@ export default function ExerciseDetailPage() {
                             'hover:brightness-110',
                             isCurrent && 'border-lime-400 bg-lime-400/10 shadow-[0_0_8px_rgba(200,245,66,0.15)]',
                             isPast && 'border-emerald-500/30 bg-emerald-500/5',
-                            isFuture && 'border-zinc-800 bg-zinc-800/30',
+                            isFuture && 'border-border bg-muted/30',
                           )}
                         >
                           <div className={cn(
                             'text-[9px] font-mono tracking-widest mb-1',
-                            isCurrent ? 'text-lime-400' : isPast ? 'text-emerald-500/60' : 'text-zinc-600',
+                            isCurrent ? 'text-lime-400' : isPast ? 'text-emerald-500/60' : 'text-muted-foreground/60',
                           )}>
                             LV.{prog.difficultyOrder}
                           </div>
                           <div className={cn(
                             'text-[11px] font-medium leading-tight',
-                            isCurrent ? 'text-foreground' : isPast ? 'text-emerald-500/70' : 'text-zinc-600',
+                            isCurrent ? 'text-foreground' : isPast ? 'text-emerald-500/70' : 'text-muted-foreground/60',
                           )}>
                             {prog.exerciseName}
                           </div>
@@ -681,7 +681,7 @@ export default function ExerciseDetailPage() {
                         {i < chain.length - 1 && (
                           <span className={cn(
                             'text-[14px] flex-shrink-0',
-                            i < currentChainIdx ? 'text-emerald-500/40' : 'text-zinc-700',
+                            i < currentChainIdx ? 'text-emerald-500/40' : 'text-muted-foreground/50',
                           )}>
                             &rarr;
                           </span>
@@ -693,7 +693,7 @@ export default function ExerciseDetailPage() {
               </div>
 
               {currentChainIdx >= 0 && chain[currentChainIdx] && (
-                <div className="text-[11px] text-zinc-400 bg-zinc-800/50 rounded-lg px-4 py-3 mt-4 border-l-2 border-lime-400/20">
+                <div className="text-[11px] text-muted-foreground bg-muted/50 rounded-lg px-4 py-3 mt-4 border-l-2 border-lime-400/20">
                   <span className="font-mono text-lime-400">{chain[currentChainIdx].targetRepsToAdvance} reps</span>
                   {' '}en{' '}
                   <span className="font-mono text-lime-400">{chain[currentChainIdx].sessionsAtTarget} sesiones</span>
@@ -706,7 +706,7 @@ export default function ExerciseDetailPage() {
       </Tabs>
 
       {/* ── Divider ─────────────────────────────────────────────────────── */}
-      <div className="h-px bg-zinc-800/60 my-8" />
+      <div className="h-px bg-muted/60 my-8" />
 
       {/* ── Related workouts ────────────────────────────────────────────── */}
       {relatedWorkouts.length > 0 && (
@@ -716,16 +716,16 @@ export default function ExerciseDetailPage() {
             {relatedWorkouts.map(w => (
               <div
                 key={w.id}
-                className="flex items-center gap-4 px-4 py-4 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/60 transition-colors"
+                className="flex items-center gap-4 px-4 py-4 rounded-xl bg-muted/60 hover:bg-muted/60 transition-colors"
               >
                 <div className="size-10 rounded-lg bg-lime-400/10 flex items-center justify-center flex-shrink-0">
                   <span className="text-sm font-bebas text-lime-400 tracking-wide">F{w.phase}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{w.name}</div>
-                  <div className="text-[11px] text-zinc-500">{w.title}</div>
+                  <div className="text-[11px] text-muted-foreground">{w.title}</div>
                   {w.durationMin > 0 && (
-                    <div className="text-[10px] text-zinc-600 font-mono mt-0.5">~{w.durationMin} min</div>
+                    <div className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">~{w.durationMin} min</div>
                   )}
                 </div>
               </div>
@@ -746,12 +746,12 @@ export default function ExerciseDetailPage() {
                 <Link
                   key={sim.id}
                   to={`/exercises/${sim.slug || sim.id}`}
-                  className="group px-4 py-4 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/60 transition-colors"
+                  className="group px-4 py-4 rounded-xl bg-muted/60 hover:bg-muted/60 transition-colors"
                 >
                   <div className="font-bebas text-base tracking-wide leading-tight mb-1.5 group-hover:text-lime-400 transition-colors line-clamp-2 uppercase">
                     {sim.name}
                   </div>
-                  <div className="text-[11px] text-zinc-500 line-clamp-1 mb-2.5">
+                  <div className="text-[11px] text-muted-foreground line-clamp-1 mb-2.5">
                     {simMuscles.join(' · ')}
                   </div>
                   <div className="flex items-center justify-between">

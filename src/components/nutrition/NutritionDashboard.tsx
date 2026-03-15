@@ -35,7 +35,7 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
           cx="70" cy="70" r={radius}
           fill="none"
           stroke="currentColor"
-          className="text-zinc-800"
+          className="text-muted"
           strokeWidth="10"
         />
         {/* Progress ring */}

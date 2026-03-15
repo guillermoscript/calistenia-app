@@ -284,30 +284,30 @@ export default function ExerciseLibraryPage() {
       {/* ── Hero header ──────────────────────────────────────────────────── */}
       <div className="mb-8">
         <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">EJERCICIOS</h1>
-        <p className="text-sm text-zinc-500 mt-1 font-mono tracking-wide">
+        <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
           {loading ? 'Cargando...' : `${filtered.length} ejercicio${filtered.length !== 1 ? 's' : ''}`}
         </p>
       </div>
 
       {/* ── Search ──────────────────────────────────────────────────────── */}
       <div className="relative mb-6">
-        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-zinc-500" />
+        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nombre o musculo..."
-          className="w-full h-12 pl-11 pr-4 rounded-xl bg-zinc-900 border border-zinc-800 text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-lime-400/30 focus:ring-1 focus:ring-lime-400/20 transition-all text-sm"
+          className="w-full h-12 pl-11 pr-4 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-lime-400/30 focus:ring-1 focus:ring-lime-400/20 transition-all text-sm"
         />
       </div>
 
       {/* ── Filter bar ───────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[11px] font-mono tracking-widest text-zinc-500 uppercase">Filtros</span>
+        <span className="text-[11px] font-mono tracking-widest text-muted-foreground uppercase">Filtros</span>
         {hasActiveFilters && (
           <button
             onClick={() => { setActiveCategory('todos'); setActiveMuscle(null); setSearch('') }}
-            className="text-[11px] font-mono tracking-widest text-zinc-600 hover:text-zinc-400 transition-colors uppercase"
+            className="text-[11px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase"
           >
             Limpiar todo
           </button>
@@ -326,7 +326,7 @@ export default function ExerciseLibraryPage() {
                 'px-4 py-2.5 rounded-full text-[11px] font-mono tracking-widest whitespace-nowrap transition-all duration-150 border uppercase',
                 isActive
                   ? cn(cat.bg, cat.color, 'border-current/20')
-                  : 'border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600'
+                  : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground'
               )}
             >
               {cat.label}
@@ -342,8 +342,8 @@ export default function ExerciseLibraryPage() {
           className={cn(
             'px-3 py-1.5 rounded-lg text-[10px] font-mono tracking-widest whitespace-nowrap transition-all duration-150 uppercase',
             !activeMuscle
-              ? 'bg-zinc-800 text-foreground'
-              : 'text-zinc-600 hover:text-zinc-400'
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground/60 hover:text-muted-foreground'
           )}
         >
           TODOS
@@ -355,8 +355,8 @@ export default function ExerciseLibraryPage() {
             className={cn(
               'px-3 py-1.5 rounded-lg text-[10px] font-mono tracking-widest whitespace-nowrap transition-all duration-150 uppercase',
               activeMuscle === muscle
-                ? 'bg-zinc-800 text-foreground'
-                : 'text-zinc-600 hover:text-zinc-400'
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground/60 hover:text-muted-foreground'
             )}
           >
             {muscle.toUpperCase()}
@@ -368,11 +368,11 @@ export default function ExerciseLibraryPage() {
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl bg-zinc-900 p-5 animate-pulse">
-              <div className="h-5 w-3/4 bg-zinc-800 rounded mb-3" />
-              <div className="h-3 w-full bg-zinc-800 rounded mb-2" />
-              <div className="h-3 w-1/2 bg-zinc-800 rounded mb-4" />
-              <div className="h-5 w-16 bg-zinc-800 rounded" />
+            <div key={i} className="rounded-xl bg-muted p-5 animate-pulse">
+              <div className="h-5 w-3/4 bg-muted rounded mb-3" />
+              <div className="h-3 w-full bg-muted rounded mb-2" />
+              <div className="h-3 w-1/2 bg-muted rounded mb-4" />
+              <div className="h-5 w-16 bg-muted rounded" />
             </div>
           ))}
         </div>
@@ -381,11 +381,11 @@ export default function ExerciseLibraryPage() {
       {/* ── Empty state ─────────────────────────────────────────────────── */}
       {!loading && filtered.length === 0 && (
         <div className="text-center py-24">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center">
-            <SearchIcon className="size-7 text-zinc-700" />
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
+            <SearchIcon className="size-7 text-muted-foreground/50" />
           </div>
-          <p className="text-sm text-zinc-400 mb-1">No se encontraron ejercicios</p>
-          <p className="text-xs text-zinc-600">Prueba con otro filtro o busqueda</p>
+          <p className="text-sm text-muted-foreground mb-1">No se encontraron ejercicios</p>
+          <p className="text-xs text-muted-foreground/60">Prueba con otro filtro o busqueda</p>
         </div>
       )}
 
@@ -399,11 +399,11 @@ export default function ExerciseLibraryPage() {
               <button
                 key={ex.id}
                 onClick={() => navigate(`/exercises/${ex.slug || ex.id}`)}
-                className="group text-left rounded-xl bg-zinc-900/80 overflow-hidden hover:bg-zinc-800/80 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-lime-400/30"
+                className="group text-left rounded-xl bg-muted/80 overflow-hidden hover:bg-muted/80 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-lime-400/30"
               >
                 {/* Thumbnail or placeholder */}
                 {ex.demoImages && ex.demoImages.length > 0 ? (
-                  <div className="h-36 bg-zinc-800 overflow-hidden">
+                  <div className="h-36 bg-muted overflow-hidden">
                     <img
                       src={ex.demoImages[0]}
                       alt={ex.name}
@@ -412,8 +412,8 @@ export default function ExerciseLibraryPage() {
                     />
                   </div>
                 ) : (
-                  <div className="h-24 bg-zinc-900/50 flex items-center justify-center">
-                    <svg className="size-8 text-zinc-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <div className="h-24 bg-muted/50 flex items-center justify-center">
+                    <svg className="size-8 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <rect x="3" y="8" width="4" height="8" rx="1" />
                       <rect x="17" y="8" width="4" height="8" rx="1" />
                       <line x1="7" y1="12" x2="17" y2="12" />
@@ -433,7 +433,7 @@ export default function ExerciseLibraryPage() {
                   </div>
 
                   {/* Muscles dot-separated */}
-                  <p className="text-[11px] text-zinc-500 line-clamp-1 mb-3 pl-[18px]">
+                  <p className="text-[11px] text-muted-foreground line-clamp-1 mb-3 pl-[18px]">
                     {muscleList.join(' · ')}
                   </p>
 
