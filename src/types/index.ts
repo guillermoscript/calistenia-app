@@ -1,0 +1,157 @@
+// ─── Workout & Program Data ──────────────────────────────────────────────────
+
+export type DayId = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
+
+export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest'
+
+export type Priority = 'high' | 'med' | 'low'
+
+export interface Exercise {
+  id: string
+  name: string
+  /** Usually a number, but can be a string like "m\u00FAltiples" or "intentos" */
+  sets: number | string
+  reps: string
+  rest: number
+  muscles: string
+  note: string
+  youtube: string
+  priority: Priority
+  isTimer?: boolean
+  timerSeconds?: number
+}
+
+export interface Workout {
+  phase: number
+  day: DayId
+  title: string
+  exercises: Exercise[]
+}
+
+/** Keyed as `p${phase}_${day}`, e.g. "p1_lun" */
+export type WorkoutsMap = Record<string, Workout>
+
+export interface Phase {
+  id: number
+  name: string
+  weeks: string
+  color: string
+  bg: string
+}
+
+export interface WeekDay {
+  id: DayId
+  name: string
+  focus: string
+  type: DayType
+  color: string
+}
+
+// ─── Progress & Sessions ─────────────────────────────────────────────────────
+
+export interface SetData {
+  reps: string
+  note: string
+  timestamp: number
+}
+
+export interface ExerciseLog {
+  sets: SetData[]
+  date: string
+  workoutKey: string
+  exerciseId: string
+}
+
+export interface SessionDone {
+  done: true
+  date: string
+  workoutKey: string
+  completedAt?: number
+  note: string
+}
+
+/** The progress map stores both exercise logs and session-done markers */
+export type ProgressMap = Record<string, ExerciseLog | SessionDone>
+
+export interface Settings {
+  phase: number
+  startDate: string | null
+  weeklyGoal: number
+  pr_pullups?: number
+  pr_pushups?: number
+  pr_lsit?: number
+  pr_pistol?: number
+  pr_handstand?: number
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+/**
+ * PocketBase user record shape.
+ * The exact fields depend on the PB `users` collection schema;
+ * these are the ones used throughout the app.
+ */
+export interface User {
+  id: string
+  email: string
+  name?: string
+  avatar?: string
+  created?: string
+  updated?: string
+}
+
+// ─── Work Day ────────────────────────────────────────────────────────────────
+
+export type PauseType = '25' | '60'
+
+export interface Pause {
+  at: string   // ISO timestamp
+  type: PauseType
+}
+
+export interface WorkDay {
+  workStart: string | null   // ISO timestamp
+  workEnd: string | null     // ISO timestamp
+  pauses: Pause[]
+  date: string               // YYYY-MM-DD
+}
+
+// ─── Lumbar Page ─────────────────────────────────────────────────────────────
+
+export interface ProtocolExercise {
+  name: string
+  time: number | null
+  reps: string
+  note: string
+  youtube: string
+  isTimer?: boolean
+}
+
+export interface Protocol {
+  id: string
+  name: string
+  desc: string
+  accent: string
+  border: string
+  badge: string
+  dot: string
+  duration: string
+  exercises: ProtocolExercise[]
+}
+
+export interface LumbarCheck {
+  date: string
+  lumbar_score: number       // 1-5
+  slept_well: boolean
+  sitting_hours: number
+  created_at: string         // ISO timestamp
+}
+
+// ─── Programs ────────────────────────────────────────────────────────────────
+
+export interface ProgramMeta {
+  id: string
+  name: string
+  description: string
+  duration_weeks: number
+}
