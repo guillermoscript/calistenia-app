@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useProgress } from './hooks/useProgress'
 import { usePrograms } from './hooks/usePrograms'
@@ -301,11 +301,10 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, children }
 // ── Route wrappers (extract params and pass props) ──────────────────────────
 
 function ProgramDetailPageRoute({
-  userId, activeProgram, programs, onSelectProgram, onDuplicateProgram,
+  userId, activeProgram, onSelectProgram, onDuplicateProgram,
 }: {
   userId: string
   activeProgram: import('./types').ProgramMeta | null
-  programs: import('./types').ProgramMeta[]
   onSelectProgram: (id: string) => Promise<void>
   onDuplicateProgram: (id: string) => Promise<void>
 }) {
@@ -317,8 +316,8 @@ function ProgramDetailPageRoute({
       programId={id}
       userId={userId}
       activeProgram={activeProgram}
-      programs={programs}
       onBack={() => navigate('/programs')}
+      onNavigateToProgram={(pid) => navigate(`/programs/${pid}`)}
       onSelectProgram={onSelectProgram}
       onDuplicateProgram={onDuplicateProgram}
     />
@@ -326,11 +325,10 @@ function ProgramDetailPageRoute({
 }
 
 function SharedProgramPageRoute({
-  userId, activeProgram, programs, onSelectProgram, onDuplicateProgram,
+  userId, activeProgram, onSelectProgram, onDuplicateProgram,
 }: {
   userId?: string
   activeProgram: import('./types').ProgramMeta | null
-  programs: import('./types').ProgramMeta[]
   onSelectProgram: (id: string) => Promise<void>
   onDuplicateProgram: (id: string) => Promise<void>
 }) {
@@ -342,7 +340,7 @@ function SharedProgramPageRoute({
       programId={shareCode}
       userId={userId}
       activeProgram={activeProgram}
-      programs={programs}
+      onNavigateToProgram={(pid) => navigate(`/programs/${pid}`)}
       onBack={() => navigate('/programs')}
       onSelectProgram={onSelectProgram}
       onDuplicateProgram={onDuplicateProgram}
@@ -500,7 +498,6 @@ export default function App() {
               <ProgramDetailPageRoute
                 userId={user.id}
                 activeProgram={activeProgram}
-                programs={programs}
                 onSelectProgram={selectProgram}
                 onDuplicateProgram={handleDuplicateProgram}
               />
@@ -511,11 +508,11 @@ export default function App() {
               <SharedProgramPageRoute
                 userId={user.id}
                 activeProgram={activeProgram}
-                programs={programs}
                 onSelectProgram={selectProgram}
                 onDuplicateProgram={handleDuplicateProgram}
               />
             } />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppShell>
       </div>

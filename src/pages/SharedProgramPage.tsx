@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import ProgramDetailPage from './ProgramDetailPage'
 import type { ProgramMeta } from '../types'
 
@@ -13,7 +12,7 @@ interface SharedProgramPageProps {
   programId: string
   userId?: string
   activeProgram?: ProgramMeta | null
-  programs?: ProgramMeta[]
+  onNavigateToProgram?: (programId: string) => void
   onSelectProgram?: (programId: string) => Promise<void>
   onDuplicateProgram?: (programId: string) => Promise<void>
   onBack: () => void
@@ -24,7 +23,7 @@ export default function SharedProgramPage({
   programId,
   userId,
   activeProgram,
-  programs,
+  onNavigateToProgram,
   onSelectProgram,
   onDuplicateProgram,
   onBack,
@@ -37,8 +36,8 @@ export default function SharedProgramPage({
       programId={programId}
       userId={userId}
       activeProgram={activeProgram}
-      programs={programs}
       onBack={onBack}
+      onNavigateToProgram={onNavigateToProgram}
       onSelectProgram={isLoggedIn ? onSelectProgram : undefined}
       onDuplicateProgram={isLoggedIn ? onDuplicateProgram : undefined}
       isSharedView={true}

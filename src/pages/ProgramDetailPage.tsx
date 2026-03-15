@@ -132,8 +132,8 @@ interface ProgramDetailPageProps {
   programId: string
   userId?: string
   activeProgram?: ProgramMeta | null
-  programs?: ProgramMeta[]
   onBack: () => void
+  onNavigateToProgram?: (programId: string) => void
   onSelectProgram?: (programId: string) => Promise<void>
   onDuplicateProgram?: (programId: string) => Promise<void>
   /** If true, show as shared view (for non-logged-in or add-to-mine) */
@@ -146,6 +146,7 @@ export default function ProgramDetailPage({
   userId,
   activeProgram,
   onBack,
+  onNavigateToProgram,
   onSelectProgram,
   onDuplicateProgram,
   isSharedView = false,
@@ -560,12 +561,7 @@ export default function ProgramDetailPage({
               <Card
                 key={rp.id}
                 className="cursor-pointer transition-all hover:border-[hsl(var(--lime))]/30 group"
-                onClick={() => {
-                  // Navigate to this program's detail
-                  window.location.hash = ''
-                  // Re-render with new programId
-                  window.location.reload()
-                }}
+                onClick={() => onNavigateToProgram?.(rp.id)}
               >
                 <CardContent className="p-4">
                   <h3 className="font-bebas text-lg tracking-wide text-foreground group-hover:text-[hsl(var(--lime))] mb-1">

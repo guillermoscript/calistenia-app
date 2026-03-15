@@ -284,7 +284,7 @@ export default function ExerciseDetailPage() {
           try {
             // Try by slug first, then by id
             const res = await pb.collection('exercises_catalog').getList(1, 1, {
-              filter: `slug = "${id}" || id = "${id}"`,
+              filter: pb.filter('slug = {:val} || id = {:val}', { val: id }),
             })
             if (!cancelled && res.items.length > 0) {
               setExercise(mapPBRecord(res.items[0]))
@@ -486,7 +486,19 @@ export default function ExerciseDetailPage() {
               preload="metadata"
             />
           </div>
-        ) : (
+        ) : null}
+        {/* Show video below images when both exist */}
+        {hasImages && hasVideo && (
+          <div className="rounded-xl overflow-hidden border border-border bg-muted/20 mt-3">
+            <video
+              src={exercise.demoVideo}
+              controls
+              className="w-full h-56 sm:h-72 object-cover"
+              preload="metadata"
+            />
+          </div>
+        )}
+        {!hasImages && !hasVideo && (
           <div className="rounded-xl border border-border bg-muted/10 h-40 sm:h-48 flex items-center justify-center">
             <div className="text-center">
               <svg className="size-12 text-muted-foreground/15 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
