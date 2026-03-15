@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { useProgressions } from '../hooks/useProgressions'
+import { detectEquipment } from '../lib/equipment'
+import { calculateWorkoutDuration } from '../lib/duration'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
@@ -141,8 +143,8 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
   return null
 }
 
-function findRelatedWorkouts(exerciseId: string): RelatedProgram[] {
-  const results: RelatedProgram[] = []
+function findRelatedWorkouts(exerciseId: string): (RelatedProgram & { durationMin: number })[] {
+  const results: (RelatedProgram & { durationMin: number })[] = []
   const DAY_NAMES: Record<string, string> = {
     lun: 'Lunes', mar: 'Martes', mie: 'Miercoles',
     jue: 'Jueves', vie: 'Viernes', sab: 'Sabado', dom: 'Domingo',
@@ -156,6 +158,7 @@ function findRelatedWorkouts(exerciseId: string): RelatedProgram[] {
         phase: workout.phase,
         day: workout.day,
         title: workout.title,
+        durationMin: calculateWorkoutDuration(workout.exercises),
       })
     }
   }
@@ -334,6 +337,12 @@ export default function ExerciseDetailPage() {
 
   // Muscle list as array
   const muscleList = exercise?.muscles.split(',').map(m => m.trim()).filter(Boolean) || []
+
+  // Equipment detection
+  const equipment = useMemo(() => {
+    if (!exercise) return []
+    return detectEquipment({ name: exercise.name, note: exercise.note })
+  }, [exercise])
 
   if (loading) {
     return (
@@ -541,6 +550,9 @@ export default function ExerciseDetailPage() {
           <TabsTrigger value="musculos" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
             Musculos
           </TabsTrigger>
+          <TabsTrigger value="material" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
+            Material
+          </TabsTrigger>
           <TabsTrigger value="config" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
             Config
           </TabsTrigger>
@@ -576,6 +588,27 @@ export default function ExerciseDetailPage() {
                   className="px-4 py-2.5 rounded-xl bg-zinc-800/60 text-sm text-foreground font-medium"
                 >
                   {muscle}
+                </div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Material tab */}
+        <TabsContent value="material">
+          <div className="rounded-xl bg-zinc-900/60 p-6">
+            <div className="flex flex-wrap gap-3">
+              {equipment.map((item, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'px-4 py-2.5 rounded-xl text-sm font-medium',
+                    item === 'Sin equipo'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-zinc-800/60 text-foreground'
+                  )}
+                >
+                  {item}
                 </div>
               ))}
             </div>
@@ -691,6 +724,9 @@ export default function ExerciseDetailPage() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{w.name}</div>
                   <div className="text-[11px] text-zinc-500">{w.title}</div>
+                  {w.durationMin > 0 && (
+                    <div className="text-[10px] text-zinc-600 font-mono mt-0.5">~{w.durationMin} min</div>
+                  )}
                 </div>
               </div>
             ))}

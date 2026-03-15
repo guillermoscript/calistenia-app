@@ -66,9 +66,10 @@ const PRIORITY_DOT: Record<Priority, string> = {
   low:  'bg-sky-500',
 }
 
-const MUSCLE_GROUPS = [
+const DEFAULT_MUSCLE_GROUPS = [
   'Pecho', 'Hombros', 'Triceps', 'Dorsal', 'Biceps', 'Core',
   'Cuadriceps', 'Gluteos', 'Isquios', 'Lumbar', 'Pantorrillas',
+  'Deltoides', 'Psoas', 'Columna',
 ]
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -230,6 +231,21 @@ export default function ExerciseLibraryPage() {
     return () => { cancelled = true }
   }, [])
 
+  // Extract unique muscle groups from all exercises
+  const muscleGroups = useMemo(() => {
+    if (exercises.length === 0) return DEFAULT_MUSCLE_GROUPS
+    const allMuscles = new Set<string>()
+    exercises.forEach(ex => {
+      ex.muscles.split(',').forEach(m => {
+        const trimmed = m.trim()
+        if (trimmed) allMuscles.add(trimmed)
+      })
+    })
+    // Sort and return unique muscles, but limit to most common ones
+    const sorted = Array.from(allMuscles).sort((a, b) => a.localeCompare(b))
+    return sorted.length > 0 ? sorted : DEFAULT_MUSCLE_GROUPS
+  }, [exercises])
+
   // Filtered exercises
   const filtered = useMemo(() => {
     let result = exercises
@@ -332,7 +348,7 @@ export default function ExerciseLibraryPage() {
         >
           TODOS
         </button>
-        {MUSCLE_GROUPS.map(muscle => (
+        {muscleGroups.map(muscle => (
           <button
             key={muscle}
             onClick={() => setActiveMuscle(activeMuscle === muscle ? null : muscle)}

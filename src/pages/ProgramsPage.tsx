@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react'
 import { cn } from '../lib/utils'
+import { inferDifficulty, DIFFICULTY_COLORS, type DifficultyLevel } from '../lib/difficulty'
+import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
+import { WORKOUTS } from '../data/workouts'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import type { ProgramMeta } from '../types'
@@ -45,6 +48,14 @@ async function shareProgram(programId: string, programName: string) {
 
 // ── Program Card ───────────────────────────────────────────────────────────
 
+// Compute default difficulty from hardcoded workouts
+const defaultDifficulty: DifficultyLevel = inferDifficulty(
+  Object.values(WORKOUTS).flatMap(w => w.exercises)
+)
+const defaultTotalDuration: number = Object.values(WORKOUTS).reduce(
+  (sum, w) => sum + calculateWorkoutDuration(w.exercises), 0
+)
+
 interface ProgramCardProps {
   program: ProgramMeta
   isOwn: boolean
@@ -54,6 +65,7 @@ interface ProgramCardProps {
 }
 
 function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCardProps) {
+  const diffStyle = DIFFICULTY_COLORS[defaultDifficulty]
   return (
     <div
       className={cn(
@@ -91,10 +103,24 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
       )}
 
       {/* Meta row */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 flex-wrap mb-4">
         {program.duration_weeks > 0 && (
           <span className="text-[10px] font-mono tracking-wide text-zinc-500 uppercase">
             {program.duration_weeks} semanas
+          </span>
+        )}
+        <Badge
+          variant="outline"
+          className={cn(
+            'text-[8px] px-2 py-0.5 font-mono tracking-widest border',
+            diffStyle.text, diffStyle.bg, diffStyle.border
+          )}
+        >
+          {defaultDifficulty.toUpperCase()}
+        </Badge>
+        {defaultTotalDuration > 0 && (
+          <span className="text-[10px] font-mono tracking-wide text-zinc-500">
+            ~{formatDuration(defaultTotalDuration)} total
           </span>
         )}
         {isOwn && (

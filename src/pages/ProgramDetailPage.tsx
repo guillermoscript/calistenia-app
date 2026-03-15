@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
+import { inferDifficulty, DIFFICULTY_COLORS } from '../lib/difficulty'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
@@ -306,6 +309,25 @@ export default function ProgramDetailPage({
   // Total exercise count
   const totalExercises = workouts.reduce((sum, w) => sum + w.exercises.length, 0)
 
+  // Difficulty level
+  const allExercises = useMemo(() => workouts.flatMap(w => w.exercises), [workouts])
+  const difficulty = useMemo(() => inferDifficulty(allExercises), [allExercises])
+  const diffStyle = DIFFICULTY_COLORS[difficulty]
+
+  // Total estimated duration (sum of all workout durations)
+  const totalDurationMinutes = useMemo(() => {
+    return workouts.reduce((sum, w) => sum + calculateWorkoutDuration(w.exercises), 0)
+  }, [workouts])
+
+  // Per-workout duration for phase workouts
+  const workoutDurations = useMemo(() => {
+    const map: Record<string, number> = {}
+    phaseWorkouts.forEach(w => {
+      map[`${w.phase}_${w.day}`] = calculateWorkoutDuration(w.exercises)
+    })
+    return map
+  }, [phaseWorkouts])
+
   // ── Render ─────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -386,6 +408,25 @@ export default function ProgramDetailPage({
             <span className="text-lime-400 font-bebas text-xl">{totalExercises}</span>
             <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">ejercicios</span>
           </div>
+          {totalDurationMinutes > 0 && (
+            <>
+              <div className="w-px h-5 bg-zinc-800" />
+              <div className="flex items-center gap-2">
+                <span className="text-lime-400 font-bebas text-xl">{formatDuration(totalDurationMinutes)}</span>
+                <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">total est.</span>
+              </div>
+            </>
+          )}
+          <div className="w-px h-5 bg-zinc-800" />
+          <Badge
+            variant="outline"
+            className={cn(
+              'text-[9px] px-2.5 py-0.5 font-mono tracking-widest border',
+              diffStyle.text, diffStyle.bg, diffStyle.border
+            )}
+          >
+            {difficulty.toUpperCase()}
+          </Badge>
           {isOwn && (
             <>
               <div className="w-px h-5 bg-zinc-800" />
@@ -502,9 +543,16 @@ export default function ProgramDetailPage({
                                 </span>
                               )}
                             </div>
-                            <span className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase">
-                              {workout.exercises.length} ejercicio{workout.exercises.length !== 1 ? 's' : ''}
-                            </span>
+                            <div className="flex items-center gap-3">
+                              {workoutDurations[`${workout.phase}_${workout.day}`] > 0 && (
+                                <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">
+                                  ~{workoutDurations[`${workout.phase}_${workout.day}`]} min
+                                </span>
+                              )}
+                              <span className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase">
+                                {workout.exercises.length} ejercicio{workout.exercises.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
                           </div>
                           {workout.title && workout.title !== workout.dayFocus && (
                             <div className="text-[11px] text-zinc-500 mt-1">{workout.title}</div>
@@ -544,9 +592,13 @@ export default function ProgramDetailPage({
                               {/* Exercise info */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
-                                  <span className="text-[13px] font-semibold text-foreground truncate">
+                                  <Link
+                                    to={`/exercises/${exercise.id}`}
+                                    className="text-[13px] font-semibold text-foreground truncate hover:text-lime-400 transition-colors"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     {exercise.name}
-                                  </span>
+                                  </Link>
                                   <Badge
                                     variant="outline"
                                     className={cn(

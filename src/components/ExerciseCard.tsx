@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Image, ArrowUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Image, ArrowUp, Info } from 'lucide-react'
 import Timer from './Timer'
 import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
@@ -24,6 +25,7 @@ interface ExerciseCardProps {
 }
 
 export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [] }: ExerciseCardProps) {
+  const navigate = useNavigate()
   const [showTimer, setShowTimer] = useState<boolean>(false)
   const [showYoutube, setShowYoutube] = useState<boolean>(false)
   const [showMedia, setShowMedia] = useState<boolean>(false)
@@ -192,6 +194,14 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             title="Ver tutorial"
           >
             ▶
+          </button>
+
+          <button
+            onClick={() => navigate(`/exercises/${exercise.id}`)}
+            className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-zinc-600/30 bg-zinc-500/5 text-zinc-400 hover:bg-zinc-500/10 hover:text-lime cursor-pointer transition-all duration-150"
+            title="Ver detalle del ejercicio"
+          >
+            <Info size={15} />
           </button>
 
           {recentLogs.length > 0 && (

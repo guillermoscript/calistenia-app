@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '../data/workouts'
+import { calculateWorkoutDuration } from '../lib/duration'
 import ExerciseCard from '../components/ExerciseCard'
 import RestTimer from '../components/RestTimer'
 import SessionView from '../components/SessionView'
@@ -55,6 +57,10 @@ export default function WorkoutPage({
 
   const todayId  = (['dom','lun','mar','mie','jue','vie','sab'] as const)[new Date().getDay()]
   const workout  = selectedDay ? getWorkout(selectedPhase, selectedDay) : null
+  const workoutDuration = useMemo(() => {
+    if (!workout) return 0
+    return calculateWorkoutDuration(workout.exercises)
+  }, [workout])
   const workoutKey = selectedDay ? `p${selectedPhase}_${selectedDay}` : null
   const isDone   = workoutKey ? isWorkoutDone(workoutKey) : false
 
@@ -171,7 +177,7 @@ export default function WorkoutPage({
             <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center md:flex-wrap">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-[2px] mb-1 uppercase">
-                  Fase {selectedPhase} · {WEEK_DAYS.find(d => d.id === selectedDay)?.name.toUpperCase()} · {workout.exercises.length} ejercicios
+                  Fase {selectedPhase} · {WEEK_DAYS.find(d => d.id === selectedDay)?.name.toUpperCase()} · {workout.exercises.length} ejercicios{workoutDuration > 0 ? ` · ~${workoutDuration} min` : ''}
                 </div>
                 <div className="font-bebas text-[26px] md:text-[32px] leading-none">{workout.title}</div>
               </div>
