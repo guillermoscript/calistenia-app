@@ -1,8 +1,10 @@
 import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
-import { generateObject } from 'ai'
+import { generateText, Output } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
+import { google } from '@ai-sdk/google'
+import { openai } from '@ai-sdk/openai'
 import { z } from 'zod'
 import PocketBase from 'pocketbase'
 
@@ -32,22 +34,24 @@ const upload = multer({
 // ---------------------------------------------------------------------------
 
 const FoodItemSchema = z.object({
-  name: z.string().describe('Nombre del alimento'),
-  portion: z.string().describe('Tamaño de la porción (ej: "100g", "1 unidad")'),
-  calories: z.number().describe('Calorías (kcal)'),
-  protein: z.number().describe('Proteína (g)'),
-  carbs: z.number().describe('Carbohidratos (g)'),
-  fat: z.number().describe('Grasa (g)'),
+  name: z.string().describe('Nombre del alimento en español'),
+  portion: z.string().describe('Tamaño de la porción estimada (ej: "150g", "1 unidad", "200ml")'),
+  calories: z.number().describe('Calorías estimadas (kcal)'),
+  protein: z.number().describe('Proteína estimada (g)'),
+  carbs: z.number().describe('Carbohidratos estimados (g)'),
+  fat: z.number().describe('Grasa estimada (g)'),
+  confidence: z.enum(['high', 'medium', 'low']).describe('Confianza en la identificación del alimento'),
 })
 
 const MealAnalysisSchema = z.object({
-  foods: z.array(FoodItemSchema).describe('Lista de alimentos detectados'),
+  foods: z.array(FoodItemSchema).describe('Lista de alimentos detectados en la imagen'),
   totals: z.object({
-    calories: z.number().describe('Total de calorías (kcal)'),
-    protein: z.number().describe('Total de proteína (g)'),
-    carbs: z.number().describe('Total de carbohidratos (g)'),
-    fat: z.number().describe('Total de grasa (g)'),
-  }).describe('Totales nutricionales de la comida'),
+    calories: z.number().describe('Suma total de calorías (kcal)'),
+    protein: z.number().describe('Suma total de proteína (g)'),
+    carbs: z.number().describe('Suma total de carbohidratos (g)'),
+    fat: z.number().describe('Suma total de grasa (g)'),
+  }).describe('Totales nutricionales sumados de todos los alimentos'),
+  meal_description: z.string().describe('Breve descripción de la comida en español (1-2 oraciones)'),
 })
 
 // ---------------------------------------------------------------------------
@@ -59,31 +63,52 @@ Analiza la imagen de la comida proporcionada y devuelve información nutricional
 
 Instrucciones:
 - Identifica cada alimento visible en la imagen.
-- Estima el tamaño de la porción de forma realista.
-- Calcula los valores nutricionales (calorías, proteína, carbohidratos, grasa) para cada alimento.
-- Proporciona los totales sumados correctamente.
-- Usa valores realistas basados en tablas nutricionales estándar.
-- Si no puedes identificar un alimento con certeza, haz tu mejor estimación e indícalo en el nombre.
+- Estima el tamaño de la porción de forma realista basándote en el tamaño visual.
+- Calcula los valores nutricionales (calorías, proteína, carbohidratos, grasa) para cada alimento usando tablas nutricionales estándar.
+- Los totales DEBEN ser la suma exacta de los valores individuales de cada alimento.
+- Usa valores realistas — no redondees excesivamente.
+- Si no puedes identificar un alimento con certeza, haz tu mejor estimación y marca la confianza como "low".
+- Si el alimento es claramente identificable, marca la confianza como "high".
+- Proporciona una breve descripción general de la comida.
 - Responde siempre en español.`
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Model selection by tier
 // ---------------------------------------------------------------------------
 
-/** Resolve the AI model based on user tier. */
+// Model priority: tries the first available provider based on env vars
 function getModel(tier) {
-  switch (tier) {
-    case 'pro':
-      return anthropic('claude-sonnet-4-20250514')
-    default:
-      return anthropic('claude-haiku-4-5-20241022')
+  if (tier === 'pro') {
+    // Pro tier: best available model
+    if (process.env.ANTHROPIC_API_KEY) return anthropic('claude-sonnet-4-6')
+    if (process.env.OPENAI_API_KEY) return openai('gpt-4o')
+    if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return google('gemini-2.5-pro')
   }
+
+  // Free tier: cheapest fast model
+  if (process.env.ANTHROPIC_API_KEY) return anthropic('claude-haiku-4-5')
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return google('gemini-2.5-flash')
+  if (process.env.OPENAI_API_KEY) return openai('gpt-4.1-mini')
+
+  throw new Error('No AI provider API key configured. Set ANTHROPIC_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or OPENAI_API_KEY.')
 }
 
-/**
- * Validate the PocketBase auth token and return the user record.
- * Throws on invalid / expired tokens.
- */
+function getModelName(tier) {
+  if (tier === 'pro') {
+    if (process.env.ANTHROPIC_API_KEY) return 'claude-sonnet-4-6'
+    if (process.env.OPENAI_API_KEY) return 'gpt-4o'
+    if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return 'gemini-2.5-pro'
+  }
+  if (process.env.ANTHROPIC_API_KEY) return 'claude-haiku-4-5'
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return 'gemini-2.5-flash'
+  if (process.env.OPENAI_API_KEY) return 'gpt-4.1-mini'
+  return 'unknown'
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
 async function authenticateRequest(authHeader) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     const err = new Error('Token de autenticación requerido')
@@ -92,12 +117,10 @@ async function authenticateRequest(authHeader) {
   }
 
   const token = authHeader.slice(7)
-
   const pb = new PocketBase(POCKETBASE_URL)
   pb.authStore.save(token, null)
 
   try {
-    // authRefresh validates the token and returns the fresh user record
     const result = await pb.collection('users').authRefresh()
     return result.record
   } catch {
@@ -115,12 +138,20 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// Health check
+// Health check — also reports which AI providers are configured
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    providers: {
+      anthropic: !!process.env.ANTHROPIC_API_KEY,
+      google: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+      openai: !!process.env.OPENAI_API_KEY,
+    },
+  })
 })
 
-// Analyze meal image
+// Analyze meal image — AI SDK v6 with Output.object()
 app.post('/api/analyze-meal', upload.single('image'), async (req, res) => {
   try {
     // 1. Authenticate
@@ -136,15 +167,16 @@ app.post('/api/analyze-meal', upload.single('image'), async (req, res) => {
     // 3. Determine model based on user tier
     const tier = user.tier || 'free'
     const model = getModel(tier)
+    const modelName = getModelName(tier)
 
-    // 4. Build the image content for the AI
+    // 4. Build the image content
     const imageBase64 = req.file.buffer.toString('base64')
     const mimeType = req.file.mimetype
 
-    // 5. Call AI with structured output
-    const { object } = await generateObject({
+    // 5. Call AI with structured output (AI SDK v6 pattern)
+    const { output, usage } = await generateText({
       model,
-      schema: MealAnalysisSchema,
+      output: Output.object({ schema: MealAnalysisSchema }),
       messages: [
         {
           role: 'system',
@@ -155,12 +187,11 @@ app.post('/api/analyze-meal', upload.single('image'), async (req, res) => {
           content: [
             {
               type: 'image',
-              image: imageBase64,
-              mimeType,
+              image: `data:${mimeType};base64,${imageBase64}`,
             },
             {
               type: 'text',
-              text: `Analiza esta imagen de ${mealType}. Identifica todos los alimentos y proporciona el desglose nutricional completo.`,
+              text: `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`,
             },
           ],
         },
@@ -170,8 +201,14 @@ app.post('/api/analyze-meal', upload.single('image'), async (req, res) => {
     // 6. Return structured response
     return res.json({
       meal_type: mealType,
-      analysis: object,
+      analysis: output,
+      model_used: modelName,
       model_tier: tier,
+      usage: {
+        prompt_tokens: usage?.promptTokens,
+        completion_tokens: usage?.completionTokens,
+        total_tokens: usage?.totalTokens,
+      },
     })
   } catch (err) {
     console.error('[analyze-meal] Error:', err.message || err)
@@ -207,4 +244,5 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`AI API server running on port ${PORT}`)
   console.log(`PocketBase URL: ${POCKETBASE_URL}`)
+  console.log(`Providers: Anthropic=${!!process.env.ANTHROPIC_API_KEY}, Google=${!!process.env.GOOGLE_GENERATIVE_AI_API_KEY}, OpenAI=${!!process.env.OPENAI_API_KEY}`)
 })

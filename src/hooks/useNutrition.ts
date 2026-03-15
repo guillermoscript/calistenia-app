@@ -162,8 +162,17 @@ export function useNutrition(userId: string | null) {
       body: formData,
     })
 
-    if (!res.ok) throw new Error(`Analyze meal failed: ${res.status}`)
-    return res.json()
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new Error(errBody.error || `Analyze meal failed: ${res.status}`)
+    }
+    const data = await res.json()
+    // AI SDK v6 returns { analysis: { foods, totals, meal_description }, model_used, usage }
+    return {
+      foods: data.analysis?.foods ?? [],
+      totals: data.analysis?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      ai_model: data.model_used || 'unknown',
+    }
   }, [])
 
   // ─── CRUD: saveEntry ──────────────────────────────────────────────────────
