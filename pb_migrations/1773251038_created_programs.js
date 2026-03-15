@@ -1,6 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
-  const collection = new Collection({
+  let collection
+  try {
+    collection = app.findCollectionByNameOrId("pbc_2970041692")
+  } catch (e) {
+    collection = new Collection({
     "createRule": null,
     "deleteRule": null,
     "fields": [
@@ -77,10 +81,14 @@ migrate((app) => {
     "updateRule": null,
     "viewRule": "@request.auth.id != \"\""
   });
+  }
 
   return app.save(collection);
 }, (app) => {
-  const collection = app.findCollectionByNameOrId("pbc_2970041692");
-
-  return app.delete(collection);
+  try {
+    const collection = app.findCollectionByNameOrId("pbc_2970041692");
+    return app.delete(collection);
+  } catch (e) {
+    // Already deleted, ignore
+  }
 })

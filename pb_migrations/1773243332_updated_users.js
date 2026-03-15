@@ -1,6 +1,11 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
-  const collection = app.findCollectionByNameOrId("_pb_users_auth_")
+  let collection
+  try {
+    collection = app.findCollectionByNameOrId("_pb_users_auth_")
+  } catch (e) {
+    return // Collection doesn't exist, skip
+  }
 
   // add field
   collection.fields.addAt(10, new Field({
@@ -20,10 +25,11 @@ migrate((app) => {
 
   return app.save(collection)
 }, (app) => {
-  const collection = app.findCollectionByNameOrId("_pb_users_auth_")
-
-  // remove field
-  collection.fields.removeById("text3578368839")
-
-  return app.save(collection)
+  try {
+    const collection = app.findCollectionByNameOrId("_pb_users_auth_")
+    collection.fields.removeById("text3578368839")
+    return app.save(collection)
+  } catch (e) {
+    // Collection doesn't exist, ignore
+  }
 })

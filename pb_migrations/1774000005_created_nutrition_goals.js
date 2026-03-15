@@ -1,6 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
-  const collection = new Collection({
+  let collection
+  try {
+    collection = app.findCollectionByNameOrId("pbc_4000000005")
+  } catch (e) {
+    collection = new Collection({
     "createRule": "@request.auth.id != \"\"",
     "deleteRule": "user = @request.auth.id",
     "fields": [
@@ -169,10 +173,14 @@ migrate((app) => {
     "updateRule": "user = @request.auth.id",
     "viewRule": "user = @request.auth.id"
   });
+  }
 
   return app.save(collection);
 }, (app) => {
-  const collection = app.findCollectionByNameOrId("pbc_4000000005");
-
-  return app.delete(collection);
+  try {
+    const collection = app.findCollectionByNameOrId("pbc_4000000005");
+    return app.delete(collection);
+  } catch (e) {
+    // Already deleted, ignore
+  }
 })

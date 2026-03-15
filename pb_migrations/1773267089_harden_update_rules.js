@@ -23,7 +23,6 @@
 
 migrate((app) => {
   const SECURE_RULE = "user = @request.auth.id && @request.body.user:isset = false"
-  const OLD_RULE    = "user = @request.auth.id"
 
   const targets = [
     "pbc_2769025244", // settings
@@ -34,20 +33,28 @@ migrate((app) => {
   ]
 
   for (const id of targets) {
-    const col = app.findCollectionByNameOrId(id)
-    col.updateRule = SECURE_RULE
-    app.save(col)
+    try {
+      const col = app.findCollectionByNameOrId(id)
+      col.updateRule = SECURE_RULE
+      app.save(col)
+    } catch (e) {
+      // Collection doesn't exist, skip
+    }
   }
 
   // Add missing index on sessions(user, workout_key)
-  const sessions = app.findCollectionByNameOrId("pbc_3660498186")
-  const hasIdx = sessions.indexes.some(i => i.includes("idx_sessions_workout_key"))
-  if (!hasIdx) {
-    sessions.indexes = [
-      ...sessions.indexes,
-      "CREATE INDEX idx_sessions_workout_key ON sessions (user, workout_key)",
-    ]
-    app.save(sessions)
+  try {
+    const sessions = app.findCollectionByNameOrId("pbc_3660498186")
+    const hasIdx = sessions.indexes.some(i => i.includes("idx_sessions_workout_key"))
+    if (!hasIdx) {
+      sessions.indexes = [
+        ...sessions.indexes,
+        "CREATE INDEX idx_sessions_workout_key ON sessions (user, workout_key)",
+      ]
+      app.save(sessions)
+    }
+  } catch (e) {
+    // Collection doesn't exist, skip
   }
 
 }, (app) => {
@@ -63,13 +70,21 @@ migrate((app) => {
   ]
 
   for (const id of targets) {
-    const col = app.findCollectionByNameOrId(id)
-    col.updateRule = OLD_RULE
-    app.save(col)
+    try {
+      const col = app.findCollectionByNameOrId(id)
+      col.updateRule = OLD_RULE
+      app.save(col)
+    } catch (e) {
+      // Collection doesn't exist, skip
+    }
   }
 
   // Remove the added index
-  const sessions = app.findCollectionByNameOrId("pbc_3660498186")
-  sessions.indexes = sessions.indexes.filter(i => !i.includes("idx_sessions_workout_key"))
-  app.save(sessions)
+  try {
+    const sessions = app.findCollectionByNameOrId("pbc_3660498186")
+    sessions.indexes = sessions.indexes.filter(i => !i.includes("idx_sessions_workout_key"))
+    app.save(sessions)
+  } catch (e) {
+    // Collection doesn't exist, skip
+  }
 })

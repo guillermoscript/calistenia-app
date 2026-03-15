@@ -5,7 +5,12 @@
  * can update/delete them.
  */
 migrate((app) => {
-  const col = app.findCollectionByNameOrId("pbc_2970041692")
+  let col
+  try {
+    col = app.findCollectionByNameOrId("pbc_2970041692")
+  } catch (e) {
+    return // Collection doesn't exist, skip
+  }
 
   // Add created_by relation field
   col.fields.add(new Field({
@@ -29,15 +34,14 @@ migrate((app) => {
 
   return app.save(col)
 }, (app) => {
-  const col = app.findCollectionByNameOrId("pbc_2970041692")
-
-  // Remove created_by field
-  col.fields.removeById("relation3001000001")
-
-  // Restore original rules (admin only)
-  col.createRule = null
-  col.updateRule = null
-  col.deleteRule = null
-
-  return app.save(col)
+  try {
+    const col = app.findCollectionByNameOrId("pbc_2970041692")
+    col.fields.removeById("relation3001000001")
+    col.createRule = null
+    col.updateRule = null
+    col.deleteRule = null
+    return app.save(col)
+  } catch (e) {
+    // Collection doesn't exist, ignore
+  }
 })

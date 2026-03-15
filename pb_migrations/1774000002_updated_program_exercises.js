@@ -4,7 +4,12 @@
  * Allows per-exercise media overrides (images + video).
  */
 migrate((app) => {
-  const col = app.findCollectionByNameOrId("pbc_3294601311")
+  let col
+  try {
+    col = app.findCollectionByNameOrId("pbc_3294601311")
+  } catch (e) {
+    return // Collection doesn't exist, skip
+  }
 
   col.fields.add(new Field({
     "hidden": false,
@@ -44,10 +49,12 @@ migrate((app) => {
 
   return app.save(col)
 }, (app) => {
-  const col = app.findCollectionByNameOrId("pbc_3294601311")
-
-  col.fields.removeById("file2001000001")
-  col.fields.removeById("file2001000002")
-
-  return app.save(col)
+  try {
+    const col = app.findCollectionByNameOrId("pbc_3294601311")
+    col.fields.removeById("file2001000001")
+    col.fields.removeById("file2001000002")
+    return app.save(col)
+  } catch (e) {
+    // Collection doesn't exist, ignore
+  }
 })

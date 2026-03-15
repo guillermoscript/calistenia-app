@@ -1,6 +1,11 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
-  const collection = app.findCollectionByNameOrId("_pb_users_auth_")
+  let collection
+  try {
+    collection = app.findCollectionByNameOrId("_pb_users_auth_")
+  } catch (e) {
+    return // Collection doesn't exist, skip
+  }
 
   // add weight field
   collection.fields.addAt(11, new Field({
@@ -64,12 +69,14 @@ migrate((app) => {
 
   return app.save(collection)
 }, (app) => {
-  const collection = app.findCollectionByNameOrId("_pb_users_auth_")
-
-  collection.fields.removeById("number_user_weight")
-  collection.fields.removeById("number_user_height")
-  collection.fields.removeById("text_user_level")
-  collection.fields.removeById("text_user_goal")
-
-  return app.save(collection)
+  try {
+    const collection = app.findCollectionByNameOrId("_pb_users_auth_")
+    collection.fields.removeById("number_user_weight")
+    collection.fields.removeById("number_user_height")
+    collection.fields.removeById("text_user_level")
+    collection.fields.removeById("text_user_goal")
+    return app.save(collection)
+  } catch (e) {
+    // Collection doesn't exist, ignore
+  }
 })
