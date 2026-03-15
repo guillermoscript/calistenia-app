@@ -155,7 +155,8 @@ export function useNutrition(userId: string | null) {
       headers['Authorization'] = `Bearer ${pb.authStore.token}`
     }
 
-    const res = await fetch('/api/analyze-meal', {
+    const aiApiUrl = import.meta.env.VITE_AI_API_URL || ''
+    const res = await fetch(`${aiApiUrl}/api/analyze-meal`, {
       method: 'POST',
       headers,
       body: formData,

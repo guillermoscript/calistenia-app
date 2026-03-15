@@ -14,6 +14,10 @@ COPY . .
 ARG VITE_POCKETBASE_URL=""
 ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL
 
+# Empty in dev (uses Vite proxy). In prod: absolute URL of the AI API service.
+ARG VITE_AI_API_URL=""
+ENV VITE_AI_API_URL=$VITE_AI_API_URL
+
 RUN npm run build
 
 # ─────────────────────────────────────────────
