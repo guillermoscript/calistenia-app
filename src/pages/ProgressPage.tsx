@@ -6,6 +6,10 @@ import { Separator } from '../components/ui/separator'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
 import type { ProgressMap, Settings, ProgramMeta, ExerciseLog, SetData } from '../types'
+import ProgressSummary from '../components/progress/ProgressSummary'
+import ExerciseChart from '../components/progress/ExerciseChart'
+import WeightTracker from '../components/progress/WeightTracker'
+import BodyPhotosTimeline from '../components/progress/BodyPhotosTimeline'
 
 const LS_LUMBAR = 'calistenia_lumbar_checks'
 
@@ -49,9 +53,10 @@ interface ProgressPageProps {
   progress: ProgressMap
   settings: Settings
   activeProgram: ProgramMeta | null
+  userId?: string | null
 }
 
-export default function ProgressPage({ progress, settings, activeProgram }: ProgressPageProps) {
+export default function ProgressPage({ progress, settings, activeProgram, userId }: ProgressPageProps) {
   const allLogs = useMemo<SessionLog[]>(() => {
     return Object.entries(progress)
       .filter(([k]) => k.startsWith('done_'))
@@ -119,13 +124,13 @@ export default function ProgressPage({ progress, settings, activeProgram }: Prog
       {allLogs.length === 0 ? (
         <div className="text-center py-20 px-5 text-muted-foreground">
           <div className="text-6xl mb-5">📊</div>
-          <div className="font-bebas text-3xl mb-2">Aún no hay datos</div>
-          <div className="text-sm leading-relaxed">Cuando completes tu primer entrenamiento y marques las series, aquí verás todo tu historial.</div>
+          <div className="font-bebas text-3xl mb-2">Aun no hay datos</div>
+          <div className="text-sm leading-relaxed">Cuando completes tu primer entrenamiento y marques las series, aqui veras todo tu historial.</div>
           <Card className="mt-6 inline-block text-left border-lime/20">
             <CardContent className="px-6 py-4">
-              <div className="text-[11px] text-lime mb-2 tracking-[2px] uppercase">Cómo usar:</div>
+              <div className="text-[11px] text-lime mb-2 tracking-[2px] uppercase">Como usar:</div>
               <div className="text-[13px] text-muted-foreground leading-relaxed">
-                1. Ve a "Entrenar" y selecciona tu día<br/>
+                1. Ve a "Entrenar" y selecciona tu dia<br/>
                 2. En cada ejercicio haz clic en "+ ANOTAR SERIE"<br/>
                 3. Escribe las reps que hiciste y guarda<br/>
                 4. Al terminar haz clic en "MARCAR COMPLETADO"
@@ -135,20 +140,34 @@ export default function ProgressPage({ progress, settings, activeProgram }: Prog
         </div>
       ) : (
         <div>
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            {[
-              { val: allLogs.length, label:'Sesiones completadas', accent:'text-lime' },
-              { val: Object.keys(exerciseLogs).length, label:'Ejercicios registrados', accent:'text-sky-500' },
-              { val: totalSetsCount, label:'Series totales', accent:'text-amber-400' },
-            ].map(s => (
-              <Card key={s.label}>
-                <CardContent className="p-5">
-                  <div className={cn('font-bebas text-[40px] leading-none', s.accent)}>{s.val}</div>
-                  <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">{s.label}</div>
-                </CardContent>
-              </Card>
-            ))}
+          {/* Progress Summary */}
+          <ProgressSummary progress={progress} settings={settings} />
+
+          {/* Exercise Charts */}
+          {Object.keys(exerciseLogs).length > 0 && (
+            <div className="mb-8">
+              <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Graficas por ejercicio</div>
+              <div className="flex flex-col gap-2.5">
+                {Object.entries(exerciseLogs).map(([exId, logs]) => (
+                  <ExerciseChart
+                    key={exId}
+                    exerciseId={exId}
+                    exerciseName={exId}
+                    logs={logs}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Weight Tracker */}
+          <div className="mb-8">
+            <WeightTracker userId={userId || null} />
+          </div>
+
+          {/* Body Photos */}
+          <div className="mb-8">
+            <BodyPhotosTimeline userId={userId || null} />
           </div>
 
           {/* Session History */}
@@ -210,12 +229,12 @@ export default function ProgressPage({ progress, settings, activeProgram }: Prog
                       <div className={cn('font-bebas text-5xl leading-none', lumbarColor(avgLumbar))}>
                         {avgLumbar ?? '–'}
                       </div>
-                      <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">Promedio (últimas 7)</div>
+                      <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">Promedio (ultimas 7)</div>
                     </div>
                     <div className="flex-1">
                       <Progress value={((avgLumbar || 0) / 5) * 100} className="h-1.5 mb-1.5" />
                       <div className="text-[11px] text-muted-foreground">
-                        {avgLumbar !== null && avgLumbar >= 4 ? 'Lumbar en buen estado' : avgLumbar !== null && avgLumbar >= 2.5 ? 'Lumbar con molestias moderadas' : 'Lumbar necesita atención'}
+                        {avgLumbar !== null && avgLumbar >= 4 ? 'Lumbar en buen estado' : avgLumbar !== null && avgLumbar >= 2.5 ? 'Lumbar con molestias moderadas' : 'Lumbar necesita atencion'}
                       </div>
                     </div>
                   </div>
@@ -226,7 +245,7 @@ export default function ProgressPage({ progress, settings, activeProgram }: Prog
                       const col = lumbarColor(score)
                       return (
                         <div key={i}
-                          title={`${c.date} — Lumbar: ${score}/5, Sueño: ${c.sleptWell ? 'Sí' : 'No'}, Sentado: ${c.sittingHours}h`}
+                          title={`${c.date} — Lumbar: ${score}/5, Sueno: ${c.sleptWell ? 'Si' : 'No'}, Sentado: ${c.sittingHours}h`}
                           className="text-center px-2.5 py-2 bg-muted/30 rounded-md min-w-[48px] border border-border/50">
                           <div className={cn('font-bebas text-xl leading-none', col)}>{score}</div>
                           <div className="text-[9px] text-muted-foreground mt-0.5 font-mono">{c.date?.slice(5) || ''}</div>
@@ -242,10 +261,10 @@ export default function ProgressPage({ progress, settings, activeProgram }: Prog
                     return (
                       <div className="flex gap-4 mt-4 pt-4 border-t border-border/60">
                         <div className="text-[12px] text-muted-foreground">
-                          <span className={sleptWellPct >= 70 ? 'text-emerald-500' : 'text-amber-400'}>{sleptWellPct}%</span> de noches con buen sueño
+                          <span className={sleptWellPct >= 70 ? 'text-emerald-500' : 'text-amber-400'}>{sleptWellPct}%</span> de noches con buen sueno
                         </div>
                         <div className="text-[12px] text-muted-foreground">
-                          Promedio sentado: <span className={avgSitting <= 6 ? 'text-emerald-500' : avgSitting <= 9 ? 'text-amber-400' : 'text-red-500'}>{avgSitting}h/día</span>
+                          Promedio sentado: <span className={avgSitting <= 6 ? 'text-emerald-500' : avgSitting <= 9 ? 'text-amber-400' : 'text-red-500'}>{avgSitting}h/dia</span>
                         </div>
                       </div>
                     )

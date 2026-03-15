@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Image } from 'lucide-react'
+import { Image, ArrowUp } from 'lucide-react'
 import Timer from './Timer'
 import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
+import ProgressionChain from './ProgressionChain'
+import { useProgressions } from '../hooks/useProgressions'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { cn } from '../lib/utils'
@@ -27,6 +29,11 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   const [showMedia, setShowMedia] = useState<boolean>(false)
   const [showEditForm, setShowEditForm] = useState<boolean>(false)
   const [showHistory, setShowHistory] = useState<boolean>(false)
+  const [showProgression, setShowProgression] = useState<boolean>(false)
+  const { getChainForExercise, shouldSuggestProgression } = useProgressions()
+  const chain = getChainForExercise(exercise.id)
+  const hasProgression = chain.length > 0
+  const advanceSuggested = hasProgression && shouldSuggestProgression(exercise.id, logs)
   const [logReps, setLogReps] = useState<string>('')
   const [logNote, setLogNote] = useState<string>('')
   const [setsLogged, setSetsLogged] = useState<number>(0)
@@ -200,6 +207,23 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
               HIST
             </button>
           )}
+
+          {hasProgression && (
+            <button
+              onClick={() => setShowProgression(true)}
+              className={cn(
+                'relative py-[13px] px-3 rounded-md font-mono text-[10px] tracking-[0.5px] flex-shrink-0 border transition-all duration-150',
+                'border-border text-muted-foreground hover:border-lime/30 hover:text-lime'
+              )}
+            >
+              PROG
+              {advanceSuggested && (
+                <span className="absolute -top-1.5 -right-1.5 text-lime">
+                  <ArrowUp size={12} className="animate-bounce" />
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* EDIT FORM */}
@@ -264,6 +288,14 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
 
       {showYoutube && <YoutubeModal query={exercise.youtube} onClose={() => setShowYoutube(false)} />}
       {showMedia && <MediaViewer exercise={exercise} onClose={() => setShowMedia(false)} />}
+      {showProgression && hasProgression && (
+        <ProgressionChain
+          chain={chain}
+          currentExerciseId={exercise.id}
+          shouldAdvance={advanceSuggested}
+          onClose={() => setShowProgression(false)}
+        />
+      )}
     </div>
   )
 }

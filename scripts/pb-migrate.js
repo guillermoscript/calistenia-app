@@ -590,6 +590,9 @@ async function main() {
   // ── 12. Seed: exercises_catalog ──────────────────────────────────────────────
   await seedExercisesCatalog()
 
+  // ── 13. Seed: exercise_progressions ─────────────────────────────────────────
+  await seedProgressions()
+
   console.log('✓ Migración completada.')
   console.log(`  Admin: ${PB_URL}/_/`)
 }
@@ -639,6 +642,65 @@ async function seedExercisesCatalog() {
 
   console.log(`  → ${count} ejercicios de catálogo creados`)
   console.log('exercises_catalog seed completado.')
+  console.log()
+}
+
+// ─── Seed exercise_progressions ─────────────────────────────────────────────
+
+const SEED_PROGRESSIONS = [
+  // Push chain
+  { exercise_id: 'pushup_std',      exercise_name: 'Push-up Estándar',           category: 'push',  difficulty_order: 1, next_exercise_id: 'diamond_pushup', prev_exercise_id: null,             target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'diamond_pushup',  exercise_name: 'Diamond Push-up',            category: 'push',  difficulty_order: 2, next_exercise_id: 'archer_pushup',  prev_exercise_id: 'pushup_std',     target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'archer_pushup',   exercise_name: 'Archer Push-up',             category: 'push',  difficulty_order: 3, next_exercise_id: 'one_arm_prog',   prev_exercise_id: 'diamond_pushup', target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'one_arm_prog',    exercise_name: 'One-Arm Push-up Progresión', category: 'push',  difficulty_order: 4, next_exercise_id: null,             prev_exercise_id: 'archer_pushup',  target_reps_to_advance: 12, sessions_at_target: 3 },
+
+  // Pull chain
+  { exercise_id: 'australian_pullup', exercise_name: 'Australian Pull-up',       category: 'pull',  difficulty_order: 1, next_exercise_id: 'neg_pullup',       prev_exercise_id: null,               target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'neg_pullup',        exercise_name: 'Dominadas Negativas',      category: 'pull',  difficulty_order: 2, next_exercise_id: 'pullup_strict',    prev_exercise_id: 'australian_pullup',target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'pullup_strict',     exercise_name: 'Pull-up Estricta',         category: 'pull',  difficulty_order: 3, next_exercise_id: 'weighted_pullup',  prev_exercise_id: 'neg_pullup',       target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'weighted_pullup',   exercise_name: 'Pull-up Lastrada',         category: 'pull',  difficulty_order: 4, next_exercise_id: 'typewriter_pullup',prev_exercise_id: 'pullup_strict',    target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'typewriter_pullup', exercise_name: 'Typewriter Pull-up',       category: 'pull',  difficulty_order: 5, next_exercise_id: null,               prev_exercise_id: 'weighted_pullup',  target_reps_to_advance: 12, sessions_at_target: 3 },
+
+  // Legs chain
+  { exercise_id: 'goblet_squat',  exercise_name: 'Sentadilla Goblet',      category: 'legs',  difficulty_order: 1, next_exercise_id: 'reverse_lunge', prev_exercise_id: null,            target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'reverse_lunge', exercise_name: 'Reverse Lunge',          category: 'legs',  difficulty_order: 2, next_exercise_id: 'bulgarian',     prev_exercise_id: 'goblet_squat',  target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'bulgarian',     exercise_name: 'Bulgarian Split Squat',  category: 'legs',  difficulty_order: 3, next_exercise_id: 'pistol_prog',   prev_exercise_id: 'reverse_lunge', target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'pistol_prog',   exercise_name: 'Pistol Squat Progresión',category: 'legs',  difficulty_order: 4, next_exercise_id: 'pistol_free',   prev_exercise_id: 'bulgarian',     target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'pistol_free',   exercise_name: 'Pistol Squat Libre',     category: 'legs',  difficulty_order: 5, next_exercise_id: null,            prev_exercise_id: 'pistol_prog',   target_reps_to_advance: 12, sessions_at_target: 3 },
+
+  // Core chain
+  { exercise_id: 'plank',       exercise_name: 'Plank',                 category: 'core',  difficulty_order: 1, next_exercise_id: 'hollow_hold',  prev_exercise_id: null,           target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'hollow_hold', exercise_name: 'Hollow Body Hold',      category: 'core',  difficulty_order: 2, next_exercise_id: 'hollow_rock',  prev_exercise_id: 'plank',        target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'hollow_rock', exercise_name: 'Hollow Body Rock',      category: 'core',  difficulty_order: 3, next_exercise_id: 'lsit_prog',    prev_exercise_id: 'hollow_hold',  target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'lsit_prog',   exercise_name: 'L-sit Progresión',      category: 'core',  difficulty_order: 4, next_exercise_id: 'lsit_full',    prev_exercise_id: 'hollow_rock',  target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'lsit_full',   exercise_name: 'L-sit Completo',        category: 'core',  difficulty_order: 5, next_exercise_id: null,           prev_exercise_id: 'lsit_prog',   target_reps_to_advance: 12, sessions_at_target: 3 },
+
+  // Skills chain
+  { exercise_id: 'pike_pushup',    exercise_name: 'Pike Push-up',           category: 'skills', difficulty_order: 1, next_exercise_id: 'pike_elevated',  prev_exercise_id: null,             target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'pike_elevated',  exercise_name: 'Pike Push-up Elevado',   category: 'skills', difficulty_order: 2, next_exercise_id: 'handstand_wall', prev_exercise_id: 'pike_pushup',    target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'handstand_wall', exercise_name: 'Handstand en Pared',     category: 'skills', difficulty_order: 3, next_exercise_id: 'pike_hspu',      prev_exercise_id: 'pike_elevated',  target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'pike_hspu',      exercise_name: 'Pike HSPU',              category: 'skills', difficulty_order: 4, next_exercise_id: 'hspu_wall',      prev_exercise_id: 'handstand_wall', target_reps_to_advance: 12, sessions_at_target: 3 },
+  { exercise_id: 'hspu_wall',      exercise_name: 'HSPU en Pared',          category: 'skills', difficulty_order: 5, next_exercise_id: null,             prev_exercise_id: 'pike_hspu',      target_reps_to_advance: 12, sessions_at_target: 3 },
+]
+
+async function seedProgressions() {
+  // Idempotent: skip if already seeded
+  const existing = await pb.collection('exercise_progressions').getList(1, 1)
+  if (existing.totalItems > 0) {
+    console.log(`exercise_progressions ya tiene ${existing.totalItems} registros, omitiendo seed.`)
+    return
+  }
+
+  console.log('Seeding exercise_progressions...')
+
+  let count = 0
+  for (const prog of SEED_PROGRESSIONS) {
+    await pb.collection('exercise_progressions').create(prog)
+    count++
+  }
+
+  console.log(`  → ${count} progresiones creadas`)
+  console.log('exercise_progressions seed completado.')
   console.log()
 }
 

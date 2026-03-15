@@ -218,3 +218,17 @@ export interface DailyTotals {
   carbs: number
   fat: number
 }
+
+// ─── Exercise Progressions ─────────────────────────────────────────────────
+
+export interface ExerciseProgression {
+  id?: string
+  exerciseId: string
+  exerciseName: string
+  category: string
+  difficultyOrder: number
+  nextExerciseId?: string
+  prevExerciseId?: string
+  targetRepsToAdvance: number
+  sessionsAtTarget: number
+}

@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage'
 import LumbarPage from './pages/LumbarPage'
 import ProgressPage from './pages/ProgressPage'
 import NutritionPage from './pages/NutritionPage'
+import ProfilePage from './pages/ProfilePage'
 import AuthPage from './pages/AuthPage'
 import ProgramEditorPage from './pages/ProgramEditorPage'
 import { cn } from './lib/utils'
@@ -28,7 +29,7 @@ import {
 import { Button } from './components/ui/button'
 import { Separator } from './components/ui/separator'
 
-type TabId = 'dashboard' | 'workout' | 'lumbar' | 'progress' | 'nutrition'
+type TabId = 'dashboard' | 'workout' | 'lumbar' | 'progress' | 'nutrition' | 'perfil'
 
 interface IconProps {
   className?: string
@@ -46,6 +47,7 @@ const TABS: TabDef[] = [
   { id: 'lumbar',    label: 'Lumbar',     icon: SpineIcon },
   { id: 'progress',  label: 'Progreso',   icon: ChartIcon },
   { id: 'nutrition', label: 'Nutricion',  icon: NutritionIcon },
+  { id: 'perfil',    label: 'Perfil',     icon: ProfileIcon },
 ]
 
 // ── Minimal inline SVG icons ────────────────────────────────────────────────
@@ -96,6 +98,14 @@ function NutritionIcon({ className }: IconProps) {
       <line x1="5" y1="1" x2="5" y2="5" />
       <line x1="8" y1="1" x2="8" y2="4" />
       <line x1="11" y1="1" x2="11" y2="5" />
+    </svg>
+  )
+}
+function ProfileIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="8" cy="5" r="3" />
+      <path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" />
     </svg>
   )
 }
@@ -358,7 +368,11 @@ export default function App() {
             <ProgressPage
               progress={progress} settings={settings}
               activeProgram={activeProgram}
+              userId={user.id}
             />
+          )}
+          {activeTab === 'perfil' && (
+            <ProfilePage user={user} />
           )}
         </AppShell>
       </div>
