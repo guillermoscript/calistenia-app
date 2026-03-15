@@ -6,8 +6,7 @@ import { useProgressions } from '../hooks/useProgressions'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Separator } from '../components/ui/separator'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Skeleton } from '../components/ui/skeleton'
 import type { Exercise, Priority } from '../types'
 
@@ -67,7 +66,7 @@ const PRIORITY_LABEL: Record<Priority, string> = {
 
 const CATEGORY_LABEL: Record<string, string> = {
   push: 'Empuje',
-  pull: 'Tir\u00F3n',
+  pull: 'Tiron',
   legs: 'Piernas',
   core: 'Core',
   lumbar: 'Lumbar',
@@ -96,7 +95,7 @@ function inferCategory(exercise: Exercise, dayType: string): string {
   if (name.includes('push-up') || name.includes('push up') || name.includes('dip') ||
       name.includes('pike') || name.includes('hspu')) return 'push'
   if (name.includes('pull-up') || name.includes('pull up') || name.includes('chin-up') ||
-      name.includes('row') || name.includes('face pull') || name.includes('retracci\u00F3n') ||
+      name.includes('row') || name.includes('face pull') || name.includes('retraccion') ||
       name.includes('australian') || name.includes('renegade') || name.includes('inverted')) return 'pull'
   if (name.includes('squat') || name.includes('lunge') || name.includes('bulgarian') ||
       name.includes('pistol') || name.includes('nordic') || name.includes('step-up') ||
@@ -145,15 +144,15 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
 function findRelatedWorkouts(exerciseId: string): RelatedProgram[] {
   const results: RelatedProgram[] = []
   const DAY_NAMES: Record<string, string> = {
-    lun: 'Lunes', mar: 'Martes', mie: 'Mi\u00E9rcoles',
-    jue: 'Jueves', vie: 'Viernes', sab: 'S\u00E1bado', dom: 'Domingo',
+    lun: 'Lunes', mar: 'Martes', mie: 'Miercoles',
+    jue: 'Jueves', vie: 'Viernes', sab: 'Sabado', dom: 'Domingo',
   }
 
   for (const [key, workout] of Object.entries(WORKOUTS)) {
     if (workout.exercises.some(ex => ex.id === exerciseId)) {
       results.push({
         id: key,
-        name: `Fase ${workout.phase} \u2014 ${DAY_NAMES[workout.day] || workout.day}`,
+        name: `Fase ${workout.phase} — ${DAY_NAMES[workout.day] || workout.day}`,
         phase: workout.phase,
         day: workout.day,
         title: workout.title,
@@ -267,6 +266,7 @@ export default function ExerciseDetailPage() {
   const [exercise, setExercise] = useState<CatalogExercise | null>(null)
   const [loading, setLoading] = useState(true)
   const [imageIndex, setImageIndex] = useState(0)
+  const [activeTab, setActiveTab] = useState('descripcion')
   const { getChainForExercise, loading: progressionsLoading } = useProgressions()
 
   // Fetch exercise
@@ -337,29 +337,36 @@ export default function ExerciseDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 max-w-3xl mx-auto">
-        <Skeleton className="h-8 w-48 mb-4" />
-        <Skeleton className="h-48 w-full rounded-xl mb-4" />
-        <Skeleton className="h-6 w-64 mb-3" />
-        <Skeleton className="h-4 w-full mb-2" />
-        <Skeleton className="h-4 w-3/4 mb-2" />
-        <Skeleton className="h-4 w-1/2" />
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12">
+        <Skeleton className="h-6 w-24 mb-8" />
+        <Skeleton className="h-14 w-2/3 mb-4" />
+        <Skeleton className="h-4 w-1/2 mb-8" />
+        <Skeleton className="h-56 w-full rounded-xl mb-6" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        </div>
       </div>
     )
   }
 
   if (!exercise) {
     return (
-      <div className="p-4 sm:p-6 max-w-3xl mx-auto text-center py-20">
-        <div className="text-4xl mb-4 opacity-30">&#x1F6AB;</div>
-        <p className="text-lg font-semibold text-foreground mb-2">Ejercicio no encontrado</p>
-        <p className="text-sm text-muted-foreground mb-6">
-          No se encontr&oacute; un ejercicio con el identificador &ldquo;{id}&rdquo;
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12 text-center py-24">
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center">
+          <svg className="size-8 text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        </div>
+        <p className="text-lg font-bebas tracking-wide text-foreground mb-2 uppercase">Ejercicio no encontrado</p>
+        <p className="text-sm text-zinc-500 mb-6">
+          No se encontro un ejercicio con el identificador "{id}"
         </p>
         <Button
           variant="outline"
           onClick={() => navigate('/exercises')}
-          className="gap-2"
+          className="gap-2 border-zinc-700 hover:border-lime-400/40 hover:text-lime-400"
         >
           <ArrowLeftIcon className="size-4" />
           Volver a la biblioteca
@@ -373,328 +380,317 @@ export default function ExerciseDetailPage() {
   const hasVideo = !!exercise.demoVideo
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto pb-16">
+    <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12 pb-16">
       {/* ── Back button ─────────────────────────────────────────────────── */}
       <button
         onClick={() => navigate('/exercises')}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-foreground transition-colors mb-8"
       >
         <ArrowLeftIcon className="size-4" />
-        <span>Biblioteca</span>
+        <span className="font-mono text-[11px] tracking-widest uppercase">Biblioteca</span>
       </button>
 
       {/* ── Hero section ────────────────────────────────────────────────── */}
-      <div className="mb-6">
-        <h1 className="font-bebas text-3xl sm:text-4xl tracking-wide mb-3">
-          {exercise.name}
-        </h1>
-
-        <div className="flex flex-wrap gap-2 items-center">
-          {/* Category badge */}
-          {catStyle && (
-            <Badge
-              variant="outline"
-              className={cn(
-                'text-[10px] px-2 py-0.5 font-mono tracking-wider border',
-                catStyle.text, catStyle.bg, catStyle.border
-              )}
-            >
-              {(CATEGORY_LABEL[exercise.category] || exercise.category).toUpperCase()}
-            </Badge>
-          )}
-
-          {/* Priority badge */}
-          {prioStyle && (
-            <Badge
-              variant="outline"
-              className={cn(
-                'text-[10px] px-2 py-0.5 font-mono tracking-wider border',
-                prioStyle.text, prioStyle.bg, prioStyle.border
-              )}
-            >
-              {PRIORITY_LABEL[exercise.priority].toUpperCase()}
-            </Badge>
-          )}
-
-          {/* Timer badge */}
-          {exercise.isTimer && (
-            <Badge
-              variant="outline"
-              className="text-[10px] px-2 py-0.5 font-mono tracking-wider border text-sky-400 bg-sky-500/10 border-sky-500/20"
-            >
-              TIMER {exercise.timerSeconds}S
-            </Badge>
-          )}
-
-          {/* Muscle tags */}
-          {muscleList.map((muscle, i) => (
-            <Badge
-              key={i}
-              variant="secondary"
-              className="text-[10px] px-2 py-0.5"
-            >
-              {muscle}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Media section ───────────────────────────────────────────────── */}
-      <div className="mb-6">
-        {hasImages ? (
-          <div className="relative rounded-xl overflow-hidden border border-border bg-muted/20">
-            <img
-              src={images[imageIndex]}
-              alt={`${exercise.name} - imagen ${imageIndex + 1}`}
-              className="w-full h-56 sm:h-72 object-cover"
-            />
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={() => setImageIndex(i => (i - 1 + images.length) % images.length)}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 size-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
-                >
-                  <ChevronLeftIcon className="size-4" />
-                </button>
-                <button
-                  onClick={() => setImageIndex(i => (i + 1) % images.length)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
-                >
-                  <ChevronRightIcon className="size-4" />
-                </button>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {images.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setImageIndex(i)}
-                      className={cn(
-                        'size-2 rounded-full transition-all duration-200',
-                        i === imageIndex ? 'bg-lime scale-125' : 'bg-foreground/30'
-                      )}
-                    />
-                  ))}
-                </div>
-              </>
+      <div className="flex flex-col md:flex-row md:items-start gap-6 mb-8">
+        <div className="flex-1">
+          {/* Category + Priority inline */}
+          <div className="flex items-center gap-2 mb-3">
+            {catStyle && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-[10px] px-2.5 py-0.5 font-mono tracking-widest border',
+                  catStyle.text, catStyle.bg, catStyle.border
+                )}
+              >
+                {(CATEGORY_LABEL[exercise.category] || exercise.category).toUpperCase()}
+              </Badge>
+            )}
+            {prioStyle && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-[10px] px-2.5 py-0.5 font-mono tracking-widest border',
+                  prioStyle.text, prioStyle.bg, prioStyle.border
+                )}
+              >
+                {PRIORITY_LABEL[exercise.priority].toUpperCase()}
+              </Badge>
+            )}
+            {exercise.isTimer && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-2.5 py-0.5 font-mono tracking-widest border text-sky-400 bg-sky-500/10 border-sky-500/20"
+              >
+                TIMER {exercise.timerSeconds}S
+              </Badge>
             )}
           </div>
-        ) : hasVideo ? (
-          <div className="rounded-xl overflow-hidden border border-border bg-muted/20">
-            <video
-              src={exercise.demoVideo}
-              controls
-              className="w-full h-56 sm:h-72 object-cover"
-              preload="metadata"
-            />
+
+          <h1 className="font-bebas text-4xl md:text-6xl leading-none tracking-wide mb-4 uppercase">
+            {exercise.name}
+          </h1>
+
+          {/* Muscles dot-separated */}
+          <p className="text-sm text-zinc-500 mb-6">
+            {muscleList.join(' · ')}
+          </p>
+
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-red-400 border-zinc-700 hover:border-red-500/30 hover:bg-red-500/5 font-mono text-[11px] tracking-widest"
+              onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.youtube || exercise.name + ' tutorial')}`, '_blank')}
+            >
+              <span className="text-sm">&#9654;</span>
+              YOUTUBE
+              <ExternalLinkIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-zinc-700 text-zinc-400 hover:text-foreground font-mono text-[11px] tracking-widest"
+              onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(exercise.name + ' ejercicio calistenia tutorial')}`, '_blank')}
+            >
+              GOOGLE
+              <ExternalLinkIcon className="size-3.5" />
+            </Button>
           </div>
-        ) : null}
-        {/* Show video below images when both exist */}
-        {hasImages && hasVideo && (
-          <div className="rounded-xl overflow-hidden border border-border bg-muted/20 mt-3">
-            <video
-              src={exercise.demoVideo}
-              controls
-              className="w-full h-56 sm:h-72 object-cover"
-              preload="metadata"
-            />
-          </div>
-        )}
-        {!hasImages && !hasVideo && (
-          <div className="rounded-xl border border-border bg-muted/10 h-40 sm:h-48 flex items-center justify-center">
-            <div className="text-center">
-              <svg className="size-12 text-muted-foreground/15 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        </div>
+
+        {/* Media - shown on right on desktop */}
+        <div className="md:w-[320px] shrink-0">
+          {hasImages ? (
+            <div className="relative rounded-xl overflow-hidden bg-zinc-900">
+              <img
+                src={images[imageIndex]}
+                alt={`${exercise.name} - imagen ${imageIndex + 1}`}
+                className="w-full h-56 md:h-64 object-cover"
+              />
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setImageIndex(i => (i - 1 + images.length) % images.length)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 size-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
+                  >
+                    <ChevronLeftIcon className="size-4" />
+                  </button>
+                  <button
+                    onClick={() => setImageIndex(i => (i + 1) % images.length)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
+                  >
+                    <ChevronRightIcon className="size-4" />
+                  </button>
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {images.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setImageIndex(i)}
+                        className={cn(
+                          'size-2 rounded-full transition-all duration-200',
+                          i === imageIndex ? 'bg-lime-400 scale-125' : 'bg-foreground/30'
+                        )}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : hasVideo ? (
+            <div className="rounded-xl overflow-hidden bg-zinc-900">
+              <video
+                src={exercise.demoVideo}
+                controls
+                className="w-full h-56 md:h-64 object-cover"
+                preload="metadata"
+              />
+            </div>
+          ) : (
+            <div className="rounded-xl bg-zinc-900/50 h-48 flex items-center justify-center">
+              <svg className="size-12 text-zinc-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <rect x="3" y="8" width="4" height="8" rx="1" />
                 <rect x="17" y="8" width="4" height="8" rx="1" />
                 <line x1="7" y1="12" x2="17" y2="12" />
                 <rect x="5" y="7" width="3" height="10" rx="1" />
                 <rect x="16" y="7" width="3" height="10" rx="1" />
               </svg>
-              <p className="text-xs text-muted-foreground/40">Sin media disponible</p>
+            </div>
+          )}
+          {/* Show video below images when both exist */}
+          {hasImages && hasVideo && (
+            <div className="rounded-xl overflow-hidden bg-zinc-900 mt-3">
+              <video
+                src={exercise.demoVideo}
+                controls
+                className="w-full h-48 object-cover"
+                preload="metadata"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Tabs section ─────────────────────────────────────────────────── */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+        <TabsList className="bg-zinc-900/80 border border-zinc-800 p-1 gap-1 mb-6">
+          <TabsTrigger value="descripcion" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
+            Descripcion
+          </TabsTrigger>
+          <TabsTrigger value="musculos" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
+            Musculos
+          </TabsTrigger>
+          <TabsTrigger value="config" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
+            Config
+          </TabsTrigger>
+          {!progressionsLoading && chain.length > 0 && (
+            <TabsTrigger value="progresion" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
+              Progresion
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        {/* Description tab */}
+        <TabsContent value="descripcion">
+          {(exercise.description || exercise.note) ? (
+            <div className="rounded-xl bg-zinc-900/60 p-6">
+              <p className="text-sm text-foreground leading-relaxed">
+                {exercise.description || exercise.note}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-zinc-900/40 p-8 text-center">
+              <p className="text-sm text-zinc-500">Sin descripcion disponible</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Muscles tab */}
+        <TabsContent value="musculos">
+          <div className="rounded-xl bg-zinc-900/60 p-6">
+            <div className="flex flex-wrap gap-3">
+              {muscleList.map((muscle, i) => (
+                <div
+                  key={i}
+                  className="px-4 py-2.5 rounded-xl bg-zinc-800/60 text-sm text-foreground font-medium"
+                >
+                  {muscle}
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        </TabsContent>
 
-      {/* ── Action buttons ──────────────────────────────────────────────── */}
-      <div className="flex gap-2 mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-red-400 border-red-500/20 hover:bg-red-500/10"
-          onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.youtube || exercise.name + ' tutorial')}`, '_blank')}
-        >
-          <span className="text-sm">&#9654;</span>
-          Ver en YouTube
-          <ExternalLinkIcon className="size-3.5" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(exercise.name + ' ejercicio calistenia tutorial')}`, '_blank')}
-        >
-          Ver en Google
-          <ExternalLinkIcon className="size-3.5" />
-        </Button>
-      </div>
-
-      {/* ── Description section ─────────────────────────────────────────── */}
-      {(exercise.description || exercise.note) && (
-        <Card className="mb-4">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-mono tracking-wide text-muted-foreground">
-              DESCRIPCI&Oacute;N
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-0">
-            <p className="text-sm text-foreground leading-relaxed">
-              {exercise.description || exercise.note}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── Muscles section ─────────────────────────────────────────────── */}
-      <Card className="mb-4">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-mono tracking-wide text-muted-foreground">
-            M&Uacute;SCULOS
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 pt-0">
-          <div className="flex flex-wrap gap-2">
-            {muscleList.map((muscle, i) => (
-              <div
-                key={i}
-                className="px-3 py-1.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground"
-              >
-                {muscle}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Default config section ──────────────────────────────────────── */}
-      <Card className="mb-4">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-mono tracking-wide text-muted-foreground">
-            CONFIGURACI&Oacute;N POR DEFECTO
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 pt-0">
+        {/* Config tab */}
+        <TabsContent value="config">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-muted/20 rounded-lg p-3 text-center border border-border">
-              <div className="text-xs text-muted-foreground font-mono tracking-wide mb-1">SERIES</div>
-              <div className="text-lg font-bebas text-lime">{exercise.sets}</div>
+            <div className="rounded-xl bg-zinc-900/60 p-5 text-center">
+              <div className="text-[10px] font-mono tracking-widest text-zinc-500 mb-2 uppercase">Series</div>
+              <div className="text-2xl font-bebas text-lime-400">{exercise.sets}</div>
             </div>
-            <div className="bg-muted/20 rounded-lg p-3 text-center border border-border">
-              <div className="text-xs text-muted-foreground font-mono tracking-wide mb-1">REPS</div>
-              <div className="text-lg font-bebas text-lime">{exercise.reps}</div>
+            <div className="rounded-xl bg-zinc-900/60 p-5 text-center">
+              <div className="text-[10px] font-mono tracking-widest text-zinc-500 mb-2 uppercase">Reps</div>
+              <div className="text-2xl font-bebas text-lime-400">{exercise.reps}</div>
             </div>
-            <div className="bg-muted/20 rounded-lg p-3 text-center border border-border">
-              <div className="text-xs text-muted-foreground font-mono tracking-wide mb-1">DESCANSO</div>
-              <div className="text-lg font-bebas text-lime">{exercise.rest}s</div>
+            <div className="rounded-xl bg-zinc-900/60 p-5 text-center">
+              <div className="text-[10px] font-mono tracking-widest text-zinc-500 mb-2 uppercase">Descanso</div>
+              <div className="text-2xl font-bebas text-lime-400">{exercise.rest}s</div>
             </div>
             {exercise.isTimer && exercise.timerSeconds && (
-              <div className="bg-sky-500/5 rounded-lg p-3 text-center border border-sky-500/20">
-                <div className="text-xs text-muted-foreground font-mono tracking-wide mb-1">TIMER</div>
-                <div className="text-lg font-bebas text-sky-400">{exercise.timerSeconds}s</div>
+              <div className="rounded-xl bg-sky-500/5 border border-sky-500/20 p-5 text-center">
+                <div className="text-[10px] font-mono tracking-widest text-zinc-500 mb-2 uppercase">Timer</div>
+                <div className="text-2xl font-bebas text-sky-400">{exercise.timerSeconds}s</div>
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* ── Progression section ─────────────────────────────────────────── */}
-      {!progressionsLoading && chain.length > 0 && (
-        <Card className="mb-4">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-mono tracking-wide text-muted-foreground">
-              CADENA DE PROGRESI&Oacute;N
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-0">
-            <div className="overflow-x-auto -mx-4 px-4 pb-2">
-              <div className="flex items-center gap-1.5 min-w-max py-2">
-                {chain.map((prog, i) => {
-                  const isCurrent = prog.exerciseId === exercise.id
-                  const isPast = currentChainIdx >= 0 && i < currentChainIdx
-                  const isFuture = currentChainIdx >= 0 && i > currentChainIdx
+        {/* Progression tab */}
+        {!progressionsLoading && chain.length > 0 && (
+          <TabsContent value="progresion">
+            <div className="rounded-xl bg-zinc-900/60 p-6">
+              <div className="overflow-x-auto -mx-6 px-6 pb-2">
+                <div className="flex items-center gap-1.5 min-w-max py-2">
+                  {chain.map((prog, i) => {
+                    const isCurrent = prog.exerciseId === exercise.id
+                    const isPast = currentChainIdx >= 0 && i < currentChainIdx
+                    const isFuture = currentChainIdx >= 0 && i > currentChainIdx
 
-                  return (
-                    <div key={prog.exerciseId} className="flex items-center gap-1.5">
-                      <Link
-                        to={`/exercises/${prog.exerciseId}`}
-                        className={cn(
-                          'relative px-3 py-2 rounded-lg border text-center transition-all duration-200 min-w-[90px] max-w-[120px]',
-                          'hover:brightness-110',
-                          isCurrent && 'border-lime bg-lime/10 shadow-[0_0_8px_rgba(200,245,66,0.15)]',
-                          isPast && 'border-emerald-500/30 bg-emerald-500/5',
-                          isFuture && 'border-zinc-700/50 bg-zinc-800/30',
+                    return (
+                      <div key={prog.exerciseId} className="flex items-center gap-1.5">
+                        <Link
+                          to={`/exercises/${prog.exerciseId}`}
+                          className={cn(
+                            'relative px-3 py-2 rounded-lg border text-center transition-all duration-200 min-w-[90px] max-w-[120px]',
+                            'hover:brightness-110',
+                            isCurrent && 'border-lime-400 bg-lime-400/10 shadow-[0_0_8px_rgba(200,245,66,0.15)]',
+                            isPast && 'border-emerald-500/30 bg-emerald-500/5',
+                            isFuture && 'border-zinc-800 bg-zinc-800/30',
+                          )}
+                        >
+                          <div className={cn(
+                            'text-[9px] font-mono tracking-widest mb-1',
+                            isCurrent ? 'text-lime-400' : isPast ? 'text-emerald-500/60' : 'text-zinc-600',
+                          )}>
+                            LV.{prog.difficultyOrder}
+                          </div>
+                          <div className={cn(
+                            'text-[11px] font-medium leading-tight',
+                            isCurrent ? 'text-foreground' : isPast ? 'text-emerald-500/70' : 'text-zinc-600',
+                          )}>
+                            {prog.exerciseName}
+                          </div>
+                          {isCurrent && (
+                            <div className="text-[8px] font-mono text-lime-400 tracking-widest mt-1">ACTUAL</div>
+                          )}
+                        </Link>
+                        {i < chain.length - 1 && (
+                          <span className={cn(
+                            'text-[14px] flex-shrink-0',
+                            i < currentChainIdx ? 'text-emerald-500/40' : 'text-zinc-700',
+                          )}>
+                            &rarr;
+                          </span>
                         )}
-                      >
-                        <div className={cn(
-                          'text-[9px] font-mono tracking-wider mb-1',
-                          isCurrent ? 'text-lime' : isPast ? 'text-emerald-500/60' : 'text-muted-foreground/50',
-                        )}>
-                          LV.{prog.difficultyOrder}
-                        </div>
-                        <div className={cn(
-                          'text-[11px] font-medium leading-tight',
-                          isCurrent ? 'text-foreground' : isPast ? 'text-emerald-500/70' : 'text-muted-foreground/60',
-                        )}>
-                          {prog.exerciseName}
-                        </div>
-                        {isCurrent && (
-                          <div className="text-[8px] font-mono text-lime tracking-widest mt-1">ACTUAL</div>
-                        )}
-                      </Link>
-                      {i < chain.length - 1 && (
-                        <span className={cn(
-                          'text-[14px] flex-shrink-0',
-                          i < currentChainIdx ? 'text-emerald-500/40' : 'text-muted-foreground/25',
-                        )}>
-                          &rarr;
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
+
+              {currentChainIdx >= 0 && chain[currentChainIdx] && (
+                <div className="text-[11px] text-zinc-400 bg-zinc-800/50 rounded-lg px-4 py-3 mt-4 border-l-2 border-lime-400/20">
+                  <span className="font-mono text-lime-400">{chain[currentChainIdx].targetRepsToAdvance} reps</span>
+                  {' '}en{' '}
+                  <span className="font-mono text-lime-400">{chain[currentChainIdx].sessionsAtTarget} sesiones</span>
+                  {' '}consecutivas para avanzar
+                </div>
+              )}
             </div>
+          </TabsContent>
+        )}
+      </Tabs>
 
-            {currentChainIdx >= 0 && chain[currentChainIdx] && (
-              <div className="text-[11px] text-muted-foreground bg-muted/30 rounded px-3 py-2 mt-2 border-l-2 border-lime/20">
-                <span className="font-mono text-lime">{chain[currentChainIdx].targetRepsToAdvance} reps</span>
-                {' '}en{' '}
-                <span className="font-mono text-lime">{chain[currentChainIdx].sessionsAtTarget} sesiones</span>
-                {' '}consecutivas para avanzar
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <Separator className="my-6" />
+      {/* ── Divider ─────────────────────────────────────────────────────── */}
+      <div className="h-px bg-zinc-800/60 my-8" />
 
       {/* ── Related workouts ────────────────────────────────────────────── */}
       {relatedWorkouts.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-mono tracking-wide text-muted-foreground mb-3">
-            PROGRAMAS CON ESTE EJERCICIO
-          </h2>
-          <div className="grid gap-2">
+        <div className="mb-10">
+          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">Sesiones</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {relatedWorkouts.map(w => (
               <div
                 key={w.id}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border bg-card hover:border-lime/20 transition-colors"
+                className="flex items-center gap-4 px-4 py-4 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/60 transition-colors"
               >
-                <div className="size-8 rounded-md bg-lime/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bebas text-lime">F{w.phase}</span>
+                <div className="size-10 rounded-lg bg-lime-400/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bebas text-lime-400 tracking-wide">F{w.phase}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{w.name}</div>
-                  <div className="text-xs text-muted-foreground">{w.title}</div>
+                  <div className="text-[11px] text-zinc-500">{w.title}</div>
                 </div>
               </div>
             ))}
@@ -704,34 +700,38 @@ export default function ExerciseDetailPage() {
 
       {/* ── Similar exercises ───────────────────────────────────────────── */}
       {similarExercises.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-mono tracking-wide text-muted-foreground mb-3">
-            EJERCICIOS SIMILARES
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="mb-8">
+          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">Tambien te puede interesar</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {similarExercises.map(sim => {
               const simCatStyle = CATEGORY_COLORS[sim.category] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }
+              const simMuscles = sim.muscles.split(',').map(m => m.trim()).filter(Boolean)
               return (
                 <Link
                   key={sim.id}
                   to={`/exercises/${sim.slug || sim.id}`}
-                  className="group px-3 py-2.5 rounded-lg border border-border bg-card hover:border-lime/20 transition-colors"
+                  className="group px-4 py-4 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/60 transition-colors"
                 >
-                  <div className="text-[13px] font-medium leading-tight mb-1 group-hover:text-lime transition-colors line-clamp-2">
+                  <div className="font-bebas text-base tracking-wide leading-tight mb-1.5 group-hover:text-lime-400 transition-colors line-clamp-2 uppercase">
                     {sim.name}
                   </div>
-                  <div className="text-[10px] text-muted-foreground line-clamp-1 mb-1.5">
-                    {sim.muscles}
+                  <div className="text-[11px] text-zinc-500 line-clamp-1 mb-2.5">
+                    {simMuscles.join(' · ')}
                   </div>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'text-[8px] px-1.5 py-0 font-mono tracking-wider border',
-                      simCatStyle.text, simCatStyle.bg, simCatStyle.border
-                    )}
-                  >
-                    {sim.category.toUpperCase()}
-                  </Badge>
+                  <div className="flex items-center justify-between">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'text-[8px] px-2 py-0.5 font-mono tracking-widest border',
+                        simCatStyle.text, simCatStyle.bg, simCatStyle.border
+                      )}
+                    >
+                      {sim.category.toUpperCase()}
+                    </Badge>
+                    <span className="text-[11px] font-bebas text-lime-400 tracking-wide">
+                      {sim.sets} x {sim.reps}
+                    </span>
+                  </div>
                 </Link>
               )
             })}

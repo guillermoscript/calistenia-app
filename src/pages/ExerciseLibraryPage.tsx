@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { cn } from '../lib/utils'
-import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
-import { Skeleton } from '../components/ui/skeleton'
 import type { Exercise, Priority } from '../types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -68,15 +66,9 @@ const PRIORITY_DOT: Record<Priority, string> = {
   low:  'bg-sky-500',
 }
 
-const PRIORITY_LABEL: Record<Priority, string> = {
-  high: 'Prioritario',
-  med:  'Importante',
-  low:  'Complementario',
-}
-
 const MUSCLE_GROUPS = [
-  'Pecho', 'Hombros', 'Tríceps', 'Dorsal', 'Bíceps', 'Core',
-  'Cuádriceps', 'Glúteos', 'Isquios', 'Lumbar', 'Pantorrillas',
+  'Pecho', 'Hombros', 'Triceps', 'Dorsal', 'Biceps', 'Core',
+  'Cuadriceps', 'Gluteos', 'Isquios', 'Lumbar', 'Pantorrillas',
 ]
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -105,7 +97,7 @@ function inferCategory(exercise: Exercise, dayType: string): string {
   // Lumbar
   if (dayType === 'lumbar' || name.includes('bird-dog') || name.includes('superman') ||
       name.includes('glute bridge') || note.includes('lumbar')) {
-    if (muscles.includes('glúteo') || name.includes('glute bridge')) return 'lumbar'
+    if (muscles.includes('gluteo') || name.includes('glute bridge')) return 'lumbar'
     return 'lumbar'
   }
 
@@ -115,7 +107,7 @@ function inferCategory(exercise: Exercise, dayType: string): string {
 
   // Pull
   if (name.includes('pull-up') || name.includes('pull up') || name.includes('chin-up') ||
-      name.includes('row') || name.includes('face pull') || name.includes('retracción') ||
+      name.includes('row') || name.includes('face pull') || name.includes('retraccion') ||
       name.includes('australian') || name.includes('renegade') || name.includes('inverted')) return 'pull'
 
   // Legs
@@ -268,31 +260,46 @@ export default function ExerciseLibraryPage() {
   const getCategoryStyle = (cat: string) =>
     CATEGORY_COLORS[cat] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }
 
+  const hasActiveFilters = activeCategory !== 'todos' || activeMuscle !== null || search.trim() !== ''
+
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 className="font-bebas text-3xl tracking-wide">EJERCICIOS</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {loading ? 'Cargando...' : `${filtered.length} de ${exercises.length} ejercicios`}
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">
+
+      {/* ── Hero header ──────────────────────────────────────────────────── */}
+      <div className="mb-8">
+        <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">EJERCICIOS</h1>
+        <p className="text-sm text-zinc-500 mt-1 font-mono tracking-wide">
+          {loading ? 'Cargando...' : `${filtered.length} ejercicio${filtered.length !== 1 ? 's' : ''}`}
+        </p>
       </div>
 
       {/* ── Search ──────────────────────────────────────────────────────── */}
-      <div className="relative mb-4">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <Input
+      <div className="relative mb-6">
+        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-zinc-500" />
+        <input
+          type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o m\u00FAsculo..."
-          className="pl-10 h-10"
+          placeholder="Buscar por nombre o musculo..."
+          className="w-full h-12 pl-11 pr-4 rounded-xl bg-zinc-900 border border-zinc-800 text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-lime-400/30 focus:ring-1 focus:ring-lime-400/20 transition-all text-sm"
         />
       </div>
 
+      {/* ── Filter bar ───────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[11px] font-mono tracking-widest text-zinc-500 uppercase">Filtros</span>
+        {hasActiveFilters && (
+          <button
+            onClick={() => { setActiveCategory('todos'); setActiveMuscle(null); setSearch('') }}
+            className="text-[11px] font-mono tracking-widest text-zinc-600 hover:text-zinc-400 transition-colors uppercase"
+          >
+            Limpiar todo
+          </button>
+        )}
+      </div>
+
       {/* ── Category pills ──────────────────────────────────────────────── */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
         {CATEGORIES.map(cat => {
           const isActive = activeCategory === cat.id
           return (
@@ -300,10 +307,10 @@ export default function ExerciseLibraryPage() {
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 border',
+                'px-4 py-2.5 rounded-full text-[11px] font-mono tracking-widest whitespace-nowrap transition-all duration-150 border uppercase',
                 isActive
                   ? cn(cat.bg, cat.color, 'border-current/20')
-                  : 'border-border text-muted-foreground hover:text-foreground hover:border-border/80'
+                  : 'border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600'
               )}
             >
               {cat.label}
@@ -313,14 +320,14 @@ export default function ExerciseLibraryPage() {
       </div>
 
       {/* ── Muscle group filter ──────────────────────────────────────────── */}
-      <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+      <div className="flex gap-1.5 overflow-x-auto pb-4 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
         <button
           onClick={() => setActiveMuscle(null)}
           className={cn(
-            'px-2 py-1 rounded text-[10px] font-mono tracking-wide whitespace-nowrap transition-all duration-150',
+            'px-3 py-1.5 rounded-lg text-[10px] font-mono tracking-widest whitespace-nowrap transition-all duration-150 uppercase',
             !activeMuscle
-              ? 'bg-foreground/10 text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-zinc-800 text-foreground'
+              : 'text-zinc-600 hover:text-zinc-400'
           )}
         >
           TODOS
@@ -330,10 +337,10 @@ export default function ExerciseLibraryPage() {
             key={muscle}
             onClick={() => setActiveMuscle(activeMuscle === muscle ? null : muscle)}
             className={cn(
-              'px-2 py-1 rounded text-[10px] font-mono tracking-wide whitespace-nowrap transition-all duration-150',
+              'px-3 py-1.5 rounded-lg text-[10px] font-mono tracking-widest whitespace-nowrap transition-all duration-150 uppercase',
               activeMuscle === muscle
-                ? 'bg-foreground/10 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-zinc-800 text-foreground'
+                : 'text-zinc-600 hover:text-zinc-400'
             )}
           >
             {muscle.toUpperCase()}
@@ -343,13 +350,13 @@ export default function ExerciseLibraryPage() {
 
       {/* ── Loading state ───────────────────────────────────────────────── */}
       {loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-4">
-              <Skeleton className="h-4 w-3/4 mb-3" />
-              <Skeleton className="h-3 w-full mb-2" />
-              <Skeleton className="h-3 w-1/2 mb-3" />
-              <Skeleton className="h-5 w-16" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-xl bg-zinc-900 p-5 animate-pulse">
+              <div className="h-5 w-3/4 bg-zinc-800 rounded mb-3" />
+              <div className="h-3 w-full bg-zinc-800 rounded mb-2" />
+              <div className="h-3 w-1/2 bg-zinc-800 rounded mb-4" />
+              <div className="h-5 w-16 bg-zinc-800 rounded" />
             </div>
           ))}
         </div>
@@ -357,27 +364,30 @@ export default function ExerciseLibraryPage() {
 
       {/* ── Empty state ─────────────────────────────────────────────────── */}
       {!loading && filtered.length === 0 && (
-        <div className="text-center py-16">
-          <div className="text-4xl mb-3 opacity-30">&#x1F50D;</div>
-          <p className="text-sm text-muted-foreground">No se encontraron ejercicios</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">Prueba con otro filtro o b&uacute;squeda</p>
+        <div className="text-center py-24">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center">
+            <SearchIcon className="size-7 text-zinc-700" />
+          </div>
+          <p className="text-sm text-zinc-400 mb-1">No se encontraron ejercicios</p>
+          <p className="text-xs text-zinc-600">Prueba con otro filtro o busqueda</p>
         </div>
       )}
 
       {/* ── Exercise grid ───────────────────────────────────────────────── */}
       {!loading && filtered.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(ex => {
             const catStyle = getCategoryStyle(ex.category)
+            const muscleList = ex.muscles.split(',').map(m => m.trim()).filter(Boolean)
             return (
               <button
                 key={ex.id}
                 onClick={() => navigate(`/exercises/${ex.slug || ex.id}`)}
-                className="group text-left rounded-xl border border-border bg-card overflow-hidden hover:border-lime/30 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-lime/40"
+                className="group text-left rounded-xl bg-zinc-900/80 overflow-hidden hover:bg-zinc-800/80 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-lime-400/30"
               >
-                {/* Thumbnail placeholder or image */}
+                {/* Thumbnail or placeholder */}
                 {ex.demoImages && ex.demoImages.length > 0 ? (
-                  <div className="h-28 sm:h-32 bg-muted/30 overflow-hidden">
+                  <div className="h-36 bg-zinc-800 overflow-hidden">
                     <img
                       src={ex.demoImages[0]}
                       alt={ex.name}
@@ -386,8 +396,8 @@ export default function ExerciseLibraryPage() {
                     />
                   </div>
                 ) : (
-                  <div className="h-20 sm:h-24 bg-muted/20 flex items-center justify-center">
-                    <svg className="size-8 text-muted-foreground/15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <div className="h-24 bg-zinc-900/50 flex items-center justify-center">
+                    <svg className="size-8 text-zinc-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <rect x="3" y="8" width="4" height="8" rx="1" />
                       <rect x="17" y="8" width="4" height="8" rx="1" />
                       <line x1="7" y1="12" x2="17" y2="12" />
@@ -397,33 +407,33 @@ export default function ExerciseLibraryPage() {
                   </div>
                 )}
 
-                <div className="p-3">
+                <div className="p-4">
                   {/* Priority dot + Name */}
-                  <div className="flex items-start gap-2 mb-1.5">
+                  <div className="flex items-start gap-2.5 mb-2">
                     <div className={cn('size-2 rounded-full mt-1.5 flex-shrink-0', PRIORITY_DOT[ex.priority])} />
-                    <span className="font-semibold text-[13px] leading-tight line-clamp-2 group-hover:text-lime transition-colors duration-150">
+                    <span className="font-bebas text-lg tracking-wide leading-tight line-clamp-2 group-hover:text-lime-400 transition-colors duration-150 uppercase">
                       {ex.name}
                     </span>
                   </div>
 
-                  {/* Muscles */}
-                  <p className="text-[11px] text-muted-foreground line-clamp-1 mb-2 pl-4">
-                    {ex.muscles}
+                  {/* Muscles dot-separated */}
+                  <p className="text-[11px] text-zinc-500 line-clamp-1 mb-3 pl-[18px]">
+                    {muscleList.join(' · ')}
                   </p>
 
                   {/* Category badge + sets x reps */}
-                  <div className="flex items-center justify-between gap-2 pl-4">
+                  <div className="flex items-center justify-between gap-2 pl-[18px]">
                     <Badge
                       variant="outline"
                       className={cn(
-                        'text-[9px] px-1.5 py-0 font-mono tracking-wider border',
+                        'text-[9px] px-2 py-0.5 font-mono tracking-widest border',
                         catStyle.text, catStyle.bg, catStyle.border
                       )}
                     >
                       {ex.category.toUpperCase()}
                     </Badge>
-                    <span className="text-[10px] font-mono text-muted-foreground/60">
-                      {ex.sets} &times; {ex.reps}
+                    <span className="text-[11px] font-bebas text-lime-400 tracking-wide">
+                      {ex.sets} x {ex.reps}
                     </span>
                   </div>
                 </div>

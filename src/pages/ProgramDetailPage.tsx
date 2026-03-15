@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
-import type { ProgramMeta, Phase, Exercise } from '../types'
+import type { ProgramMeta } from '../types'
 import type { RecordModel } from 'pocketbase'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -304,17 +303,25 @@ export default function ProgramDetailPage({
 
   const currentPhase = phases.find(p => p.id === phaseNum)
 
+  // Total exercise count
+  const totalExercises = workouts.reduce((sum, w) => sum + w.exercises.length, 0)
+
   // ── Render ─────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/3" />
-          <div className="h-4 bg-muted rounded w-2/3" />
-          <div className="h-32 bg-muted rounded" />
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
+        <div className="animate-pulse space-y-6">
+          <div className="h-6 bg-zinc-800 rounded w-24" />
+          <div className="h-14 bg-zinc-800 rounded w-2/3" />
+          <div className="h-4 bg-zinc-800 rounded w-1/2" />
+          <div className="flex gap-3">
+            <div className="h-10 bg-zinc-800 rounded w-40" />
+            <div className="h-10 bg-zinc-800 rounded w-32" />
+          </div>
+          <div className="h-[1px] bg-zinc-800" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map(i => <div key={i} className="h-40 bg-muted rounded" />)}
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-zinc-800 rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -323,63 +330,82 @@ export default function ProgramDetailPage({
 
   if (error || !program) {
     return (
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        <Button variant="ghost" onClick={onBack} className="mb-4 text-muted-foreground hover:text-foreground">
-          <ArrowLeftIcon className="size-4 mr-1.5" /> Volver
-        </Button>
-        <div className="text-center py-16">
-          <div className="text-muted-foreground text-sm">{error || 'Programa no encontrado.'}</div>
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-foreground transition-colors mb-8">
+          <ArrowLeftIcon className="size-4" />
+          <span className="font-mono text-[11px] tracking-widest uppercase">Volver</span>
+        </button>
+        <div className="text-center py-20">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center">
+            <svg className="size-8 text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+          </div>
+          <p className="text-zinc-400 text-sm">{error || 'Programa no encontrado.'}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
+    <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
 
       {/* Back button */}
-      <Button variant="ghost" onClick={onBack} className="mb-4 text-muted-foreground hover:text-foreground -ml-2">
-        <ArrowLeftIcon className="size-4 mr-1.5" /> Volver a programas
-      </Button>
+      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-foreground transition-colors mb-8 -ml-1">
+        <ArrowLeftIcon className="size-4" />
+        <span className="font-mono text-[11px] tracking-widest uppercase">Volver a programas</span>
+      </button>
 
       {/* Hero section */}
-      <div className="mb-8">
-        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-1 uppercase">
+      <div className="mb-10">
+        <div className="text-[11px] text-zinc-500 tracking-[0.3em] mb-2 uppercase font-mono">
           {isSharedView ? 'Programa Compartido' : 'Detalle del Programa'}
         </div>
-        <h1 className="font-bebas text-4xl md:text-5xl leading-none mb-3">{program.name}</h1>
+        <h1 className="font-bebas text-4xl md:text-6xl leading-none mb-4 tracking-wide">{program.name}</h1>
         {program.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-4">{program.description}</p>
+          <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-6">{program.description}</p>
         )}
 
-        {/* Meta badges */}
-        <div className="flex items-center gap-2 flex-wrap mb-5">
+        {/* Meta stats */}
+        <div className="flex items-center gap-4 flex-wrap mb-6">
           {program.duration_weeks > 0 && (
-            <Badge variant="secondary" className="text-[10px] font-mono bg-zinc-800 text-zinc-300 border-zinc-700">
-              {program.duration_weeks} semanas
-            </Badge>
+            <div className="flex items-center gap-2">
+              <span className="text-lime-400 font-bebas text-xl">{program.duration_weeks}</span>
+              <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">semanas</span>
+            </div>
           )}
-          <Badge variant="secondary" className="text-[10px] font-mono bg-zinc-800 text-zinc-300 border-zinc-700">
-            {phases.length} fase{phases.length !== 1 ? 's' : ''}
-          </Badge>
+          <div className="w-px h-5 bg-zinc-800" />
+          <div className="flex items-center gap-2">
+            <span className="text-lime-400 font-bebas text-xl">{phases.length}</span>
+            <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">fase{phases.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="w-px h-5 bg-zinc-800" />
+          <div className="flex items-center gap-2">
+            <span className="text-lime-400 font-bebas text-xl">{totalExercises}</span>
+            <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">ejercicios</span>
+          </div>
           {isOwn && (
-            <Badge variant="secondary" className="text-[10px] font-mono bg-sky-500/10 text-sky-400 border-sky-500/20">
-              Creado por ti
-            </Badge>
+            <>
+              <div className="w-px h-5 bg-zinc-800" />
+              <span className="text-[10px] font-mono tracking-widest text-sky-400/70 uppercase">Creado por ti</span>
+            </>
           )}
           {isActive && (
-            <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-400/30 font-mono">
-              ACTIVO
-            </Badge>
+            <>
+              <div className="w-px h-5 bg-zinc-800" />
+              <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full uppercase">Activo</span>
+            </>
           )}
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           {isSharedView && !userId ? (
             <Button
               onClick={onLogin}
-              className="bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-zinc-900 font-bebas text-lg tracking-wide px-5"
+              className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10"
             >
               REGISTRATE PARA USAR ESTE PROGRAMA
             </Button>
@@ -389,15 +415,15 @@ export default function ProgramDetailPage({
                 <Button
                   onClick={handleSelectProgram}
                   disabled={actionLoading === 'select'}
-                  className="bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-zinc-900 font-bebas text-lg tracking-wide px-5"
+                  className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10"
                 >
-                  <CheckIcon className="size-4 mr-1.5" />
+                  <CheckIcon className="size-4 mr-2" />
                   {actionLoading === 'select' ? 'ACTIVANDO...' : isSharedView ? 'ANADIR A MIS PROGRAMAS' : 'USAR PROGRAMA'}
                 </Button>
               )}
               {isActive && (
-                <Button disabled className="font-bebas text-lg tracking-wide px-5 opacity-60">
-                  <CheckIcon className="size-4 mr-1.5" />
+                <Button disabled className="font-bebas text-lg tracking-widest px-6 h-11 opacity-50">
+                  <CheckIcon className="size-4 mr-2" />
                   PROGRAMA ACTIVO
                 </Button>
               )}
@@ -406,18 +432,18 @@ export default function ProgramDetailPage({
                   variant="outline"
                   onClick={handleDuplicate}
                   disabled={actionLoading === 'duplicate'}
-                  className="font-mono text-[11px] tracking-wide hover:border-sky-500 hover:text-sky-500"
+                  className="font-mono text-[11px] tracking-widest h-11 px-5 border-zinc-700 hover:border-sky-500/50 hover:text-sky-400"
                 >
-                  <CopyIcon className="size-3.5 mr-1.5" />
-                  {actionLoading === 'duplicate' ? 'DUPLICANDO...' : 'DUPLICAR Y EDITAR'}
+                  <CopyIcon className="size-3.5 mr-2" />
+                  {actionLoading === 'duplicate' ? 'DUPLICANDO...' : 'DUPLICAR'}
                 </Button>
               )}
               <Button
                 variant="outline"
                 onClick={() => shareProgram(programId, program.name)}
-                className="font-mono text-[11px] tracking-wide hover:border-pink-500 hover:text-pink-500"
+                className="font-mono text-[11px] tracking-widest h-11 px-5 border-zinc-700 hover:border-pink-500/50 hover:text-pink-400"
               >
-                <ShareIcon className="size-3.5 mr-1.5" />
+                <ShareIcon className="size-3.5 mr-2" />
                 COMPARTIR
               </Button>
             </>
@@ -425,19 +451,22 @@ export default function ProgramDetailPage({
         </div>
       </div>
 
+      {/* Divider */}
+      <div className="h-px bg-zinc-800/60 mb-8" />
+
       {/* Phase Tabs + Exercise List */}
       {phases.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-10">
           <Tabs value={selectedPhase} onValueChange={setSelectedPhase}>
-            <TabsList className="mb-4 bg-zinc-900/50 border border-border">
+            <TabsList className="mb-6 bg-zinc-900/80 border border-zinc-800 p-1 gap-1">
               {phases.map(phase => (
                 <TabsTrigger
                   key={phase.id}
                   value={String(phase.id)}
-                  className="font-mono text-[11px] tracking-wide data-[state=active]:text-foreground"
+                  className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2"
                 >
                   {phase.name}
-                  <span className="ml-1.5 text-[9px] text-muted-foreground">({phase.weeks})</span>
+                  <span className="ml-2 text-[9px] text-zinc-500">({phase.weeks})</span>
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -445,90 +474,57 @@ export default function ProgramDetailPage({
             {phases.map(phase => (
               <TabsContent key={phase.id} value={String(phase.id)}>
                 {/* Phase info */}
-                <div className="mb-4 px-1">
-                  <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">
+                <div className="mb-5">
+                  <div className="text-[10px] text-zinc-500 tracking-[0.3em] uppercase font-mono">
                     Fase {phase.id} · Semanas {phase.weeks}
                   </div>
                 </div>
 
                 {/* Day workouts */}
                 {phaseWorkouts.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground text-sm">
+                  <div className="text-center py-16 text-zinc-500 text-sm">
                     No hay ejercicios en esta fase.
                   </div>
                 ) : (
-                  <div className="space-y-5">
+                  <div className="space-y-6">
                     {phaseWorkouts.map(workout => (
-                      <Card key={`${workout.phase}_${workout.day}`} className="overflow-hidden">
+                      <div key={`${workout.phase}_${workout.day}`} className="rounded-xl bg-zinc-900/60 overflow-hidden">
                         {/* Day header */}
-                        <div className="px-5 py-3 bg-zinc-900/50 border-b border-border">
+                        <div className="px-5 py-4 border-b border-zinc-800/60">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <span className="font-bebas text-lg tracking-wide text-foreground">
+                            <div className="flex items-center gap-3">
+                              <span className="font-bebas text-xl tracking-widest text-foreground uppercase">
                                 {workout.dayName}
                               </span>
                               {workout.dayFocus && (
-                                <span className="ml-2 text-[11px] text-muted-foreground">
-                                  — {workout.dayFocus}
+                                <span className="text-[11px] text-zinc-500 font-mono tracking-wide">
+                                  {workout.dayFocus}
                                 </span>
                               )}
                             </div>
-                            <Badge variant="secondary" className="text-[9px] font-mono bg-zinc-800 text-zinc-400">
+                            <span className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase">
                               {workout.exercises.length} ejercicio{workout.exercises.length !== 1 ? 's' : ''}
-                            </Badge>
+                            </span>
                           </div>
                           {workout.title && workout.title !== workout.dayFocus && (
-                            <div className="text-[11px] text-muted-foreground mt-0.5">{workout.title}</div>
+                            <div className="text-[11px] text-zinc-500 mt-1">{workout.title}</div>
                           )}
                         </div>
 
                         {/* Exercise list */}
-                        <CardContent className="p-0">
+                        <div>
                           {workout.exercises.map((exercise, idx) => (
                             <div
                               key={`${exercise.id}_${idx}`}
                               className={cn(
-                                'px-5 py-3.5 border-l-[3px] flex items-start gap-3',
-                                PRIORITY_STRIPE[exercise.priority] || 'border-l-zinc-600',
-                                idx < workout.exercises.length - 1 && 'border-b border-border',
+                                'px-5 py-4 border-l-[3px] flex items-center gap-4 hover:bg-zinc-800/30 transition-colors',
+                                PRIORITY_STRIPE[exercise.priority] || 'border-l-zinc-700',
+                                idx < workout.exercises.length - 1 && 'border-b border-zinc-800/40',
                               )}
                             >
-                              {/* Exercise info */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-[13px] font-medium text-foreground">
-                                    {exercise.name}
-                                  </span>
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      'text-[8px] font-mono px-1.5 py-0',
-                                      exercise.priority === 'high' && 'text-red-400 border-red-400/30',
-                                      exercise.priority === 'med' && 'text-amber-400 border-amber-400/30',
-                                      exercise.priority === 'low' && 'text-emerald-400 border-emerald-400/30',
-                                    )}
-                                  >
-                                    {PRIORITY_LABEL[exercise.priority]}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                                  <span>{exercise.sets} x {exercise.reps}</span>
-                                  {exercise.rest > 0 && <span>Descanso: {exercise.rest}s</span>}
-                                  {exercise.isTimer && exercise.timerSeconds && (
-                                    <span>Timer: {exercise.timerSeconds}s</span>
-                                  )}
-                                </div>
-                                {exercise.muscles && (
-                                  <div className="text-[10px] text-muted-foreground/70 mt-1">{exercise.muscles}</div>
-                                )}
-                                {exercise.note && (
-                                  <div className="text-[10px] text-muted-foreground/60 mt-1 italic">{exercise.note}</div>
-                                )}
-                              </div>
-
                               {/* Demo thumbnail */}
                               {exercise.demoImages && exercise.demoImages.length > 0 && exercise.demoImages[0] && (
-                                <div className="w-12 h-12 rounded bg-zinc-800 overflow-hidden shrink-0">
+                                <div className="w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden shrink-0">
                                   <img
                                     src={exercise.demoImages[0]}
                                     alt={exercise.name}
@@ -537,10 +533,51 @@ export default function ProgramDetailPage({
                                   />
                                 </div>
                               )}
+
+                              {/* Sets x Reps in accent */}
+                              <div className="shrink-0 w-16 text-center">
+                                <span className="font-bebas text-lg text-lime-400 tracking-wide">
+                                  {exercise.sets}x{exercise.reps}
+                                </span>
+                              </div>
+
+                              {/* Exercise info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className="text-[13px] font-semibold text-foreground truncate">
+                                    {exercise.name}
+                                  </span>
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      'text-[8px] font-mono px-1.5 py-0 shrink-0',
+                                      exercise.priority === 'high' && 'text-red-400 border-red-400/30',
+                                      exercise.priority === 'med' && 'text-amber-400 border-amber-400/30',
+                                      exercise.priority === 'low' && 'text-emerald-400 border-emerald-400/30',
+                                    )}
+                                  >
+                                    {PRIORITY_LABEL[exercise.priority]}
+                                  </Badge>
+                                </div>
+                                {exercise.muscles && (
+                                  <div className="text-[11px] text-zinc-500">
+                                    {exercise.muscles.split(',').map(m => m.trim()).filter(Boolean).join(' · ')}
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-3 mt-1 text-[10px] text-zinc-600 font-mono">
+                                  {exercise.rest > 0 && <span>Descanso: {exercise.rest}s</span>}
+                                  {exercise.isTimer && exercise.timerSeconds && (
+                                    <span>Timer: {exercise.timerSeconds}s</span>
+                                  )}
+                                </div>
+                                {exercise.note && (
+                                  <div className="text-[10px] text-zinc-600 mt-1 italic">{exercise.note}</div>
+                                )}
+                              </div>
                             </div>
                           ))}
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -552,31 +589,27 @@ export default function ProgramDetailPage({
 
       {/* Related programs */}
       {relatedPrograms.length > 0 && (
-        <div className="mt-12 mb-8">
-          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">
-            También te puede interesar
-          </div>
+        <div className="mt-16 mb-8">
+          <h2 className="font-bebas text-2xl tracking-widest mb-6 uppercase">También te puede interesar</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {relatedPrograms.slice(0, 3).map(rp => (
-              <Card
+              <div
                 key={rp.id}
-                className="cursor-pointer transition-all hover:border-[hsl(var(--lime))]/30 group"
+                className="group cursor-pointer rounded-xl bg-zinc-900/60 p-5 transition-all hover:bg-zinc-800/60"
                 onClick={() => onNavigateToProgram?.(rp.id)}
               >
-                <CardContent className="p-4">
-                  <h3 className="font-bebas text-lg tracking-wide text-foreground group-hover:text-[hsl(var(--lime))] mb-1">
-                    {rp.name}
-                  </h3>
-                  {rp.description && (
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2">{rp.description}</p>
-                  )}
-                  {rp.duration_weeks > 0 && (
-                    <Badge variant="secondary" className="text-[9px] font-mono bg-zinc-800 text-zinc-400">
-                      {rp.duration_weeks} semanas
-                    </Badge>
-                  )}
-                </CardContent>
-              </Card>
+                <h3 className="font-bebas text-lg tracking-wide text-foreground group-hover:text-lime-400 transition-colors mb-2 uppercase">
+                  {rp.name}
+                </h3>
+                {rp.description && (
+                  <p className="text-[11px] text-zinc-500 line-clamp-2 mb-3">{rp.description}</p>
+                )}
+                {rp.duration_weeks > 0 && (
+                  <span className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase">
+                    {rp.duration_weeks} semanas
+                  </span>
+                )}
+              </div>
             ))}
           </div>
         </div>
