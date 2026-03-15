@@ -1,4 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react'
+import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useProgress } from './hooks/useProgress'
 import { usePrograms } from './hooks/usePrograms'
@@ -11,6 +12,11 @@ import NutritionPage from './pages/NutritionPage'
 import ProfilePage from './pages/ProfilePage'
 import AuthPage from './pages/AuthPage'
 import ProgramEditorPage from './pages/ProgramEditorPage'
+import ProgramsPage from './pages/ProgramsPage'
+import ExerciseLibraryPage from './pages/ExerciseLibraryPage'
+import ExerciseDetailPage from './pages/ExerciseDetailPage'
+import ProgramDetailPage from './pages/ProgramDetailPage'
+import SharedProgramPage from './pages/SharedProgramPage'
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import { setupAutoSync } from './lib/offlineQueue'
@@ -33,26 +39,42 @@ import {
 import { Button } from './components/ui/button'
 import { Separator } from './components/ui/separator'
 
-type TabId = 'dashboard' | 'workout' | 'lumbar' | 'progress' | 'nutrition' | 'perfil'
-
 interface IconProps {
   className?: string
 }
 
-interface TabDef {
-  id: TabId
+interface NavItem {
+  path: string
   label: string
   icon: React.FC<IconProps>
 }
 
-const TABS: TabDef[] = [
-  { id: 'dashboard', label: 'Dashboard',  icon: LayoutIcon },
-  { id: 'workout',   label: 'Entrenar',   icon: DumbbellIcon },
-  { id: 'lumbar',    label: 'Lumbar',     icon: SpineIcon },
-  { id: 'progress',  label: 'Progreso',   icon: ChartIcon },
-  { id: 'nutrition', label: 'Nutricion',  icon: NutritionIcon },
-  { id: 'perfil',    label: 'Perfil',     icon: ProfileIcon },
+const NAV_ITEMS: NavItem[] = [
+  { path: '/',          label: 'Dashboard',  icon: LayoutIcon },
+  { path: '/workout',   label: 'Entrenar',   icon: DumbbellIcon },
+  { path: '/lumbar',    label: 'Lumbar',      icon: SpineIcon },
+  { path: '/progress',  label: 'Progreso',   icon: ChartIcon },
+  { path: '/nutrition', label: 'Nutricion',  icon: NutritionIcon },
+  { path: '/programs',  label: 'Programas',  icon: ProgramIcon },
+  { path: '/exercises', label: 'Ejercicios', icon: ExerciseIcon },
+  { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
 ]
+
+// Map paths to breadcrumb labels (includes sub-routes)
+function getBreadcrumb(pathname: string): string {
+  // Check exact matches first
+  const exact = NAV_ITEMS.find(item => item.path === pathname)
+  if (exact) return exact.label
+
+  // Sub-route patterns
+  if (pathname === '/programs/new') return 'Nuevo Programa'
+  if (pathname.match(/^\/programs\/[^/]+\/edit$/)) return 'Editar Programa'
+  if (pathname.match(/^\/programs\/[^/]+$/)) return 'Detalle Programa'
+  if (pathname.match(/^\/exercises\/[^/]+$/)) return 'Detalle Ejercicio'
+  if (pathname.match(/^\/shared\/[^/]+$/)) return 'Programa Compartido'
+
+  return 'Dashboard'
+}
 
 // ── Minimal inline SVG icons ────────────────────────────────────────────────
 function LayoutIcon({ className }: IconProps) {
@@ -113,6 +135,24 @@ function ProfileIcon({ className }: IconProps) {
     </svg>
   )
 }
+function ProgramIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="2" y="1" width="12" height="14" rx="1.5" />
+      <line x1="5" y1="5" x2="11" y2="5" />
+      <line x1="5" y1="8" x2="11" y2="8" />
+      <line x1="5" y1="11" x2="9" y2="11" />
+    </svg>
+  )
+}
+function ExerciseIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="8" cy="8" r="6" />
+      <polyline points="8,4 8,8 11,10" />
+    </svg>
+  )
+}
 function LogOutIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -154,8 +194,6 @@ const Loader: React.FC = () => (
 // ── AppShell (uses sidebar context) ─────────────────────────────────────────
 
 interface AppShellProps {
-  activeTab: TabId
-  setActiveTab: (tab: TabId) => void
   settings: Settings
   displayName: string
   signOut: () => void
@@ -164,8 +202,15 @@ interface AppShellProps {
   children: ReactNode
 }
 
-function AppShell({ activeTab, setActiveTab, settings, displayName, signOut, dark, toggleDark, children }: AppShellProps) {
+function AppShell({ settings, displayName, signOut, dark, toggleDark, children }: AppShellProps) {
   const { open } = useSidebar()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/'
+    return location.pathname.startsWith(path)
+  }
 
   return (
     <>
@@ -181,11 +226,11 @@ function AppShell({ activeTab, setActiveTab, settings, displayName, signOut, dar
 
         <SidebarContent className="px-2">
           <SidebarMenu>
-            {TABS.map(({ id, label, icon: Icon }) => (
-              <SidebarMenuItem key={id}>
+            {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
+              <SidebarMenuItem key={path}>
                 <SidebarMenuButton
-                  isActive={activeTab === id}
-                  onClick={() => setActiveTab(id)}
+                  isActive={isActive(path)}
+                  onClick={() => navigate(path)}
                   tooltip={label}
                 >
                   <Icon className="size-4 shrink-0" />
@@ -211,7 +256,7 @@ function AppShell({ activeTab, setActiveTab, settings, displayName, signOut, dar
           </div>
           <SidebarMenuButton onClick={signOut} className="text-muted-foreground hover:text-destructive">
             <LogOutIcon className="size-4 shrink-0" />
-            <span>Cerrar sesión</span>
+            <span>Cerrar sesion</span>
           </SidebarMenuButton>
         </SidebarFooter>
       </Sidebar>
@@ -225,7 +270,7 @@ function AppShell({ activeTab, setActiveTab, settings, displayName, signOut, dar
           {/* Breadcrumb-style current section */}
           <nav aria-label="breadcrumb">
             <span className="text-sm font-medium text-foreground">
-              {TABS.find(t => t.id === activeTab)?.label}
+              {getBreadcrumb(location.pathname)}
             </span>
           </nav>
           <div className="ml-auto flex items-center gap-3">
@@ -253,10 +298,64 @@ function AppShell({ activeTab, setActiveTab, settings, displayName, signOut, dar
   )
 }
 
+// ── Route wrappers (extract params and pass props) ──────────────────────────
+
+function ProgramDetailPageRoute({
+  userId, activeProgram, programs, onSelectProgram, onDuplicateProgram,
+}: {
+  userId: string
+  activeProgram: import('./types').ProgramMeta | null
+  programs: import('./types').ProgramMeta[]
+  onSelectProgram: (id: string) => Promise<void>
+  onDuplicateProgram: (id: string) => Promise<void>
+}) {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  if (!id) return null
+  return (
+    <ProgramDetailPage
+      programId={id}
+      userId={userId}
+      activeProgram={activeProgram}
+      programs={programs}
+      onBack={() => navigate('/programs')}
+      onSelectProgram={onSelectProgram}
+      onDuplicateProgram={onDuplicateProgram}
+    />
+  )
+}
+
+function SharedProgramPageRoute({
+  userId, activeProgram, programs, onSelectProgram, onDuplicateProgram,
+}: {
+  userId?: string
+  activeProgram: import('./types').ProgramMeta | null
+  programs: import('./types').ProgramMeta[]
+  onSelectProgram: (id: string) => Promise<void>
+  onDuplicateProgram: (id: string) => Promise<void>
+}) {
+  const { shareCode } = useParams<{ shareCode: string }>()
+  const navigate = useNavigate()
+  if (!shareCode) return null
+  return (
+    <SharedProgramPage
+      programId={shareCode}
+      userId={userId}
+      activeProgram={activeProgram}
+      programs={programs}
+      onBack={() => navigate('/programs')}
+      onSelectProgram={onSelectProgram}
+      onDuplicateProgram={onDuplicateProgram}
+      onLogin={() => navigate('/')}
+    />
+  )
+}
+
 // ── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabId>('dashboard')
   const [dark, setDark] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
   const { user, authReady, authError, isLoading, signIn, signUp, signOut } = useAuth()
 
   // Setup offline queue auto-sync
@@ -279,8 +378,20 @@ export default function App() {
 
   const { goals: nutritionGoals, getDailyTotals: getNutritionDailyTotals } = useNutrition(user?.id ?? null)
 
-  const [showEditor, setShowEditor] = useState(false)
-  const [editorProgramId, setEditorProgramId] = useState<string | null>(null)
+  const handleCreateProgram = () => {
+    navigate('/programs/new')
+  }
+
+  const handleEditProgram = (programId: string) => {
+    navigate(`/programs/${programId}/edit`)
+  }
+
+  const handleDuplicateProgram = async (programId: string) => {
+    const newId = await duplicateProgram(programId)
+    if (newId) {
+      navigate(`/programs/${newId}/edit`)
+    }
+  }
 
   const {
     progress, settings, usePB, pbReady,
@@ -293,6 +404,19 @@ export default function App() {
   if (!authReady) return <Loader />
 
   if (!user) {
+    // Allow shared program pages for non-authenticated users
+    if (location.pathname.startsWith('/shared/')) {
+      const shareCode = location.pathname.replace('/shared/', '')
+      return (
+        <div className="min-h-screen bg-background">
+          <SharedProgramPage
+            programId={shareCode}
+            onBack={() => navigate('/')}
+            onLogin={() => navigate('/')}
+          />
+        </div>
+      )
+    }
     return (
       <AuthPage
         signIn={signIn}
@@ -301,31 +425,6 @@ export default function App() {
         isLoading={isLoading}
       />
     )
-  }
-
-  const handleCreateProgram = () => {
-    setEditorProgramId(null)
-    setShowEditor(true)
-  }
-
-  const handleEditProgram = (programId: string) => {
-    setEditorProgramId(programId)
-    setShowEditor(true)
-  }
-
-  const handleDuplicateProgram = async (programId: string) => {
-    const newId = await duplicateProgram(programId)
-    if (newId) {
-      setEditorProgramId(newId)
-      setShowEditor(true)
-    }
-  }
-
-  const handleEditorSaved = (_programId: string) => {
-    setShowEditor(false)
-    setEditorProgramId(null)
-    // Force re-init by resetting — the programs list will refresh on next mount cycle
-    // For now, just close. User can reload or switch programs.
   }
 
   if (!pbReady || !programsReady) return <Loader />
@@ -338,68 +437,91 @@ export default function App() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppShell
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
           settings={settings}
           displayName={displayName}
           signOut={signOut}
           dark={dark}
           toggleDark={toggleDark}
         >
-          {activeTab === 'dashboard' && (
-            <DashboardPage
-              settings={settings} usePB={usePB}
-              getTotalSessions={getTotalSessions} getLongestStreak={getLongestStreak}
-              getWeeklyDoneCount={getWeeklyDoneCount} getMonthActivity={getMonthActivity}
-              updateSettings={updateSettings} isWorkoutDone={isWorkoutDone}
-              getLastSessionDate={getLastSessionDate} onGoToWorkout={() => setActiveTab('workout')}
-              activeProgram={activeProgram} programs={programs}
-              phases={phases} weekDays={weekDays}
-              onSelectProgram={selectProgram}
-              onCreateProgram={handleCreateProgram}
-              onEditProgram={handleEditProgram}
-              onDuplicateProgram={handleDuplicateProgram}
-              userId={user.id}
-              nutritionTotals={getNutritionDailyTotals()}
-              nutritionGoals={nutritionGoals}
-              onGoToNutrition={() => setActiveTab('nutrition')}
-            />
-          )}
-          {activeTab === 'workout' && (
-            <WorkoutPage
-              settings={settings} onLogSet={logSet} onMarkDone={markWorkoutDone}
-              isWorkoutDone={isWorkoutDone} getExerciseLogs={getExerciseLogs}
-              phases={phases} weekDays={weekDays} getWorkout={getWorkout}
-              onGoToDashboard={() => setActiveTab('dashboard')}
-            />
-          )}
-          {activeTab === 'lumbar' && <LumbarPage user={user} />}
-          {activeTab === 'nutrition' && <NutritionPage userId={user.id} />}
-          {activeTab === 'progress' && (
-            <ProgressPage
-              progress={progress} settings={settings}
-              activeProgram={activeProgram}
-              userId={user.id}
-            />
-          )}
-          {activeTab === 'perfil' && (
-            <ProfilePage user={user} />
-          )}
+          <Routes>
+            <Route path="/" element={
+              <DashboardPage
+                settings={settings} usePB={usePB}
+                getTotalSessions={getTotalSessions} getLongestStreak={getLongestStreak}
+                getWeeklyDoneCount={getWeeklyDoneCount} getMonthActivity={getMonthActivity}
+                updateSettings={updateSettings} isWorkoutDone={isWorkoutDone}
+                getLastSessionDate={getLastSessionDate} onGoToWorkout={() => navigate('/workout')}
+                activeProgram={activeProgram} programs={programs}
+                phases={phases} weekDays={weekDays}
+                onSelectProgram={selectProgram}
+                onCreateProgram={handleCreateProgram}
+                onEditProgram={handleEditProgram}
+                onDuplicateProgram={handleDuplicateProgram}
+                userId={user.id}
+                nutritionTotals={getNutritionDailyTotals()}
+                nutritionGoals={nutritionGoals}
+                onGoToNutrition={() => navigate('/nutrition')}
+              />
+            } />
+            <Route path="/workout" element={
+              <WorkoutPage
+                settings={settings} onLogSet={logSet} onMarkDone={markWorkoutDone}
+                isWorkoutDone={isWorkoutDone} getExerciseLogs={getExerciseLogs}
+                phases={phases} weekDays={weekDays} getWorkout={getWorkout}
+                onGoToDashboard={() => navigate('/')}
+              />
+            } />
+            <Route path="/lumbar" element={<LumbarPage user={user} />} />
+            <Route path="/nutrition" element={<NutritionPage userId={user.id} />} />
+            <Route path="/progress" element={
+              <ProgressPage
+                progress={progress} settings={settings}
+                activeProgram={activeProgram}
+                userId={user.id}
+              />
+            } />
+            <Route path="/profile" element={<ProfilePage user={user} />} />
+            <Route path="/programs" element={
+              <ProgramsPage
+                programs={programs}
+                activeProgram={activeProgram}
+                userId={user.id}
+                onSelectProgram={(id) => navigate(`/programs/${id}`)}
+                onCreateProgram={handleCreateProgram}
+              />
+            } />
+            <Route path="/programs/new" element={
+              <ProgramEditorPage userId={user.id} />
+            } />
+            <Route path="/programs/:id/edit" element={
+              <ProgramEditorPage userId={user.id} />
+            } />
+            <Route path="/programs/:id" element={
+              <ProgramDetailPageRoute
+                userId={user.id}
+                activeProgram={activeProgram}
+                programs={programs}
+                onSelectProgram={selectProgram}
+                onDuplicateProgram={handleDuplicateProgram}
+              />
+            } />
+            <Route path="/exercises" element={<ExerciseLibraryPage />} />
+            <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
+            <Route path="/shared/:shareCode" element={
+              <SharedProgramPageRoute
+                userId={user.id}
+                activeProgram={activeProgram}
+                programs={programs}
+                onSelectProgram={selectProgram}
+                onDuplicateProgram={handleDuplicateProgram}
+              />
+            } />
+          </Routes>
         </AppShell>
       </div>
     </SidebarProvider>
 
     <InstallPrompt />
-
-    {/* Program Editor Overlay */}
-    {showEditor && (
-      <ProgramEditorPage
-        userId={user.id}
-        programId={editorProgramId}
-        onClose={() => { setShowEditor(false); setEditorProgramId(null) }}
-        onSaved={handleEditorSaved}
-      />
-    )}
     </>
   )
 }

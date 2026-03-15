@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { useProgramEditor, type EditorExercise, type EditorPhase } from '../hooks/useProgramEditor'
 import ExerciseCatalogPicker from '../components/ExerciseCatalogPicker'
@@ -10,9 +11,6 @@ import { Badge } from '../components/ui/badge'
 
 interface ProgramEditorPageProps {
   userId: string
-  programId?: string | null
-  onClose: () => void
-  onSaved: (programId: string) => void
 }
 
 const STEP_LABELS = ['Info', 'Fases', 'Días', 'Ejercicios']
@@ -44,7 +42,10 @@ const PRIORITY_OPTIONS: { value: 'high' | 'med' | 'low'; label: string; color: s
 
 const DAY_IDS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
 
-export default function ProgramEditorPage({ userId, programId = null, onClose, onSaved }: ProgramEditorPageProps) {
+export default function ProgramEditorPage({ userId }: ProgramEditorPageProps) {
+  const navigate = useNavigate()
+  const { id: programId } = useParams<{ id: string }>()
+
   const {
     state, setStep, updateInfo, addPhase, removePhase, updatePhase,
     updateDay, addExercise, removeExercise, updateExercise, moveExercise,
@@ -64,6 +65,10 @@ export default function ProgramEditorPage({ userId, programId = null, onClose, o
     }
   }, [programId]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleClose = () => {
+    navigate('/programs')
+  }
+
   const handleNext = () => {
     const err = validate(state.step)
     if (err) return
@@ -79,7 +84,7 @@ export default function ProgramEditorPage({ userId, programId = null, onClose, o
     if (err) return
     const savedId = await saveProgram(userId)
     if (savedId) {
-      onSaved(savedId)
+      navigate('/programs')
     }
   }
 
@@ -109,12 +114,12 @@ export default function ProgramEditorPage({ userId, programId = null, onClose, o
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background flex flex-col overflow-hidden">
+    <div className="flex flex-col min-h-0">
       {/* Header */}
       <div className="shrink-0 border-b border-border bg-background/95 backdrop-blur px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground hover:text-foreground h-8 px-2">
+            <Button variant="ghost" size="sm" onClick={handleClose} className="text-muted-foreground hover:text-foreground h-8 px-2">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-4">
                 <polyline points="10,3 5,8 10,13" />
               </svg>
@@ -173,7 +178,7 @@ export default function ProgramEditorPage({ userId, programId = null, onClose, o
       <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-4xl mx-auto">
 
-          {/* ═══ Step 1: Info ═══ */}
+          {/* Step 1: Info */}
           {state.step === 1 && (
             <div className="space-y-6">
               <Card>
@@ -217,7 +222,7 @@ export default function ProgramEditorPage({ userId, programId = null, onClose, o
             </div>
           )}
 
-          {/* ═══ Step 2: Phases ═══ */}
+          {/* Step 2: Phases */}
           {state.step === 2 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-2">
@@ -293,7 +298,7 @@ export default function ProgramEditorPage({ userId, programId = null, onClose, o
             </div>
           )}
 
-          {/* ═══ Step 3: Days ═══ */}
+          {/* Step 3: Days */}
           {state.step === 3 && (
             <div className="space-y-4">
               <div className="font-bebas text-2xl tracking-wide mb-2">DÍAS POR FASE</div>
@@ -365,7 +370,7 @@ export default function ProgramEditorPage({ userId, programId = null, onClose, o
             </div>
           )}
 
-          {/* ═══ Step 4: Exercises ═══ */}
+          {/* Step 4: Exercises */}
           {state.step === 4 && (
             <div className="space-y-4">
               <div className="font-bebas text-2xl tracking-wide mb-2">EJERCICIOS</div>
@@ -477,14 +482,14 @@ export default function ProgramEditorPage({ userId, programId = null, onClose, o
                               className="w-10 h-7 text-[11px] text-center px-1"
                               placeholder="S"
                             />
-                            <span className="text-muted-foreground text-[10px]">×</span>
+                            <span className="text-muted-foreground text-[10px]">x</span>
                             <Input
                               value={ex.reps}
                               onChange={e => updateExercise(currentDayKey, ei, { reps: e.target.value })}
                               className="w-16 h-7 text-[11px] text-center px-1"
                               placeholder="Reps"
                             />
-                            <span className="text-muted-foreground text-[10px]">·</span>
+                            <span className="text-muted-foreground text-[10px]">.</span>
                             <Input
                               value={ex.rest}
                               onChange={e => updateExercise(currentDayKey, ei, { rest: parseInt(e.target.value) || 0 })}
