@@ -128,12 +128,17 @@ interface DashboardPageProps {
   phases: Phase[]
   weekDays: WeekDay[]
   onSelectProgram: (programId: string) => Promise<void>
+  onCreateProgram?: () => void
+  onEditProgram?: (programId: string) => void
+  onDuplicateProgram?: (programId: string) => void
+  userId?: string
 }
 
 export default function DashboardPage({
   settings, getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity,
   updateSettings, usePB, isWorkoutDone, getLastSessionDate, onGoToWorkout,
   activeProgram, programs, phases: phasesProp, weekDays, onSelectProgram,
+  onCreateProgram, onEditProgram, onDuplicateProgram, userId,
 }: DashboardPageProps) {
   const PHASES = phasesProp || FALLBACK_PHASES
   const [showProgramModal, setShowProgramModal] = useState(false)
@@ -194,16 +199,28 @@ export default function DashboardPage({
                 <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{activeProgram.description}</div>
               )}
             </div>
-            {programs && programs.length > 1 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowProgramModal(true)}
-                className="text-[10px] tracking-widest hover:border-lime hover:text-lime whitespace-nowrap"
-              >
-                CAMBIAR PROGRAMA
-              </Button>
-            )}
+            <div className="flex gap-2 flex-wrap shrink-0">
+              {programs && programs.length > 1 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProgramModal(true)}
+                  className="text-[10px] tracking-widest hover:border-lime hover:text-lime whitespace-nowrap"
+                >
+                  CAMBIAR PROGRAMA
+                </Button>
+              )}
+              {onCreateProgram && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onCreateProgram}
+                  className="text-[10px] tracking-widest hover:border-sky-500 hover:text-sky-500 whitespace-nowrap"
+                >
+                  + CREAR PROGRAMA
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -325,6 +342,9 @@ export default function DashboardPage({
           activeProgram={activeProgram}
           onSelect={async (id: string) => { await onSelectProgram(id); setShowProgramModal(false) }}
           onClose={() => setShowProgramModal(false)}
+          onDuplicate={onDuplicateProgram ? (id: string) => { setShowProgramModal(false); onDuplicateProgram(id) } : undefined}
+          onEdit={onEditProgram ? (id: string) => { setShowProgramModal(false); onEditProgram(id) } : undefined}
+          userId={userId}
         />
       )}
     </div>

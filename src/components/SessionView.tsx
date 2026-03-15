@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Image } from 'lucide-react'
 import YoutubeModal from './YoutubeModal'
+import MediaViewer from './MediaViewer'
 import Timer from './Timer'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -264,6 +266,7 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
   const [customReps, setCustomReps] = useState<string>('')
   const [customNote, setCustomNote] = useState<string>('')
   const [showYoutube, setShowYoutube] = useState<boolean>(false)
+  const [showMedia, setShowMedia]   = useState<boolean>(false)
   const [flash, setFlash]           = useState<boolean>(false)
 
   const { exercise, setNumber, totalSets } = step
@@ -387,6 +390,16 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
               ✏ EDITAR REPS
             </button>
 
+            {exercise.demoImages && exercise.demoImages.length > 0 && (
+              <button
+                onClick={() => setShowMedia(true)}
+                className="py-[11px] px-3.5 rounded-md cursor-pointer border border-lime/20 bg-lime/5 text-lime text-sm leading-none hover:bg-lime/10 transition-all duration-150"
+                title="Ver media"
+              >
+                <Image size={15} />
+              </button>
+            )}
+
             <button
               onClick={() => setShowYoutube(true)}
               className="py-[11px] px-3.5 rounded-md cursor-pointer border border-red-500/20 bg-red-500/5 text-red-500 text-sm leading-none hover:bg-red-500/10 transition-all duration-150"
@@ -432,6 +445,7 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
       </div>
 
       {showYoutube && <YoutubeModal query={exercise.youtube} onClose={() => setShowYoutube(false)} />}
+      {showMedia && <MediaViewer exercise={exercise} onClose={() => setShowMedia(false)} />}
     </div>
   )
 }

@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage'
 import LumbarPage from './pages/LumbarPage'
 import ProgressPage from './pages/ProgressPage'
 import AuthPage from './pages/AuthPage'
+import ProgramEditorPage from './pages/ProgramEditorPage'
 import { cn } from './lib/utils'
 import type { Settings } from './types'
 import {
@@ -239,8 +240,11 @@ export default function App() {
   }
 
   const {
-    programs, activeProgram, phases, weekDays, getWorkout, selectProgram, programsReady,
+    programs, activeProgram, phases, weekDays, getWorkout, selectProgram, duplicateProgram, programsReady,
   } = usePrograms(user?.id ?? null)
+
+  const [showEditor, setShowEditor] = useState(false)
+  const [editorProgramId, setEditorProgramId] = useState<string | null>(null)
 
   const {
     progress, settings, usePB, pbReady,
@@ -263,11 +267,37 @@ export default function App() {
     )
   }
 
+  const handleCreateProgram = () => {
+    setEditorProgramId(null)
+    setShowEditor(true)
+  }
+
+  const handleEditProgram = (programId: string) => {
+    setEditorProgramId(programId)
+    setShowEditor(true)
+  }
+
+  const handleDuplicateProgram = async (programId: string) => {
+    const newId = await duplicateProgram(programId)
+    if (newId) {
+      setEditorProgramId(newId)
+      setShowEditor(true)
+    }
+  }
+
+  const handleEditorSaved = (_programId: string) => {
+    setShowEditor(false)
+    setEditorProgramId(null)
+    // Force re-init by resetting — the programs list will refresh on next mount cycle
+    // For now, just close. User can reload or switch programs.
+  }
+
   if (!pbReady || !programsReady) return <Loader />
 
   const displayName = user.display_name || user.email?.split('@')[0] || ''
 
   return (
+    <>
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppShell
@@ -289,6 +319,10 @@ export default function App() {
               activeProgram={activeProgram} programs={programs}
               phases={phases} weekDays={weekDays}
               onSelectProgram={selectProgram}
+              onCreateProgram={handleCreateProgram}
+              onEditProgram={handleEditProgram}
+              onDuplicateProgram={handleDuplicateProgram}
+              userId={user.id}
             />
           )}
           {activeTab === 'workout' && (
@@ -309,5 +343,16 @@ export default function App() {
         </AppShell>
       </div>
     </SidebarProvider>
+
+    {/* Program Editor Overlay */}
+    {showEditor && (
+      <ProgramEditorPage
+        userId={user.id}
+        programId={editorProgramId}
+        onClose={() => { setShowEditor(false); setEditorProgramId(null) }}
+        onSaved={handleEditorSaved}
+      />
+    )}
+    </>
   )
 }

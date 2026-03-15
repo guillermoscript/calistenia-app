@@ -19,6 +19,9 @@ export interface Exercise {
   priority: Priority
   isTimer?: boolean
   timerSeconds?: number
+  pbRecordId?: string
+  demoImages?: string[]
+  demoVideo?: string
 }
 
 export interface Workout {
@@ -147,6 +150,14 @@ export interface LumbarCheck {
   created_at: string         // ISO timestamp
 }
 
+// ─── Exercise Media ─────────────────────────────────────────────────────────
+
+export interface ExerciseMedia {
+  pbRecordId?: string
+  demoImages?: string[]
+  demoVideo?: string
+}
+
 // ─── Programs ────────────────────────────────────────────────────────────────
 
 export interface ProgramMeta {
@@ -154,4 +165,5 @@ export interface ProgramMeta {
   name: string
   description: string
   duration_weeks: number
+  created_by?: string
 }

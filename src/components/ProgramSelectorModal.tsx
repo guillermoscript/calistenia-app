@@ -17,9 +17,12 @@ interface ProgramSelectorModalProps {
   activeProgram: ProgramMeta | null
   onSelect: (programId: string) => Promise<void>
   onClose: () => void
+  onDuplicate?: (programId: string) => void
+  onEdit?: (programId: string) => void
+  userId?: string
 }
 
-export default function ProgramSelectorModal({ programs, activeProgram, onSelect, onClose }: ProgramSelectorModalProps) {
+export default function ProgramSelectorModal({ programs, activeProgram, onSelect, onClose, onDuplicate, onEdit, userId }: ProgramSelectorModalProps) {
   const [pending, setPending] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
 
@@ -111,6 +114,31 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
                   </div>
                   {prog.description && (
                     <div className="text-[12px] text-muted-foreground leading-relaxed">{prog.description}</div>
+                  )}
+                  {/* Action buttons */}
+                  {(onDuplicate || onEdit) && (
+                    <div className="flex gap-2 mt-2.5">
+                      {onDuplicate && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); onDuplicate(prog.id) }}
+                          className="h-7 px-2.5 text-[10px] tracking-wide hover:border-sky-500 hover:text-sky-500"
+                        >
+                          DUPLICAR Y EDITAR
+                        </Button>
+                      )}
+                      {onEdit && userId && prog.created_by === userId && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); onEdit(prog.id) }}
+                          className="h-7 px-2.5 text-[10px] tracking-wide hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+                        >
+                          EDITAR
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               )

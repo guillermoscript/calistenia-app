@@ -587,8 +587,59 @@ async function main() {
   }
   console.log()
 
+  // ── 12. Seed: exercises_catalog ──────────────────────────────────────────────
+  await seedExercisesCatalog()
+
   console.log('✓ Migración completada.')
   console.log(`  Admin: ${PB_URL}/_/`)
+}
+
+// ─── Seed exercises_catalog ─────────────────────────────────────────────────
+async function seedExercisesCatalog() {
+  // Check if catalog already has records (idempotent)
+  const existing = await pb.collection('exercises_catalog').getList(1, 1)
+  if (existing.totalItems > 0) {
+    console.log(`exercises_catalog ya tiene ${existing.totalItems} registros, omitiendo seed.`)
+    return
+  }
+
+  console.log('Seeding exercises_catalog...')
+
+  // Build a map of day_id → day_type from DAY_META for category inference
+  // For exercises that appear in multiple days, use the first occurrence
+  const exerciseMap = new Map() // exercise_id → exercise data + category
+
+  for (const [phaseNum, dayId, workoutTitle, exercises] of SEED_WORKOUTS) {
+    const meta = DAY_META[dayId]
+    for (const ex of exercises) {
+      if (!exerciseMap.has(ex.exercise_id)) {
+        exerciseMap.set(ex.exercise_id, {
+          name:                  ex.exercise_name,
+          slug:                  ex.exercise_id,
+          muscles:               ex.muscles || '',
+          youtube:               ex.youtube || '',
+          priority:              ex.priority || '',
+          is_timer:              ex.is_timer || false,
+          default_timer_seconds: ex.timer_seconds || 0,
+          default_sets:          ex.sets || 0,
+          default_reps:          ex.reps || '',
+          default_rest_seconds:  ex.rest_seconds || 0,
+          note:                  ex.note || '',
+          category:              meta.day_type || '',
+        })
+      }
+    }
+  }
+
+  let count = 0
+  for (const [slug, data] of exerciseMap) {
+    await pb.collection('exercises_catalog').create(data)
+    count++
+  }
+
+  console.log(`  → ${count} ejercicios de catálogo creados`)
+  console.log('exercises_catalog seed completado.')
+  console.log()
 }
 
 main().catch(err => {

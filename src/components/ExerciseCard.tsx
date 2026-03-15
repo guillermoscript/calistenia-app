@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { Image } from 'lucide-react'
 import Timer from './Timer'
 import YoutubeModal from './YoutubeModal'
+import MediaViewer from './MediaViewer'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { cn } from '../lib/utils'
@@ -22,6 +24,7 @@ interface ExerciseCardProps {
 export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [] }: ExerciseCardProps) {
   const [showTimer, setShowTimer] = useState<boolean>(false)
   const [showYoutube, setShowYoutube] = useState<boolean>(false)
+  const [showMedia, setShowMedia] = useState<boolean>(false)
   const [showEditForm, setShowEditForm] = useState<boolean>(false)
   const [showHistory, setShowHistory] = useState<boolean>(false)
   const [logReps, setLogReps] = useState<string>('')
@@ -166,6 +169,16 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             </button>
           )}
 
+          {exercise.demoImages && exercise.demoImages.length > 0 && (
+            <button
+              onClick={() => setShowMedia(true)}
+              className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-lime/18 bg-lime/5 text-lime hover:bg-lime/10 cursor-pointer transition-all duration-150"
+              title="Ver media"
+            >
+              <Image size={15} />
+            </button>
+          )}
+
           <button
             onClick={() => setShowYoutube(true)}
             className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-red-500/18 bg-red-500/5 text-red-500 hover:bg-red-500/10 cursor-pointer transition-all duration-150"
@@ -250,6 +263,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
       </div>
 
       {showYoutube && <YoutubeModal query={exercise.youtube} onClose={() => setShowYoutube(false)} />}
+      {showMedia && <MediaViewer exercise={exercise} onClose={() => setShowMedia(false)} />}
     </div>
   )
 }

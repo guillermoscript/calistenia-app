@@ -103,6 +103,9 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
       priority:     r.priority,
       isTimer:      r.is_timer,
       timerSeconds: r.timer_seconds,
+      pbRecordId:   r.id,
+      demoImages:   r.demo_images || [],
+      demoVideo:    r.demo_video || '',
     } as Exercise)
   })
   // Sort exercises by sort_order (stored in the full record list order from PB)
@@ -125,6 +128,7 @@ interface UseProgramsReturn {
   weekDays: WeekDay[]
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<void>
+  duplicateProgram: (programId: string) => Promise<string | null>
   programsReady: boolean
 }
 
@@ -197,6 +201,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       name:           p.name,
       description:    p.description,
       duration_weeks: p.duration_weeks,
+      created_by:     p.created_by || undefined,
     }))
     setPrograms(catalog)
 
@@ -305,6 +310,86 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     }
   }, [usePB, userId, programs]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── duplicateProgram ──────────────────────────────────────────────────────
+  const duplicateProgram = useCallback(async (programId: string): Promise<string | null> => {
+    if (!usePB || !userId) return null
+
+    try {
+      // 1. Fetch original program
+      const original = await pb.collection('programs').getOne(programId)
+
+      // 2. Create new program (copy)
+      const newProgram = await pb.collection('programs').create({
+        name:           `${original.name} (copia)`,
+        description:    original.description,
+        duration_weeks: original.duration_weeks,
+        is_active:      true,
+        created_by:     userId,
+      })
+
+      // 3. Copy phases
+      const phasesRes = await pb.collection('program_phases').getList(1, 20, {
+        filter: pb.filter('program = {:pid}', { pid: programId }),
+        sort:   'sort_order',
+      })
+      for (const p of phasesRes.items) {
+        await pb.collection('program_phases').create({
+          program:      newProgram.id,
+          phase_number: p.phase_number,
+          name:         p.name,
+          weeks:        p.weeks,
+          color:        p.color,
+          bg_color:     p.bg_color,
+          sort_order:   p.sort_order,
+        })
+      }
+
+      // 4. Copy exercises
+      const exercisesRes = await pb.collection('program_exercises').getList(1, 2000, {
+        filter: pb.filter('program = {:pid}', { pid: programId }),
+        sort:   'phase_number,sort_order',
+      })
+      for (const e of exercisesRes.items) {
+        await pb.collection('program_exercises').create({
+          program:       newProgram.id,
+          phase_number:  e.phase_number,
+          day_id:        e.day_id,
+          day_name:      e.day_name,
+          day_focus:     e.day_focus,
+          day_type:      e.day_type,
+          day_color:     e.day_color,
+          exercise_id:   e.exercise_id,
+          exercise_name: e.exercise_name,
+          sets:          e.sets,
+          reps:          e.reps,
+          rest_seconds:  e.rest_seconds,
+          muscles:       e.muscles,
+          note:          e.note,
+          youtube:       e.youtube,
+          priority:      e.priority,
+          is_timer:      e.is_timer,
+          timer_seconds: e.timer_seconds,
+          workout_title: e.workout_title,
+          sort_order:    e.sort_order,
+        })
+      }
+
+      // 5. Update local programs list
+      const newMeta: ProgramMeta = {
+        id:             newProgram.id,
+        name:           newProgram.name,
+        description:    newProgram.description,
+        duration_weeks: newProgram.duration_weeks,
+      }
+      setPrograms(prev => [...prev, newMeta])
+
+      return newProgram.id
+    } catch (e) {
+      console.error('usePrograms: duplicateProgram error', e)
+      return null
+    }
+  }, [usePB, userId])
+
   return {
     programs,
     activeProgram,
@@ -312,6 +397,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     weekDays,
     getWorkout,
     selectProgram,
+    duplicateProgram,
     programsReady,
   }
 }
