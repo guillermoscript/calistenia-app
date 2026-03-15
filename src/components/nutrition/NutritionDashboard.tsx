@@ -1,0 +1,193 @@
+import { useState } from 'react'
+import { cn } from '../../lib/utils'
+import { Card, CardContent } from '../ui/card'
+import { Button } from '../ui/button'
+import MacroBar from './MacroBar'
+import type { NutritionEntry } from '../../types'
+
+interface NutritionDashboardProps {
+  dailyTotals: { calories: number; protein: number; carbs: number; fat: number }
+  goals: { dailyCalories: number; dailyProtein: number; dailyCarbs: number; dailyFat: number } | null
+  entries: NutritionEntry[]
+  onDeleteEntry?: (id: string) => void
+}
+
+const MEAL_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  desayuno: { label: 'DESAYUNO', color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
+  almuerzo: { label: 'ALMUERZO', color: 'text-sky-500', bg: 'bg-sky-500/10 border-sky-500/30' },
+  cena:     { label: 'CENA',     color: 'text-pink-500', bg: 'bg-pink-500/10 border-pink-500/30' },
+  snack:    { label: 'SNACK',    color: 'text-lime',     bg: 'bg-lime/10 border-lime/30' },
+}
+
+function CalorieGauge({ consumed, target }: { consumed: number; target: number }) {
+  const pct = target > 0 ? Math.min(consumed / target, 1.2) : 0
+  const clampedPct = Math.min(pct, 1)
+  const radius = 52
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference * (1 - clampedPct)
+  const overBudget = consumed > target
+
+  return (
+    <div className="relative flex items-center justify-center">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        {/* Background ring */}
+        <circle
+          cx="70" cy="70" r={radius}
+          fill="none"
+          stroke="currentColor"
+          className="text-zinc-800"
+          strokeWidth="10"
+        />
+        {/* Progress ring */}
+        <circle
+          cx="70" cy="70" r={radius}
+          fill="none"
+          stroke="currentColor"
+          className={cn(
+            overBudget ? 'text-red-500' : pct >= 0.8 ? 'text-amber-400' : 'text-lime'
+          )}
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          transform="rotate(-90 70 70)"
+          style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cn(
+          'font-bebas text-3xl leading-none',
+          overBudget ? 'text-red-500' : 'text-foreground'
+        )}>
+          {Math.round(consumed)}
+        </span>
+        <span className="text-[10px] text-muted-foreground tracking-widest">
+          / {target} kcal
+        </span>
+      </div>
+    </div>
+  )
+}
+
+export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry }: NutritionDashboardProps) {
+  const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
+
+  if (!goals) return null
+
+  const formatTime = (isoString: string) => {
+    try {
+      const d = new Date(isoString)
+      return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    } catch {
+      return ''
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Calorie gauge + macros */}
+      <Card>
+        <CardContent className="p-5">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <CalorieGauge consumed={dailyTotals.calories} target={goals.dailyCalories} />
+            <div className="flex-1 w-full space-y-3">
+              <MacroBar label="Proteina" current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
+              <MacroBar label="Carbos" current={dailyTotals.carbs} target={goals.dailyCarbs} color="bg-amber-400" />
+              <MacroBar label="Grasa" current={dailyTotals.fat} target={goals.dailyFat} color="bg-pink-500" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Meal timeline */}
+      <div>
+        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Comidas de Hoy</div>
+        {entries.length === 0 ? (
+          <Card>
+            <CardContent className="p-5 text-center">
+              <div className="text-muted-foreground text-sm">No has registrado comidas hoy</div>
+              <div className="text-xs text-muted-foreground mt-1">Usa el boton + para registrar tu primera comida</div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {entries.map((entry, idx) => {
+              const mealInfo = MEAL_LABELS[entry.mealType] || MEAL_LABELS.snack
+              const entryId = entry.id || `entry-${idx}`
+              const isExpanded = expandedEntry === entryId
+
+              return (
+                <Card key={entryId} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <button
+                      onClick={() => setExpandedEntry(isExpanded ? null : entryId)}
+                      className="w-full p-4 text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={cn(
+                          'text-[9px] tracking-widest px-2 py-0.5 rounded border',
+                          mealInfo.bg, mealInfo.color
+                        )}>
+                          {mealInfo.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{formatTime(entry.loggedAt)}</span>
+                        <span className="ml-auto font-bebas text-lg text-foreground">{Math.round(entry.totalCalories)} kcal</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2 line-clamp-1">
+                        {entry.foods.map(f => f.name).join(', ')}
+                      </div>
+                    </button>
+
+                    {/* Expanded detail */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 border-t border-border">
+                        <div className="pt-3 space-y-2">
+                          {entry.foods.map((food, fi) => (
+                            <div key={fi} className="flex items-center gap-3 text-xs">
+                              <span className="flex-1 text-foreground">{food.name}</span>
+                              <span className="text-muted-foreground">{food.portion}</span>
+                              <span className="text-sky-500 w-12 text-right">{food.protein}p</span>
+                              <span className="text-amber-400 w-12 text-right">{food.carbs}c</span>
+                              <span className="text-pink-500 w-12 text-right">{food.fat}g</span>
+                              <span className="text-foreground w-14 text-right">{food.calories} kcal</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                          <div className="flex gap-4 text-xs">
+                            <span className="text-sky-500">{Math.round(entry.totalProtein)}g prot</span>
+                            <span className="text-amber-400">{Math.round(entry.totalCarbs)}g carbs</span>
+                            <span className="text-pink-500">{Math.round(entry.totalFat)}g grasa</span>
+                          </div>
+                          {onDeleteEntry && entry.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); onDeleteEntry(entry.id!) }}
+                              className="h-7 px-2 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                            >
+                              <TrashIcon className="size-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4M6.67 7.33v4M9.33 7.33v4" />
+      <path d="M3.33 4h9.34l-.67 9.33a1.33 1.33 0 01-1.33 1.34H5.33A1.33 1.33 0 014 13.33L3.33 4z" />
+    </svg>
+  )
+}

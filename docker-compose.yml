@@ -18,3 +18,19 @@ services:
       - "8090:8090"
     volumes:
       - ./pb_data_local:/app/pb_data
+
+  ai-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: calistenia-ai-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - POCKETBASE_URL=http://app:8090
+    depends_on:
+      - app

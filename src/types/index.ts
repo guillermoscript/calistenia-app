@@ -167,3 +167,54 @@ export interface ProgramMeta {
   duration_weeks: number
   created_by?: string
 }
+
+// ─── Nutrition ──────────────────────────────────────────────────────────────
+
+export interface FoodItem {
+  name: string
+  portion: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
+export interface NutritionEntry {
+  id?: string
+  user?: string
+  photoUrl?: string
+  mealType: 'desayuno' | 'almuerzo' | 'cena' | 'snack'
+  foods: FoodItem[]
+  totalCalories: number
+  totalProtein: number
+  totalCarbs: number
+  totalFat: number
+  aiModel?: string
+  loggedAt: string
+}
+
+export type NutritionGoalType = 'muscle_gain' | 'fat_loss' | 'recomp' | 'maintain'
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
+export type Sex = 'male' | 'female'
+
+export interface NutritionGoal {
+  id?: string
+  user?: string
+  dailyCalories: number
+  dailyProtein: number
+  dailyCarbs: number
+  dailyFat: number
+  goal: NutritionGoalType
+  weight: number
+  height: number
+  age: number
+  sex: Sex
+  activityLevel: ActivityLevel
+}
+
+export interface DailyTotals {
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}

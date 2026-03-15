@@ -132,6 +132,9 @@ interface DashboardPageProps {
   onEditProgram?: (programId: string) => void
   onDuplicateProgram?: (programId: string) => void
   userId?: string
+  nutritionTotals?: { calories: number; protein: number; carbs: number; fat: number }
+  nutritionGoals?: { dailyCalories: number } | null
+  onGoToNutrition?: () => void
 }
 
 export default function DashboardPage({
@@ -139,6 +142,7 @@ export default function DashboardPage({
   updateSettings, usePB, isWorkoutDone, getLastSessionDate, onGoToWorkout,
   activeProgram, programs, phases: phasesProp, weekDays, onSelectProgram,
   onCreateProgram, onEditProgram, onDuplicateProgram, userId,
+  nutritionTotals, nutritionGoals, onGoToNutrition,
 }: DashboardPageProps) {
   const PHASES = phasesProp || FALLBACK_PHASES
   const [showProgramModal, setShowProgramModal] = useState(false)
@@ -261,6 +265,66 @@ export default function DashboardPage({
         <StatCard value={weeklyDone} label="Esta semana" accent="text-amber-400" sub={`Meta: ${settings.weeklyGoal || 5} días`} />
         <StatCard value={`${Math.round(progress)}%`} label="Programa completado" accent="text-pink-500" />
       </div>
+
+      {/* Nutrition Summary Widget */}
+      {onGoToNutrition && (
+        <Card className="mb-8 border-l-[3px] border-l-lime">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="relative size-14 shrink-0">
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" className="text-zinc-800" strokeWidth="5" />
+                  <circle
+                    cx="28" cy="28" r="22"
+                    fill="none" stroke="currentColor"
+                    className={cn(
+                      nutritionGoals && nutritionTotals && nutritionTotals.calories > nutritionGoals.dailyCalories
+                        ? 'text-red-500'
+                        : 'text-lime'
+                    )}
+                    strokeWidth="5" strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 22}
+                    strokeDashoffset={
+                      2 * Math.PI * 22 * (1 - Math.min(
+                        (nutritionTotals?.calories || 0) / (nutritionGoals?.dailyCalories || 1), 1
+                      ))
+                    }
+                    transform="rotate(-90 28 28)"
+                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[10px] font-bold">
+                    {nutritionGoals
+                      ? `${Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100)}%`
+                      : '—'
+                    }
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">Nutricion Hoy</div>
+                {nutritionGoals ? (
+                  <div className="text-sm">
+                    <span className="text-foreground font-medium">{Math.round(nutritionTotals?.calories || 0)}</span>
+                    <span className="text-muted-foreground"> / {nutritionGoals.dailyCalories} kcal</span>
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Configura tus objetivos nutricionales</div>
+                )}
+              </div>
+              <Button
+                onClick={onGoToNutrition}
+                variant="outline"
+                size="sm"
+                className="text-[10px] tracking-widest hover:border-lime hover:text-lime whitespace-nowrap"
+              >
+                {nutritionGoals ? 'REGISTRAR COMIDA' : 'CONFIGURAR'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Weekly Plan */}
       <WeekPlanWidget selectedPhase={settings.phase || 1} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />

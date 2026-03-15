@@ -2,10 +2,12 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useProgress } from './hooks/useProgress'
 import { usePrograms } from './hooks/usePrograms'
+import { useNutrition } from './hooks/useNutrition'
 import WorkoutPage from './pages/WorkoutPage'
 import DashboardPage from './pages/DashboardPage'
 import LumbarPage from './pages/LumbarPage'
 import ProgressPage from './pages/ProgressPage'
+import NutritionPage from './pages/NutritionPage'
 import AuthPage from './pages/AuthPage'
 import ProgramEditorPage from './pages/ProgramEditorPage'
 import { cn } from './lib/utils'
@@ -26,7 +28,7 @@ import {
 import { Button } from './components/ui/button'
 import { Separator } from './components/ui/separator'
 
-type TabId = 'dashboard' | 'workout' | 'lumbar' | 'progress'
+type TabId = 'dashboard' | 'workout' | 'lumbar' | 'progress' | 'nutrition'
 
 interface IconProps {
   className?: string
@@ -43,6 +45,7 @@ const TABS: TabDef[] = [
   { id: 'workout',   label: 'Entrenar',   icon: DumbbellIcon },
   { id: 'lumbar',    label: 'Lumbar',     icon: SpineIcon },
   { id: 'progress',  label: 'Progreso',   icon: ChartIcon },
+  { id: 'nutrition', label: 'Nutricion',  icon: NutritionIcon },
 ]
 
 // ── Minimal inline SVG icons ────────────────────────────────────────────────
@@ -82,6 +85,17 @@ function ChartIcon({ className }: IconProps) {
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
       <polyline points="1,12 5,7 8,9 12,4 15,6" />
       <line x1="1" y1="14" x2="15" y2="14" />
+    </svg>
+  )
+}
+function NutritionIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M5 1v4a3 3 0 006 0V1" />
+      <line x1="8" y1="8" x2="8" y2="15" />
+      <line x1="5" y1="1" x2="5" y2="5" />
+      <line x1="8" y1="1" x2="8" y2="4" />
+      <line x1="11" y1="1" x2="11" y2="5" />
     </svg>
   )
 }
@@ -243,6 +257,8 @@ export default function App() {
     programs, activeProgram, phases, weekDays, getWorkout, selectProgram, duplicateProgram, programsReady,
   } = usePrograms(user?.id ?? null)
 
+  const { goals: nutritionGoals, getDailyTotals: getNutritionDailyTotals } = useNutrition(user?.id ?? null)
+
   const [showEditor, setShowEditor] = useState(false)
   const [editorProgramId, setEditorProgramId] = useState<string | null>(null)
 
@@ -323,6 +339,9 @@ export default function App() {
               onEditProgram={handleEditProgram}
               onDuplicateProgram={handleDuplicateProgram}
               userId={user.id}
+              nutritionTotals={getNutritionDailyTotals()}
+              nutritionGoals={nutritionGoals}
+              onGoToNutrition={() => setActiveTab('nutrition')}
             />
           )}
           {activeTab === 'workout' && (
@@ -334,6 +353,7 @@ export default function App() {
             />
           )}
           {activeTab === 'lumbar' && <LumbarPage user={user} />}
+          {activeTab === 'nutrition' && <NutritionPage userId={user.id} />}
           {activeTab === 'progress' && (
             <ProgressPage
               progress={progress} settings={settings}
