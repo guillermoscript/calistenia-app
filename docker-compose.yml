@@ -6,6 +6,7 @@
 #
 # App: http://localhost:8090
 # PocketBase admin: http://localhost:8090/_/
+# AI API: http://localhost:3001/api/health
 
 services:
   app:
@@ -30,9 +31,18 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # At least one provider key is required
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # PocketBase URL (internal Docker network)
       - POCKETBASE_URL=http://app:8090
+      # Optional: set preferred provider and model overrides
+      - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-}
+      - DEFAULT_MODEL_FREE=${DEFAULT_MODEL_FREE:-}
+      - DEFAULT_MODEL_PRO=${DEFAULT_MODEL_PRO:-}
+      # Optional: rate limit tuning
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-10}
     depends_on:
       - app

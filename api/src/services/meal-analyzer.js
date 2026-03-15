@@ -2,6 +2,21 @@ import { generateText, Output } from 'ai'
 import { MealAnalysisSchema } from '../schemas/meal.js'
 import { resolveModel } from './model-resolver.js'
 
+/**
+ * @typedef {Object} MealAnalysisInput
+ * @property {Buffer} imageBuffer — Raw image bytes
+ * @property {string} mimeType   — MIME type (e.g. 'image/jpeg')
+ * @property {string} mealType   — Meal category ('desayuno', 'almuerzo', 'cena', 'snack')
+ * @property {import('./model-resolver.js').Tier} tier — User pricing tier
+ */
+
+/**
+ * @typedef {Object} MealAnalysisResult
+ * @property {import('zod').infer<typeof MealAnalysisSchema>} analysis
+ * @property {string} model_used — Model identifier that produced the result
+ * @property {{ prompt_tokens?: number, completion_tokens?: number, total_tokens?: number }} usage
+ */
+
 const SYSTEM_PROMPT = `Eres un nutricionista experto especializado en análisis visual de comidas.
 Analiza la imagen de la comida proporcionada y devuelve información nutricional detallada.
 
@@ -16,9 +31,18 @@ Instrucciones:
 - Proporciona una breve descripción general de la comida.
 - Responde siempre en español.`
 
+/**
+ * Analyze a meal image using the AI SDK and return structured nutrition data.
+ *
+ * Uses `generateText` with `Output.object()` (AI SDK v6 pattern).
+ * The model is selected automatically based on the user's tier and available providers.
+ *
+ * @param {MealAnalysisInput} input
+ * @returns {Promise<MealAnalysisResult>}
+ * @throws {Error} On AI provider failures or missing configuration
+ */
 export async function analyzeMealImage({ imageBuffer, mimeType, mealType, tier }) {
   const { model, name: modelName } = resolveModel(tier)
-
   const imageBase64 = imageBuffer.toString('base64')
 
   const { output, usage } = await generateText({

@@ -1,8 +1,22 @@
 import multer from 'multer'
 import { AuthError } from '../services/auth.js'
 
+/**
+ * Centralized Express error handler.
+ *
+ * Handles known error types with appropriate HTTP status codes:
+ *  - AuthError       → 401
+ *  - MulterError     → 400/413
+ *  - ZodError        → 422
+ *  - AI SDK errors   → 502
+ *  - Everything else → 500
+ *
+ * @param {Error & { status?: number }} err
+ * @param {import('express').Request} _req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} _next
+ */
 export function errorHandler(err, _req, res, _next) {
-  // Known error types
   if (err instanceof AuthError) {
     return res.status(err.status).json({ error: err.message })
   }
@@ -14,18 +28,16 @@ export function errorHandler(err, _req, res, _next) {
     return res.status(400).json({ error: `Error al procesar archivo: ${err.message}` })
   }
 
-  // Zod validation errors
   if (err.name === 'ZodError') {
     return res.status(422).json({ error: 'Datos inválidos', details: err.issues })
   }
 
-  // AI SDK errors
-  if (err.name === 'AI_APICallError' || err.name === 'AI_NoObjectGeneratedError') {
-    console.error('[ai-error]', err.message)
+  // AI SDK specific errors (network, parsing, rate limits from provider)
+  if (err.name?.startsWith('AI_')) {
+    console.error('[ai-error]', err.name, err.message)
     return res.status(502).json({ error: 'Error al comunicarse con el servicio de IA. Intenta de nuevo.' })
   }
 
-  // Fallback
   console.error('[unhandled-error]', err.message || err)
   return res.status(err.status || 500).json({
     error: err.status ? err.message : 'Error interno del servidor',

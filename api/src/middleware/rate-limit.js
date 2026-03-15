@@ -1,8 +1,15 @@
 import config from '../config/env.js'
 
+/**
+ * @typedef {Object} RateBucket
+ * @property {number} windowStart — Timestamp when the window started
+ * @property {number} count       — Number of requests in this window
+ */
+
+/** @type {Map<string, RateBucket>} */
 const buckets = new Map()
 
-// Clean up expired entries every 5 minutes
+// Evict expired buckets every 5 minutes to prevent memory leaks
 setInterval(() => {
   const now = Date.now()
   for (const [key, bucket] of buckets) {
@@ -10,8 +17,18 @@ setInterval(() => {
       buckets.delete(key)
     }
   }
-}, 5 * 60 * 1000)
+}, 5 * 60 * 1000).unref() // .unref() so this timer doesn't keep the process alive
 
+/**
+ * In-memory sliding-window rate limiter.
+ *
+ * Keys by `req.user.id` (authenticated) or `req.ip` (fallback).
+ * Sets standard `X-RateLimit-*` headers on every response.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 export function rateLimit(req, res, next) {
   const key = req.user?.id || req.ip
   const now = Date.now()
@@ -24,9 +41,12 @@ export function rateLimit(req, res, next) {
 
   bucket.count++
 
+  const remaining = Math.max(0, config.rateLimit.maxRequests - bucket.count)
+  const resetAt = new Date(bucket.windowStart + config.rateLimit.windowMs).toISOString()
+
   res.setHeader('X-RateLimit-Limit', config.rateLimit.maxRequests)
-  res.setHeader('X-RateLimit-Remaining', Math.max(0, config.rateLimit.maxRequests - bucket.count))
-  res.setHeader('X-RateLimit-Reset', new Date(bucket.windowStart + config.rateLimit.windowMs).toISOString())
+  res.setHeader('X-RateLimit-Remaining', remaining)
+  res.setHeader('X-RateLimit-Reset', resetAt)
 
   if (bucket.count > config.rateLimit.maxRequests) {
     return res.status(429).json({

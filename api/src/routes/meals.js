@@ -6,6 +6,18 @@ import { analyzeMealImage } from '../services/meal-analyzer.js'
 
 const router = Router()
 
+/**
+ * POST /api/analyze-meal
+ *
+ * Accepts a multipart form with:
+ *   - `image` (file, required) — Photo of the meal
+ *   - `meal_type` (string, optional) — 'desayuno' | 'almuerzo' | 'cena' | 'snack'
+ *
+ * Requires Bearer token (PocketBase auth).
+ * Rate-limited per user.
+ *
+ * Returns structured nutrition data with per-food macros and totals.
+ */
 router.post(
   '/analyze-meal',
   requireAuth,
