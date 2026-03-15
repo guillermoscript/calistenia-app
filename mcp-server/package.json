@@ -1,0 +1,27 @@
+{
+  "name": "calistenia-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Calistenia App — manage training, nutrition, and progress data via Claude",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "start:stdio": "node build/stdio.js",
+    "dev": "tsx src/index.ts",
+    "dev:stdio": "tsx src/stdio.ts",
+    "seed": "node build/seed.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "pocketbase": "^0.21.5",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3"
+  }
+}
