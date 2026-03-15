@@ -73,3 +73,7 @@ jobs:
           # Layer caching via GitHub Actions cache
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trigger Dokploy deployment
+        run: |
+          curl -sSf -X POST "${{ secrets.DOKPLOY_DEPLOY_WEBHOOK_URL }}"
