@@ -139,8 +139,7 @@ export default function WorkoutPage({
             return (
               <button
                 key={day.id}
-                onClick={() => !isRest && setSelectedDay(day.id === selectedDay ? null : day.id)}
-                disabled={isRest}
+                onClick={() => setSelectedDay(day.id === selectedDay ? null : day.id)}
                 className={cn(
                   'relative rounded-md border text-center transition-all duration-200',
                   'snap-start shrink-0 w-[52px] min-h-[64px] py-2.5 px-1',
@@ -150,7 +149,7 @@ export default function WorkoutPage({
                     : isToday
                       ? 'border-lime/30 bg-lime/5 text-lime'
                       : 'border-border text-muted-foreground',
-                  isRest && 'opacity-40 cursor-default'
+                  isRest && !isSelected && 'opacity-50'
                 )}
               >
                 {done    && <div className="absolute top-[3px] right-[3px] size-1.5 rounded-full bg-emerald-500" />}
@@ -170,7 +169,7 @@ export default function WorkoutPage({
         </div>
         {!selectedDay && (
           <div className="mt-2.5 text-[12px] text-muted-foreground italic">
-            Selecciona un día. Punto verde = hoy ({WEEK_DAYS.find(d => d.id === todayId)?.name}).
+            Selecciona cualquier día para entrenar. No importa el día real — elige el tipo de entrenamiento que quieras. Punto verde = hoy.
           </div>
         )}
       </div>
@@ -219,11 +218,22 @@ export default function WorkoutPage({
             ))}
           </div>
         </div>
+      ) : selectedDay && selectedDayType === 'rest' ? (
+        <div className="text-center py-16 px-5 text-muted-foreground">
+          <div className="text-5xl mb-4">🧘</div>
+          <div className="font-bebas text-3xl mb-2">Día de descanso</div>
+          <div className="text-sm mb-4">
+            {WEEK_DAYS.find(d => d.id === selectedDay)?.focus || 'Descanso'}
+          </div>
+          <div className="text-xs text-muted-foreground/70">
+            Si quieres entrenar hoy, selecciona otro día — puedes hacer cualquier entrenamiento en cualquier momento.
+          </div>
+        </div>
       ) : (
         <div className="text-center py-16 px-5 text-muted-foreground">
           <div className="text-5xl mb-4">💪</div>
           <div className="font-bebas text-3xl mb-2">Selecciona un día</div>
-          <div className="text-sm">Elige el día de la semana para ver tu entrenamiento</div>
+          <div className="text-sm">Elige cualquier día para ver tu entrenamiento</div>
         </div>
       )}
 

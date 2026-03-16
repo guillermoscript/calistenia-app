@@ -93,7 +93,7 @@ const WORKOUT_STEPS: DriveStep[] = [
     element: '#tour-day-selector',
     popover: {
       title: 'Dia de entrenamiento',
-      description: 'Selecciona el dia. Cada dia tiene un enfoque diferente. El punto verde indica hoy.',
+      description: 'Cada dia tiene un enfoque diferente (empuje, tiron, piernas...). Puedes hacer cualquier entrenamiento en cualquier dia real — no estas limitado al calendario. Punto verde = hoy.',
       side: 'bottom',
     },
   },
