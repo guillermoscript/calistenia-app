@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
+import cors from "cors";
 import type { IncomingMessage, ServerResponse } from "http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -27,9 +28,10 @@ import { registerSmartTools } from "./tools/smart.js";
 import { registerGamificationTools } from "./tools/gamification.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
+import { createApiRouter } from "./api/index.js";
 
-const PORT = parseInt(process.env.MCP_SERVER_PORT ?? "3002", 10);
-const HOST = process.env.MCP_SERVER_HOST ?? "127.0.0.1";
+const PORT = parseInt(process.env.PORT ?? process.env.MCP_SERVER_PORT ?? "3001", 10);
+const HOST = process.env.HOST ?? process.env.MCP_SERVER_HOST ?? "127.0.0.1";
 const PB_URL = process.env.POCKETBASE_URL ?? "http://127.0.0.1:8090";
 
 function createServerWithAuth(auth: AuthManager): McpServer {
@@ -52,6 +54,7 @@ function createServerWithAuth(auth: AuthManager): McpServer {
 
 // Create Express app with MCP defaults (DNS rebinding protection included)
 const app = createMcpExpressApp({ host: HOST });
+app.use(cors());
 app.use(express.json());
 
 // ── MCP endpoint ──────────────────────────────────────────────────────────────
@@ -105,32 +108,33 @@ app.post("/mcp", async (req, res) => {
   }
 });
 
+// ── API routes (REST) ─────────────────────────────────────────────────────────
+app.use("/api", createApiRouter());
+
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({
     status: "ok",
-    server: "calistenia-mcp-server",
+    server: "calistenia-server",
     version: "1.0.0",
     pocketbase: PB_URL,
+    services: ["api", "mcp"],
   });
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, HOST, () => {
-  console.error(`╔═══════════════════════════════════════════════════════════════╗`);
-  console.error(`║  Calistenia MCP Server                                        ║`);
-  console.error(`╠═══════════════════════════════════════════════════════════════╣`);
+  console.error(`╔════════════════════════════════════════════════════════════════╗`);
+  console.error(`║  Calistenia Server (API + MCP)                                ║`);
+  console.error(`╠════════════════════════════════════════════════════════════════╣`);
   console.error(`║  Status:     READY                                            ║`);
-  console.error(`║  Address:    http://${HOST}:${PORT}                              ║`);
-  console.error(`║  Endpoint:   POST /mcp                                        ║`);
-  console.error(`║  Health:     GET /health                                      ║`);
-  console.error(`║  PocketBase: ${PB_URL.padEnd(47)} ║`);
-  console.error(`╠═══════════════════════════════════════════════════════════════╣`);
-  console.error(`║  Auth:  Authorization: Bearer <pocketbase_token>              ║`);
-  console.error(`║  Tools: workouts, programs, progress, nutrition, smart, game  ║`);
-  console.error(`║  Resources: user://profile, nutrition://today, progress://weekly║`);
-  console.error(`║  Prompts: plan_training_week, analyze_progress, nutrition_advice║`);
-  console.error(`╚═══════════════════════════════════════════════════════════════╝`);
+  console.error(`║  Address:    http://${HOST}:${PORT}                               ║`);
+  console.error(`║  PocketBase: ${PB_URL.padEnd(48)}║`);
+  console.error(`╠════════════════════════════════════════════════════════════════╣`);
+  console.error(`║  API:   GET /api/health  ·  POST /api/analyze-meal            ║`);
+  console.error(`║  MCP:   POST /mcp                                             ║`);
+  console.error(`║  Health: GET /health                                          ║`);
+  console.error(`╚════════════════════════════════════════════════════════════════╝`);
 });
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
