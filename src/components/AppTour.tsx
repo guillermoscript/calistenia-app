@@ -106,10 +106,26 @@ const WORKOUT_STEPS: DriveStep[] = [
     },
   },
   {
+    element: '#tour-first-exercise',
+    popover: {
+      title: 'Tarjeta de ejercicio',
+      description: 'Cada ejercicio muestra series x repeticiones, descanso, prioridad y musculos. La barra de color indica la prioridad.',
+      side: 'bottom',
+    },
+  },
+  {
+    element: '#tour-exercise-list',
+    popover: {
+      title: 'Registro rapido',
+      description: 'Toca "+ SERIE" para registrar cada serie. El contador sube automaticamente. Al completar todas las series, se inicia el descanso.',
+      side: 'top',
+    },
+  },
+  {
     element: '#tour-start-session',
     popover: {
-      title: 'Iniciar sesion guiada',
-      description: 'Inicia el entrenamiento paso a paso. La app te guia con temporizadores de descanso y sonidos.',
+      title: 'Sesion guiada',
+      description: 'Inicia el entrenamiento paso a paso. La app te guia ejercicio por ejercicio con temporizadores de descanso, sonidos y notificaciones.',
       side: 'top',
     },
   },
@@ -317,4 +333,52 @@ export function replayTourForPage(pathname: string) {
   const tourDef = PAGE_TOURS[pathname]
   if (!tourDef) return
   runTour(tourDef.steps)
+}
+
+// ── Workout detail tour (triggered from WorkoutPage when content loads) ───────
+
+const WORKOUT_DETAIL_STEPS: DriveStep[] = [
+  {
+    element: '#tour-workout-header',
+    popover: {
+      title: 'Tu entrenamiento',
+      description: 'Aqui ves la fase, dia, numero de ejercicios y duracion estimada.',
+      side: 'bottom',
+    },
+  },
+  {
+    element: '#tour-first-exercise',
+    popover: {
+      title: 'Tarjeta de ejercicio',
+      description: 'Series x repeticiones, descanso entre series, prioridad (color) y musculos trabajados.',
+      side: 'bottom',
+    },
+  },
+  {
+    element: '#tour-exercise-list',
+    popover: {
+      title: 'Registro rapido',
+      description: 'Toca "+ SERIE" para registrar cada serie. El contador sube automaticamente y al completar se inicia el temporizador de descanso.',
+      side: 'top',
+    },
+  },
+  {
+    element: '#tour-start-session',
+    popover: {
+      title: 'Sesion guiada',
+      description: 'O inicia la sesion guiada: la app te lleva ejercicio por ejercicio con descansos, sonidos y notificaciones.',
+      side: 'top',
+    },
+  },
+]
+
+/**
+ * Trigger the workout detail tour (when a day is selected for the first time).
+ * Call from WorkoutPage when workout content renders.
+ */
+export function triggerWorkoutDetailTour(userId?: string) {
+  if (isPageTourDone('workout-detail', userId)) return
+  setTimeout(() => {
+    runTour(WORKOUT_DETAIL_STEPS, () => markPageTourDone('workout-detail', userId))
+  }, 500)
 }

@@ -564,6 +564,7 @@ export default function App() {
                 isWorkoutDone={isWorkoutDone} getExerciseLogs={getExerciseLogs}
                 phases={phases} weekDays={weekDays} getWorkout={getWorkout}
                 onGoToDashboard={() => navigate('/')}
+                userId={user.id}
               />
             } />
             <Route path="/lumbar" element={<LumbarPage user={user} />} />

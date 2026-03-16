@@ -6,6 +6,7 @@ import ExerciseCard from '../components/ExerciseCard'
 import RestTimer from '../components/RestTimer'
 import SessionView from '../components/SessionView'
 import { Button } from '../components/ui/button'
+import { triggerWorkoutDetailTour } from '../components/AppTour'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
 import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData } from '../types'
@@ -30,6 +31,7 @@ interface WorkoutPageProps {
   weekDays: WeekDay[]
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   onGoToDashboard: () => void
+  userId?: string
 }
 
 type ViewMode = 'list' | 'session'
@@ -37,7 +39,7 @@ type ViewMode = 'list' | 'session'
 export default function WorkoutPage({
   settings, onLogSet, onMarkDone, isWorkoutDone, getExerciseLogs,
   phases: phasesProp, weekDays: weekDaysProp, getWorkout: getWorkoutProp,
-  onGoToDashboard,
+  onGoToDashboard, userId,
 }: WorkoutPageProps) {
   const PHASES    = phasesProp    || FALLBACK_PHASES
   const WEEK_DAYS = weekDaysProp  || FALLBACK_WEEK_DAYS
@@ -63,6 +65,13 @@ export default function WorkoutPage({
   }, [workout])
   const workoutKey = selectedDay ? `p${selectedPhase}_${selectedDay}` : null
   const isDone   = workoutKey ? isWorkoutDone(workoutKey) : false
+
+  // Trigger workout detail tour when a day is selected for the first time
+  useEffect(() => {
+    if (workout && viewMode === 'list') {
+      triggerWorkoutDetailTour(userId)
+    }
+  }, [!!workout, viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (viewMode === 'session' && workout) {
     return (
@@ -201,10 +210,12 @@ export default function WorkoutPage({
           </div>
 
           {/* Exercise cards */}
-          <div className="flex flex-col gap-3">
-            {workout.exercises.map(ex => (
-              <ExerciseCard key={ex.id} exercise={ex} workoutKey={workoutKey!}
-                onLogSet={onLogSet} onStartRest={(s: number) => setRestTime(s)} logs={getExerciseLogs(ex.id)} />
+          <div id="tour-exercise-list" className="flex flex-col gap-3">
+            {workout.exercises.map((ex, idx) => (
+              <div key={ex.id} {...(idx === 0 ? { id: 'tour-first-exercise' } : {})}>
+                <ExerciseCard exercise={ex} workoutKey={workoutKey!}
+                  onLogSet={onLogSet} onStartRest={(s: number) => setRestTime(s)} logs={getExerciseLogs(ex.id)} />
+              </div>
             ))}
           </div>
         </div>
