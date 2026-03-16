@@ -5,14 +5,18 @@ import { Badge } from './ui/badge'
 import { cn } from '../lib/utils'
 import type { ProgramMeta } from '../types'
 
-const ONBOARDING_KEY = 'calistenia_onboarding_done'
+const ONBOARDING_KEY_PREFIX = 'calistenia_onboarding_done'
 
-export function isOnboardingDone(): boolean {
-  return localStorage.getItem(ONBOARDING_KEY) === 'true'
+function getOnboardingKey(userId?: string): string {
+  return userId ? `${ONBOARDING_KEY_PREFIX}_${userId}` : ONBOARDING_KEY_PREFIX
 }
 
-export function markOnboardingDone(): void {
-  localStorage.setItem(ONBOARDING_KEY, 'true')
+export function isOnboardingDone(userId?: string): boolean {
+  return localStorage.getItem(getOnboardingKey(userId)) === 'true'
+}
+
+export function markOnboardingDone(userId?: string): void {
+  localStorage.setItem(getOnboardingKey(userId), 'true')
 }
 
 interface OnboardingFlowProps {
@@ -79,7 +83,7 @@ export default function OnboardingFlow({
   }
 
   const handleFinish = () => {
-    markOnboardingDone()
+    markOnboardingDone(userId)
     onComplete()
   }
 
@@ -231,7 +235,7 @@ export default function OnboardingFlow({
             <Card
               className="cursor-pointer border-2 border-dashed border-muted-foreground/20 hover:border-sky-500/40 transition-all"
               onClick={() => {
-                markOnboardingDone()
+                markOnboardingDone(userId)
                 onCreateProgram()
               }}
             >

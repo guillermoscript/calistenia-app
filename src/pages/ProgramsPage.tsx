@@ -269,6 +269,7 @@ export default function ProgramsPage({
           </p>
         </div>
         <Button
+          id="tour-create-program"
           onClick={onCreateProgram}
           className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10"
         >
@@ -278,7 +279,7 @@ export default function ProgramsPage({
       </div>
 
       {/* Search bar */}
-      <div className="relative mb-6">
+      <div id="tour-programs-search" className="relative mb-6">
         <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <input
           type="text"
@@ -290,7 +291,7 @@ export default function ProgramsPage({
       </div>
 
       {/* Filter pills */}
-      <div className="flex items-center gap-2 mb-8">
+      <div id="tour-programs-filters" className="flex items-center gap-2 mb-8">
         {FILTER_PILLS.map(pill => (
           <button
             key={pill.id}

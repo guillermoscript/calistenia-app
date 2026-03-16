@@ -84,7 +84,7 @@ export default function WorkoutPage({
     <div className="max-w-[900px] mx-auto px-4 py-6 md:px-6 md:py-8">
 
       {/* Phase Selector */}
-      <div className="mb-7">
+      <div id="tour-phase-selector" className="mb-7">
         <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">Fase Activa</div>
         <div className="relative md:overflow-visible"
           style={{ maskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)' }}
@@ -115,7 +115,7 @@ export default function WorkoutPage({
       </div>
 
       {/* Day Selector */}
-      <div className="mb-7">
+      <div id="tour-day-selector" className="mb-7">
         <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">Día de Entrenamiento</div>
         {/* Mobile: horizontal scroll strip with fade — Desktop: 7-col grid */}
         <div className="relative md:overflow-visible"
@@ -170,7 +170,7 @@ export default function WorkoutPage({
       {workout ? (
         <div>
           {/* Workout header */}
-          <div className={cn(
+          <div id="tour-workout-header" className={cn(
             'p-4 md:px-6 md:py-5 bg-card rounded-xl border border-border mb-5 border-l-4',
             DAY_TYPE[selectedDayType as DayType]?.border || 'border-l-border'
           )}>
@@ -184,6 +184,7 @@ export default function WorkoutPage({
               <div className="flex gap-2.5 flex-wrap w-full md:w-auto">
                 {!isDone && (
                   <Button
+                    id="tour-start-session"
                     onClick={() => setViewMode('session')}
                     className="w-full md:w-auto font-bebas text-xl tracking-wide bg-lime text-lime-foreground hover:bg-lime/90"
                   >

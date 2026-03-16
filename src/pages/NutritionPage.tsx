@@ -78,7 +78,7 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
       <div className="font-bebas text-4xl md:text-5xl mb-6">NUTRICION</div>
 
       {/* Date picker */}
-      <div className="flex items-center gap-3 mb-6">
+      <div id="tour-nutrition-date" className="flex items-center gap-3 mb-6">
         <button
           onClick={() => {
             const d = new Date(selectedDate)
@@ -125,17 +125,21 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
         <NutritionGoalSetup onSave={handleSaveGoals} calculateMacros={handleCalculateMacros} />
       ) : (
         <div className="space-y-8">
+          <div id="tour-nutrition-dashboard">
           <NutritionDashboard
             dailyTotals={dailyTotals}
             goals={goals}
             entries={entries}
             onDeleteEntry={deleteEntry}
           />
+          </div>
 
           <MealSuggestions remaining={remaining} />
 
           {/* FAB for meal logging */}
-          <MealLogger onAnalyze={handleAnalyze} onSave={handleSaveEntry} />
+          <div id="tour-meal-logger">
+            <MealLogger onAnalyze={handleAnalyze} onSave={handleSaveEntry} />
+          </div>
         </div>
       )}
     </div>

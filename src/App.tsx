@@ -23,7 +23,7 @@ import UserProfilePage from './pages/UserProfilePage'
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
-import AppTour, { isTourDone } from './components/AppTour'
+import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from './lib/offlineQueue'
 import { pb } from './lib/pocketbase'
 import { cn } from './lib/utils'
@@ -328,6 +328,16 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => replayTourForPage(location.pathname)}
+              className="size-7 text-muted-foreground hover:text-[hsl(var(--lime))]"
+              aria-label="Guia de la pagina"
+              title="Guia de la pagina"
+            >
+              <span className="text-sm font-bold">?</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={toggleDark}
               className="size-7 text-muted-foreground hover:text-foreground"
               aria-label={dark ? 'Activar modo claro' : 'Activar modo oscuro'}
@@ -405,10 +415,19 @@ export default function App() {
     document.documentElement.classList.toggle('dark', isDark)
     return isDark
   })
-  const [onboardingDone, setOnboardingDone] = useState(() => isOnboardingDone())
+  const [onboardingDone, setOnboardingDone] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const { user, authReady, authError, isLoading, userRole, signIn, signUp, signOut } = useAuth()
+
+  // Check onboarding status once user is known
+  useEffect(() => {
+    if (user) {
+      setOnboardingDone(isOnboardingDone(user.id))
+    } else {
+      setOnboardingDone(false)
+    }
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Setup offline queue auto-sync
   useEffect(() => {
@@ -494,7 +513,7 @@ export default function App() {
         userId={user.id}
         onSelectProgram={selectProgram}
         onCreateProgram={() => {
-          markOnboardingDone()
+          markOnboardingDone(user.id)
           setOnboardingDone(true)
           navigate('/programs/new')
         }}
@@ -614,8 +633,7 @@ export default function App() {
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          {/* Auto-start tour on dashboard for users who just completed onboarding */}
-          {location.pathname === '/' && <AppTour autoStart />}
+          <AppTour pathname={location.pathname} userId={user.id} autoStart />
         </AppShell>
       </div>
     </SidebarProvider>

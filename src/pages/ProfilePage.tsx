@@ -97,7 +97,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
 
       <div className="flex flex-col gap-5">
         {/* Basic info */}
-        <Card>
+        <Card id="tour-personal-info">
           <CardContent className="p-5 flex flex-col gap-4">
             <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">Informacion Personal</div>
 
@@ -148,7 +148,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               </div>
             )}
 
-            <div>
+            <div id="tour-level-selector">
               <Label className="text-[11px] text-muted-foreground mb-1.5 block">Nivel</Label>
               <div className="flex gap-2">
                 {LEVELS.map(l => (

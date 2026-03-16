@@ -141,11 +141,13 @@ export default function ProgressPage({ progress, settings, activeProgram, userId
       ) : (
         <div>
           {/* Progress Summary */}
-          <ProgressSummary progress={progress} settings={settings} />
+          <div id="tour-progress-summary">
+            <ProgressSummary progress={progress} settings={settings} />
+          </div>
 
           {/* Exercise Charts */}
           {Object.keys(exerciseLogs).length > 0 && (
-            <div className="mb-8">
+            <div id="tour-exercise-charts" className="mb-8">
               <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Graficas por ejercicio</div>
               <div className="flex flex-col gap-2.5">
                 {Object.entries(exerciseLogs).map(([exId, logs]) => (
@@ -171,7 +173,7 @@ export default function ProgressPage({ progress, settings, activeProgram, userId
           </div>
 
           {/* Session History */}
-          <div className="mb-8">
+          <div id="tour-session-history" className="mb-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Historial de sesiones</div>
               {programName && (
