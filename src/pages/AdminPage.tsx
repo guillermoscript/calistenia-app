@@ -4,6 +4,7 @@ import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
+import { PB_ADMIN_URL, pbCollectionUrl } from '../lib/pocketbase-admin'
 import type { ProgramMeta, UserRole } from '../types'
 
 type Tab = 'overview' | 'users' | 'programs'
@@ -118,7 +119,38 @@ export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
       <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Administracion</div>
-      <h1 className="font-bebas text-5xl mb-6">PANEL ADMIN</h1>
+      <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
+        <h1 className="font-bebas text-5xl">PANEL ADMIN</h1>
+        <a
+          href={PB_ADMIN_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:border-[hsl(var(--lime))]/40 hover:text-[hsl(var(--lime))] transition-colors"
+        >
+          <span className="text-base">⚙</span> PocketBase Admin
+          <span className="text-[10px] opacity-60">↗</span>
+        </a>
+      </div>
+
+      {/* Quick links to PB collections */}
+      <div className="flex gap-2 flex-wrap mb-6">
+        {([
+          { label: 'Ejercicios (programa)', collection: 'program_exercises' as const },
+          { label: 'Catalogo ejercicios', collection: 'exercises_catalog' as const },
+          { label: 'Programas', collection: 'programs' as const },
+          { label: 'Usuarios', collection: 'users' as const },
+        ]).map(link => (
+          <a
+            key={link.collection}
+            href={pbCollectionUrl(link.collection)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 rounded-lg border border-border text-[11px] font-mono tracking-wide text-muted-foreground hover:border-sky-500/40 hover:text-sky-400 transition-colors"
+          >
+            {link.label} ↗
+          </a>
+        ))}
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-8">

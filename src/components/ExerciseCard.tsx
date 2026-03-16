@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Image, ArrowUp, Info } from 'lucide-react'
+import { Image, ArrowUp, Info, Pencil } from 'lucide-react'
+import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
 import Timer from './Timer'
 import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
@@ -22,9 +23,10 @@ interface ExerciseCardProps {
   onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string }) => void
   onStartRest: (seconds: number) => void
   logs?: ExerciseLog[]
+  isAdmin?: boolean
 }
 
-export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [] }: ExerciseCardProps) {
+export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [], isAdmin }: ExerciseCardProps) {
   const navigate = useNavigate()
   const [showTimer, setShowTimer] = useState<boolean>(false)
   const [showYoutube, setShowYoutube] = useState<boolean>(false)
@@ -203,6 +205,19 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
           >
             <Info size={15} />
           </button>
+
+          {isAdmin && exercise.pbRecordId && (
+            <a
+              href={pbExerciseEditUrl(exercise.pbRecordId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10 cursor-pointer transition-all duration-150"
+              title="Editar en PocketBase"
+            >
+              <Pencil size={15} />
+            </a>
+          )}
 
           {recentLogs.length > 0 && (
             <button

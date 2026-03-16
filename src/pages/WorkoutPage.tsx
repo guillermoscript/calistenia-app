@@ -32,6 +32,7 @@ interface WorkoutPageProps {
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   onGoToDashboard: () => void
   userId?: string
+  userRole?: import('../types').UserRole
 }
 
 type ViewMode = 'list' | 'session'
@@ -39,8 +40,9 @@ type ViewMode = 'list' | 'session'
 export default function WorkoutPage({
   settings, onLogSet, onMarkDone, isWorkoutDone, getExerciseLogs,
   phases: phasesProp, weekDays: weekDaysProp, getWorkout: getWorkoutProp,
-  onGoToDashboard, userId,
+  onGoToDashboard, userId, userRole,
 }: WorkoutPageProps) {
+  const isAdmin = userRole === 'admin' || userRole === 'editor'
   const PHASES    = phasesProp    || FALLBACK_PHASES
   const WEEK_DAYS = weekDaysProp  || FALLBACK_WEEK_DAYS
   const getWorkout = getWorkoutProp || fallbackGetWorkout
@@ -213,7 +215,7 @@ export default function WorkoutPage({
             {workout.exercises.map((ex, idx) => (
               <div key={ex.id} {...(idx === 0 ? { id: 'tour-first-exercise' } : {})}>
                 <ExerciseCard exercise={ex} workoutKey={workoutKey!}
-                  onLogSet={onLogSet} onStartRest={(s: number) => setRestTime(s)} logs={getExerciseLogs(ex.id)} />
+                  onLogSet={onLogSet} onStartRest={(s: number) => setRestTime(s)} logs={getExerciseLogs(ex.id)} isAdmin={isAdmin} />
               </div>
             ))}
           </div>
