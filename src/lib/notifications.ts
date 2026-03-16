@@ -34,7 +34,7 @@ async function send(opts: NotifyOptions): Promise<void> {
   // For non-urgent notifications, skip if tab is focused (in-app sounds suffice)
   if (!opts.urgent && document.visibilityState === 'visible') return
 
-  const notifOptions: NotificationOptions = {
+  const notifOptions: NotificationOptions & { vibrate?: number[] } = {
     body: opts.body,
     tag: opts.tag,
     icon: '/icons/icon-192.svg',
