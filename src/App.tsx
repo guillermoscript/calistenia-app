@@ -19,6 +19,7 @@ import ProgramDetailPage from './pages/ProgramDetailPage'
 import SharedProgramPage from './pages/SharedProgramPage'
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
+import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
 import { setupAutoSync } from './lib/offlineQueue'
 import { pb } from './lib/pocketbase'
 import { cn } from './lib/utils'
@@ -357,6 +358,7 @@ export default function App() {
     document.documentElement.classList.toggle('dark', isDark)
     return isDark
   })
+  const [onboardingDone, setOnboardingDone] = useState(() => isOnboardingDone())
   const navigate = useNavigate()
   const location = useLocation()
   const { user, authReady, authError, isLoading, signIn, signUp, signOut } = useAuth()
@@ -434,6 +436,28 @@ export default function App() {
   if (!pbReady || !programsReady) return <Loader />
 
   const displayName = user.display_name || user.email?.split('@')[0] || ''
+
+  // Show onboarding for first-time users
+  if (!onboardingDone && user) {
+    return (
+      <OnboardingFlow
+        displayName={displayName}
+        programs={programs}
+        activeProgram={activeProgram}
+        userId={user.id}
+        onSelectProgram={selectProgram}
+        onCreateProgram={() => {
+          markOnboardingDone()
+          setOnboardingDone(true)
+          navigate('/programs/new')
+        }}
+        onComplete={() => {
+          setOnboardingDone(true)
+          navigate('/')
+        }}
+      />
+    )
+  }
 
   return (
     <>

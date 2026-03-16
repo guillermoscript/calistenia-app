@@ -1,0 +1,286 @@
+import { useState } from 'react'
+import { Card, CardContent } from './ui/card'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { cn } from '../lib/utils'
+import type { ProgramMeta } from '../types'
+
+const ONBOARDING_KEY = 'calistenia_onboarding_done'
+
+export function isOnboardingDone(): boolean {
+  return localStorage.getItem(ONBOARDING_KEY) === 'true'
+}
+
+export function markOnboardingDone(): void {
+  localStorage.setItem(ONBOARDING_KEY, 'true')
+}
+
+interface OnboardingFlowProps {
+  displayName: string
+  programs: ProgramMeta[]
+  activeProgram: ProgramMeta | null
+  userId?: string
+  onSelectProgram: (programId: string) => Promise<void>
+  onCreateProgram: () => void
+  onComplete: () => void
+}
+
+const SECTIONS = [
+  {
+    icon: '📊',
+    label: 'Dashboard',
+    desc: 'Tu vista principal — progreso general, racha, actividad del mes y objetivos personales.',
+  },
+  {
+    icon: '🏋️',
+    label: 'Entrenar',
+    desc: 'Selecciona la fase y el día. Inicia la sesión guiada con descansos, sonidos y registro de series.',
+  },
+  {
+    icon: '📋',
+    label: 'Programas',
+    desc: 'Explora programas existentes, duplica uno o crea el tuyo propio desde cero.',
+  },
+  {
+    icon: '🍽️',
+    label: 'Nutrición',
+    desc: 'Registra comidas con foto y AI. Lleva tus macros y calorías del día.',
+  },
+  {
+    icon: '📈',
+    label: 'Progreso',
+    desc: 'Historial de sesiones, gráficos de volumen y evolución de tus ejercicios clave.',
+  },
+]
+
+export default function OnboardingFlow({
+  displayName,
+  programs,
+  activeProgram,
+  userId,
+  onSelectProgram,
+  onCreateProgram,
+  onComplete,
+}: OnboardingFlowProps) {
+  const [step, setStep] = useState(0)
+  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
+  const [selecting, setSelecting] = useState(false)
+
+  const totalSteps = 3
+
+  const handleSelectProgram = async (programId: string) => {
+    setSelectedProgramId(programId)
+    setSelecting(true)
+    try {
+      await onSelectProgram(programId)
+    } finally {
+      setSelecting(false)
+    }
+  }
+
+  const handleFinish = () => {
+    markOnboardingDone()
+    onComplete()
+  }
+
+  const firstName = displayName?.split(/[\s@]/)[0] || ''
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }`}</style>
+      <div className="w-full max-w-lg">
+        {/* Progress dots */}
+        <div className="flex justify-center gap-2 mb-8">
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                'h-1.5 rounded-full transition-all duration-300',
+                i === step ? 'w-8 bg-[hsl(var(--lime))]' : 'w-1.5 bg-muted-foreground/30'
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Step 0: Welcome */}
+        {step === 0 && (
+          <div className="text-center animate-[fadeUp_0.5s_ease]">
+            <div className="font-bebas text-6xl md:text-7xl text-[hsl(var(--lime))] mb-2 leading-none">
+              CALISTENIA
+            </div>
+            <div className="text-muted-foreground text-sm mb-8">Tu programa de entrenamiento personalizado</div>
+
+            <Card className="mb-6 text-left">
+              <CardContent className="p-6">
+                <div className="text-lg font-medium mb-1">
+                  {firstName ? `Hola, ${firstName}` : 'Bienvenido'}
+                </div>
+                <div className="text-sm text-muted-foreground leading-relaxed space-y-3">
+                  <p>
+                    Esta app te guía día a día por un programa de calistenia con fases progresivas.
+                    Cada fase dura varias semanas y aumenta en dificultad.
+                  </p>
+                  <p>
+                    Lo primero es elegir tu programa — puede ser uno existente o puedes crear el tuyo.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button
+              onClick={() => setStep(1)}
+              className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
+            >
+              EMPEZAR
+            </Button>
+
+            <button
+              onClick={handleFinish}
+              className="mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Ya conozco la app, saltar
+            </button>
+          </div>
+        )}
+
+        {/* Step 1: Choose program */}
+        {step === 1 && (
+          <div className="animate-[fadeUp_0.5s_ease]">
+            <div className="text-center mb-6">
+              <div className="font-bebas text-3xl mb-1">ELIGE TU PROGRAMA</div>
+              <div className="text-sm text-muted-foreground">
+                Este será tu programa activo en el dashboard y en tus entrenamientos.
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-6 max-h-[50vh] overflow-y-auto pr-1">
+              {programs.map((program) => {
+                const isSelected = selectedProgramId === program.id
+                const isOwn = program.created_by === userId
+                return (
+                  <Card
+                    key={program.id}
+                    className={cn(
+                      'cursor-pointer transition-all duration-200 border-2',
+                      isSelected
+                        ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/5'
+                        : 'border-transparent hover:border-muted-foreground/20'
+                    )}
+                    onClick={() => handleSelectProgram(program.id)}
+                  >
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div
+                        className={cn(
+                          'size-10 rounded-lg flex items-center justify-center shrink-0 text-lg font-bebas',
+                          isSelected
+                            ? 'bg-[hsl(var(--lime))] text-background'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {isSelected ? '✓' : program.name[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={cn('font-medium text-sm', isSelected && 'text-[hsl(var(--lime))]')}>
+                            {program.name}
+                          </span>
+                          {isOwn && (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-sky-500 border-sky-500/30">
+                              TUYO
+                            </Badge>
+                          )}
+                        </div>
+                        {program.description && (
+                          <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {program.description}
+                          </div>
+                        )}
+                        <div className="text-[10px] text-muted-foreground mt-1">
+                          {program.duration_weeks} semanas
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+
+            {/* Create own option */}
+            <Card
+              className="cursor-pointer border-2 border-dashed border-muted-foreground/20 hover:border-sky-500/40 transition-all"
+              onClick={() => {
+                markOnboardingDone()
+                onCreateProgram()
+              }}
+            >
+              <CardContent className="p-4 text-center">
+                <div className="text-sm text-muted-foreground">
+                  <span className="text-sky-500 font-medium">+ Crear mi propio programa</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setStep(0)}
+                className="flex-1 h-11 font-mono text-xs tracking-wide"
+              >
+                ATRÁS
+              </Button>
+              <Button
+                onClick={() => setStep(2)}
+                disabled={!selectedProgramId || selecting}
+                className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background disabled:opacity-40"
+              >
+                {selecting ? 'GUARDANDO...' : 'CONTINUAR'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Quick orientation */}
+        {step === 2 && (
+          <div className="animate-[fadeUp_0.5s_ease]">
+            <div className="text-center mb-6">
+              <div className="font-bebas text-3xl mb-1">ASÍ FUNCIONA</div>
+              <div className="text-sm text-muted-foreground">
+                Las secciones principales de la app.
+              </div>
+            </div>
+
+            <div className="space-y-2.5 mb-8">
+              {SECTIONS.map((section) => (
+                <Card key={section.label}>
+                  <CardContent className="p-4 flex items-start gap-3">
+                    <div className="text-xl shrink-0 mt-0.5">{section.icon}</div>
+                    <div>
+                      <div className="font-medium text-sm">{section.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                        {section.desc}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Button
+              onClick={handleFinish}
+              className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
+            >
+              IR AL DASHBOARD
+            </Button>
+
+            <button
+              onClick={() => setStep(1)}
+              className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
+            >
+              Volver a elegir programa
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
