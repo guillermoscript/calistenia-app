@@ -129,6 +129,7 @@ interface UseProgramsReturn {
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<void>
   duplicateProgram: (programId: string) => Promise<string | null>
+  deleteProgram: (programId: string) => Promise<boolean>
   programsReady: boolean
 }
 
@@ -400,6 +401,57 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     }
   }, [usePB, userId])
 
+  // ── deleteProgram ──────────────────────────────────────────────────────
+  const deleteProgram = useCallback(async (programId: string): Promise<boolean> => {
+    if (!usePB || !userId) return false
+
+    try {
+      // Delete exercises for this program
+      try {
+        const exercises = await pb.collection('program_exercises').getList(1, 2000, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+        })
+        for (const e of exercises.items) {
+          await pb.collection('program_exercises').delete(e.id)
+        }
+      } catch { /* no exercises */ }
+
+      // Delete phases for this program
+      try {
+        const phases = await pb.collection('program_phases').getList(1, 20, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+        })
+        for (const p of phases.items) {
+          await pb.collection('program_phases').delete(p.id)
+        }
+      } catch { /* no phases */ }
+
+      // Delete user_programs entries
+      try {
+        const userProgs = await pb.collection('user_programs').getList(1, 100, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+        })
+        for (const up of userProgs.items) {
+          await pb.collection('user_programs').delete(up.id)
+        }
+      } catch { /* no user_programs */ }
+
+      // Delete the program itself
+      await pb.collection('programs').delete(programId)
+
+      // Update local state
+      setPrograms(prev => prev.filter(p => p.id !== programId))
+      if (activeProgram?.id === programId) {
+        setActiveProgram(null)
+      }
+
+      return true
+    } catch (e) {
+      console.error('usePrograms: deleteProgram error', e)
+      return false
+    }
+  }, [usePB, userId, activeProgram])
+
   return {
     programs,
     activeProgram,
@@ -408,6 +460,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     getWorkout,
     selectProgram,
     duplicateProgram,
+    deleteProgram,
     programsReady,
   }
 }

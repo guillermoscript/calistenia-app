@@ -359,12 +359,13 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
 // ── Route wrappers (extract params and pass props) ──────────────────────────
 
 function ProgramDetailPageRoute({
-  userId, activeProgram, onSelectProgram, onDuplicateProgram,
+  userId, activeProgram, onSelectProgram, onDuplicateProgram, onDeleteProgram,
 }: {
   userId: string
   activeProgram: import('./types').ProgramMeta | null
   onSelectProgram: (id: string) => Promise<void>
   onDuplicateProgram: (id: string) => Promise<void>
+  onDeleteProgram: (id: string) => Promise<void>
 }) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -378,6 +379,7 @@ function ProgramDetailPageRoute({
       onNavigateToProgram={(pid) => navigate(`/programs/${pid}`)}
       onSelectProgram={onSelectProgram}
       onDuplicateProgram={onDuplicateProgram}
+      onDeleteProgram={onDeleteProgram}
     />
   )
 }
@@ -445,7 +447,7 @@ export default function App() {
   }
 
   const {
-    programs, activeProgram, phases, weekDays, getWorkout, selectProgram, duplicateProgram, programsReady,
+    programs, activeProgram, phases, weekDays, getWorkout, selectProgram, duplicateProgram, deleteProgram, programsReady,
   } = usePrograms(user?.id ?? null)
 
   const { goals: nutritionGoals, getDailyTotals: getNutritionDailyTotals } = useNutrition(user?.id ?? null)
@@ -462,6 +464,13 @@ export default function App() {
     const newId = await duplicateProgram(programId)
     if (newId) {
       navigate(`/programs/${newId}/edit`)
+    }
+  }
+
+  const handleDeleteProgram = async (programId: string) => {
+    const success = await deleteProgram(programId)
+    if (success) {
+      navigate('/programs')
     }
   }
 
@@ -599,6 +608,7 @@ export default function App() {
                 activeProgram={activeProgram}
                 onSelectProgram={selectProgram}
                 onDuplicateProgram={handleDuplicateProgram}
+                onDeleteProgram={handleDeleteProgram}
               />
             } />
             <Route path="/exercises" element={<ExerciseLibraryPage />} />

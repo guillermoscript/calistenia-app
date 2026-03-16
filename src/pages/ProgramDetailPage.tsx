@@ -139,6 +139,7 @@ interface ProgramDetailPageProps {
   onNavigateToProgram?: (programId: string) => void
   onSelectProgram?: (programId: string) => Promise<void>
   onDuplicateProgram?: (programId: string) => Promise<void>
+  onDeleteProgram?: (programId: string) => Promise<void>
   /** If true, show as shared view (for non-logged-in or add-to-mine) */
   isSharedView?: boolean
   onLogin?: () => void
@@ -152,6 +153,7 @@ export default function ProgramDetailPage({
   onNavigateToProgram,
   onSelectProgram,
   onDuplicateProgram,
+  onDeleteProgram,
   isSharedView = false,
   onLogin,
 }: ProgramDetailPageProps) {
@@ -502,6 +504,19 @@ export default function ProgramDetailPage({
                   </Button>
                 ) : null
               })()}
+              {onDeleteProgram && isOwn && !isActive && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (confirm('¿Eliminar este programa? Esta accion no se puede deshacer.')) {
+                      onDeleteProgram(programId)
+                    }
+                  }}
+                  className="font-mono text-[11px] tracking-widest h-11 px-5 border-red-500/20 text-red-400 hover:border-red-500/40 hover:bg-red-500/5"
+                >
+                  ELIMINAR
+                </Button>
+              )}
             </>
           )}
         </div>
