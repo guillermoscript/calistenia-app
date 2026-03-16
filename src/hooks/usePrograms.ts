@@ -322,16 +322,18 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       const original = await pb.collection('programs').getOne(programId)
 
       // 2. Create new program (copy) — duplicates are always personal, not official
-      const newProgram = await pb.collection('programs').create({
+      // Only include SaaS fields if they exist on the original (avoids errors if PB migration not applied)
+      const newProgramData: Record<string, unknown> = {
         name:           `${original.name} (copia)`,
         description:    original.description,
         duration_weeks: original.duration_weeks,
         is_active:      true,
         created_by:     userId,
-        is_official:    false,
-        is_featured:    false,
-        difficulty:     original.difficulty || 'beginner',
-      })
+      }
+      if ('is_official' in original) newProgramData.is_official = false
+      if ('is_featured' in original) newProgramData.is_featured = false
+      if (original.difficulty) newProgramData.difficulty = original.difficulty
+      const newProgram = await pb.collection('programs').create(newProgramData)
 
       // 3. Copy phases
       const phasesRes = await pb.collection('program_phases').getList(1, 20, {

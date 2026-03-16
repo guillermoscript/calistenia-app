@@ -343,15 +343,16 @@ export function useProgramEditor() {
       let programId = state.programId
 
       // Create or update the program record
-      const programData = {
+      const programData: Record<string, unknown> = {
         name: state.info.name,
         description: state.info.description,
         duration_weeks: state.info.durationWeeks,
         is_active: true,
         created_by: userId,
-        is_official: state.info.isOfficial,
-        difficulty: state.info.difficulty,
       }
+      // Only include SaaS fields if they have non-default values (avoids errors if PB migration not applied)
+      if (state.info.isOfficial) programData.is_official = true
+      if (state.info.difficulty && state.info.difficulty !== 'beginner') programData.difficulty = state.info.difficulty
 
       if (programId) {
         await pb.collection('programs').update(programId, programData)
