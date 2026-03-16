@@ -1,17 +1,45 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
 import NutritionDashboard from '../components/nutrition/NutritionDashboard'
 import MealLogger from '../components/nutrition/MealLogger'
 import MealSuggestions from '../components/nutrition/MealSuggestions'
 import { useNutrition } from '../hooks/useNutrition'
-import type { NutritionGoal, NutritionEntry, FoodItem } from '../types'
+import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import type { NutritionGoal, NutritionEntry, FoodItem, Sex } from '../types'
 
 interface NutritionPageProps {
   userId: string | null
 }
 
+interface UserProfileData {
+  weight?: number
+  height?: number
+  age?: number
+  sex?: Sex
+}
+
 export default function NutritionPage({ userId }: NutritionPageProps) {
+  const [profileData, setProfileData] = useState<UserProfileData>({})
+
+  // Fetch user profile data for pre-filling nutrition goal setup
+  useEffect(() => {
+    if (!userId) return
+    const load = async () => {
+      const available = await isPocketBaseAvailable()
+      if (!available) return
+      try {
+        const user = await pb.collection('users').getOne(userId)
+        setProfileData({
+          weight: user.weight || undefined,
+          height: user.height || undefined,
+          age: user.age || undefined,
+          sex: user.sex || undefined,
+        })
+      } catch { /* ignore */ }
+    }
+    load()
+  }, [userId])
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0])
 
   const {
@@ -122,7 +150,14 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
           ))}
         </div>
       ) : !goals ? (
-        <NutritionGoalSetup onSave={handleSaveGoals} calculateMacros={handleCalculateMacros} />
+        <NutritionGoalSetup
+          onSave={handleSaveGoals}
+          calculateMacros={handleCalculateMacros}
+          initialWeight={profileData.weight}
+          initialHeight={profileData.height}
+          initialAge={profileData.age}
+          initialSex={profileData.sex}
+        />
       ) : (
         <div className="space-y-8">
           <div id="tour-nutrition-dashboard">

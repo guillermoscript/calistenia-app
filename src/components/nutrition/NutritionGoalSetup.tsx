@@ -13,6 +13,11 @@ interface NutritionGoalSetupProps {
     dailyCarbs: number
     dailyFat: number
   }
+  /** Pre-fill from user profile */
+  initialWeight?: number
+  initialHeight?: number
+  initialAge?: number
+  initialSex?: Sex
 }
 
 const ACTIVITY_LEVELS: { id: ActivityLevel; label: string; desc: string }[] = [
@@ -30,16 +35,16 @@ const GOALS: { id: NutritionGoalType; label: string; icon: string; desc: string 
   { id: 'maintain', label: 'Mantener', icon: '✅', desc: 'Mantener peso actual' },
 ]
 
-export default function NutritionGoalSetup({ onSave, calculateMacros }: NutritionGoalSetupProps) {
+export default function NutritionGoalSetup({ onSave, calculateMacros, initialWeight, initialHeight, initialAge, initialSex }: NutritionGoalSetupProps) {
   const [step, setStep] = useState(0)
 
-  // Body data
-  const [weight, setWeight] = useState('')
-  const [height, setHeight] = useState('')
-  const [age, setAge] = useState('')
+  // Body data — pre-fill from user profile if available
+  const [weight, setWeight] = useState(initialWeight ? String(initialWeight) : '')
+  const [height, setHeight] = useState(initialHeight ? String(initialHeight) : '')
+  const [age, setAge] = useState(initialAge ? String(initialAge) : '')
 
   // Selections
-  const [sex, setSex] = useState<Sex>('male')
+  const [sex, setSex] = useState<Sex>(initialSex ?? 'male')
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
   const [goal, setGoal] = useState<NutritionGoalType>('muscle_gain')
 
