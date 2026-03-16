@@ -47,7 +47,13 @@ export interface EditorExercise {
 export interface ProgramEditorState {
   programId: string | null
   step: number
-  info: { name: string; description: string; durationWeeks: number }
+  info: {
+    name: string
+    description: string
+    durationWeeks: number
+    isOfficial: boolean
+    difficulty: 'beginner' | 'intermediate' | 'advanced'
+  }
   phases: EditorPhase[]
   days: Record<string, EditorDay>  // key: "phaseIndex_dayId"
   isDirty: boolean
@@ -88,7 +94,7 @@ function createInitialState(): ProgramEditorState {
   return {
     programId: null,
     step: 1,
-    info: { name: '', description: '', durationWeeks: 26 },
+    info: { name: '', description: '', durationWeeks: 26, isOfficial: false, difficulty: 'beginner' },
     phases: [...DEFAULT_PHASES],
     days: buildDefaultDays(4),
     isDirty: false,
@@ -308,6 +314,8 @@ export function useProgramEditor() {
           name: program.name,
           description: program.description || '',
           durationWeeks: program.duration_weeks || 26,
+          isOfficial: program.is_official || false,
+          difficulty: program.difficulty || 'beginner',
         },
         phases: loadedPhases.length > 0 ? loadedPhases : [...DEFAULT_PHASES],
         days,
@@ -341,6 +349,8 @@ export function useProgramEditor() {
         duration_weeks: state.info.durationWeeks,
         is_active: true,
         created_by: userId,
+        is_official: state.info.isOfficial,
+        difficulty: state.info.difficulty,
       }
 
       if (programId) {

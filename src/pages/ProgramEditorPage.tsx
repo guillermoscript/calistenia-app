@@ -11,6 +11,7 @@ import { Badge } from '../components/ui/badge'
 
 interface ProgramEditorPageProps {
   userId: string
+  userRole?: import('../types').UserRole
 }
 
 const STEP_LABELS = ['Info', 'Fases', 'Días', 'Ejercicios']
@@ -42,7 +43,8 @@ const PRIORITY_OPTIONS: { value: 'high' | 'med' | 'low'; label: string; color: s
 
 const DAY_IDS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
 
-export default function ProgramEditorPage({ userId }: ProgramEditorPageProps) {
+export default function ProgramEditorPage({ userId, userRole = 'user' }: ProgramEditorPageProps) {
+  const canPublishOfficial = userRole === 'editor' || userRole === 'admin'
   const navigate = useNavigate()
   const { id: programId } = useParams<{ id: string }>()
 
@@ -217,6 +219,47 @@ export default function ProgramEditorPage({ userId }: ProgramEditorPageProps) {
                       className="text-sm w-32"
                     />
                   </div>
+
+                  <div>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Dificultad</label>
+                    <div className="flex gap-2">
+                      {(['beginner', 'intermediate', 'advanced'] as const).map(d => (
+                        <button
+                          key={d}
+                          onClick={() => updateInfo({ difficulty: d })}
+                          className={cn(
+                            'px-4 py-2 rounded-lg text-[11px] font-mono tracking-widest border transition-all uppercase',
+                            state.info.difficulty === d
+                              ? d === 'beginner' ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
+                                : d === 'intermediate' ? 'bg-amber-400/10 border-amber-400/30 text-amber-400'
+                                : 'bg-red-400/10 border-red-400/30 text-red-400'
+                              : 'border-border text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {d === 'beginner' ? 'Principiante' : d === 'intermediate' ? 'Intermedio' : 'Avanzado'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {canPublishOfficial && (
+                    <div className="pt-2 border-t border-border">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={state.info.isOfficial}
+                          onChange={e => updateInfo({ isOfficial: e.target.checked })}
+                          className="size-4 rounded accent-[hsl(var(--lime))]"
+                        />
+                        <div>
+                          <div className="text-sm font-medium">Publicar como programa oficial</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            Los programas oficiales aparecen en la seccion principal y en el onboarding.
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

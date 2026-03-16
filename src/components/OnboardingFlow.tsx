@@ -154,7 +154,17 @@ export default function OnboardingFlow({
             </div>
 
             <div className="space-y-3 mb-6 max-h-[50vh] overflow-y-auto pr-1">
-              {programs.map((program) => {
+              {/* Show official programs first (featured at top), then rest */}
+              {[...programs]
+                .sort((a, b) => {
+                  // Featured first, then official, then rest
+                  if (a.is_featured && !b.is_featured) return -1
+                  if (!a.is_featured && b.is_featured) return 1
+                  if (a.is_official && !b.is_official) return -1
+                  if (!a.is_official && b.is_official) return 1
+                  return a.name.localeCompare(b.name)
+                })
+                .map((program) => {
                 const isSelected = selectedProgramId === program.id
                 const isOwn = program.created_by === userId
                 return (
@@ -164,7 +174,9 @@ export default function OnboardingFlow({
                       'cursor-pointer transition-all duration-200 border-2',
                       isSelected
                         ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/5'
-                        : 'border-transparent hover:border-muted-foreground/20'
+                        : program.is_featured
+                          ? 'border-amber-400/20 bg-amber-400/[0.03] hover:border-amber-400/40'
+                          : 'border-transparent hover:border-muted-foreground/20'
                     )}
                     onClick={() => handleSelectProgram(program.id)}
                   >
@@ -184,7 +196,17 @@ export default function OnboardingFlow({
                           <span className={cn('font-medium text-sm', isSelected && 'text-[hsl(var(--lime))]')}>
                             {program.name}
                           </span>
-                          {isOwn && (
+                          {program.is_featured && (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-amber-400 border-amber-400/30">
+                              RECOMENDADO
+                            </Badge>
+                          )}
+                          {program.is_official && !program.is_featured && (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-emerald-400 border-emerald-400/30">
+                              OFICIAL
+                            </Badge>
+                          )}
+                          {isOwn && !program.is_official && (
                             <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-sky-500 border-sky-500/30">
                               TUYO
                             </Badge>

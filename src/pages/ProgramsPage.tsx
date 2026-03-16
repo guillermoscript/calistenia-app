@@ -10,9 +10,9 @@ import type { ProgramMeta } from '../types'
 // ── Filter categories ──────────────────────────────────────────────────────
 
 const FILTER_PILLS = [
-  { id: 'todos', label: 'Todos' },
+  { id: 'oficiales', label: 'Oficiales' },
+  { id: 'comunidad', label: 'Comunidad' },
   { id: 'mis', label: 'Mis Programas' },
-  { id: 'explorar', label: 'Explorar' },
 ] as const
 
 type FilterId = typeof FILTER_PILLS[number]['id']
@@ -56,6 +56,12 @@ const defaultTotalDuration: number = Object.values(WORKOUTS).reduce(
   (sum, w) => sum + calculateWorkoutDuration(w.exercises), 0
 )
 
+const DIFFICULTY_LABELS: Record<string, string> = {
+  beginner: 'PRINCIPIANTE',
+  intermediate: 'INTERMEDIO',
+  advanced: 'AVANZADO',
+}
+
 interface ProgramCardProps {
   program: ProgramMeta
   isOwn: boolean
@@ -65,18 +71,24 @@ interface ProgramCardProps {
 }
 
 function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCardProps) {
-  const diffStyle = DIFFICULTY_COLORS[defaultDifficulty]
+  const diff = program.difficulty || 'beginner'
+  const diffStyle = DIFFICULTY_COLORS[diff] || DIFFICULTY_COLORS[defaultDifficulty]
   return (
     <div
       className={cn(
         'group relative cursor-pointer rounded-xl bg-muted/80 p-5 transition-all duration-200',
         'hover:bg-muted/80 hover:shadow-lg hover:shadow-lime-400/5',
-        isActive && 'ring-1 ring-lime-400/30 bg-lime-400/[0.03]',
+        program.is_featured && 'ring-1 ring-amber-400/30 bg-amber-400/[0.03]',
+        isActive && !program.is_featured && 'ring-1 ring-lime-400/30 bg-lime-400/[0.03]',
       )}
       onClick={onSelect}
     >
-      {/* Active indicator bar */}
-      {isActive && (
+      {/* Featured indicator bar */}
+      {program.is_featured && (
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-400/60 via-amber-400 to-amber-400/60 rounded-t-xl" />
+      )}
+      {/* Active indicator bar (if not featured) */}
+      {isActive && !program.is_featured && (
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-lime-400/60 via-lime-400 to-lime-400/60 rounded-t-xl" />
       )}
 
@@ -88,11 +100,23 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
         )}>
           {program.name}
         </h3>
-        {isActive && (
-          <span className="shrink-0 text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
-            ACTIVO
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {program.is_featured && (
+            <span className="text-[9px] font-mono tracking-widest text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
+              RECOMENDADO
+            </span>
+          )}
+          {program.is_official && !program.is_featured && (
+            <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+              OFICIAL
+            </span>
+          )}
+          {isActive && (
+            <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+              ACTIVO
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Description */}
@@ -116,13 +140,8 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
             diffStyle.text, diffStyle.bg, diffStyle.border
           )}
         >
-          {defaultDifficulty.toUpperCase()}
+          {DIFFICULTY_LABELS[diff] || diff.toUpperCase()}
         </Badge>
-        {defaultTotalDuration > 0 && (
-          <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-            ~{formatDuration(defaultTotalDuration)} total
-          </span>
-        )}
         {isOwn && (
           <span className="text-[10px] font-mono tracking-wide text-sky-400/70">
             Creado por ti
@@ -202,17 +221,26 @@ export default function ProgramsPage({
   onSelectProgram,
   onCreateProgram,
 }: ProgramsPageProps) {
-  const [activeFilter, setActiveFilter] = useState<FilterId>('todos')
+  const [activeFilter, setActiveFilter] = useState<FilterId>('oficiales')
   const [search, setSearch] = useState('')
 
   const filteredPrograms = useMemo(() => {
     let result = programs
     switch (activeFilter) {
+      case 'oficiales':
+        result = result.filter(p => p.is_official)
+        // Sort: featured first, then alphabetical
+        result.sort((a, b) => {
+          if (a.is_featured && !b.is_featured) return -1
+          if (!a.is_featured && b.is_featured) return 1
+          return a.name.localeCompare(b.name)
+        })
+        break
+      case 'comunidad':
+        result = result.filter(p => !p.is_official)
+        break
       case 'mis':
         result = result.filter(p => p.created_by === userId)
-        break
-      case 'explorar':
-        result = result.filter(p => p.created_by !== userId)
         break
     }
     if (search.trim()) {
@@ -225,6 +253,8 @@ export default function ProgramsPage({
     return result
   }, [programs, activeFilter, userId, search])
 
+  const officialCount = useMemo(() => programs.filter(p => p.is_official).length, [programs])
+  const communityCount = useMemo(() => programs.filter(p => !p.is_official).length, [programs])
   const myProgramsCount = useMemo(() => programs.filter(p => p.created_by === userId).length, [programs, userId])
 
   return (
@@ -273,15 +303,21 @@ export default function ProgramsPage({
             )}
           >
             {pill.label}
+            {pill.id === 'oficiales' && officialCount > 0 && (
+              <span className="ml-2 text-[10px] opacity-60">({officialCount})</span>
+            )}
+            {pill.id === 'comunidad' && communityCount > 0 && (
+              <span className="ml-2 text-[10px] opacity-60">({communityCount})</span>
+            )}
             {pill.id === 'mis' && myProgramsCount > 0 && (
               <span className="ml-2 text-[10px] opacity-60">({myProgramsCount})</span>
             )}
           </button>
         ))}
 
-        {(activeFilter !== 'todos' || search) && (
+        {(activeFilter !== 'oficiales' || search) && (
           <button
-            onClick={() => { setActiveFilter('todos'); setSearch('') }}
+            onClick={() => { setActiveFilter('oficiales'); setSearch('') }}
             className="ml-auto text-[11px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase"
           >
             Limpiar filtros

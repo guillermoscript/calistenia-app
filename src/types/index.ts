@@ -160,12 +160,19 @@ export interface ExerciseMedia {
 
 // ─── Programs ────────────────────────────────────────────────────────────────
 
+export type UserRole = 'user' | 'editor' | 'admin'
+export type UserTier = 'free' | 'premium'
+export type ProgramDifficulty = 'beginner' | 'intermediate' | 'advanced'
+
 export interface ProgramMeta {
   id: string
   name: string
   description: string
   duration_weeks: number
   created_by?: string
+  is_official?: boolean
+  is_featured?: boolean
+  difficulty?: ProgramDifficulty
 }
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────

@@ -202,6 +202,9 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       description:    p.description,
       duration_weeks: p.duration_weeks,
       created_by:     p.created_by || undefined,
+      is_official:    p.is_official || false,
+      is_featured:    p.is_featured || false,
+      difficulty:     p.difficulty || 'beginner',
     }))
     setPrograms(catalog)
 
@@ -318,13 +321,16 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       // 1. Fetch original program
       const original = await pb.collection('programs').getOne(programId)
 
-      // 2. Create new program (copy)
+      // 2. Create new program (copy) — duplicates are always personal, not official
       const newProgram = await pb.collection('programs').create({
         name:           `${original.name} (copia)`,
         description:    original.description,
         duration_weeks: original.duration_weeks,
         is_active:      true,
         created_by:     userId,
+        is_official:    false,
+        is_featured:    false,
+        difficulty:     original.difficulty || 'beginner',
       })
 
       // 3. Copy phases

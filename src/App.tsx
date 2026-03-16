@@ -17,6 +17,9 @@ import ExerciseLibraryPage from './pages/ExerciseLibraryPage'
 import ExerciseDetailPage from './pages/ExerciseDetailPage'
 import ProgramDetailPage from './pages/ProgramDetailPage'
 import SharedProgramPage from './pages/SharedProgramPage'
+import AdminPage from './pages/AdminPage'
+import EditorPage from './pages/EditorPage'
+import UserProfilePage from './pages/UserProfilePage'
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -73,6 +76,9 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/programs\/[^/]+$/)) return 'Detalle Programa'
   if (pathname.match(/^\/exercises\/[^/]+$/)) return 'Detalle Ejercicio'
   if (pathname.match(/^\/shared\/[^/]+$/)) return 'Programa Compartido'
+  if (pathname === '/admin') return 'Admin'
+  if (pathname === '/editor') return 'Editor'
+  if (pathname.match(/^\/u\/[^/]+$/)) return 'Perfil'
 
   return 'Dashboard'
 }
@@ -154,6 +160,20 @@ function ExerciseIcon({ className }: IconProps) {
     </svg>
   )
 }
+function ShieldIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M8 1L2 4v4c0 3.5 2.5 6 6 7 3.5-1 6-3.5 6-7V4L8 1z" />
+    </svg>
+  )
+}
+function PencilIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M11.5 1.5l3 3L5 14H2v-3L11.5 1.5z" />
+    </svg>
+  )
+}
 function LogOutIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -200,10 +220,11 @@ interface AppShellProps {
   signOut: () => void
   dark: boolean
   toggleDark: () => void
+  userRole: import('./types').UserRole
   children: ReactNode
 }
 
-function AppShell({ settings, displayName, signOut, dark, toggleDark, children }: AppShellProps) {
+function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
   const { open } = useSidebar()
   const navigate = useNavigate()
   const location = useLocation()
@@ -239,6 +260,31 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, children }
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+            {/* Role-based nav items */}
+            {userRole === 'admin' && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive('/admin')}
+                  onClick={() => navigate('/admin')}
+                  tooltip="Admin"
+                >
+                  <ShieldIcon className="size-4 shrink-0" />
+                  <span>Admin</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            {userRole === 'editor' && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive('/editor')}
+                  onClick={() => navigate('/editor')}
+                  tooltip="Editor"
+                >
+                  <PencilIcon className="size-4 shrink-0" />
+                  <span>Editor</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarContent>
 
@@ -361,7 +407,7 @@ export default function App() {
   const [onboardingDone, setOnboardingDone] = useState(() => isOnboardingDone())
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, authReady, authError, isLoading, signIn, signUp, signOut } = useAuth()
+  const { user, authReady, authError, isLoading, userRole, signIn, signUp, signOut } = useAuth()
 
   // Setup offline queue auto-sync
   useEffect(() => {
@@ -470,6 +516,7 @@ export default function App() {
           signOut={signOut}
           dark={dark}
           toggleDark={toggleDark}
+          userRole={userRole}
         >
           <Routes>
             <Route path="/" element={
@@ -519,10 +566,10 @@ export default function App() {
               />
             } />
             <Route path="/programs/new" element={
-              <ProgramEditorPage userId={user.id} />
+              <ProgramEditorPage userId={user.id} userRole={userRole} />
             } />
             <Route path="/programs/:id/edit" element={
-              <ProgramEditorPage userId={user.id} />
+              <ProgramEditorPage userId={user.id} userRole={userRole} />
             } />
             <Route path="/programs/:id" element={
               <ProgramDetailPageRoute
@@ -534,6 +581,28 @@ export default function App() {
             } />
             <Route path="/exercises" element={<ExerciseLibraryPage />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
+            {/* Role-gated routes */}
+            {userRole === 'admin' && (
+              <Route path="/admin" element={<AdminPage programs={programs} />} />
+            )}
+            {(userRole === 'editor' || userRole === 'admin') && (
+              <Route path="/editor" element={
+                <EditorPage
+                  programs={programs}
+                  userId={user.id}
+                  onCreateProgram={handleCreateProgram}
+                  onEditProgram={handleEditProgram}
+                />
+              } />
+            )}
+            <Route path="/u/:userId" element={
+              <UserProfilePage
+                currentUserId={user.id}
+                currentUserPrs={settings as unknown as Record<string, number>}
+                currentUserStreak={getLongestStreak()}
+                currentUserSessions={getTotalSessions()}
+              />
+            } />
             <Route path="/shared/:shareCode" element={
               <SharedProgramPageRoute
                 userId={user.id}

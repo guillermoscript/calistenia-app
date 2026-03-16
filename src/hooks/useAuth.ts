@@ -1,12 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RecordModel } from 'pocketbase'
 import { pb, login, register, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
+import type { UserRole, UserTier } from '../types'
 
 interface UseAuthReturn {
   user: RecordModel | null
   authReady: boolean
   authError: string | null
   isLoading: boolean
+  userRole: UserRole
+  userTier: UserTier
+  isAdmin: boolean
+  isEditor: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, displayName: string) => Promise<void>
   signOut: () => void
@@ -98,5 +103,10 @@ export const useAuth = (): UseAuthReturn => {
     // onChange listener limpia `user` automáticamente
   }, [])
 
-  return { user, authReady, authError, isLoading, signIn, signUp, signOut }
+  const userRole: UserRole = (user?.role as UserRole) || 'user'
+  const userTier: UserTier = (user?.tier as UserTier) || 'free'
+  const isAdmin = userRole === 'admin'
+  const isEditor = userRole === 'editor'
+
+  return { user, authReady, authError, isLoading, userRole, userTier, isAdmin, isEditor, signIn, signUp, signOut }
 }
