@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '../lib/utils'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
+import { pbProgramEditUrl, pbExerciseEditUrl } from '../lib/pocketbase-admin'
 import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
 import { inferDifficulty, DIFFICULTY_COLORS } from '../lib/difficulty'
 import { Button } from '../components/ui/button'
@@ -243,6 +244,7 @@ export default function ProgramDetailPage({
           timerSeconds: r.timer_seconds,
           demoImages: r.demo_images || [],
           demoVideo: r.demo_video || '',
+          pbRecordId: r.id,
         })
       })
       setWorkouts(Object.values(workoutMap))
@@ -487,6 +489,19 @@ export default function ProgramDetailPage({
                 <ShareIcon className="size-3.5 mr-2" />
                 COMPARTIR
               </Button>
+              {(() => {
+                const u = getCurrentUser()
+                const role = u?.role as string | undefined
+                return (role === 'admin' || role === 'editor') ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(pbProgramEditUrl(programId), '_blank')}
+                    className="font-mono text-[11px] tracking-widest h-11 px-5 border-amber-500/20 text-amber-400 hover:border-amber-500/40 hover:bg-amber-500/5"
+                  >
+                    EDITAR EN PB ↗
+                  </Button>
+                ) : null
+              })()}
             </>
           )}
         </div>
@@ -599,6 +614,24 @@ export default function ProgramDetailPage({
                                   >
                                     {exercise.name}
                                   </Link>
+                                  {(() => {
+                                    const u = getCurrentUser()
+                                    const role = u?.role as string | undefined
+                                    return (role === 'admin' || role === 'editor') && exercise.pbRecordId ? (
+                                      <a
+                                        href={pbExerciseEditUrl(exercise.pbRecordId)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-amber-400/60 hover:text-amber-400 transition-colors shrink-0"
+                                        title="Editar en PocketBase"
+                                      >
+                                        <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                          <path d="M11.5 1.5l3 3L5 14H2v-3L11.5 1.5z" />
+                                        </svg>
+                                      </a>
+                                    ) : null
+                                  })()}
                                   <Badge
                                     variant="outline"
                                     className={cn(

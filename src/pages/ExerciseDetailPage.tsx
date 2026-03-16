@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { useProgressions } from '../hooks/useProgressions'
 import { detectEquipment } from '../lib/equipment'
@@ -11,6 +11,7 @@ import { Button } from '../components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Skeleton } from '../components/ui/skeleton'
 import type { Exercise, Priority } from '../types'
+import { pbCatalogEditUrl } from '../lib/pocketbase-admin'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -466,6 +467,21 @@ export default function ExerciseDetailPage() {
               GOOGLE
               <ExternalLinkIcon className="size-3.5" />
             </Button>
+            {(() => {
+              const u = getCurrentUser()
+              const role = u?.role as string | undefined
+              return (role === 'admin' || role === 'editor') ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 border-amber-500/20 text-amber-400 hover:border-amber-500/40 hover:bg-amber-500/5 font-mono text-[11px] tracking-widest"
+                  onClick={() => window.open(pbCatalogEditUrl(exercise.id), '_blank')}
+                >
+                  EDITAR EN PB
+                  <ExternalLinkIcon className="size-3.5" />
+                </Button>
+              ) : null
+            })()}
           </div>
         </div>
 
