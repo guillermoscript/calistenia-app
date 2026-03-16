@@ -23,6 +23,7 @@ import UserProfilePage from './pages/UserProfilePage'
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
+import AppTour, { isTourDone } from './components/AppTour'
 import { setupAutoSync } from './lib/offlineQueue'
 import { pb } from './lib/pocketbase'
 import { cn } from './lib/utils'
@@ -247,7 +248,7 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
         </SidebarHeader>
 
         <SidebarContent className="px-2">
-          <SidebarMenu>
+          <SidebarMenu id="tour-sidebar-nav">
             {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
               <SidebarMenuItem key={path}>
                 <SidebarMenuButton
@@ -613,6 +614,8 @@ export default function App() {
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          {/* Auto-start tour on dashboard for users who just completed onboarding */}
+          {location.pathname === '/' && <AppTour autoStart />}
         </AppShell>
       </div>
     </SidebarProvider>

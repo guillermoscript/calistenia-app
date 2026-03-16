@@ -113,3 +113,65 @@
 
   ::selection { background: hsl(74 90% 57% / 0.2); }
 }
+
+/* ── driver.js tour theme ─────────────────────────────────────────────────── */
+.driver-popover.calistenia-tour-popover {
+  background: hsl(0 0% 7%);
+  border: 1px solid hsl(0 0% 15%);
+  border-radius: 12px;
+  color: hsl(0 0% 90%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.driver-popover.calistenia-tour-popover .driver-popover-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 22px;
+  letter-spacing: 0.05em;
+  color: hsl(74 90% 57%);
+}
+.driver-popover.calistenia-tour-popover .driver-popover-description {
+  color: hsl(0 0% 65%);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.driver-popover.calistenia-tour-popover .driver-popover-progress-text {
+  color: hsl(0 0% 45%);
+  font-size: 11px;
+}
+.driver-popover.calistenia-tour-popover .driver-popover-navigation-btns button {
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.driver-popover.calistenia-tour-popover .driver-popover-next-btn,
+.driver-popover.calistenia-tour-popover .driver-popover-close-btn[data-button="done"] {
+  background: hsl(74 90% 57%);
+  color: hsl(0 0% 5%);
+  border: none;
+}
+.driver-popover.calistenia-tour-popover .driver-popover-next-btn:hover {
+  background: hsl(74 90% 50%);
+}
+.driver-popover.calistenia-tour-popover .driver-popover-prev-btn {
+  background: transparent;
+  border: 1px solid hsl(0 0% 20%);
+  color: hsl(0 0% 65%);
+}
+.driver-popover.calistenia-tour-popover .driver-popover-prev-btn:hover {
+  border-color: hsl(0 0% 35%);
+  color: hsl(0 0% 85%);
+}
+.driver-popover.calistenia-tour-popover .driver-popover-arrow-side-left,
+.driver-popover.calistenia-tour-popover .driver-popover-arrow-side-right,
+.driver-popover.calistenia-tour-popover .driver-popover-arrow-side-top,
+.driver-popover.calistenia-tour-popover .driver-popover-arrow-side-bottom {
+  border-color: hsl(0 0% 7%);
+}
+.driver-popover.calistenia-tour-popover .driver-popover-close-btn {
+  color: hsl(0 0% 45%);
+}
+.driver-popover.calistenia-tour-popover .driver-popover-close-btn:hover {
+  color: hsl(0 0% 85%);
+}

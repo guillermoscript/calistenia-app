@@ -194,7 +194,7 @@ export default function DashboardPage({
 
       {/* Active Program Banner */}
       {activeProgram && (
-        <Card className="mb-6">
+        <Card id="tour-active-program" className="mb-6">
           <CardContent className="p-4 md:p-5 flex items-center gap-4 flex-wrap">
             <div className="flex-1">
               <div className="text-[9px] text-muted-foreground tracking-widest mb-1 uppercase">Programa Activo</div>
@@ -248,7 +248,7 @@ export default function DashboardPage({
       )}
 
       {/* Progress Bar */}
-      <Card className="mb-8">
+      <Card id="tour-progress" className="mb-8">
         <CardContent className="p-5 md:p-6">
           <div className="flex justify-between mb-2.5 text-sm">
             <span className={cn('text-[11px]', phaseAccent.text)}>{phase.name} (Semanas {phase.weeks})</span>
@@ -259,7 +259,7 @@ export default function DashboardPage({
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div id="tour-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard value={totalSessions} label="Sesiones totales" accent="text-lime" sub={`Objetivo: ${weekElapsed * 5} sesiones`} />
         <StatCard value={streak} label="Racha máxima (días)" accent="text-sky-500" />
         <StatCard value={weeklyDone} label="Esta semana" accent="text-amber-400" sub={`Meta: ${settings.weeklyGoal || 5} días`} />
@@ -268,7 +268,7 @@ export default function DashboardPage({
 
       {/* Nutrition Summary Widget */}
       {onGoToNutrition && (
-        <Card className="mb-8 border-l-[3px] border-l-lime">
+        <Card id="tour-nutrition" className="mb-8 border-l-[3px] border-l-lime">
           <CardContent className="p-5">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="relative size-14 shrink-0">
@@ -327,7 +327,9 @@ export default function DashboardPage({
       )}
 
       {/* Weekly Plan */}
-      <WeekPlanWidget selectedPhase={settings.phase || 1} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />
+      <div id="tour-weekly-plan">
+        <WeekPlanWidget selectedPhase={settings.phase || 1} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />
+      </div>
 
       {/* Calendar */}
       <div className="mb-8">
