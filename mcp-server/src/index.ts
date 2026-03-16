@@ -26,6 +26,7 @@ import { registerProgressTools } from "./tools/progress.js";
 import { registerNutritionTools } from "./tools/nutrition.js";
 import { registerSmartTools } from "./tools/smart.js";
 import { registerGamificationTools } from "./tools/gamification.js";
+import { registerMediaTools } from "./tools/media.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
 import { createApiRouter } from "./api/index.js";
@@ -46,6 +47,7 @@ function createServerWithAuth(auth: AuthManager): McpServer {
   registerNutritionTools(server, auth);
   registerSmartTools(server, auth);
   registerGamificationTools(server, auth);
+  registerMediaTools(server, auth);
   registerResources(server, auth);
   registerPrompts(server);
 
