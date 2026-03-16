@@ -92,6 +92,13 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-lime-400/60 via-lime-400 to-lime-400/60 rounded-t-xl" />
       )}
 
+      {/* Cover image */}
+      {program.cover_image_url && (
+        <div className="-mx-5 -mt-5 mb-4 h-36 rounded-t-xl overflow-hidden bg-muted">
+          <img src={program.cover_image_url} alt={program.name} className="w-full h-full object-cover" />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <h3 className={cn(

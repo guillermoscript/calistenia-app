@@ -173,6 +173,9 @@ export interface ProgramMeta {
   is_official?: boolean
   is_featured?: boolean
   difficulty?: ProgramDifficulty
+  cover_image?: string
+  /** Resolved cover image URL (built from PB file service) */
+  cover_image_url?: string
 }
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────

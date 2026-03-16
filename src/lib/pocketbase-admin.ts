@@ -35,3 +35,8 @@ export function pbExerciseEditUrl(recordId: string): string {
 export function pbCatalogEditUrl(recordId: string): string {
   return pbRecordUrl('exercises_catalog', recordId)
 }
+
+/** Open PB admin for a program record */
+export function pbProgramEditUrl(recordId: string): string {
+  return pbRecordUrl('programs', recordId)
+}
