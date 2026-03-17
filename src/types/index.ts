@@ -180,6 +180,18 @@ export interface ProgramMeta {
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────
 
+export type FoodCategory =
+  | 'proteinas'
+  | 'carbohidratos'
+  | 'frutas'
+  | 'verduras'
+  | 'lacteos'
+  | 'grasas'
+  | 'legumbres'
+  | 'bebidas'
+  | 'procesados'
+  | 'otros'
+
 export interface FoodItem {
   name: string
   portion: string
@@ -187,6 +199,8 @@ export interface FoodItem {
   protein: number
   carbs: number
   fat: number
+  category?: FoodCategory
+  tags?: string[]
 }
 
 export interface NutritionEntry {

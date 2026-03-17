@@ -5,6 +5,8 @@ import { Input } from '../ui/input'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '../ui/dialog'
+import FoodNameInput from './FoodNameInput'
+import { useFoodCatalog } from '../../hooks/useFoodCatalog'
 import type { FoodItem, NutritionEntry } from '../../types'
 
 interface MealLoggerProps {
@@ -59,6 +61,7 @@ function compressImage(file: File, maxSize = 1024): Promise<File> {
 }
 
 export default function MealLogger({ onAnalyze, onSave }: MealLoggerProps) {
+  const { saveFoodToCatalog } = useFoodCatalog()
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<'capture' | 'analyzing' | 'review' | 'saving' | 'success'>('capture')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -140,6 +143,8 @@ export default function MealLogger({ onAnalyze, onSave }: MealLoggerProps) {
         totalFat: totals.fat,
         loggedAt: new Date().toISOString(),
       })
+      // Save each named food to the shared catalog (fire-and-forget)
+      foods.filter(f => f.name.trim()).forEach(f => saveFoodToCatalog(f))
       setStep('success')
       setTimeout(() => {
         setOpen(false)
@@ -265,11 +270,12 @@ export default function MealLogger({ onAnalyze, onSave }: MealLoggerProps) {
               {foods.map((food, idx) => (
                 <div key={idx} className="p-3 bg-card border border-border rounded-lg space-y-2">
                   <div className="flex items-center gap-2">
-                    <Input
+                    <FoodNameInput
                       value={food.name}
-                      onChange={e => updateFood(idx, 'name', e.target.value)}
-                      placeholder="Nombre del alimento"
-                      className="flex-1 h-8 text-sm"
+                      onChange={val => updateFood(idx, 'name', val)}
+                      onFoodSelect={selected => {
+                        setFoods(prev => prev.map((f, i) => i === idx ? { ...f, ...selected } : f))
+                      }}
                     />
                     <Input
                       value={food.portion}

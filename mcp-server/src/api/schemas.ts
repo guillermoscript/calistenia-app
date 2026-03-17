@@ -1,7 +1,20 @@
 import { z } from "zod";
 
+export const FOOD_CATEGORIES = [
+  "proteinas",
+  "carbohidratos",
+  "frutas",
+  "verduras",
+  "lacteos",
+  "grasas",
+  "legumbres",
+  "bebidas",
+  "procesados",
+  "otros",
+] as const;
+
 export const FoodItemSchema = z.object({
-  name: z.string().describe("Nombre del alimento en español"),
+  name: z.string().describe("Nombre del alimento en español, en singular y forma canónica (ej: 'Pechuga de pollo', 'Arroz blanco cocido')"),
   portion: z
     .string()
     .describe('Tamaño de la porción estimada (ej: "150g", "1 unidad", "200ml")'),
@@ -12,6 +25,12 @@ export const FoodItemSchema = z.object({
   confidence: z
     .enum(["high", "medium", "low"])
     .describe("Confianza en la identificación del alimento"),
+  category: z
+    .enum(FOOD_CATEGORIES)
+    .describe("Categoría nutricional del alimento"),
+  tags: z
+    .array(z.string())
+    .describe("Alias y términos relacionados en minúsculas para facilitar búsqueda (ej: ['pollo', 'ave', 'carne blanca'])"),
 });
 
 export const MealAnalysisSchema = z.object({

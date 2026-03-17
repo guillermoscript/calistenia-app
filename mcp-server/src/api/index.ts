@@ -12,6 +12,8 @@ import PocketBase from "pocketbase";
 import config, { type AppConfig } from "./config.js";
 import { getAvailableProviders } from "./model-resolver.js";
 import { analyzeMealImage } from "./meal-analyzer.js";
+import { lookupFoodByName } from "./food-lookup.js";
+import { generateDailyMealPlan } from "./meal-plan-generator.js";
 import type { Tier } from "./model-resolver.js";
 
 // ── Auth error ────────────────────────────────────────────────────────────────
@@ -173,6 +175,63 @@ export function createApiRouter(): Router {
         });
 
         return res.json({ meal_type: mealType, model_tier: tier, ...result });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Food catalog lookup by name (AI-powered)
+  router.post(
+    "/lookup-food",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        const foodName = req.body?.food_name?.trim();
+        if (!foodName) {
+          return res.status(400).json({ error: "Se requiere el nombre del alimento" });
+        }
+        const tier: Tier =
+          req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+        const result = await lookupFoodByName({ foodName, tier });
+        return res.json(result);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Daily meal plan generation (AI-powered)
+  router.post(
+    "/generate-meal-plan",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        const {
+          remaining_calories,
+          remaining_protein,
+          remaining_carbs,
+          remaining_fat,
+          logged_meal_types = [],
+        } = req.body ?? {};
+
+        if (remaining_calories == null) {
+          return res.status(400).json({ error: "Se requieren los macros restantes" });
+        }
+        const tier: Tier =
+          req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+
+        const result = await generateDailyMealPlan({
+          remainingCalories: Number(remaining_calories),
+          remainingProtein: Number(remaining_protein ?? 0),
+          remainingCarbs: Number(remaining_carbs ?? 0),
+          remainingFat: Number(remaining_fat ?? 0),
+          loggedMealTypes: Array.isArray(logged_meal_types) ? logged_meal_types : [],
+          tier,
+        });
+        return res.json(result);
       } catch (err) {
         next(err);
       }
