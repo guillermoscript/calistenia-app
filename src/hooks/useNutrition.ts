@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { AI_API_URL } from '../lib/ai-api'
 import type {
   NutritionEntry,
   NutritionGoal,
@@ -155,8 +156,7 @@ export function useNutrition(userId: string | null) {
       headers['Authorization'] = `Bearer ${pb.authStore.token}`
     }
 
-    const aiApiUrl = import.meta.env.VITE_AI_API_URL || ''
-    const res = await fetch(`${aiApiUrl}/api/analyze-meal`, {
+    const res = await fetch(`${AI_API_URL}/api/analyze-meal`, {
       method: 'POST',
       headers,
       body: formData,

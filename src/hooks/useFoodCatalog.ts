@@ -1,8 +1,7 @@
 import { useCallback } from 'react'
 import { pb } from '../lib/pocketbase'
 import type { FoodItem } from '../types'
-
-const AI_API_URL = import.meta.env.VITE_AI_API_URL || ''
+import { AI_API_URL } from '../lib/ai-api'
 
 // ── Relation helpers ───────────────────────────────────────────────────────
 

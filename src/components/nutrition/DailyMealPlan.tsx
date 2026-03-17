@@ -3,8 +3,7 @@ import { pb } from '../../lib/pocketbase'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-
-const AI_API_URL = import.meta.env.VITE_AI_API_URL || ''
+import { AI_API_URL } from '../../lib/ai-api'
 
 interface MacroTarget {
   calories: number
