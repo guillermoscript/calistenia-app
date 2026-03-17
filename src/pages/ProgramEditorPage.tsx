@@ -213,7 +213,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                     <Input
                       type="number"
                       min={1}
-                      max={52}
+                      max={104}
                       value={state.info.durationWeeks}
                       onChange={e => updateInfo({ durationWeeks: parseInt(e.target.value) || 1 })}
                       className="text-sm w-32"
@@ -270,7 +270,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="font-bebas text-2xl tracking-wide">FASES DEL PROGRAMA</div>
-                {state.phases.length < 4 && (
+                {state.phases.length < 8 && (
                   <Button
                     onClick={addPhase}
                     size="sm"

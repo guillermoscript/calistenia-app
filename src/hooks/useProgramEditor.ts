@@ -70,6 +70,16 @@ const DEFAULT_PHASES: EditorPhase[] = [
   { name: 'Peak & Consolidación',  weeks: '21-26', color: '#f5c842', bgColor: 'rgba(245,200,66,0.08)' },
 ]
 
+// Color palette for phases beyond the 4 defaults
+const EXTRA_PHASE_COLORS: Array<{ color: string; bgColor: string }> = [
+  { color: '#f54242', bgColor: 'rgba(245,66,66,0.08)' },
+  { color: '#42f5a8', bgColor: 'rgba(66,245,168,0.08)' },
+  { color: '#a842f5', bgColor: 'rgba(168,66,245,0.08)' },
+  { color: '#f5a842', bgColor: 'rgba(245,168,66,0.08)' },
+]
+
+const MAX_PHASES = 8
+
 const DAY_DEFAULTS: { dayId: string; dayName: string; focus: string; type: string; color: string }[] = [
   { dayId: 'lun', dayName: 'Lunes',     focus: 'Empuje + Core',       type: 'push',   color: '#c8f542' },
   { dayId: 'mar', dayName: 'Martes',    focus: 'Tirón + Movilidad',   type: 'pull',   color: '#42c8f5' },
@@ -103,6 +113,21 @@ function createInitialState(): ProgramEditorState {
   }
 }
 
+function distributeWeeks(totalWeeks: number, phaseCount: number): string[] {
+  if (phaseCount <= 0 || totalWeeks <= 0) return []
+  const base = Math.floor(totalWeeks / phaseCount)
+  const extra = totalWeeks % phaseCount
+  const ranges: string[] = []
+  let start = 1
+  for (let i = 0; i < phaseCount; i++) {
+    const size = base + (i < extra ? 1 : 0)
+    const end = start + size - 1
+    ranges.push(`${start}-${end}`)
+    start = end + 1
+  }
+  return ranges
+}
+
 let _idCounter = 0
 function genId(): string {
   _idCounter++
@@ -121,21 +146,35 @@ export function useProgramEditor() {
 
   // ── Info ────────────────────────────────────────────────────────────────────
   const updateInfo = useCallback((info: Partial<ProgramEditorState['info']>) => {
-    setState(s => ({ ...s, info: { ...s.info, ...info }, isDirty: true }))
+    setState(s => {
+      const newInfo = { ...s.info, ...info }
+      let newPhases = s.phases
+      if (info.durationWeeks !== undefined && info.durationWeeks > 0) {
+        const ranges = distributeWeeks(info.durationWeeks, s.phases.length)
+        newPhases = s.phases.map((p, i) => ({ ...p, weeks: ranges[i] }))
+      }
+      return { ...s, info: newInfo, phases: newPhases, isDirty: true }
+    })
   }, [])
 
   // ── Phases ──────────────────────────────────────────────────────────────────
   const addPhase = useCallback(() => {
     setState(s => {
-      if (s.phases.length >= 4) return s
-      const newPhase: EditorPhase = { name: `Fase ${s.phases.length + 1}`, weeks: '', color: '#c8f542', bgColor: 'rgba(200,245,66,0.08)' }
+      if (s.phases.length >= MAX_PHASES) return s
+      const extraIdx = Math.max(0, s.phases.length - DEFAULT_PHASES.length) % EXTRA_PHASE_COLORS.length
+      const { color, bgColor } = s.phases.length < DEFAULT_PHASES.length
+        ? DEFAULT_PHASES[s.phases.length]
+        : EXTRA_PHASE_COLORS[extraIdx]
+      const newPhase: EditorPhase = { name: `Fase ${s.phases.length + 1}`, weeks: '', color, bgColor }
       const newPhases = [...s.phases, newPhase]
+      const ranges = distributeWeeks(s.info.durationWeeks, newPhases.length)
+      const redistributed = newPhases.map((p, i) => ({ ...p, weeks: ranges[i] }))
       const newDays = { ...s.days }
       const pi = newPhases.length - 1
       for (const d of DAY_DEFAULTS) {
         newDays[`${pi}_${d.dayId}`] = { ...d, exercises: [] }
       }
-      return { ...s, phases: newPhases, days: newDays, isDirty: true }
+      return { ...s, phases: redistributed, days: newDays, isDirty: true }
     })
   }, [])
 
@@ -143,6 +182,8 @@ export function useProgramEditor() {
     setState(s => {
       if (s.phases.length <= 1) return s
       const newPhases = s.phases.filter((_, i) => i !== index)
+      const ranges = distributeWeeks(s.info.durationWeeks, newPhases.length)
+      const redistributed = newPhases.map((p, i) => ({ ...p, weeks: ranges[i] }))
       // Rebuild days: remove old phase's days and re-index
       const newDays: Record<string, EditorDay> = {}
       let newIdx = 0
@@ -155,7 +196,7 @@ export function useProgramEditor() {
         }
         newIdx++
       }
-      return { ...s, phases: newPhases, days: newDays, isDirty: true }
+      return { ...s, phases: redistributed, days: newDays, isDirty: true }
     })
   }, [])
 
