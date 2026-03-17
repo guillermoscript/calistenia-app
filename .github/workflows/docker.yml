@@ -102,7 +102,7 @@ jobs:
       - name: Build and push AI API image
         uses: docker/build-push-action@v6
         with:
-          context: ./api
+          context: ./mcp-server
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-ai.outputs.tags }}

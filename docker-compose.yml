@@ -24,7 +24,7 @@ services:
 
   ai-api:
     build:
-      context: ./api
+      context: ./mcp-server
       dockerfile: Dockerfile
     container_name: calistenia-ai-api
     restart: unless-stopped

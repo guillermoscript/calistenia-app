@@ -32,7 +32,7 @@ import { registerPrompts } from "./prompts.js";
 import { createApiRouter } from "./api/index.js";
 
 const PORT = parseInt(process.env.PORT ?? process.env.MCP_SERVER_PORT ?? "3001", 10);
-const HOST = process.env.HOST ?? process.env.MCP_SERVER_HOST ?? "127.0.0.1";
+const HOST = process.env.HOST ?? process.env.MCP_SERVER_HOST ?? "0.0.0.0";
 const PB_URL = process.env.POCKETBASE_URL ?? "http://127.0.0.1:8090";
 
 function createServerWithAuth(auth: AuthManager): McpServer {
