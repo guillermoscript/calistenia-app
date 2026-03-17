@@ -146,14 +146,16 @@ export function useProgramEditor() {
 
   // ── Info ────────────────────────────────────────────────────────────────────
   const updateInfo = useCallback((info: Partial<ProgramEditorState['info']>) => {
+    setState(s => ({ ...s, info: { ...s.info, ...info }, isDirty: true }))
+  }, [])
+
+  // Redistribute phase week ranges based on current durationWeeks — call on blur
+  const redistributeWeeks = useCallback(() => {
     setState(s => {
-      const newInfo = { ...s.info, ...info }
-      let newPhases = s.phases
-      if (info.durationWeeks !== undefined && info.durationWeeks > 0) {
-        const ranges = distributeWeeks(info.durationWeeks, s.phases.length)
-        newPhases = s.phases.map((p, i) => ({ ...p, weeks: ranges[i] }))
-      }
-      return { ...s, info: newInfo, phases: newPhases, isDirty: true }
+      if (s.info.durationWeeks <= 0) return s
+      const ranges = distributeWeeks(s.info.durationWeeks, s.phases.length)
+      const newPhases = s.phases.map((p, i) => ({ ...p, weeks: ranges[i] }))
+      return { ...s, phases: newPhases }
     })
   }, [])
 
@@ -489,6 +491,7 @@ export function useProgramEditor() {
     state,
     setStep,
     updateInfo,
+    redistributeWeeks,
     addPhase,
     removePhase,
     updatePhase,

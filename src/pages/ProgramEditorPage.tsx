@@ -49,7 +49,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
   const { id: programId } = useParams<{ id: string }>()
 
   const {
-    state, setStep, updateInfo, addPhase, removePhase, updatePhase,
+    state, setStep, updateInfo, redistributeWeeks, addPhase, removePhase, updatePhase,
     updateDay, addExercise, removeExercise, updateExercise, moveExercise,
     loadProgram, saveProgram, validate, resetEditor,
   } = useProgramEditor()
@@ -216,6 +216,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                       max={104}
                       value={state.info.durationWeeks}
                       onChange={e => updateInfo({ durationWeeks: parseInt(e.target.value) || 1 })}
+                      onBlur={redistributeWeeks}
                       className="text-sm w-32"
                     />
                   </div>
