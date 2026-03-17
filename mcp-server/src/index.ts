@@ -18,7 +18,6 @@ import cors from "cors";
 import type { IncomingMessage, ServerResponse } from "http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { AuthManager, validateBearerToken } from "./auth.js";
 import { registerWorkoutTools } from "./tools/workouts.js";
 import { registerProgramTools } from "./tools/programs.js";
@@ -54,8 +53,7 @@ function createServerWithAuth(auth: AuthManager): McpServer {
   return server;
 }
 
-// Create Express app with MCP defaults (DNS rebinding protection included)
-const app = createMcpExpressApp({ host: HOST });
+const app = express();
 app.use(cors());
 app.use(express.json());
 
