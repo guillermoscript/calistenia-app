@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { cn } from '../lib/utils'
 import { inferDifficulty, DIFFICULTY_COLORS, type DifficultyLevel } from '../lib/difficulty'
 import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
@@ -68,9 +68,24 @@ interface ProgramCardProps {
   isActive: boolean
   onSelect: () => void
   onShare: () => void
+  onDelete?: () => void
+  onEdit?: () => void
 }
 
-function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCardProps) {
+function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, onEdit }: ProgramCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
   const diff = program.difficulty || 'beginner'
   const diffStyle = DIFFICULTY_COLORS[diff] || DIFFICULTY_COLORS[defaultDifficulty]
   return (
@@ -122,6 +137,48 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
             <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
               ACTIVO
             </span>
+          )}
+          {isOwn && (onDelete || onEdit) && (
+            <div ref={menuRef} className="relative" onClick={e => e.stopPropagation()}>
+              <button
+                onClick={() => setMenuOpen(v => !v)}
+                className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10 transition-colors"
+                aria-label="Más opciones"
+              >
+                <DotsIcon className="size-3.5" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-50 min-w-[130px] rounded-lg border border-border bg-popover shadow-lg py-1">
+                  {onEdit && (
+                    <button
+                      onClick={() => { setMenuOpen(false); onEdit() }}
+                      className="w-full text-left px-3 py-2 text-[12px] font-mono tracking-wide text-foreground hover:bg-muted transition-colors"
+                    >
+                      Editar
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      disabled={isActive}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        if (confirm('¿Eliminar este programa? Esta acción no se puede deshacer.')) {
+                          onDelete()
+                        }
+                      }}
+                      className={cn(
+                        'w-full text-left px-3 py-2 text-[12px] font-mono tracking-wide transition-colors',
+                        isActive
+                          ? 'text-muted-foreground/40 cursor-not-allowed'
+                          : 'text-red-400 hover:bg-red-400/10',
+                      )}
+                    >
+                      {isActive ? 'Eliminar (activo)' : 'Eliminar'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -181,6 +238,16 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare }: ProgramCar
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
+function DotsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <circle cx="8" cy="3" r="1.5" />
+      <circle cx="8" cy="8" r="1.5" />
+      <circle cx="8" cy="13" r="1.5" />
+    </svg>
+  )
+}
+
 function ShareIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -219,6 +286,8 @@ interface ProgramsPageProps {
   userId?: string
   onSelectProgram: (programId: string) => void
   onCreateProgram: () => void
+  onDeleteProgram?: (programId: string) => void
+  onEditProgram?: (programId: string) => void
 }
 
 export default function ProgramsPage({
@@ -227,6 +296,8 @@ export default function ProgramsPage({
   userId,
   onSelectProgram,
   onCreateProgram,
+  onDeleteProgram,
+  onEditProgram,
 }: ProgramsPageProps) {
   const [activeFilter, setActiveFilter] = useState<FilterId>('oficiales')
   const [search, setSearch] = useState('')
@@ -372,6 +443,8 @@ export default function ProgramsPage({
               isActive={program.id === activeProgram?.id}
               onSelect={() => onSelectProgram(program.id)}
               onShare={() => shareProgram(program.id, program.name)}
+              onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
+              onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
             />
           ))}
         </div>
