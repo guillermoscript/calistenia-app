@@ -414,6 +414,34 @@ export function useNutrition(userId: string | null) {
     return entries.filter(e => e.loggedAt.startsWith(date))
   }, [entries])
 
+  // ─── Computed: getWeeklyHistory ──────────────────────────────────────────
+  const getWeeklyHistory = useCallback((): Array<{
+    date: string
+    dayLabel: string
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+  }> => {
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+    const result = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().split('T')[0]
+      const totals = getDailyTotals(dateStr)
+      result.push({
+        date: dateStr,
+        dayLabel: days[d.getDay()],
+        calories: Math.round(totals.calories),
+        protein: Math.round(totals.protein),
+        carbs: Math.round(totals.carbs),
+        fat: Math.round(totals.fat),
+      })
+    }
+    return result
+  }, [getDailyTotals])
+
   // ─── Computed: getRemainingMacros ─────────────────────────────────────────
   const getRemainingMacros = useCallback((date?: string): DailyTotals => {
     const totals = getDailyTotals(date)
@@ -446,6 +474,7 @@ export function useNutrition(userId: string | null) {
     // Computed
     getDailyTotals,
     getWeeklyAverages,
+    getWeeklyHistory,
     getEntriesForDate,
     getRemainingMacros,
   }

@@ -578,7 +578,7 @@ export default function App() {
               />
             } />
             <Route path="/lumbar" element={<LumbarPage user={user} />} />
-            <Route path="/nutrition" element={<NutritionPage userId={user.id} />} />
+            <Route path="/nutrition" element={<NutritionPage userId={user.id} trainingPhase={settings.phase} />} />
             <Route path="/progress" element={
               <ProgressPage
                 progress={progress} settings={settings}
@@ -594,6 +594,8 @@ export default function App() {
                 userId={user.id}
                 onSelectProgram={(id) => navigate(`/programs/${id}`)}
                 onCreateProgram={handleCreateProgram}
+                onDeleteProgram={handleDeleteProgram}
+                onEditProgram={handleEditProgram}
               />
             } />
             <Route path="/programs/new" element={

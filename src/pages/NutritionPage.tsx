@@ -1,15 +1,22 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
 import NutritionDashboard from '../components/nutrition/NutritionDashboard'
 import MealLogger from '../components/nutrition/MealLogger'
 import MealSuggestions from '../components/nutrition/MealSuggestions'
+import WeeklyNutritionChart from '../components/nutrition/WeeklyNutritionChart'
+import DailyMealPlan from '../components/nutrition/DailyMealPlan'
 import { useNutrition } from '../hooks/useNutrition'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { Card, CardContent } from '../components/ui/card'
+import { Button } from '../components/ui/button'
 import type { NutritionGoal, NutritionEntry, FoodItem, Sex } from '../types'
+
+const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
 interface NutritionPageProps {
   userId: string | null
+  trainingPhase?: number
 }
 
 interface UserProfileData {
@@ -19,8 +26,9 @@ interface UserProfileData {
   sex?: Sex
 }
 
-export default function NutritionPage({ userId }: NutritionPageProps) {
+export default function NutritionPage({ userId, trainingPhase }: NutritionPageProps) {
   const [profileData, setProfileData] = useState<UserProfileData>({})
+  const [phaseChangeBanner, setPhaseChangeBanner] = useState(false)
 
   // Fetch user profile data for pre-filling nutrition goal setup
   useEffect(() => {
@@ -40,6 +48,17 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
     }
     load()
   }, [userId])
+
+  // US-14: Detect training phase change → suggest recalculating macros
+  useEffect(() => {
+    if (trainingPhase == null) return
+    const lastPhase = localStorage.getItem(LS_LAST_PHASE)
+    if (lastPhase !== null && Number(lastPhase) !== trainingPhase) {
+      setPhaseChangeBanner(true)
+    }
+    localStorage.setItem(LS_LAST_PHASE, String(trainingPhase))
+  }, [trainingPhase])
+
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0])
 
   const {
@@ -52,10 +71,12 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
     calculateMacros,
     getDailyTotals,
     getEntriesForDate,
+    getWeeklyHistory,
   } = useNutrition(userId)
 
   const entries = useMemo(() => getEntriesForDate(selectedDate), [getEntriesForDate, selectedDate])
   const dailyTotals = useMemo(() => getDailyTotals(selectedDate), [getDailyTotals, selectedDate])
+  const weeklyHistory = useMemo(() => getWeeklyHistory(), [getWeeklyHistory])
 
   const remaining = useMemo(() => {
     if (!goals) return { calories: 0, protein: 0, carbs: 0, fat: 0 }
@@ -67,11 +88,24 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
     }
   }, [goals, dailyTotals])
 
+  // US-15: Detect if user has missed goals 2+ of last 3 days
+  const missedGoalsAlert = useMemo(() => {
+    if (!goals) return false
+    const last3 = weeklyHistory.slice(0, 6) // exclude today (last item)
+    const missed = last3.filter(d => d.calories > 0 && d.calories < goals.dailyCalories * 0.7)
+    return missed.length >= 2
+  }, [weeklyHistory, goals])
+
+  const loggedMealTypes = useMemo(
+    () => [...new Set(entries.map(e => e.mealType))],
+    [entries]
+  )
+
   const handleSaveGoals = useCallback(async (newGoals: NutritionGoal) => {
     await saveGoals(newGoals)
+    setPhaseChangeBanner(false)
   }, [saveGoals])
 
-  /** Adapter: NutritionGoalSetup passes (weight, height, age, sex, activityLevel, goal) as strings */
   const handleCalculateMacros = useCallback((
     weight: number, height: number, age: number, sex: string, activityLevel: string, goal: string
   ) => {
@@ -86,13 +120,11 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
     }
   }, [calculateMacros])
 
-  /** Adapter for MealLogger onAnalyze */
   const handleAnalyze = useCallback(async (imageFile: File, mealType: string): Promise<{ foods: FoodItem[] }> => {
     const result = await analyzeMeal(imageFile, mealType)
     return { foods: result.foods }
   }, [analyzeMeal])
 
-  /** Adapter for MealLogger onSave */
   const handleSaveEntry = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>) => {
     await saveEntry({ ...entry, user: userId || undefined })
   }, [saveEntry, userId])
@@ -113,7 +145,7 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
             d.setDate(d.getDate() - 1)
             setSelectedDate(d.toISOString().split('T')[0])
           }}
-          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
+          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime-400/40 text-muted-foreground hover:text-foreground transition-colors"
         >
           ‹
         </button>
@@ -129,14 +161,14 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
             d.setDate(d.getDate() + 1)
             setSelectedDate(d.toISOString().split('T')[0])
           }}
-          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
+          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime-400/40 text-muted-foreground hover:text-foreground transition-colors"
         >
           ›
         </button>
         {!isToday && (
           <button
             onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-            className="text-[10px] tracking-widest text-lime hover:text-lime/80 uppercase"
+            className="text-[10px] tracking-widest text-lime-400 hover:text-lime-400/80 uppercase"
           >
             HOY
           </button>
@@ -160,16 +192,89 @@ export default function NutritionPage({ userId }: NutritionPageProps) {
         />
       ) : (
         <div className="space-y-8">
+
+          {/* US-14: Phase change banner */}
+          {phaseChangeBanner && (
+            <Card className="border-lime-400/30 bg-lime-400/5">
+              <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="text-sm font-medium text-lime-400">
+                    Entraste a Fase {trainingPhase} de entrenamiento
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Tu nivel de actividad puede haber cambiado. ¿Quieres recalcular tus macros?
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => setPhaseChangeBanner(false)}
+                    variant="outline"
+                    className="text-[10px] tracking-widest h-8"
+                  >
+                    Ignorar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setPhaseChangeBanner(false)
+                      // Temporarily hide goals to show setup wizard
+                      saveGoals({ ...goals, dailyCalories: -1 })
+                    }}
+                    className="bg-lime-400 hover:bg-lime-300 text-zinc-900 text-[10px] font-bebas tracking-widest h-8 px-3"
+                  >
+                    Recalcular
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* US-15: Missed goals alert */}
+          {missedGoalsAlert && (
+            <Card className="border-amber-400/30 bg-amber-400/5">
+              <CardContent className="p-4">
+                <div className="flex gap-3">
+                  <span className="text-xl shrink-0">📉</span>
+                  <div>
+                    <div className="text-sm font-medium text-amber-400">Llevas días sin alcanzar tu meta</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                      En los últimos días tu ingesta calórica estuvo por debajo del 70% de tu objetivo.
+                      Considera usar el <strong>Plan del día</strong> o revisar tus metas.
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Daily dashboard */}
           <div id="tour-nutrition-dashboard">
-          <NutritionDashboard
-            dailyTotals={dailyTotals}
-            goals={goals}
-            entries={entries}
-            onDeleteEntry={deleteEntry}
-          />
+            <NutritionDashboard
+              dailyTotals={dailyTotals}
+              goals={goals}
+              entries={entries}
+              onDeleteEntry={deleteEntry}
+            />
           </div>
 
+          {/* US-10: AI Daily meal plan */}
+          {isToday && (
+            <DailyMealPlan
+              remaining={remaining}
+              goals={{ calories: goals.dailyCalories, protein: goals.dailyProtein, carbs: goals.dailyCarbs, fat: goals.dailyFat }}
+              loggedMealTypes={loggedMealTypes}
+            />
+          )}
+
+          {/* Macro suggestions */}
           <MealSuggestions remaining={remaining} />
+
+          {/* US-11/12: Weekly history chart */}
+          <WeeklyNutritionChart
+            history={weeklyHistory}
+            calorieGoal={goals.dailyCalories}
+          />
 
           {/* FAB for meal logging */}
           <div id="tour-meal-logger">
