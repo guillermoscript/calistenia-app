@@ -91,7 +91,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   // US-15: Detect if user has missed goals 2+ of last 3 days
   const missedGoalsAlert = useMemo(() => {
     if (!goals) return false
-    const last3 = weeklyHistory.slice(0, 6) // exclude today (last item)
+    const last3 = weeklyHistory.slice(3, 6) // last 3 days before today (index 6)
     const missed = last3.filter(d => d.calories > 0 && d.calories < goals.dailyCalories * 0.7)
     return missed.length >= 2
   }, [weeklyHistory, goals])
