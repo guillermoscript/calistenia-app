@@ -44,6 +44,7 @@ interface ProgramExercise {
   timerSeconds?: number
   demoImages?: string[]
   demoVideo?: string
+  pbRecordId?: string
 }
 
 // ── Share helper ───────────────────────────────────────────────────────────
