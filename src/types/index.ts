@@ -55,6 +55,7 @@ export interface WeekDay {
 export interface SetData {
   reps: string
   note: string
+  weight?: number
   timestamp: number
 }
 

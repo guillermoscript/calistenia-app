@@ -129,6 +129,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
         entry.sets.push({
           reps: s.reps,
           note: s.note,
+          weight: s.weight_kg || undefined,
           timestamp: new Date(s.logged_at || s.created).getTime(),
         })
       })
@@ -197,6 +198,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
           workout_key: workoutKey,
           reps: setData.reps || '',
           note: setData.note || '',
+          weight_kg: setData.weight ?? null,
           logged_at: new Date().toISOString().replace('T', ' '),
         })
       } catch (e) { console.warn('PB sets_log error:', e) }

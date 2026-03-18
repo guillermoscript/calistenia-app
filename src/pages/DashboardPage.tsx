@@ -8,6 +8,8 @@ import { Button } from '../components/ui/button'
 import { Progress } from '../components/ui/progress'
 import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
+import WaterTracker from '../components/WaterTracker'
+import { useWater } from '../hooks/useWater'
 import type { Settings, Phase, WeekDay, ProgramMeta } from '../types'
 
 // Map phase id → tailwind accent color class (border-l, text)
@@ -146,6 +148,7 @@ export default function DashboardPage({
 }: DashboardPageProps) {
   const PHASES = phasesProp || FALLBACK_PHASES
   const [showProgramModal, setShowProgramModal] = useState(false)
+  const { todayTotal: waterTotal, goal: waterGoal, addWater } = useWater(userId ?? null)
   const [windowWidth, setWindowWidth] = useState(() => window.innerWidth)
   useEffect(() => {
     const handler = () => setWindowWidth(window.innerWidth)
@@ -325,6 +328,11 @@ export default function DashboardPage({
           </CardContent>
         </Card>
       )}
+
+      {/* Water Tracker */}
+      <div className="mb-8">
+        <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} compact />
+      </div>
 
       {/* Weekly Plan */}
       <div id="tour-weekly-plan">

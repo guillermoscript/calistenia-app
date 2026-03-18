@@ -20,7 +20,7 @@ const PRIORITY_LABELS: Record<Priority, string> = { high: 'PRIORITARIO', med: 'I
 interface ExerciseCardProps {
   exercise: Exercise
   workoutKey: string
-  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string }) => void
+  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number }) => void
   onStartRest: (seconds: number) => void
   logs?: ExerciseLog[]
   isAdmin?: boolean
@@ -40,6 +40,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   const advanceSuggested = hasProgression && shouldSuggestProgression(exercise.id, logs)
   const [logReps, setLogReps] = useState<string>('')
   const [logNote, setLogNote] = useState<string>('')
+  const [logWeight, setLogWeight] = useState<string>('')
   const [setsLogged, setSetsLogged] = useState<number>(0)
   const [flash, setFlash] = useState<boolean>(false)
 
@@ -63,10 +64,12 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
 
   const handleFormLog = (): void => {
     if (!logReps) return
-    onLogSet(exercise.id, workoutKey, { reps: logReps, note: logNote })
+    const w = parseFloat(logWeight)
+    onLogSet(exercise.id, workoutKey, { reps: logReps, note: logNote, weight: isNaN(w) ? undefined : w })
     setSetsLogged(s => s + 1)
     setLogReps('')
     setLogNote('')
+    setLogWeight('')
     setShowEditForm(false)
     onStartRest(exercise.rest || 90)
     triggerFlash()
@@ -263,10 +266,19 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 className="flex-1 min-w-[110px] h-8 text-xs"
               />
               <Input
+                type="number"
+                step="0.5"
+                min="0"
+                value={logWeight}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogWeight(e.target.value)}
+                placeholder="Lastre kg"
+                className="w-[90px] h-8 text-xs"
+              />
+              <Input
                 value={logNote}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogNote(e.target.value)}
-                placeholder="Nota opcional (ej: fácil, con dolor…)"
-                className="flex-[2] min-w-[150px] h-8 text-xs"
+                placeholder="Nota opcional"
+                className="flex-[2] min-w-[120px] h-8 text-xs"
               />
               <Button
                 onClick={handleFormLog}
@@ -295,6 +307,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 {log.sets?.map((s: SetData, j: number) => (
                   <span key={j} className="mr-2">
                     Serie {j + 1}: <strong>{s.reps}</strong>
+                    {s.weight && <span className="text-amber-400 ml-1">+{s.weight}kg</span>}
                     {s.note && <em className="text-muted-foreground ml-1">({s.note})</em>}
                   </span>
                 ))}

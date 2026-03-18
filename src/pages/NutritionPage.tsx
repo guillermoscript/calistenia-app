@@ -7,6 +7,8 @@ import MealSuggestions from '../components/nutrition/MealSuggestions'
 import WeeklyNutritionChart from '../components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan from '../components/nutrition/DailyMealPlan'
 import { useNutrition } from '../hooks/useNutrition'
+import { useWater } from '../hooks/useWater'
+import WaterTracker from '../components/WaterTracker'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -59,6 +61,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     localStorage.setItem(LS_LAST_PHASE, String(trainingPhase))
   }, [trainingPhase])
 
+  const { todayTotal: waterTotal, goal: waterGoal, addWater } = useWater(userId)
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0])
 
   const {
@@ -248,6 +251,9 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               </CardContent>
             </Card>
           )}
+
+          {/* Water tracker */}
+          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} />
 
           {/* Daily dashboard */}
           <div id="tour-nutrition-dashboard">

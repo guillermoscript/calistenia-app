@@ -21,6 +21,7 @@ import SharedProgramPage from './pages/SharedProgramPage'
 import AdminPage from './pages/AdminPage'
 import EditorPage from './pages/EditorPage'
 import UserProfilePage from './pages/UserProfilePage'
+import CalendarPage from './pages/CalendarPage'
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -61,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/lumbar',    label: 'Lumbar',      icon: SpineIcon },
   { path: '/progress',  label: 'Progreso',   icon: ChartIcon },
   { path: '/nutrition', label: 'Nutricion',  icon: NutritionIcon },
+  { path: '/calendar',  label: 'Calendario', icon: CalendarNavIcon },
   { path: '/programs',  label: 'Programas',  icon: ProgramIcon },
   { path: '/exercises', label: 'Ejercicios', icon: ExerciseIcon },
   { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
@@ -77,6 +79,7 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/programs\/[^/]+\/edit$/)) return 'Editar Programa'
   if (pathname.match(/^\/programs\/[^/]+$/)) return 'Detalle Programa'
   if (pathname.match(/^\/exercises\/[^/]+$/)) return 'Detalle Ejercicio'
+  if (pathname === '/calendar') return 'Calendario'
   if (pathname === '/nutrition/log') return 'Registrar Comida'
   if (pathname.match(/^\/shared\/[^/]+$/)) return 'Programa Compartido'
   if (pathname === '/admin') return 'Admin'
@@ -160,6 +163,16 @@ function ExerciseIcon({ className }: IconProps) {
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="8" cy="8" r="6" />
       <polyline points="8,4 8,8 11,10" />
+    </svg>
+  )
+}
+function CalendarNavIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="1" y="3" width="14" height="12" rx="1.5" />
+      <line x1="1" y1="7" x2="15" y2="7" />
+      <line x1="4" y1="1" x2="4" y2="4" />
+      <line x1="12" y1="1" x2="12" y2="4" />
     </svg>
   )
 }
@@ -587,6 +600,12 @@ export default function App() {
                 progress={progress} settings={settings}
                 activeProgram={activeProgram}
                 userId={user.id}
+              />
+            } />
+            <Route path="/calendar" element={
+              <CalendarPage
+                progress={progress}
+                onGoToWorkout={() => navigate('/workout')}
               />
             } />
             <Route path="/profile" element={<ProfilePage user={user} />} />

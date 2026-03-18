@@ -3,6 +3,7 @@ import { pb } from '../lib/pocketbase'
 import type { FoodItem } from '../types'
 import { migrateLegacyFood } from '../lib/macro-calc'
 import { AI_API_URL } from '../lib/ai-api'
+import { searchCommonFoods } from '../data/common-foods'
 
 // ── Relation helpers ───────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ export function useFoodCatalog() {
         sort: 'name_display',
         expand: 'category,tags',
       })
-      return res.items.map((r: any) => {
+      const pbFoods = res.items.map((r: any) => {
         const food = migrateLegacyFood({
           name: r.name_display,
           portion: r.portion,
@@ -86,8 +87,13 @@ export function useFoodCatalog() {
         if (r.base_fat_100) food.baseFat100 = r.base_fat_100
         return food
       })
+      // Merge with local common foods (avoid duplicates by name)
+      const pbNames = new Set(pbFoods.map((f: FoodItem) => f.name.toLowerCase()))
+      const localFoods = searchCommonFoods(query).filter(f => !pbNames.has(f.name.toLowerCase()))
+      return [...pbFoods, ...localFoods].slice(0, 15)
     } catch {
-      return []
+      // PB not available — fall back to local common foods database
+      return searchCommonFoods(query)
     }
   }, [])
 
