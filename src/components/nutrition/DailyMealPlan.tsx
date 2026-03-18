@@ -12,23 +12,14 @@ interface MacroTarget {
   fat: number
 }
 
-interface PlannedFood {
-  name: string
-  portion: string
+interface PlannedMeal {
+  meal_type: 'desayuno' | 'almuerzo' | 'cena' | 'snack'
+  label: string
+  description: string
   calories: number
   protein: number
   carbs: number
   fat: number
-}
-
-interface PlannedMeal {
-  meal_type: 'desayuno' | 'almuerzo' | 'cena' | 'snack'
-  label: string
-  foods: PlannedFood[]
-  total_calories: number
-  total_protein: number
-  total_carbs: number
-  total_fat: number
 }
 
 interface DailyMealPlanProps {
@@ -159,24 +150,19 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes }: Dai
             return (
               <Card key={i}>
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-2">
                     <span className={cn('text-[9px] tracking-widest px-2 py-0.5 rounded border', colors.bg, colors.color)}>
                       {meal.label || colors.label}
                     </span>
-                    <span className="font-bebas text-lg text-foreground">{meal.total_calories} kcal</span>
+                    <span className="font-bebas text-lg text-foreground">{meal.calories} kcal</span>
                   </div>
-                  <div className="space-y-1.5">
-                    {meal.foods.map((food, fi) => (
-                      <div key={fi} className="flex items-center gap-2 text-xs">
-                        <span className="flex-1 text-foreground">{food.name}</span>
-                        <span className="text-muted-foreground shrink-0">{food.portion}</span>
-                      </div>
-                    ))}
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    {meal.description}
                   </div>
-                  <div className="flex gap-4 mt-3 pt-2.5 border-t border-border text-[11px]">
-                    <span className="text-sky-500">{meal.total_protein}g P</span>
-                    <span className="text-amber-400">{meal.total_carbs}g C</span>
-                    <span className="text-pink-500">{meal.total_fat}g G</span>
+                  <div className="flex gap-4 mt-2.5 pt-2.5 border-t border-border text-[11px]">
+                    <span className="text-sky-500">{meal.protein}g P</span>
+                    <span className="text-amber-400">{meal.carbs}g C</span>
+                    <span className="text-pink-500">{meal.fat}g G</span>
                   </div>
                 </CardContent>
               </Card>

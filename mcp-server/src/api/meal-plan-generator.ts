@@ -1,29 +1,20 @@
-import { generateText, Output } from "ai";
+import { generateObject } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
 
-const PlannedFoodSchema = z.object({
-  name: z.string().describe("Nombre del alimento en español"),
-  portion: z.string().describe('Porción (ej: "200g", "1 taza", "2 unidades")'),
-  calories: z.number().describe("Calorías (kcal)"),
-  protein: z.number().describe("Proteína (g)"),
-  carbs: z.number().describe("Carbohidratos (g)"),
-  fat: z.number().describe("Grasa (g)"),
-});
-
 const PlannedMealSchema = z.object({
   meal_type: z.enum(["desayuno", "almuerzo", "cena", "snack"]),
-  label: z.string().describe("Nombre descriptivo de la comida"),
-  foods: z.array(PlannedFoodSchema).describe("Lista de alimentos para esta comida"),
-  total_calories: z.number().describe("Suma total de calorías de la comida"),
-  total_protein: z.number().describe("Suma total de proteína"),
-  total_carbs: z.number().describe("Suma total de carbohidratos"),
-  total_fat: z.number().describe("Suma total de grasa"),
+  label: z.string().describe("Nombre corto de la comida"),
+  description: z.string().describe("Alimentos con porciones, ej: 'Pechuga 150g, arroz 200g, ensalada'"),
+  calories: z.number().describe("Calorías totales (kcal)"),
+  protein: z.number().describe("Proteína total (g)"),
+  carbs: z.number().describe("Carbohidratos totales (g)"),
+  fat: z.number().describe("Grasa total (g)"),
 });
 
 const MealPlanSchema = z.object({
-  meals: z.array(PlannedMealSchema).describe("Lista de comidas planificadas para el resto del día"),
-  notes: z.string().optional().describe("Nota o consejo adicional sobre el plan (opcional)"),
+  meals: z.array(PlannedMealSchema).describe("Comidas planificadas"),
+  notes: z.string().describe("Consejo breve"),
 });
 
 interface MealPlanInput {
@@ -53,39 +44,22 @@ export async function generateDailyMealPlan({
       ? pendingMeals.join(", ")
       : "snack o comida adicional";
 
-  const systemPrompt = `Eres un nutricionista experto que diseña planes de comidas personalizados.
-Crea un plan de comidas práctico, sabroso y realista para el resto del día.
+  const prompt = `Diseña comidas para: ${pendingLabel}.
+Macros restantes: ${remainingCalories}kcal, ${remainingProtein}g prot, ${remainingCarbs}g carbs, ${remainingFat}g grasa.
+Usa alimentos comunes, porciones realistas, en español. Sé conciso.`;
 
-Reglas:
-- Distribuye los macros restantes de forma equilibrada entre las comidas pendientes
-- Los alimentos deben ser comunes y fáciles de conseguir (no ingredientes exóticos)
-- Las porciones deben ser realistas y saciantes
-- Los totales de cada comida DEBEN ser la suma exacta de sus alimentos
-- Responde siempre en español
-- Prefiere alimentos naturales y no procesados cuando sea posible`;
-
-  const userPrompt = `Diseña un plan de comidas para las comidas pendientes del día: ${pendingLabel}.
-
-Macros restantes para distribuir:
-- Calorías: ${remainingCalories} kcal
-- Proteína: ${remainingProtein}g
-- Carbohidratos: ${remainingCarbs}g
-- Grasa: ${remainingFat}g
-
-Genera exactamente las comidas que faltan y distribuye los macros de forma inteligente.`;
-
-  const { output, usage } = await generateText({
+  const { object, usage } = await generateObject({
     model,
-    output: Output.object({ schema: MealPlanSchema }),
+    schema: MealPlanSchema,
     messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: "system", content: "Nutricionista experto. Respuestas concisas en español." },
+      { role: "user", content: prompt },
     ],
   });
 
   return {
-    meals: output.meals,
-    notes: output.notes,
+    meals: object.meals,
+    notes: object.notes,
     model_used: modelName,
     usage: {
       prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
