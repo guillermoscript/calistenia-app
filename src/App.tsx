@@ -22,6 +22,7 @@ import AdminPage from './pages/AdminPage'
 import EditorPage from './pages/EditorPage'
 import UserProfilePage from './pages/UserProfilePage'
 import CalendarPage from './pages/CalendarPage'
+import LandingPage from './pages/LandingPage'
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -514,19 +515,22 @@ export default function App() {
           <SharedProgramPage
             programId={shareCode}
             onBack={() => navigate('/')}
-            onLogin={() => navigate('/')}
+            onLogin={() => navigate('/auth')}
           />
         </div>
       )
     }
-    return (
-      <AuthPage
-        signIn={signIn}
-        signUp={signUp}
-        authError={authError}
-        isLoading={isLoading}
-      />
-    )
+    if (location.pathname === '/auth') {
+      return (
+        <AuthPage
+          signIn={signIn}
+          signUp={signUp}
+          authError={authError}
+          isLoading={isLoading}
+        />
+      )
+    }
+    return <LandingPage onGetStarted={() => navigate('/auth')} />
   }
 
   if (!pbReady || !programsReady) return <Loader />
