@@ -375,7 +375,7 @@ export default function DashboardPage({
 
       {/* Workout Reminders */}
       <div className="mb-8">
-        <WorkoutReminderWidget />
+        <WorkoutReminderWidget userId={userId} />
       </div>
 
       {/* Phase + Goals */}

@@ -2,39 +2,21 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from './ui/button'
 import { playRestStart, playGetReady, playCountdownTick, playWarning, vibrate } from '../lib/sounds'
 
-const LS_REST_PREFS = 'calistenia_rest_prefs'
-
-function getRestPref(exerciseId?: string): number | null {
-  if (!exerciseId) return null
-  try {
-    const prefs = JSON.parse(localStorage.getItem(LS_REST_PREFS) || '{}')
-    return prefs[exerciseId] || null
-  } catch { return null }
-}
-
-function saveRestPref(exerciseId: string, seconds: number) {
-  try {
-    const prefs = JSON.parse(localStorage.getItem(LS_REST_PREFS) || '{}')
-    prefs[exerciseId] = seconds
-    localStorage.setItem(LS_REST_PREFS, JSON.stringify(prefs))
-  } catch {}
-}
-
 interface RestTimerProps {
   seconds?: number
   exerciseId?: string
   onDone?: () => void
+  onAdjust?: (exerciseId: string, seconds: number) => void
+  savedRest?: number
 }
 
-export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone }: RestTimerProps) {
-  const savedPref = exerciseId ? getRestPref(exerciseId) : null
-  const startSecs = savedPref || initSecs
+export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone, onAdjust, savedRest }: RestTimerProps) {
+  const startSecs = savedRest || initSecs
   const [s, setS] = useState<number>(startSecs)
   const [totalSecs, setTotalSecs] = useState<number>(startSecs)
   const [running, setRunning] = useState<boolean>(true)
   const ref = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Sound on mount
   useEffect(() => { playRestStart() }, [])
 
   useEffect(() => {
@@ -48,9 +30,7 @@ export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone }
           onDone?.()
           return 0
         }
-        // Warning at 10s
         if (prev === 11) { playWarning(); vibrate([100]) }
-        // Countdown 3, 2, 1
         if (prev <= 4 && prev > 1) { playCountdownTick(); vibrate([50]) }
         return prev - 1
       })
@@ -63,7 +43,7 @@ export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone }
     const newS = Math.max(1, s + delta)
     setTotalSecs(newTotal)
     setS(newS)
-    if (exerciseId) saveRestPref(exerciseId, newTotal)
+    if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
   }
 
   return (
@@ -76,47 +56,21 @@ export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone }
         </div>
       </div>
       <div className="flex flex-col gap-1.5">
-        {/* Adjust buttons */}
         <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => adjustTime(-15)}
-            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground"
-          >
-            -15
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => adjustTime(15)}
-            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground"
-          >
-            +15
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => adjustTime(30)}
-            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground"
-          >
-            +30
-          </Button>
+          <Button size="sm" variant="outline" onClick={() => adjustTime(-15)}
+            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground">-15</Button>
+          <Button size="sm" variant="outline" onClick={() => adjustTime(15)}
+            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground">+15</Button>
+          <Button size="sm" variant="outline" onClick={() => adjustTime(30)}
+            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground">+30</Button>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
+        <Button size="sm" variant="outline"
           onClick={() => { if (ref.current) clearInterval(ref.current); setRunning(false); onDone?.() }}
-          className="font-mono text-[10px] tracking-wide text-[hsl(var(--lime))] border-[hsl(var(--lime))]/30 hover:bg-[hsl(var(--lime))]/10 hover:text-[hsl(var(--lime))]"
-        >
+          className="font-mono text-[10px] tracking-wide text-[hsl(var(--lime))] border-[hsl(var(--lime))]/30 hover:bg-[hsl(var(--lime))]/10 hover:text-[hsl(var(--lime))]">
           SALTAR
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setRunning(r => !r)}
-          className="font-mono text-[10px] text-muted-foreground"
-        >
+        <Button size="sm" variant="ghost" onClick={() => setRunning(r => !r)}
+          className="font-mono text-[10px] text-muted-foreground">
           {running ? 'PAUSA' : 'RESUME'}
         </Button>
       </div>

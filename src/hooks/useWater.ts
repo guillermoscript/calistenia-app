@@ -54,10 +54,15 @@ export const useWater = (userId: string | null = null): UseWaterReturn => {
       if (available && userId) {
         try {
           const startOfDay = `${today} 00:00:00`
-          const res = await pb.collection('water_entries').getList(1, 100, {
-            filter: pb.filter('user = {:uid} && logged_at >= {:start}', { uid: userId, start: startOfDay }),
-            sort: '-logged_at',
-          })
+          const [res, settingsRec] = await Promise.all([
+            pb.collection('water_entries').getList(1, 100, {
+              filter: pb.filter('user = {:uid} && logged_at >= {:start}', { uid: userId, start: startOfDay }),
+              sort: '-logged_at',
+            }),
+            pb.collection('settings').getFirstListItem(
+              pb.filter('user = {:uid}', { uid: userId })
+            ).catch(() => null),
+          ])
           const entries: WaterEntry[] = res.items.map((r: any) => ({
             id: r.id,
             amount_ml: r.amount_ml,
@@ -65,6 +70,12 @@ export const useWater = (userId: string | null = null): UseWaterReturn => {
           }))
           const total = entries.reduce((s, e) => s + e.amount_ml, 0)
           setData({ [today]: { entries, total } })
+          // Load water goal from PB settings
+          if (settingsRec && (settingsRec as any).water_goal) {
+            const pbGoal = (settingsRec as any).water_goal
+            setGoalState(pbGoal)
+            localStorage.setItem('calistenia_water_goal', String(pbGoal))
+          }
         } catch {
           setData(lsGet())
         }
@@ -126,10 +137,25 @@ export const useWater = (userId: string | null = null): UseWaterReturn => {
     }
   }, [usePB, userId, today])
 
-  const setGoal = useCallback((ml: number) => {
+  const setGoal = useCallback(async (ml: number) => {
     setGoalState(ml)
     localStorage.setItem('calistenia_water_goal', String(ml))
-  }, [])
+
+    // Persist to PB settings
+    if (usePB && userId) {
+      try {
+        const existing = await pb.collection('settings').getFirstListItem(
+          pb.filter('user = {:uid}', { uid: userId })
+        )
+        await pb.collection('settings').update(existing.id, { water_goal: ml })
+      } catch {
+        // Settings record may not exist or field not yet available
+        try {
+          await pb.collection('settings').create({ user: userId, water_goal: ml })
+        } catch {}
+      }
+    }
+  }, [usePB, userId])
 
   return {
     todayTotal: todayData.total,

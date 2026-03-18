@@ -134,24 +134,12 @@ interface RestScreenProps {
   exerciseId?: string
   nextStep: Step | null
   onSkip: () => void
+  savedRest?: number
+  onAdjust?: (exerciseId: string, seconds: number) => void
 }
 
-const LS_REST_PREFS = 'calistenia_rest_prefs'
-function getRestPref(exerciseId?: string): number | null {
-  if (!exerciseId) return null
-  try { return JSON.parse(localStorage.getItem(LS_REST_PREFS) || '{}')[exerciseId] || null } catch { return null }
-}
-function saveRestPref(exerciseId: string, seconds: number) {
-  try {
-    const prefs = JSON.parse(localStorage.getItem(LS_REST_PREFS) || '{}')
-    prefs[exerciseId] = seconds
-    localStorage.setItem(LS_REST_PREFS, JSON.stringify(prefs))
-  } catch {}
-}
-
-function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip }: RestScreenProps) {
-  const savedPref = exerciseId ? getRestPref(exerciseId) : null
-  const initialSeconds = savedPref || defaultSeconds
+function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, savedRest, onAdjust }: RestScreenProps) {
+  const initialSeconds = savedRest || defaultSeconds
   const [remaining, setRemaining] = useState<number>(initialSeconds)
   const [totalSecs, setTotalSecs] = useState<number>(initialSeconds)
   const touchStartX = useRef<number | null>(null)
@@ -210,7 +198,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip }: R
     const newTotal = Math.max(10, totalSecs + delta)
     setTotalSecs(newTotal)
     setRemaining(r => Math.max(1, r + delta))
-    if (exerciseId) saveRestPref(exerciseId, newTotal)
+    if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
   }
 
   const mins = Math.floor(remaining / 60)
@@ -644,6 +632,8 @@ interface SessionViewProps {
   onGoToDashboard: () => void
   onExitSession: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
+  getRestForExercise?: (exerciseId: string, defaultRest: number) => number
+  setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
 }
 
 export default function SessionView({
@@ -654,6 +644,8 @@ export default function SessionView({
   onGoToDashboard,
   onExitSession,
   getExerciseLogs,
+  getRestForExercise,
+  setRestForExercise,
 }: SessionViewProps) {
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
 
@@ -756,6 +748,8 @@ export default function SessionView({
           exerciseId={currentStep?.exercise.id}
           nextStep={nextStep}
           onSkip={handleRestDone}
+          savedRest={currentStep && getRestForExercise ? getRestForExercise(currentStep.exercise.id, currentStep.exercise.rest || 90) : undefined}
+          onAdjust={setRestForExercise ? (id, secs) => setRestForExercise(id, secs) : undefined}
         />
       )}
 

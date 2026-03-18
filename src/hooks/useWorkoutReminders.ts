@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 
 const LS_KEY = 'calistenia_workout_reminders'
 
@@ -15,10 +16,50 @@ const lsGet = (): WorkoutReminder[] => {
 }
 const lsSet = (d: WorkoutReminder[]) => localStorage.setItem(LS_KEY, JSON.stringify(d))
 
-export function useWorkoutReminders() {
-  const [reminders, setReminders] = useState<WorkoutReminder[]>(() => lsGet())
+export function useWorkoutReminders(userId: string | null = null) {
+  const [reminders, setReminders] = useState<WorkoutReminder[]>([])
+  const [usePB, setUsePB] = useState(false)
+  const initialized = useRef(false)
 
-  const saveReminder = useCallback((hour: number, minute: number, daysOfWeek: number[] = [1, 2, 3, 4, 5]) => {
+  useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+
+    const init = async () => {
+      const available = userId ? await isPocketBaseAvailable() : false
+      setUsePB(available && !!userId)
+
+      if (available && userId) {
+        try {
+          const res = await pb.collection('workout_reminders').getList(1, 50, {
+            filter: pb.filter('user = {:uid}', { uid: userId }),
+            sort: 'hour,minute',
+          })
+          const loaded: WorkoutReminder[] = res.items.map((r: any) => ({
+            id: r.id,
+            hour: r.hour,
+            minute: r.minute,
+            daysOfWeek: typeof r.days_of_week === 'string' ? JSON.parse(r.days_of_week) : r.days_of_week || [1, 2, 3, 4, 5],
+            enabled: r.enabled,
+          }))
+          setReminders(loaded)
+          lsSet(loaded)
+        } catch {
+          setReminders(lsGet())
+        }
+      } else {
+        setReminders(lsGet())
+      }
+    }
+    init()
+  }, [userId])
+
+  // Schedule notifications on mount/update
+  useEffect(() => {
+    reminders.filter(r => r.enabled).forEach(scheduleNotification)
+  }, [reminders])
+
+  const saveReminder = useCallback(async (hour: number, minute: number, daysOfWeek: number[] = [1, 2, 3, 4, 5]) => {
     const reminder: WorkoutReminder = {
       id: `wr_${Date.now()}`,
       hour,
@@ -26,36 +67,57 @@ export function useWorkoutReminders() {
       daysOfWeek,
       enabled: true,
     }
+
+    if (usePB && userId) {
+      try {
+        const rec = await pb.collection('workout_reminders').create({
+          user: userId,
+          hour,
+          minute,
+          days_of_week: JSON.stringify(daysOfWeek),
+          enabled: true,
+        })
+        reminder.id = rec.id
+      } catch (e) { console.warn('PB workout_reminders create error:', e) }
+    }
+
     setReminders(prev => {
       const updated = [...prev, reminder]
       lsSet(updated)
       return updated
     })
 
-    // Schedule browser notification
     scheduleNotification(reminder)
-  }, [])
+  }, [usePB, userId])
 
-  const toggleReminder = useCallback((id: string) => {
+  const toggleReminder = useCallback(async (id: string) => {
+    const reminder = reminders.find(r => r.id === id)
+    if (!reminder) return
+
+    const newEnabled = !reminder.enabled
+
+    if (usePB && !id.startsWith('wr_')) {
+      try { await pb.collection('workout_reminders').update(id, { enabled: newEnabled }) } catch {}
+    }
+
     setReminders(prev => {
-      const updated = prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r)
+      const updated = prev.map(r => r.id === id ? { ...r, enabled: newEnabled } : r)
       lsSet(updated)
       return updated
     })
-  }, [])
+  }, [usePB, reminders])
 
-  const deleteReminder = useCallback((id: string) => {
+  const deleteReminder = useCallback(async (id: string) => {
+    if (usePB && !id.startsWith('wr_')) {
+      try { await pb.collection('workout_reminders').delete(id) } catch {}
+    }
+
     setReminders(prev => {
       const updated = prev.filter(r => r.id !== id)
       lsSet(updated)
       return updated
     })
-  }, [])
-
-  // On mount, schedule all enabled reminders
-  useEffect(() => {
-    reminders.filter(r => r.enabled).forEach(scheduleNotification)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [usePB])
 
   return { reminders, saveReminder, toggleReminder, deleteReminder }
 }
@@ -64,7 +126,7 @@ function scheduleNotification(reminder: WorkoutReminder) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
 
   const now = new Date()
-  const today = now.getDay() === 0 ? 7 : now.getDay() // Convert to 1=Mon..7=Sun
+  const today = now.getDay() === 0 ? 7 : now.getDay()
   if (!reminder.daysOfWeek.includes(today)) return
 
   const target = new Date()

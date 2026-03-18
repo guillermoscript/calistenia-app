@@ -5,6 +5,10 @@ import { Input } from './ui/input'
 import { cn } from '../lib/utils'
 import { useWorkoutReminders } from '../hooks/useWorkoutReminders'
 
+interface WorkoutReminderWidgetProps {
+  userId?: string | null
+}
+
 const DAY_LABELS = [
   { id: 1, label: 'L' },
   { id: 2, label: 'M' },
@@ -15,8 +19,8 @@ const DAY_LABELS = [
   { id: 7, label: 'D' },
 ]
 
-export default function WorkoutReminderWidget() {
-  const { reminders, saveReminder, toggleReminder, deleteReminder } = useWorkoutReminders()
+export default function WorkoutReminderWidget({ userId }: WorkoutReminderWidgetProps) {
+  const { reminders, saveReminder, toggleReminder, deleteReminder } = useWorkoutReminders(userId ?? null)
   const [showForm, setShowForm] = useState(false)
   const [hour, setHour] = useState('08')
   const [minute, setMinute] = useState('00')
