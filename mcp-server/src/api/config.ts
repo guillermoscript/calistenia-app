@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 export interface AppConfig {
   port: number;
   pocketbaseUrl: string;
