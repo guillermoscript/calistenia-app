@@ -265,7 +265,19 @@ export default function DashboardPage({
       {/* Stats Grid */}
       <div id="tour-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard value={totalSessions} label="Sesiones totales" accent="text-lime" sub={`Objetivo: ${weekElapsed * 5} sesiones`} />
-        <StatCard value={streak} label="Racha máxima (días)" accent="text-sky-500" />
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2">
+              <div className={cn('font-bebas text-5xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>
+                {streak}
+              </div>
+              {streak >= 3 && <span className="text-2xl animate-pulse">🔥</span>}
+            </div>
+            <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Racha máxima (días)</div>
+            {streak >= 7 && <div className="text-[10px] text-orange-500 mt-1">Imparable!</div>}
+            {streak >= 3 && streak < 7 && <div className="text-[10px] text-amber-400 mt-1">Sigue asi!</div>}
+          </CardContent>
+        </Card>
         <StatCard value={weeklyDone} label="Esta semana" accent="text-amber-400" sub={`Meta: ${settings.weeklyGoal || 5} días`} />
         <StatCard value={`${Math.round(progress)}%`} label="Programa completado" accent="text-pink-500" />
       </div>

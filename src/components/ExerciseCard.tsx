@@ -48,6 +48,13 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   const isComplete = totalSets !== '∞' && setsLogged >= parseInt(String(totalSets))
   const recentLogs = logs.slice(0, 3)
 
+  // Progressive overload hint
+  const lastLog = logs[0]
+  const lastBestReps = lastLog?.sets?.reduce((max, s) => {
+    const n = parseInt(s.reps); return (!isNaN(n) && n > max) ? n : max
+  }, 0) || 0
+  const lastBestWeight = lastLog?.sets?.reduce((max, s) => (s.weight || 0) > max ? (s.weight || 0) : max, 0) || 0
+
   const triggerFlash = (): void => {
     setFlash(true)
     setTimeout(() => setFlash(false), 400)
@@ -123,6 +130,19 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             <div className="text-[9px] text-muted-foreground tracking-wide font-mono uppercase">Series</div>
           </div>
         </div>
+
+        {/* Progressive overload hint */}
+        {lastLog && lastBestReps > 0 && setsLogged === 0 && (
+          <div className="text-[11px] text-amber-400/80 bg-amber-400/5 rounded px-3 py-2 mt-2.5 border-l-2 border-amber-400/30">
+            Ultima vez: <strong>{lastBestReps}</strong> reps
+            {lastBestWeight > 0 && <> +<strong>{lastBestWeight}</strong>kg</>}
+            {' — '}
+            {lastBestWeight > 0
+              ? `intenta +${(lastBestWeight + 2.5).toFixed(1)}kg o +1 rep`
+              : `intenta ${lastBestReps + 1} reps`
+            }
+          </div>
+        )}
 
         {/* Exercise note */}
         {exercise.note && (

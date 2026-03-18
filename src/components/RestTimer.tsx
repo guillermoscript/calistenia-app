@@ -2,13 +2,35 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from './ui/button'
 import { playRestStart, playGetReady, playCountdownTick, playWarning, vibrate } from '../lib/sounds'
 
+const LS_REST_PREFS = 'calistenia_rest_prefs'
+
+function getRestPref(exerciseId?: string): number | null {
+  if (!exerciseId) return null
+  try {
+    const prefs = JSON.parse(localStorage.getItem(LS_REST_PREFS) || '{}')
+    return prefs[exerciseId] || null
+  } catch { return null }
+}
+
+function saveRestPref(exerciseId: string, seconds: number) {
+  try {
+    const prefs = JSON.parse(localStorage.getItem(LS_REST_PREFS) || '{}')
+    prefs[exerciseId] = seconds
+    localStorage.setItem(LS_REST_PREFS, JSON.stringify(prefs))
+  } catch {}
+}
+
 interface RestTimerProps {
   seconds?: number
+  exerciseId?: string
   onDone?: () => void
 }
 
-export default function RestTimer({ seconds: initSecs = 90, onDone }: RestTimerProps) {
-  const [s, setS] = useState<number>(initSecs)
+export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone }: RestTimerProps) {
+  const savedPref = exerciseId ? getRestPref(exerciseId) : null
+  const startSecs = savedPref || initSecs
+  const [s, setS] = useState<number>(startSecs)
+  const [totalSecs, setTotalSecs] = useState<number>(startSecs)
   const [running, setRunning] = useState<boolean>(true)
   const ref = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -36,6 +58,14 @@ export default function RestTimer({ seconds: initSecs = 90, onDone }: RestTimerP
     return () => { if (ref.current) clearInterval(ref.current) }
   }, [running])
 
+  const adjustTime = (delta: number) => {
+    const newTotal = Math.max(10, totalSecs + delta)
+    const newS = Math.max(1, s + delta)
+    setTotalSecs(newTotal)
+    setS(newS)
+    if (exerciseId) saveRestPref(exerciseId, newTotal)
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-[999] bg-card border border-border rounded-xl px-5 py-4 flex items-center gap-4 shadow-lg animate-[slideUp_0.3s_ease]">
       <style>{`@keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }`}</style>
@@ -46,6 +76,33 @@ export default function RestTimer({ seconds: initSecs = 90, onDone }: RestTimerP
         </div>
       </div>
       <div className="flex flex-col gap-1.5">
+        {/* Adjust buttons */}
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => adjustTime(-15)}
+            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground"
+          >
+            -15
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => adjustTime(15)}
+            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground"
+          >
+            +15
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => adjustTime(30)}
+            className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground"
+          >
+            +30
+          </Button>
+        </div>
         <Button
           size="sm"
           variant="outline"

@@ -2,11 +2,15 @@ import { useState, useMemo } from 'react'
 import { cn } from '../lib/utils'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
-import type { ProgressMap, SessionDone } from '../types'
+import { Badge } from '../components/ui/badge'
+import type { ProgressMap, SessionDone, WeekDay, ProgramMeta } from '../types'
 
 interface CalendarPageProps {
   progress: ProgressMap
   onGoToWorkout: () => void
+  weekDays?: WeekDay[]
+  activeProgram?: ProgramMeta | null
+  currentPhase?: number
 }
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -30,7 +34,7 @@ function formatDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-export default function CalendarPage({ progress, onGoToWorkout }: CalendarPageProps) {
+export default function CalendarPage({ progress, onGoToWorkout, weekDays, activeProgram, currentPhase }: CalendarPageProps) {
   const today = new Date()
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
@@ -80,6 +84,18 @@ export default function CalendarPage({ progress, onGoToWorkout }: CalendarPagePr
     setViewMonth(today.getMonth())
     setSelectedDate(todayStr)
   }
+
+  // Get planned workout for a date based on weekday
+  const getPlannedWorkout = (dateStr: string): WeekDay | null => {
+    if (!weekDays || weekDays.length === 0) return null
+    const d = new Date(dateStr + 'T12:00:00')
+    const jsDay = d.getDay() // 0=Sun
+    const dayMap = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab']
+    const dayId = dayMap[jsDay]
+    return weekDays.find(wd => wd.id === dayId) || null
+  }
+
+  const selectedPlanned = selectedDate ? getPlannedWorkout(selectedDate) : null
 
   // Workout key to readable title
   const parseWorkoutKey = (key: string) => {
@@ -217,10 +233,31 @@ export default function CalendarPage({ progress, onGoToWorkout }: CalendarPagePr
                   </div>
                 ))}
               </div>
+            ) : selectedPlanned ? (
+              <div>
+                {selectedPlanned.type === 'rest' ? (
+                  <div className="text-xs text-muted-foreground">Día de descanso planificado</div>
+                ) : (
+                  <div className="px-4 py-3 bg-muted/20 rounded-lg border border-border/60 border-l-[3px] border-l-lime/40">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-[9px] tracking-wide border-lime/30 text-lime bg-lime/10">
+                        PLANIFICADO
+                      </Badge>
+                      {activeProgram && (
+                        <span className="text-[9px] text-muted-foreground">{activeProgram.name}</span>
+                      )}
+                    </div>
+                    <div className="text-sm font-medium">{selectedPlanned.focus}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {selectedPlanned.name} · Fase {currentPhase || 1}
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : selectedDate <= todayStr ? (
-              <div className="text-xs text-muted-foreground">Día de descanso o sin registro.</div>
+              <div className="text-xs text-muted-foreground">Sin registro para este día.</div>
             ) : (
-              <div className="text-xs text-muted-foreground">Día futuro — aún sin planificar.</div>
+              <div className="text-xs text-muted-foreground">Día futuro.</div>
             )}
           </CardContent>
         </Card>

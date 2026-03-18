@@ -6,6 +6,7 @@ import MealLogger from '../components/nutrition/MealLogger'
 import MealSuggestions from '../components/nutrition/MealSuggestions'
 import WeeklyNutritionChart from '../components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan from '../components/nutrition/DailyMealPlan'
+import DailySummaryCard from '../components/nutrition/DailySummaryCard'
 import { useNutrition } from '../hooks/useNutrition'
 import { useWater } from '../hooks/useWater'
 import WaterTracker from '../components/WaterTracker'
@@ -282,6 +283,17 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             history={weeklyHistory}
             calorieGoal={goals.dailyCalories}
           />
+
+          {/* Daily summary shareable card */}
+          {dailyTotals.calories > 0 && isToday && (
+            <DailySummaryCard
+              date={selectedDate}
+              totals={dailyTotals}
+              goals={goals}
+              waterMl={waterTotal}
+              waterGoal={waterGoal}
+            />
+          )}
 
           {/* FAB for meal logging */}
           <div id="tour-meal-logger">

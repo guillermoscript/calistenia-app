@@ -612,6 +612,9 @@ export default function App() {
               <CalendarPage
                 progress={progress}
                 onGoToWorkout={() => navigate('/workout')}
+                weekDays={weekDays}
+                activeProgram={activeProgram}
+                currentPhase={settings.phase}
               />
             } />
             <Route path="/profile" element={<ProfilePage user={user} />} />

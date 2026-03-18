@@ -131,28 +131,46 @@ function Confetti() {
 
 interface RestScreenProps {
   seconds: number
+  exerciseId?: string
   nextStep: Step | null
   onSkip: () => void
 }
 
-function RestScreen({ seconds, nextStep, onSkip }: RestScreenProps) {
-  const [remaining, setRemaining] = useState<number>(seconds)
+const LS_REST_PREFS = 'calistenia_rest_prefs'
+function getRestPref(exerciseId?: string): number | null {
+  if (!exerciseId) return null
+  try { return JSON.parse(localStorage.getItem(LS_REST_PREFS) || '{}')[exerciseId] || null } catch { return null }
+}
+function saveRestPref(exerciseId: string, seconds: number) {
+  try {
+    const prefs = JSON.parse(localStorage.getItem(LS_REST_PREFS) || '{}')
+    prefs[exerciseId] = seconds
+    localStorage.setItem(LS_REST_PREFS, JSON.stringify(prefs))
+  } catch {}
+}
+
+function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip }: RestScreenProps) {
+  const savedPref = exerciseId ? getRestPref(exerciseId) : null
+  const initialSeconds = savedPref || defaultSeconds
+  const [remaining, setRemaining] = useState<number>(initialSeconds)
+  const [totalSecs, setTotalSecs] = useState<number>(initialSeconds)
   const touchStartX = useRef<number | null>(null)
   const hasPlayedWarning = useRef<boolean>(false)
   const hasNotifiedStart = useRef<boolean>(false)
 
   useEffect(() => {
-    setRemaining(seconds)
+    setRemaining(initialSeconds)
+    setTotalSecs(initialSeconds)
     hasPlayedWarning.current = false
     hasNotifiedStart.current = false
-  }, [seconds])
+  }, [initialSeconds])
 
   // Play rest-start sound + notification on mount
   useEffect(() => {
     if (!hasNotifiedStart.current) {
       hasNotifiedStart.current = true
       sounds.playRestStart()
-      notif.notifyRestStart(seconds, nextStep?.exercise.name)
+      notif.notifyRestStart(initialSeconds, nextStep?.exercise.name)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -188,9 +206,16 @@ function RestScreen({ seconds, nextStep, onSkip }: RestScreenProps) {
     touchStartX.current = null
   }
 
+  const adjustTime = (delta: number) => {
+    const newTotal = Math.max(10, totalSecs + delta)
+    setTotalSecs(newTotal)
+    setRemaining(r => Math.max(1, r + delta))
+    if (exerciseId) saveRestPref(exerciseId, newTotal)
+  }
+
   const mins = Math.floor(remaining / 60)
   const secs = String(remaining % 60).padStart(2, '0')
-  const pct  = seconds > 0 ? (remaining / seconds) : 0
+  const pct  = totalSecs > 0 ? (remaining / totalSecs) : 0
   const circumference = 2 * Math.PI * 54
   const strokeDash    = circumference * pct
   const isUrgent = remaining < 10
@@ -238,6 +263,16 @@ function RestScreen({ seconds, nextStep, onSkip }: RestScreenProps) {
         </div>
       )}
 
+      {/* Adjust rest time */}
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => adjustTime(-15)}
+          className="font-mono text-[10px] text-muted-foreground hover:text-foreground">-15s</Button>
+        <Button variant="outline" size="sm" onClick={() => adjustTime(15)}
+          className="font-mono text-[10px] text-muted-foreground hover:text-foreground">+15s</Button>
+        <Button variant="outline" size="sm" onClick={() => adjustTime(30)}
+          className="font-mono text-[10px] text-muted-foreground hover:text-foreground">+30s</Button>
+      </div>
+
       <Button
         variant="outline"
         onClick={onSkip}
@@ -271,6 +306,13 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
 
   const { exercise, setNumber, totalSets } = step
   const recentLogs = logs.slice(0, 2)
+
+  // Progressive overload hint
+  const lastLog = logs[0]
+  const lastBestReps = lastLog?.sets?.reduce((max: number, s: SetData) => {
+    const n = parseInt(s.reps); return (!isNaN(n) && n > max) ? n : max
+  }, 0) || 0
+  const lastBestWeight = lastLog?.sets?.reduce((max: number, s: SetData) => (s.weight || 0) > max ? (s.weight || 0) : max, 0) || 0
 
   const doLog = (reps: string | number, note: string = ''): void => {
     setFlash(true)
@@ -332,6 +374,19 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
           ))}
           <span className="font-mono text-[10px] text-muted-foreground ml-1">SERIE {setNumber}/{totalSets}</span>
         </div>
+
+        {/* Progressive overload hint */}
+        {lastLog && lastBestReps > 0 && setNumber === 1 && (
+          <div className="text-[12px] text-amber-400/80 bg-amber-400/5 rounded-md px-3.5 py-2.5 mb-4 border-l-[3px] border-amber-400/30">
+            Ultima vez: <strong>{lastBestReps}</strong> reps
+            {lastBestWeight > 0 && <> +<strong>{lastBestWeight}</strong>kg</>}
+            {' — '}
+            {lastBestWeight > 0
+              ? `intenta +${(lastBestWeight + 2.5).toFixed(1)}kg o +1 rep`
+              : `intenta ${lastBestReps + 1} reps`
+            }
+          </div>
+        )}
 
         {/* Exercise note */}
         {exercise.note && (
@@ -455,10 +510,11 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
 interface NoteScreenProps {
   workoutTitle: string
   totalSetsLogged: number
+  durationMin: number
   onSave: (note: string) => void
 }
 
-function NoteScreen({ workoutTitle, totalSetsLogged, onSave }: NoteScreenProps) {
+function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: NoteScreenProps) {
   const [note, setNote] = useState<string>('')
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-6">
@@ -466,7 +522,7 @@ function NoteScreen({ workoutTitle, totalSetsLogged, onSave }: NoteScreenProps) 
         ¡Último set listo!
       </div>
       <div className="text-[11px] text-muted-foreground tracking-[2px] font-mono">
-        {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES
+        {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
       </div>
 
       <div className="w-full max-w-[420px] bg-card border border-border rounded-xl px-6 py-5">
@@ -505,10 +561,11 @@ function NoteScreen({ workoutTitle, totalSetsLogged, onSave }: NoteScreenProps) 
 interface CelebrateScreenProps {
   workoutTitle: string
   totalSetsLogged: number
+  durationMin: number
   onDone: () => void
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, onDone }: CelebrateScreenProps) {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }: CelebrateScreenProps) {
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
 
   useEffect(() => {
@@ -547,7 +604,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, onDone }: CelebrateScr
           SESIÓN COMPLETADA
         </div>
         <div className="font-mono text-[11px] text-muted-foreground tracking-[2px]">
-          {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES
+          {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
         </div>
       </div>
 
@@ -604,6 +661,7 @@ export default function SessionView({
   const [phase,     setPhase]     = useState<SessionPhase>('exercise')
   const [setsCount, setSetsCount] = useState<number>(0)
   const [showExit,  setShowExit]  = useState<boolean>(false)
+  const sessionStartTime = useRef<number>(Date.now())
 
   const currentStep = steps[stepIdx]
   const nextStep    = steps[stepIdx + 1] || null
@@ -695,6 +753,7 @@ export default function SessionView({
         <RestScreen
           key={`rest-${stepIdx}`}
           seconds={currentStep?.exercise.rest || 90}
+          exerciseId={currentStep?.exercise.id}
           nextStep={nextStep}
           onSkip={handleRestDone}
         />
@@ -704,6 +763,7 @@ export default function SessionView({
         <NoteScreen
           workoutTitle={workout.title}
           totalSetsLogged={setsCount}
+          durationMin={Math.round((Date.now() - sessionStartTime.current) / 60000)}
           onSave={handleNoteSaved}
         />
       )}
@@ -712,6 +772,7 @@ export default function SessionView({
         <CelebrateScreen
           workoutTitle={workout.title}
           totalSetsLogged={setsCount}
+          durationMin={Math.round((Date.now() - sessionStartTime.current) / 60000)}
           onDone={onGoToDashboard}
         />
       )}

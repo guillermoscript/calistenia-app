@@ -50,6 +50,7 @@ export default function WorkoutPage({
   const [selectedPhase, setSelectedPhase] = useState(settings?.phase || 1)
   const [selectedDay,   setSelectedDay]   = useState<DayId | null>(null)
   const [restTime,      setRestTime]      = useState<number | null>(null)
+  const [restExerciseId, setRestExerciseId] = useState<string | null>(null)
   const [viewMode,      setViewMode]      = useState<ViewMode>('list')
 
   useEffect(() => { if (settings?.phase) setSelectedPhase(settings.phase) }, [settings])
@@ -215,7 +216,7 @@ export default function WorkoutPage({
             {workout.exercises.map((ex, idx) => (
               <div key={ex.id} {...(idx === 0 ? { id: 'tour-first-exercise' } : {})}>
                 <ExerciseCard exercise={ex} workoutKey={workoutKey!}
-                  onLogSet={onLogSet} onStartRest={(s: number) => setRestTime(s)} logs={getExerciseLogs(ex.id)} isAdmin={isAdmin} />
+                  onLogSet={onLogSet} onStartRest={(s: number) => { setRestTime(s); setRestExerciseId(ex.id) }} logs={getExerciseLogs(ex.id)} isAdmin={isAdmin} />
               </div>
             ))}
           </div>
@@ -239,7 +240,7 @@ export default function WorkoutPage({
         </div>
       )}
 
-      {restTime && <RestTimer seconds={restTime} onDone={() => setRestTime(null)} />}
+      {restTime && <RestTimer seconds={restTime} exerciseId={restExerciseId || undefined} onDone={() => { setRestTime(null); setRestExerciseId(null) }} />}
     </div>
   )
 }
