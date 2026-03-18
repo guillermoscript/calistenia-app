@@ -10,6 +10,7 @@ import LumbarPage from './pages/LumbarPage'
 import ProgressPage from './pages/ProgressPage'
 import NutritionPage from './pages/NutritionPage'
 import ProfilePage from './pages/ProfilePage'
+import MealLoggerPage from './pages/MealLoggerPage'
 import AuthPage from './pages/AuthPage'
 import ProgramEditorPage from './pages/ProgramEditorPage'
 import ProgramsPage from './pages/ProgramsPage'
@@ -76,6 +77,7 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/programs\/[^/]+\/edit$/)) return 'Editar Programa'
   if (pathname.match(/^\/programs\/[^/]+$/)) return 'Detalle Programa'
   if (pathname.match(/^\/exercises\/[^/]+$/)) return 'Detalle Ejercicio'
+  if (pathname === '/nutrition/log') return 'Registrar Comida'
   if (pathname.match(/^\/shared\/[^/]+$/)) return 'Programa Compartido'
   if (pathname === '/admin') return 'Admin'
   if (pathname === '/editor') return 'Editor'
@@ -579,6 +581,7 @@ export default function App() {
             } />
             <Route path="/lumbar" element={<LumbarPage user={user} />} />
             <Route path="/nutrition" element={<NutritionPage userId={user.id} trainingPhase={settings.phase} />} />
+            <Route path="/nutrition/log" element={<MealLoggerPage userId={user.id} />} />
             <Route path="/progress" element={
               <ProgressPage
                 progress={progress} settings={settings}

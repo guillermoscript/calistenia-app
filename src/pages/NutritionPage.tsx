@@ -72,6 +72,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     getDailyTotals,
     getEntriesForDate,
     getWeeklyHistory,
+    getRecentEntries,
   } = useNutrition(userId)
 
   const entries = useMemo(() => getEntriesForDate(selectedDate), [getEntriesForDate, selectedDate])
@@ -278,7 +279,14 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
           {/* FAB for meal logging */}
           <div id="tour-meal-logger">
-            <MealLogger onAnalyze={handleAnalyze} onSave={handleSaveEntry} />
+            <MealLogger
+              onAnalyze={handleAnalyze}
+              onSave={handleSaveEntry}
+              userId={userId}
+              dailyTotals={dailyTotals}
+              goals={goals}
+              getRecentEntries={getRecentEntries}
+            />
           </div>
         </div>
       )}
