@@ -22,6 +22,7 @@
     "express": "^5.2.1",
     "multer": "^1.4.5-lts.1",
     "pocketbase": "^0.21.5",
+    "web-push": "^3.6.7",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.5",
+    "@types/web-push": "^3.6.4",
     "tsx": "^4.19.0",
     "typescript": "^5.7.3"
   }

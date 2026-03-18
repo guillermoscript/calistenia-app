@@ -14,6 +14,7 @@ import { getAvailableProviders } from "./model-resolver.js";
 import { analyzeMealImage } from "./meal-analyzer.js";
 import { lookupFoodByName } from "./food-lookup.js";
 import { generateDailyMealPlan } from "./meal-plan-generator.js";
+import { sendPushToUser } from "./push-sender.js";
 import type { Tier } from "./model-resolver.js";
 
 // ── Auth error ────────────────────────────────────────────────────────────────
@@ -231,6 +232,26 @@ export function createApiRouter(): Router {
           loggedMealTypes: Array.isArray(logged_meal_types) ? logged_meal_types : [],
           tier,
         });
+        return res.json(result);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Push notification sending (internal use — authenticated with shared secret or user auth)
+  router.post(
+    "/send-push",
+    requireAuth,
+    async (req: any, res: any, next: any) => {
+      try {
+        const { user_id, title, body, url } = req.body ?? {};
+        if (!user_id || !title) {
+          return res
+            .status(400)
+            .json({ error: "Se requiere user_id y title" });
+        }
+        const result = await sendPushToUser(user_id, { title, body, url });
         return res.json(result);
       } catch (err) {
         next(err);
