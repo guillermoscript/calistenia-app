@@ -10,6 +10,13 @@ import ProgressSummary from '../components/progress/ProgressSummary'
 import ExerciseChart from '../components/progress/ExerciseChart'
 import WeightTracker from '../components/progress/WeightTracker'
 import BodyPhotosTimeline from '../components/progress/BodyPhotosTimeline'
+import WeightProgressionChart from '../components/progress/WeightProgressionChart'
+import MuscleVolumeChart from '../components/progress/MuscleVolumeChart'
+import PhotoComparator from '../components/progress/PhotoComparator'
+import BodyMeasurementsTracker from '../components/progress/BodyMeasurementsTracker'
+import ExportData from '../components/progress/ExportData'
+import { useWeight } from '../hooks/useWeight'
+import { useBodyPhotos } from '../hooks/useBodyPhotos'
 
 const LS_LUMBAR = 'calistenia_lumbar_checks'
 
@@ -57,6 +64,8 @@ interface ProgressPageProps {
 }
 
 export default function ProgressPage({ progress, settings, activeProgram, userId }: ProgressPageProps) {
+  const { weights } = useWeight(userId || null)
+  const { photos } = useBodyPhotos(userId || null)
   const allLogs = useMemo<SessionLog[]>(() => {
     return Object.entries(progress)
       .filter(([k]) => k.startsWith('done_'))
@@ -162,15 +171,30 @@ export default function ProgressPage({ progress, settings, activeProgram, userId
             </div>
           )}
 
+          {/* Weight Progression Chart (lastre) */}
+          <WeightProgressionChart exerciseLogs={exerciseLogs} />
+
+          {/* Muscle Volume Chart */}
+          <MuscleVolumeChart progress={progress} />
+
           {/* Weight Tracker */}
           <div className="mb-8">
             <WeightTracker userId={userId || null} />
           </div>
 
+          {/* Body Measurements */}
+          <BodyMeasurementsTracker userId={userId || null} />
+
           {/* Body Photos */}
           <div className="mb-8">
             <BodyPhotosTimeline userId={userId || null} />
           </div>
+
+          {/* Photo Comparator */}
+          <PhotoComparator photos={photos} />
+
+          {/* Export Data */}
+          <ExportData progress={progress} weights={weights} />
 
           {/* Session History */}
           <div id="tour-session-history" className="mb-8">

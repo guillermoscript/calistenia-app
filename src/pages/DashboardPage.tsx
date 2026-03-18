@@ -9,6 +9,7 @@ import { Progress } from '../components/ui/progress'
 import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
 import WaterTracker from '../components/WaterTracker'
+import WorkoutReminderWidget from '../components/WorkoutReminderWidget'
 import { useWater } from '../hooks/useWater'
 import type { Settings, Phase, WeekDay, ProgramMeta } from '../types'
 
@@ -358,6 +359,11 @@ export default function DashboardPage({
             />
           ))}
         </div>
+      </div>
+
+      {/* Workout Reminders */}
+      <div className="mb-8">
+        <WorkoutReminderWidget />
       </div>
 
       {/* Phase + Goals */}

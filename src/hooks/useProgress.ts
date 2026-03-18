@@ -31,6 +31,7 @@ interface UseProgressReturn {
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
+  checkAndUpdatePR: (exerciseId: string, reps: string) => Promise<void>
 }
 
 /**
@@ -330,11 +331,30 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
     }
   }, [settings, usePB, userId])
 
+  // ─── Auto-detect PRs ─────────────────────────────────────────────────────
+  const PR_MAP: Record<string, keyof Settings> = {
+    'pullup': 'pr_pullups', 'neg_pullup': 'pr_pullups', 'chinup': 'pr_pullups',
+    'pushup_std': 'pr_pushups', 'pushup': 'pr_pushups', 'diamond_pushup': 'pr_pushups',
+    'lsit': 'pr_lsit', 'l_sit': 'pr_lsit',
+    'pistol': 'pr_pistol', 'pistol_squat': 'pr_pistol',
+    'handstand': 'pr_handstand', 'handstand_hold': 'pr_handstand',
+  }
+  const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string) => {
+    const repsNum = parseInt(reps)
+    if (isNaN(repsNum) || repsNum <= 0) return
+    const prKey = PR_MAP[exerciseId]
+    if (!prKey) return
+    const current = (settings as unknown as Record<string, number>)[prKey] || 0
+    if (repsNum > current) {
+      await updateSettings({ [prKey]: repsNum } as Partial<Settings>)
+    }
+  }, [settings, updateSettings])
+
   return {
     progress, settings, usePB, pbReady,
     logSet, markWorkoutDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
     getLongestStreak, updateSettings, getMonthActivity,
-    getLastSessionDate,
+    getLastSessionDate, checkAndUpdatePR,
   }
 }

@@ -61,7 +61,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     localStorage.setItem(LS_LAST_PHASE, String(trainingPhase))
   }, [trainingPhase])
 
-  const { todayTotal: waterTotal, goal: waterGoal, addWater } = useWater(userId)
+  const { todayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal } = useWater(userId)
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0])
 
   const {
@@ -253,7 +253,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           )}
 
           {/* Water tracker */}
-          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} />
+          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} onSetGoal={setWaterGoal} />
 
           {/* Daily dashboard */}
           <div id="tour-nutrition-dashboard">

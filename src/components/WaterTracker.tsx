@@ -9,14 +9,17 @@ interface WaterTrackerProps {
   todayTotal: number
   goal: number
   onAdd: (ml: number) => Promise<void>
+  onSetGoal?: (ml: number) => void
   compact?: boolean
 }
 
 const QUICK_AMOUNTS = [200, 350, 500]
 
-export default function WaterTracker({ todayTotal, goal, onAdd, compact }: WaterTrackerProps) {
+export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compact }: WaterTrackerProps) {
   const [custom, setCustom] = useState('')
   const [showCustom, setShowCustom] = useState(false)
+  const [editingGoal, setEditingGoal] = useState(false)
+  const [goalInput, setGoalInput] = useState('')
   const pct = Math.min(100, (todayTotal / goal) * 100)
   const reached = pct >= 100
 
@@ -132,6 +135,52 @@ export default function WaterTracker({ todayTotal, goal, onAdd, compact }: Water
               <Button size="sm" onClick={handleCustom} className="h-8 px-3 text-xs bg-sky-500 hover:bg-sky-400 text-white">
                 OK
               </Button>
+            </div>
+          )}
+
+          {/* Goal editor */}
+          {onSetGoal && (
+            <div className="mt-3 pt-3 border-t border-border/60">
+              {editingGoal ? (
+                <div className="flex gap-2 items-center">
+                  <span className="text-[10px] text-muted-foreground">Meta diaria:</span>
+                  <Input
+                    type="number"
+                    step="100"
+                    min="500"
+                    value={goalInput}
+                    onChange={e => setGoalInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        const n = parseInt(goalInput)
+                        if (n >= 500) { onSetGoal(n); setEditingGoal(false) }
+                      }
+                      if (e.key === 'Escape') setEditingGoal(false)
+                    }}
+                    placeholder={String(goal)}
+                    className="w-24 h-7 text-xs"
+                    autoFocus
+                  />
+                  <span className="text-[10px] text-muted-foreground">ml</span>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const n = parseInt(goalInput)
+                      if (n >= 500) { onSetGoal(n); setEditingGoal(false) }
+                    }}
+                    className="h-7 px-2 text-[10px]"
+                  >
+                    OK
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setGoalInput(String(goal)); setEditingGoal(true) }}
+                  className="text-[10px] text-muted-foreground hover:text-sky-500 transition-colors"
+                >
+                  Meta: {goal} ml · click para cambiar
+                </button>
+              )}
             </div>
           )}
         </CardContent>

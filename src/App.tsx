@@ -491,11 +491,17 @@ export default function App() {
 
   const {
     progress, settings, usePB, pbReady,
-    logSet, markWorkoutDone, isWorkoutDone,
+    logSet: rawLogSet, markWorkoutDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
     getLongestStreak, updateSettings, getMonthActivity,
-    getLastSessionDate,
+    getLastSessionDate, checkAndUpdatePR,
   } = useProgress(user?.id ?? null, activeProgram?.id ?? null)
+
+  // Wrap logSet to auto-detect PRs
+  const logSet = async (exerciseId: string, workoutKey: string, setData: { reps: string; note: string; weight?: number }) => {
+    await rawLogSet(exerciseId, workoutKey, setData)
+    if (setData.reps) checkAndUpdatePR(exerciseId, setData.reps)
+  }
 
   if (!authReady) return <Loader />
 
