@@ -24,7 +24,7 @@ USER apiuser
 
 EXPOSE 3001
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=5s \
-  CMD wget -qO- http://localhost:3001/api/health || exit 1
+HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://localhost:3001/api/health').then(r=>{if(!r.ok)throw r.status;process.exit(0)}).catch(()=>process.exit(1))"
 
 CMD ["node", "build/index.js"]
