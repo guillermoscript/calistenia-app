@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { pb } from '../lib/pocketbase'
 import type { FoodItem } from '../types'
+import { migrateLegacyFood } from '../lib/macro-calc'
 import { AI_API_URL } from '../lib/ai-api'
 
 // ── Relation helpers ───────────────────────────────────────────────────────
@@ -67,16 +68,24 @@ export function useFoodCatalog() {
         sort: 'name_display',
         expand: 'category,tags',
       })
-      return res.items.map((r: any) => ({
-        name: r.name_display,
-        portion: r.portion,
-        calories: r.calories,
-        protein: r.protein,
-        carbs: r.carbs,
-        fat: r.fat,
-        category: r.expand?.category?.slug || undefined,
-        tags: r.expand?.tags?.map((t: any) => t.slug) || [],
-      }))
+      return res.items.map((r: any) => {
+        const food = migrateLegacyFood({
+          name: r.name_display,
+          portion: r.portion,
+          calories: r.calories,
+          protein: r.protein,
+          carbs: r.carbs,
+          fat: r.fat,
+          category: r.expand?.category?.slug || undefined,
+          tags: r.expand?.tags?.map((t: any) => t.slug) || [],
+        })
+        // Use base100 from DB if available
+        if (r.base_cal_100) food.baseCal100 = r.base_cal_100
+        if (r.base_prot_100) food.baseProt100 = r.base_prot_100
+        if (r.base_carbs_100) food.baseCarbs100 = r.base_carbs_100
+        if (r.base_fat_100) food.baseFat100 = r.base_fat_100
+        return food
+      })
     } catch {
       return []
     }
@@ -101,11 +110,15 @@ export function useFoodCatalog() {
         await pb.collection('foods').create({
           name: normalized,
           name_display: food.name,
-          portion: food.portion,
+          portion: `${food.portionAmount}${food.portionUnit}`,
           calories: food.calories,
           protein: food.protein,
           carbs: food.carbs,
           fat: food.fat,
+          base_cal_100: food.baseCal100 || 0,
+          base_prot_100: food.baseProt100 || 0,
+          base_carbs_100: food.baseCarbs100 || 0,
+          base_fat_100: food.baseFat100 || 0,
           ...(categoryId && { category: categoryId }),
           ...(tagIds.length && { tags: tagIds }),
           source: 'ai',
@@ -132,7 +145,7 @@ export function useFoodCatalog() {
       throw new Error(err.error || `Lookup failed: ${res.status}`)
     }
     const data = await res.json()
-    const food: FoodItem = {
+    const food = migrateLegacyFood({
       name: data.food?.name || foodName,
       portion: data.food?.portion || '100g',
       calories: data.food?.calories || 0,
@@ -141,7 +154,7 @@ export function useFoodCatalog() {
       fat: data.food?.fat || 0,
       category: data.food?.category || undefined,
       tags: data.food?.tags || [],
-    }
+    })
     await saveFoodToCatalog(food)
     return food
   }, [saveFoodToCatalog])

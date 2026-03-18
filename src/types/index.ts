@@ -192,15 +192,64 @@ export type FoodCategory =
   | 'procesados'
   | 'otros'
 
+export type PortionUnit = 'g' | 'kg' | 'ml' | 'L' | 'oz' | 'unidad'
+
+export const UNIT_WEIGHT_GRAMS: Record<PortionUnit, number> = {
+  g: 1,
+  kg: 1000,
+  ml: 1,
+  L: 1000,
+  oz: 28.35,
+  unidad: 100,
+}
+
 export interface FoodItem {
   name: string
-  portion: string
+  portionAmount: number
+  portionUnit: PortionUnit
+  unitWeightInGrams: number
   calories: number
   protein: number
   carbs: number
   fat: number
+  baseCal100: number
+  baseProt100: number
+  baseCarbs100: number
+  baseFat100: number
   category?: FoodCategory
   tags?: string[]
+}
+
+export type MealType = 'desayuno' | 'almuerzo' | 'cena' | 'snack'
+
+export interface MealTemplate {
+  id?: string
+  user?: string
+  name: string
+  foods: FoodItem[]
+  mealType: MealType
+  usageCount: number
+  lastUsedAt: string
+}
+
+export interface FoodHistoryItem {
+  id?: string
+  user?: string
+  foodData: FoodItem
+  mealType: MealType
+  loggedHour: number
+  usageCount: number
+  lastUsedAt: string
+}
+
+export interface MealReminder {
+  id?: string
+  user?: string
+  mealType: MealType
+  hour: number
+  minute: number
+  enabled: boolean
+  daysOfWeek: number[]
 }
 
 export interface NutritionEntry {

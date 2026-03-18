@@ -133,8 +133,21 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                         <span className="text-xs text-muted-foreground">{formatTime(entry.loggedAt)}</span>
                         <span className="ml-auto font-bebas text-lg text-foreground">{Math.round(entry.totalCalories)} kcal</span>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-2 line-clamp-1">
-                        {entry.foods.map(f => f.name).join(', ')}
+                      {(() => {
+                        const foodNames = entry.foods.map(f => f.name).filter(Boolean)
+                        const summary = foodNames.length > 0
+                          ? foodNames.join(', ')
+                          : `${entry.foods.length} alimento${entry.foods.length !== 1 ? 's' : ''}`
+                        return (
+                          <div className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
+                            {summary}
+                          </div>
+                        )
+                      })()}
+                      <div className="flex gap-3 mt-1.5 text-[10px]">
+                        <span className="text-sky-500">{Math.round(entry.totalProtein)}g prot</span>
+                        <span className="text-amber-400">{Math.round(entry.totalCarbs)}g carbs</span>
+                        <span className="text-pink-500">{Math.round(entry.totalFat)}g grasa</span>
                       </div>
                     </button>
 
@@ -144,8 +157,8 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                         <div className="pt-3 space-y-2">
                           {entry.foods.map((food, fi) => (
                             <div key={fi} className="flex items-center gap-3 text-xs">
-                              <span className="flex-1 text-foreground">{food.name}</span>
-                              <span className="text-muted-foreground">{food.portion}</span>
+                              <span className="flex-1 text-foreground">{food.name || 'Sin nombre'}</span>
+                              <span className="text-muted-foreground">{(food as any).portionAmount ?? ''}{(food as any).portionUnit ?? (food as any).portion ?? ''}</span>
                               <span className="text-sky-500 w-12 text-right">{food.protein}p</span>
                               <span className="text-amber-400 w-12 text-right">{food.carbs}c</span>
                               <span className="text-pink-500 w-12 text-right">{food.fat}g</span>

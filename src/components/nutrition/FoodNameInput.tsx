@@ -136,7 +136,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, className
                 )}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
-                {food.portion} · <span className="text-foreground/70">{food.calories} kcal</span>
+                {food.portionAmount}{food.portionUnit} · <span className="text-foreground/70">{food.calories} kcal</span>
                 {' · '}P {food.protein}g · C {food.carbs}g · G {food.fat}g
               </div>
             </button>

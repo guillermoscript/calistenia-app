@@ -9,7 +9,7 @@ interface MealSuggestionsProps {
 
 interface CatalogFood {
   name: string
-  portion: string
+  portionLabel: string
   protein: number
   carbs: number
   fat: number
@@ -32,7 +32,7 @@ async function fetchTopFoodsByCategory(category: string, limit = 4): Promise<Cat
     })
     return res.items.map((r: any) => ({
       name: r.name_display,
-      portion: r.portion,
+      portionLabel: r.portion || '100g',
       protein: r.protein,
       carbs: r.carbs,
       fat: r.fat,
@@ -44,7 +44,7 @@ async function fetchTopFoodsByCategory(category: string, limit = 4): Promise<Cat
 }
 
 function formatCatalogFoods(foods: CatalogFood[], macro: 'protein' | 'carbs' | 'fat'): string {
-  return foods.map(f => `${f.name} (${f[macro]}g/${f.portion})`).join(', ')
+  return foods.map(f => `${f.name} (${f[macro]}g/${f.portionLabel})`).join(', ')
 }
 
 export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
