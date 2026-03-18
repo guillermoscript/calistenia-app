@@ -442,6 +442,34 @@ export function useNutrition(userId: string | null) {
     return result
   }, [getDailyTotals])
 
+  // ─── getRecentEntries ────────────────────────────────────────────────────
+  const getRecentEntries = useCallback(async (limit = 10): Promise<NutritionEntry[]> => {
+    if (usePB && userId) {
+      try {
+        const res = await pb.collection('nutrition_entries').getList(1, limit, {
+          filter: pb.filter('user = {:uid}', { uid: userId }),
+          sort: '-logged_at',
+        })
+        return res.items.map((r: any) => ({
+          id: r.id,
+          user: r.user,
+          photoUrl: r.photo ? pb.files.getUrl(r, r.photo) : undefined,
+          mealType: r.meal_type,
+          foods: r.foods || [],
+          totalCalories: r.total_calories,
+          totalProtein: r.total_protein,
+          totalCarbs: r.total_carbs,
+          totalFat: r.total_fat,
+          aiModel: r.ai_model || undefined,
+          loggedAt: r.logged_at,
+        }))
+      } catch {
+        return entries.slice(0, limit)
+      }
+    }
+    return entries.slice(0, limit)
+  }, [usePB, userId, entries])
+
   // ─── Computed: getRemainingMacros ─────────────────────────────────────────
   const getRemainingMacros = useCallback((date?: string): DailyTotals => {
     const totals = getDailyTotals(date)
@@ -477,5 +505,6 @@ export function useNutrition(userId: string | null) {
     getWeeklyHistory,
     getEntriesForDate,
     getRemainingMacros,
+    getRecentEntries,
   }
 }
