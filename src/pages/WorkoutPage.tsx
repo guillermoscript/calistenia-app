@@ -163,10 +163,10 @@ export default function WorkoutPage({
               >
                 {done    && <div className="absolute top-[3px] right-[3px] size-1.5 rounded-full bg-emerald-500" />}
                 {isToday && <div className="absolute top-[3px] left-[3px] size-1 rounded-full bg-lime opacity-80" />}
-                <div className="text-[9px] tracking-[2px] mb-1 font-mono">{day.name.slice(0,3).toUpperCase()}</div>
+                <div className="text-[10px] tracking-[2px] mb-1 font-mono">{day.name.slice(0,3).toUpperCase()}</div>
                 <div className="text-[9px] leading-tight hidden md:block">{day.focus}</div>
                 {/* Mobile: show just type icon */}
-                <div className="text-[8px] leading-tight md:hidden text-current opacity-70">
+                <div className="text-[10px] leading-tight md:hidden text-current opacity-70">
                   {isRest ? '—' : done ? '✓' : day.focus.split(' ')[0].slice(0,4)}
                 </div>
               </button>

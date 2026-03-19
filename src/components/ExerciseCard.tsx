@@ -156,7 +156,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             onClick={handleQuickLog}
             disabled={isComplete}
             className={cn(
-              'flex-1 py-[13px] px-3 rounded-md font-mono text-[12px] font-bold tracking-wide flex items-center justify-center gap-2 transition-all duration-150',
+              'flex-1 min-h-11 py-[13px] px-3 rounded-md font-mono text-[12px] font-bold tracking-wide flex items-center justify-center gap-2 transition-all duration-150',
               isComplete
                 ? 'bg-emerald-500/10 text-emerald-500 cursor-default'
                 : 'bg-lime/13 text-lime hover:bg-lime/20 cursor-pointer'

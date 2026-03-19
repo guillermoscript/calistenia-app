@@ -28,7 +28,7 @@ export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
 
   return (
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="max-w-[700px] p-0 overflow-hidden bg-zinc-900 border-zinc-700">
+      <DialogContent className="max-w-[700px] max-sm:max-w-[95vw] p-0 overflow-hidden bg-zinc-900 border-zinc-700">
         <DialogHeader className="px-5 py-4 border-b border-zinc-800">
           <div className="font-mono text-[10px] text-lime tracking-[2px] mb-1">MEDIA</div>
           <DialogTitle className="font-semibold text-[15px] text-zinc-100">{exercise.name}</DialogTitle>

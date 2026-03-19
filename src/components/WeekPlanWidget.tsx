@@ -41,7 +41,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
                 <div className="absolute top-[5px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[hsl(var(--lime))]" />
               )}
               <div className={cn(
-                'font-mono text-[9px] tracking-[2px] mb-1.5',
+                'font-mono text-[10px] tracking-[2px] mb-1.5',
                 isToday ? 'mt-1.5 text-[hsl(var(--lime))]' : 'text-muted-foreground',
               )}>
                 {day.name.slice(0, 3).toUpperCase()}

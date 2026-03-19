@@ -17,7 +17,7 @@ export default function YoutubeModal({ query, onClose }: YoutubeModalProps) {
 
   return (
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="max-w-[700px] p-0 overflow-hidden">
+      <DialogContent className="max-w-[700px] max-sm:max-w-[95vw] p-0 overflow-hidden">
         <DialogHeader className="px-5 py-4 border-b border-border">
           <div className="font-mono text-[10px] text-[hsl(var(--lime))] tracking-[2px] mb-1">▶ YOUTUBE TUTORIAL</div>
           <DialogTitle className="font-semibold text-[15px]">{query}</DialogTitle>

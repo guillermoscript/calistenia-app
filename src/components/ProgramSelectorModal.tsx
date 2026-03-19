@@ -46,7 +46,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
 
   return (
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="max-w-[520px]">
+      <DialogContent className="max-w-[520px] max-sm:max-w-[95vw]">
         <DialogHeader>
           <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">CATÁLOGO DE PROGRAMAS</div>
           <DialogTitle className="font-bebas text-[32px] leading-none">SELECCIONA PROGRAMA</DialogTitle>

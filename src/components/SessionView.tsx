@@ -619,7 +619,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
         <div className="flex gap-3 items-center">
           <Button
             onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDone() }}
-            className="min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5"
+            className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5"
           >
             IR AL DASHBOARD
           </Button>
@@ -793,7 +793,7 @@ export default function SessionView({
 
       {/* Interrupt Dialog */}
       <Dialog open={showExit} onOpenChange={setShowExit}>
-        <DialogContent className="max-w-[320px]">
+        <DialogContent className="max-w-[320px] max-sm:max-w-[90vw]">
           <DialogHeader>
             <DialogTitle className="font-bebas text-[28px] tracking-[2px]">¿Interrumpir sesión?</DialogTitle>
             <DialogDescription>

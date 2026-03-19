@@ -88,7 +88,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
   return (
     <Dialog open modal>
       <DialogContent
-        className="max-w-[480px]"
+        className="max-w-[480px] max-sm:max-w-[95vw]"
         onInteractOutside={(e: Event) => e.preventDefault()}
         hideClose
       >

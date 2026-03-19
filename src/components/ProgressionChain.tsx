@@ -74,18 +74,18 @@ export default function ProgressionChain({ chain, currentExerciseId, shouldAdvan
 
                     {/* Current indicator */}
                     {isCurrent && (
-                      <div className="text-[8px] font-mono text-lime tracking-widest mt-1">ACTUAL</div>
+                      <div className="text-[9px] font-mono text-lime tracking-widest mt-1">ACTUAL</div>
                     )}
 
                     {/* Completed check */}
                     {isCompleted && (
-                      <div className="text-[8px] font-mono text-emerald-500/60 tracking-widest mt-1">HECHO</div>
+                      <div className="text-[9px] font-mono text-emerald-500/60 tracking-widest mt-1">HECHO</div>
                     )}
 
                     {/* Advance badge */}
                     {isNext && shouldAdvance && (
                       <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                        <span className="text-[8px] font-mono font-bold text-lime bg-lime/15 border border-lime/30 rounded-full px-2 py-0.5 animate-pulse">
+                        <span className="text-[9px] font-mono font-bold text-lime bg-lime/15 border border-lime/30 rounded-full px-2 py-0.5 animate-pulse">
                           Listo para avanzar
                         </span>
                       </div>

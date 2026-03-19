@@ -165,7 +165,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
 
   return (
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="max-w-[600px] max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-[600px] max-sm:max-w-[95vw] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">CATÁLOGO</div>
           <DialogTitle className="font-bebas text-[28px] leading-none">AGREGAR EJERCICIO</DialogTitle>
