@@ -108,8 +108,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
-            Registra ejercicios de calistenia, controla tu nutrición
-            y mide tu progreso. Simple y directo.
+            Registra tus entrenamientos, controla tu nutrición
+            y mide tu progreso — sin complicaciones.
           </p>
 
           <button
@@ -165,7 +165,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           Empieza hoy
         </h2>
         <p className="mt-4 text-muted-foreground max-w-sm mx-auto">
-          Sin distracciones. Solo tu y tu entrenamiento.
+          Sin distracciones. Solo tú y tu entrenamiento.
         </p>
         <button
           onClick={onGetStarted}

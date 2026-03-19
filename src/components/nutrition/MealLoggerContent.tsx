@@ -147,7 +147,7 @@ export default function MealLoggerContent({
       setStep('review')
     } catch {
       if (cancelledRef.current) return
-      setError('Error al analizar la imagen. Intenta de nuevo.')
+      setError('No pudimos analizar la imagen. Verifica que sea una foto de comida e intenta de nuevo.')
       setStep('capture')
     } finally {
       abortControllerRef.current = null
@@ -226,7 +226,7 @@ export default function MealLoggerContent({
       foods.filter(f => f.name.trim()).forEach(f => trackFood(f, mealType, hour))
       setStep('success')
     } catch {
-      setError('Error al guardar. Intenta de nuevo.')
+      setError('No se pudo guardar. Revisa tu conexión e intenta de nuevo.')
       setStep('review')
     }
   }
@@ -418,7 +418,7 @@ export default function MealLoggerContent({
                   onClick={loadTemplates}
                   className="flex-1 text-center py-2 rounded-lg border border-border text-[10px] text-muted-foreground tracking-widest hover:border-lime/40 hover:text-lime transition-colors"
                 >
-                  MIS TEMPLATES
+                  MIS PLANTILLAS
                 </button>
               </div>
             </>
@@ -464,13 +464,13 @@ export default function MealLoggerContent({
           {captureSubView === 'templates' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Mis Templates</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Mis Plantillas</div>
                 <button onClick={() => setCaptureSubView('main')} className="text-xs text-muted-foreground hover:text-foreground">
                   Volver
                 </button>
               </div>
               {templates.length === 0 ? (
-                <div className="text-sm text-muted-foreground text-center py-6">No hay templates guardados</div>
+                <div className="text-sm text-muted-foreground text-center py-6">No hay plantillas guardadas</div>
               ) : (
                 templates.map(tmpl => (
                   <div key={tmpl.id} className="flex items-center gap-2">
@@ -489,7 +489,7 @@ export default function MealLoggerContent({
                         setTemplates(prev => prev.filter(t => t.id !== tmpl.id))
                       }}
                       className="size-8 flex items-center justify-center text-red-500 hover:bg-red-500/10 rounded shrink-0"
-                      aria-label={`Eliminar template ${tmpl.name}`}
+                      aria-label={`Eliminar plantilla ${tmpl.name}`}
                     >
                       <CloseIcon className="size-3.5" />
                     </button>
@@ -533,7 +533,7 @@ export default function MealLoggerContent({
             onClick={handleCancelAnalysis}
             className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
           >
-            Cancelar análisis
+            Cancelar
           </button>
         </div>
       )}
@@ -756,16 +756,16 @@ export default function MealLoggerContent({
               onClick={() => setShowSaveTemplate(true)}
               className="w-full text-center text-[10px] text-muted-foreground tracking-widest hover:text-lime transition-colors"
             >
-              GUARDAR COMO TEMPLATE
+              GUARDAR COMO PLANTILLA
             </button>
           ) : (
             <div className="flex gap-2">
               <input
                 value={templateName}
                 onChange={e => setTemplateName(e.target.value)}
-                placeholder="Nombre del template"
+                placeholder="Nombre de la plantilla"
                 maxLength={100}
-                aria-label="Nombre del template"
+                aria-label="Nombre de la plantilla"
                 className="flex-1 h-8 text-sm px-3 rounded-md border border-input bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
               <Button
@@ -779,7 +779,7 @@ export default function MealLoggerContent({
               <button
                 onClick={() => setShowSaveTemplate(false)}
                 className="text-xs text-muted-foreground hover:text-foreground"
-                aria-label="Cancelar template"
+                aria-label="Cancelar plantilla"
               >
                 <CloseIcon className="size-3" />
               </button>

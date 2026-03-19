@@ -117,7 +117,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
 
       {/* Meal timeline */}
       <div>
-        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Comidas de Hoy</div>
+        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Comidas de hoy</div>
         {entries.filter(e => e.id !== pendingDelete).length === 0 && !pendingDelete ? ((() => {
           const hour = new Date().getHours()
           const emptyPrompt = hour < 10 ? '¿Qué desayunaste hoy?' : hour < 15 ? '¿Ya almorzaste?' : '¿Qué comiste hoy?'

@@ -268,7 +268,7 @@ export default function ProgressPage({ progress, settings, activeProgram, userId
                     <div className="flex-1">
                       <Progress value={((avgLumbar || 0) / 5) * 100} className="h-1.5 mb-1.5" />
                       <div className="text-[11px] text-muted-foreground">
-                        {avgLumbar !== null && avgLumbar >= 4 ? 'Lumbar en buen estado' : avgLumbar !== null && avgLumbar >= 2.5 ? 'Lumbar con molestias moderadas' : 'Lumbar necesita atención'}
+                        {avgLumbar !== null && avgLumbar >= 4 ? 'Tu lumbar está bien' : avgLumbar !== null && avgLumbar >= 2.5 ? 'Molestias lumbares moderadas — presta atención' : 'Tu lumbar necesita cuidado — considera descansar'}
                       </div>
                     </div>
                   </div>
@@ -311,7 +311,7 @@ export default function ProgressPage({ progress, settings, activeProgram, userId
           {/* Exercise PR Tracker */}
           {Object.keys(exerciseLogs).length > 0 && (
             <div>
-              <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Registro por ejercicio</div>
+              <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Resumen por ejercicio</div>
               <div className="flex flex-col gap-2.5">
                 {Object.entries(exerciseLogs).map(([exId, logs]) => {
                   const allSets = logs.flatMap(l => l.sets)

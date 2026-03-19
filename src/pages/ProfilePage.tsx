@@ -337,7 +337,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           disabled={saving}
           className="h-11 bg-lime text-zinc-900 hover:bg-lime/90 font-bebas text-lg tracking-wide"
         >
-          {saving ? 'GUARDANDO...' : saved ? 'GUARDADO' : 'GUARDAR CAMBIOS'}
+          {saving ? 'GUARDANDO...' : saved ? '¡GUARDADO!' : 'GUARDAR CAMBIOS'}
         </Button>
       </div>
     </div>

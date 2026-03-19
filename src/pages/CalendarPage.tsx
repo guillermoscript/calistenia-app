@@ -205,7 +205,7 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
                 <div className="text-sm">
                   {selectedSessions.length > 0
                     ? `${selectedSessions.length} sesión${selectedSessions.length > 1 ? 'es' : ''}`
-                    : 'Sin entrenamientos'
+                    : 'Sin entrenamientos registrados'
                   }
                 </div>
               </div>
@@ -237,7 +237,7 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
             ) : selectedPlanned ? (
               <div>
                 {selectedPlanned.type === 'rest' ? (
-                  <div className="text-xs text-muted-foreground">Día de descanso planificado</div>
+                  <div className="text-xs text-muted-foreground">Día de descanso</div>
                 ) : (
                   <div className="px-4 py-3 bg-muted/20 rounded-lg border border-border/60 border-l-[3px] border-l-lime/40">
                     <div className="flex items-center gap-2 mb-1">
@@ -256,9 +256,9 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
                 )}
               </div>
             ) : selectedDate <= todayStr ? (
-              <div className="text-xs text-muted-foreground">Sin registro para este día.</div>
+              <div className="text-xs text-muted-foreground">No entrenaste este día</div>
             ) : (
-              <div className="text-xs text-muted-foreground">Día futuro.</div>
+              <div className="text-xs text-muted-foreground">Día por venir</div>
             )}
           </CardContent>
         </Card>

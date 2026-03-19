@@ -101,7 +101,7 @@ export default function WorkoutPage({
 
       {/* Phase Selector */}
       <div id="tour-phase-selector" className="mb-7">
-        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">Fase Activa</div>
+        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">Fase</div>
         <div className="relative md:overflow-visible"
           style={{ maskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)' }}
         >
@@ -235,14 +235,14 @@ export default function WorkoutPage({
             {WEEK_DAYS.find(d => d.id === selectedDay)?.focus || 'Descanso'}
           </div>
           <div className="text-xs text-muted-foreground/70">
-            Si quieres entrenar hoy, selecciona otro día — puedes hacer cualquier entrenamiento en cualquier momento.
+            Puedes elegir otro día si quieres entrenar — no importa el día real.
           </div>
         </div>
       ) : (
         <div className="text-center py-16 px-5 text-muted-foreground">
           <div className="text-5xl mb-4">💪</div>
-          <div className="font-bebas text-3xl mb-2">Selecciona un día</div>
-          <div className="text-sm">Elige cualquier día para ver tu entrenamiento</div>
+          <div className="font-bebas text-3xl mb-2">Elige tu entrenamiento</div>
+          <div className="text-sm">Selecciona un día de la semana para ver los ejercicios</div>
         </div>
       )}
 

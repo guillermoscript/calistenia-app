@@ -76,7 +76,7 @@ export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
     suggestions.push({
       icon: '⚠️',
       title: 'Exceso detectado',
-      description: `Superaste tu objetivo en: ${overItems.join(', ')}. Considera ajustar tu próxima comida.`,
+      description: `Te pasaste en: ${overItems.join(', ')}. Ajusta tu próxima comida para compensar.`,
       accent: 'text-amber-400',
       border: 'border-l-amber-400',
     })

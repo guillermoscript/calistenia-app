@@ -99,7 +99,7 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
             className="flex-1 h-8 text-xs"
             aria-label={goal.label}
           />
-          <Button size="sm" onClick={handleSubmit} className="h-8 px-3 text-xs">OK</Button>
+          <Button size="sm" onClick={handleSubmit} className="h-8 px-3 text-xs">GUARDAR</Button>
           <Button size="sm" variant="outline" onClick={() => setEditing(false)} className="h-8 px-2 text-xs">✕</Button>
         </div>
       ) : (
@@ -109,7 +109,7 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
           onClick={() => setEditing(true)}
           className="h-7 px-2.5 text-[11px] tracking-wide hover:border-lime hover:text-lime"
         >
-          + LOG MAX ACTUAL
+          ACTUALIZAR MARCA
         </Button>
       )}
     </div>
@@ -241,7 +241,7 @@ export default function DashboardPage({
             <div className="text-[10px] text-amber-600 dark:text-amber-400 tracking-widest mb-1 uppercase">
               Llevas {daysSinceLastSession} días sin entrenar
             </div>
-            <div className="text-sm text-muted-foreground">No pierdas el ritmo. Incluso 20 minutos cuentan.</div>
+            <div className="text-sm text-muted-foreground">No pierdas el ritmo — incluso 20 minutos hacen la diferencia.</div>
           </div>
           <Button
             onClick={onGoToWorkout}
@@ -274,7 +274,7 @@ export default function DashboardPage({
               </div>
               {streak >= 3 && <span className="text-2xl animate-pulse">🔥</span>}
             </div>
-            <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Racha máxima (días)</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Racha más larga</div>
             {streak >= 7 && <div className="text-[10px] text-orange-500 mt-1">¡Imparable!</div>}
             {streak >= 3 && streak < 7 && <div className="text-[10px] text-amber-400 mt-1">¡Sigue así!</div>}
           </CardContent>
@@ -327,7 +327,7 @@ export default function DashboardPage({
                     <span className="text-muted-foreground"> / {nutritionGoals.dailyCalories} kcal</span>
                   </div>
                 ) : (
-                  <div className="text-xs text-muted-foreground">Configura tus objetivos nutricionales</div>
+                  <div className="text-xs text-muted-foreground">Configura tus macros para empezar a registrar</div>
                 )}
               </div>
               <Button
@@ -336,7 +336,7 @@ export default function DashboardPage({
                 size="sm"
                 className="text-[10px] tracking-widest hover:border-lime hover:text-lime whitespace-nowrap"
               >
-                {nutritionGoals ? 'REGISTRAR COMIDA' : 'CONFIGURAR'}
+                {nutritionGoals ? 'REGISTRAR' : 'CONFIGURAR'}
               </Button>
             </div>
           </CardContent>
