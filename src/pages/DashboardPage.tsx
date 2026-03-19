@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { PHASES as FALLBACK_PHASES } from '../data/workouts'
 import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
@@ -175,60 +175,28 @@ export default function DashboardPage({
 
   const showNudge = daysSinceLastSession !== null && daysSinceLastSession >= 3
 
+  const [showConfig, setShowConfig] = useState(false)
+
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
 
-      {/* Header */}
+      {/* ═══ ZONE 1: Header + What to do today ═══════════════════════════════ */}
       <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Dashboard</div>
-      <div className="flex items-center gap-4 mb-2 flex-wrap">
+      <div className="flex items-center gap-4 mb-1 flex-wrap">
         <div className={cn('font-bebas leading-none', isMobile ? 'text-4xl' : 'text-5xl')}>TU PROGRESO</div>
-        <Badge variant={usePB ? 'outline' : 'secondary'} className={usePB ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10' : 'text-amber-600 border-amber-500/40 bg-amber-500/10'}>
-          {usePB ? '● POCKETBASE' : '● LOCALSTORAGE'}
+        <Badge variant={usePB ? 'outline' : 'secondary'} className={cn('text-[9px]', usePB ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10' : 'text-amber-600 border-amber-500/40 bg-amber-500/10')}>
+          {usePB ? '● POCKETBASE' : '● LOCAL'}
         </Badge>
       </div>
       <div className="text-sm text-muted-foreground mb-6">
         Semana <strong className="text-foreground">{Math.min(weekElapsed, totalWeeks)}</strong> de {totalWeeks} ·{' '}
         Día <strong className="text-foreground">{Math.min(daysElapsed + 1, totalWeeks * 7)}</strong> de {totalWeeks * 7}
+        {activeProgram && (
+          <span className="text-lime"> · {activeProgram.name}</span>
+        )}
       </div>
 
-      {/* Active Program Banner */}
-      {activeProgram && (
-        <Card id="tour-active-program" className="mb-6">
-          <CardContent className="p-4 md:p-5 flex items-center gap-4 flex-wrap">
-            <div className="flex-1">
-              <div className="text-[9px] text-muted-foreground tracking-widest mb-1 uppercase">Programa Activo</div>
-              <div className="font-bebas text-2xl text-lime tracking-wide">{activeProgram.name}</div>
-              {activeProgram.description && (
-                <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{activeProgram.description}</div>
-              )}
-            </div>
-            <div className="flex gap-2 flex-wrap shrink-0">
-              {programs && programs.length > 1 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowProgramModal(true)}
-                  className="text-[10px] tracking-widest hover:border-lime hover:text-lime whitespace-nowrap"
-                >
-                  CAMBIAR PROGRAMA
-                </Button>
-              )}
-              {onCreateProgram && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onCreateProgram}
-                  className="text-[10px] tracking-widest hover:border-sky-500 hover:text-sky-500 whitespace-nowrap"
-                >
-                  + CREAR PROGRAMA
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Nudge */}
+      {/* Nudge — prominent when present */}
       {showNudge && (
         <div className="mb-6 p-4 md:p-5 bg-amber-500/5 border border-amber-500/30 rounded-xl flex items-center gap-4 flex-wrap">
           <div className="flex-1">
@@ -246,117 +214,104 @@ export default function DashboardPage({
         </div>
       )}
 
-      {/* Progress Bar */}
-      <Card id="tour-progress" className="mb-8">
-        <CardContent className="p-5 md:p-6">
-          <div className="flex justify-between mb-2.5 text-sm">
-            <span className={cn('text-[11px]', phaseAccent.text)}>{phase.name} (Semanas {phase.weeks})</span>
-            <span className="text-[11px] text-muted-foreground">{Math.round(progress)}% del programa</span>
+      {/* Progress bar — compact, always visible */}
+      <Card id="tour-progress" className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex justify-between mb-2 text-sm">
+            <span className={cn('text-[11px]', phaseAccent.text)}>{phase.name} · Semanas {phase.weeks}</span>
+            <span className="text-[11px] text-muted-foreground">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-1.5" />
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
-      <div id="tour-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard value={totalSessions} label="Sesiones totales" accent="text-lime" sub={`Objetivo: ${weekElapsed * 5} sesiones`} />
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2">
-              <div className={cn('font-bebas text-5xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>
-                {streak}
-              </div>
-              {streak >= 3 && <span className="text-2xl animate-pulse">🔥</span>}
-            </div>
-            <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Racha más larga</div>
-            {streak >= 7 && <div className="text-[10px] text-orange-500 mt-1">¡Imparable!</div>}
-            {streak >= 3 && streak < 7 && <div className="text-[10px] text-amber-400 mt-1">¡Sigue así!</div>}
-          </CardContent>
-        </Card>
-        <StatCard value={weeklyDone} label="Esta semana" accent="text-amber-400" sub={`Meta: ${settings.weeklyGoal || 5} días`} />
-        <StatCard value={`${Math.round(progress)}%`} label="Programa completado" accent="text-pink-500" />
-      </div>
-
-      {/* Nutrition Summary Widget */}
-      {onGoToNutrition && (
-        <Card id="tour-nutrition" className="mb-8 border-l-[3px] border-l-lime">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="relative size-14 shrink-0" role="img" aria-label={`${nutritionGoals ? Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100) : 0}% de calorías diarias`}>
-                <svg width="56" height="56" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" className="text-muted" strokeWidth="5" />
+      {/* Today row: Nutrition + Water side by side */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {onGoToNutrition && (
+          <button onClick={onGoToNutrition} className="text-left p-4 bg-card border border-border rounded-xl hover:border-lime/30 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="relative size-11 shrink-0" role="img" aria-label={`${nutritionGoals ? Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100) : 0}% de calorías diarias`}>
+                <svg width="44" height="44" viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="17" fill="none" stroke="currentColor" className="text-muted" strokeWidth="4" />
                   <circle
-                    cx="28" cy="28" r="22"
+                    cx="22" cy="22" r="17"
                     fill="none" stroke="currentColor"
                     className={cn(
                       nutritionGoals && nutritionTotals && nutritionTotals.calories > nutritionGoals.dailyCalories
-                        ? 'text-red-500'
-                        : 'text-lime'
+                        ? 'text-red-500' : 'text-lime'
                     )}
-                    strokeWidth="5" strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 22}
-                    strokeDashoffset={
-                      2 * Math.PI * 22 * (1 - Math.min(
-                        (nutritionTotals?.calories || 0) / (nutritionGoals?.dailyCalories || 1), 1
-                      ))
-                    }
-                    transform="rotate(-90 28 28)"
+                    strokeWidth="4" strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 17}
+                    strokeDashoffset={2 * Math.PI * 17 * (1 - Math.min((nutritionTotals?.calories || 0) / (nutritionGoals?.dailyCalories || 1), 1))}
+                    transform="rotate(-90 22 22)"
                     style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[10px] font-bold">
-                    {nutritionGoals
-                      ? `${Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100)}%`
-                      : '—'
-                    }
+                  <span className="text-[9px] font-bold">
+                    {nutritionGoals ? `${Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100)}%` : '—'}
                   </span>
                 </div>
               </div>
-              <div className="flex-1">
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">Nutrición Hoy</div>
+              <div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Nutrición</div>
                 {nutritionGoals ? (
                   <div className="text-sm">
                     <span className="text-foreground font-medium">{Math.round(nutritionTotals?.calories || 0)}</span>
                     <span className="text-muted-foreground"> / {nutritionGoals.dailyCalories} kcal</span>
                   </div>
                 ) : (
-                  <div className="text-xs text-muted-foreground">Configura tus macros para empezar a registrar</div>
+                  <div className="text-xs text-muted-foreground">Configurar macros</div>
                 )}
               </div>
-              <Button
-                onClick={onGoToNutrition}
-                variant="outline"
-                size="sm"
-                className="text-[10px] tracking-widest hover:border-lime hover:text-lime whitespace-nowrap"
-              >
-                {nutritionGoals ? 'REGISTRAR' : 'CONFIGURAR'}
-              </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Water Tracker */}
-      <div className="mb-8">
-        <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} compact />
+          </button>
+        )}
+        <div className={cn(!onGoToNutrition && 'col-span-full')}>
+          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} compact />
+        </div>
       </div>
 
       {/* Weekly Plan */}
-      <div id="tour-weekly-plan">
+      <div id="tour-weekly-plan" className="mb-6">
         <WeekPlanWidget selectedPhase={settings.phase || 1} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />
       </div>
 
-      {/* Calendar */}
-      <div className="mb-8">
-        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Actividad este mes</div>
+      {/* ═══ ZONE 2: Stats + History ═════════════════════════════════════════ */}
+      <div className="border-t border-border pt-6 mb-6">
+        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Resumen</div>
+
+        {/* Compact stats row — 4 values inline */}
+        <div id="tour-stats" className="grid grid-cols-4 gap-3 mb-6">
+          <div className="text-center">
+            <div className="font-bebas text-3xl md:text-4xl text-lime leading-none">{totalSessions}</div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Sesiones</div>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1">
+              <span className={cn('font-bebas text-3xl md:text-4xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>{streak}</span>
+              {streak >= 3 && <span className="text-lg">🔥</span>}
+            </div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Racha</div>
+          </div>
+          <div className="text-center">
+            <div className="font-bebas text-3xl md:text-4xl text-amber-400 leading-none">{weeklyDone}<span className="text-lg text-muted-foreground">/{settings.weeklyGoal || 5}</span></div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Semana</div>
+          </div>
+          <div className="text-center">
+            <div className="font-bebas text-3xl md:text-4xl text-pink-500 leading-none">{Math.round(progress)}%</div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Programa</div>
+          </div>
+        </div>
+
+        {/* Activity heatmap */}
         <div className="flex gap-1 flex-wrap" role="img" aria-label={`${Object.values(monthActivity).filter(Boolean).length} días activos este mes`}>
           {calDays.map(([date, active]) => (
             <div
               key={date}
               title={date}
               className={cn(
-                'size-6 rounded',
+                'size-5 rounded-sm',
                 active
                   ? 'bg-lime'
                   : date === today_str
@@ -368,60 +323,90 @@ export default function DashboardPage({
         </div>
       </div>
 
-      {/* Workout Reminders */}
-      <div className="mb-8">
-        <WorkoutReminderWidget userId={userId} />
-      </div>
+      {/* ═══ ZONE 3: Configuration (collapsed) ═══════════════════════════════ */}
+      <div className="border-t border-border pt-6">
+        <button
+          onClick={() => setShowConfig(c => !c)}
+          className="flex items-center justify-between w-full mb-4 group"
+        >
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase group-hover:text-foreground transition-colors">
+            Configuración
+          </div>
+          <svg
+            className={cn('size-4 text-muted-foreground transition-transform', showConfig && 'rotate-180')}
+            viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+          >
+            <polyline points="4,6 8,10 12,6" />
+          </svg>
+        </button>
 
-      {/* Phase + Goals */}
-      <div className={cn('grid gap-5', isMobile ? 'grid-cols-1' : 'grid-cols-2')}>
+        {showConfig && (
+          <div className="space-y-5 motion-safe:animate-fade-in">
+            {/* Active program */}
+            {activeProgram && (
+              <div id="tour-active-program" className="flex items-center gap-3 flex-wrap">
+                <div className="flex-1">
+                  <div className="text-[9px] text-muted-foreground tracking-widest uppercase">Programa</div>
+                  <div className="font-bebas text-xl text-lime">{activeProgram.name}</div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  {programs && programs.length > 1 && (
+                    <Button variant="outline" size="sm" onClick={() => setShowProgramModal(true)}
+                      className="text-[10px] tracking-widest hover:border-lime hover:text-lime h-8">
+                      CAMBIAR
+                    </Button>
+                  )}
+                  {onCreateProgram && (
+                    <Button variant="outline" size="sm" onClick={onCreateProgram}
+                      className="text-[10px] tracking-widest hover:border-sky-500 hover:text-sky-500 h-8">
+                      + NUEVO
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
-        {/* Phase selector */}
-        <Card className={cn('border-l-[3px]', phaseAccent.border)}>
-          <CardContent className="p-5 md:p-6">
-            <div className={cn('text-[10px] tracking-widest mb-2 uppercase', phaseAccent.text)}>Fase Actual</div>
-            <div className="font-bebas text-3xl mb-1.5">Fase {phase.id}: {phase.name}</div>
-            <div className="text-sm text-muted-foreground mb-4">Semanas {phase.weeks}</div>
-            <div className="flex gap-2 flex-wrap">
-              {PHASES.map(p => {
-                const pa = PHASE_COLORS[p.id] || PHASE_COLORS[1]
-                const isSelected = settings.phase === p.id
-                return (
-                  <Button
-                    key={p.id}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateSettings({ phase: p.id })}
-                    aria-pressed={isSelected}
-                    className={cn(
-                      'h-7 px-3 text-[10px] tracking-wide transition-all',
-                      isSelected && cn('border-current', pa.text)
-                    )}
-                  >
-                    F{p.id}
-                  </Button>
-                )
-              })}
+            {/* Phase + Goals side by side */}
+            <div className={cn('grid gap-5', isMobile ? 'grid-cols-1' : 'grid-cols-2')}>
+              <Card className={cn('border-l-[3px]', phaseAccent.border)}>
+                <CardContent className="p-5">
+                  <div className={cn('text-[10px] tracking-widest mb-2 uppercase', phaseAccent.text)}>Fase Actual</div>
+                  <div className="font-bebas text-2xl mb-1">Fase {phase.id}: {phase.name}</div>
+                  <div className="text-xs text-muted-foreground mb-3">Semanas {phase.weeks}</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {PHASES.map(p => {
+                      const pa = PHASE_COLORS[p.id] || PHASE_COLORS[1]
+                      const isSelected = settings.phase === p.id
+                      return (
+                        <Button key={p.id} variant="outline" size="sm"
+                          onClick={() => updateSettings({ phase: p.id })} aria-pressed={isSelected}
+                          className={cn('h-7 px-3 text-[10px] tracking-wide transition-all', isSelected && cn('border-current', pa.text))}>
+                          F{p.id}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-5">
+                  <div className="text-[10px] text-muted-foreground tracking-widest mb-3 uppercase">Objetivos a 6 meses</div>
+                  <div className="flex flex-col gap-2.5">
+                    {GOALS.map(goal => (
+                      <GoalCard key={goal.key} goal={goal}
+                        current={(settings as unknown as Record<string, number>)[goal.key] || 0}
+                        onUpdate={val => updateSettings({ [goal.key]: val })} />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Goals */}
-        <Card>
-          <CardContent className="p-5 md:p-6">
-            <div className="text-[10px] text-muted-foreground tracking-widest mb-4 uppercase">Objetivos a 6 meses</div>
-            <div className="flex flex-col gap-3">
-              {GOALS.map(goal => (
-                <GoalCard
-                  key={goal.key}
-                  goal={goal}
-                  current={(settings as unknown as Record<string, number>)[goal.key] || 0}
-                  onUpdate={val => updateSettings({ [goal.key]: val })}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            {/* Workout Reminders */}
+            <WorkoutReminderWidget userId={userId} />
+          </div>
+        )}
       </div>
 
       {showProgramModal && (
