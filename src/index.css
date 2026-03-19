@@ -114,6 +114,13 @@
   ::selection { background: hsl(74 90% 57% / 0.2); }
 }
 
+/* ── Exercise card flash ─────────────────────────────────────────────────── */
+@keyframes quickFlash {
+  0%   { background: hsl(var(--lime) / 0.15); }
+  100% { background: transparent; }
+}
+.ex-flash { animation: quickFlash 0.4s ease-out; }
+
 /* ── driver.js tour theme ─────────────────────────────────────────────────── */
 .driver-popover.calistenia-tour-popover {
   background: hsl(0 0% 7%);

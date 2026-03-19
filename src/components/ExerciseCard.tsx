@@ -90,14 +90,6 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
       'bg-card rounded-xl overflow-hidden transition-[border-color] duration-300 border',
       isComplete ? 'border-lime/35' : 'border-border'
     )}>
-      <style>{`
-        @keyframes quickFlash {
-          0%   { background: hsl(var(--lime) / 0.15); }
-          100% { background: transparent; }
-        }
-        .ex-flash { animation: quickFlash 0.4s ease-out; }
-      `}</style>
-
       {/* Priority stripe */}
       <div className={cn('h-0.5', PRIORITY_STRIPE[exercise.priority] || 'bg-muted')} />
 

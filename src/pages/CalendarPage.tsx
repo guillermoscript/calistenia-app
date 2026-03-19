@@ -110,12 +110,12 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Planificacion</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Planificación</div>
       <div className="font-bebas text-4xl md:text-5xl mb-6">CALENDARIO</div>
 
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-6">
-        <Button variant="outline" size="sm" onClick={prevMonth} className="h-8 px-3 text-xs">
+        <Button variant="outline" size="sm" onClick={prevMonth} aria-label="Mes anterior" className="h-8 px-3 text-xs">
           ‹
         </Button>
         <div className="text-center">
@@ -128,7 +128,7 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
           <Button variant="outline" size="sm" onClick={goToday} className="h-8 px-3 text-[10px] tracking-widest">
             HOY
           </Button>
-          <Button variant="outline" size="sm" onClick={nextMonth} className="h-8 px-3 text-xs">
+          <Button variant="outline" size="sm" onClick={nextMonth} aria-label="Mes siguiente" className="h-8 px-3 text-xs">
             ›
           </Button>
         </div>
@@ -160,6 +160,7 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
               return (
                 <button
                   key={date}
+                  aria-label={`${d} de ${MONTH_NAMES[viewMonth]}${hasSession ? `, ${sessions.length} sesión${sessions.length > 1 ? 'es' : ''}` : ''}${isToday ? ', hoy' : ''}`}
                   onClick={() => setSelectedDate(isSelected ? null : date)}
                   className={cn(
                     'aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all text-sm relative',

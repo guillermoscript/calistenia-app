@@ -116,11 +116,12 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         {/* Basic info */}
         <Card id="tour-personal-info">
           <CardContent className="p-5 flex flex-col gap-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">Informacion Personal</div>
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">Información Personal</div>
 
             <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">Nombre</Label>
+              <Label htmlFor="profile-name" className="text-[11px] text-muted-foreground mb-1.5 block">Nombre</Label>
               <Input
+                id="profile-name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Tu nombre"
@@ -130,8 +131,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-[11px] text-muted-foreground mb-1.5 block">Peso (kg)</Label>
+                <Label htmlFor="profile-weight" className="text-[11px] text-muted-foreground mb-1.5 block">Peso (kg)</Label>
                 <Input
+                  id="profile-weight"
                   type="number"
                   step="0.1"
                   min="0"
@@ -142,8 +144,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 />
               </div>
               <div>
-                <Label className="text-[11px] text-muted-foreground mb-1.5 block">Altura (cm)</Label>
+                <Label htmlFor="profile-height" className="text-[11px] text-muted-foreground mb-1.5 block">Altura (cm)</Label>
                 <Input
+                  id="profile-height"
                   type="number"
                   min="0"
                   value={height}
@@ -166,13 +169,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             )}
 
             <div id="tour-level-selector">
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">Nivel</Label>
+              <Label htmlFor="profile-level" className="text-[11px] text-muted-foreground mb-1.5 block">Nivel</Label>
               <div className="flex gap-2">
                 {LEVELS.map(l => (
                   <Button
                     key={l.value}
                     variant={level === l.value ? 'default' : 'outline'}
                     size="sm"
+                    aria-pressed={level === l.value}
                     onClick={() => setLevel(l.value)}
                     className={level === l.value
                       ? 'h-8 px-4 text-[11px] bg-lime text-zinc-900 hover:bg-lime/90'
@@ -186,8 +190,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </div>
 
             <div>
-              <Label className="text-[11px] text-muted-foreground mb-1.5 block">Objetivo</Label>
+              <Label htmlFor="profile-goal" className="text-[11px] text-muted-foreground mb-1.5 block">Objetivo</Label>
               <textarea
+                id="profile-goal"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
                 placeholder="Ej: Lograr 10 muscle-ups seguidos, bajar grasa corporal..."

@@ -146,6 +146,8 @@ export default function WorkoutPage({
             return (
               <button
                 key={day.id}
+                aria-pressed={isSelected}
+                aria-label={`${day.name} - ${day.focus}${done ? ' - completado' : ''}${isToday ? ' - hoy' : ''}`}
                 onClick={() => setSelectedDay(day.id === selectedDay ? null : day.id)}
                 className={cn(
                   'relative rounded-md border text-center transition-all duration-200',

@@ -97,6 +97,7 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') handleSubmit(); if (e.key === 'Escape') setEditing(false) }}
             placeholder={`Ej: ${current || goal.goal}`}
             className="flex-1 h-8 text-xs"
+            aria-label={goal.label}
           />
           <Button size="sm" onClick={handleSubmit} className="h-8 px-3 text-xs">OK</Button>
           <Button size="sm" variant="outline" onClick={() => setEditing(false)} className="h-8 px-2 text-xs">✕</Button>
@@ -274,8 +275,8 @@ export default function DashboardPage({
               {streak >= 3 && <span className="text-2xl animate-pulse">🔥</span>}
             </div>
             <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Racha máxima (días)</div>
-            {streak >= 7 && <div className="text-[10px] text-orange-500 mt-1">Imparable!</div>}
-            {streak >= 3 && streak < 7 && <div className="text-[10px] text-amber-400 mt-1">Sigue asi!</div>}
+            {streak >= 7 && <div className="text-[10px] text-orange-500 mt-1">¡Imparable!</div>}
+            {streak >= 3 && streak < 7 && <div className="text-[10px] text-amber-400 mt-1">¡Sigue así!</div>}
           </CardContent>
         </Card>
         <StatCard value={weeklyDone} label="Esta semana" accent="text-amber-400" sub={`Meta: ${settings.weeklyGoal || 5} días`} />
@@ -287,7 +288,7 @@ export default function DashboardPage({
         <Card id="tour-nutrition" className="mb-8 border-l-[3px] border-l-lime">
           <CardContent className="p-5">
             <div className="flex items-center gap-4 flex-wrap">
-              <div className="relative size-14 shrink-0">
+              <div className="relative size-14 shrink-0" role="img" aria-label={`${nutritionGoals ? Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100) : 0}% de calorías diarias`}>
                 <svg width="56" height="56" viewBox="0 0 56 56">
                   <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" className="text-muted" strokeWidth="5" />
                   <circle
@@ -319,7 +320,7 @@ export default function DashboardPage({
                 </div>
               </div>
               <div className="flex-1">
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">Nutricion Hoy</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">Nutrición Hoy</div>
                 {nutritionGoals ? (
                   <div className="text-sm">
                     <span className="text-foreground font-medium">{Math.round(nutritionTotals?.calories || 0)}</span>
@@ -355,7 +356,7 @@ export default function DashboardPage({
       {/* Calendar */}
       <div className="mb-8">
         <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Actividad este mes</div>
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex gap-1 flex-wrap" role="img" aria-label={`${Object.values(monthActivity).filter(Boolean).length} días activos este mes`}>
           {calDays.map(([date, active]) => (
             <div
               key={date}
@@ -397,6 +398,7 @@ export default function DashboardPage({
                     variant="outline"
                     size="sm"
                     onClick={() => updateSettings({ phase: p.id })}
+                    aria-pressed={isSelected}
                     className={cn(
                       'h-7 px-3 text-[10px] tracking-wide transition-all',
                       isSelected && cn('border-current', pa.text)

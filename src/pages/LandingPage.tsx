@@ -32,7 +32,7 @@ const FEATURES = [
     ),
   },
   {
-    title: 'Nutricion simple',
+    title: 'Nutrición simple',
     desc: 'Registra comidas, controla macros y agua. Base de datos de alimentos comunes.',
     icon: (
       <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
@@ -43,7 +43,7 @@ const FEATURES = [
   },
   {
     title: 'Mira tu progreso',
-    desc: 'Graficas de peso, volumen muscular, medidas corporales y fotos de progreso.',
+    desc: 'Gráficas de peso, volumen muscular, medidas corporales y fotos de progreso.',
     icon: (
       <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
         <polyline points="4,24 10,16 16,20 22,10 28,14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
@@ -53,7 +53,7 @@ const FEATURES = [
   },
   {
     title: 'Calendario y rachas',
-    desc: 'Visualiza tu constancia. Cada dia cuenta.',
+    desc: 'Visualiza tu constancia. Cada día cuenta.',
     icon: (
       <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
         <rect x="4" y="6" width="24" height="22" rx="3" stroke="currentColor" strokeWidth="2" fill="none" />
@@ -108,7 +108,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
-            Registra ejercicios de calistenia, controla tu nutricion
+            Registra ejercicios de calistenia, controla tu nutrición
             y mide tu progreso. Simple y directo.
           </p>
 
@@ -181,7 +181,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* ── Footer ──────────────────────────────── */}
       <footer className="px-6 pb-8 max-w-5xl mx-auto">
         <div className="h-px bg-border mb-6" />
-        <p className="text-xs text-muted-foreground">CALISTENIA &middot; Entrena con proposito</p>
+        <p className="text-xs text-muted-foreground">CALISTENIA &middot; Entrena con propósito</p>
       </footer>
     </div>
   )
