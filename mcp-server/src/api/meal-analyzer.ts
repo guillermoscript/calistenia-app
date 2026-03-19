@@ -25,7 +25,6 @@ Instrucciones:
 
 export async function analyzeMealImage({ imageBuffer, mimeType, mealType, tier }: MealAnalysisInput) {
   const { model, name: modelName } = resolveModel(tier);
-  const imageBase64 = imageBuffer.toString("base64");
 
   const { output, usage } = await generateText({
     model,
@@ -35,7 +34,7 @@ export async function analyzeMealImage({ imageBuffer, mimeType, mealType, tier }
       {
         role: "user",
         content: [
-          { type: "image", image: `data:${mimeType};base64,${imageBase64}` },
+          { type: "image", image: new Uint8Array(imageBuffer), mimeType: mimeType as any },
           {
             type: "text",
             text: `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`,

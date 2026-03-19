@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useId } from 'react'
 import { cn } from '../../lib/utils'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
@@ -29,13 +29,14 @@ const ACTIVITY_LEVELS: { id: ActivityLevel; label: string; desc: string }[] = [
 ]
 
 const GOALS: { id: NutritionGoalType; label: string; icon: string; desc: string }[] = [
-  { id: 'muscle_gain', label: 'Ganar Musculo', icon: '💪', desc: 'Superavit calorico' },
-  { id: 'fat_loss', label: 'Perder Grasa', icon: '🔥', desc: 'Deficit calorico' },
-  { id: 'recomp', label: 'Recomposicion', icon: '⚖️', desc: 'Ganar musculo y perder grasa' },
+  { id: 'muscle_gain', label: 'Ganar Músculo', icon: '💪', desc: 'Superávit calórico' },
+  { id: 'fat_loss', label: 'Perder Grasa', icon: '🔥', desc: 'Déficit calórico' },
+  { id: 'recomp', label: 'Recomposición', icon: '⚖️', desc: 'Ganar músculo y perder grasa' },
   { id: 'maintain', label: 'Mantener', icon: '✅', desc: 'Mantener peso actual' },
 ]
 
 export default function NutritionGoalSetup({ onSave, calculateMacros, initialWeight, initialHeight, initialAge, initialSex }: NutritionGoalSetupProps) {
+  const formId = useId()
   const [step, setStep] = useState(0)
 
   // Body data — pre-fill from user profile if available
@@ -81,11 +82,11 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Configuracion</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Configuración</div>
       <div className="font-bebas text-4xl mb-6">OBJETIVOS NUTRICIONALES</div>
 
       {/* Step indicator */}
-      <div className="flex gap-1.5 mb-6">
+      <div className="flex gap-1.5 mb-6" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={6} aria-label={`Paso ${step + 1} de 6`}>
         {[0, 1, 2, 3, 4, 5].map(i => (
           <div
             key={i}
@@ -103,8 +104,9 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
           <CardContent className="p-5 space-y-4">
             <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">Datos Corporales</div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Peso (kg)</label>
+              <label htmlFor={`${formId}-weight`} className="text-xs text-muted-foreground mb-1 block">Peso (kg)</label>
               <Input
+                id={`${formId}-weight`}
                 type="number"
                 placeholder="70"
                 value={weight}
@@ -112,8 +114,9 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Altura (cm)</label>
+              <label htmlFor={`${formId}-height`} className="text-xs text-muted-foreground mb-1 block">Altura (cm)</label>
               <Input
+                id={`${formId}-height`}
                 type="number"
                 placeholder="175"
                 value={height}
@@ -121,8 +124,9 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Edad</label>
+              <label htmlFor={`${formId}-age`} className="text-xs text-muted-foreground mb-1 block">Edad</label>
               <Input
+                id={`${formId}-age`}
                 type="number"
                 placeholder="25"
                 value={age}
@@ -222,7 +226,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Peso</span><span>{weight} kg</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Altura</span><span>{height} cm</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Edad</span><span>{age} anos</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Edad</span><span>{age} años</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Sexo</span><span>{sex === 'male' ? 'Masculino' : 'Femenino'}</span></div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Actividad</span>
@@ -245,32 +249,36 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
             <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">Macros Calculados</div>
             <div className="text-xs text-muted-foreground mb-3">Puedes ajustar los valores manualmente</div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Calorias diarias (kcal)</label>
+              <label htmlFor={`${formId}-dailyCalories`} className="text-xs text-muted-foreground mb-1 block">Calorías diarias (kcal)</label>
               <Input
+                id={`${formId}-dailyCalories`}
                 type="number"
                 value={macros.dailyCalories}
                 onChange={e => setMacros(m => ({ ...m, dailyCalories: parseInt(e.target.value) || 0 }))}
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Proteina (g)</label>
+              <label htmlFor={`${formId}-dailyProtein`} className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
               <Input
+                id={`${formId}-dailyProtein`}
                 type="number"
                 value={macros.dailyProtein}
                 onChange={e => setMacros(m => ({ ...m, dailyProtein: parseInt(e.target.value) || 0 }))}
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Carbohidratos (g)</label>
+              <label htmlFor={`${formId}-dailyCarbs`} className="text-xs text-muted-foreground mb-1 block">Carbohidratos (g)</label>
               <Input
+                id={`${formId}-dailyCarbs`}
                 type="number"
                 value={macros.dailyCarbs}
                 onChange={e => setMacros(m => ({ ...m, dailyCarbs: parseInt(e.target.value) || 0 }))}
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Grasa (g)</label>
+              <label htmlFor={`${formId}-dailyFat`} className="text-xs text-muted-foreground mb-1 block">Grasa (g)</label>
               <Input
+                id={`${formId}-dailyFat`}
                 type="number"
                 value={macros.dailyFat}
                 onChange={e => setMacros(m => ({ ...m, dailyFat: parseInt(e.target.value) || 0 }))}
@@ -279,7 +287,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
 
             {/* Summary card */}
             <div className="mt-4 p-3 bg-lime/5 border border-lime/20 rounded-lg">
-              <div className="text-xs text-lime tracking-widest uppercase mb-2">Distribucion Diaria</div>
+              <div className="text-xs text-lime tracking-widest uppercase mb-2">Distribución Diaria</div>
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div>
                   <div className="font-bebas text-2xl text-lime">{macros.dailyCalories}</div>

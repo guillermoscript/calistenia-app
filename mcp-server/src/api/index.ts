@@ -126,8 +126,11 @@ function apiErrorHandler(err: any, _req: any, res: any, _next: any) {
     return res.status(422).json({ error: "Datos inválidos", details: err.issues });
   }
   if (err.name?.startsWith("AI_")) {
-    console.error("[ai-error]", err.name, err.message);
-    return res.status(502).json({ error: "Error al comunicarse con el servicio de IA. Intenta de nuevo." });
+    console.error("[ai-error]", err.name, err.message, err.cause ?? "");
+    return res.status(502).json({
+      error: "Error al comunicarse con el servicio de IA. Intenta de nuevo.",
+      debug: process.env.NODE_ENV !== "production" ? { type: err.name, message: err.message } : undefined,
+    });
   }
   console.error("[unhandled-error]", err.message ?? err);
   return res.status(err.status ?? 500).json({

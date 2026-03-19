@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '../ui/dialog'
@@ -7,11 +8,18 @@ import type { MealLoggerContentProps } from './MealLoggerContent'
 
 type MealLoggerProps = MealLoggerContentProps
 
+const isMobile = () => window.matchMedia('(max-width: 639px)').matches
+
 export default function MealLogger(props: MealLoggerProps) {
   const [open, setOpen] = useState(false)
   const [key, setKey] = useState(0)
+  const navigate = useNavigate()
 
   const handleOpen = () => {
+    if (isMobile()) {
+      navigate('/nutrition/log')
+      return
+    }
     setKey(k => k + 1) // reset content state
     setOpen(true)
   }
@@ -27,7 +35,8 @@ export default function MealLogger(props: MealLoggerProps) {
       {/* FAB trigger */}
       <button
         onClick={handleOpen}
-        className="fixed bottom-6 right-6 z-40 size-14 rounded-full bg-lime text-zinc-900 shadow-lg shadow-lime/20 flex items-center justify-center hover:bg-lime/90 transition-colors"
+        className="fixed right-6 z-40 size-14 rounded-full bg-lime text-zinc-900 shadow-lg shadow-lime/20 flex items-center justify-center hover:bg-lime/90 transition-colors"
+        style={{ bottom: 'max(1.5rem, calc(0.5rem + env(safe-area-inset-bottom, 1rem)))' }}
         aria-label="Registrar comida"
       >
         <svg className="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">

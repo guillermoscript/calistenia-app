@@ -26,13 +26,13 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, className
 
   // Close dropdown on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
   }, [])
 
   const doAILookup = useCallback(async (name: string) => {

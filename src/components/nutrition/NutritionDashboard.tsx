@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { cn } from '../../lib/utils'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
@@ -28,7 +28,7 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
   const overBudget = consumed > target
 
   return (
-    <div className="relative flex items-center justify-center">
+    <div className="relative flex items-center justify-center" role="img" aria-label={`${Math.round(consumed)} de ${target} calorías consumidas`}>
       <svg width="140" height="140" viewBox="0 0 140 140">
         {/* Background ring */}
         <circle
@@ -71,6 +71,22 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
 
 export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry }: NutritionDashboardProps) {
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
+  const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleDelete = (id: string) => {
+    setPendingDelete(id)
+    if (pendingTimeoutRef.current) clearTimeout(pendingTimeoutRef.current)
+    pendingTimeoutRef.current = setTimeout(() => {
+      onDeleteEntry?.(id)
+      setPendingDelete(null)
+    }, 5000)
+  }
+
+  const handleUndo = () => {
+    if (pendingTimeoutRef.current) clearTimeout(pendingTimeoutRef.current)
+    setPendingDelete(null)
+  }
 
   if (!goals) return null
 
@@ -91,7 +107,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <CalorieGauge consumed={dailyTotals.calories} target={goals.dailyCalories} />
             <div className="flex-1 w-full space-y-3">
-              <MacroBar label="Proteina" current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
+              <MacroBar label="Proteína" current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
               <MacroBar label="Carbos" current={dailyTotals.carbs} target={goals.dailyCarbs} color="bg-amber-400" />
               <MacroBar label="Grasa" current={dailyTotals.fat} target={goals.dailyFat} color="bg-pink-500" />
             </div>
@@ -102,26 +118,34 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
       {/* Meal timeline */}
       <div>
         <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Comidas de Hoy</div>
-        {entries.length === 0 ? (
-          <Card>
-            <CardContent className="p-5 text-center">
-              <div className="text-muted-foreground text-sm">No has registrado comidas hoy</div>
-              <div className="text-xs text-muted-foreground mt-1">Usa el boton + para registrar tu primera comida</div>
-            </CardContent>
-          </Card>
+        {entries.filter(e => e.id !== pendingDelete).length === 0 && !pendingDelete ? ((() => {
+          const hour = new Date().getHours()
+          const emptyPrompt = hour < 10 ? '¿Qué desayunaste hoy?' : hour < 15 ? '¿Ya almorzaste?' : '¿Qué comiste hoy?'
+          return (
+            <Card>
+              <CardContent className="p-5 text-center">
+                <div className="text-muted-foreground text-sm">{emptyPrompt}</div>
+                <div className="text-xs text-muted-foreground mt-1">Usa el botón + para registrar</div>
+              </CardContent>
+            </Card>
+          )
+        })()
         ) : (
           <div className="space-y-3">
             {entries.map((entry, idx) => {
               const mealInfo = MEAL_LABELS[entry.mealType] || MEAL_LABELS.snack
               const entryId = entry.id || `entry-${idx}`
               const isExpanded = expandedEntry === entryId
+              const isPending = entryId === pendingDelete
 
               return (
-                <Card key={entryId} className="overflow-hidden">
+                <Card key={entryId} className={cn('overflow-hidden transition-all duration-300', isPending && 'opacity-0 h-0 !m-0 pointer-events-none')}>
                   <CardContent className="p-0">
                     <button
                       onClick={() => setExpandedEntry(isExpanded ? null : entryId)}
                       className="w-full p-4 text-left"
+                      aria-expanded={isExpanded}
+                      aria-label={`${mealInfo.label} - ${Math.round(entry.totalCalories)} kcal`}
                     >
                       <div className="flex items-center gap-3">
                         <span className={cn(
@@ -176,7 +200,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => { e.stopPropagation(); onDeleteEntry(entry.id!) }}
+                              onClick={(e) => { e.stopPropagation(); handleDelete(entry.id!) }}
                               className="h-7 px-2 text-red-500 hover:text-red-400 hover:bg-red-500/10"
                             >
                               <TrashIcon className="size-3.5" />
@@ -189,6 +213,17 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                 </Card>
               )
             })}
+            {pendingDelete && (
+              <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-zinc-800 border border-border">
+                <span className="text-xs text-muted-foreground">Comida eliminada</span>
+                <button
+                  onClick={handleUndo}
+                  className="text-xs font-bebas tracking-widest text-lime hover:text-lime/80 transition-colors"
+                >
+                  DESHACER
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

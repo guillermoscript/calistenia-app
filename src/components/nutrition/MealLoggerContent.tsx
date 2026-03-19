@@ -28,6 +28,17 @@ const MEAL_OPTIONS: { id: MealType; label: string }[] = [
   { id: 'snack', label: 'Snack' },
 ]
 
+/** Auto-detect meal type based on current hour */
+function getDefaultMealType(): MealType {
+  const hour = new Date().getHours()
+  if (hour < 10) return 'desayuno'
+  if (hour < 15) return 'almuerzo'
+  if (hour < 18) return 'snack'
+  return 'cena'
+}
+
+const PORTION_PRESETS = [50, 100, 150, 200, 250]
+
 /** Compress image client-side to max 1024px */
 function compressImage(file: File, maxSize = 1024): Promise<File> {
   return new Promise((resolve) => {
@@ -76,11 +87,14 @@ export default function MealLoggerContent({
   const [captureSubView, setCaptureSubView] = useState<'main' | 'repeatMeal' | 'templates'>('main')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [mealType, setMealType] = useState<MealType>('almuerzo')
+  const [mealType, setMealType] = useState<MealType>(getDefaultMealType)
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [manualEditIndex, setManualEditIndex] = useState<number | null>(null)
+  const [quickText, setQuickText] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const cancelledRef = useRef(false)
   const formId = useId()
 
   // Recent foods & suggestions
@@ -111,22 +125,54 @@ export default function MealLoggerContent({
 
   const handleAnalyze = async () => {
     if (!imageFile) return
+    cancelledRef.current = false
+    abortControllerRef.current = new AbortController()
     setStep('analyzing')
     setError(null)
     try {
       const result = await onAnalyze(imageFile, mealType)
+      if (cancelledRef.current) return
       const normalized = (result.foods || []).map(f => {
         if (!('baseCal100' in f) || !f.baseCal100) {
           return migrateLegacyFood(f as any)
         }
         return f
       })
+      if (normalized.length === 0) {
+        setError('No se detectaron alimentos. Intenta con otra foto o agrega manualmente.')
+        setStep('capture')
+        return
+      }
       setFoods(normalized)
       setStep('review')
     } catch {
+      if (cancelledRef.current) return
       setError('Error al analizar la imagen. Intenta de nuevo.')
       setStep('capture')
+    } finally {
+      abortControllerRef.current = null
     }
+  }
+
+  const handleCancelAnalysis = () => {
+    cancelledRef.current = true
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
+    setStep('capture')
+  }
+
+  const handleQuickTextSubmit = () => {
+    const text = quickText.trim()
+    if (!text) return
+    const names = text.split(',').map(s => s.trim()).filter(Boolean)
+    const newFoods = names.map(name => {
+      const food = createEmptyFood()
+      food.name = name
+      return food
+    })
+    setFoods(newFoods)
+    setQuickText('')
+    setStep('review')
   }
 
   const handlePortionChange = (index: number, amount: number, unit: FoodItem['portionUnit'], unitWeight: number) => {
@@ -179,13 +225,24 @@ export default function MealLoggerContent({
       const hour = new Date().getHours()
       foods.filter(f => f.name.trim()).forEach(f => trackFood(f, mealType, hour))
       setStep('success')
-      setTimeout(() => {
-        onSaveSuccess?.()
-      }, 1200)
     } catch {
       setError('Error al guardar. Intenta de nuevo.')
       setStep('review')
     }
+  }
+
+  const handleResetForm = () => {
+    setStep('capture')
+    setCaptureSubView('main')
+    setImagePreview(null)
+    setImageFile(null)
+    setMealType(getDefaultMealType())
+    setFoods([])
+    setError(null)
+    setManualEditIndex(null)
+    setQuickText('')
+    setShowSaveTemplate(false)
+    setTemplateName('')
   }
 
   const handleSaveTemplate = async () => {
@@ -236,6 +293,8 @@ export default function MealLoggerContent({
     } catch { /* ignore */ }
   }
 
+  const mealLabel = MEAL_OPTIONS.find(o => o.id === mealType)?.label ?? mealType
+
   return (
     <div className="space-y-4 motion-safe:animate-fade-in">
       {/* Step: Capture */}
@@ -243,6 +302,42 @@ export default function MealLoggerContent({
         <div className="space-y-4 motion-safe:animate-fade-in">
           {captureSubView === 'main' && (
             <>
+              {/* Quick text input */}
+              <div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1.5">Registro rápido</div>
+                <form
+                  onSubmit={e => { e.preventDefault(); handleQuickTextSubmit() }}
+                  className="flex gap-2"
+                >
+                  <input
+                    value={quickText}
+                    onChange={e => setQuickText(e.target.value)}
+                    placeholder="Escribe tu comida... ej: pollo, arroz, ensalada"
+                    className="flex-1 h-10 text-sm px-3 rounded-lg border border-input bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground/60"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!quickText.trim()}
+                    className={cn(
+                      'size-10 rounded-lg flex items-center justify-center shrink-0 transition-colors',
+                      quickText.trim()
+                        ? 'bg-lime text-zinc-900 hover:bg-lime/90'
+                        : 'bg-muted text-muted-foreground'
+                    )}
+                    aria-label="Enviar"
+                  >
+                    <SendIcon className="size-4" />
+                  </button>
+                </form>
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[10px] text-muted-foreground tracking-widest uppercase">o</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -266,7 +361,7 @@ export default function MealLoggerContent({
               ) : (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-40 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 hover:border-lime/40 transition-colors"
+                  className="w-full h-48 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 hover:border-lime/40 transition-colors bg-muted/30"
                 >
                   <CameraIcon className="size-10 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Tomar foto o seleccionar imagen</span>
@@ -274,8 +369,8 @@ export default function MealLoggerContent({
               )}
 
               <fieldset>
-                <legend className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">Tipo de Comida</legend>
-                <div className="grid grid-cols-4 gap-2" role="group">
+                <legend className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1.5">Tipo de comida</legend>
+                <div className="grid grid-cols-4 gap-1.5" role="group">
                   {MEAL_OPTIONS.map(opt => (
                     <button
                       key={opt.id}
@@ -283,10 +378,10 @@ export default function MealLoggerContent({
                       onClick={() => setMealType(opt.id)}
                       aria-pressed={mealType === opt.id}
                       className={cn(
-                        'py-2.5 px-1 rounded-lg border text-xs text-center transition-all',
+                        'py-1.5 px-1 rounded-md border text-[11px] text-center transition-all',
                         mealType === opt.id
                           ? 'border-lime bg-lime/10 text-lime'
-                          : 'border-border hover:border-lime/40'
+                          : 'border-border hover:border-lime/40 text-muted-foreground'
                       )}
                     >
                       {opt.label}
@@ -305,29 +400,26 @@ export default function MealLoggerContent({
                 ANALIZAR COMIDA
               </Button>
 
-              <Button
-                variant="outline"
+              <button
                 onClick={() => { setFoods([createEmptyFood()]); setStep('review') }}
-                className="w-full text-[10px] tracking-widest"
+                className="w-full text-center text-xs text-muted-foreground hover:text-lime transition-colors py-1"
               >
-                AGREGAR MANUALMENTE
-              </Button>
+                Agregar manualmente
+              </button>
 
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
+              <div className="flex items-center gap-2">
+                <button
                   onClick={loadRepeatMeal}
-                  className="text-[10px] tracking-widest"
+                  className="flex-1 text-center py-2 rounded-lg border border-border text-[10px] text-muted-foreground tracking-widest hover:border-lime/40 hover:text-lime transition-colors"
                 >
                   REPETIR COMIDA
-                </Button>
-                <Button
-                  variant="outline"
+                </button>
+                <button
                   onClick={loadTemplates}
-                  className="text-[10px] tracking-widest"
+                  className="flex-1 text-center py-2 rounded-lg border border-border text-[10px] text-muted-foreground tracking-widest hover:border-lime/40 hover:text-lime transition-colors"
                 >
                   MIS TEMPLATES
-                </Button>
+                </button>
               </div>
             </>
           )}
@@ -411,21 +503,51 @@ export default function MealLoggerContent({
 
       {/* Step: Analyzing */}
       {step === 'analyzing' && (
-        <div className="space-y-3 py-8 motion-safe:animate-fade-in" role="status" aria-label="Analizando comida">
-          <div className="text-center text-sm text-muted-foreground mb-4">Analizando tu comida...</div>
-          {[0, 1, 2].map(i => (
-            <div
-              key={i}
-              className="h-10 bg-muted rounded-lg animate-pulse"
-              style={{ animationDelay: `${i * 150}ms` }}
-            />
-          ))}
+        <div className="space-y-4 py-4 motion-safe:animate-fade-in" role="status" aria-label="Analizando comida">
+          {imagePreview ? (
+            <div className="relative overflow-hidden rounded-lg">
+              <img src={imagePreview} alt="Analizando..." className="w-full rounded-lg opacity-60" />
+              <div
+                className="absolute inset-0 bg-gradient-to-b from-transparent via-lime/10 to-transparent animate-pulse"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="inline-block size-6 border-2 border-lime/30 border-t-lime rounded-full animate-spin mb-2" />
+                  <div className="text-sm text-foreground font-medium">Analizando tu comida...</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="text-center text-sm text-muted-foreground mb-4">Analizando tu comida...</div>
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="h-10 bg-muted rounded-lg animate-pulse"
+                  style={{ animationDelay: `${i * 150}ms` }}
+                />
+              ))}
+            </>
+          )}
+          <button
+            onClick={handleCancelAnalysis}
+            className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
+          >
+            Cancelar análisis
+          </button>
         </div>
       )}
 
       {/* Step: Review */}
       {step === 'review' && (
         <div className="space-y-4 motion-safe:animate-fade-in">
+          {/* Daily progress context first */}
+          <MealProgressBar
+            dailyTotals={dailyTotals}
+            mealTotals={totals}
+            goals={goals}
+          />
+
           {recentFoods.length > 0 && (
             <div>
               <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1.5">Recientes</div>
@@ -489,6 +611,26 @@ export default function MealLoggerContent({
                   onChange={(amount, unit, unitWeight) => handlePortionChange(idx, amount, unit, unitWeight)}
                 />
               </div>
+              {/* Quick portion presets for gram-based portions */}
+              {food.portionUnit === 'g' && (
+                <div className="flex gap-1.5 flex-wrap">
+                  {PORTION_PRESETS.map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => handlePortionChange(idx, preset, 'g', food.unitWeightInGrams)}
+                      className={cn(
+                        'px-2 py-0.5 rounded-full text-[10px] border transition-colors',
+                        food.portionAmount === preset
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-lime/40'
+                      )}
+                    >
+                      {preset}g
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="grid grid-cols-4 gap-2">
                 {manualEditIndex === idx ? (
                   <>
@@ -587,12 +729,6 @@ export default function MealLoggerContent({
             + AGREGAR ALIMENTO
           </Button>
 
-          <MealProgressBar
-            dailyTotals={dailyTotals}
-            mealTotals={totals}
-            goals={goals}
-          />
-
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">Total de esta comida</div>
             <div className="grid grid-cols-4 gap-2 text-center text-sm">
@@ -672,13 +808,60 @@ export default function MealLoggerContent({
 
       {/* Step: Success */}
       {step === 'success' && (
-        <div className="py-12 text-center motion-safe:animate-fade-in">
-          <div className="inline-flex items-center justify-center size-14 rounded-full bg-lime/10 border border-lime/20 mb-3 motion-safe:animate-scale-in">
-            <svg className="size-7 text-lime" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+        <div className="py-8 motion-safe:animate-fade-in">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center size-14 rounded-full bg-lime/10 border border-lime/20 mb-3 motion-safe:animate-scale-in">
+              <svg className="size-7 text-lime" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <div className="text-lime font-bebas text-2xl tracking-wide">Comida registrada</div>
           </div>
-          <div className="text-lime font-bebas text-2xl tracking-wide">Comida registrada</div>
+
+          {/* Meal summary */}
+          <div className="p-4 bg-card border border-border rounded-lg space-y-3 mb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-mono tracking-wide px-2 py-0.5 rounded-full uppercase bg-lime/10 text-lime border border-lime/20">
+                {mealLabel}
+              </span>
+              <span className="font-bebas text-lg tabular-nums">{Math.round(totals.calories)} kcal</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-2 bg-muted/50 rounded-md">
+                <div className="font-bebas text-lg text-sky-500 tabular-nums">{Math.round(totals.protein)}g</div>
+                <div className="text-[10px] text-muted-foreground">Proteína</div>
+              </div>
+              <div className="p-2 bg-muted/50 rounded-md">
+                <div className="font-bebas text-lg text-amber-400 tabular-nums">{Math.round(totals.carbs)}g</div>
+                <div className="text-[10px] text-muted-foreground">Carbos</div>
+              </div>
+              <div className="p-2 bg-muted/50 rounded-md">
+                <div className="font-bebas text-lg text-pink-500 tabular-nums">{Math.round(totals.fat)}g</div>
+                <div className="text-[10px] text-muted-foreground">Grasa</div>
+              </div>
+            </div>
+            {goals && (
+              <div className="text-xs text-muted-foreground text-center pt-1 border-t border-border">
+                Llevas {Math.round(dailyTotals.calories + totals.calories)} de {Math.round(goals.dailyCalories)} kcal hoy
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={() => onSaveSuccess?.()}
+              className="flex-1 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-wide"
+            >
+              LISTO
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleResetForm}
+              className="flex-1 font-bebas text-lg tracking-wide"
+            >
+              REGISTRAR OTRA
+            </Button>
+          </div>
         </div>
       )}
     </div>
@@ -707,6 +890,15 @@ function PencilIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    </svg>
+  )
+}
+
+function SendIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 2 11 13" />
+      <path d="M22 2 15 22 11 13 2 9z" />
     </svg>
   )
 }

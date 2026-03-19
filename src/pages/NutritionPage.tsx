@@ -79,6 +79,35 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     getRecentEntries,
   } = useNutrition(userId)
 
+  const [frequentMeals, setFrequentMeals] = useState<NutritionEntry[]>([])
+
+  // Load frequent meals from recent entries
+  useEffect(() => {
+    if (!isReady || !goals) return
+    const load = async () => {
+    const allEntries = await getRecentEntries(20)
+    const signature = (e: NutritionEntry) => e.foods.map(f => f.name).sort().join('|')
+    const groups = new Map<string, { entry: NutritionEntry; count: number }>()
+    for (const entry of allEntries) {
+      const sig = signature(entry)
+      if (!sig) continue
+      const existing = groups.get(sig)
+      if (existing) {
+        existing.count++
+      } else {
+        groups.set(sig, { entry, count: 1 })
+      }
+    }
+    const frequent = [...groups.values()]
+      .filter(g => g.count >= 2)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4)
+      .map(g => g.entry)
+    setFrequentMeals(frequent)
+    }
+    load()
+  }, [isReady, goals, getRecentEntries])
+
   const entries = useMemo(() => getEntriesForDate(selectedDate), [getEntriesForDate, selectedDate])
   const dailyTotals = useMemo(() => getDailyTotals(selectedDate), [getDailyTotals, selectedDate])
   const weeklyHistory = useMemo(() => getWeeklyHistory(), [getWeeklyHistory])
@@ -139,8 +168,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Header */}
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Alimentacion</div>
-      <div className="font-bebas text-4xl md:text-5xl mb-6">NUTRICION</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Alimentación</div>
+      <div className="font-bebas text-4xl md:text-5xl mb-6">NUTRICIÓN</div>
 
       {/* Date picker */}
       <div id="tour-nutrition-date" className="flex items-center gap-3 mb-6">
@@ -151,6 +180,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             setSelectedDate(d.toISOString().split('T')[0])
           }}
           className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime-400/40 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Día anterior"
         >
           ‹
         </button>
@@ -167,6 +197,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             setSelectedDate(d.toISOString().split('T')[0])
           }}
           className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime-400/40 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Día siguiente"
         >
           ›
         </button>
@@ -255,6 +286,47 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
           {/* Water tracker */}
           <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} onSetGoal={setWaterGoal} />
+
+          {/* Frequent meals quick-tap */}
+          {isToday && frequentMeals.length > 0 && (
+            <div>
+              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-1 uppercase">COMIDAS FRECUENTES</div>
+              <div className="text-[10px] text-muted-foreground/60 mb-3">Toca para registrar</div>
+              <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth">
+                {frequentMeals.map((entry, i) => {
+                  const foodNames = entry.foods.map(f => f.name).filter(Boolean)
+                  const summary = foodNames.length > 2
+                    ? foodNames.slice(0, 2).join(', ') + ` +${foodNames.length - 2}`
+                    : foodNames.join(', ')
+                  return (
+                    <button
+                      key={i}
+                      onClick={async () => {
+                        await handleSaveEntry({
+                          mealType: entry.mealType,
+                          foods: entry.foods,
+                          totalCalories: entry.totalCalories,
+                          totalProtein: entry.totalProtein,
+                          totalCarbs: entry.totalCarbs,
+                          totalFat: entry.totalFat,
+                          loggedAt: new Date().toISOString(),
+                        })
+                      }}
+                      className="shrink-0 w-40 p-3 bg-card border border-border rounded-lg hover:border-lime/40 transition-colors text-left group"
+                    >
+                      <div className="text-xs font-medium text-foreground line-clamp-1 group-hover:text-lime transition-colors">{summary || 'Sin nombre'}</div>
+                      <div className="text-[10px] text-muted-foreground mt-1">
+                        {Math.round(entry.totalCalories)} kcal · {Math.round(entry.totalProtein)}g P
+                      </div>
+                      <div className="flex items-center gap-1 mt-1.5 text-[9px] text-lime tracking-widest">
+                        <span>+</span> REGISTRAR
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Daily dashboard */}
           <div id="tour-nutrition-dashboard">

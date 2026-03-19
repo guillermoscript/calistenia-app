@@ -129,6 +129,26 @@ export default function WeeklyNutritionChart({ history, calorieGoal }: WeeklyNut
           )}
         </CardContent>
       </Card>
+
+      <table className="sr-only">
+        <caption>Historial nutricional semanal</caption>
+        <thead>
+          <tr>
+            <th>Día</th><th>Calorías</th><th>Proteína</th><th>Carbos</th><th>Grasa</th>
+          </tr>
+        </thead>
+        <tbody>
+          {history.map(d => (
+            <tr key={d.date}>
+              <td>{d.dayLabel}</td>
+              <td>{d.calories} kcal</td>
+              <td>{d.protein}g</td>
+              <td>{d.carbs}g</td>
+              <td>{d.fat}g</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
