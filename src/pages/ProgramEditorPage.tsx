@@ -71,14 +71,23 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     navigate('/programs')
   }
 
+  const [validationError, setValidationError] = useState<string | null>(null)
+
   const handleNext = () => {
     const err = validate(state.step)
-    if (err) return
+    if (err) {
+      setValidationError(err)
+      return
+    }
+    setValidationError(null)
     if (state.step < 4) setStep(state.step + 1)
   }
 
   const handleBack = () => {
-    if (state.step > 1) setStep(state.step - 1)
+    if (state.step > 1) {
+      setValidationError(null)
+      setStep(state.step - 1)
+    }
   }
 
   const handleSave = async () => {
@@ -146,22 +155,39 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
             const stepNum = i + 1
             const isActive = state.step === stepNum
             const isDone = state.step > stepNum
+            const isFuture = state.step < stepNum
             return (
               <button
                 key={stepNum}
                 onClick={() => {
-                  if (isDone || isActive) setStep(stepNum)
+                  if (isActive) return
+                  if (isDone) {
+                    setValidationError(null)
+                    setStep(stepNum)
+                  } else if (isFuture) {
+                    // Validate all steps up to current before jumping forward
+                    for (let s = state.step; s < stepNum; s++) {
+                      const err = validate(s)
+                      if (err) {
+                        setValidationError(err)
+                        return
+                      }
+                    }
+                    setValidationError(null)
+                    setStep(stepNum)
+                  }
                 }}
+                aria-current={isActive ? 'step' : undefined}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] tracking-wide transition-all',
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] tracking-wide transition-all cursor-pointer',
                   isActive
                     ? 'bg-[hsl(var(--lime))] text-black font-medium'
                     : isDone
-                      ? 'bg-[hsl(var(--lime))]/10 text-[hsl(var(--lime))] cursor-pointer'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'bg-[hsl(var(--lime))]/10 text-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/20'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                 )}
               >
-                <span className="font-mono text-[10px]">{stepNum}</span>
+                <span className="font-mono text-[10px]">{isDone ? '✓' : stepNum}</span>
                 <span className="hidden sm:inline">{label}</span>
               </button>
             )
@@ -170,9 +196,9 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
       </div>
 
       {/* Error display */}
-      {state.error && (
-        <div className="shrink-0 px-4 py-2 bg-red-500/10 border-b border-red-500/20">
-          <div className="max-w-4xl mx-auto text-sm text-red-400">{state.error}</div>
+      {(state.error || validationError) && (
+        <div className="shrink-0 px-4 py-2 bg-red-500/10 border-b border-red-500/20" role="alert">
+          <div className="max-w-4xl mx-auto text-sm text-red-400">{state.error || validationError}</div>
         </div>
       )}
 
@@ -255,7 +281,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                         <div>
                           <div className="text-sm font-medium">Publicar como programa oficial</div>
                           <div className="text-[11px] text-muted-foreground">
-                            Los programas oficiales aparecen en la seccion principal y en el onboarding.
+                            Los programas oficiales aparecen en la sección principal y en el onboarding.
                           </div>
                         </div>
                       </label>
@@ -491,6 +517,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                             <button
                               onClick={() => moveExercise(currentDayKey, ei, 'up')}
                               disabled={ei === 0}
+                              aria-label={`Mover ${ex.name || 'ejercicio'} arriba`}
                               className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
                             >
                               ▲
@@ -498,6 +525,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                             <button
                               onClick={() => moveExercise(currentDayKey, ei, 'down')}
                               disabled={ei === currentDay.exercises.length - 1}
+                              aria-label={`Mover ${ex.name || 'ejercicio'} abajo`}
                               className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
                             >
                               ▼
@@ -563,6 +591,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                           </button>
                           <button
                             onClick={() => removeExercise(currentDayKey, ei)}
+                            aria-label={`Eliminar ${ex.name || 'ejercicio'}`}
                             className="text-muted-foreground hover:text-red-400 text-xs px-1"
                           >
                             ✕
