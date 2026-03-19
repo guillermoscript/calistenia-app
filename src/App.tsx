@@ -1,28 +1,30 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, useEffect, lazy, Suspense, type ReactNode } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useProgress } from './hooks/useProgress'
 import { usePrograms } from './hooks/usePrograms'
 import { useNutrition } from './hooks/useNutrition'
-import WorkoutPage from './pages/WorkoutPage'
+// Eagerly loaded: core pages the user sees first
 import DashboardPage from './pages/DashboardPage'
-import LumbarPage from './pages/LumbarPage'
-import ProgressPage from './pages/ProgressPage'
-import NutritionPage from './pages/NutritionPage'
-import ProfilePage from './pages/ProfilePage'
-import MealLoggerPage from './pages/MealLoggerPage'
+import WorkoutPage from './pages/WorkoutPage'
 import AuthPage from './pages/AuthPage'
-import ProgramEditorPage from './pages/ProgramEditorPage'
-import ProgramsPage from './pages/ProgramsPage'
-import ExerciseLibraryPage from './pages/ExerciseLibraryPage'
-import ExerciseDetailPage from './pages/ExerciseDetailPage'
-import ProgramDetailPage from './pages/ProgramDetailPage'
-import SharedProgramPage from './pages/SharedProgramPage'
-import AdminPage from './pages/AdminPage'
-import EditorPage from './pages/EditorPage'
-import UserProfilePage from './pages/UserProfilePage'
-import CalendarPage from './pages/CalendarPage'
 import LandingPage from './pages/LandingPage'
+// Lazy loaded: secondary pages (split into separate chunks)
+const ProgressPage = lazy(() => import('./pages/ProgressPage'))
+const NutritionPage = lazy(() => import('./pages/NutritionPage'))
+const MealLoggerPage = lazy(() => import('./pages/MealLoggerPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const CalendarPage = lazy(() => import('./pages/CalendarPage'))
+const LumbarPage = lazy(() => import('./pages/LumbarPage'))
+const ProgramsPage = lazy(() => import('./pages/ProgramsPage'))
+const ProgramEditorPage = lazy(() => import('./pages/ProgramEditorPage'))
+const ProgramDetailPage = lazy(() => import('./pages/ProgramDetailPage'))
+const ExerciseLibraryPage = lazy(() => import('./pages/ExerciseLibraryPage'))
+const ExerciseDetailPage = lazy(() => import('./pages/ExerciseDetailPage'))
+const SharedProgramPage = lazy(() => import('./pages/SharedProgramPage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const EditorPage = lazy(() => import('./pages/EditorPage'))
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -572,6 +574,7 @@ export default function App() {
           toggleDark={toggleDark}
           userRole={userRole}
         >
+          <Suspense fallback={<Loader />}>
           <Routes>
             <Route path="/" element={
               <DashboardPage
@@ -682,6 +685,7 @@ export default function App() {
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
           <AppTour pathname={location.pathname} userId={user.id} autoStart />
         </AppShell>
       </div>
