@@ -5,6 +5,7 @@ import { Badge } from '../components/ui/badge'
 import { Separator } from '../components/ui/separator'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
+import { PHASE_COLORS } from '../lib/style-tokens'
 import type { ProgressMap, Settings, ProgramMeta, ExerciseLog, SetData } from '../types'
 import ProgressSummary from '../components/progress/ProgressSummary'
 import ExerciseChart from '../components/progress/ExerciseChart'
@@ -33,13 +34,6 @@ function getLumbarChecks(): LumbarCheckLocal[] {
   try { return JSON.parse(localStorage.getItem(LS_LUMBAR) || '[]') } catch { return [] }
 }
 
-// Phase id → semantic classes
-const PHASE_CLASSES: Record<number, { text: string; bg: string; badge: string }> = {
-  1: { text: 'text-lime',     bg: 'bg-lime/10',     badge: 'border-lime/30 text-lime bg-lime/10' },
-  2: { text: 'text-sky-500',  bg: 'bg-sky-500/10',  badge: 'border-sky-500/30 text-sky-500 bg-sky-500/10' },
-  3: { text: 'text-pink-500', bg: 'bg-pink-500/10', badge: 'border-pink-500/30 text-pink-500 bg-pink-500/10' },
-  4: { text: 'text-amber-400',bg: 'bg-amber-400/10',badge: 'border-amber-400/30 text-amber-400 bg-amber-400/10' },
-}
 
 // Lumbar score → semantic color class
 function lumbarColor(score: number | null): string {
@@ -222,7 +216,7 @@ export default function ProgressPage({ progress, settings, activeProgram, userId
                       <div className="text-[11px] text-sky-600 dark:text-sky-400 font-mono whitespace-nowrap">{date}</div>
                       <div className="flex-1 flex gap-2 flex-wrap">
                         {logs.map((log, i) => {
-                          const pc = PHASE_CLASSES[log.phase ?? 0] || { badge: 'border-border text-muted-foreground bg-transparent' }
+                          const pc = PHASE_COLORS[log.phase ?? 0] || { badge: 'border-border text-muted-foreground bg-transparent' }
                           return (
                             <Badge key={i} variant="outline" className={cn('text-[11px] font-mono', pc.badge)}>
                               {log.title}

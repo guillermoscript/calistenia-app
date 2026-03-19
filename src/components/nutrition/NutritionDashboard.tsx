@@ -3,6 +3,7 @@ import { cn } from '../../lib/utils'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import MacroBar from './MacroBar'
+import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
 import type { NutritionEntry } from '../../types'
 
 interface NutritionDashboardProps {
@@ -12,12 +13,6 @@ interface NutritionDashboardProps {
   onDeleteEntry?: (id: string) => void
 }
 
-const MEAL_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  desayuno: { label: 'DESAYUNO', color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
-  almuerzo: { label: 'ALMUERZO', color: 'text-sky-500', bg: 'bg-sky-500/10 border-sky-500/30' },
-  cena:     { label: 'CENA',     color: 'text-pink-500', bg: 'bg-pink-500/10 border-pink-500/30' },
-  snack:    { label: 'SNACK',    color: 'text-lime',     bg: 'bg-lime/10 border-lime/30' },
-}
 
 function CalorieGauge({ consumed, target }: { consumed: number; target: number }) {
   const pct = target > 0 ? Math.min(consumed / target, 1.2) : 0
@@ -133,7 +128,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
         ) : (
           <div className="space-y-3">
             {entries.map((entry, idx) => {
-              const mealInfo = MEAL_LABELS[entry.mealType] || MEAL_LABELS.snack
+              const mealInfo = MEAL_TYPE_COLORS[entry.mealType] || MEAL_TYPE_COLORS.snack
               const entryId = entry.id || `entry-${idx}`
               const isExpanded = expandedEntry === entryId
               const isPending = entryId === pendingDelete
@@ -152,7 +147,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                           'text-[9px] tracking-widest px-2 py-0.5 rounded border',
                           mealInfo.bg, mealInfo.color
                         )}>
-                          {mealInfo.label}
+                          {mealInfo.label.toUpperCase()}
                         </span>
                         <span className="text-xs text-muted-foreground">{formatTime(entry.loggedAt)}</span>
                         <span className="ml-auto font-bebas text-lg text-foreground">{Math.round(entry.totalCalories)} kcal</span>

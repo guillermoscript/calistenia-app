@@ -4,6 +4,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { AI_API_URL } from '../../lib/ai-api'
+import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
 
 interface MacroTarget {
   calories: number
@@ -28,12 +29,6 @@ interface DailyMealPlanProps {
   loggedMealTypes: string[]
 }
 
-const MEAL_COLORS: Record<string, { label: string; color: string; bg: string }> = {
-  desayuno: { label: 'Desayuno', color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
-  almuerzo: { label: 'Almuerzo', color: 'text-sky-500', bg: 'bg-sky-500/10 border-sky-500/30' },
-  cena:     { label: 'Cena',     color: 'text-pink-500', bg: 'bg-pink-500/10 border-pink-500/30' },
-  snack:    { label: 'Snack',    color: 'text-lime-400', bg: 'bg-lime-400/10 border-lime-400/30' },
-}
 
 export default function DailyMealPlan({ remaining, goals, loggedMealTypes }: DailyMealPlanProps) {
   const [plan, setPlan] = useState<PlannedMeal[] | null>(null)
@@ -146,7 +141,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes }: Dai
       {plan && !loading && plan.length > 0 && (
         <div className="space-y-3">
           {plan.map((meal, i) => {
-            const colors = MEAL_COLORS[meal.meal_type] || MEAL_COLORS.snack
+            const colors = MEAL_TYPE_COLORS[meal.meal_type] || MEAL_TYPE_COLORS.snack
             return (
               <Card key={i}>
                 <CardContent className="p-4">

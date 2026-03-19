@@ -18,10 +18,8 @@ import { cn } from '../lib/utils'
 import WorkoutShareCard from './WorkoutShareCard'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
+import { PRIORITY_COLORS } from '../lib/style-tokens'
 import type { Exercise, Workout, ExerciseLog, SetData, Priority } from '../types'
-
-// Priority → semantic Tailwind classes
-const PRIORITY_STRIPE: Record<Priority, string> = { high: 'bg-red-500', med: 'bg-amber-400', low: 'bg-sky-500' }
 
 interface Quote {
   q: string
@@ -242,7 +240,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
       {nextStep && (
         <div className="w-full max-w-[340px] bg-card border border-border rounded-xl px-4 py-3.5">
           <div className="text-[9px] text-muted-foreground tracking-[3px] mb-2 uppercase font-mono">Siguiente</div>
-          <div className={cn('h-0.5 rounded mb-2.5', PRIORITY_STRIPE[nextStep.exercise.priority] || 'bg-muted')} />
+          <div className={cn('h-0.5 rounded mb-2.5', PRIORITY_COLORS[nextStep.exercise.priority]?.stripe || 'bg-muted')} />
           <div className="font-semibold text-[15px] mb-1">{nextStep.exercise.name}</div>
           <div className="font-mono text-[12px] text-lime">
             {nextStep.exercise.reps}
@@ -336,7 +334,7 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
 
       <div className={`flex-1 flex flex-col px-6 pb-8 overflow-auto ${flash ? 'ex-session-flash' : ''}`}>
         {/* Priority stripe */}
-        <div className={cn('h-[3px] rounded-b-sm mb-7', PRIORITY_STRIPE[exercise.priority] || 'bg-muted')} />
+        <div className={cn('h-[3px] rounded-b-sm mb-7', PRIORITY_COLORS[exercise.priority]?.stripe || 'bg-muted')} />
 
         {/* Exercise name + set counter */}
         <div className="mb-2">

@@ -10,11 +10,9 @@ import { useProgressions } from '../hooks/useProgressions'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { cn } from '../lib/utils'
+import { PRIORITY_COLORS } from '../lib/style-tokens'
 import type { Exercise, ExerciseLog, SetData, Priority } from '../types'
 
-// Priority → semantic Tailwind classes (no hex)
-const PRIORITY_STRIPE: Record<Priority, string> = { high: 'bg-red-500', med: 'bg-amber-400', low: 'bg-sky-500' }
-const PRIORITY_TEXT: Record<Priority, string>   = { high: 'text-red-500', med: 'text-amber-400', low: 'text-sky-500' }
 const PRIORITY_LABELS: Record<Priority, string> = { high: 'PRIORITARIO', med: 'IMPORTANTE', low: 'COMPLEMENTARIO' }
 
 interface ExerciseCardProps {
@@ -91,7 +89,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
       isComplete ? 'border-lime/35' : 'border-border'
     )}>
       {/* Priority stripe */}
-      <div className={cn('h-0.5', PRIORITY_STRIPE[exercise.priority] || 'bg-muted')} />
+      <div className={cn('h-0.5', PRIORITY_COLORS[exercise.priority]?.stripe || 'bg-muted')} />
 
       <div className={`px-4 py-4 transition-[background] duration-100 ${flash ? 'ex-flash' : ''}`}>
 
@@ -110,7 +108,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             <div className="flex gap-4 mb-1.5 flex-wrap">
               <span className="font-mono text-[12px] text-lime">{totalSets} × {exercise.reps}</span>
               <span className="font-mono text-[11px] text-muted-foreground">descanso {exercise.rest}s</span>
-              <span className={cn('font-mono text-[10px] tracking-wide', PRIORITY_TEXT[exercise.priority])}>
+              <span className={cn('font-mono text-[10px] tracking-wide', PRIORITY_COLORS[exercise.priority]?.text)}>
                 {PRIORITY_LABELS[exercise.priority]}
               </span>
             </div>

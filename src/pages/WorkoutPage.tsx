@@ -10,17 +10,8 @@ import { Button } from '../components/ui/button'
 import { triggerWorkoutDetailTour } from '../components/AppTour'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
+import { DAY_TYPE_COLORS } from '../lib/style-tokens'
 import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData } from '../types'
-
-// Day type → semantic color classes
-const DAY_TYPE: Record<DayType, { badge: string; border: string }> = {
-  push:   { badge: 'border-lime/60 text-lime bg-lime/5',          border: 'border-l-lime' },
-  pull:   { badge: 'border-sky-500/60 text-sky-600 bg-sky-500/5', border: 'border-l-sky-500' },
-  lumbar: { badge: 'border-red-500/60 text-red-500 bg-red-500/5', border: 'border-l-red-500' },
-  legs:   { badge: 'border-pink-500/60 text-pink-500 bg-pink-500/5', border: 'border-l-pink-500' },
-  full:   { badge: 'border-amber-400/60 text-amber-500 bg-amber-400/5', border: 'border-l-amber-400' },
-  rest:   { badge: 'border-border text-muted-foreground bg-transparent', border: 'border-l-border' },
-}
 
 interface WorkoutPageProps {
   settings: Settings
@@ -189,7 +180,7 @@ export default function WorkoutPage({
           {/* Workout header */}
           <div id="tour-workout-header" className={cn(
             'p-4 md:px-6 md:py-5 bg-card rounded-xl border border-border mb-5 border-l-4',
-            DAY_TYPE[selectedDayType as DayType]?.border || 'border-l-border'
+            DAY_TYPE_COLORS[selectedDayType as DayType]?.border || 'border-l-border'
           )}>
             <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center md:flex-wrap">
               <div>

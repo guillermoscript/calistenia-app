@@ -3,6 +3,7 @@ import { PHASES as FALLBACK_PHASES } from '../data/workouts'
 import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
 import { cn } from '../lib/utils'
+import { PHASE_COLORS } from '../lib/style-tokens'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Progress } from '../components/ui/progress'
@@ -13,13 +14,6 @@ import WorkoutReminderWidget from '../components/WorkoutReminderWidget'
 import { useWater } from '../hooks/useWater'
 import type { Settings, Phase, WeekDay, ProgramMeta } from '../types'
 
-// Map phase id → tailwind accent color class (border-l, text)
-const PHASE_ACCENT: Record<number, { border: string; text: string }> = {
-  1: { border: 'border-l-lime', text: 'text-lime' },
-  2: { border: 'border-l-sky-500', text: 'text-sky-500' },
-  3: { border: 'border-l-pink-500', text: 'text-pink-500' },
-  4: { border: 'border-l-amber-400', text: 'text-amber-400' },
-}
 
 interface StatCardProps {
   value: string | number
@@ -164,7 +158,7 @@ export default function DashboardPage({
   const weeklyDone = getWeeklyDoneCount()
   const monthActivity = getMonthActivity()
   const phase = PHASES.find(p => p.id === settings.phase) || PHASES[0]
-  const phaseAccent = PHASE_ACCENT[phase.id] || PHASE_ACCENT[1]
+  const phaseAccent = PHASE_COLORS[phase.id] || PHASE_COLORS[1]
   const startDate = settings.startDate ? new Date(settings.startDate) : new Date()
   const daysElapsed = Math.floor((new Date().getTime() - startDate.getTime()) / 86400000)
   const weekElapsed = Math.floor(daysElapsed / 7) + 1
@@ -390,7 +384,7 @@ export default function DashboardPage({
             <div className="text-sm text-muted-foreground mb-4">Semanas {phase.weeks}</div>
             <div className="flex gap-2 flex-wrap">
               {PHASES.map(p => {
-                const pa = PHASE_ACCENT[p.id] || PHASE_ACCENT[1]
+                const pa = PHASE_COLORS[p.id] || PHASE_COLORS[1]
                 const isSelected = settings.phase === p.id
                 return (
                   <Button

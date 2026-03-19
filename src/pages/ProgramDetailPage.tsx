@@ -8,7 +8,8 @@ import { inferDifficulty, DIFFICULTY_COLORS } from '../lib/difficulty'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
-import type { ProgramMeta } from '../types'
+import { PRIORITY_COLORS } from '../lib/style-tokens'
+import type { ProgramMeta, Priority } from '../types'
 import type { RecordModel } from 'pocketbase'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -70,14 +71,6 @@ async function shareProgram(programId: string, programName: string) {
   } catch {
     prompt('Copia este enlace:', url)
   }
-}
-
-// ── Priority colors ────────────────────────────────────────────────────────
-
-const PRIORITY_STRIPE: Record<string, string> = {
-  high: 'border-l-red-500',
-  med: 'border-l-amber-400',
-  low: 'border-l-emerald-400',
 }
 
 const PRIORITY_LABEL: Record<string, string> = {
@@ -597,7 +590,7 @@ export default function ProgramDetailPage({
                               key={`${exercise.id}_${idx}`}
                               className={cn(
                                 'px-5 py-4 border-l-[3px] flex items-center gap-4 hover:bg-muted/30 transition-colors',
-                                PRIORITY_STRIPE[exercise.priority] || 'border-l-border',
+                                PRIORITY_COLORS[exercise.priority as Priority]?.border || 'border-l-border',
                                 idx < workout.exercises.length - 1 && 'border-b border-border/40',
                               )}
                             >
