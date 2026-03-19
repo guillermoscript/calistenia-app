@@ -12,6 +12,8 @@ import WeightTracker from '../components/progress/WeightTracker'
 import BodyPhotosTimeline from '../components/progress/BodyPhotosTimeline'
 import WeightProgressionChart from '../components/progress/WeightProgressionChart'
 import MuscleVolumeChart from '../components/progress/MuscleVolumeChart'
+import VolumeLoadChart from '../components/progress/VolumeLoadChart'
+import OneRepMaxCalculator from '../components/progress/OneRepMaxCalculator'
 import PhotoComparator from '../components/progress/PhotoComparator'
 import BodyMeasurementsTracker from '../components/progress/BodyMeasurementsTracker'
 import ExportData from '../components/progress/ExportData'
@@ -174,8 +176,14 @@ export default function ProgressPage({ progress, settings, activeProgram, userId
           {/* Weight Progression Chart (lastre) */}
           <WeightProgressionChart exerciseLogs={exerciseLogs} />
 
+          {/* Volume Load */}
+          <VolumeLoadChart progress={progress} />
+
           {/* Muscle Volume Chart */}
           <MuscleVolumeChart progress={progress} />
+
+          {/* 1RM Calculator */}
+          <OneRepMaxCalculator exerciseLogs={exerciseLogs} />
 
           {/* Weight Tracker */}
           <div className="mb-8">

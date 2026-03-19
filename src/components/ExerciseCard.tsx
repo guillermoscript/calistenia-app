@@ -20,7 +20,7 @@ const PRIORITY_LABELS: Record<Priority, string> = { high: 'PRIORITARIO', med: 'I
 interface ExerciseCardProps {
   exercise: Exercise
   workoutKey: string
-  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number }) => void
+  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number; rpe?: number }) => void
   onStartRest: (seconds: number) => void
   logs?: ExerciseLog[]
   isAdmin?: boolean
@@ -41,6 +41,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   const [logReps, setLogReps] = useState<string>('')
   const [logNote, setLogNote] = useState<string>('')
   const [logWeight, setLogWeight] = useState<string>('')
+  const [logRpe, setLogRpe] = useState<string>('')
   const [setsLogged, setSetsLogged] = useState<number>(0)
   const [flash, setFlash] = useState<boolean>(false)
 
@@ -72,11 +73,13 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   const handleFormLog = (): void => {
     if (!logReps) return
     const w = parseFloat(logWeight)
-    onLogSet(exercise.id, workoutKey, { reps: logReps, note: logNote, weight: isNaN(w) ? undefined : w })
+    const r = parseInt(logRpe)
+    onLogSet(exercise.id, workoutKey, { reps: logReps, note: logNote, weight: isNaN(w) ? undefined : w, rpe: isNaN(r) ? undefined : r })
     setSetsLogged(s => s + 1)
     setLogReps('')
     setLogNote('')
     setLogWeight('')
+    setLogRpe('')
     setShowEditForm(false)
     onStartRest(exercise.rest || 90)
     triggerFlash()
@@ -105,6 +108,9 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-semibold text-[15px]">{exercise.name}</span>
+              {exercise.supersetGroup && (
+                <span className="text-[9px] text-pink-500 font-mono tracking-[0.5px] px-1.5 py-0.5 rounded bg-pink-500/10 border border-pink-500/20">SS</span>
+              )}
               {isComplete && (
                 <span className="text-[11px] text-emerald-500 font-mono tracking-[0.5px]">✓ COMPLETADO</span>
               )}
@@ -292,13 +298,23 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 value={logWeight}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogWeight(e.target.value)}
                 placeholder="Lastre kg"
-                className="w-[90px] h-8 text-xs"
+                className="w-[80px] h-8 text-xs"
+              />
+              <Input
+                type="number"
+                min="1"
+                max="10"
+                value={logRpe}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogRpe(e.target.value)}
+                placeholder="RPE"
+                title="Rate of Perceived Exertion (1-10)"
+                className="w-[55px] h-8 text-xs"
               />
               <Input
                 value={logNote}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogNote(e.target.value)}
-                placeholder="Nota opcional"
-                className="flex-[2] min-w-[120px] h-8 text-xs"
+                placeholder="Nota"
+                className="flex-[2] min-w-[80px] h-8 text-xs"
               />
               <Button
                 onClick={handleFormLog}
@@ -328,6 +344,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                   <span key={j} className="mr-2">
                     Serie {j + 1}: <strong>{s.reps}</strong>
                     {s.weight && <span className="text-amber-400 ml-1">+{s.weight}kg</span>}
+                    {s.rpe && <span className="text-pink-500 ml-1">RPE {s.rpe}</span>}
                     {s.note && <em className="text-muted-foreground ml-1">({s.note})</em>}
                   </span>
                 ))}

@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from './ui/dialog'
 import { cn } from '../lib/utils'
+import WorkoutShareCard from './WorkoutShareCard'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
 import type { Exercise, Workout, ExerciseLog, SetData, Priority } from '../types'
@@ -352,6 +353,13 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
           </div>
         </div>
 
+        {/* Superset badge */}
+        {exercise.supersetGroup && (
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-3 rounded-md bg-pink-500/10 border border-pink-500/30">
+            <span className="text-[10px] font-mono tracking-wide text-pink-500">SUPERSET</span>
+          </div>
+        )}
+
         {/* Set tracker dots */}
         <div className="flex gap-2 items-center mb-5">
           {Array.from({ length: totalSets }).map((_, i) => (
@@ -607,13 +615,16 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
         <div className="h-px mt-6 bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      <div style={{ animation: 'fadeUp 0.5s 0.5s ease-out both' }}>
-        <Button
-          onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDone() }}
-          className="min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5 mb-3"
-        >
-          IR AL DASHBOARD
-        </Button>
+      <div style={{ animation: 'fadeUp 0.5s 0.5s ease-out both' }} className="flex flex-col items-center gap-3">
+        <div className="flex gap-3 items-center">
+          <Button
+            onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDone() }}
+            className="min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5"
+          >
+            IR AL DASHBOARD
+          </Button>
+          <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} />
+        </div>
         <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
       </div>
     </div>
@@ -675,9 +686,18 @@ export default function SessionView({
     if (isLastStep) {
       setPhase('note')
     } else {
-      setPhase('rest')
+      // Check superset: if current and next exercise share a supersetGroup, skip rest
+      const currentGroup = currentStep.exercise.supersetGroup
+      const nextExGroup = nextStep?.exercise.supersetGroup
+      if (currentGroup && nextExGroup && currentGroup === nextExGroup) {
+        // Superset — go directly to next exercise
+        setStepIdx(i => i + 1)
+        setPhase('exercise')
+      } else {
+        setPhase('rest')
+      }
     }
-  }, [currentStep, isLastStep, onLogSet, workoutKey, setsCount, stepIdx, steps.length])
+  }, [currentStep, isLastStep, nextStep, onLogSet, workoutKey, setsCount, stepIdx, steps.length])
 
   const handleRestDone = useCallback(() => {
     setStepIdx(i => i + 1)

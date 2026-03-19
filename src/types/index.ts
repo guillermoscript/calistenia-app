@@ -22,6 +22,7 @@ export interface Exercise {
   pbRecordId?: string
   demoImages?: string[]
   demoVideo?: string
+  supersetGroup?: string  // exercises with same group ID are done back-to-back
 }
 
 export interface Workout {
@@ -56,6 +57,7 @@ export interface SetData {
   reps: string
   note: string
   weight?: number
+  rpe?: number  // Rate of Perceived Exertion 1-10
   timestamp: number
 }
 
