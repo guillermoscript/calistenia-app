@@ -180,7 +180,8 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
       try {
         await loadFromPB(userId)
-      } catch (e) {
+      } catch (e: any) {
+        if (e?.code === 0) return // auto-cancelled, ignore
         console.error('usePrograms: PB load error, falling back', e)
         // fallback values already set
       }
@@ -196,6 +197,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     const catalogRes = await pb.collection('programs').getList(1, 100, {
       filter: 'is_active = true',
       sort: 'name',
+      $autoCancel: false,
     })
     const catalog: ProgramMeta[] = catalogRes.items.map(p => ({
       id:             p.id,
@@ -247,10 +249,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       pb.collection('program_phases').getList(1, 20, {
         filter: pb.filter('program = {:pid}', { pid: programId }),
         sort:   'sort_order',
+        $autoCancel: false,
       }),
       pb.collection('program_exercises').getList(1, 2000, {
         filter: pb.filter('program = {:pid}', { pid: programId }),
         sort:   'phase_number,sort_order',
+        $autoCancel: false,
       }),
     ])
 

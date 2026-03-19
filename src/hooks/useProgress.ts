@@ -105,10 +105,12 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
         pb.collection('sessions').getList(1, 500, {
           filter: sessionFilter,
           sort: '-completed_at',
+          $autoCancel: false,
         }),
         pb.collection('sets_log').getList(1, 1000, {
           filter: pb.filter('user = {:uid}', { uid }),
           sort: '-logged_at',
+          $autoCancel: false,
         }),
       ])
 
@@ -171,7 +173,8 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
           }).catch(() => {}) // No bloquear si falla
         }
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.code === 0) return // auto-cancelled, ignore
       console.error('PocketBase load error, falling back to localStorage', e)
       loadFromLS()
     }

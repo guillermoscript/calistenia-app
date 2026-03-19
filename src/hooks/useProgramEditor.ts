@@ -286,15 +286,17 @@ export function useProgramEditor() {
     if (!available) return
 
     try {
-      const program = await pb.collection('programs').getOne(programId)
+      const program = await pb.collection('programs').getOne(programId, { $autoCancel: false })
       const [phasesRes, exercisesRes] = await Promise.all([
         pb.collection('program_phases').getList(1, 20, {
           filter: pb.filter('program = {:pid}', { pid: programId }),
           sort: 'sort_order',
+          $autoCancel: false,
         }),
         pb.collection('program_exercises').getList(1, 2000, {
           filter: pb.filter('program = {:pid}', { pid: programId }),
           sort: 'phase_number,sort_order',
+          $autoCancel: false,
         }),
       ])
 
@@ -366,7 +368,8 @@ export function useProgramEditor() {
         isSaving: false,
         error: null,
       })
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.code === 0) return // auto-cancelled, ignore
       console.error('useProgramEditor: loadProgram error', e)
       setState(s => ({ ...s, error: 'Error al cargar el programa' }))
     }

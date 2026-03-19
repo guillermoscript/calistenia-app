@@ -178,7 +178,7 @@ export default function ProgramDetailPage({
 
     try {
       // Fetch program
-      const progRecord = await pb.collection('programs').getOne(programId)
+      const progRecord = await pb.collection('programs').getOne(programId, { $autoCancel: false })
       const meta: ProgramMeta = {
         id: progRecord.id,
         name: progRecord.name,
@@ -192,6 +192,7 @@ export default function ProgramDetailPage({
       const phasesRes = await pb.collection('program_phases').getList(1, 20, {
         filter: pb.filter('program = {:pid}', { pid: programId }),
         sort: 'sort_order',
+        $autoCancel: false,
       })
       const builtPhases: ProgramPhase[] = phasesRes.items.map(p => ({
         id: p.phase_number,
@@ -210,6 +211,7 @@ export default function ProgramDetailPage({
       const exercisesRes = await pb.collection('program_exercises').getList(1, 2000, {
         filter: pb.filter('program = {:pid}', { pid: programId }),
         sort: 'phase_number,sort_order',
+        $autoCancel: false,
       })
 
       // Build workouts grouped by phase+day
@@ -261,7 +263,8 @@ export default function ProgramDetailPage({
       } catch {
         // Not critical
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.code === 0) return // auto-cancelled, ignore
       console.error('ProgramDetailPage: fetch error', e)
       setError('Error al cargar el programa.')
     } finally {

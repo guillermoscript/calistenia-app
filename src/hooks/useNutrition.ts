@@ -91,9 +91,11 @@ export function useNutrition(userId: string | null) {
             start: `${today} 00:00:00`,
           }),
           sort: '-logged_at',
+          $autoCancel: false,
         }),
         pb.collection('nutrition_goals').getList(1, 1, {
           filter: pb.filter('user = {:uid}', { uid }),
+          $autoCancel: false,
         }),
       ])
 
@@ -136,7 +138,8 @@ export function useNutrition(userId: string | null) {
         const lsGoal = lsGetGoals()
         setGoals(lsGoal)
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.code === 0) return // auto-cancelled, ignore
       console.error('PocketBase nutrition load error, falling back to localStorage', e)
       loadFromLS()
     }
