@@ -143,35 +143,43 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
 
       // Cargar settings del usuario
       try {
-        const settingsRec: any = await pb.collection('settings').getFirstListItem(
-          pb.filter('user = {:uid}', { uid })
-        )
-        const s: Settings = {
-          phase: settingsRec.phase,
-          startDate: settingsRec.start_date?.split(' ')[0] || null,
-          weeklyGoal: settingsRec.weekly_goal || 5,
-          pr_pullups:   settingsRec.pr_pullups   || 0,
-          pr_pushups:   settingsRec.pr_pushups   || 0,
-          pr_lsit:      settingsRec.pr_lsit      || 0,
-          pr_pistol:    settingsRec.pr_pistol     || 0,
-          pr_handstand: settingsRec.pr_handstand  || 0,
+        const settingsRes = await pb.collection('settings').getList(1, 1, {
+          filter: pb.filter('user = {:uid}', { uid }),
+          $autoCancel: false,
+        })
+        if (settingsRes.items.length > 0) {
+          const settingsRec: any = settingsRes.items[0]
+          const s: Settings = {
+            phase: settingsRec.phase,
+            startDate: settingsRec.start_date?.split(' ')[0] || null,
+            weeklyGoal: settingsRec.weekly_goal || 5,
+            pr_pullups:   settingsRec.pr_pullups   || 0,
+            pr_pushups:   settingsRec.pr_pushups   || 0,
+            pr_lsit:      settingsRec.pr_lsit      || 0,
+            pr_pistol:    settingsRec.pr_pistol     || 0,
+            pr_handstand: settingsRec.pr_handstand  || 0,
+          }
+          setSettingsState(s)
+          lsSetSettings(s)
+        } else {
+          // No hay settings en PB aún, usar localStorage o defaults
+          const s = lsGetSettings()
+          if (!s.startDate) { s.startDate = new Date().toISOString().split('T')[0]; lsSetSettings(s) }
+          setSettingsState(s)
+          // Crear registro de settings en PB para este usuario
+          if (uid) {
+            pb.collection('settings').create({
+              user: uid,
+              phase: s.phase,
+              start_date: s.startDate,
+              weekly_goal: s.weeklyGoal,
+            }).catch(() => {}) // No bloquear si falla
+          }
         }
-        setSettingsState(s)
-        lsSetSettings(s)
       } catch {
-        // No hay settings en PB aún, usar localStorage o defaults
+        // Network/PB error, use localStorage
         const s = lsGetSettings()
-        if (!s.startDate) { s.startDate = new Date().toISOString().split('T')[0]; lsSetSettings(s) }
         setSettingsState(s)
-        // Crear registro de settings en PB para este usuario
-        if (uid) {
-          pb.collection('settings').create({
-            user: uid,
-            phase: s.phase,
-            start_date: s.startDate,
-            weekly_goal: s.weeklyGoal,
-          }).catch(() => {}) // No bloquear si falla
-        }
       }
     } catch (e: any) {
       if (e?.code === 0) return // auto-cancelled, ignore
@@ -306,10 +314,11 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
 
     if (usePB && userId) {
       try {
-        const existing = await pb.collection('settings').getFirstListItem(
-          pb.filter('user = {:uid}', { uid: userId })
-        )
-        await pb.collection('settings').update(existing.id, {
+        const existingRes = await pb.collection('settings').getList(1, 1, {
+          filter: pb.filter('user = {:uid}', { uid: userId }),
+          $autoCancel: false,
+        })
+        const data = {
           phase: updated.phase,
           start_date: updated.startDate,
           weekly_goal: updated.weeklyGoal,
@@ -318,9 +327,14 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
           pr_lsit:      updated.pr_lsit      ?? null,
           pr_pistol:    updated.pr_pistol     ?? null,
           pr_handstand: updated.pr_handstand  ?? null,
-        })
+        }
+        if (existingRes.items.length > 0) {
+          await pb.collection('settings').update(existingRes.items[0].id, data)
+        } else {
+          await pb.collection('settings').create({ user: userId, ...data })
+        }
       } catch {
-        // No existe aún: crear
+        // Fallback: try creating
         pb.collection('settings').create({
           user: userId,
           phase: updated.phase,

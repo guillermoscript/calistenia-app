@@ -59,9 +59,10 @@ export const useWater = (userId: string | null = null): UseWaterReturn => {
               filter: pb.filter('user = {:uid} && logged_at >= {:start}', { uid: userId, start: startOfDay }),
               sort: '-logged_at',
             }),
-            pb.collection('settings').getFirstListItem(
-              pb.filter('user = {:uid}', { uid: userId })
-            ).catch(() => null),
+            pb.collection('settings').getList(1, 1, {
+              filter: pb.filter('user = {:uid}', { uid: userId }),
+              $autoCancel: false,
+            }).then(r => r.items[0] || null).catch(() => null),
           ])
           const entries: WaterEntry[] = res.items.map((r: any) => ({
             id: r.id,
@@ -144,15 +145,17 @@ export const useWater = (userId: string | null = null): UseWaterReturn => {
     // Persist to PB settings
     if (usePB && userId) {
       try {
-        const existing = await pb.collection('settings').getFirstListItem(
-          pb.filter('user = {:uid}', { uid: userId })
-        )
-        await pb.collection('settings').update(existing.id, { water_goal: ml })
-      } catch {
-        // Settings record may not exist or field not yet available
-        try {
+        const existingRes = await pb.collection('settings').getList(1, 1, {
+          filter: pb.filter('user = {:uid}', { uid: userId }),
+          $autoCancel: false,
+        })
+        if (existingRes.items.length > 0) {
+          await pb.collection('settings').update(existingRes.items[0].id, { water_goal: ml })
+        } else {
           await pb.collection('settings').create({ user: userId, water_goal: ml })
-        } catch {}
+        }
+      } catch {
+        // PB not available, goal saved to localStorage above
       }
     }
   }, [usePB, userId])

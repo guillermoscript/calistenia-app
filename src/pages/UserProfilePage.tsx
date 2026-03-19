@@ -71,9 +71,11 @@ export default function UserProfilePage({
         // Fetch settings
         let settings: any = {}
         try {
-          settings = await pb.collection('settings').getFirstListItem(
-            pb.filter('user = {:uid}', { uid: userId })
-          )
+          const settingsRes = await pb.collection('settings').getList(1, 1, {
+            filter: pb.filter('user = {:uid}', { uid: userId }),
+            $autoCancel: false,
+          })
+          if (settingsRes.items.length > 0) settings = settingsRes.items[0]
         } catch { /* no settings yet */ }
 
         // Fetch recent sessions for activity calendar
