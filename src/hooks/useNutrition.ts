@@ -167,7 +167,7 @@ export function useNutrition(userId: string | null) {
     imageFiles: File | File[],
     mealType: string,
     description?: string,
-  ): Promise<{ foods: FoodItem[]; totals: DailyTotals; ai_model: string }> => {
+  ): Promise<{ foods: FoodItem[]; totals: DailyTotals; meal_description: string; ai_model: string }> => {
     const formData = new FormData()
     const files = Array.isArray(imageFiles) ? imageFiles : [imageFiles]
     for (const file of files) {
@@ -196,6 +196,7 @@ export function useNutrition(userId: string | null) {
     return {
       foods: data.analysis?.foods ?? [],
       totals: data.analysis?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      meal_description: data.analysis?.meal_description || '',
       ai_model: data.model_used || 'unknown',
     }
   }, [])

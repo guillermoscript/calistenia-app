@@ -13,7 +13,7 @@ import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate
 const MAX_PHOTOS = 5
 
 export interface MealLoggerContentProps {
-  onAnalyze: (imageFiles: File[], mealType: string, description?: string) => Promise<{ foods: FoodItem[] }>
+  onAnalyze: (imageFiles: File[], mealType: string, description?: string) => Promise<{ foods: FoodItem[]; meal_description?: string }>
   onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => Promise<void>
   userId: string | null
   dailyTotals: DailyTotals
@@ -93,6 +93,7 @@ export default function MealLoggerContent({
   const [editingMacro, setEditingMacro] = useState<{ index: number; field: keyof FoodItem } | null>(null)
   const [quickText, setQuickText] = useState('')
   const [imageDescription, setImageDescription] = useState('')
+  const [mealDescription, setMealDescription] = useState('')
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -151,6 +152,7 @@ export default function MealLoggerContent({
         return
       }
       setFoods(normalized)
+      setMealDescription(result.meal_description || '')
       setStep('review')
     } catch {
       if (cancelledRef.current) return
@@ -249,6 +251,7 @@ export default function MealLoggerContent({
     setEditingMacro(null)
     setQuickText('')
     setImageDescription('')
+    setMealDescription('')
     setShowSaveTemplate(false)
     setTemplateName('')
   }
@@ -797,6 +800,13 @@ export default function MealLoggerContent({
             ))}
           </div>
 
+          {/* AI meal description */}
+          {mealDescription && (
+            <div className="px-3 py-2.5 rounded-xl bg-lime-400/5 border border-lime-400/10 text-xs text-muted-foreground leading-relaxed">
+              {mealDescription}
+            </div>
+          )}
+
           {/* Add food */}
           <button
             onClick={addFood}
@@ -926,7 +936,7 @@ export default function MealLoggerContent({
             </div>
             {goals && (
               <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
-                Llevas {Math.round(dailyTotals.calories + totals.calories)} de {Math.round(goals.dailyCalories)} kcal hoy
+                Llevas {Math.round(dailyTotals.calories)} de {Math.round(goals.dailyCalories)} kcal hoy
               </div>
             )}
           </div>
