@@ -178,19 +178,25 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                     {isExpanded && (
                       <div className="px-4 pb-4 border-t border-border">
                         {/* Photo gallery */}
-                        {entry.photoUrls && entry.photoUrls.length > 0 && (
-                          <div className="flex gap-2 pt-3 pb-2 overflow-x-auto scrollbar-none -mx-1 px-1">
-                            {entry.photoUrls.map((url, pi) => (
-                              <img
-                                key={pi}
-                                src={url}
-                                alt={`Foto ${pi + 1}`}
-                                className="shrink-0 h-28 rounded-lg object-cover"
-                                loading="lazy"
-                              />
-                            ))}
-                          </div>
-                        )}
+                        {(() => {
+                          const photos = (entry.photoUrls && entry.photoUrls.length > 0)
+                            ? entry.photoUrls
+                            : entry.photoUrl ? [entry.photoUrl] : []
+                          if (photos.length === 0) return null
+                          return (
+                            <div className="flex gap-2 pt-3 pb-2 overflow-x-auto scrollbar-none -mx-1 px-1">
+                              {photos.map((url, pi) => (
+                                <img
+                                  key={pi}
+                                  src={url}
+                                  alt={`Foto ${pi + 1}`}
+                                  className="shrink-0 h-32 rounded-lg object-cover"
+                                  loading="lazy"
+                                />
+                              ))}
+                            </div>
+                          )
+                        })()}
                         <div className="pt-3 space-y-2">
                           {entry.foods.map((food, fi) => (
                             <div key={fi} className="flex items-center gap-3 text-xs">

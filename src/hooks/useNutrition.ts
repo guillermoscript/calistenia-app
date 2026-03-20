@@ -225,7 +225,9 @@ export function useNutrition(userId: string | null) {
           }
         }
 
-        const rec: any = await pb.collection('nutrition_entries').create(formData)
+        const created: any = await pb.collection('nutrition_entries').create(formData)
+        // Re-fetch to ensure file fields are fully populated
+        const rec: any = await pb.collection('nutrition_entries').getOne(created.id, { $autoCancel: false })
         saved = {
           id: rec.id,
           user: rec.user,
