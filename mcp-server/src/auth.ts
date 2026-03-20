@@ -14,7 +14,7 @@ export class AuthManager {
   constructor(pbUrl: string, context: UserContext) {
     this.pb = new PocketBase(pbUrl);
     // Save the validated token so all subsequent requests are authenticated
-    this.pb.authStore.save(context.token, { id: context.userId });
+    this.pb.authStore.save(context.token, { id: context.userId } as any);
     this.userId = context.userId;
     this.email = context.email;
   }
