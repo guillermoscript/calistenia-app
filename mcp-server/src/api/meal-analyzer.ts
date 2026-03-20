@@ -6,6 +6,7 @@ interface MealAnalysisInput {
   imageBuffer: Buffer;
   mimeType: string;
   mealType: string;
+  description?: string;
   tier: Tier;
 }
 
@@ -23,8 +24,13 @@ Instrucciones:
 - Proporciona una breve descripción general de la comida.
 - Responde siempre en español.`;
 
-export async function analyzeMealImage({ imageBuffer, mimeType, mealType, tier }: MealAnalysisInput) {
+export async function analyzeMealImage({ imageBuffer, mimeType, mealType, description, tier }: MealAnalysisInput) {
   const { model, name: modelName } = resolveModel(tier);
+
+  let userText = `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`;
+  if (description) {
+    userText += `\n\nEl usuario describe la comida asi: "${description}"\nUsa esta descripcion como guia para identificar mejor los alimentos, porciones e ingredientes que pueden no ser obvios en la foto.`;
+  }
 
   const { output, usage } = await generateText({
     model,
@@ -35,10 +41,7 @@ export async function analyzeMealImage({ imageBuffer, mimeType, mealType, tier }
         role: "user",
         content: [
           { type: "image", image: new Uint8Array(imageBuffer), mediaType: mimeType as any },
-          {
-            type: "text",
-            text: `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`,
-          },
+          { type: "text", text: userText },
         ],
       },
     ],

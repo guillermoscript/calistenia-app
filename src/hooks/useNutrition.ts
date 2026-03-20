@@ -149,10 +149,12 @@ export function useNutrition(userId: string | null) {
   const analyzeMeal = useCallback(async (
     imageFile: File,
     mealType: string,
+    description?: string,
   ): Promise<{ foods: FoodItem[]; totals: DailyTotals; ai_model: string }> => {
     const formData = new FormData()
     formData.append('image', imageFile)
     formData.append('meal_type', mealType)
+    if (description) formData.append('description', description)
 
     const headers: Record<string, string> = {}
     if (pb.authStore.token) {

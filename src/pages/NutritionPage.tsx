@@ -154,8 +154,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     }
   }, [calculateMacros])
 
-  const handleAnalyze = useCallback(async (imageFile: File, mealType: string): Promise<{ foods: FoodItem[] }> => {
-    const result = await analyzeMeal(imageFile, mealType)
+  const handleAnalyze = useCallback(async (imageFile: File, mealType: string, description?: string): Promise<{ foods: FoodItem[] }> => {
+    const result = await analyzeMeal(imageFile, mealType, description)
     return { foods: result.foods }
   }, [analyzeMeal])
 

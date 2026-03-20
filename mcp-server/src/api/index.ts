@@ -169,12 +169,14 @@ export function createApiRouter(): Router {
           return res.status(400).json({ error: "Se requiere una imagen de la comida" });
         }
         const mealType = req.body.meal_type ?? "comida";
+        const description = req.body.description ?? "";
         const tier: Tier = req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
 
         const result = await analyzeMealImage({
           imageBuffer: req.file.buffer,
           mimeType: req.file.mimetype,
           mealType,
+          description,
           tier,
         });
 

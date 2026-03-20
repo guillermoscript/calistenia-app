@@ -11,7 +11,7 @@ import { calcMacros, normalizeToBase100, migrateLegacyFood, createEmptyFood } fr
 import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate, MealType } from '../../types'
 
 export interface MealLoggerContentProps {
-  onAnalyze: (imageFile: File, mealType: string) => Promise<{ foods: FoodItem[] }>
+  onAnalyze: (imageFile: File, mealType: string, description?: string) => Promise<{ foods: FoodItem[] }>
   onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>) => Promise<void>
   userId: string | null
   dailyTotals: DailyTotals
@@ -92,6 +92,7 @@ export default function MealLoggerContent({
   const [error, setError] = useState<string | null>(null)
   const [manualEditIndex, setManualEditIndex] = useState<number | null>(null)
   const [quickText, setQuickText] = useState('')
+  const [imageDescription, setImageDescription] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const cancelledRef = useRef(false)
@@ -130,7 +131,7 @@ export default function MealLoggerContent({
     setStep('analyzing')
     setError(null)
     try {
-      const result = await onAnalyze(imageFile, mealType)
+      const result = await onAnalyze(imageFile, mealType, imageDescription.trim() || undefined)
       if (cancelledRef.current) return
       const normalized = (result.foods || []).map(f => {
         if (!('baseCal100' in f) || !f.baseCal100) {
@@ -241,6 +242,7 @@ export default function MealLoggerContent({
     setError(null)
     setManualEditIndex(null)
     setQuickText('')
+    setImageDescription('')
     setShowSaveTemplate(false)
     setTemplateName('')
   }
@@ -359,18 +361,36 @@ export default function MealLoggerContent({
                 />
 
                 {imagePreview ? (
-                  <div className="relative rounded-xl overflow-hidden">
-                    <img src={imagePreview} alt="Preview" className="w-full rounded-xl" />
-                    <button
-                      onClick={() => { setImagePreview(null); setImageFile(null) }}
-                      className="absolute top-2 right-2 size-7 rounded-full bg-background/80 backdrop-blur-sm text-foreground flex items-center justify-center hover:bg-background transition-colors"
-                      aria-label="Eliminar imagen"
-                    >
-                      <CloseIcon className="size-3.5" />
-                    </button>
+                  <div className="space-y-3">
+                    <div className="relative rounded-xl overflow-hidden">
+                      <img src={imagePreview} alt="Preview" className="w-full rounded-xl" />
+                      <button
+                        onClick={() => { setImagePreview(null); setImageFile(null); setImageDescription('') }}
+                        className="absolute top-2 right-2 size-7 rounded-full bg-background/80 backdrop-blur-sm text-foreground flex items-center justify-center hover:bg-background transition-colors"
+                        aria-label="Eliminar imagen"
+                      >
+                        <CloseIcon className="size-3.5" />
+                      </button>
+                    </div>
+                    {/* Description field for AI context */}
+                    <div className="relative">
+                      <textarea
+                        value={imageDescription}
+                        onChange={e => setImageDescription(e.target.value)}
+                        placeholder="Describe tu comida para mejor precision... ej: pollo a la plancha con arroz integral y ensalada, unos 200g de pollo"
+                        maxLength={500}
+                        rows={2}
+                        className="w-full text-sm px-3.5 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/40 transition-all resize-none leading-relaxed"
+                      />
+                      {imageDescription && (
+                        <div className="absolute bottom-2 right-3 text-[9px] text-muted-foreground/40 tabular-nums">
+                          {imageDescription.length}/500
+                        </div>
+                      )}
+                    </div>
                     <Button
                       onClick={handleAnalyze}
-                      className="absolute bottom-3 left-3 right-3 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-base tracking-widest shadow-lg"
+                      className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-base tracking-widest shadow-lg shadow-lime-400/10"
                     >
                       ANALIZAR CON IA
                     </Button>
