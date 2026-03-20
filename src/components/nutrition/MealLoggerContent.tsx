@@ -10,9 +10,11 @@ import { useMealTemplates } from '../../hooks/useMealTemplates'
 import { calcMacros, normalizeToBase100, migrateLegacyFood, createEmptyFood } from '../../lib/macro-calc'
 import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate, MealType } from '../../types'
 
+const MAX_PHOTOS = 5
+
 export interface MealLoggerContentProps {
-  onAnalyze: (imageFile: File, mealType: string, description?: string) => Promise<{ foods: FoodItem[] }>
-  onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>) => Promise<void>
+  onAnalyze: (imageFiles: File[], mealType: string, description?: string) => Promise<{ foods: FoodItem[] }>
+  onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => Promise<void>
   userId: string | null
   dailyTotals: DailyTotals
   goals: NutritionGoal | null
@@ -85,8 +87,8 @@ export default function MealLoggerContent({
 
   const [step, setStep] = useState<'capture' | 'analyzing' | 'review' | 'saving' | 'success'>('capture')
   const [captureSubView, setCaptureSubView] = useState<'main' | 'repeatMeal' | 'templates'>('main')
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [mealType, setMealType] = useState<MealType>(getDefaultMealType)
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -116,22 +118,29 @@ export default function MealLoggerContent({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || imageFiles.length >= MAX_PHOTOS) return
     const compressed = await compressImage(file)
-    setImageFile(compressed)
+    setImageFiles(prev => [...prev, compressed])
     const reader = new FileReader()
-    reader.onload = () => setImagePreview(reader.result as string)
+    reader.onload = () => setImagePreviews(prev => [...prev, reader.result as string])
     reader.readAsDataURL(compressed)
+    // Reset input so the same file can be re-selected
+    e.target.value = ''
+  }
+
+  const removePhoto = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index))
+    setImagePreviews(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleAnalyze = async () => {
-    if (!imageFile) return
+    if (imageFiles.length === 0) return
     cancelledRef.current = false
     abortControllerRef.current = new AbortController()
     setStep('analyzing')
     setError(null)
     try {
-      const result = await onAnalyze(imageFile, mealType, imageDescription.trim() || undefined)
+      const result = await onAnalyze(imageFiles, mealType, imageDescription.trim() || undefined)
       if (cancelledRef.current) return
       const normalized = (result.foods || []).map(f => {
         if (!('baseCal100' in f) || !f.baseCal100) {
@@ -221,7 +230,7 @@ export default function MealLoggerContent({
         totalCarbs: totals.carbs,
         totalFat: totals.fat,
         loggedAt: new Date().toISOString(),
-      })
+      }, imageFiles.length > 0 ? imageFiles : undefined)
       foods.filter(f => f.name.trim()).forEach(f => saveFoodToCatalog(f))
       const hour = new Date().getHours()
       foods.filter(f => f.name.trim()).forEach(f => trackFood(f, mealType, hour))
@@ -235,8 +244,8 @@ export default function MealLoggerContent({
   const handleResetForm = () => {
     setStep('capture')
     setCaptureSubView('main')
-    setImagePreview(null)
-    setImageFile(null)
+    setImagePreviews([])
+    setImageFiles([])
     setMealType(getDefaultMealType())
     setFoods([])
     setError(null)
@@ -360,17 +369,36 @@ export default function MealLoggerContent({
                   className="hidden"
                 />
 
-                {imagePreview ? (
+                {imagePreviews.length > 0 ? (
                   <div className="space-y-3">
-                    <div className="relative rounded-xl overflow-hidden">
-                      <img src={imagePreview} alt="Preview" className="w-full rounded-xl" />
-                      <button
-                        onClick={() => { setImagePreview(null); setImageFile(null); setImageDescription('') }}
-                        className="absolute top-2 right-2 size-7 rounded-full bg-background/80 backdrop-blur-sm text-foreground flex items-center justify-center hover:bg-background transition-colors"
-                        aria-label="Eliminar imagen"
-                      >
-                        <CloseIcon className="size-3.5" />
-                      </button>
+                    {/* Photo strip */}
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+                      {imagePreviews.map((preview, i) => (
+                        <div key={i} className="relative shrink-0 w-[calc(50%-4px)] max-w-[180px] aspect-square rounded-xl overflow-hidden">
+                          <img src={preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => removePhoto(i)}
+                            className="absolute top-1.5 right-1.5 size-6 rounded-full bg-background/80 backdrop-blur-sm text-foreground flex items-center justify-center hover:bg-background transition-colors"
+                            aria-label={`Eliminar foto ${i + 1}`}
+                          >
+                            <CloseIcon className="size-3" />
+                          </button>
+                          <div className="absolute bottom-1.5 left-1.5 text-[9px] font-mono text-white/70 bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded">
+                            {i + 1}/{imagePreviews.length}
+                          </div>
+                        </div>
+                      ))}
+                      {imageFiles.length < MAX_PHOTOS && (
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="shrink-0 w-[calc(50%-4px)] max-w-[180px] aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1.5 hover:border-lime-400/40 hover:bg-lime-400/[0.03] transition-all"
+                        >
+                          <CameraIcon className="size-5 text-muted-foreground/50" />
+                          <span className="text-[9px] font-mono text-muted-foreground/50 tracking-wide">
+                            +FOTO ({imageFiles.length}/{MAX_PHOTOS})
+                          </span>
+                        </button>
+                      )}
                     </div>
                     {/* Description field for AI context */}
                     <div className="relative">
@@ -533,9 +561,14 @@ export default function MealLoggerContent({
       {/* Step: Analyzing */}
       {step === 'analyzing' && (
         <div className="space-y-4 py-4 motion-safe:animate-fade-in" role="status" aria-label="Analizando comida">
-          {imagePreview ? (
+          {imagePreviews.length > 0 ? (
             <div className="relative overflow-hidden rounded-xl">
-              <img src={imagePreview} alt="Analizando..." className="w-full rounded-xl opacity-60" />
+              <img src={imagePreviews[0]} alt="Analizando..." className="w-full rounded-xl opacity-60" />
+              {imagePreviews.length > 1 && (
+                <div className="absolute top-2 left-2 text-[10px] font-mono text-white/80 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded">
+                  {imagePreviews.length} fotos
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-lime-400/10 to-transparent animate-pulse" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center bg-background/70 backdrop-blur-sm rounded-xl px-6 py-4">
@@ -573,7 +606,7 @@ export default function MealLoggerContent({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => { setStep('capture'); setFoods([]); setImagePreview(null); setImageFile(null) }}
+                onClick={() => { setStep('capture'); setFoods([]); setImagePreviews([]); setImageFiles([]) }}
                 className="size-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
               >
                 <BackIcon className="size-4 text-muted-foreground" />

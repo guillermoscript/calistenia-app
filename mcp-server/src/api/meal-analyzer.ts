@@ -2,9 +2,13 @@ import { generateText, Output } from "ai";
 import { MealAnalysisSchema } from "./schemas.js";
 import { resolveModel, type Tier } from "./model-resolver.js";
 
-interface MealAnalysisInput {
-  imageBuffer: Buffer;
+interface ImageInput {
+  buffer: Buffer;
   mimeType: string;
+}
+
+interface MealAnalysisInput {
+  images: ImageInput[];
   mealType: string;
   description?: string;
   tier: Tier;
@@ -24,13 +28,21 @@ Instrucciones:
 - Proporciona una breve descripción general de la comida.
 - Responde siempre en español.`;
 
-export async function analyzeMealImage({ imageBuffer, mimeType, mealType, description, tier }: MealAnalysisInput) {
+export async function analyzeMealImage({ images, mealType, description, tier }: MealAnalysisInput) {
   const { model, name: modelName } = resolveModel(tier);
 
-  let userText = `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`;
+  let userText = images.length > 1
+    ? `Analiza estas ${images.length} imagenes de ${mealType}. Las imagenes muestran la misma comida desde diferentes angulos o diferentes platos de la misma comida. Identifica todos los alimentos visibles en todas las imagenes y proporciona el desglose nutricional completo. No dupliques alimentos que aparezcan en varias fotos.`
+    : `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`;
   if (description) {
     userText += `\n\nEl usuario describe la comida asi: "${description}"\nUsa esta descripcion como guia para identificar mejor los alimentos, porciones e ingredientes que pueden no ser obvios en la foto.`;
   }
+
+  const imageContent = images.map(img => ({
+    type: "image" as const,
+    image: new Uint8Array(img.buffer),
+    mediaType: img.mimeType as any,
+  }));
 
   const { output, usage } = await generateText({
     model,
@@ -40,7 +52,7 @@ export async function analyzeMealImage({ imageBuffer, mimeType, mealType, descri
       {
         role: "user",
         content: [
-          { type: "image", image: new Uint8Array(imageBuffer), mediaType: mimeType as any },
+          ...imageContent,
           { type: "text", text: userText },
         ],
       },

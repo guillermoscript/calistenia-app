@@ -162,19 +162,24 @@ export function createApiRouter(): Router {
     "/analyze-meal",
     requireAuth,
     rateLimit,
-    imageUpload.single("image"),
+    imageUpload.array("images", 5),
     async (req: any, res: any, next: any) => {
       try {
-        if (!req.file) {
-          return res.status(400).json({ error: "Se requiere una imagen de la comida" });
+        const files: Express.Multer.File[] = req.files || [];
+        if (files.length === 0) {
+          return res.status(400).json({ error: "Se requiere al menos una imagen de la comida" });
         }
         const mealType = req.body.meal_type ?? "comida";
         const description = req.body.description ?? "";
         const tier: Tier = req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
 
+        const images = files.map((f: Express.Multer.File) => ({
+          buffer: f.buffer,
+          mimeType: f.mimetype,
+        }));
+
         const result = await analyzeMealImage({
-          imageBuffer: req.file.buffer,
-          mimeType: req.file.mimetype,
+          images,
           mealType,
           description,
           tier,

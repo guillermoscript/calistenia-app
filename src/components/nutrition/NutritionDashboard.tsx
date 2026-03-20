@@ -126,37 +126,71 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                       aria-expanded={isExpanded}
                       aria-label={`${mealInfo.label} - ${Math.round(entry.totalCalories)} kcal`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          'text-[9px] tracking-widest px-2 py-0.5 rounded border',
-                          mealInfo.bg, mealInfo.color
-                        )}>
-                          {mealInfo.label.toUpperCase()}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{formatTime(entry.loggedAt)}</span>
-                        <span className="ml-auto font-bebas text-lg text-foreground">{Math.round(entry.totalCalories)} kcal</span>
-                      </div>
-                      {(() => {
-                        const foodNames = entry.foods.map(f => f.name).filter(Boolean)
-                        const summary = foodNames.length > 0
-                          ? foodNames.join(', ')
-                          : `${entry.foods.length} alimento${entry.foods.length !== 1 ? 's' : ''}`
-                        return (
-                          <div className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
-                            {summary}
+                      <div className="flex gap-3">
+                        {/* Photo thumbnail */}
+                        {((entry.photoUrls && entry.photoUrls.length > 0) || entry.photoUrl) && (
+                          <div className="shrink-0 size-14 rounded-lg overflow-hidden bg-muted relative">
+                            <img
+                              src={(entry.photoUrls?.[0]) || entry.photoUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            {entry.photoUrls && entry.photoUrls.length > 1 && (
+                              <div className="absolute bottom-0.5 right-0.5 text-[8px] font-mono text-white bg-black/60 backdrop-blur-sm px-1 rounded">
+                                +{entry.photoUrls.length - 1}
+                              </div>
+                            )}
                           </div>
-                        )
-                      })()}
-                      <div className="flex gap-3 mt-1.5 text-[10px]">
-                        <span className="text-sky-500">{Math.round(entry.totalProtein)}g prot</span>
-                        <span className="text-amber-400">{Math.round(entry.totalCarbs)}g carbs</span>
-                        <span className="text-pink-500">{Math.round(entry.totalFat)}g grasa</span>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <span className={cn(
+                              'text-[9px] tracking-widest px-2 py-0.5 rounded border',
+                              mealInfo.bg, mealInfo.color
+                            )}>
+                              {mealInfo.label.toUpperCase()}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{formatTime(entry.loggedAt)}</span>
+                            <span className="ml-auto font-bebas text-lg text-foreground">{Math.round(entry.totalCalories)} kcal</span>
+                          </div>
+                          {(() => {
+                            const foodNames = entry.foods.map(f => f.name).filter(Boolean)
+                            const summary = foodNames.length > 0
+                              ? foodNames.join(', ')
+                              : `${entry.foods.length} alimento${entry.foods.length !== 1 ? 's' : ''}`
+                            return (
+                              <div className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
+                                {summary}
+                              </div>
+                            )
+                          })()}
+                          <div className="flex gap-3 mt-1.5 text-[10px]">
+                            <span className="text-sky-500">{Math.round(entry.totalProtein)}g prot</span>
+                            <span className="text-amber-400">{Math.round(entry.totalCarbs)}g carbs</span>
+                            <span className="text-pink-500">{Math.round(entry.totalFat)}g grasa</span>
+                          </div>
+                        </div>
                       </div>
                     </button>
 
                     {/* Expanded detail */}
                     {isExpanded && (
                       <div className="px-4 pb-4 border-t border-border">
+                        {/* Photo gallery */}
+                        {entry.photoUrls && entry.photoUrls.length > 0 && (
+                          <div className="flex gap-2 pt-3 pb-2 overflow-x-auto scrollbar-none -mx-1 px-1">
+                            {entry.photoUrls.map((url, pi) => (
+                              <img
+                                key={pi}
+                                src={url}
+                                alt={`Foto ${pi + 1}`}
+                                className="shrink-0 h-28 rounded-lg object-cover"
+                                loading="lazy"
+                              />
+                            ))}
+                          </div>
+                        )}
                         <div className="pt-3 space-y-2">
                           {entry.foods.map((food, fi) => (
                             <div key={fi} className="flex items-center gap-3 text-xs">

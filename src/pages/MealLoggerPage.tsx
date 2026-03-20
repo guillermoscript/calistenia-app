@@ -20,13 +20,13 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
 
   const dailyTotals = useMemo(() => getDailyTotals(), [getDailyTotals])
 
-  const handleAnalyze = useCallback(async (imageFile: File, mealType: string): Promise<{ foods: FoodItem[] }> => {
-    const result = await analyzeMeal(imageFile, mealType)
+  const handleAnalyze = useCallback(async (imageFiles: File[], mealType: string, description?: string): Promise<{ foods: FoodItem[] }> => {
+    const result = await analyzeMeal(imageFiles, mealType, description)
     return { foods: result.foods }
   }, [analyzeMeal])
 
-  const handleSave = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>) => {
-    await saveEntry({ ...entry, user: userId || undefined })
+  const handleSave = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => {
+    await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
   }, [saveEntry, userId])
 
   const handleSaveSuccess = useCallback(() => {

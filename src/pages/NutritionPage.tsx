@@ -154,13 +154,13 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     }
   }, [calculateMacros])
 
-  const handleAnalyze = useCallback(async (imageFile: File, mealType: string, description?: string): Promise<{ foods: FoodItem[] }> => {
-    const result = await analyzeMeal(imageFile, mealType, description)
+  const handleAnalyze = useCallback(async (imageFiles: File[], mealType: string, description?: string): Promise<{ foods: FoodItem[] }> => {
+    const result = await analyzeMeal(imageFiles, mealType, description)
     return { foods: result.foods }
   }, [analyzeMeal])
 
-  const handleSaveEntry = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>) => {
-    await saveEntry({ ...entry, user: userId || undefined })
+  const handleSaveEntry = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => {
+    await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
   }, [saveEntry, userId])
 
   const handleSavePlannedMeal = useCallback(async (meal: PlannedMeal) => {

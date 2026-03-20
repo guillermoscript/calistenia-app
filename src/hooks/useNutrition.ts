@@ -11,6 +11,22 @@ import type {
   FoodItem,
 } from '../types'
 
+/** Resolve photo URLs from a PocketBase record that may have `photo` (single) or `photos` (array) */
+function resolvePhotoUrls(rec: any): string[] {
+  const urls: string[] = []
+  // New multi-photo field
+  if (Array.isArray(rec.photos) && rec.photos.length > 0) {
+    for (const filename of rec.photos) {
+      urls.push(pb.files.getUrl(rec, filename))
+    }
+  }
+  // Legacy single-photo field
+  if (urls.length === 0 && rec.photo) {
+    urls.push(pb.files.getUrl(rec, rec.photo))
+  }
+  return urls
+}
+
 const LS_ENTRIES = 'calistenia_nutrition_entries'
 const LS_GOALS = 'calistenia_nutrition_goals'
 
@@ -103,6 +119,7 @@ export function useNutrition(userId: string | null) {
         id: r.id,
         user: r.user,
         photoUrl: r.photo ? pb.files.getUrl(r, r.photo) : undefined,
+        photoUrls: resolvePhotoUrls(r),
         mealType: r.meal_type,
         foods: r.foods || [],
         totalCalories: r.total_calories,
@@ -147,12 +164,15 @@ export function useNutrition(userId: string | null) {
 
   // ─── AI analysis ──────────────────────────────────────────────────────────
   const analyzeMeal = useCallback(async (
-    imageFile: File,
+    imageFiles: File | File[],
     mealType: string,
     description?: string,
   ): Promise<{ foods: FoodItem[]; totals: DailyTotals; ai_model: string }> => {
     const formData = new FormData()
-    formData.append('image', imageFile)
+    const files = Array.isArray(imageFiles) ? imageFiles : [imageFiles]
+    for (const file of files) {
+      formData.append('images', file)
+    }
     formData.append('meal_type', mealType)
     if (description) formData.append('description', description)
 
@@ -183,7 +203,7 @@ export function useNutrition(userId: string | null) {
   // ─── CRUD: saveEntry ──────────────────────────────────────────────────────
   const saveEntry = useCallback(async (
     entry: Omit<NutritionEntry, 'id'>,
-    photoFile?: File,
+    photoFiles?: File[],
   ): Promise<NutritionEntry> => {
     let saved: NutritionEntry = { ...entry, id: `local_${Date.now()}`, loggedAt: entry.loggedAt || new Date().toISOString() }
 
@@ -198,13 +218,18 @@ export function useNutrition(userId: string | null) {
         formData.append('total_carbs', String(entry.totalCarbs))
         formData.append('total_fat', String(entry.totalFat))
         if (entry.aiModel) formData.append('ai_model', entry.aiModel)
-        if (photoFile) formData.append('photo', photoFile)
+        if (photoFiles && photoFiles.length > 0) {
+          for (const file of photoFiles) {
+            formData.append('photos', file)
+          }
+        }
 
         const rec: any = await pb.collection('nutrition_entries').create(formData)
         saved = {
           id: rec.id,
           user: rec.user,
           photoUrl: rec.photo ? pb.files.getUrl(rec, rec.photo) : undefined,
+          photoUrls: resolvePhotoUrls(rec),
           mealType: rec.meal_type,
           foods: rec.foods || [],
           totalCalories: rec.total_calories,
@@ -459,6 +484,7 @@ export function useNutrition(userId: string | null) {
           id: r.id,
           user: r.user,
           photoUrl: r.photo ? pb.files.getUrl(r, r.photo) : undefined,
+          photoUrls: resolvePhotoUrls(r),
           mealType: r.meal_type,
           foods: r.foods || [],
           totalCalories: r.total_calories,
