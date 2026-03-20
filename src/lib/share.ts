@@ -30,3 +30,21 @@ export async function shareImage(blob: Blob, filename: string, title?: string, t
 export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
 }
+
+/** Cached logo for share cards */
+let _logoCache: HTMLImageElement | null = null
+
+/**
+ * Load the app logo image for use in share card canvases.
+ * Caches after first load.
+ */
+export function loadLogo(): Promise<HTMLImageElement | null> {
+  if (_logoCache) return Promise.resolve(_logoCache)
+  return new Promise(resolve => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => { _logoCache = img; resolve(img) }
+    img.onerror = () => resolve(null)
+    img.src = '/hard.png'
+  })
+}

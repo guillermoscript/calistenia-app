@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { shareImage, canvasToBlob } from '../../lib/share'
+import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
 import type { DailyTotals, NutritionGoal } from '../../types'
 
 interface DailySummaryCardProps {
@@ -69,6 +69,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
 
       ctx.scale(scale, scale)
       const pad = 36
+      const logo = await loadLogo()
 
       // ── Background gradient ──
       const grad = ctx.createLinearGradient(0, 0, 0, h)
@@ -78,23 +79,26 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, w, h)
 
-      // ── Decorative top accent line ──
-      fillRRect(ctx, pad, 40, 60, 4, 2, '#a3e635')
+      // ── Header with logo ──
+      const logoSize = 44
+      const headerY = 40
+      if (logo) {
+        ctx.drawImage(logo, pad, headerY, logoSize, logoSize)
+      }
+      const textX = logo ? pad + logoSize + 12 : pad
 
-      // ── Header ──
-      ctx.fillStyle = '#a3e635'
-      ctx.font = '600 16px system-ui, -apple-system, sans-serif'
-      ctx.fillText('CALISTENIA APP', pad, 76)
+      ctx.fillStyle = '#fafafa'
+      ctx.font = '700 16px system-ui, -apple-system, sans-serif'
+      ctx.fillText('CALISTENIA APP', textX, headerY + 20)
 
       ctx.fillStyle = '#525252'
-      ctx.font = '400 13px system-ui, -apple-system, sans-serif'
-      ctx.fillText(formatDate(date), pad, 96)
+      ctx.font = '400 12px system-ui, -apple-system, sans-serif'
+      ctx.fillText(formatDate(date), textX, headerY + 38)
 
       // ── Section label ──
       ctx.fillStyle = '#404040'
       ctx.font = '600 11px system-ui, -apple-system, sans-serif'
-      ctx.letterSpacing = '3px'
-      ctx.fillText('N U T R I C I O N   D E L   D I A', pad, 140)
+      ctx.fillText('N U T R I C I O N   D E L   D I A', pad, 120)
 
       // ── Calorie gauge ──
       const calVal = Math.round(totals.calories)
@@ -102,7 +106,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
       const calPct = calGoal > 0 ? calVal / calGoal : 0
       const gaugeR = 80
       const gaugeCx = w / 2
-      const gaugeCy = 260
+      const gaugeCy = 240
 
       drawGauge(ctx, gaugeCx, gaugeCy, gaugeR, calPct, '#1a1a1a', calVal > calGoal ? '#ef4444' : '#a3e635', 10)
 
@@ -203,14 +207,13 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
       ctx.fillStyle = '#1a1a1a'
       ctx.fillRect(pad, footerY, barW, 1)
 
-      ctx.fillStyle = '#a3e635'
-      ctx.beginPath()
-      ctx.arc(pad + 8, footerY + 24, 4, 0, Math.PI * 2)
-      ctx.fill()
-
+      const footerLogoSize = 22
+      if (logo) {
+        ctx.drawImage(logo, pad, footerY + 12, footerLogoSize, footerLogoSize)
+      }
       ctx.fillStyle = '#404040'
       ctx.font = '400 12px system-ui, -apple-system, sans-serif'
-      ctx.fillText('calistenia-app.com', pad + 20, footerY + 28)
+      ctx.fillText('calistenia-app.com', pad + (logo ? footerLogoSize + 8 : 0), footerY + 28)
 
       const blob = await canvasToBlob(canvas)
       if (!blob) return
