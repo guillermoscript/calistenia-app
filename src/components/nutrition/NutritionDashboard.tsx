@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { cn } from '../../lib/utils'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
+import { ConfirmDialog } from '../ui/confirm-dialog'
 import MacroBar from './MacroBar'
 import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
 import type { NutritionEntry } from '../../types'
@@ -66,22 +67,7 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
 
 export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry }: NutritionDashboardProps) {
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
-  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
-  const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const handleDelete = (id: string) => {
-    setPendingDelete(id)
-    if (pendingTimeoutRef.current) clearTimeout(pendingTimeoutRef.current)
-    pendingTimeoutRef.current = setTimeout(() => {
-      onDeleteEntry?.(id)
-      setPendingDelete(null)
-    }, 5000)
-  }
-
-  const handleUndo = () => {
-    if (pendingTimeoutRef.current) clearTimeout(pendingTimeoutRef.current)
-    setPendingDelete(null)
-  }
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   if (!goals) return null
 
@@ -113,7 +99,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
       {/* Meal timeline */}
       <div>
         <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Comidas de hoy</div>
-        {entries.filter(e => e.id !== pendingDelete).length === 0 && !pendingDelete ? ((() => {
+        {entries.length === 0 ? ((() => {
           const hour = new Date().getHours()
           const emptyPrompt = hour < 10 ? '¿Qué desayunaste hoy?' : hour < 15 ? '¿Ya almorzaste?' : '¿Qué comiste hoy?'
           return (
@@ -131,10 +117,8 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
               const mealInfo = MEAL_TYPE_COLORS[entry.mealType] || MEAL_TYPE_COLORS.snack
               const entryId = entry.id || `entry-${idx}`
               const isExpanded = expandedEntry === entryId
-              const isPending = entryId === pendingDelete
-
               return (
-                <Card key={entryId} className={cn('overflow-hidden transition-all duration-300', isPending && 'opacity-0 h-0 !m-0 pointer-events-none')}>
+                <Card key={entryId} className="overflow-hidden transition-all duration-300">
                   <CardContent className="p-0">
                     <button
                       onClick={() => setExpandedEntry(isExpanded ? null : entryId)}
@@ -195,7 +179,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => { e.stopPropagation(); handleDelete(entry.id!) }}
+                              onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(entry.id!) }}
                               className="h-7 px-2 text-red-500 hover:text-red-400 hover:bg-red-500/10"
                             >
                               <TrashIcon className="size-3.5" />
@@ -208,20 +192,24 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                 </Card>
               )
             })}
-            {pendingDelete && (
-              <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-zinc-800 border border-border">
-                <span className="text-xs text-muted-foreground">Comida eliminada</span>
-                <button
-                  onClick={handleUndo}
-                  className="text-xs font-bebas tracking-widest text-lime hover:text-lime/80 transition-colors"
-                >
-                  DESHACER
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
+
+      {onDeleteEntry && (
+        <ConfirmDialog
+          open={deleteConfirmId !== null}
+          onOpenChange={(open) => { if (!open) setDeleteConfirmId(null) }}
+          title="Eliminar comida"
+          description="¿Eliminar este registro de comida?"
+          confirmLabel="ELIMINAR"
+          cancelLabel="CANCELAR"
+          variant="destructive"
+          onConfirm={() => {
+            if (deleteConfirmId) onDeleteEntry(deleteConfirmId)
+          }}
+        />
+      )}
     </div>
   )
 }

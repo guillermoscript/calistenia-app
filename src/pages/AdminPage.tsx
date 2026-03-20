@@ -3,6 +3,7 @@ import { pb } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
+import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { cn } from '../lib/utils'
 import { PB_ADMIN_URL, pbCollectionUrl } from '../lib/pocketbase-admin'
 import type { ProgramMeta, UserRole } from '../types'
@@ -32,6 +33,8 @@ export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [stats, setStats] = useState<AdminStats>({ totalUsers: 0, activeThisWeek: 0, totalSessions: 0, officialPrograms: 0 })
   const [loading, setLoading] = useState(false)
+  const [roleConfirm, setRoleConfirm] = useState<{ userId: string; newRole: UserRole } | null>(null)
+  const [unpublishConfirm, setUnpublishConfirm] = useState<string | null>(null)
 
   // Load stats
   useEffect(() => {
@@ -79,13 +82,11 @@ export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
 
   // Change user role
   const changeRole = async (userId: string, newRole: UserRole) => {
-    if (!confirm(`Cambiar rol a "${newRole}"?`)) return
     try {
       await pb.collection('users').update(userId, { role: newRole })
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
     } catch (e) {
       console.error('AdminPage: changeRole error', e)
-      alert('Error al cambiar el rol. Verifica permisos de admin en PocketBase.')
     }
   }
 
@@ -100,7 +101,6 @@ export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
 
   // Unpublish program
   const unpublishProgram = async (programId: string) => {
-    if (!confirm('Esto quitara el programa de la seccion oficial. Continuar?')) return
     try {
       await pb.collection('programs').update(programId, { is_official: false, is_featured: false })
     } catch (e) {
@@ -249,7 +249,7 @@ export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => changeRole(u.id, 'editor')}
+                          onClick={() => setRoleConfirm({ userId: u.id, newRole: 'editor' })}
                           className="text-[10px] tracking-widest hover:border-amber-400 hover:text-amber-400"
                         >
                           HACER EDITOR
@@ -259,7 +259,7 @@ export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => changeRole(u.id, 'user')}
+                          onClick={() => setRoleConfirm({ userId: u.id, newRole: 'user' })}
                           className="text-[10px] tracking-widest hover:border-muted-foreground"
                         >
                           QUITAR EDITOR
@@ -318,7 +318,7 @@ export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => unpublishProgram(p.id)}
+                      onClick={() => setUnpublishConfirm(p.id)}
                       className="text-[10px] tracking-widest hover:border-red-400 hover:text-red-400"
                     >
                       DESPUBLICAR
@@ -330,6 +330,33 @@ export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
           )}
         </div>
       )}
+
+      {/* Role change confirmation */}
+      <ConfirmDialog
+        open={roleConfirm !== null}
+        onOpenChange={(open) => { if (!open) setRoleConfirm(null) }}
+        title="Cambiar rol"
+        description={roleConfirm ? `¿Cambiar el rol de este usuario a "${roleConfirm.newRole}"?` : ''}
+        confirmLabel="CAMBIAR ROL"
+        cancelLabel="CANCELAR"
+        onConfirm={() => {
+          if (roleConfirm) changeRole(roleConfirm.userId, roleConfirm.newRole)
+        }}
+      />
+
+      {/* Unpublish confirmation */}
+      <ConfirmDialog
+        open={unpublishConfirm !== null}
+        onOpenChange={(open) => { if (!open) setUnpublishConfirm(null) }}
+        title="Despublicar programa"
+        description="Esto quitara el programa de la seccion oficial. ¿Continuar?"
+        confirmLabel="DESPUBLICAR"
+        cancelLabel="CANCELAR"
+        variant="destructive"
+        onConfirm={() => {
+          if (unpublishConfirm) unpublishProgram(unpublishConfirm)
+        }}
+      />
     </div>
   )
 }
