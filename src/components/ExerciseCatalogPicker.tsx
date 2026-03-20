@@ -12,6 +12,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog'
+import { useWgerSearch } from '../hooks/useWgerSearch'
+import WgerResultCard from './WgerResultCard'
 import type { EditorExercise } from '../hooks/useProgramEditor'
 
 interface ExerciseCatalogPickerProps {
@@ -99,6 +101,9 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
+  const [importedIds, setImportedIds] = useState<Set<number>>(new Set())
+
+  const { wgerResults, wgerLoading, wgerError, searchWger: doWgerSearch, importExercise, importing, clearResults } = useWgerSearch()
 
   useEffect(() => {
     const load = async () => {
@@ -205,7 +210,21 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
           {loading ? (
             <div className="py-12 text-center text-sm text-muted-foreground">Cargando catálogo...</div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">No se encontraron ejercicios</div>
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground mb-4">No se encontraron ejercicios</p>
+              {search.length >= 3 && wgerResults.length === 0 && (
+                <button
+                  onClick={() => doWgerSearch(search)}
+                  disabled={wgerLoading}
+                  className="px-4 py-2 rounded-lg text-xs font-mono tracking-wide bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 transition-all disabled:opacity-50"
+                >
+                  {wgerLoading ? 'Buscando...' : 'Buscar en wger →'}
+                </button>
+              )}
+              {wgerError && wgerResults.length === 0 && !wgerLoading && (
+                <p className="text-xs text-muted-foreground/60 mt-2">{wgerError}</p>
+              )}
+            </div>
           ) : (
             filtered.map(ex => (
               <div
@@ -234,6 +253,49 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
             ))
           )}
         </div>
+
+        {/* wger results */}
+        {wgerResults.length > 0 && (
+          <div className="space-y-1.5 -mx-6 px-6 pb-2">
+            <div className="flex items-center justify-between pt-2 pb-1">
+              <span className="text-[10px] font-mono tracking-widest text-sky-400 uppercase">wger ({wgerResults.length})</span>
+              <button onClick={clearResults} className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground">✕</button>
+            </div>
+            {wgerResults.map(suggestion => (
+              <WgerResultCard
+                key={suggestion.data.id}
+                suggestion={suggestion}
+                compact
+                importLabel="IMPORTAR + AGREGAR"
+                onImport={async (wgerId) => {
+                  try {
+                    const recordId = await importExercise(wgerId)
+                    setImportedIds(prev => new Set(prev).add(wgerId))
+                    // Fetch the created record and add to program
+                    const rec = await pb.collection('exercises_catalog').getOne(recordId)
+                    onAdd({
+                      exerciseId: rec.exercise_id || rec.id,
+                      name: rec.name,
+                      sets: rec.default_sets ?? 3,
+                      reps: rec.default_reps ?? '8-12',
+                      rest: rec.default_rest_seconds ?? 60,
+                      muscles: rec.muscles ?? '',
+                      note: rec.note ?? rec.description ?? '',
+                      youtube: rec.youtube ?? '',
+                      priority: rec.priority ?? 'med',
+                      isTimer: rec.is_timer ?? false,
+                      timerSeconds: rec.timer_seconds ?? 0,
+                    })
+                  } catch (err) {
+                    console.error('Import failed:', err)
+                  }
+                }}
+                importing={importing.has(suggestion.data.id)}
+                imported={importedIds.has(suggestion.data.id)}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Footer count */}
         <div className="text-[10px] text-muted-foreground text-center pt-1">

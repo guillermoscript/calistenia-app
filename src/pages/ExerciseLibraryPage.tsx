@@ -2,8 +2,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
+import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabel } from '../lib/equipment'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
+import { useWgerSearch } from '../hooks/useWgerSearch'
+import WgerResultCard from '../components/WgerResultCard'
 import type { Exercise, Priority } from '../types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -199,6 +202,10 @@ export default function ExerciseLibraryPage() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<CategoryId>('todos')
   const [activeMuscle, setActiveMuscle] = useState<string | null>(null)
+  const [activeEquipment, setActiveEquipment] = useState<string | null>(null)
+  const [importedIds, setImportedIds] = useState<Set<number>>(new Set())
+
+  const { wgerResults, wgerLoading, wgerError, searchWger: doWgerSearch, importExercise, importing, clearResults } = useWgerSearch()
 
   // Fetch from PB, fallback to hardcoded
   useEffect(() => {
@@ -261,6 +268,14 @@ export default function ExerciseLibraryPage() {
       result = result.filter(ex => ex.muscles.toLowerCase().includes(muscle))
     }
 
+    // Equipment filter
+    if (activeEquipment) {
+      result = result.filter(ex => {
+        const equipmentIds = getExerciseEquipment({ name: ex.name, note: ex.note })
+        return equipmentIds.includes(activeEquipment)
+      })
+    }
+
     // Search filter
     if (search.trim()) {
       const q = search.toLowerCase().trim()
@@ -271,12 +286,12 @@ export default function ExerciseLibraryPage() {
     }
 
     return result
-  }, [exercises, activeCategory, activeMuscle, search])
+  }, [exercises, activeCategory, activeMuscle, activeEquipment, search])
 
   const getCategoryStyle = (cat: string) =>
     CATEGORY_COLORS[cat] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }
 
-  const hasActiveFilters = activeCategory !== 'todos' || activeMuscle !== null || search.trim() !== ''
+  const hasActiveFilters = activeCategory !== 'todos' || activeMuscle !== null || activeEquipment !== null || search.trim() !== ''
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">
@@ -306,7 +321,7 @@ export default function ExerciseLibraryPage() {
         <span className="text-[11px] font-mono tracking-widest text-muted-foreground uppercase">Filtros</span>
         {hasActiveFilters && (
           <button
-            onClick={() => { setActiveCategory('todos'); setActiveMuscle(null); setSearch('') }}
+            onClick={() => { setActiveCategory('todos'); setActiveMuscle(null); setActiveEquipment(null); setSearch('') }}
             className="text-[11px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase"
           >
             Limpiar todo
@@ -330,6 +345,27 @@ export default function ExerciseLibraryPage() {
               )}
             >
               {cat.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Equipment filter ─────────────────────────────────────────────── */}
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+        {EQUIPMENT_CATALOG.filter(e => e.id !== 'ninguno').map(eq => {
+          const isActive = activeEquipment === eq.id
+          return (
+            <button
+              key={eq.id}
+              onClick={() => setActiveEquipment(isActive ? null : eq.id)}
+              className={cn(
+                'px-4 py-2.5 rounded-full text-[11px] font-mono tracking-widest whitespace-nowrap transition-all duration-150 border uppercase',
+                isActive
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-400/20'
+                  : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground'
+              )}
+            >
+              {eq.icon} {eq.label}
             </button>
           )
         })}
@@ -385,7 +421,16 @@ export default function ExerciseLibraryPage() {
             <SearchIcon className="size-7 text-muted-foreground/50" />
           </div>
           <p className="text-sm text-muted-foreground mb-1">No se encontraron ejercicios</p>
-          <p className="text-xs text-muted-foreground/60">Prueba con otro filtro o busqueda</p>
+          <p className="text-xs text-muted-foreground/60 mb-6">Prueba con otro filtro o busqueda</p>
+          {search.length >= 3 && (
+            <button
+              onClick={() => doWgerSearch(search)}
+              disabled={wgerLoading}
+              className="px-5 py-2.5 rounded-lg text-sm font-mono tracking-wide bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 transition-all disabled:opacity-50"
+            >
+              {wgerLoading ? 'Buscando...' : 'Buscar en wger →'}
+            </button>
+          )}
         </div>
       )}
 
@@ -456,6 +501,67 @@ export default function ExerciseLibraryPage() {
               </button>
             )
           })}
+        </div>
+      )}
+
+      {/* ── "Search more" link when few local results ──────────────────── */}
+      {!loading && filtered.length > 0 && filtered.length < 3 && search.length >= 3 && wgerResults.length === 0 && (
+        <div className="text-center mt-6">
+          <button
+            onClick={() => doWgerSearch(search)}
+            disabled={wgerLoading}
+            className="text-xs font-mono tracking-wide text-sky-400/70 hover:text-sky-400 transition-colors disabled:opacity-50"
+          >
+            {wgerLoading ? 'Buscando...' : 'Buscar más en wger...'}
+          </button>
+        </div>
+      )}
+
+      {/* ── wger results ──────────────────────────────────────────────── */}
+      {wgerResults.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono tracking-widest text-sky-400 uppercase">Resultados de wger</span>
+              <span className="text-[10px] text-muted-foreground">({wgerResults.length})</span>
+            </div>
+            <button
+              onClick={clearResults}
+              className="text-[10px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            >
+              CERRAR
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {wgerResults.map(suggestion => (
+              <WgerResultCard
+                key={suggestion.data.id}
+                suggestion={suggestion}
+                onImport={async (wgerId) => {
+                  try {
+                    const recordId = await importExercise(wgerId)
+                    setImportedIds(prev => new Set(prev).add(wgerId))
+                    // Optimistic update: add to local exercises
+                    try {
+                      const rec = await pb.collection('exercises_catalog').getOne(recordId)
+                      setExercises(prev => [...prev, mapPBRecord(rec)].sort((a, b) => a.name.localeCompare(b.name)))
+                    } catch { /* Will show on next load */ }
+                  } catch (err) {
+                    console.error('Import failed:', err)
+                  }
+                }}
+                importing={importing.has(suggestion.data.id)}
+                imported={importedIds.has(suggestion.data.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── wger error ────────────────────────────────────────────────── */}
+      {wgerError && wgerResults.length === 0 && !wgerLoading && (
+        <div className="text-center mt-6">
+          <p className="text-xs text-muted-foreground/60">{wgerError}</p>
         </div>
       )}
     </div>
