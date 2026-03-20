@@ -15,23 +15,23 @@
     "@ai-sdk/anthropic": "^3.0.58",
     "@ai-sdk/google": "^3.0.43",
     "@ai-sdk/openai": "^3.0.41",
-    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "ai": "^6.0.116",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "multer": "^1.4.5-lts.1",
-    "pocketbase": "^0.21.5",
+    "multer": "^2.1.1",
+    "pocketbase": "^0.26.8",
     "web-push": "^3.6.7",
-    "zod": "^3.24.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/multer": "^1.4.12",
-    "@types/node": "^22.10.5",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^25.5.0",
     "@types/web-push": "^3.6.4",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.3"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

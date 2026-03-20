@@ -20,13 +20,13 @@ interface ModelCandidate {
 const MODEL_MAP: Record<Tier, ModelCandidate[]> = {
   pro: [
     { provider: "anthropic", model: () => anthropic("claude-sonnet-4-6"), name: "claude-sonnet-4-6" },
-    { provider: "openai", model: () => openai("gpt-4o"), name: "gpt-4o" },
+    { provider: "openai", model: () => openai("gpt-5.4"), name: "gpt-5.4" },
     { provider: "google", model: () => google("gemini-2.5-pro"), name: "gemini-2.5-pro" },
   ],
   free: [
     { provider: "anthropic", model: () => anthropic("claude-haiku-4-5"), name: "claude-haiku-4-5" },
     { provider: "google", model: () => google("gemini-2.5-flash"), name: "gemini-2.5-flash" },
-    { provider: "openai", model: () => openai("gpt-4.1-mini"), name: "gpt-4.1-mini" },
+    { provider: "openai", model: () => openai("gpt-5.4-mini"), name: "gpt-5.4-mini" },
   ],
 };
 
