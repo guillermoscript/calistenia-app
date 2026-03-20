@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Image, ArrowUp, Info, Pencil } from 'lucide-react'
 import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
@@ -22,9 +22,10 @@ interface ExerciseCardProps {
   onStartRest: (seconds: number) => void
   logs?: ExerciseLog[]
   isAdmin?: boolean
+  isFirst?: boolean
 }
 
-export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [], isAdmin }: ExerciseCardProps) {
+export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [], isAdmin, isFirst }: ExerciseCardProps) {
   const navigate = useNavigate()
   const [showTimer, setShowTimer] = useState<boolean>(false)
   const [showYoutube, setShowYoutube] = useState<boolean>(false)
@@ -54,18 +55,27 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   }, 0) || 0
   const lastBestWeight = lastLog?.sets?.reduce((max, s) => (s.weight || 0) > max ? (s.weight || 0) : max, 0) || 0
 
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current) }, [])
+
   const triggerFlash = (): void => {
     setFlash(true)
-    setTimeout(() => setFlash(false), 400)
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+    flashTimerRef.current = setTimeout(() => setFlash(false), 400)
   }
 
+  const [logging, setLogging] = useState(false)
+
   const handleQuickLog = (): void => {
-    if (isComplete) return
+    if (isComplete || logging) return
+    setLogging(true)
     const reps = String(exercise.reps)
     onLogSet(exercise.id, workoutKey, { reps, note: '' })
     setSetsLogged(s => s + 1)
     onStartRest(exercise.rest || 90)
     triggerFlash()
+    // Brief lock to prevent double-tap
+    setTimeout(() => setLogging(false), 300)
   }
 
   const handleFormLog = (): void => {
@@ -152,7 +162,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
 
           <button
             onClick={handleQuickLog}
-            disabled={isComplete}
+            disabled={isComplete || logging}
             className={cn(
               'flex-1 min-h-11 py-[13px] px-3 rounded-md font-mono text-[12px] font-bold tracking-wide flex items-center justify-center gap-2 transition-all duration-150',
               isComplete
@@ -172,6 +182,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
 
           {!isComplete && (
             <button
+              id={isFirst ? 'tour-edit-set' : undefined}
               onClick={() => setShowEditForm(v => !v)}
               title="Editar reps / añadir nota"
               className={cn(
@@ -279,12 +290,14 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 value={logReps}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogReps(e.target.value)}
                 placeholder={`Reps (ej: ${exercise.reps})`}
+                maxLength={20}
                 className="flex-1 min-w-[110px] h-8 text-xs"
               />
               <Input
                 type="number"
                 step="0.5"
                 min="0"
+                max="999"
                 value={logWeight}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogWeight(e.target.value)}
                 placeholder="Lastre kg"
@@ -294,16 +307,19 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 type="number"
                 min="1"
                 max="10"
+                step="1"
                 value={logRpe}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogRpe(e.target.value)}
                 placeholder="RPE"
-                title="Rate of Perceived Exertion (1-10)"
+                title="Esfuerzo percibido (1-10)"
+                aria-label="RPE - Esfuerzo percibido del 1 al 10"
                 className="w-[55px] h-8 text-xs"
               />
               <Input
                 value={logNote}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogNote(e.target.value)}
                 placeholder="Nota"
+                maxLength={200}
                 className="flex-[2] min-w-[80px] h-8 text-xs"
               />
               <Button

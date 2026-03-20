@@ -25,6 +25,7 @@ const SharedProgramPage = lazy(() => import('./pages/SharedProgramPage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const EditorPage = lazy(() => import('./pages/EditorPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
+const RemindersPage = lazy(() => import('./pages/RemindersPage'))
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -84,6 +85,7 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/exercises\/[^/]+$/)) return 'Detalle Ejercicio'
   if (pathname === '/calendar') return 'Calendario'
   if (pathname === '/nutrition/log') return 'Registrar Comida'
+  if (pathname === '/reminders') return 'Recordatorios'
   if (pathname.match(/^\/shared\/[^/]+$/)) return 'Programa Compartido'
   if (pathname === '/admin') return 'Admin'
   if (pathname === '/editor') return 'Editor'
@@ -249,6 +251,7 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
 
   return (
     <nav
+      aria-label="Navegación principal"
       className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border bg-background/95 backdrop-blur-lg"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
@@ -260,14 +263,14 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
               key={path}
               onClick={() => navigate(path)}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors relative',
+                'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[48px] py-1.5 transition-colors relative',
                 active ? 'text-lime-400' : 'text-muted-foreground',
               )}
             >
               {active && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-lime-400 rounded-full" />
               )}
-              <Icon className="size-[18px]" />
+              <Icon className="size-5" />
               <span className="text-[9px] font-mono tracking-wide">{label}</span>
             </button>
           )
@@ -412,7 +415,7 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
         </header>
 
         {/* Page content */}
-        <main className="flex-1 pb-16 sm:pb-0">
+        <main className="flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
           {children}
         </main>
       </SidebarInset>
@@ -674,6 +677,7 @@ export default function App() {
               />
             } />
             <Route path="/profile" element={<ProfilePage user={user} />} />
+            <Route path="/reminders" element={<RemindersPage userId={user.id} />} />
             <Route path="/programs" element={
               <ProgramsPage
                 programs={programs}

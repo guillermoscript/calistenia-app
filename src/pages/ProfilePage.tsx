@@ -1,13 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { useMealReminders } from '../hooks/useMealReminders'
-import { subscribeToPush, getSubscriptionStatus } from '../lib/push-subscription'
-import type { MealReminder, MealType } from '../types'
 
 const LEVELS = [
   { value: 'principiante', label: 'Principiante' },
@@ -20,6 +18,7 @@ interface ProfilePageProps {
 }
 
 export default function ProfilePage({ user }: ProfilePageProps) {
+  const navigate = useNavigate()
   const [displayName, setDisplayName] = useState(user?.display_name || user?.name || '')
   const [weight, setWeight] = useState<string>('')
   const [height, setHeight] = useState<string>('')
@@ -28,23 +27,6 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loaded, setLoaded] = useState(false)
-
-  // Meal reminders
-  const { getReminders, saveReminder, toggleReminder, deleteReminder } = useMealReminders(user?.id || null)
-  const [reminders, setReminders] = useState<MealReminder[]>([])
-  const [pushEnabled, setPushEnabled] = useState(false)
-  const [newReminderType, setNewReminderType] = useState<MealType>('almuerzo')
-  const [newReminderHour, setNewReminderHour] = useState('12')
-  const [newReminderMinute, setNewReminderMinute] = useState('00')
-  const [reminderSaving, setReminderSaving] = useState(false)
-  const [reminderError, setReminderError] = useState<string | null>(null)
-  const [reminderSuccess, setReminderSuccess] = useState(false)
-
-  useEffect(() => {
-    if (!user?.id) return
-    getReminders().then(setReminders).catch(() => {})
-    getSubscriptionStatus().then(setPushEnabled).catch(() => {})
-  }, [user?.id, getReminders])
 
   useEffect(() => {
     if (!user?.id || loaded) return
@@ -223,136 +205,22 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           </CardContent>
         </Card>
 
-        {/* Meal Reminders */}
-        <Card>
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">Recordatorios de Comida</div>
-
-            {/* Existing reminders */}
-            {reminders.map(r => (
-              <div key={r.id} className="flex items-center justify-between gap-3 py-2 border-b border-border/40 last:border-0">
-                <div className="flex-1">
-                  <div className="text-sm font-medium capitalize">{r.mealType}</div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {String(r.hour).padStart(2, '0')}:{String(r.minute).padStart(2, '0')}
-                    {' · '}
-                    {r.daysOfWeek.map(d => ['D', 'L', 'M', 'X', 'J', 'V', 'S'][d]).join(', ')}
-                  </div>
-                </div>
-                <button
-                  role="switch"
-                  aria-checked={r.enabled}
-                  aria-label={`${r.enabled ? 'Desactivar' : 'Activar'} recordatorio de ${r.mealType}`}
-                  onClick={async () => {
-                    await toggleReminder(r.id!, !r.enabled)
-                    setReminders(prev => prev.map(rem => rem.id === r.id ? { ...rem, enabled: !rem.enabled } : rem))
-                  }}
-                  className={cn(
-                    'w-10 h-6 rounded-full relative transition-colors shrink-0',
-                    r.enabled ? 'bg-lime' : 'bg-muted'
-                  )}
-                >
-                  <div className={cn(
-                    'absolute top-0.5 size-5 rounded-full bg-white transition-transform',
-                    r.enabled ? 'translate-x-[18px]' : 'translate-x-0.5'
-                  )} />
-                </button>
-                <button
-                  onClick={async () => {
-                    await deleteReminder(r.id!)
-                    setReminders(prev => prev.filter(rem => rem.id !== r.id))
-                  }}
-                  aria-label={`Eliminar recordatorio de ${r.mealType}`}
-                  className="text-red-500 hover:bg-red-500/10 size-8 rounded flex items-center justify-center text-xs shrink-0"
-                >
-                  X
-                </button>
-              </div>
-            ))}
-
-            {/* Add new reminder */}
-            <div className="flex items-end gap-2 flex-wrap">
+        {/* Reminders link */}
+        <Card
+          className="cursor-pointer hover:border-lime-400/30 transition-colors"
+          onClick={() => navigate('/reminders')}
+        >
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🔔</span>
               <div>
-                <Label htmlFor="reminder-type" className="text-[10px] text-muted-foreground mb-1 block">Tipo</Label>
-                <select
-                  id="reminder-type"
-                  value={newReminderType}
-                  onChange={e => setNewReminderType(e.target.value as MealType)}
-                  className="h-10 text-xs px-2 rounded-md border border-input bg-transparent"
-                >
-                  <option value="desayuno">Desayuno</option>
-                  <option value="almuerzo">Almuerzo</option>
-                  <option value="cena">Cena</option>
-                  <option value="snack">Snack</option>
-                </select>
+                <div className="text-sm font-medium">Recordatorios</div>
+                <div className="text-[10px] text-muted-foreground">Comidas, ejercicio y pausas activas</div>
               </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground mb-1 block">Hora</Label>
-                <div className="flex gap-1">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={23}
-                    value={newReminderHour}
-                    onChange={e => setNewReminderHour(e.target.value)}
-                    className="w-14 h-9 text-xs text-center"
-                  />
-                  <span className="self-center text-muted-foreground">:</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={59}
-                    value={newReminderMinute}
-                    onChange={e => setNewReminderMinute(e.target.value)}
-                    className="w-14 h-9 text-xs text-center"
-                  />
-                </div>
-              </div>
-              <Button
-                size="sm"
-                disabled={reminderSaving}
-                onClick={async () => {
-                  if (!user?.id) return
-                  setReminderSaving(true)
-                  setReminderError(null)
-                  setReminderSuccess(false)
-                  try {
-                    // Ensure push subscription on first reminder
-                    if (!pushEnabled) {
-                      const ok = await subscribeToPush(user.id)
-                      setPushEnabled(ok)
-                      if (!ok) {
-                        setReminderError('No se pudo activar las notificaciones. Verifica los permisos en tu navegador.')
-                        setReminderSaving(false)
-                        return
-                      }
-                    }
-                    await saveReminder(
-                      newReminderType,
-                      parseInt(newReminderHour) || 12,
-                      parseInt(newReminderMinute) || 0,
-                    )
-                    const updated = await getReminders()
-                    setReminders(updated)
-                    setReminderSuccess(true)
-                    setTimeout(() => setReminderSuccess(false), 2000)
-                  } catch (e: any) {
-                    console.error('Error saving reminder:', e)
-                    setReminderError('No se pudo guardar el recordatorio. Intenta de nuevo.')
-                  } finally {
-                    setReminderSaving(false)
-                  }
-                }}
-                className="h-9 bg-lime text-zinc-900 text-[10px] tracking-widest"
-              >
-                {reminderSaving ? 'GUARDANDO...' : reminderSuccess ? '✓ LISTO' : 'AGREGAR'}
-              </Button>
             </div>
-            {reminderError && (
-              <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-                {reminderError}
-              </div>
-            )}
+            <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </CardContent>
         </Card>
 

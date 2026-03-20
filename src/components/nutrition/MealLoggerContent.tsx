@@ -334,6 +334,7 @@ export default function MealLoggerContent({
                     value={quickText}
                     onChange={e => setQuickText(e.target.value)}
                     placeholder="¿Qué comiste? ej: pollo, arroz, ensalada"
+                    maxLength={500}
                     className="w-full h-12 text-sm pl-4 pr-12 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/50 transition-all"
                   />
                   {quickText.trim() && (
@@ -642,10 +643,10 @@ export default function MealLoggerContent({
                   </div>
                   <button
                     onClick={() => removeFood(idx)}
-                    className="size-7 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded-lg shrink-0 transition-colors"
+                    className="size-9 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded-lg shrink-0 transition-colors -mr-1"
                     aria-label={`Eliminar ${food.name || 'alimento'}`}
                   >
-                    <CloseIcon className="size-3" />
+                    <CloseIcon className="size-3.5" />
                   </button>
                 </div>
 

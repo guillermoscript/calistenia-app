@@ -122,6 +122,14 @@ const WORKOUT_STEPS: DriveStep[] = [
     },
   },
   {
+    element: '#tour-edit-set',
+    popover: {
+      title: 'Lastre y detalles',
+      description: 'Toca el icono ✏ para abrir el formulario detallado. Ahi puedes registrar reps personalizadas, lastre en kg (ej: chaleco, mancuerna, banda), RPE (esfuerzo del 1-10) y una nota. El lastre se guarda en tu historial para trackear progresion.',
+      side: 'bottom',
+    },
+  },
+  {
     element: '#tour-start-session',
     popover: {
       title: 'Sesion guiada',

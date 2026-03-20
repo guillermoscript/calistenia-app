@@ -213,7 +213,7 @@ export default function WorkoutPage({
             {workout.exercises.map((ex, idx) => (
               <div key={ex.id} {...(idx === 0 ? { id: 'tour-first-exercise' } : {})}>
                 <ExerciseCard exercise={ex} workoutKey={workoutKey!}
-                  onLogSet={onLogSet} onStartRest={(s: number) => { setRestTime(getRestForExercise(ex.id, s)); setRestExerciseId(ex.id) }} logs={getExerciseLogs(ex.id)} isAdmin={isAdmin} />
+                  onLogSet={onLogSet} onStartRest={(s: number) => { setRestTime(getRestForExercise(ex.id, s)); setRestExerciseId(ex.id) }} logs={getExerciseLogs(ex.id)} isAdmin={isAdmin} isFirst={idx === 0} />
               </div>
             ))}
           </div>

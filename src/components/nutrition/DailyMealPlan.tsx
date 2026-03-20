@@ -113,9 +113,10 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
           <CardContent className="p-5 text-center">
             <div className="text-2xl mb-2">🍽️</div>
             <div className="text-sm text-foreground font-medium">¿Qué comer el resto del día?</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Te quedan <span className="text-lime-400 font-medium">{Math.round(remaining.calories)} kcal</span> ·{' '}
-              {Math.round(remaining.protein)}g prot · {Math.round(remaining.carbs)}g carbs · {Math.round(remaining.fat)}g grasa
+            <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              Te quedan <span className="text-lime-400 font-medium tabular-nums">{Math.round(remaining.calories)} kcal</span>
+              <span className="hidden sm:inline"> · </span><br className="sm:hidden" />
+              <span className="tabular-nums">{Math.round(remaining.protein)}g prot · {Math.round(remaining.carbs)}g carbs · {Math.round(remaining.fat)}g grasa</span>
             </div>
             <Button
               onClick={generate}
@@ -160,11 +161,11 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                   <div className="text-xs text-muted-foreground leading-relaxed">
                     {meal.description}
                   </div>
-                  <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border">
-                    <div className="flex gap-4 text-[11px]">
-                      <span className="text-sky-500">{meal.protein}g P</span>
-                      <span className="text-amber-400">{meal.carbs}g C</span>
-                      <span className="text-pink-500">{meal.fat}g G</span>
+                  <div className="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-border">
+                    <div className="flex gap-3 sm:gap-4 text-[11px] min-w-0">
+                      <span className="text-sky-500 tabular-nums">{meal.protein}g P</span>
+                      <span className="text-amber-400 tabular-nums">{meal.carbs}g C</span>
+                      <span className="text-pink-500 tabular-nums">{meal.fat}g G</span>
                     </div>
                     {onSaveMeal && (
                       <Button
@@ -181,13 +182,13 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                           }
                         }}
                         className={cn(
-                          'h-7 px-3 text-[10px] font-mono tracking-widest',
+                          'h-8 px-3 text-[10px] font-mono tracking-widest shrink-0',
                           isSaved
                             ? 'text-emerald-400'
                             : 'border-lime-400/30 text-lime-400 hover:bg-lime-400/10',
                         )}
                       >
-                        {isSaving ? 'GUARDANDO...' : isSaved ? '✓ GUARDADO' : 'GUARDAR'}
+                        {isSaving ? '...' : isSaved ? '✓' : 'GUARDAR'}
                       </Button>
                     )}
                   </div>
