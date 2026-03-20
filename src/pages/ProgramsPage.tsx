@@ -5,7 +5,8 @@ import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
 import { WORKOUTS } from '../data/workouts'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
-import type { ProgramMeta } from '../types'
+import { ConfirmDialog } from '../components/ui/confirm-dialog'
+import type { ProgramMeta, UserRole } from '../types'
 
 // ── Filter categories ──────────────────────────────────────────────────────
 
@@ -65,6 +66,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 interface ProgramCardProps {
   program: ProgramMeta
   isOwn: boolean
+  canEdit: boolean
   isActive: boolean
   onSelect: () => void
   onShare: () => void
@@ -72,8 +74,9 @@ interface ProgramCardProps {
   onEdit?: () => void
 }
 
-function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, onEdit }: ProgramCardProps) {
+function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onDelete, onEdit }: ProgramCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -138,7 +141,7 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, on
               ACTIVO
             </span>
           )}
-          {isOwn && (onDelete || onEdit) && (
+          {(canEdit || (isOwn && onDelete)) && (
             <div ref={menuRef} className="relative" onClick={e => e.stopPropagation()}>
               <button
                 onClick={() => setMenuOpen(v => !v)}
@@ -149,7 +152,7 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, on
               </button>
               {menuOpen && (
                 <div className="absolute right-0 top-full mt-1 z-50 min-w-[130px] rounded-lg border border-border bg-popover shadow-lg py-1">
-                  {onEdit && (
+                  {canEdit && onEdit && (
                     <button
                       onClick={() => { setMenuOpen(false); onEdit() }}
                       className="w-full text-left px-3 py-2 text-[12px] font-mono tracking-wide text-foreground hover:bg-muted transition-colors"
@@ -157,14 +160,12 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, on
                       Editar
                     </button>
                   )}
-                  {onDelete && (
+                  {onDelete && isOwn && (
                     <button
                       disabled={isActive}
                       onClick={() => {
                         setMenuOpen(false)
-                        if (confirm('¿Eliminar este programa? Esta acción no se puede deshacer.')) {
-                          onDelete()
-                        }
+                        if (!isActive) setShowDeleteConfirm(true)
                       }}
                       className={cn(
                         'w-full text-left px-3 py-2 text-[12px] font-mono tracking-wide transition-colors',
@@ -222,6 +223,17 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, on
         >
           VER
         </Button>
+        {canEdit && onEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onEdit() }}
+            className="h-8 px-3 text-[10px] font-mono tracking-widest border-border text-muted-foreground hover:border-amber-500/50 hover:text-amber-400"
+          >
+            <EditIcon className="size-3 mr-1.5" />
+            EDITAR
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -232,6 +244,19 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, on
           COMPARTIR
         </Button>
       </div>
+
+      {onDelete && (
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          title="Eliminar programa"
+          description="¿Eliminar este programa? Esta accion no se puede deshacer."
+          confirmLabel="ELIMINAR"
+          cancelLabel="CANCELAR"
+          variant="destructive"
+          onConfirm={() => onDelete()}
+        />
+      )}
     </div>
   )
 }
@@ -269,6 +294,15 @@ function PlusIcon({ className }: { className?: string }) {
   )
 }
 
+function EditIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M11.5 2.5l2 2L5 13H3v-2z" />
+      <line x1="9.5" y1="4.5" x2="11.5" y2="6.5" />
+    </svg>
+  )
+}
+
 function SearchIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -284,6 +318,7 @@ interface ProgramsPageProps {
   programs: ProgramMeta[]
   activeProgram: ProgramMeta | null
   userId?: string
+  userRole?: UserRole
   onSelectProgram: (programId: string) => void
   onCreateProgram: () => void
   onDeleteProgram?: (programId: string) => void
@@ -294,11 +329,13 @@ export default function ProgramsPage({
   programs,
   activeProgram,
   userId,
+  userRole = 'user',
   onSelectProgram,
   onCreateProgram,
   onDeleteProgram,
   onEditProgram,
 }: ProgramsPageProps) {
+  const isAdmin = userRole === 'admin' || userRole === 'editor'
   const [activeFilter, setActiveFilter] = useState<FilterId>('oficiales')
   const [search, setSearch] = useState('')
 
@@ -440,6 +477,7 @@ export default function ProgramsPage({
               key={program.id}
               program={program}
               isOwn={program.created_by === userId}
+              canEdit={isAdmin || program.created_by === userId}
               isActive={program.id === activeProgram?.id}
               onSelect={() => onSelectProgram(program.id)}
               onShare={() => shareProgram(program.id, program.name)}

@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
-import { pbProgramEditUrl, pbExerciseEditUrl } from '../lib/pocketbase-admin'
+import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
 import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
 import { inferDifficulty, DIFFICULTY_COLORS } from '../lib/difficulty'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
+import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { PRIORITY_COLORS } from '../lib/style-tokens'
 import type { ProgramMeta, Priority } from '../types'
 import type { RecordModel } from 'pocketbase'
@@ -123,17 +124,28 @@ function CheckIcon({ className }: { className?: string }) {
   )
 }
 
+function EditIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M11.5 2.5l2 2L5 13H3v-2z" />
+      <line x1="9.5" y1="4.5" x2="11.5" y2="6.5" />
+    </svg>
+  )
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────
 
 interface ProgramDetailPageProps {
   programId: string
   userId?: string
+  userRole?: import('../types').UserRole
   activeProgram?: ProgramMeta | null
   onBack: () => void
   onNavigateToProgram?: (programId: string) => void
   onSelectProgram?: (programId: string) => Promise<void>
   onDuplicateProgram?: (programId: string) => Promise<void>
   onDeleteProgram?: (programId: string) => Promise<void>
+  onEditProgram?: (programId: string) => void
   /** If true, show as shared view (for non-logged-in or add-to-mine) */
   isSharedView?: boolean
   onLogin?: () => void
@@ -142,12 +154,14 @@ interface ProgramDetailPageProps {
 export default function ProgramDetailPage({
   programId,
   userId,
+  userRole = 'user',
   activeProgram,
   onBack,
   onNavigateToProgram,
   onSelectProgram,
   onDuplicateProgram,
   onDeleteProgram,
+  onEditProgram,
   isSharedView = false,
   onLogin,
 }: ProgramDetailPageProps) {
@@ -159,6 +173,7 @@ export default function ProgramDetailPage({
   const [error, setError] = useState<string | null>(null)
   const [selectedPhase, setSelectedPhase] = useState<string>('1')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const isActive = activeProgram?.id === programId
   const isOwn = program?.created_by === userId
@@ -488,27 +503,20 @@ export default function ProgramDetailPage({
                 <ShareIcon className="size-3.5 mr-2" />
                 COMPARTIR
               </Button>
-              {(() => {
-                const u = getCurrentUser()
-                const role = u?.role as string | undefined
-                return (role === 'admin' || role === 'editor') ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(pbProgramEditUrl(programId), '_blank')}
-                    className="font-mono text-[11px] tracking-widest h-11 px-5 border-amber-500/20 text-amber-400 hover:border-amber-500/40 hover:bg-amber-500/5"
-                  >
-                    EDITAR EN PB ↗
-                  </Button>
-                ) : null
-              })()}
+              {onEditProgram && (isOwn || userRole === 'admin' || userRole === 'editor') && (
+                <Button
+                  variant="outline"
+                  onClick={() => onEditProgram(programId)}
+                  className="font-mono text-[11px] tracking-widest h-11 px-5 border-amber-500/20 text-amber-400 hover:border-amber-500/40 hover:bg-amber-500/5"
+                >
+                  <EditIcon className="size-3.5 mr-2" />
+                  EDITAR
+                </Button>
+              )}
               {onDeleteProgram && isOwn && !isActive && (
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    if (confirm('¿Eliminar este programa? Esta accion no se puede deshacer.')) {
-                      onDeleteProgram(programId)
-                    }
-                  }}
+                  onClick={() => setShowDeleteConfirm(true)}
                   className="font-mono text-[11px] tracking-widest h-11 px-5 border-red-500/20 text-red-400 hover:border-red-500/40 hover:bg-red-500/5"
                 >
                   ELIMINAR
@@ -710,6 +718,18 @@ export default function ProgramDetailPage({
             ))}
           </div>
         </div>
+      )}
+      {onDeleteProgram && (
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          title="Eliminar programa"
+          description="¿Eliminar este programa? Esta accion no se puede deshacer."
+          confirmLabel="ELIMINAR"
+          cancelLabel="CANCELAR"
+          variant="destructive"
+          onConfirm={() => onDeleteProgram(programId)}
+        />
       )}
     </div>
   )

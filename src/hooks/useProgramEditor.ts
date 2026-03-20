@@ -394,7 +394,10 @@ export function useProgramEditor() {
         description: state.info.description,
         duration_weeks: state.info.durationWeeks,
         is_active: true,
-        created_by: userId,
+      }
+      // Only set created_by on new programs — don't overwrite ownership on edit
+      if (!state.programId) {
+        programData.created_by = userId
       }
       // Only include SaaS fields if they have non-default values (avoids errors if PB migration not applied)
       if (state.info.isOfficial) programData.is_official = true

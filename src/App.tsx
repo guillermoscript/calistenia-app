@@ -429,13 +429,15 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
 // ── Route wrappers (extract params and pass props) ──────────────────────────
 
 function ProgramDetailPageRoute({
-  userId, activeProgram, onSelectProgram, onDuplicateProgram, onDeleteProgram,
+  userId, userRole, activeProgram, onSelectProgram, onDuplicateProgram, onDeleteProgram, onEditProgram,
 }: {
   userId: string
+  userRole: import('./types').UserRole
   activeProgram: import('./types').ProgramMeta | null
   onSelectProgram: (id: string) => Promise<void>
   onDuplicateProgram: (id: string) => Promise<void>
   onDeleteProgram: (id: string) => Promise<void>
+  onEditProgram: (id: string) => void
 }) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -444,12 +446,14 @@ function ProgramDetailPageRoute({
     <ProgramDetailPage
       programId={id}
       userId={userId}
+      userRole={userRole}
       activeProgram={activeProgram}
       onBack={() => navigate('/programs')}
       onNavigateToProgram={(pid) => navigate(`/programs/${pid}`)}
       onSelectProgram={onSelectProgram}
       onDuplicateProgram={onDuplicateProgram}
       onDeleteProgram={onDeleteProgram}
+      onEditProgram={onEditProgram}
     />
   )
 }
@@ -683,6 +687,7 @@ export default function App() {
                 programs={programs}
                 activeProgram={activeProgram}
                 userId={user.id}
+                userRole={userRole}
                 onSelectProgram={(id) => navigate(`/programs/${id}`)}
                 onCreateProgram={handleCreateProgram}
                 onDeleteProgram={handleDeleteProgram}
@@ -698,10 +703,12 @@ export default function App() {
             <Route path="/programs/:id" element={
               <ProgramDetailPageRoute
                 userId={user.id}
+                userRole={userRole}
                 activeProgram={activeProgram}
                 onSelectProgram={selectProgram}
                 onDuplicateProgram={handleDuplicateProgram}
                 onDeleteProgram={handleDeleteProgram}
+                onEditProgram={handleEditProgram}
               />
             } />
             <Route path="/exercises" element={<ExerciseLibraryPage />} />
