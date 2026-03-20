@@ -126,19 +126,32 @@ function scheduleNotification(reminder: WorkoutReminder) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
 
   const now = new Date()
-  const today = now.getDay() === 0 ? 7 : now.getDay()
-  if (!reminder.daysOfWeek.includes(today)) return
+  // Convert JS getDay() (0=Sun) to our format (0=Sun, 1=Mon..6=Sat)
+  const today = now.getDay()
+  if (!reminder.daysOfWeek.includes(today === 0 ? 0 : today)) return
 
   const target = new Date()
   target.setHours(reminder.hour, reminder.minute, 0, 0)
   const delay = target.getTime() - now.getTime()
 
   if (delay > 0 && delay < 24 * 60 * 60 * 1000) {
-    setTimeout(() => {
-      new Notification('Hora de entrenar!', {
+    setTimeout(async () => {
+      const title = 'Hora de entrenar!'
+      const options: NotificationOptions = {
         body: 'Tu entrenamiento te espera. No pierdas la racha!',
-        icon: '/icon-192.png',
-      })
+        icon: '/icons/icon-192.svg',
+        tag: `workout-reminder-${reminder.id}`,
+      }
+      try {
+        // Prefer SW notification — works in background on all platforms
+        const reg = await navigator.serviceWorker?.ready
+        if (reg) {
+          await reg.showNotification(title, options)
+          return
+        }
+      } catch { /* fallback below */ }
+      // Fallback to basic notification
+      try { new Notification(title, options) } catch { /* unsupported */ }
     }, delay)
   }
 }

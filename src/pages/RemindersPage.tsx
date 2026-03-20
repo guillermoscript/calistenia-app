@@ -3,7 +3,7 @@ import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { useMealReminders } from '../hooks/useMealReminders'
 import { useWorkoutReminders } from '../hooks/useWorkoutReminders'
-import { subscribeToPush, getSubscriptionStatus } from '../lib/push-subscription'
+import { subscribeToPush, getSubscriptionStatus, getNotificationSupport, requestNotificationPermission } from '../lib/push-subscription'
 import type { MealReminder, MealType } from '../types'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -88,9 +88,11 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
   const [mealReminders, setMealReminders] = useState<MealReminder[]>([])
   const [pushEnabled, setPushEnabled] = useState(false)
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>('default')
   const [showForm, setShowForm] = useState<ReminderType | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set())
 
   // Form state
@@ -108,6 +110,8 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     if (!userId) return
     getMealReminders().then(setMealReminders).catch(() => {})
     getSubscriptionStatus().then(setPushEnabled).catch(() => {})
+    const support = getNotificationSupport()
+    setNotifPermission(support.permission)
   }, [userId, getMealReminders])
 
   // ── Build sorted timeline ─────────────────────────────────────────────────
@@ -144,23 +148,44 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     return items
   }, [mealReminders, workoutReminders])
 
-  // ── Push ────────────────────────────────────────────────────────────────────
-  const ensurePush = async (): Promise<boolean> => {
-    if (pushEnabled) return true
-    if (!userId) return false
-    const ok = await subscribeToPush(userId)
-    setPushEnabled(ok)
-    if (!ok) setError('Activa las notificaciones en tu navegador para recibir recordatorios.')
-    return ok
+  // ── Notifications ─────────────────────────────────────────────────────────
+  const setupNotifications = async (): Promise<void> => {
+    setWarning(null)
+
+    // Step 1: Request basic notification permission
+    const granted = await requestNotificationPermission()
+    setNotifPermission(granted ? 'granted' : ('Notification' in window ? Notification.permission : 'unsupported'))
+
+    if (!granted) {
+      const support = getNotificationSupport()
+      if (!support.notifications) {
+        setWarning('Tu navegador no soporta notificaciones. Los recordatorios se guardan, pero no podras recibir alertas en este dispositivo.')
+      } else if (support.permission === 'denied') {
+        setWarning('Las notificaciones estan bloqueadas. Ve a los ajustes de tu navegador y permite notificaciones para este sitio.')
+      } else {
+        setWarning('Necesitas permitir notificaciones para recibir recordatorios.')
+      }
+      return
+    }
+
+    // Step 2: Try push subscription (optional — works on supported browsers)
+    if (userId) {
+      const ok = await subscribeToPush(userId)
+      setPushEnabled(ok)
+      if (!ok) {
+        // Push not available but basic notifications work — this is fine for local scheduling
+        setWarning('Recordatorio guardado. Las notificaciones funcionaran mientras la app este abierta. Para recibir alertas con la app cerrada, instala la app desde el menu de tu navegador.')
+      }
+    }
   }
 
   // ── Save ────────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaving(true)
     setError(null)
+    setWarning(null)
     try {
-      if (!(await ensurePush())) { setSaving(false); return }
-
+      // Always save the reminder first — notifications are a bonus, not a gate
       if (showForm === 'meal') {
         await saveMealReminder(mealType, parseInt(hour) || 12, parseInt(minute) || 0, days)
         setMealReminders(await getMealReminders())
@@ -177,6 +202,10 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           }
         }
       }
+
+      // Then try to set up notifications (non-blocking)
+      await setupNotifications()
+
       setShowForm(null)
     } catch {
       setError('No se pudo guardar. Intenta de nuevo.')
@@ -257,9 +286,17 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
               {workoutReminders.length} ejercicio
             </span>
           </div>
-          {!pushEnabled && (
+          {notifPermission === 'granted' ? (
+            <span className="text-[10px] font-mono tracking-wide text-emerald-400/70 ml-auto">
+              {pushEnabled ? 'notif. activas' : 'notif. locales'}
+            </span>
+          ) : notifPermission === 'denied' ? (
+            <span className="text-[10px] font-mono tracking-wide text-red-400/70 ml-auto">
+              notif. bloqueadas
+            </span>
+          ) : (
             <span className="text-[10px] font-mono tracking-wide text-amber-400/70 ml-auto">
-              notif. inactivas
+              notif. pendientes
             </span>
           )}
         </div>
@@ -461,6 +498,13 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
             </div>
           )}
 
+          {warning && (
+            <div className="text-[11px] text-amber-400/80 mb-4 flex items-start gap-2 bg-amber-400/5 rounded-lg px-3 py-2.5 border border-amber-400/15">
+              <span className="shrink-0 mt-px">⚠</span>
+              {warning}
+            </div>
+          )}
+
           <Button
             onClick={handleSave}
             disabled={saving || days.length === 0}
@@ -470,6 +514,25 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           </Button>
 
           <div className={cn('h-px mt-6', showForm === 'meal' ? 'bg-amber-400/30' : showForm === 'workout' ? 'bg-sky-400/30' : 'bg-violet-400/30')} />
+        </div>
+      )}
+
+      {/* Notification status banner */}
+      {notifPermission === 'denied' && timeline.length > 0 && (
+        <div className="mb-6 px-4 py-3 rounded-xl bg-red-400/5 border border-red-400/15">
+          <div className="text-[12px] text-red-400 font-medium mb-1">Notificaciones bloqueadas</div>
+          <div className="text-[11px] text-muted-foreground leading-relaxed">
+            Los recordatorios estan guardados pero no recibiras alertas. Para activarlas, ve a los ajustes de tu navegador → Permisos → Notificaciones y permite este sitio.
+          </div>
+        </div>
+      )}
+
+      {notifPermission === 'unsupported' && timeline.length > 0 && (
+        <div className="mb-6 px-4 py-3 rounded-xl bg-amber-400/5 border border-amber-400/15">
+          <div className="text-[12px] text-amber-400 font-medium mb-1">Notificaciones no soportadas</div>
+          <div className="text-[11px] text-muted-foreground leading-relaxed">
+            Tu navegador no soporta notificaciones. Prueba con Chrome, Edge o Safari, o instala la app desde el menu de tu navegador.
+          </div>
         </div>
       )}
 

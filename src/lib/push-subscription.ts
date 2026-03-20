@@ -13,6 +13,33 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray
 }
 
+/** Detect what notification capabilities the current browser supports */
+export function getNotificationSupport(): {
+  notifications: boolean
+  pushManager: boolean
+  serviceWorker: boolean
+  vapidConfigured: boolean
+  permission: NotificationPermission | 'unsupported'
+} {
+  const notifications = 'Notification' in window
+  return {
+    notifications,
+    pushManager: 'PushManager' in window,
+    serviceWorker: 'serviceWorker' in navigator,
+    vapidConfigured: !!VAPID_PUBLIC_KEY,
+    permission: notifications ? Notification.permission : 'unsupported',
+  }
+}
+
+/** Request basic notification permission (works on all browsers that support Notification API) */
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (!('Notification' in window)) return false
+  if (Notification.permission === 'granted') return true
+  if (Notification.permission === 'denied') return false
+  const result = await Notification.requestPermission()
+  return result === 'granted'
+}
+
 export async function subscribeToPush(userId: string): Promise<boolean> {
   if (!VAPID_PUBLIC_KEY || !('serviceWorker' in navigator) || !('PushManager' in window)) {
     return false
