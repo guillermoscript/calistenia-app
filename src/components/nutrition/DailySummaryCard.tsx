@@ -12,8 +12,8 @@ interface DailySummaryCardProps {
   waterGoal: number
 }
 
-/** Draw a rounded rectangle path */
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+/** Draw a rounded rect path */
+function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
   ctx.lineTo(x + w - r, y)
@@ -27,127 +27,190 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath()
 }
 
+/** Draw a filled rounded rect */
+function fillRRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, color: string) {
+  rrect(ctx, x, y, w, h, r)
+  ctx.fillStyle = color
+  ctx.fill()
+}
+
+/** Draw a circular arc gauge */
+function drawGauge(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, pct: number, trackColor: string, fillColor: string, lineWidth: number) {
+  // Track
+  ctx.beginPath()
+  ctx.arc(cx, cy, radius, -Math.PI / 2, Math.PI * 1.5)
+  ctx.strokeStyle = trackColor
+  ctx.lineWidth = lineWidth
+  ctx.lineCap = 'round'
+  ctx.stroke()
+  // Fill
+  if (pct > 0) {
+    const endAngle = -Math.PI / 2 + Math.PI * 2 * Math.min(pct, 1)
+    ctx.beginPath()
+    ctx.arc(cx, cy, radius, -Math.PI / 2, endAngle)
+    ctx.strokeStyle = fillColor
+    ctx.lineWidth = lineWidth
+    ctx.lineCap = 'round'
+    ctx.stroke()
+  }
+}
+
 export default function DailySummaryCard({ date, totals, goals, waterMl, waterGoal }: DailySummaryCardProps) {
   const handleShare = useCallback(async () => {
     try {
-      const scale = 3
-      const w = 400
-      const h = 340
-      const pad = 28
+      const scale = 2
+      const w = 1080 / scale
+      const h = 1920 / scale
       const canvas = document.createElement('canvas')
-      canvas.width = w * scale
-      canvas.height = h * scale
+      canvas.width = 1080
+      canvas.height = 1920
       const ctx = canvas.getContext('2d')
       if (!ctx) return
 
       ctx.scale(scale, scale)
+      const pad = 36
 
-      // ── Background ──
-      ctx.fillStyle = '#0c0c0c'
+      // ── Background gradient ──
+      const grad = ctx.createLinearGradient(0, 0, 0, h)
+      grad.addColorStop(0, '#0a0a0a')
+      grad.addColorStop(0.5, '#0f0f0f')
+      grad.addColorStop(1, '#0a0a0a')
+      ctx.fillStyle = grad
       ctx.fillRect(0, 0, w, h)
 
-      // ── Accent bar (left) ──
-      roundRect(ctx, 0, 0, 5, h, 0)
-      ctx.fillStyle = '#a3e635'
-      ctx.fill()
+      // ── Decorative top accent line ──
+      fillRRect(ctx, pad, 40, 60, 4, 2, '#a3e635')
 
-      // ── Header: app name + date ──
+      // ── Header ──
       ctx.fillStyle = '#a3e635'
-      ctx.font = '600 13px system-ui, -apple-system, sans-serif'
-      ctx.fillText('CALISTENIA APP', pad, 28)
+      ctx.font = '600 16px system-ui, -apple-system, sans-serif'
+      ctx.fillText('CALISTENIA APP', pad, 76)
 
       ctx.fillStyle = '#525252'
-      ctx.font = '400 11px system-ui, -apple-system, sans-serif'
-      ctx.fillText(formatDate(date), pad, 44)
+      ctx.font = '400 13px system-ui, -apple-system, sans-serif'
+      ctx.fillText(formatDate(date), pad, 96)
 
-      // ── Calories: big number + goal ──
+      // ── Section label ──
+      ctx.fillStyle = '#404040'
+      ctx.font = '600 11px system-ui, -apple-system, sans-serif'
+      ctx.letterSpacing = '3px'
+      ctx.fillText('N U T R I C I O N   D E L   D I A', pad, 140)
+
+      // ── Calorie gauge ──
       const calVal = Math.round(totals.calories)
       const calGoal = goals?.dailyCalories ?? 0
-      const calPct = calGoal > 0 ? Math.min(calVal / calGoal, 1) : 0
+      const calPct = calGoal > 0 ? calVal / calGoal : 0
+      const gaugeR = 80
+      const gaugeCx = w / 2
+      const gaugeCy = 260
 
+      drawGauge(ctx, gaugeCx, gaugeCy, gaugeR, calPct, '#1a1a1a', calVal > calGoal ? '#ef4444' : '#a3e635', 10)
+
+      // Calorie number inside gauge
       ctx.fillStyle = '#fafafa'
-      ctx.font = '700 42px system-ui, -apple-system, sans-serif'
-      ctx.fillText(`${calVal}`, pad, 92)
-      const calWidth = ctx.measureText(`${calVal}`).width
+      ctx.font = '700 48px system-ui, -apple-system, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(`${calVal}`, gaugeCx, gaugeCy + 8)
 
       ctx.fillStyle = '#525252'
-      ctx.font = '400 16px system-ui, -apple-system, sans-serif'
-      ctx.fillText('kcal', pad + calWidth + 6, 92)
+      ctx.font = '400 14px system-ui, -apple-system, sans-serif'
+      ctx.fillText('kcal', gaugeCx, gaugeCy + 28)
 
       if (calGoal > 0) {
-        const kcalWidth = ctx.measureText('kcal').width
         ctx.fillStyle = '#404040'
-        ctx.font = '400 14px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`/ ${calGoal}`, pad + calWidth + 6 + kcalWidth + 6, 92)
+        ctx.font = '400 13px system-ui, -apple-system, sans-serif'
+        ctx.fillText(`de ${calGoal} kcal`, gaugeCx, gaugeCy + gaugeR + 28)
       }
 
-      // ── Calorie progress bar ──
-      const barY = 102
-      const barW = w - pad * 2
-      const barH = 4
-      roundRect(ctx, pad, barY, barW, barH, 2)
-      ctx.fillStyle = '#1c1c1c'
-      ctx.fill()
-      if (calPct > 0) {
-        roundRect(ctx, pad, barY, barW * calPct, barH, 2)
-        ctx.fillStyle = calVal > calGoal ? '#ef4444' : '#a3e635'
-        ctx.fill()
+      ctx.textAlign = 'left'
+
+      // ── Percentage chip ──
+      if (calGoal > 0) {
+        const pctText = `${Math.round(calPct * 100)}%`
+        const chipW = ctx.measureText(pctText).width + 20
+        const chipColor = calVal > calGoal ? '#ef4444' : calPct >= 0.8 ? '#a3e635' : '#525252'
+        fillRRect(ctx, gaugeCx - chipW / 2, gaugeCy + gaugeR + 40, chipW, 26, 13, chipColor + '20')
+        ctx.fillStyle = chipColor
+        ctx.font = '600 12px system-ui, -apple-system, sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText(pctText, gaugeCx, gaugeCy + gaugeR + 57)
+        ctx.textAlign = 'left'
       }
 
-      // ── Macro rows ──
+      // ── Macro cards ──
       const macros = [
-        { label: 'Proteina', val: Math.round(totals.protein), goal: goals?.dailyProtein, unit: 'g', color: '#38bdf8' },
-        { label: 'Carbos', val: Math.round(totals.carbs), goal: goals?.dailyCarbs, unit: 'g', color: '#fbbf24' },
-        { label: 'Grasa', val: Math.round(totals.fat), goal: goals?.dailyFat, unit: 'g', color: '#f472b6' },
-        { label: 'Agua', val: waterMl, goal: waterGoal, unit: 'ml', color: '#38bdf8' },
+        { label: 'Proteina', val: Math.round(totals.protein), goal: goals?.dailyProtein, unit: 'g', color: '#38bdf8', emoji: '' },
+        { label: 'Carbos', val: Math.round(totals.carbs), goal: goals?.dailyCarbs, unit: 'g', color: '#fbbf24', emoji: '' },
+        { label: 'Grasa', val: Math.round(totals.fat), goal: goals?.dailyFat, unit: 'g', color: '#f472b6', emoji: '' },
       ]
 
-      const rowStart = 130
-      const rowH = 44
+      const cardStartY = gaugeCy + gaugeR + 90
+      const cardH = 80
+      const cardGap = 12
+      const barW = w - pad * 2
 
       macros.forEach((m, i) => {
-        const y = rowStart + i * rowH
+        const y = cardStartY + i * (cardH + cardGap)
         const pct = m.goal ? Math.min(m.val / m.goal, 1) : 0
+
+        // Card background
+        fillRRect(ctx, pad, y, barW, cardH, 14, '#141414')
 
         // Value
         ctx.fillStyle = m.color
-        ctx.font = '700 18px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`${m.val}${m.unit}`, pad, y + 4)
+        ctx.font = '700 28px system-ui, -apple-system, sans-serif'
+        ctx.fillText(`${m.val}${m.unit}`, pad + 20, y + 36)
 
         // Label + goal
         ctx.fillStyle = '#737373'
         ctx.font = '400 13px system-ui, -apple-system, sans-serif'
         const goalStr = m.goal ? ` / ${m.goal}${m.unit}` : ''
-        ctx.fillText(`${m.label}${goalStr}`, pad + 90, y + 4)
+        ctx.fillText(`${m.label}${goalStr}`, pad + 20, y + 56)
 
         // Progress bar
-        const pbY = y + 12
-        const pbW = barW
-        roundRect(ctx, pad, pbY, pbW, 3, 1.5)
-        ctx.fillStyle = '#1c1c1c'
-        ctx.fill()
+        const pbX = pad + 20
+        const pbY = y + 66
+        const pbW = barW - 40
+        fillRRect(ctx, pbX, pbY, pbW, 4, 2, '#1f1f1f')
         if (pct > 0) {
-          roundRect(ctx, pad, pbY, pbW * pct, 3, 1.5)
-          ctx.fillStyle = m.color + '99' // semi-transparent
-          ctx.fill()
+          fillRRect(ctx, pbX, pbY, pbW * pct, 4, 2, m.color)
         }
       })
 
-      // ── Footer divider ──
-      const footerY = rowStart + macros.length * rowH + 10
-      ctx.fillStyle = '#1c1c1c'
+      // ── Water card ──
+      const waterY = cardStartY + macros.length * (cardH + cardGap)
+      const waterPct = waterGoal > 0 ? Math.min(waterMl / waterGoal, 1) : 0
+      fillRRect(ctx, pad, waterY, barW, cardH, 14, '#141414')
+
+      ctx.fillStyle = '#38bdf8'
+      ctx.font = '700 28px system-ui, -apple-system, sans-serif'
+      ctx.fillText(`${waterMl}ml`, pad + 20, waterY + 36)
+
+      ctx.fillStyle = '#737373'
+      ctx.font = '400 13px system-ui, -apple-system, sans-serif'
+      ctx.fillText(`Agua / ${waterGoal}ml`, pad + 20, waterY + 56)
+
+      const wpbX = pad + 20
+      const wpbY = waterY + 66
+      const wpbW = barW - 40
+      fillRRect(ctx, wpbX, wpbY, wpbW, 4, 2, '#1f1f1f')
+      if (waterPct > 0) {
+        fillRRect(ctx, wpbX, wpbY, wpbW * waterPct, 4, 2, '#38bdf8')
+      }
+
+      // ── Footer ──
+      const footerY = h - 60
+      ctx.fillStyle = '#1a1a1a'
       ctx.fillRect(pad, footerY, barW, 1)
 
-      // ── Footer text ──
-      ctx.fillStyle = '#404040'
-      ctx.font = '400 10px system-ui, -apple-system, sans-serif'
-      ctx.fillText('calistenia-app.com', pad, footerY + 18)
-
-      // ── Lime dot accent near footer ──
       ctx.fillStyle = '#a3e635'
       ctx.beginPath()
-      ctx.arc(w - pad, footerY + 14, 3, 0, Math.PI * 2)
+      ctx.arc(pad + 8, footerY + 24, 4, 0, Math.PI * 2)
       ctx.fill()
+
+      ctx.fillStyle = '#404040'
+      ctx.font = '400 12px system-ui, -apple-system, sans-serif'
+      ctx.fillText('calistenia-app.com', pad + 20, footerY + 28)
 
       const blob = await canvasToBlob(canvas)
       if (!blob) return
@@ -211,7 +274,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
 function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr + 'T12:00:00')
-    return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   } catch {
     return dateStr
   }
