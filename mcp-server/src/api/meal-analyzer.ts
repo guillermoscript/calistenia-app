@@ -34,7 +34,7 @@ export async function analyzeMealImage({ imageBuffer, mimeType, mealType, tier }
       {
         role: "user",
         content: [
-          { type: "image", image: new Uint8Array(imageBuffer), mimeType: mimeType as any },
+          { type: "image", image: new Uint8Array(imageBuffer), mediaType: mimeType as any },
           {
             type: "text",
             text: `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`,
