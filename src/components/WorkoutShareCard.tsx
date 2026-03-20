@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { Button } from './ui/button'
+import { shareImage, canvasToBlob } from '../lib/share'
 
 interface WorkoutShareCardProps {
   workoutTitle: string
@@ -69,24 +70,14 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
     ctx.font = '10px system-ui'
     ctx.fillText('calistenia-app.com', 20, 208)
 
-    canvas.toBlob(async (blob) => {
-      if (!blob) return
-      if (navigator.share) {
-        const file = new File([blob], `workout_${dateStr}.png`, { type: 'image/png' })
-        await navigator.share({
-          files: [file],
-          title: `${workoutTitle} - ${dateStr}`,
-          text: `${workoutTitle} — ${totalSets} series en ${durationMin} min`,
-        }).catch(() => {})
-      } else {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `workout_${dateStr}.png`
-        a.click()
-        URL.revokeObjectURL(url)
-      }
-    }, 'image/png')
+    const blob = await canvasToBlob(canvas)
+    if (!blob) return
+    await shareImage(
+      blob,
+      `workout_${dateStr}.png`,
+      `${workoutTitle} - ${dateStr}`,
+      `${workoutTitle} — ${totalSets} series en ${durationMin} min`,
+    )
   }, [workoutTitle, totalSets, durationMin, dateStr])
 
   return (
