@@ -221,6 +221,7 @@ export interface FoodItem {
   baseFat100: number
   category?: FoodCategory
   tags?: string[]
+  portionNote?: string
 }
 
 export type MealType = 'desayuno' | 'almuerzo' | 'cena' | 'snack'

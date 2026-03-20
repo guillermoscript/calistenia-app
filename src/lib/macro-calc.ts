@@ -90,6 +90,7 @@ export function migrateLegacyFood(legacy: {
     baseFat100: 0,
     category: legacy.category as FoodItem['category'],
     tags: legacy.tags,
+    portionNote: (legacy as any).portionNote,
   }
 
   return normalizeToBase100(food)

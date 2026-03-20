@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useId, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
 import FoodNameInput from './FoodNameInput'
@@ -38,8 +38,6 @@ function getDefaultMealType(): MealType {
   if (hour < 18) return 'snack'
   return 'cena'
 }
-
-const PORTION_PRESETS = [50, 100, 150, 200, 250]
 
 /** Compress image client-side to max 1024px */
 function compressImage(file: File, maxSize = 1024): Promise<File> {
@@ -92,15 +90,13 @@ export default function MealLoggerContent({
   const [mealType, setMealType] = useState<MealType>(getDefaultMealType)
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [manualEditIndex, setManualEditIndex] = useState<number | null>(null)
+  const [editingMacro, setEditingMacro] = useState<{ index: number; field: keyof FoodItem } | null>(null)
   const [quickText, setQuickText] = useState('')
   const [imageDescription, setImageDescription] = useState('')
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const cancelledRef = useRef(false)
-  const formId = useId()
-
   // Recent foods & suggestions
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>([])
   const [hourSuggestions, setHourSuggestions] = useState<FoodItem[]>([])
@@ -250,7 +246,7 @@ export default function MealLoggerContent({
     setMealType(getDefaultMealType())
     setFoods([])
     setError(null)
-    setManualEditIndex(null)
+    setEditingMacro(null)
     setQuickText('')
     setImageDescription('')
     setShowSaveTemplate(false)
@@ -347,7 +343,7 @@ export default function MealLoggerContent({
                     onChange={e => setQuickText(e.target.value)}
                     placeholder="¿Qué comiste? ej: pollo, arroz, ensalada"
                     maxLength={500}
-                    className="w-full h-12 text-sm pl-4 pr-12 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/50 transition-all"
+                    className="w-full h-12 text-base pl-4 pr-12 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/50 transition-all"
                   />
                   {quickText.trim() && (
                     <button
@@ -428,7 +424,7 @@ export default function MealLoggerContent({
                         placeholder="Describe tu comida para mejor precision... ej: pollo a la plancha con arroz integral y ensalada, unos 200g de pollo"
                         maxLength={500}
                         rows={2}
-                        className="w-full text-sm px-3.5 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/40 transition-all resize-none leading-relaxed"
+                        className="w-full text-base px-3.5 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/40 transition-all resize-none leading-relaxed"
                       />
                       {imageDescription && (
                         <div className="absolute bottom-2 right-3 text-[9px] text-muted-foreground/40 tabular-nums">
@@ -678,9 +674,9 @@ export default function MealLoggerContent({
                       <button
                         key={`h-${i}`}
                         onClick={() => addRecentFood(food)}
-                        className="shrink-0 px-3 py-1.5 rounded-full border border-lime-400/30 bg-lime-400/5 text-[11px] text-lime-400 hover:bg-lime-400/10 transition-colors"
+                        className="shrink-0 min-h-[36px] px-3 py-1.5 rounded-full border border-lime-400/30 bg-lime-400/5 text-xs text-lime-400 hover:bg-lime-400/10 active:bg-lime-400/20 transition-colors"
                       >
-                        + {food.name}
+                        + <span className="truncate max-w-[20ch] inline-block align-bottom">{food.name}</span>
                       </button>
                     ))}
                   </div>
@@ -694,9 +690,9 @@ export default function MealLoggerContent({
                       <button
                         key={`r-${i}`}
                         onClick={() => addRecentFood(food)}
-                        className="shrink-0 px-3 py-1.5 rounded-full border border-border text-[11px] text-muted-foreground hover:border-lime-400/40 hover:text-foreground transition-colors"
+                        className="shrink-0 min-h-[36px] px-3 py-1.5 rounded-full border border-border text-xs text-muted-foreground hover:border-lime-400/40 hover:text-foreground active:bg-muted/50 transition-colors"
                       >
-                        + {food.name}
+                        + <span className="truncate max-w-[20ch] inline-block align-bottom">{food.name}</span>
                       </button>
                     ))}
                   </div>
@@ -719,6 +715,7 @@ export default function MealLoggerContent({
                         const normalized = migrateLegacyFood(selected as any)
                         setFoods(prev => prev.map((f, i) => i === idx ? normalized : f))
                       }}
+                      recentFoods={recentFoods}
                     />
                   </div>
                   <button
@@ -737,104 +734,64 @@ export default function MealLoggerContent({
                     unit={food.portionUnit}
                     unitWeight={food.unitWeightInGrams}
                     onChange={(amount, unit, unitWeight) => handlePortionChange(idx, amount, unit, unitWeight)}
+                    category={food.category}
+                    portionNote={food.portionNote}
                   />
-                  {/* Quick portion presets for gram-based portions */}
-                  {food.portionUnit === 'g' && (
-                    <div className="flex gap-1.5 mt-2">
-                      {PORTION_PRESETS.map(preset => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => handlePortionChange(idx, preset, 'g', food.unitWeightInGrams)}
-                          className={cn(
-                            'px-2.5 py-1 rounded-full text-[10px] border transition-colors',
-                            food.portionAmount === preset
-                              ? 'border-lime-400 bg-lime-400/10 text-lime-400'
-                              : 'border-border text-muted-foreground hover:border-lime-400/40'
-                          )}
-                        >
-                          {preset}g
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
-                {/* Macros row */}
-                <div className="px-3 py-2.5 bg-muted/30 border-t border-border/50">
-                  {manualEditIndex === idx ? (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-4 gap-2">
-                        <div>
-                          <label htmlFor={`${formId}-cal-${idx}`} className="text-[9px] text-muted-foreground uppercase block mb-0.5">kcal</label>
+                {/* Macros row — tap to edit inline */}
+                <div className="px-3 py-2 bg-muted/30 border-t border-border/50">
+                  <div className="flex items-center gap-1 text-xs">
+                    {([
+                      { field: 'calories' as const, label: 'kcal', color: 'text-foreground font-medium', suffix: ' kcal', round: true },
+                      { field: 'protein' as const, label: 'P', color: 'text-sky-500', suffix: 'g P', round: false },
+                      { field: 'carbs' as const, label: 'C', color: 'text-amber-400', suffix: 'g C', round: false },
+                      { field: 'fat' as const, label: 'G', color: 'text-pink-500', suffix: 'g G', round: false },
+                    ] as const).map(macro => {
+                      const isEditing = editingMacro?.index === idx && editingMacro?.field === macro.field
+                      const rawVal = Number(food[macro.field]) || 0
+                      const displayVal = macro.round ? Math.round(rawVal) : Math.round(rawVal * 10) / 10
+
+                      if (isEditing) {
+                        return (
                           <input
-                            id={`${formId}-cal-${idx}`}
+                            key={macro.field}
                             type="number"
-                            value={food.calories}
-                            onChange={e => updateFood(idx, 'calories', parseInt(e.target.value) || 0)}
-                            className="w-full h-8 text-xs px-2 rounded-lg border border-input bg-background text-center"
+                            inputMode="decimal"
+                            autoFocus
+                            defaultValue={displayVal}
+                            onBlur={e => {
+                              const val = macro.round ? parseInt(e.target.value) || 0 : parseFloat(e.target.value) || 0
+                              updateFood(idx, macro.field, val)
+                              setFoods(prev => prev.map((f, i) => i === idx ? normalizeToBase100(f) : f))
+                              setEditingMacro(null)
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                              if (e.key === 'Escape') setEditingMacro(null)
+                            }}
+                            className={cn('w-16 h-8 text-base px-1 rounded-lg border border-lime-400/40 bg-background text-center tabular-nums', macro.color)}
                           />
-                        </div>
-                        <div>
-                          <label htmlFor={`${formId}-prot-${idx}`} className="text-[9px] text-sky-500 uppercase block mb-0.5">prot</label>
-                          <input
-                            id={`${formId}-prot-${idx}`}
-                            type="number"
-                            value={food.protein}
-                            onChange={e => updateFood(idx, 'protein', parseFloat(e.target.value) || 0)}
-                            className="w-full h-8 text-xs px-2 rounded-lg border border-input bg-background text-center"
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor={`${formId}-carbs-${idx}`} className="text-[9px] text-amber-400 uppercase block mb-0.5">carbs</label>
-                          <input
-                            id={`${formId}-carbs-${idx}`}
-                            type="number"
-                            value={food.carbs}
-                            onChange={e => updateFood(idx, 'carbs', parseFloat(e.target.value) || 0)}
-                            className="w-full h-8 text-xs px-2 rounded-lg border border-input bg-background text-center"
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor={`${formId}-fat-${idx}`} className="text-[9px] text-pink-500 uppercase block mb-0.5">grasa</label>
-                          <input
-                            id={`${formId}-fat-${idx}`}
-                            type="number"
-                            value={food.fat}
-                            onChange={e => updateFood(idx, 'fat', parseFloat(e.target.value) || 0)}
-                            className="w-full h-8 text-xs px-2 rounded-lg border border-input bg-background text-center"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFoods(prev => prev.map((f, i) => i === idx ? normalizeToBase100(f) : f))
-                          setManualEditIndex(null)
-                        }}
-                        className="text-[10px] text-lime-400 tracking-widest hover:text-lime-300 transition-colors"
-                      >
-                        LISTO
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 text-[11px]">
-                        <span className="font-medium text-foreground tabular-nums">{Math.round(food.calories)} kcal</span>
-                        <span className="text-sky-500 tabular-nums">{Math.round(food.protein * 10) / 10}g P</span>
-                        <span className="text-amber-400 tabular-nums">{Math.round(food.carbs * 10) / 10}g C</span>
-                        <span className="text-pink-500 tabular-nums">{Math.round(food.fat * 10) / 10}g G</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setManualEditIndex(manualEditIndex === idx ? null : idx)}
-                        aria-label="Editar macros manualmente"
-                        className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg transition-colors"
-                      >
-                        <PencilIcon className="size-3" />
-                      </button>
-                    </div>
-                  )}
+                        )
+                      }
+
+                      return (
+                        <button
+                          key={macro.field}
+                          type="button"
+                          onClick={() => setEditingMacro({ index: idx, field: macro.field })}
+                          className={cn(
+                            'min-h-[36px] px-2 py-1.5 rounded-lg tabular-nums transition-colors',
+                            'active:bg-muted/60 active:ring-1 active:ring-border/50',
+                            macro.color,
+                          )}
+                          title={`Editar ${macro.label}`}
+                        >
+                          {displayVal}{macro.suffix}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             ))}
@@ -843,7 +800,7 @@ export default function MealLoggerContent({
           {/* Add food */}
           <button
             onClick={addFood}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-[11px] font-mono tracking-widest text-muted-foreground hover:border-lime-400/40 hover:text-lime-400 transition-colors"
+            className="w-full flex items-center justify-center gap-2 min-h-[44px] py-3 rounded-xl border border-dashed border-border text-xs font-mono tracking-widest text-muted-foreground hover:border-lime-400/40 hover:text-lime-400 active:bg-lime-400/5 transition-colors"
           >
             <PlusIcon className="size-3.5" />
             AGREGAR ALIMENTO
@@ -875,7 +832,7 @@ export default function MealLoggerContent({
           {!showSaveTemplate ? (
             <button
               onClick={() => setShowSaveTemplate(true)}
-              className="w-full flex items-center justify-center gap-2 py-2 text-[10px] text-muted-foreground tracking-widest hover:text-lime-400 transition-colors"
+              className="w-full flex items-center justify-center gap-2 min-h-[40px] py-2 text-xs text-muted-foreground tracking-widest hover:text-lime-400 active:text-lime-300 transition-colors"
             >
               <TemplateIcon className="size-3" />
               GUARDAR COMO PLANTILLA
@@ -888,7 +845,7 @@ export default function MealLoggerContent({
                 placeholder="Nombre de la plantilla"
                 maxLength={100}
                 aria-label="Nombre de la plantilla"
-                className="flex-1 h-9 text-sm px-3 rounded-lg border border-input bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-lime-400/20"
+                className="flex-1 h-10 text-base px-3 rounded-lg border border-input bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-lime-400/20"
               />
               <Button
                 size="sm"
