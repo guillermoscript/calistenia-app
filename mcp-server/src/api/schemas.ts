@@ -20,7 +20,6 @@ export const FoodItemSchema = z.object({
     .describe('Tamaño de la porción estimada con precision realista. NUNCA uses valores redondeados a 50g (como 50g, 100g, 150g, 200g). Usa estimaciones visuales precisas como 175g, 185g, 220g, 135g, 280g. Para liquidos: 180ml, 330ml, etc. Para unidades: "1 unidad", "2 unidades".'),
   portionNote: z
     .string()
-    .optional()
     .describe('Nota breve explicando como se estimo la porcion (ej: "filete mediano", "vaso estandar 330ml", "puñado grande", "plato hondo lleno")'),
   calories: z.number().describe("Calorías estimadas (kcal)"),
   protein: z.number().describe("Proteína estimada (g)"),
