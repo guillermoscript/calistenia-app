@@ -13,7 +13,7 @@ interface MacroTarget {
   fat: number
 }
 
-interface PlannedMeal {
+export interface PlannedMeal {
   meal_type: 'desayuno' | 'almuerzo' | 'cena' | 'snack'
   label: string
   description: string
@@ -27,19 +27,23 @@ interface DailyMealPlanProps {
   remaining: MacroTarget
   goals: MacroTarget
   loggedMealTypes: string[]
+  onSaveMeal?: (meal: PlannedMeal) => Promise<void>
 }
 
 
-export default function DailyMealPlan({ remaining, goals, loggedMealTypes }: DailyMealPlanProps) {
+export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSaveMeal }: DailyMealPlanProps) {
   const [plan, setPlan] = useState<PlannedMeal[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
+  const [savingIndex, setSavingIndex] = useState<number | null>(null)
+  const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set())
 
   const generate = useCallback(async () => {
     setLoading(true)
     setError(null)
     setOpen(true)
+    setSavedIndices(new Set())
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (pb.authStore.token) headers['Authorization'] = `Bearer ${pb.authStore.token}`
@@ -142,6 +146,8 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes }: Dai
         <div className="space-y-3">
           {plan.map((meal, i) => {
             const colors = MEAL_TYPE_COLORS[meal.meal_type] || MEAL_TYPE_COLORS.snack
+            const isSaved = savedIndices.has(i)
+            const isSaving = savingIndex === i
             return (
               <Card key={i}>
                 <CardContent className="p-4">
@@ -154,10 +160,36 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes }: Dai
                   <div className="text-xs text-muted-foreground leading-relaxed">
                     {meal.description}
                   </div>
-                  <div className="flex gap-4 mt-2.5 pt-2.5 border-t border-border text-[11px]">
-                    <span className="text-sky-500">{meal.protein}g P</span>
-                    <span className="text-amber-400">{meal.carbs}g C</span>
-                    <span className="text-pink-500">{meal.fat}g G</span>
+                  <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border">
+                    <div className="flex gap-4 text-[11px]">
+                      <span className="text-sky-500">{meal.protein}g P</span>
+                      <span className="text-amber-400">{meal.carbs}g C</span>
+                      <span className="text-pink-500">{meal.fat}g G</span>
+                    </div>
+                    {onSaveMeal && (
+                      <Button
+                        size="sm"
+                        variant={isSaved ? 'ghost' : 'outline'}
+                        disabled={isSaving || isSaved}
+                        onClick={async () => {
+                          setSavingIndex(i)
+                          try {
+                            await onSaveMeal(meal)
+                            setSavedIndices(prev => new Set(prev).add(i))
+                          } finally {
+                            setSavingIndex(null)
+                          }
+                        }}
+                        className={cn(
+                          'h-7 px-3 text-[10px] font-mono tracking-widest',
+                          isSaved
+                            ? 'text-emerald-400'
+                            : 'border-lime-400/30 text-lime-400 hover:bg-lime-400/10',
+                        )}
+                      >
+                        {isSaving ? 'GUARDANDO...' : isSaved ? '✓ GUARDADO' : 'GUARDAR'}
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

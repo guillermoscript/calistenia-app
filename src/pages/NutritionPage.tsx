@@ -5,7 +5,7 @@ import NutritionDashboard from '../components/nutrition/NutritionDashboard'
 import MealLogger from '../components/nutrition/MealLogger'
 import MealSuggestions from '../components/nutrition/MealSuggestions'
 import WeeklyNutritionChart from '../components/nutrition/WeeklyNutritionChart'
-import DailyMealPlan from '../components/nutrition/DailyMealPlan'
+import DailyMealPlan, { type PlannedMeal } from '../components/nutrition/DailyMealPlan'
 import DailySummaryCard from '../components/nutrition/DailySummaryCard'
 import { useNutrition } from '../hooks/useNutrition'
 import { useWater } from '../hooks/useWater'
@@ -161,6 +161,35 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
   const handleSaveEntry = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>) => {
     await saveEntry({ ...entry, user: userId || undefined })
+  }, [saveEntry, userId])
+
+  const handleSavePlannedMeal = useCallback(async (meal: PlannedMeal) => {
+    const food: FoodItem = {
+      name: meal.label,
+      portionAmount: 1,
+      portionUnit: 'unidad',
+      unitWeightInGrams: 0,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      baseCal100: meal.calories,
+      baseProt100: meal.protein,
+      baseCarbs100: meal.carbs,
+      baseFat100: meal.fat,
+      tags: ['plan-ia'],
+    }
+    await saveEntry({
+      user: userId || undefined,
+      mealType: meal.meal_type,
+      foods: [food],
+      totalCalories: meal.calories,
+      totalProtein: meal.protein,
+      totalCarbs: meal.carbs,
+      totalFat: meal.fat,
+      aiModel: 'meal-plan',
+      loggedAt: new Date().toISOString(),
+    })
   }, [saveEntry, userId])
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0]
@@ -344,6 +373,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               remaining={remaining}
               goals={{ calories: goals.dailyCalories, protein: goals.dailyProtein, carbs: goals.dailyCarbs, fat: goals.dailyFat }}
               loggedMealTypes={loggedMealTypes}
+              onSaveMeal={handleSavePlannedMeal}
             />
           )}
 

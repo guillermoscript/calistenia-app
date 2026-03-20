@@ -115,9 +115,9 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, on
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <h3 className={cn(
-          'font-bebas text-xl tracking-wide leading-tight uppercase',
+          'font-bebas text-xl tracking-wide leading-tight uppercase min-w-0 break-words',
           isActive ? 'text-lime-400' : 'text-foreground group-hover:text-lime-400',
         )}>
           {program.name}
@@ -191,7 +191,7 @@ function ProgramCard({ program, isOwn, isActive, onSelect, onShare, onDelete, on
       )}
 
       {/* Meta row */}
-      <div className="flex items-center gap-3 flex-wrap mb-4">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap mb-4">
         {program.duration_weeks > 0 && (
           <span className="text-[10px] font-mono tracking-wide text-muted-foreground uppercase">
             {program.duration_weeks} semanas
@@ -336,12 +336,12 @@ export default function ProgramsPage({
   const myProgramsCount = useMemo(() => programs.filter(p => p.created_by === userId).length, [programs, userId])
 
   return (
-    <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12 overflow-x-hidden">
 
       {/* Hero header */}
-      <div className="flex items-end justify-between gap-4 mb-8 flex-wrap">
-        <div>
-          <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">PROGRAMAS</h1>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div className="min-w-0">
+          <h1 className="font-bebas text-4xl sm:text-5xl md:text-7xl leading-none tracking-wide truncate">PROGRAMAS</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
             {filteredPrograms.length} programa{filteredPrograms.length !== 1 ? 's' : ''} disponible{filteredPrograms.length !== 1 ? 's' : ''}
           </p>
@@ -349,7 +349,7 @@ export default function ProgramsPage({
         <Button
           id="tour-create-program"
           onClick={onCreateProgram}
-          className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10"
+          className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10 w-full sm:w-auto shrink-0"
         >
           <PlusIcon className="size-4 mr-2" />
           CREAR PROGRAMA
@@ -369,13 +369,13 @@ export default function ProgramsPage({
       </div>
 
       {/* Filter pills */}
-      <div id="tour-programs-filters" className="flex items-center gap-2 mb-8">
+      <div id="tour-programs-filters" className="flex items-center gap-2 mb-8 overflow-x-auto scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
         {FILTER_PILLS.map(pill => (
           <button
             key={pill.id}
             onClick={() => setActiveFilter(pill.id)}
             className={cn(
-              'px-5 py-2.5 rounded-full text-[12px] font-mono tracking-widest transition-all whitespace-nowrap border uppercase',
+              'px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-[12px] font-mono tracking-widest transition-all whitespace-nowrap border uppercase shrink-0',
               activeFilter === pill.id
                 ? 'bg-lime-400/10 border-lime-400/30 text-lime-400'
                 : 'bg-transparent border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground',
@@ -397,7 +397,7 @@ export default function ProgramsPage({
         {(activeFilter !== 'oficiales' || search) && (
           <button
             onClick={() => { setActiveFilter('oficiales'); setSearch('') }}
-            className="ml-auto text-[11px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase"
+            className="ml-auto text-[11px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase shrink-0"
           >
             Limpiar filtros
           </button>

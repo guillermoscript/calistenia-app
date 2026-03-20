@@ -36,6 +36,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [newReminderType, setNewReminderType] = useState<MealType>('almuerzo')
   const [newReminderHour, setNewReminderHour] = useState('12')
   const [newReminderMinute, setNewReminderMinute] = useState('00')
+  const [reminderSaving, setReminderSaving] = useState(false)
+  const [reminderError, setReminderError] = useState<string | null>(null)
+  const [reminderSuccess, setReminderSuccess] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
@@ -307,27 +310,49 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               </div>
               <Button
                 size="sm"
+                disabled={reminderSaving}
                 onClick={async () => {
                   if (!user?.id) return
-                  // Ensure push subscription on first reminder
-                  if (!pushEnabled) {
-                    const ok = await subscribeToPush(user.id)
-                    setPushEnabled(ok)
-                    if (!ok) return
+                  setReminderSaving(true)
+                  setReminderError(null)
+                  setReminderSuccess(false)
+                  try {
+                    // Ensure push subscription on first reminder
+                    if (!pushEnabled) {
+                      const ok = await subscribeToPush(user.id)
+                      setPushEnabled(ok)
+                      if (!ok) {
+                        setReminderError('No se pudo activar las notificaciones. Verifica los permisos en tu navegador.')
+                        setReminderSaving(false)
+                        return
+                      }
+                    }
+                    await saveReminder(
+                      newReminderType,
+                      parseInt(newReminderHour) || 12,
+                      parseInt(newReminderMinute) || 0,
+                    )
+                    const updated = await getReminders()
+                    setReminders(updated)
+                    setReminderSuccess(true)
+                    setTimeout(() => setReminderSuccess(false), 2000)
+                  } catch (e: any) {
+                    console.error('Error saving reminder:', e)
+                    setReminderError('No se pudo guardar el recordatorio. Intenta de nuevo.')
+                  } finally {
+                    setReminderSaving(false)
                   }
-                  await saveReminder(
-                    newReminderType,
-                    parseInt(newReminderHour) || 12,
-                    parseInt(newReminderMinute) || 0,
-                  )
-                  const updated = await getReminders()
-                  setReminders(updated)
                 }}
                 className="h-9 bg-lime text-zinc-900 text-[10px] tracking-widest"
               >
-                AGREGAR
+                {reminderSaving ? 'GUARDANDO...' : reminderSuccess ? '✓ LISTO' : 'AGREGAR'}
               </Button>
             </div>
+            {reminderError && (
+              <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                {reminderError}
+              </div>
+            )}
           </CardContent>
         </Card>
 

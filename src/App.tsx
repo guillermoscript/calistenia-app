@@ -231,6 +231,52 @@ const Loader: React.FC = () => (
   </div>
 )
 
+// ── Mobile bottom tab bar ───────────────────────────────────────────────────
+
+const MOBILE_TABS: { path: string; label: string; icon: React.FC<IconProps> }[] = [
+  { path: '/',          label: 'Inicio',     icon: LayoutIcon },
+  { path: '/workout',   label: 'Entrenar',   icon: DumbbellIcon },
+  { path: '/nutrition', label: 'Nutrición',  icon: NutritionIcon },
+  { path: '/progress',  label: 'Progreso',   icon: ChartIcon },
+  { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
+]
+
+function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; pathname: string }) {
+  const isTabActive = (path: string) => {
+    if (path === '/') return pathname === '/'
+    return pathname.startsWith(path)
+  }
+
+  return (
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border bg-background/95 backdrop-blur-lg"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="flex items-stretch">
+        {MOBILE_TABS.map(({ path, label, icon: Icon }) => {
+          const active = isTabActive(path)
+          return (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className={cn(
+                'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors relative',
+                active ? 'text-lime-400' : 'text-muted-foreground',
+              )}
+            >
+              {active && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-lime-400 rounded-full" />
+              )}
+              <Icon className="size-[18px]" />
+              <span className="text-[9px] font-mono tracking-wide">{label}</span>
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
 // ── AppShell (uses sidebar context) ─────────────────────────────────────────
 
 interface AppShellProps {
@@ -366,10 +412,13 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
         </header>
 
         {/* Page content */}
-        <main className="flex-1">
+        <main className="flex-1 pb-16 sm:pb-0">
           {children}
         </main>
       </SidebarInset>
+
+      {/* Mobile bottom tab bar */}
+      <MobileTabBar navigate={navigate} pathname={location.pathname} />
     </>
   )
 }
