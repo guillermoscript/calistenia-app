@@ -95,7 +95,8 @@ export default function MealLoggerContent({
   const [manualEditIndex, setManualEditIndex] = useState<number | null>(null)
   const [quickText, setQuickText] = useState('')
   const [imageDescription, setImageDescription] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const cancelledRef = useRef(false)
   const formId = useId()
@@ -359,12 +360,19 @@ export default function MealLoggerContent({
                   )}
                 </form>
 
-                {/* Photo capture + action buttons */}
+                {/* Hidden file inputs: camera (with capture) and gallery (without) */}
                 <input
-                  ref={fileInputRef}
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -389,15 +397,27 @@ export default function MealLoggerContent({
                         </div>
                       ))}
                       {imageFiles.length < MAX_PHOTOS && (
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="shrink-0 w-[calc(50%-4px)] max-w-[180px] aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1.5 hover:border-lime-400/40 hover:bg-lime-400/[0.03] transition-all"
-                        >
-                          <CameraIcon className="size-5 text-muted-foreground/50" />
+                        <div className="shrink-0 w-[calc(50%-4px)] max-w-[180px] aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2">
                           <span className="text-[9px] font-mono text-muted-foreground/50 tracking-wide">
-                            +FOTO ({imageFiles.length}/{MAX_PHOTOS})
+                            {imageFiles.length}/{MAX_PHOTOS}
                           </span>
-                        </button>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => cameraInputRef.current?.click()}
+                              className="size-9 rounded-lg flex items-center justify-center hover:bg-lime-400/10 transition-colors"
+                              title="Tomar foto"
+                            >
+                              <CameraIcon className="size-4 text-muted-foreground/60" />
+                            </button>
+                            <button
+                              onClick={() => galleryInputRef.current?.click()}
+                              className="size-9 rounded-lg flex items-center justify-center hover:bg-lime-400/10 transition-colors"
+                              title="Elegir de galeria"
+                            >
+                              <GalleryIcon className="size-4 text-muted-foreground/60" />
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
                     {/* Description field for AI context */}
@@ -424,13 +444,20 @@ export default function MealLoggerContent({
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => cameraInputRef.current?.click()}
                       className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
                     >
                       <CameraIcon className="size-6 text-muted-foreground" />
-                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">FOTO</span>
+                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">CAMARA</span>
+                    </button>
+                    <button
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
+                    >
+                      <GalleryIcon className="size-6 text-muted-foreground" />
+                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">GALERIA</span>
                     </button>
                     <button
                       onClick={() => { setFoods([createEmptyFood()]); setStep('review') }}
@@ -969,6 +996,16 @@ export default function MealLoggerContent({
 }
 
 // ── Icons ────────────────────────────────────────────────────────────────────
+
+function GalleryIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+    </svg>
+  )
+}
 
 function CameraIcon({ className }: { className?: string }) {
   return (
