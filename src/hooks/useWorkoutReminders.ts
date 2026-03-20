@@ -54,10 +54,7 @@ export function useWorkoutReminders(userId: string | null = null) {
     init()
   }, [userId])
 
-  // Schedule notifications on mount/update
-  useEffect(() => {
-    reminders.filter(r => r.enabled).forEach(scheduleNotification)
-  }, [reminders])
+  // Notification scheduling is handled centrally by reminder-scheduler.ts
 
   const saveReminder = useCallback(async (hour: number, minute: number, daysOfWeek: number[] = [1, 2, 3, 4, 5]) => {
     const reminder: WorkoutReminder = {
@@ -86,8 +83,6 @@ export function useWorkoutReminders(userId: string | null = null) {
       lsSet(updated)
       return updated
     })
-
-    scheduleNotification(reminder)
   }, [usePB, userId])
 
   const toggleReminder = useCallback(async (id: string) => {
@@ -122,36 +117,3 @@ export function useWorkoutReminders(userId: string | null = null) {
   return { reminders, saveReminder, toggleReminder, deleteReminder }
 }
 
-function scheduleNotification(reminder: WorkoutReminder) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return
-
-  const now = new Date()
-  // Convert JS getDay() (0=Sun) to our format (0=Sun, 1=Mon..6=Sat)
-  const today = now.getDay()
-  if (!reminder.daysOfWeek.includes(today === 0 ? 0 : today)) return
-
-  const target = new Date()
-  target.setHours(reminder.hour, reminder.minute, 0, 0)
-  const delay = target.getTime() - now.getTime()
-
-  if (delay > 0 && delay < 24 * 60 * 60 * 1000) {
-    setTimeout(async () => {
-      const title = 'Hora de entrenar!'
-      const options: NotificationOptions = {
-        body: 'Tu entrenamiento te espera. No pierdas la racha!',
-        icon: '/icons/icon-192.svg',
-        tag: `workout-reminder-${reminder.id}`,
-      }
-      try {
-        // Prefer SW notification — works in background on all platforms
-        const reg = await navigator.serviceWorker?.ready
-        if (reg) {
-          await reg.showNotification(title, options)
-          return
-        }
-      } catch { /* fallback below */ }
-      // Fallback to basic notification
-      try { new Notification(title, options) } catch { /* unsupported */ }
-    }, delay)
-  }
-}

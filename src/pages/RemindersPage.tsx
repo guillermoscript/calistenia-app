@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { useMealReminders } from '../hooks/useMealReminders'
 import { useWorkoutReminders } from '../hooks/useWorkoutReminders'
 import { subscribeToPush, getSubscriptionStatus, getNotificationSupport, requestNotificationPermission } from '../lib/push-subscription'
+import { scheduleAll, buildSchedulableReminders, setupVisibilityRescheduler } from '../lib/reminder-scheduler'
 import type { MealReminder, MealType } from '../types'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -146,6 +147,17 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
     items.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute))
     return items
+  }, [mealReminders, workoutReminders])
+
+  // ── Schedule local notifications for all reminders ───────────────────────
+  const visibilitySetup = useRef(false)
+  useEffect(() => {
+    if (!visibilitySetup.current) {
+      visibilitySetup.current = true
+      setupVisibilityRescheduler()
+    }
+    const schedulable = buildSchedulableReminders(mealReminders, workoutReminders)
+    scheduleAll(schedulable)
   }, [mealReminders, workoutReminders])
 
   // ── Notifications ─────────────────────────────────────────────────────────
