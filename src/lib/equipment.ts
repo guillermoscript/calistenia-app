@@ -1,28 +1,56 @@
 /**
- * Equipment detection utility.
- * Scans exercise name and note fields for equipment keywords.
+ * Equipment catalog and detection utility.
  */
 
+export const EQUIPMENT_CATALOG: { id: string; label: string; icon: string }[] = [
+  { id: 'ninguno', label: 'Sin equipo', icon: '🏋️' },
+  { id: 'barra_dominadas', label: 'Barra de dominadas', icon: '🔩' },
+  { id: 'paralelas', label: 'Paralelas', icon: '🪜' },
+  { id: 'anillas', label: 'Anillas', icon: '⭕' },
+  { id: 'banda_elastica', label: 'Banda elástica', icon: '🔗' },
+  { id: 'lastre', label: 'Lastre/Peso', icon: '🎒' },
+  { id: 'fitball', label: 'Fitball', icon: '🟡' },
+  { id: 'rueda_abdominal', label: 'Rueda abdominal', icon: '☸️' },
+  { id: 'trx', label: 'TRX', icon: '🪢' },
+  { id: 'banco', label: 'Banco/Silla', icon: '🪑' },
+  { id: 'kettlebell', label: 'Kettlebell', icon: '🔔' },
+  { id: 'pared', label: 'Pared', icon: '🧱' },
+  { id: 'toalla', label: 'Toalla', icon: '🧻' },
+  { id: 'escalon', label: 'Escalón', icon: '📦' },
+]
+
 const EQUIPMENT_KEYWORDS: Record<string, string[]> = {
-  'Barra de dominadas': ['barra', 'pull-up', 'pull up', 'dominada', 'muscle-up', 'muscle up', 'front lever', 'back lever', 'typewriter', 'hollow-to-arch', 'hollow arch'],
-  'Silla/Banco': ['silla', 'banco', 'chair', 'bench', 'dips', 'elevated', 'step-up', 'step up', 'paralelas'],
-  'Banda elastica': ['banda', 'band', 'elastica', 'asistida'],
-  'Pared': ['pared', 'wall', 'handstand contra', 'wall sit'],
-  'Anillas': ['anillas', 'rings', 'ring dip'],
-  'Mochila/Peso': ['mochila', 'peso', 'weighted', 'con peso', 'con 2-5kg', 'con 5-10kg'],
-  'Toalla': ['toalla', 'towel'],
-  'Escalon': ['escalon', 'step-up', 'step up', 'box jump'],
+  'barra_dominadas': ['barra', 'pull-up', 'pull up', 'dominada', 'muscle-up', 'muscle up', 'front lever', 'back lever', 'typewriter', 'hollow-to-arch', 'hollow arch'],
+  'banco': ['silla', 'banco', 'chair', 'bench', 'dips', 'elevated', 'step-up', 'step up', 'paralelas'],
+  'banda_elastica': ['banda', 'band', 'elastica', 'asistida'],
+  'pared': ['pared', 'wall', 'handstand contra', 'wall sit'],
+  'anillas': ['anillas', 'rings', 'ring dip'],
+  'lastre': ['mochila', 'peso', 'weighted', 'con peso', 'con 2-5kg', 'con 5-10kg'],
+  'toalla': ['toalla', 'towel'],
+  'escalon': ['escalon', 'step-up', 'step up', 'box jump'],
 }
 
 export function detectEquipment(exercise: { name: string; note: string }): string[] {
   const text = `${exercise.name} ${exercise.note}`.toLowerCase()
   const found: string[] = []
 
-  for (const [equipment, keywords] of Object.entries(EQUIPMENT_KEYWORDS)) {
+  for (const [equipmentId, keywords] of Object.entries(EQUIPMENT_KEYWORDS)) {
     if (keywords.some(kw => text.includes(kw))) {
-      found.push(equipment)
+      found.push(equipmentId)
     }
   }
 
-  return found.length > 0 ? found : ['Sin equipo']
+  return found.length > 0 ? found : ['ninguno']
+}
+
+export function getExerciseEquipment(exercise: { name: string; note: string; equipment?: string[] }): string[] {
+  if (exercise.equipment && exercise.equipment.length > 0) {
+    return exercise.equipment
+  }
+  return detectEquipment(exercise)
+}
+
+export function getEquipmentLabel(id: string): string {
+  const item = EQUIPMENT_CATALOG.find(e => e.id === id)
+  return item ? item.label : id
 }
