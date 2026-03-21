@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useActivityFeed, type FeedItem } from '../hooks/useActivityFeed'
 import { useReactions } from '../hooks/useReactions'
 import { cn } from '../lib/utils'
+import { Loader } from '../components/ui/loader'
 import { Button } from '../components/ui/button'
 import { PHASE_COLORS } from '../lib/style-tokens'
 
@@ -46,7 +47,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       {/* Tour anchor for the whole feed */}
 
       {loading && (
-        <div className="text-sm text-muted-foreground py-12 text-center">Cargando actividad...</div>
+        <Loader label="Cargando actividad..." className="py-12" />
       )}
 
       {!loading && items.length === 0 && (

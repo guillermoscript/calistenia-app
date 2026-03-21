@@ -300,7 +300,12 @@ export default function ExerciseLibraryPage() {
       <div className="mb-8">
         <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">EJERCICIOS</h1>
         <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
-          {loading ? 'Cargando...' : `${filtered.length} ejercicio${filtered.length !== 1 ? 's' : ''}`}
+          {loading ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+              Cargando...
+            </span>
+          ) : `${filtered.length} ejercicio${filtered.length !== 1 ? 's' : ''}`}
         </p>
       </div>
 

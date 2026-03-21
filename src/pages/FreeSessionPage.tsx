@@ -3,6 +3,7 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
+import { Loader } from '../components/ui/loader'
 import SessionView from '../components/SessionView'
 import type { Exercise, Workout, ExerciseLog } from '../types'
 
@@ -404,9 +405,7 @@ export default function FreeSessionPage({
 
           {/* Exercise list */}
           {loading ? (
-            <div className="py-16 text-center">
-              <div className="text-muted-foreground text-sm">Cargando catalogo...</div>
-            </div>
+            <Loader label="Cargando catálogo..." className="py-16" />
           ) : loadError && catalog.length === 0 ? (
             <div className="py-16 text-center space-y-3">
               <div className="text-muted-foreground text-sm">No se pudo cargar el catalogo</div>

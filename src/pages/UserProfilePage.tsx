@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { Loader } from '../components/ui/loader'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
@@ -141,8 +142,8 @@ export default function UserProfilePage({
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-16 text-center text-muted-foreground text-sm">
-        Cargando perfil...
+      <div className="max-w-3xl mx-auto px-4 py-16">
+        <Loader label="Cargando perfil..." />
       </div>
     )
   }

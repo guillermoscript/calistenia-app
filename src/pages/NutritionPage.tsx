@@ -71,6 +71,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     saveGoals,
     saveEntry,
     deleteEntry,
+    updateEntry,
     analyzeMeal,
     calculateMacros,
     getDailyTotals,
@@ -364,6 +365,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               goals={goals}
               entries={entries}
               onDeleteEntry={deleteEntry}
+              onEditEntry={updateEntry}
             />
           </div>
 

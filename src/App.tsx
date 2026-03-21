@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense, type ReactNode } from 'react'
+import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useProgress } from './hooks/useProgress'
@@ -39,6 +40,8 @@ const ChallengeDetailPage = lazy(() => import('./pages/ChallengeDetailPage'))
 const CreateChallengePage = lazy(() => import('./pages/CreateChallengePage'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
 import OfflineBanner from './components/OfflineBanner'
+import ActiveCardioBar from './components/cardio/ActiveCardioBar'
+import { CardioSessionProvider } from './contexts/CardioSessionContext'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
 import AppTour, { replayTourForPage } from './components/AppTour'
@@ -313,10 +316,8 @@ function MoonIcon({ className }: IconProps) {
     </svg>
   )
 }
-const Loader: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="text-sm text-muted-foreground">Cargando...</div>
-  </div>
+const AppLoader: React.FC = () => (
+  <Loader label="Cargando..." size="lg" fullScreen />
 )
 
 // ── Mobile bottom tab bar ───────────────────────────────────────────────────
@@ -766,7 +767,7 @@ export default function App() {
     if (setData.reps) checkAndUpdatePR(exerciseId, setData.reps)
   }
 
-  if (!authReady) return <Loader />
+  if (!authReady) return <AppLoader />
 
   if (!user) {
     // Allow legal pages for non-authenticated users
@@ -804,7 +805,7 @@ export default function App() {
     return <LandingPage onGetStarted={() => navigate('/auth')} />
   }
 
-  if (!pbReady || !programsReady) return <Loader />
+  if (!pbReady || !programsReady) return <AppLoader />
 
   const displayName = user.display_name || user.email?.split('@')[0] || ''
 
@@ -834,6 +835,7 @@ export default function App() {
   return (
     <>
     <OfflineBanner />
+    <CardioSessionProvider userId={user.id} userWeight={nutritionGoals?.weight}>
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppShell
@@ -844,7 +846,7 @@ export default function App() {
           toggleDark={toggleDark}
           userRole={userRole}
         >
-          <Suspense fallback={<Loader />}>
+          <Suspense fallback={<AppLoader />}>
           <Routes>
             <Route path="/" element={
               <DashboardPage
@@ -938,7 +940,7 @@ export default function App() {
                 getExerciseLogs={getExerciseLogs}
               />
             } />
-            <Route path="/cardio" element={<CardioSessionPage userId={user.id} userWeight={nutritionGoals?.weight} />} />
+            <Route path="/cardio" element={<CardioSessionPage userId={user.id} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
             <Route path="/session/:date/:workoutKey" element={
               <SessionDetailPage progress={progress} />
@@ -988,6 +990,8 @@ export default function App() {
         </AppShell>
       </div>
     </SidebarProvider>
+    <ActiveCardioBar />
+    </CardioSessionProvider>
 
     <InstallPrompt />
     </>

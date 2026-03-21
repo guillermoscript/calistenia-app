@@ -107,12 +107,12 @@ export default function ElevationProfile({ points, height = 100, className = '' 
       >
         <defs>
           <linearGradient id="elev-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(74 90% 57%)" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="hsl(74 90% 57%)" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="hsl(var(--lime))" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="hsl(var(--lime))" stopOpacity="0.02" />
           </linearGradient>
         </defs>
         <path d={areaData} fill="url(#elev-grad)" />
-        <path d={pathData} fill="none" stroke="hsl(74 90% 57%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        <path d={pathData} fill="none" stroke="hsl(var(--lime))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </svg>
       <div className="flex justify-between mt-1">
         <span className="text-[10px] tabular-nums text-muted-foreground/60">0 km</span>

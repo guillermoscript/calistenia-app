@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useCardioSession } from '../hooks/useCardioSession'
+import { useCardioSessionContext } from '../contexts/CardioSessionContext'
 import { useCardioStats } from '../hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, pointsToGPX } from '../lib/geo'
 import { CARDIO_ACTIVITY } from '../lib/style-tokens'
@@ -21,14 +21,13 @@ const ACTIVITIES: { id: CardioActivityType; label: string; icon: string }[] = [
 
 interface CardioSessionPageProps {
   userId: string
-  userWeight?: number
 }
 
-export default function CardioSessionPage({ userId, userWeight }: CardioSessionPageProps) {
+export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const {
     state, activityType, points: pointsRef, pointsCount, distance, duration, currentPace, currentSpeed, currentSplit, error,
     start, pause, resume, finish, discard, getHistory,
-  } = useCardioSession(userId, userWeight)
+  } = useCardioSessionContext()
 
   const { weeklyStats, monthlyStats, records, loadStats } = useCardioStats(userId)
 
@@ -81,18 +80,26 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
 
   const displaySession = savedSession
 
+  const isTracking = state === 'tracking' || state === 'paused'
+
   return (
-    <div className="max-w-2xl mx-auto px-4 md:px-6 py-8 md:py-12 pb-24">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">CARDIO</h1>
-        <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
-          Seguimiento GPS
-        </p>
-      </div>
+    <div className={cn(
+      'max-w-2xl mx-auto pb-24',
+      // During tracking: tighter padding, less vertical space — maximize data density
+      isTracking ? 'px-4 py-4 md:px-6 md:py-6' : 'px-4 md:px-6 py-8 md:py-12',
+    )}>
+      {/* Header — hidden during tracking to save screen space */}
+      {!isTracking && (
+        <div className="mb-8">
+          <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">CARDIO</h1>
+          <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
+            Seguimiento GPS
+          </p>
+        </div>
+      )}
 
       {error && (
-        <div className="p-3 mb-4 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+        <div className={cn('p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400', isTracking ? 'mb-3' : 'mb-4')}>
           {error}
         </div>
       )}
@@ -147,10 +154,10 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
         </div>
       )}
 
-      {/* Tracking / Paused view */}
-      {(state === 'tracking' || state === 'paused') && (
-        <div className="space-y-6">
-          {/* Activity indicator */}
+      {/* Tracking / Paused view — optimized for glanceability during exercise */}
+      {isTracking && (
+        <div className="space-y-4 sm:space-y-6">
+          {/* Compact activity bar with status */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xl">{ACTIVITIES.find(a => a.id === activityType)?.icon}</span>
@@ -158,70 +165,71 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
                 {ACTIVITIES.find(a => a.id === activityType)?.label}
               </span>
             </div>
-            {state === 'tracking' && (
+            {state === 'tracking' ? (
               <div className="flex items-center gap-1.5">
-                <div className="size-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] font-mono tracking-widest text-red-400">GRABANDO</span>
+                <div className="size-2.5 rounded-full bg-red-500 motion-safe:animate-pulse" />
+                <span className="text-[11px] font-mono tracking-widest text-red-400">GRABANDO</span>
               </div>
-            )}
-            {state === 'paused' && (
-              <span className="text-[10px] font-mono tracking-widest text-amber-400 px-2 py-0.5 rounded bg-amber-400/10">PAUSADO</span>
+            ) : (
+              <span className="text-[11px] font-mono tracking-widest text-amber-400 px-2.5 py-1 rounded-lg bg-amber-400/10">PAUSADO</span>
             )}
           </div>
 
-          {/* Split indicator */}
-          {currentSplit && distance > 0.1 && (
-            <div className="text-center py-2 bg-muted/40 rounded-lg">
-              <span className="font-bebas text-sm tracking-widest text-muted-foreground">KM {currentSplit.km}</span>
-              <span className="mx-2 text-muted-foreground/40">—</span>
-              <span className="font-bebas text-sm text-sky-500 tabular-nums">{formatDuration(currentSplit.elapsed)}</span>
-            </div>
-          )}
+          {/* Duration — the hero metric, readable from arm's length */}
+          <div className="text-center">
+            <div className="font-bebas text-6xl sm:text-7xl tabular-nums leading-none">{formatDuration(duration)}</div>
+            <div className="text-[11px] font-mono tracking-[0.3em] text-muted-foreground mt-1.5">DURACIÓN</div>
+          </div>
 
-          {/* Big stats */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="text-center p-3 sm:p-4 bg-muted/60 rounded-xl">
-              <div className="font-bebas text-3xl sm:text-4xl text-lime tabular-nums">{distance.toFixed(2)}</div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">KM</div>
+          {/* Secondary stats — distance + pace/speed */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center p-4 sm:p-5 bg-muted/60 rounded-xl">
+              <div className="font-bebas text-4xl sm:text-5xl text-lime tabular-nums leading-none">{distance.toFixed(2)}</div>
+              <div className="text-[11px] font-mono tracking-[0.2em] text-muted-foreground mt-1.5">KM</div>
             </div>
-            <div className="text-center p-3 sm:p-4 bg-muted/60 rounded-xl">
-              <div className="font-bebas text-3xl sm:text-4xl tabular-nums">{formatDuration(duration)}</div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">DURACIÓN</div>
-            </div>
-            <div className="text-center p-3 sm:p-4 bg-muted/60 rounded-xl">
+            <div className="text-center p-4 sm:p-5 bg-muted/60 rounded-xl">
               {isCycling(activityType) ? (
                 <>
-                  <div className="font-bebas text-3xl sm:text-4xl text-sky-500 tabular-nums">{formatSpeed(currentSpeed)}</div>
-                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">KM/H</div>
+                  <div className="font-bebas text-4xl sm:text-5xl text-sky-500 tabular-nums leading-none">{formatSpeed(currentSpeed)}</div>
+                  <div className="text-[11px] font-mono tracking-[0.2em] text-muted-foreground mt-1.5">KM/H</div>
                 </>
               ) : (
                 <>
-                  <div className="font-bebas text-3xl sm:text-4xl text-sky-500 tabular-nums">{formatPace(currentPace)}</div>
-                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">MIN/KM</div>
+                  <div className="font-bebas text-4xl sm:text-5xl text-sky-500 tabular-nums leading-none">{formatPace(currentPace)}</div>
+                  <div className="text-[11px] font-mono tracking-[0.2em] text-muted-foreground mt-1.5">MIN/KM</div>
                 </>
               )}
             </div>
           </div>
 
-          {/* Mini map */}
-          {pointsCount > 1 && (
-            <RouteMap points={pointsRef.current} height="180px" live />
+          {/* Split indicator */}
+          {currentSplit && distance > 0.1 && (
+            <div className="text-center py-2.5 bg-muted/40 rounded-lg">
+              <span className="font-bebas text-base tracking-widest text-muted-foreground">KM {currentSplit.km}</span>
+              <span className="mx-2 text-muted-foreground/40">—</span>
+              <span className="font-bebas text-base text-sky-500 tabular-nums">{formatDuration(currentSplit.elapsed)}</span>
+            </div>
           )}
 
-          {/* Controls */}
+          {/* Live map — taller for route visibility */}
+          {pointsCount > 1 && (
+            <RouteMap points={pointsRef.current} height="220px" live />
+          )}
+
+          {/* Controls — large touch targets for sweaty/gloved hands */}
           <div className="flex gap-3">
             {state === 'tracking' ? (
               <>
                 <Button
                   onClick={pause}
                   variant="outline"
-                  className="flex-1 h-14 font-bebas text-lg tracking-widest border-amber-400/30 text-amber-400 hover:bg-amber-400/10"
+                  className="flex-1 h-16 font-bebas text-xl tracking-widest border-amber-400/30 text-amber-400 hover:bg-amber-400/10 active:bg-amber-400/20"
                 >
                   PAUSAR
                 </Button>
                 <Button
                   onClick={handleFinish}
-                  className="flex-1 h-14 bg-red-500 hover:bg-red-600 text-white font-bebas text-lg tracking-widest"
+                  className="flex-1 h-16 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bebas text-xl tracking-widest"
                 >
                   PARAR
                 </Button>
@@ -230,13 +238,13 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
               <>
                 <Button
                   onClick={resume}
-                  className="flex-1 h-14 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-widest"
+                  className="flex-1 h-16 bg-lime hover:bg-lime/90 active:bg-lime/80 text-zinc-900 font-bebas text-xl tracking-widest"
                 >
                   REANUDAR
                 </Button>
                 <Button
                   onClick={handleFinish}
-                  className="flex-1 h-14 bg-red-500 hover:bg-red-600 text-white font-bebas text-lg tracking-widest"
+                  className="flex-1 h-16 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bebas text-xl tracking-widest"
                 >
                   TERMINAR
                 </Button>
@@ -244,13 +252,15 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
             )}
           </div>
 
-          {/* Discard */}
-          <button
-            onClick={handleDiscard}
-            className="w-full text-center text-xs text-muted-foreground hover:text-red-400 transition-colors py-2"
-          >
-            Descartar
-          </button>
+          {/* Discard — intentionally small with padding to prevent accidental taps */}
+          <div className="pt-2">
+            <button
+              onClick={handleDiscard}
+              className="w-full text-center text-xs text-muted-foreground hover:text-red-400 transition-colors py-3"
+            >
+              Descartar sesión
+            </button>
+          </div>
         </div>
       )}
 

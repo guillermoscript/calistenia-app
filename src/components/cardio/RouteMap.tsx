@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { cn } from '../../lib/utils'
 import type { GpsPoint } from '../../types'
 
 interface RouteMapProps {
@@ -11,39 +12,48 @@ interface RouteMapProps {
   live?: boolean
 }
 
-const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-const DARK_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
+// Voyager: a lighter, more readable CARTO style with labels and soft colors
+const TILES_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+const TILES_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
 
-const ROUTE_COLOR = '#c8f542'
-const START_COLOR = '#22c55e'
-const END_COLOR = '#ef4444'
+const START_COLOR = '#22c55e' // green-500 (start pin — always green)
+const END_COLOR = '#ef4444'   // red-500  (finish pin — always red)
 
-/** CSS for the pulsing live-position marker — injected once */
-const PULSE_CSS = `
+/** Read the --lime CSS variable and convert to a usable hex/hsl string */
+function getLimeColor(): string {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--lime').trim()
+  return raw ? `hsl(${raw})` : '#16a34a' // fallback to green-600
+}
+
+/** Build pulse CSS using the current theme lime color */
+function buildPulseCSS(color: string): string {
+  return `
 .live-marker {
   width: 16px; height: 16px;
-  background: ${ROUTE_COLOR};
+  background: ${color};
+  border: 2px solid #fff;
   border-radius: 50%;
-  box-shadow: 0 0 0 0 rgba(200, 245, 66, 0.6);
+  box-shadow: 0 0 0 0 ${color}80;
   animation: live-pulse 1.5s ease-out infinite;
 }
 @keyframes live-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(200, 245, 66, 0.6); }
-  70%  { box-shadow: 0 0 0 14px rgba(200, 245, 66, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(200, 245, 66, 0); }
+  0%   { box-shadow: 0 0 0 0 ${color}80; }
+  70%  { box-shadow: 0 0 0 14px ${color}00; }
+  100% { box-shadow: 0 0 0 0 ${color}00; }
 }
 `
-
-let pulseStyleInjected = false
-function injectPulseStyle() {
-  if (pulseStyleInjected) return
-  const style = document.createElement('style')
-  style.textContent = PULSE_CSS
-  document.head.appendChild(style)
-  pulseStyleInjected = true
 }
 
-export default function RouteMap({ points, height = '300px', className = '', live = false }: RouteMapProps) {
+let pulseStyleEl: HTMLStyleElement | null = null
+function injectPulseStyle(color: string) {
+  if (!pulseStyleEl) {
+    pulseStyleEl = document.createElement('style')
+    document.head.appendChild(pulseStyleEl)
+  }
+  pulseStyleEl.textContent = buildPulseCSS(color)
+}
+
+export default function RouteMap({ points, height = '300px', className, live = false }: RouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layersRef = useRef<L.LayerGroup | null>(null)
@@ -57,8 +67,8 @@ export default function RouteMap({ points, height = '300px', className = '', liv
       attributionControl: false,
     })
 
-    L.tileLayer(DARK_TILES, {
-      attribution: DARK_ATTR,
+    L.tileLayer(TILES_URL, {
+      attribution: TILES_ATTR,
       maxZoom: 19,
       // @ts-expect-error -- retina tiles
       r: L.Browser.retina ? '@2x' : '',
@@ -86,11 +96,12 @@ export default function RouteMap({ points, height = '300px', className = '', liv
 
     layers.clearLayers()
 
+    const routeColor = getLimeColor()
     const coords = points.map(p => [p.lat, p.lng] as L.LatLngTuple)
 
     // Route polyline
     const polyline = L.polyline(coords, {
-      color: ROUTE_COLOR,
+      color: routeColor,
       weight: 4,
       opacity: 0.85,
       lineCap: 'round',
@@ -111,7 +122,7 @@ export default function RouteMap({ points, height = '300px', className = '', liv
       const lastCoord = coords[coords.length - 1]
 
       if (live) {
-        injectPulseStyle()
+        injectPulseStyle(routeColor)
         const icon = L.divIcon({
           className: '',
           html: '<div class="live-marker"></div>',
@@ -136,11 +147,11 @@ export default function RouteMap({ points, height = '300px', className = '', liv
 
   if (points.length === 0) {
     return (
-      <div className={`flex items-center justify-center bg-muted/50 rounded-xl ${className}`} style={{ height }}>
+      <div className={cn('flex items-center justify-center bg-muted/50 rounded-xl', className)} style={{ height }}>
         <span className="text-sm text-muted-foreground">Sin datos de ruta</span>
       </div>
     )
   }
 
-  return <div ref={containerRef} className={`rounded-xl overflow-hidden ${className}`} style={{ height }} />
+  return <div ref={containerRef} className={cn('rounded-xl overflow-hidden', className)} style={{ height }} />
 }

@@ -3,6 +3,7 @@ import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { Button } from './ui/button'
+import { Loader } from './ui/loader'
 import { Input } from './ui/input'
 import { Badge } from './ui/badge'
 import {
@@ -208,7 +209,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
         {/* Exercise list */}
         <div className="flex-1 overflow-y-auto min-h-0 -mx-6 px-6 space-y-1.5">
           {loading ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">Cargando catálogo...</div>
+            <Loader label="Cargando catálogo..." className="py-12" />
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center">
               <p className="text-sm text-muted-foreground mb-4">No se encontraron ejercicios</p>

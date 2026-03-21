@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '../hooks/useLeaderboard'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
+import { Loader } from '../components/ui/loader'
 
 const CATEGORIES: { id: LeaderboardCategory; label: string; unit: string; hasTimeFilter: boolean }[] = [
   { id: 'sessions_week', label: 'Sesiones', unit: '', hasTimeFilter: true },
@@ -89,7 +90,7 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
 
       {/* Loading */}
       {loading && (
-        <div className="text-sm text-muted-foreground py-12 text-center">Cargando ranking...</div>
+        <Loader label="Cargando ranking..." className="py-12" />
       )}
 
       {/* Error */}

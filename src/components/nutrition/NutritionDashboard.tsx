@@ -3,6 +3,7 @@ import { cn } from '../../lib/utils'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
+import EditMealSheet from './EditMealSheet'
 import MacroBar from './MacroBar'
 import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
 import type { NutritionEntry } from '../../types'
@@ -12,6 +13,7 @@ interface NutritionDashboardProps {
   goals: { dailyCalories: number; dailyProtein: number; dailyCarbs: number; dailyFat: number } | null
   entries: NutritionEntry[]
   onDeleteEntry?: (id: string) => void
+  onEditEntry?: (id: string, data: Partial<NutritionEntry>) => Promise<void>
 }
 
 
@@ -65,9 +67,10 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
   )
 }
 
-export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry }: NutritionDashboardProps) {
+export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry }: NutritionDashboardProps) {
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
 
   if (!goals) return null
 
@@ -215,16 +218,28 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             <span className="text-amber-400">{Math.round(entry.totalCarbs)}g carbs</span>
                             <span className="text-pink-500">{Math.round(entry.totalFat)}g grasa</span>
                           </div>
-                          {onDeleteEntry && entry.id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(entry.id!) }}
-                              className="h-7 px-2 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                            >
-                              <TrashIcon className="size-3.5" />
-                            </Button>
-                          )}
+                          <div className="flex gap-1">
+                            {onEditEntry && entry.id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); setEditingEntry(entry) }}
+                                className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-muted"
+                              >
+                                <EditIcon className="size-3.5" />
+                              </Button>
+                            )}
+                            {onDeleteEntry && entry.id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(entry.id!) }}
+                                className="h-7 px-2 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                              >
+                                <TrashIcon className="size-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -250,7 +265,24 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
           }}
         />
       )}
+
+      {onEditEntry && (
+        <EditMealSheet
+          entry={editingEntry}
+          open={editingEntry !== null}
+          onOpenChange={(open) => { if (!open) setEditingEntry(null) }}
+          onSave={onEditEntry}
+        />
+      )}
     </div>
+  )
+}
+
+function EditIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M11.33 2a1.89 1.89 0 012.67 2.67L5.33 13.33 2 14l.67-3.33L11.33 2z" />
+    </svg>
   )
 }
 

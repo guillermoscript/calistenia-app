@@ -32,7 +32,7 @@ export default function CardioWidget({ weeklyStats, lastSession, onNavigate }: C
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-base" aria-hidden="true">🏃</span>
+                <span className="text-base" aria-hidden="true">{lastSession ? (CARDIO_ACTIVITY[lastSession.activity_type]?.icon || '🏃') : '🏃'}</span>
               </div>
             </div>
             <div className="flex-1 min-w-0">
