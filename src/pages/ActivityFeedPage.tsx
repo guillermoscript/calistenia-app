@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useActivityFeed, type FeedItem } from '../hooks/useActivityFeed'
+import { useReactions } from '../hooks/useReactions'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { PHASE_COLORS } from '../lib/style-tokens'
@@ -26,8 +27,16 @@ interface ActivityFeedPageProps {
 export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const navigate = useNavigate()
   const { items, loading, load } = useActivityFeed(userId)
+  const { loadForSessions, toggleReaction, getReaction } = useReactions(userId)
 
   useEffect(() => { load() }, [load])
+
+  // Load reactions once feed items are available
+  useEffect(() => {
+    if (items.length > 0) {
+      loadForSessions(items.map(i => i.id))
+    }
+  }, [items, loadForSessions])
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -51,15 +60,25 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
 
       {!loading && items.length > 0 && (
         <div className="flex flex-col gap-2">
-          {items.map((item, i) => (
-            <div
-              key={item.id}
-              className="motion-safe:animate-fade-in"
-              style={{ animationDelay: `${Math.min(i, 10) * 50}ms`, animationFillMode: 'both' }}
-            >
-              <FeedCard item={item} onTap={() => navigate(`/session/${item.date}/${item.workoutKey}`)} onTapUser={() => navigate(`/u/${item.userId}`)} />
-            </div>
-          ))}
+          {items.map((item, i) => {
+            const reaction = getReaction(item.id)
+            return (
+              <div
+                key={item.id}
+                className="motion-safe:animate-fade-in"
+                style={{ animationDelay: `${Math.min(i, 10) * 50}ms`, animationFillMode: 'both' }}
+              >
+                <FeedCard
+                  item={item}
+                  onTap={() => navigate(`/session/${item.date}/${item.workoutKey}`)}
+                  onTapUser={() => navigate(`/u/${item.userId}`)}
+                  reactionCount={reaction.count}
+                  hasReacted={reaction.hasReacted}
+                  onReact={() => toggleReaction(item.id)}
+                />
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -72,9 +91,12 @@ interface FeedCardProps {
   item: FeedItem
   onTap: () => void
   onTapUser: () => void
+  reactionCount: number
+  hasReacted: boolean
+  onReact: () => void
 }
 
-function FeedCard({ item, onTap, onTapUser }: FeedCardProps) {
+function FeedCard({ item, onTap, onTapUser, reactionCount, hasReacted, onReact }: FeedCardProps) {
   const phaseColor = PHASE_COLORS[item.phase]
 
   return (
@@ -114,6 +136,22 @@ function FeedCard({ item, onTap, onTapUser }: FeedCardProps) {
         </div>
         <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
       </button>
+
+      {/* Reaction */}
+      <div className="mt-2 flex items-center">
+        <button
+          onClick={(e) => { e.stopPropagation(); onReact() }}
+          className={cn(
+            'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-90',
+            hasReacted
+              ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
+              : 'text-muted-foreground hover:text-orange-400 hover:bg-orange-500/10 border border-transparent',
+          )}
+        >
+          <span className={cn('text-sm', hasReacted && 'motion-safe:animate-scale-in')}>🔥</span>
+          {reactionCount > 0 && <span>{reactionCount}</span>}
+        </button>
+      </div>
     </div>
   )
 }
