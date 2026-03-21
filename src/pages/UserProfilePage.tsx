@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { pb } from '../lib/pocketbase'
+import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -11,6 +11,7 @@ import { useFollows } from '../hooks/useFollows'
 interface ProfileData {
   id: string
   displayName: string
+  avatarUrl: string | null
   email: string
   memberSince: string
   // From user_stats
@@ -111,6 +112,7 @@ export default function UserProfilePage({
         setProfile({
           id: user.id,
           displayName: user.display_name || user.email?.split('@')[0] || '',
+          avatarUrl: getUserAvatarUrl(user as any, '200x200'),
           email: user.email,
           memberSince: user.created?.split(' ')[0] || user.created?.split('T')[0] || '',
           totalSessions: stats.total_sessions || 0,
@@ -161,8 +163,12 @@ export default function UserProfilePage({
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-3">
-          <div className="size-14 sm:size-16 rounded-full bg-accent flex items-center justify-center text-xl sm:text-2xl font-bebas text-foreground shrink-0">
-            {profile.displayName[0]?.toUpperCase() || '?'}
+          <div className="size-14 sm:size-16 rounded-full bg-accent flex items-center justify-center text-xl sm:text-2xl font-bebas text-foreground shrink-0 overflow-hidden">
+            {profile.avatarUrl ? (
+              <img src={profile.avatarUrl} alt={profile.displayName} className="size-full object-cover" />
+            ) : (
+              profile.displayName[0]?.toUpperCase() || '?'
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="font-bebas text-3xl sm:text-4xl leading-none truncate">{profile.displayName}</h1>

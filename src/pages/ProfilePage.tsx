@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { cn } from '../lib/utils'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 
 const LEVELS = [
   { value: 'principiante', label: 'Principiante' },
@@ -27,6 +27,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!user?.id || loaded) return
@@ -41,6 +44,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           setHeight((rec as any).height ? String((rec as any).height) : '')
           setLevel((rec as any).level || 'principiante')
           setGoal((rec as any).goal || '')
+          setAvatarUrl(getUserAvatarUrl(rec as any, '200x200'))
         } catch (e) {
           console.warn('Failed to load profile:', e)
         }
@@ -66,6 +70,31 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     if (v < 30) return { label: 'Sobrepeso', color: 'text-amber-400' }
     return { label: 'Obesidad', color: 'text-red-500' }
   }, [bmi])
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user?.id) return
+
+    setUploadingAvatar(true)
+    try {
+      const available = await isPocketBaseAvailable()
+      if (available) {
+        const formData = new FormData()
+        formData.append('avatar', file)
+        const updated = await pb.collection('users').update(user.id, formData)
+        // Add cache-busting param so the browser doesn't show the old cached image
+        const url = getUserAvatarUrl(updated as any, '200x200')
+        setAvatarUrl(url ? `${url}&t=${Date.now()}` : null)
+        // Refresh auth to sync avatar in authStore
+        await pb.collection('users').authRefresh()
+      }
+    } catch (e) {
+      console.warn('Failed to upload avatar:', e)
+    }
+    setUploadingAvatar(false)
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleSave = async () => {
     if (!user?.id) return
@@ -96,6 +125,43 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     <div className="max-w-[600px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">Cuenta</div>
       <div className="font-bebas text-[36px] md:text-[52px] leading-none mb-8">PERFIL</div>
+
+      {/* Avatar */}
+      <div className="flex flex-col items-center mb-6">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingAvatar}
+          className="relative group size-24 rounded-full overflow-hidden bg-accent border-2 border-border hover:border-lime transition-colors focus:outline-none focus:ring-2 focus:ring-lime"
+        >
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
+          ) : (
+            <span className="flex items-center justify-center size-full text-3xl font-bebas text-foreground">
+              {(displayName || user?.email || '?')[0]?.toUpperCase()}
+            </span>
+          )}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <svg className="size-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </div>
+          {uploadingAvatar && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <div className="size-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleAvatarChange}
+          className="hidden"
+        />
+        <span className="text-[10px] text-muted-foreground mt-2">Toca para cambiar foto</span>
+      </div>
 
       <div className="flex flex-col gap-5">
         {/* Basic info */}

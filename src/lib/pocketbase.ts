@@ -75,9 +75,35 @@ export const register = async (data: RegisterData): Promise<RecordAuthResponse<R
 
 /**
  * OAuth2 con Google (o cualquier provider configurado en PocketBase).
+ * After login, if the user has no avatar yet, fetches their Google profile picture
+ * and uploads it to PocketBase.
  */
-export const loginWithOAuth2 = (provider: string): Promise<RecordAuthResponse<RecordModel>> =>
-  pb.collection('users').authWithOAuth2({ provider })
+export const loginWithOAuth2 = async (provider: string): Promise<RecordAuthResponse<RecordModel>> => {
+  const result = await pb.collection('users').authWithOAuth2({ provider })
+
+  // If user has no avatar and OAuth provided an avatarURL, download and upload it
+  if (!result.record.avatar && result.meta?.avatarURL) {
+    try {
+      const response = await fetch(result.meta.avatarURL)
+      if (response.ok) {
+        const blob = await response.blob()
+        const ext = blob.type === 'image/png' ? 'png' : 'jpg'
+        const file = new File([blob], `google-avatar.${ext}`, { type: blob.type })
+
+        const formData = new FormData()
+        formData.append('avatar', file)
+
+        await pb.collection('users').update(result.record.id, formData)
+        // Refresh auth to get updated record with avatar
+        await pb.collection('users').authRefresh()
+      }
+    } catch (e) {
+      console.warn('Failed to fetch Google avatar:', e)
+    }
+  }
+
+  return result
+}
 
 /**
  * Refresca el token en el arranque de la app.
@@ -100,5 +126,13 @@ export const logout = (): void => pb.authStore.clear()
 /** Retorna el registro del usuario autenticado, o null. */
 export const getCurrentUser = (): RecordModel | null =>
   pb.authStore.isValid ? (pb.authStore as any).record ?? pb.authStore.model : null
+
+/**
+ * Returns the URL for a user's avatar thumbnail, or null if no avatar.
+ */
+export const getUserAvatarUrl = (user: RecordModel, thumb: string = '200x200'): string | null => {
+  if (!user.avatar) return null
+  return pb.files.getUrl(user, user.avatar, { thumb })
+}
 
 export default pb
