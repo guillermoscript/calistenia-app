@@ -23,6 +23,7 @@ export interface Exercise {
   demoImages?: string[]
   demoVideo?: string
   supersetGroup?: string  // exercises with same group ID are done back-to-back
+  equipment?: string[]
 }
 
 export interface Workout {
@@ -310,4 +311,41 @@ export interface ExerciseProgression {
   prevExerciseId?: string
   targetRepsToAdvance: number
   sessionsAtTarget: number
+}
+
+// ─── Cardio / GPS ─────────────────────────────────────────────────────────
+export type CardioActivityType = 'running' | 'walking' | 'cycling'
+
+export interface GpsPoint {
+  lat: number
+  lng: number
+  alt?: number
+  timestamp: number
+  speed?: number
+  accuracy?: number
+}
+
+export interface KmSplit {
+  km: number
+  time_seconds: number
+  pace: number // min/km
+}
+
+export interface CardioSession {
+  id?: string
+  user?: string
+  activity_type: CardioActivityType
+  gps_points: GpsPoint[]
+  distance_km: number
+  duration_seconds: number
+  avg_pace: number
+  elevation_gain: number
+  started_at: string
+  finished_at: string
+  note?: string
+  calories_burned?: number
+  max_pace?: number
+  avg_speed_kmh?: number
+  max_speed_kmh?: number
+  splits?: KmSplit[]
 }

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { useProgressions } from '../hooks/useProgressions'
-import { detectEquipment } from '../lib/equipment'
+import { getExerciseEquipment, getEquipmentLabel, EQUIPMENT_CATALOG } from '../lib/equipment'
 import { calculateWorkoutDuration } from '../lib/duration'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
@@ -342,7 +342,7 @@ export default function ExerciseDetailPage() {
   // Equipment detection
   const equipment = useMemo(() => {
     if (!exercise) return []
-    return detectEquipment({ name: exercise.name, note: exercise.note })
+    return getExerciseEquipment({ name: exercise.name, note: exercise.note })
   }, [exercise])
 
   if (loading) {
@@ -614,19 +614,24 @@ export default function ExerciseDetailPage() {
         <TabsContent value="material">
           <div className="rounded-xl bg-muted/60 p-6">
             <div className="flex flex-wrap gap-3">
-              {equipment.map((item, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'px-4 py-2.5 rounded-xl text-sm font-medium',
-                    item === 'Sin equipo'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-muted/60 text-foreground'
-                  )}
-                >
-                  {item}
-                </div>
-              ))}
+              {equipment.map((id, i) => {
+                const catalogItem = EQUIPMENT_CATALOG.find(e => e.id === id)
+                const icon = catalogItem?.icon || ''
+                const label = getEquipmentLabel(id)
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      'px-4 py-2.5 rounded-xl text-sm font-medium',
+                      id === 'ninguno'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-muted/60 text-foreground'
+                    )}
+                  >
+                    {icon && <span className="mr-1.5">{icon}</span>}{label}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </TabsContent>

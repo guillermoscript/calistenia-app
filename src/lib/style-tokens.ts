@@ -30,6 +30,13 @@ export const PRIORITY_COLORS: Record<Priority, { stripe: string; border: string;
   low:  { stripe: 'bg-sky-500',   border: 'border-l-sky-500',   text: 'text-sky-500' },
 }
 
+// ── Cardio activity types ─────────────────────────────────────────────────
+export const CARDIO_ACTIVITY: Record<string, { label: string; icon: string; color: string; bg: string }> = {
+  running: { label: 'Carrera',  icon: '🏃', color: 'text-lime',      bg: 'bg-lime/10 border-lime/30' },
+  walking: { label: 'Caminata', icon: '🚶', color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
+  cycling: { label: 'Ciclismo', icon: '🚴', color: 'text-sky-500',   bg: 'bg-sky-500/10 border-sky-500/30' },
+}
+
 // ── Meal type colors ────────────────────────────────────────────────────────
 export const MEAL_TYPE_COLORS: Record<string, { label: string; color: string; bg: string }> = {
   desayuno: { label: 'Desayuno', color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
