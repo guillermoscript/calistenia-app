@@ -134,3 +134,35 @@ export function notifyTimerDone(exerciseName: string): void {
     vibrate: [300, 100, 300],
   })
 }
+
+// ── Social notifications ─────────────────────────────────────────────────────
+
+/** Someone reacted to your workout */
+export function notifyReaction(reactorName: string, workoutTitle: string): void {
+  send({
+    title: `🔥 ${reactorName}`,
+    body: `Le gusta tu sesion: ${workoutTitle}`,
+    tag: `reaction-${reactorName}`,
+    urgent: true,
+  })
+}
+
+/** A friend completed a workout */
+export function notifyFriendWorkout(friendName: string, workoutTitle: string): void {
+  send({
+    title: `💪 ${friendName} entreno`,
+    body: workoutTitle,
+    tag: `friend-workout-${friendName}`,
+  })
+}
+
+/** Someone beat your PR */
+export function notifyPRBeaten(friendName: string, prLabel: string, newValue: number, yourValue: number): void {
+  send({
+    title: `🏆 ${friendName} te supero`,
+    body: `${prLabel}: ${newValue} (tu: ${yourValue})`,
+    tag: `pr-beaten-${prLabel}`,
+    urgent: true,
+    vibrate: [200, 100, 200],
+  })
+}
