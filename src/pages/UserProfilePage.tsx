@@ -159,20 +159,23 @@ export default function UserProfilePage({
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-8">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="size-16 rounded-full bg-accent flex items-center justify-center text-2xl font-bebas text-foreground shrink-0">
-          {profile.displayName[0]?.toUpperCase() || '?'}
-        </div>
-        <div className="flex-1">
-          <h1 className="font-bebas text-4xl leading-none">{profile.displayName}</h1>
-          <div className="text-xs text-muted-foreground mt-1">
-            Miembro desde {profile.memberSince} · Fase {profile.phase}
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-3">
+          <div className="size-14 sm:size-16 rounded-full bg-accent flex items-center justify-center text-xl sm:text-2xl font-bebas text-foreground shrink-0">
+            {profile.displayName[0]?.toUpperCase() || '?'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-bebas text-3xl sm:text-4xl leading-none truncate">{profile.displayName}</h1>
+            <div className="text-xs text-muted-foreground mt-1">
+              Miembro desde {profile.memberSince} · Fase {profile.phase}
+            </div>
           </div>
         </div>
         {!isOwnProfile && currentUserId && userId && (
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2">
             <Button
               variant={isFollowing(userId) ? 'default' : 'outline'}
+              size="sm"
               disabled={followLoading}
               onClick={async () => {
                 setFollowLoading(true)
@@ -181,7 +184,7 @@ export default function UserProfilePage({
                 setFollowLoading(false)
               }}
               className={cn(
-                'text-[10px] tracking-widest',
+                'text-[10px] tracking-widest h-9 active:scale-95 transition-all',
                 isFollowing(userId)
                   ? 'bg-[hsl(var(--lime))] text-background hover:bg-red-500 hover:text-white'
                   : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
@@ -191,9 +194,10 @@ export default function UserProfilePage({
             </Button>
             <Button
               variant={comparing ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setComparing(c => !c)}
               className={cn(
-                'text-[10px] tracking-widest',
+                'text-[10px] tracking-widest h-9',
                 comparing
                   ? 'bg-[hsl(var(--lime))] text-background'
                   : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
