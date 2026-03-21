@@ -35,6 +35,11 @@ playwright-report/
 *.jpg
 *.jpeg
 
+# But allow images in public/ (logo, favicons, etc.)
+!public/*.png
+!public/*.jpg
+!public/*.jpeg
+
 # OpenCode AI agent config
 opencode.json
 skills-lock.json
