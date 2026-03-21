@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { WORKOUTS } from '../data/workouts'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
@@ -59,7 +60,18 @@ interface ProgressPageProps {
   userId?: string | null
 }
 
+function relativeDate(dateStr: string): string {
+  const today = new Date().toISOString().split('T')[0]
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  if (dateStr === today) return 'Hoy'
+  if (dateStr === yesterday) return 'Ayer'
+  const diff = Math.floor((new Date(today).getTime() - new Date(dateStr).getTime()) / 86400000)
+  if (diff <= 7) return `Hace ${diff} dias`
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+}
+
 export default function ProgressPage({ progress, settings, activeProgram, userId }: ProgressPageProps) {
+  const navigate = useNavigate()
   const { weights } = useWeight(userId || null)
   const { photos } = useBodyPhotos(userId || null)
   const allLogs = useMemo<SessionLog[]>(() => {
@@ -125,6 +137,33 @@ export default function ProgressPage({ progress, settings, activeProgram, userId
           </Badge>
         )}
       </div>
+
+      {/* Sesiones recientes */}
+      {allLogs.length > 0 && (
+        <div className="mb-8">
+          <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">Sesiones recientes</div>
+          <div className="flex flex-col gap-1.5">
+            {allLogs.slice(0, 10).map((log, i) => {
+              const phaseColor = log.phase ? PHASE_COLORS[log.phase] : null
+              return (
+                <button
+                  key={`${log.date}-${log.workoutKey}-${i}`}
+                  onClick={() => navigate(`/session/${log.date}/${log.workoutKey}`)}
+                  className="w-full text-left px-4 py-3 bg-card border border-border rounded-lg hover:border-lime/30 transition-colors flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="text-xs text-muted-foreground w-16 shrink-0">{relativeDate(log.date)}</div>
+                    <div className="min-w-0">
+                      <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{log.title}</div>
+                    </div>
+                  </div>
+                  <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {allLogs.length === 0 ? (
         <div className="text-center py-20 px-5 text-muted-foreground">

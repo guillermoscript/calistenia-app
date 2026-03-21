@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -35,6 +36,7 @@ function formatDate(y: number, m: number, d: number) {
 }
 
 export default function CalendarPage({ progress, onGoToWorkout, weekDays, activeProgram, currentPhase }: CalendarPageProps) {
+  const navigate = useNavigate()
   const today = new Date()
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
@@ -223,15 +225,19 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
             {selectedSessions.length > 0 ? (
               <div className="space-y-2">
                 {selectedSessions.map((s, i) => (
-                  <div
+                  <button
                     key={i}
-                    className="px-4 py-3 bg-muted/30 rounded-lg border border-border"
+                    onClick={() => navigate(`/session/${s.date}/${s.workoutKey}`)}
+                    className="w-full text-left px-4 py-3 bg-muted/30 rounded-lg border border-border hover:border-lime/30 transition-colors flex items-center justify-between gap-3"
                   >
-                    <div className="text-sm font-medium">{parseWorkoutKey(s.workoutKey)}</div>
-                    {s.note && (
-                      <div className="text-xs text-muted-foreground mt-1 italic">{s.note}</div>
-                    )}
-                  </div>
+                    <div>
+                      <div className="text-sm font-medium">{parseWorkoutKey(s.workoutKey)}</div>
+                      {s.note && (
+                        <div className="text-xs text-muted-foreground mt-1 italic">{s.note}</div>
+                      )}
+                    </div>
+                    <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+                  </button>
                 ))}
               </div>
             ) : selectedPlanned ? (
