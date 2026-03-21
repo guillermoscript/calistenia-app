@@ -349,3 +349,24 @@ export interface CardioSession {
   max_speed_kmh?: number
   splits?: KmSplit[]
 }
+
+// ─── Challenges ──────────────────────────────────────────────────────────────
+
+export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand'
+export type ChallengeStatus = 'active' | 'ended'
+
+export interface Challenge {
+  id: string
+  creator: string
+  title: string
+  metric: ChallengeMetric
+  starts_at: string
+  ends_at: string
+  status: ChallengeStatus
+}
+
+export interface ChallengeParticipant {
+  id: string
+  challenge: string
+  user: string
+}

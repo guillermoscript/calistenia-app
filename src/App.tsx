@@ -34,6 +34,9 @@ const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
 const AddFriendPage = lazy(() => import('./pages/AddFriendPage'))
 const ActivityFeedPage = lazy(() => import('./pages/ActivityFeedPage'))
+const ChallengesPage = lazy(() => import('./pages/ChallengesPage'))
+const ChallengeDetailPage = lazy(() => import('./pages/ChallengeDetailPage'))
+const CreateChallengePage = lazy(() => import('./pages/CreateChallengePage'))
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -82,6 +85,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/feed', label: 'Actividad', icon: ActivityIcon },
   { path: '/friends', label: 'Amigos', icon: FriendsIcon },
   { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
+  { path: '/challenges', label: 'Desafios', icon: ChallengeIcon },
   { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
 ]
 
@@ -98,6 +102,9 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/exercises\/[^/]+$/)) return 'Detalle Ejercicio'
   if (pathname.match(/^\/session\/[^/]+\/[^/]+$/)) return 'Detalle Sesion'
   if (pathname === '/feed') return 'Actividad'
+  if (pathname === '/challenges') return 'Desafios'
+  if (pathname === '/challenges/new') return 'Nuevo Desafio'
+  if (pathname.match(/^\/challenges\/[^/]+$/)) return 'Detalle Desafio'
   if (pathname === '/friends') return 'Amigos'
   if (pathname === '/leaderboard') return 'Ranking'
   if (pathname.match(/^\/add\/[^/]+$/)) return 'Agregar Amigo'
@@ -198,6 +205,15 @@ function RunningIcon({ className }: IconProps) {
       <path d="M5 16l2-5 3 2v5" />
       <path d="M8 8l-3 3 1.5 1" />
       <path d="M8 8l2-2 3 1" />
+    </svg>
+  )
+}
+function ChallengeIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="8" cy="8" r="6" />
+      <path d="M8 4v4l3 2" />
+      <polyline points="11,2 13,4" />
     </svg>
   )
 }
@@ -908,6 +924,9 @@ export default function App() {
               <SessionDetailPage progress={progress} />
             } />
             <Route path="/feed" element={<ActivityFeedPage userId={user.id} />} />
+            <Route path="/challenges" element={<ChallengesPage userId={user.id} />} />
+            <Route path="/challenges/new" element={<CreateChallengePage userId={user.id} />} />
+            <Route path="/challenges/:id" element={<ChallengeDetailPage userId={user.id} />} />
             <Route path="/friends" element={<FriendsPage userId={user.id} />} />
             <Route path="/leaderboard" element={<LeaderboardPage userId={user.id} />} />
             <Route path="/add/:userId" element={<AddFriendPage currentUserId={user.id} />} />
