@@ -3,6 +3,7 @@ import { formatDuration, formatPace, formatSpeed } from '../../lib/geo'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
 import RouteMap from './RouteMap'
 import CardioShareCard from './CardioShareCard'
+import ElevationProfile from './ElevationProfile'
 import type { CardioSession } from '../../types'
 
 interface CardioHistoryProps {
@@ -85,6 +86,9 @@ export default function CardioHistory({ sessions, loading }: CardioHistoryProps)
               <div className="px-4 pb-4 space-y-3 border-t border-border/50 pt-3">
                 {session.gps_points.length > 0 && (
                   <RouteMap points={session.gps_points} height="200px" />
+                )}
+                {session.gps_points.length > 2 && (
+                  <ElevationProfile points={session.gps_points} height={64} />
                 )}
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="p-2 bg-muted/40 rounded-lg">

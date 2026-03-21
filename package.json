@@ -23,6 +23,7 @@
     "clsx": "^2.1.1",
     "driver.js": "^1.4.0",
     "html5-qrcode": "^2.3.8",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
     "pocketbase": "^0.26.8",
     "react": "^19.2.4",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
+    "@types/leaflet": "^1.9.21",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",

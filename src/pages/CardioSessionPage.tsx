@@ -8,6 +8,7 @@ import CardioHistory from '../components/cardio/CardioHistory'
 import SplitsTable from '../components/cardio/SplitsTable'
 import CardioStats from '../components/cardio/CardioStats'
 import CardioShareCard from '../components/cardio/CardioShareCard'
+import ElevationProfile from '../components/cardio/ElevationProfile'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
 import type { CardioActivityType, CardioSession } from '../types'
@@ -203,7 +204,7 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
 
           {/* Mini map */}
           {pointsCount > 1 && (
-            <RouteMap points={pointsRef.current} height="180px" />
+            <RouteMap points={pointsRef.current} height="180px" live />
           )}
 
           {/* Controls */}
@@ -267,6 +268,11 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
           {/* Map */}
           {pointsCount > 1 && (
             <RouteMap points={pointsRef.current} height="250px" />
+          )}
+
+          {/* Elevation profile */}
+          {pointsCount > 2 && (
+            <ElevationProfile points={pointsRef.current} height={80} />
           )}
 
           {/* Expanded stats grid */}
