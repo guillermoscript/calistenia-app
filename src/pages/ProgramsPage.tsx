@@ -72,9 +72,10 @@ interface ProgramCardProps {
   onShare: () => void
   onDelete?: () => void
   onEdit?: () => void
+  onView?: () => void
 }
 
-function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onDelete, onEdit }: ProgramCardProps) {
+function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onDelete, onEdit, onView }: ProgramCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -216,13 +217,23 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          onClick={(e) => { e.stopPropagation() }}
-          className="h-8 px-4 text-[11px] font-bebas tracking-widest bg-lime-400 hover:bg-lime-300 text-zinc-900"
-        >
-          VER
-        </Button>
+        {isActive ? (
+          <Button
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onView?.() }}
+            className="h-8 px-4 text-[11px] font-bebas tracking-widest bg-emerald-500 hover:bg-emerald-400 text-white"
+          >
+            ACTIVO — IR A ENTRENAR
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onSelect() }}
+            className="h-8 px-4 text-[11px] font-bebas tracking-widest bg-lime-400 hover:bg-lime-300 text-zinc-900"
+          >
+            USAR ESTE PROGRAMA
+          </Button>
+        )}
         {canEdit && onEdit && (
           <Button
             variant="outline"
@@ -323,6 +334,7 @@ interface ProgramsPageProps {
   onCreateProgram: () => void
   onDeleteProgram?: (programId: string) => void
   onEditProgram?: (programId: string) => void
+  onViewProgram?: (programId: string) => void
 }
 
 export default function ProgramsPage({
@@ -334,6 +346,7 @@ export default function ProgramsPage({
   onCreateProgram,
   onDeleteProgram,
   onEditProgram,
+  onViewProgram,
 }: ProgramsPageProps) {
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const [activeFilter, setActiveFilter] = useState<FilterId>('oficiales')
@@ -392,6 +405,23 @@ export default function ProgramsPage({
           CREAR PROGRAMA
         </Button>
       </div>
+
+      {/* Explainer for users without active program or new users */}
+      {!activeProgram && (
+        <div className="mb-6 p-5 rounded-xl border-2 border-dashed border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl shrink-0">📋</div>
+            <div>
+              <div className="font-bebas text-xl text-[hsl(var(--lime))] mb-1">ELIGE UN PROGRAMA PARA EMPEZAR</div>
+              <div className="text-sm text-muted-foreground leading-relaxed">
+                Un programa es tu <strong className="text-foreground">plan de entrenamiento semanal</strong>.
+                Tiene ejercicios para cada día (Push, Pull, Legs...) y fases que van subiendo de dificultad.
+                Elige uno y empieza a entrenar hoy.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search bar */}
       <div id="tour-programs-search" className="relative mb-6">
@@ -483,6 +513,7 @@ export default function ProgramsPage({
               onShare={() => shareProgram(program.id, program.name)}
               onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
               onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
+              onView={onViewProgram ? () => onViewProgram(program.id) : undefined}
             />
           ))}
         </div>

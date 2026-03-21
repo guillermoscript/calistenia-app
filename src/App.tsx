@@ -432,6 +432,7 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     label: 'Social',
     items: [
       { path: '/friends',    label: 'Amigos',       icon: FriendsIcon },
+      { path: '/challenges', label: 'Desafios',     icon: ChallengeIcon },
       { path: '/leaderboard', label: 'Ranking',      icon: TrophyIcon },
     ],
   },
@@ -908,6 +909,7 @@ export default function App() {
                 onCreateProgram={handleCreateProgram}
                 onDeleteProgram={handleDeleteProgram}
                 onEditProgram={handleEditProgram}
+                onViewProgram={() => navigate('/workout')}
               />
             } />
             <Route path="/programs/new" element={

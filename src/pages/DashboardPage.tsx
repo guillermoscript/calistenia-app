@@ -282,6 +282,67 @@ export default function DashboardPage({
         <Progress value={progress} className="h-1.5" />
       </div>
 
+      {/* ═══ TODAY'S WORKOUT HERO ══════════════════════════════════════════ */}
+      {(() => {
+        const todayDayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[new Date().getDay()]
+        const todayDay = weekDays.find(d => d.id === todayDayId)
+        const todayIsRest = todayDay?.type === 'rest'
+        const todayWorkoutKey = `p${settings.phase || 1}_${todayDayId}`
+        const todayDone = isWorkoutDone(todayWorkoutKey)
+
+        return (
+          <div
+            className={cn(
+              'mb-6 p-5 rounded-xl border-2 transition-all',
+              todayDone
+                ? 'border-emerald-500/30 bg-emerald-500/5'
+                : todayIsRest
+                  ? 'border-border bg-card'
+                  : 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5 cursor-pointer hover:border-[hsl(var(--lime))]/50 active:scale-[0.99]',
+            )}
+            onClick={() => !todayIsRest && !todayDone && navigate(`/workout?day=${todayDayId}`)}
+            role={!todayIsRest && !todayDone ? 'button' : undefined}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">
+                  {todayDone ? 'Entrenamiento de hoy' : todayIsRest ? 'Hoy toca descanso' : 'Entrenamiento de hoy'}
+                </div>
+                <div className="font-bebas text-2xl md:text-3xl leading-none">
+                  {todayDone ? (
+                    <span className="text-emerald-500">COMPLETADO</span>
+                  ) : todayIsRest ? (
+                    <span className="text-muted-foreground">DIA DE DESCANSO</span>
+                  ) : (
+                    <span className="text-[hsl(var(--lime))]">{todayDay?.focus || 'ENTRENAR'}</span>
+                  )}
+                </div>
+                {activeProgram && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {activeProgram.name} · Fase {settings.phase || 1}
+                  </div>
+                )}
+              </div>
+              {todayDone ? (
+                <div className="size-12 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <svg className="size-6 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                </div>
+              ) : todayIsRest ? (
+                <div className="text-3xl shrink-0">🧘</div>
+              ) : (
+                <div className="size-12 rounded-full bg-[hsl(var(--lime))]/10 flex items-center justify-center shrink-0">
+                  <svg className="size-6 text-[hsl(var(--lime))]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ═══ QUICK ACTIONS ═══════════════════════════════════════════════════ */}
       <div className="mb-6">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -403,8 +464,26 @@ export default function DashboardPage({
         </div>
       )}
 
-      {/* Weekly Plan */}
+      {/* Active Program + Weekly Plan */}
       <div id="tour-weekly-plan" className="mb-6">
+        {activeProgram && (
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase shrink-0">Programa</div>
+              <span className="font-bebas text-lg text-[hsl(var(--lime))] truncate">{activeProgram.name}</span>
+            </div>
+            {programs && programs.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowProgramModal(true)}
+                className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))] h-8 shrink-0"
+              >
+                CAMBIAR
+              </Button>
+            )}
+          </div>
+        )}
         <WeekPlanWidget selectedPhase={settings.phase || 1} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />
       </div>
 

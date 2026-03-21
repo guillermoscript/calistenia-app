@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 
 const LEVELS = [
   { value: 'principiante', label: 'Principiante' },
@@ -29,7 +30,32 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [loaded, setLoaded] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [copied, setCopied] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const profileUrl = `${window.location.origin}/u/${user?.id}`
+
+  function shareWhatsApp() {
+    const msg = `💪 Sígueme en Calistenia App y entrenemos juntos!\n${profileUrl}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
+  }
+
+  async function copyProfileLink() {
+    try {
+      await navigator.clipboard.writeText(profileUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      const input = document.createElement('input')
+      input.value = profileUrl
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   useEffect(() => {
     if (!user?.id || loaded) return
@@ -161,6 +187,39 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           className="hidden"
         />
         <span className="text-[10px] text-muted-foreground mt-2">Toca para cambiar foto</span>
+      </div>
+
+      {/* Share profile */}
+      <div className="mb-6 rounded-xl border border-border bg-card p-4 motion-safe:animate-fade-in">
+        <div className="text-xs text-muted-foreground mb-3">Comparte tu perfil</div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={shareWhatsApp}
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] tracking-widest h-9 px-4"
+          >
+            <WhatsAppIcon className="size-4 mr-1.5" />
+            WHATSAPP
+          </Button>
+          <Button
+            onClick={copyProfileLink}
+            variant="outline"
+            size="sm"
+            className="text-[10px] tracking-widest h-9 px-4"
+          >
+            {copied ? (
+              <>
+                <svg className="size-3.5 mr-1.5 text-lime" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                COPIADO
+              </>
+            ) : (
+              <>
+                <svg className="size-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                COPIAR LINK
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-5">

@@ -352,7 +352,7 @@ export interface CardioSession {
 
 // ─── Challenges ──────────────────────────────────────────────────────────────
 
-export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand'
+export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand' | 'custom'
 export type ChallengeStatus = 'active' | 'ended'
 
 export interface Challenge {
@@ -360,6 +360,9 @@ export interface Challenge {
   creator: string
   title: string
   metric: ChallengeMetric
+  custom_metric?: string
+  description?: string
+  goal?: number
   starts_at: string
   ends_at: string
   status: ChallengeStatus

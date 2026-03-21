@@ -3,23 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useChallenges, type ChallengeWithMeta } from '../hooks/useChallenges'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import type { ChallengeMetric } from '../types'
-
-const METRIC_LABELS: Record<ChallengeMetric, string> = {
-  most_sessions: 'Mas sesiones',
-  most_pullups: 'Mas pull-ups',
-  most_pushups: 'Mas push-ups',
-  longest_streak: 'Mayor racha',
-  most_lsit: 'Mayor L-sit',
-  most_handstand: 'Mayor handstand',
-}
-
-function daysRemaining(endsAt: string): string {
-  const diff = Math.ceil((new Date(endsAt).getTime() - Date.now()) / 86400000)
-  if (diff <= 0) return 'Finalizado'
-  if (diff === 1) return '1 dia restante'
-  return `${diff} dias restantes`
-}
+import { daysRemaining, getMetricLabel } from '../lib/challenges'
 
 type Filter = 'active' | 'past'
 
@@ -36,6 +20,11 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
 
   const items = filter === 'active' ? active : past
 
+  const FILTERS: { id: Filter; label: string; count: number }[] = [
+    { id: 'active', label: 'Activos', count: active.length },
+    { id: 'past', label: 'Finalizados', count: past.length },
+  ]
+
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
       <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Social</div>
@@ -51,18 +40,18 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
         </Button>
       </div>
 
-      {/* Filter pills */}
-      <div id="tour-challenges-filters" className="flex gap-1.5 mb-6">
-        {([
-          { id: 'active' as Filter, label: 'Activos', count: active.length },
-          { id: 'past' as Filter, label: 'Finalizados', count: past.length },
-        ]).map(f => (
+      {/* Filter tabs */}
+      <div id="tour-challenges-filters" role="tablist" aria-label="Filtro de desafíos" className="flex gap-1.5 mb-6">
+        {FILTERS.map(f => (
           <button
             key={f.id}
+            role="tab"
+            aria-selected={filter === f.id}
+            aria-controls={`tabpanel-challenges-${f.id}`}
+            id={`tab-challenges-${f.id}`}
             onClick={() => setFilter(f.id)}
-            aria-pressed={filter === f.id}
             className={cn(
-              'px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border',
+              'px-3 py-2.5 min-h-[44px] rounded-md text-[11px] tracking-wide font-medium transition-colors duration-200 border',
               filter === f.id
                 ? 'text-lime border-current bg-accent/50'
                 : 'text-muted-foreground border-transparent hover:text-foreground',
@@ -74,43 +63,55 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
         ))}
       </div>
 
-      {/* Loading */}
-      {loading && (
-        <div className="text-sm text-muted-foreground py-12 text-center">Cargando desafios...</div>
-      )}
-
-      {/* Empty state */}
-      {!loading && items.length === 0 && (
-        <div className="text-center py-16 motion-safe:animate-scale-in">
-          <div className="text-3xl mb-3">🎯</div>
-          <div className="text-sm text-muted-foreground mb-1">
-            {filter === 'active' ? 'Sin desafios activos' : 'Sin desafios finalizados'}
+      <div role="tabpanel" id={`tabpanel-challenges-${filter}`} aria-labelledby={`tab-challenges-${filter}`}>
+        {/* Loading */}
+        {loading && (
+          <div className="flex flex-col gap-2">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="w-full px-4 py-3.5 rounded-lg border border-border bg-card flex items-center justify-between gap-3 animate-pulse">
+                <div className="flex-1 min-w-0">
+                  <div className="h-4 w-40 bg-muted rounded mb-2" />
+                  <div className="h-3 w-28 bg-muted rounded" />
+                </div>
+                <div className="h-3 w-20 bg-muted rounded shrink-0" />
+              </div>
+            ))}
           </div>
-          <div className="text-xs text-muted-foreground mb-4">
-            Crea un desafio y compite con tus amigos
-          </div>
-          {filter === 'active' && (
-            <Button onClick={() => navigate('/challenges/new')} className="bg-lime text-lime-foreground hover:bg-lime/90">
-              Crear desafio
-            </Button>
-          )}
-        </div>
-      )}
+        )}
 
-      {/* Challenge cards */}
-      {!loading && items.length > 0 && (
-        <div id="tour-challenges-list" className="flex flex-col gap-2">
-          {items.map((ch, i) => (
-            <div
-              key={ch.id}
-              className="motion-safe:animate-fade-in"
-              style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
-            >
-              <ChallengeCard challenge={ch} onTap={() => navigate(`/challenges/${ch.id}`)} />
+        {/* Empty state */}
+        {!loading && items.length === 0 && (
+          <div className="text-center py-16 motion-safe:animate-scale-in">
+            <div className="text-3xl mb-3 motion-safe:animate-gentle-float">🎯</div>
+            <div className="text-sm text-muted-foreground mb-1">
+              {filter === 'active' ? 'Sin desafíos activos' : 'Sin desafíos finalizados'}
             </div>
-          ))}
-        </div>
-      )}
+            <div className="text-xs text-muted-foreground mb-4">
+              Crea un desafío y compite con tus amigos
+            </div>
+            {filter === 'active' && (
+              <Button onClick={() => navigate('/challenges/new')} className="bg-lime text-lime-foreground hover:bg-lime/90">
+                Crear desafío
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Challenge cards */}
+        {!loading && items.length > 0 && (
+          <div id="tour-challenges-list" className="flex flex-col gap-2">
+            {items.map((ch, i) => (
+              <div
+                key={ch.id}
+                className="motion-safe:animate-fade-in"
+                style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
+              >
+                <ChallengeCard challenge={ch} onTap={() => navigate(`/challenges/${ch.id}`)} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -119,21 +120,23 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
 
 function ChallengeCard({ challenge: ch, onTap }: { challenge: ChallengeWithMeta; onTap: () => void }) {
   const isActive = ch.status === 'active'
+  const metricLabel = getMetricLabel(ch.metric, ch.custom_metric)
 
   return (
     <button
       onClick={onTap}
-      className={cn(
-        'w-full text-left px-4 py-3.5 rounded-lg border transition-colors flex items-center justify-between gap-3',
-        isActive
-          ? 'bg-card border-border hover:border-lime/30'
-          : 'bg-card/50 border-border/50',
-      )}
+      className="w-full text-left px-4 py-3.5 rounded-lg border transition-colors flex items-center justify-between gap-3 bg-card border-border hover:border-lime/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium truncate">{ch.title}</div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-[10px] text-lime tracking-wide">{METRIC_LABELS[ch.metric]}</span>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <span className="text-[10px] text-lime tracking-wide">{metricLabel}</span>
+          {ch.goal && ch.goal > 0 && (
+            <>
+              <span className="text-[10px] text-muted-foreground">·</span>
+              <span className="text-[10px] text-amber-400">Meta: {ch.goal}</span>
+            </>
+          )}
           <span className="text-[10px] text-muted-foreground">·</span>
           <span className={cn('text-[10px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
             {daysRemaining(ch.ends_at)}

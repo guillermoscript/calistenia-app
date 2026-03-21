@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '../data/workouts'
 import { calculateWorkoutDuration } from '../lib/duration'
 import ExerciseCard from '../components/ExerciseCard'
@@ -39,14 +39,25 @@ export default function WorkoutPage({
   const WEEK_DAYS = weekDaysProp  || FALLBACK_WEEK_DAYS
   const getWorkout = getWorkoutProp || fallbackGetWorkout
 
+  const [searchParams, setSearchParams] = useSearchParams()
+  const dayParam = searchParams.get('day') as DayId | null
+
   const [selectedPhase, setSelectedPhase] = useState(settings?.phase || 1)
-  const [selectedDay,   setSelectedDay]   = useState<DayId | null>(null)
+  const [selectedDay,   setSelectedDay]   = useState<DayId | null>(dayParam)
   const [restTime,      setRestTime]      = useState<number | null>(null)
   const [restExerciseId, setRestExerciseId] = useState<string | null>(null)
   const { getRestForExercise, setRestForExercise } = useRestPreferences(userId ?? null)
   const [viewMode,      setViewMode]      = useState<ViewMode>('list')
 
   useEffect(() => { if (settings?.phase) setSelectedPhase(settings.phase) }, [settings])
+
+  // Consume ?day= param on mount, then clean URL
+  useEffect(() => {
+    if (dayParam && WEEK_DAYS.some(d => d.id === dayParam)) {
+      setSelectedDay(dayParam)
+      setSearchParams({}, { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setViewMode('list')

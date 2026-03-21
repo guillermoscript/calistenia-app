@@ -44,32 +44,34 @@ const SEX_OPTIONS = [
   { value: 'female', label: 'Mujer' },
 ]
 
-const SECTIONS = [
+const HOW_IT_WORKS = [
   {
-    icon: '📊',
-    label: 'Dashboard',
-    desc: 'Tu vista principal — progreso general, racha, actividad del mes y objetivos personales.',
+    step: 1,
+    label: 'Elige un programa',
+    desc: 'Un programa es tu plan semanal de ejercicios. Tiene días asignados (Push, Pull, Legs...) y fases que van subiendo de nivel.',
+    accent: 'text-[hsl(var(--lime))]',
+    bg: 'bg-[hsl(var(--lime))]/10',
   },
   {
-    icon: '🏋️',
-    label: 'Entrenar',
-    desc: 'Selecciona la fase y el día. Inicia la sesión guiada con descansos, sonidos y registro de series.',
+    step: 2,
+    label: 'Entra y entrena',
+    desc: 'Desde el Dashboard toca el día que quieras. Verás los ejercicios con series, repeticiones y descansos. Dale a EMPEZAR y sigue la sesión guiada.',
+    accent: 'text-sky-400',
+    bg: 'bg-sky-400/10',
   },
   {
-    icon: '📋',
-    label: 'Programas',
-    desc: 'Explora programas existentes, duplica uno o crea el tuyo propio desde cero.',
+    step: 3,
+    label: 'Registra y mejora',
+    desc: 'Cada serie que hagas se guarda. Verás tu racha, tus records personales y tu progreso semana a semana.',
+    accent: 'text-amber-400',
+    bg: 'bg-amber-400/10',
   },
-  {
-    icon: '🍽️',
-    label: 'Nutrición',
-    desc: 'Registra comidas con foto y AI. Lleva tus macros y calorías del día.',
-  },
-  {
-    icon: '📈',
-    label: 'Progreso',
-    desc: 'Historial de sesiones, gráficos de volumen y evolución de tus ejercicios clave.',
-  },
+]
+
+const EXTRAS = [
+  { icon: '🍽️', label: 'Nutricion', desc: 'Registra comidas con foto y AI. Lleva macros y calorias.' },
+  { icon: '🏃', label: 'Cardio', desc: 'Correr, caminar o pedalear con GPS y mapa en vivo.' },
+  { icon: '👥', label: 'Social', desc: 'Sigue amigos, compara stats y compite en retos.' },
 ]
 
 export default function OnboardingFlow({
@@ -163,22 +165,39 @@ export default function OnboardingFlow({
             <div className="font-bebas text-6xl md:text-7xl text-[hsl(var(--lime))] mb-2 leading-none">
               CALISTENIA
             </div>
-            <div className="text-muted-foreground text-sm mb-8">Tu programa de entrenamiento personalizado</div>
+            <div className="text-muted-foreground text-sm mb-6">
+              {firstName ? `${firstName}, bienvenido` : 'Bienvenido'} a tu entrenamiento
+            </div>
+
+            {/* Visual flow explanation */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              {[
+                { icon: '📋', label: 'Programa' },
+                { icon: '→', label: '' },
+                { icon: '📅', label: 'Día' },
+                { icon: '→', label: '' },
+                { icon: '💪', label: 'Ejercicios' },
+                { icon: '→', label: '' },
+                { icon: '📈', label: 'Progreso' },
+              ].map((item, i) => (
+                <div key={i} className="flex flex-col items-center">
+                  <span className={cn('text-lg', item.label ? '' : 'text-muted-foreground/40 text-sm')}>{item.icon}</span>
+                  {item.label && <span className="text-[9px] text-muted-foreground mt-0.5">{item.label}</span>}
+                </div>
+              ))}
+            </div>
 
             <Card className="mb-6 text-left">
-              <CardContent className="p-6">
-                <div className="text-lg font-medium mb-1">
-                  {firstName ? `Hola, ${firstName}` : 'Bienvenido'}
-                </div>
-                <div className="text-sm text-muted-foreground leading-relaxed space-y-3">
-                  <p>
-                    Esta app te guía día a día por un programa de calistenia con fases progresivas.
-                    Cada fase dura varias semanas y aumenta en dificultad.
+              <CardContent className="p-5">
+                <div className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="mb-2">
+                    <strong className="text-foreground">Asi funciona:</strong> eliges un programa de entrenamiento
+                    y cada día tiene ejercicios asignados. Entras, sigues la sesión guiada y todo se registra.
                   </p>
-                  <p>
+                  <p className="text-xs">
                     {needsProfile
-                      ? 'Primero vamos a conocerte un poco, luego elegirás tu programa.'
-                      : 'Lo primero es elegir tu programa — puede ser uno existente o puedes crear el tuyo.'}
+                      ? 'Primero te pedimos unos datos basicos, luego eliges tu programa.'
+                      : 'Solo necesitas elegir un programa para empezar.'}
                   </p>
                 </div>
               </CardContent>
@@ -188,7 +207,7 @@ export default function OnboardingFlow({
               onClick={() => setStep(needsProfile ? profileStep : programStep)}
               className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
             >
-              EMPEZAR
+              {needsProfile ? 'EMPEZAR' : 'ELEGIR PROGRAMA'}
             </Button>
 
             <button
@@ -349,11 +368,19 @@ export default function OnboardingFlow({
         {/* Step: Choose program */}
         {step === programStep && (
           <div className="animate-[fadeUp_0.5s_ease]">
-            <div className="text-center mb-6">
+            <div className="text-center mb-4">
               <div className="font-bebas text-3xl mb-1">ELIGE TU PROGRAMA</div>
               <div className="text-sm text-muted-foreground">
-                Este será tu programa activo en el dashboard y en tus entrenamientos.
+                Un programa es tu plan semanal: tiene ejercicios para cada día y fases que suben de dificultad.
               </div>
+            </div>
+
+            {/* Hint for official programs */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-400/5 border border-amber-400/20 mb-4">
+              <span className="text-amber-400 text-sm">★</span>
+              <span className="text-xs text-muted-foreground">
+                Los programas <strong className="text-amber-400">RECOMENDADOS</strong> son los mejores para empezar.
+              </span>
             </div>
 
             <div className="space-y-3 mb-6 max-h-[50vh] overflow-y-auto pr-1">
@@ -468,33 +495,51 @@ export default function OnboardingFlow({
         {step === orientationStep && (
           <div className="animate-[fadeUp_0.5s_ease]">
             <div className="text-center mb-6">
-              <div className="font-bebas text-3xl mb-1">ASÍ FUNCIONA</div>
+              <div className="font-bebas text-3xl mb-1">COMO FUNCIONA</div>
               <div className="text-sm text-muted-foreground">
-                Las secciones principales de la app.
+                Tu rutina diaria en 3 pasos.
               </div>
             </div>
 
-            <div className="space-y-2.5 mb-8">
-              {SECTIONS.map((section) => (
-                <Card key={section.label}>
-                  <CardContent className="p-4 flex items-start gap-3">
-                    <div className="text-xl shrink-0 mt-0.5">{section.icon}</div>
-                    <div>
-                      <div className="font-medium text-sm">{section.label}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                        {section.desc}
-                      </div>
+            {/* Core flow — numbered steps */}
+            <div className="space-y-3 mb-6">
+              {HOW_IT_WORKS.map((item) => (
+                <div key={item.step} className="flex items-start gap-3">
+                  <div className={cn(
+                    'size-8 rounded-full flex items-center justify-center shrink-0 font-bebas text-lg',
+                    item.bg, item.accent,
+                  )}>
+                    {item.step}
+                  </div>
+                  <div className="pt-0.5">
+                    <div className={cn('font-medium text-sm', item.accent)}>{item.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                      {item.desc}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
+            </div>
+
+            {/* Extras */}
+            <div className="border-t border-border pt-4 mb-6">
+              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">Tambien puedes</div>
+              <div className="grid grid-cols-3 gap-2">
+                {EXTRAS.map((extra) => (
+                  <div key={extra.label} className="text-center p-2.5 rounded-lg bg-card border border-border">
+                    <div className="text-lg mb-1">{extra.icon}</div>
+                    <div className="text-[11px] font-medium">{extra.label}</div>
+                    <div className="text-[9px] text-muted-foreground mt-0.5 leading-snug">{extra.desc}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <Button
               onClick={handleFinish}
               className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
             >
-              IR AL DASHBOARD
+              IR A ENTRENAR
             </Button>
 
             <button

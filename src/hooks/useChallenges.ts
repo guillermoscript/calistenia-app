@@ -9,6 +9,9 @@ export interface ChallengeWithMeta extends Challenge {
 interface CreateChallengeData {
   title: string
   metric: ChallengeMetric
+  custom_metric?: string
+  description?: string
+  goal?: number
   starts_at: string
   ends_at: string
   invitedUserIds: string[]
@@ -54,6 +57,9 @@ export function useChallenges(userId: string | null) {
             creator: c.creator,
             title: c.title,
             metric: c.metric as ChallengeMetric,
+            custom_metric: c.custom_metric || '',
+            description: c.description || '',
+            goal: c.goal || 0,
             starts_at: c.starts_at,
             ends_at: c.ends_at,
             status: c.status as ChallengeStatus,
@@ -94,6 +100,9 @@ export function useChallenges(userId: string | null) {
         creator: userId,
         title: data.title,
         metric: data.metric,
+        custom_metric: data.custom_metric || '',
+        description: data.description || '',
+        goal: data.goal || 0,
         starts_at: data.starts_at,
         ends_at: data.ends_at,
         status: 'active',

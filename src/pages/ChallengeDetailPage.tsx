@@ -4,35 +4,11 @@ import { useChallengeDetail } from '../hooks/useChallengeDetail'
 import { useFollows } from '../hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import type { ChallengeMetric } from '../types'
+import { METRIC_UNITS, daysRemaining, getMetricLabel } from '../lib/challenges'
+import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import type { LeaderboardEntry } from '../hooks/useLeaderboard'
 
-const METRIC_LABELS: Record<ChallengeMetric, string> = {
-  most_sessions: 'Mas sesiones',
-  most_pullups: 'Mas pull-ups',
-  most_pushups: 'Mas push-ups',
-  longest_streak: 'Mayor racha',
-  most_lsit: 'Mayor L-sit',
-  most_handstand: 'Mayor handstand',
-}
-
-const METRIC_UNITS: Record<ChallengeMetric, string> = {
-  most_sessions: '',
-  most_pullups: 'reps',
-  most_pushups: 'reps',
-  longest_streak: 'dias',
-  most_lsit: 's',
-  most_handstand: 's',
-}
-
 const MEDALS = ['🥇', '🥈', '🥉']
-
-function daysRemaining(endsAt: string): string {
-  const diff = Math.ceil((new Date(endsAt).getTime() - Date.now()) / 86400000)
-  if (diff <= 0) return 'Finalizado'
-  if (diff === 1) return '1 dia restante'
-  return `${diff} dias restantes`
-}
 
 interface ChallengeDetailPageProps {
   userId: string
@@ -52,8 +28,20 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        <div className="text-sm text-muted-foreground py-12 text-center">Cargando desafio...</div>
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8 animate-pulse">
+        <div className="h-4 w-16 bg-muted rounded mb-4" />
+        <div className="h-8 w-56 bg-muted rounded mb-2" />
+        <div className="h-4 w-32 bg-muted rounded mb-6" />
+        <div className="flex flex-col gap-1.5">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="w-full px-4 py-3 rounded-lg border border-border bg-card flex items-center gap-3">
+              <div className="w-8 h-6 bg-muted rounded shrink-0" />
+              <div className="size-9 rounded-full bg-muted shrink-0" />
+              <div className="flex-1"><div className="h-4 w-24 bg-muted rounded" /></div>
+              <div className="h-7 w-12 bg-muted rounded shrink-0" />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
@@ -61,18 +49,19 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   if (!challenge) {
     return (
       <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        <button onClick={() => navigate('/challenges')} className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1">
+        <button onClick={() => navigate('/challenges')} className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
           <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="10,3 5,8 10,13" /></svg>
           Volver
         </button>
-        <div className="text-center py-16 text-muted-foreground text-sm">Desafio no encontrado</div>
+        <div className="text-center py-16 text-muted-foreground text-sm">Desafío no encontrado</div>
       </div>
     )
   }
 
   const isCreator = challenge.creator === userId
   const isActive = challenge.status === 'active'
-  const unit = METRIC_UNITS[challenge.metric]
+  const unit = challenge.metric === 'custom' ? '' : METRIC_UNITS[challenge.metric]
+  const metricLabel = getMetricLabel(challenge.metric, challenge.custom_metric)
   const invitableUsers = following.filter(u => !participantIds.has(u.id))
 
   const handleInvite = async (targetId: string) => {
@@ -81,29 +70,56 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
     setInviting(null)
   }
 
+  const shareWhatsApp = () => {
+    const msg = `🎯 Unete a mi desafio "${challenge.title}" en Calistenia App!\n${window.location.href}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Back */}
-      <button onClick={() => navigate('/challenges')} className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1">
+      <button onClick={() => navigate('/challenges')} className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
         <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="10,3 5,8 10,13" /></svg>
         Volver
       </button>
 
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 motion-safe:animate-fade-in">
         <h1 className="font-bebas text-3xl md:text-4xl leading-none mb-2">{challenge.title}</h1>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-lime border border-lime/30 bg-lime/10">
-            {METRIC_LABELS[challenge.metric]}
+            {metricLabel}
           </span>
+          {challenge.goal && challenge.goal > 0 && (
+            <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-amber-400 border border-amber-400/30 bg-amber-400/10">
+              Meta: {challenge.goal}
+            </span>
+          )}
           <span className={cn('text-[11px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
             {daysRemaining(challenge.ends_at)}
           </span>
         </div>
-        <div className="text-xs text-muted-foreground mt-2">
+        {challenge.description && (
+          <div className="text-xs text-muted-foreground mt-2 leading-relaxed">{challenge.description}</div>
+        )}
+        <div className="text-[10px] text-muted-foreground mt-2 opacity-70">
           {challenge.starts_at} → {challenge.ends_at}
         </div>
       </div>
+
+      {/* Share */}
+      {isActive && (
+        <div className="mb-6">
+          <Button
+            onClick={shareWhatsApp}
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] tracking-widest h-9 px-4"
+          >
+            <WhatsAppIcon className="size-3.5 mr-1.5" />
+            COMPARTIR POR WHATSAPP
+          </Button>
+        </div>
+      )}
 
       {/* Invite button (creator only) */}
       {isCreator && isActive && invitableUsers.length > 0 && (
@@ -162,7 +178,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   )
 }
 
-// ── Rank Row (same pattern as LeaderboardPage) ──────────────────────────────
+// ── Rank Row ─────────────────────────────────────────────────────────────────
 
 function RankRow({ entry, position, unit, onTap }: { entry: LeaderboardEntry; position: number; unit: string; onTap: () => void }) {
   const medal = MEDALS[position - 1]
@@ -171,7 +187,7 @@ function RankRow({ entry, position, unit, onTap }: { entry: LeaderboardEntry; po
     <button
       onClick={onTap}
       className={cn(
-        'w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors',
+        'w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         entry.isCurrentUser
           ? 'bg-lime/10 border border-lime/30 border-l-[3px] border-l-lime'
           : 'bg-card border border-border hover:border-lime/20',

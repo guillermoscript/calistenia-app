@@ -1,6 +1,7 @@
+import { useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '../data/workouts'
-import type { WeekDay, DayId } from '../types'
+import type { WeekDay } from '../types'
 
 interface WeekPlanWidgetProps {
   selectedPhase: number
@@ -9,6 +10,7 @@ interface WeekPlanWidgetProps {
 }
 
 export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays: weekDaysProp }: WeekPlanWidgetProps) {
+  const navigate = useNavigate()
   const WEEK_DAYS = weekDaysProp || FALLBACK_WEEK_DAYS
   const todayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[new Date().getDay()]
 
@@ -26,15 +28,20 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
           const isRest  = day.type === 'rest'
 
           return (
-            <div key={day.id}
+            <button
+              key={day.id}
+              onClick={() => !isRest && navigate(`/workout?day=${day.id}`)}
+              disabled={isRest}
               className={cn(
-                'relative rounded-lg border text-center transition-colors',
+                'relative rounded-lg border text-center transition-all duration-200',
                 'snap-start shrink-0 w-[48px] py-2.5 px-1',
                 'md:w-auto md:py-3 md:px-1.5',
                 done    && 'border-emerald-500/30 bg-emerald-500/5',
                 isToday && !done && 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5',
                 !done && !isToday && 'border-border bg-card',
-                isRest  && 'opacity-45',
+                isRest
+                  ? 'opacity-45 cursor-default'
+                  : 'cursor-pointer hover:border-[hsl(var(--lime))]/50 hover:bg-[hsl(var(--lime))]/5 active:scale-95',
               )}
             >
               {isToday && (
@@ -64,7 +71,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
               )}>
                 {day.focus.split(' ')[0]}
               </div>
-            </div>
+            </button>
           )
         })}
       </div>
