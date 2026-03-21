@@ -8,16 +8,6 @@ import { Badge } from '../components/ui/badge'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import type { ProgramMeta, UserRole } from '../types'
 
-// ── Filter categories ──────────────────────────────────────────────────────
-
-const FILTER_PILLS = [
-  { id: 'oficiales', label: 'Oficiales' },
-  { id: 'comunidad', label: 'Comunidad' },
-  { id: 'mis', label: 'Mis Programas' },
-] as const
-
-type FilterId = typeof FILTER_PILLS[number]['id']
-
 // ── Share helper ───────────────────────────────────────────────────────────
 
 async function shareProgram(programId: string, programName: string) {
@@ -349,28 +339,11 @@ export default function ProgramsPage({
   onViewProgram,
 }: ProgramsPageProps) {
   const isAdmin = userRole === 'admin' || userRole === 'editor'
-  const [activeFilter, setActiveFilter] = useState<FilterId>('oficiales')
   const [search, setSearch] = useState('')
 
-  const filteredPrograms = useMemo(() => {
-    let result = programs
-    switch (activeFilter) {
-      case 'oficiales':
-        result = result.filter(p => p.is_official)
-        // Sort: featured first, then alphabetical
-        result.sort((a, b) => {
-          if (a.is_featured && !b.is_featured) return -1
-          if (!a.is_featured && b.is_featured) return 1
-          return a.name.localeCompare(b.name)
-        })
-        break
-      case 'comunidad':
-        result = result.filter(p => !p.is_official)
-        break
-      case 'mis':
-        result = result.filter(p => p.created_by === userId)
-        break
-    }
+  // Always show all programs: featured first → official → user's own → community
+  const sortedPrograms = useMemo(() => {
+    let result = [...programs]
     if (search.trim()) {
       const q = search.toLowerCase().trim()
       result = result.filter(p =>
@@ -378,12 +351,25 @@ export default function ProgramsPage({
         p.description?.toLowerCase().includes(q)
       )
     }
+    result.sort((a, b) => {
+      // Featured first
+      if (a.is_featured && !b.is_featured) return -1
+      if (!a.is_featured && b.is_featured) return 1
+      // Official next
+      if (a.is_official && !b.is_official) return -1
+      if (!a.is_official && b.is_official) return 1
+      // User's own programs before community
+      const aIsOwn = a.created_by === userId
+      const bIsOwn = b.created_by === userId
+      if (aIsOwn && !bIsOwn) return -1
+      if (!aIsOwn && bIsOwn) return 1
+      return a.name.localeCompare(b.name)
+    })
     return result
-  }, [programs, activeFilter, userId, search])
+  }, [programs, userId, search])
 
-  const officialCount = useMemo(() => programs.filter(p => p.is_official).length, [programs])
-  const communityCount = useMemo(() => programs.filter(p => !p.is_official).length, [programs])
-  const myProgramsCount = useMemo(() => programs.filter(p => p.created_by === userId).length, [programs, userId])
+  const officialPrograms = useMemo(() => sortedPrograms.filter(p => p.is_official), [sortedPrograms])
+  const userPrograms = useMemo(() => sortedPrograms.filter(p => !p.is_official), [sortedPrograms])
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12 overflow-x-hidden">
@@ -393,7 +379,7 @@ export default function ProgramsPage({
         <div className="min-w-0">
           <h1 className="font-bebas text-4xl sm:text-5xl md:text-7xl leading-none tracking-wide truncate">PROGRAMAS</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
-            {filteredPrograms.length} programa{filteredPrograms.length !== 1 ? 's' : ''} disponible{filteredPrograms.length !== 1 ? 's' : ''}
+            {sortedPrograms.length} programa{sortedPrograms.length !== 1 ? 's' : ''} disponible{sortedPrograms.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Button
@@ -435,87 +421,80 @@ export default function ProgramsPage({
         />
       </div>
 
-      {/* Filter pills */}
-      <div id="tour-programs-filters" className="flex items-center gap-2 mb-8 overflow-x-auto scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
-        {FILTER_PILLS.map(pill => (
-          <button
-            key={pill.id}
-            onClick={() => setActiveFilter(pill.id)}
-            className={cn(
-              'px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-[12px] font-mono tracking-widest transition-all whitespace-nowrap border uppercase shrink-0',
-              activeFilter === pill.id
-                ? 'bg-lime-400/10 border-lime-400/30 text-lime-400'
-                : 'bg-transparent border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground',
-            )}
-          >
-            {pill.label}
-            {pill.id === 'oficiales' && officialCount > 0 && (
-              <span className="ml-2 text-[10px] opacity-60">({officialCount})</span>
-            )}
-            {pill.id === 'comunidad' && communityCount > 0 && (
-              <span className="ml-2 text-[10px] opacity-60">({communityCount})</span>
-            )}
-            {pill.id === 'mis' && myProgramsCount > 0 && (
-              <span className="ml-2 text-[10px] opacity-60">({myProgramsCount})</span>
-            )}
-          </button>
-        ))}
-
-        {(activeFilter !== 'oficiales' || search) && (
-          <button
-            onClick={() => { setActiveFilter('oficiales'); setSearch('') }}
-            className="ml-auto text-[11px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase shrink-0"
-          >
-            Limpiar filtros
-          </button>
-        )}
-      </div>
-
-      {/* Programs Grid */}
-      {filteredPrograms.length === 0 ? (
-        <div className="text-center py-24">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
-            <svg className="size-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="3" />
-              <line x1="8" y1="9" x2="16" y2="9" />
-              <line x1="8" y1="13" x2="14" y2="13" />
-              <line x1="8" y1="17" x2="11" y2="17" />
-            </svg>
+      {/* Programs — Official section */}
+      {officialPrograms.length > 0 && (
+        <div className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Programas Oficiales</div>
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] text-muted-foreground">{officialPrograms.length}</span>
           </div>
-          <p className="text-muted-foreground text-sm mb-2">
-            {activeFilter === 'mis'
-              ? 'No has creado ningun programa todavia.'
-              : search
-                ? 'No se encontraron programas con esa busqueda.'
-                : 'No hay programas disponibles.'}
-          </p>
-          {activeFilter === 'mis' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {officialPrograms.map(program => (
+              <ProgramCard
+                key={program.id}
+                program={program}
+                isOwn={program.created_by === userId}
+                canEdit={isAdmin || program.created_by === userId}
+                isActive={program.id === activeProgram?.id}
+                onSelect={() => onSelectProgram(program.id)}
+                onShare={() => shareProgram(program.id, program.name)}
+                onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
+                onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
+                onView={onViewProgram ? () => onViewProgram(program.id) : undefined}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Programs — Community / Custom section */}
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">
+            {userPrograms.some(p => p.created_by === userId) ? 'Tus Programas y Comunidad' : 'Comunidad'}
+          </div>
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-[10px] text-muted-foreground">{userPrograms.length}</span>
+        </div>
+        {userPrograms.length === 0 ? (
+          <div className="text-center py-12 rounded-xl border-2 border-dashed border-border">
+            <div className="text-muted-foreground text-sm mb-3">
+              {search ? 'No se encontraron programas.' : 'No hay programas de comunidad todavia.'}
+            </div>
             <Button
               variant="outline"
               onClick={onCreateProgram}
-              className="mt-4 text-[11px] font-mono tracking-widest border-border hover:border-lime-400/40 hover:text-lime-400"
+              className="text-[11px] font-mono tracking-widest border-border hover:border-lime-400/40 hover:text-lime-400"
             >
               <PlusIcon className="size-3 mr-2" />
               CREAR TU PRIMER PROGRAMA
             </Button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredPrograms.map(program => (
-            <ProgramCard
-              key={program.id}
-              program={program}
-              isOwn={program.created_by === userId}
-              canEdit={isAdmin || program.created_by === userId}
-              isActive={program.id === activeProgram?.id}
-              onSelect={() => onSelectProgram(program.id)}
-              onShare={() => shareProgram(program.id, program.name)}
-              onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
-              onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
-              onView={onViewProgram ? () => onViewProgram(program.id) : undefined}
-            />
-          ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {userPrograms.map(program => (
+              <ProgramCard
+                key={program.id}
+                program={program}
+                isOwn={program.created_by === userId}
+                canEdit={isAdmin || program.created_by === userId}
+                isActive={program.id === activeProgram?.id}
+                onSelect={() => onSelectProgram(program.id)}
+                onShare={() => shareProgram(program.id, program.name)}
+                onDelete={onDeleteProgram ? () => onDeleteProgram(program.id) : undefined}
+                onEdit={onEditProgram ? () => onEditProgram(program.id) : undefined}
+                onView={onViewProgram ? () => onViewProgram(program.id) : undefined}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* No results at all */}
+      {sortedPrograms.length === 0 && search && (
+        <div className="text-center py-16 text-muted-foreground text-sm">
+          No se encontraron programas con "{search}".
         </div>
       )}
     </div>

@@ -33,6 +33,18 @@ interface OnboardingFlowProps {
   onComplete: () => void
 }
 
+const DIFFICULTY_LABELS: Record<string, string> = {
+  beginner: 'PRINCIPIANTE',
+  intermediate: 'INTERMEDIO',
+  advanced: 'AVANZADO',
+}
+
+const DIFFICULTY_STYLES: Record<string, string> = {
+  beginner: 'text-emerald-400 border-emerald-400/30',
+  intermediate: 'text-amber-400 border-amber-400/30',
+  advanced: 'text-red-400 border-red-400/30',
+}
+
 const LEVELS = [
   { value: 'principiante', label: 'Principiante', desc: 'Nuevo en calistenia' },
   { value: 'intermedio', label: 'Intermedio', desc: '6+ meses entrenando' },
@@ -447,8 +459,15 @@ export default function OnboardingFlow({
                             {program.description}
                           </div>
                         )}
-                        <div className="text-[10px] text-muted-foreground mt-1">
-                          {program.duration_weeks} semanas
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {program.duration_weeks} semanas
+                          </span>
+                          {program.difficulty && (
+                            <Badge variant="outline" className={cn('text-[8px] px-1.5 py-0', DIFFICULTY_STYLES[program.difficulty] || '')}>
+                              {DIFFICULTY_LABELS[program.difficulty] || program.difficulty}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </CardContent>
