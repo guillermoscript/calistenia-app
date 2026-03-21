@@ -16,7 +16,7 @@ migrate((app) => {
     ],
     listRule: '@request.auth.id != ""',
     viewRule: '@request.auth.id != ""',
-    createRule: '@request.auth.id != "" && (@request.body.user = @request.auth.id || challenge.creator = @request.auth.id)',
+    createRule: '@request.auth.id != ""',
     updateRule: null,
     deleteRule: "user = @request.auth.id",
   })
