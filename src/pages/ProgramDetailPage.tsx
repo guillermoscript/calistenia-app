@@ -51,21 +51,23 @@ interface ProgramExercise {
 
 // ── Share helper ───────────────────────────────────────────────────────────
 
-async function shareProgram(programId: string, programName: string) {
+async function shareProgram(programId: string, programName: string, method: 'native' | 'whatsapp' | 'copy' = 'native') {
   const url = `${window.location.origin}/shared/${programId}`
-  const shareData = {
-    title: programName,
-    text: `Mira este programa de calistenia: ${programName}`,
-    url,
+  const message = `💪 Mira este programa de calistenia: ${programName}\n${url}`
+
+  if (method === 'whatsapp') {
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
+    return
   }
 
-  if (navigator.share && navigator.canShare?.(shareData)) {
+  if (method === 'native' && navigator.share) {
     try {
-      await navigator.share(shareData)
+      await navigator.share({ title: programName, text: `Mira este programa: ${programName}`, url })
       return
     } catch { /* cancelled */ }
   }
 
+  // Fallback: copy to clipboard
   try {
     await navigator.clipboard.writeText(url)
     alert('Enlace copiado al portapapeles')
@@ -495,6 +497,14 @@ export default function ProgramDetailPage({
                   {actionLoading === 'duplicate' ? 'DUPLICANDO...' : 'DUPLICAR'}
                 </Button>
               )}
+              <Button
+                variant="outline"
+                onClick={() => shareProgram(programId, program.name, 'whatsapp')}
+                className="font-mono text-[11px] tracking-widest h-11 px-5 border-emerald-500/30 text-emerald-400 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+              >
+                <span className="mr-2 text-sm">📲</span>
+                WHATSAPP
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => shareProgram(programId, program.name)}
