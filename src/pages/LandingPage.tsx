@@ -1,4 +1,5 @@
 import { useState, useEffect, useId, useRef, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 interface LandingPageProps {
   onGetStarted: () => void
@@ -672,7 +673,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <img src="/logo.png" alt="" className="w-5 h-5 rounded opacity-50" />
             <span className="font-bebas text-sm tracking-[0.2em] text-[hsl(0_0%_50%)]">CALISTENIA</span>
           </div>
-          <p className="text-xs text-[hsl(0_0%_50%)]">Entrena con propósito</p>
+          <div className="flex items-center gap-3 text-xs text-[hsl(0_0%_50%)]">
+            <Link to="/legal#privacy" className="hover:text-[hsl(0_0%_70%)] transition-colors">Privacidad</Link>
+            <span>·</span>
+            <Link to="/legal#terms" className="hover:text-[hsl(0_0%_70%)] transition-colors">Condiciones</Link>
+          </div>
         </div>
       </footer>
     </div>

@@ -116,7 +116,7 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
       <div className="font-bebas text-4xl md:text-5xl mb-6">CALENDARIO</div>
 
       {/* Month navigation */}
-      <div className="flex items-center justify-between mb-6">
+      <div id="tour-calendar-nav" className="flex items-center justify-between mb-6">
         <Button variant="outline" size="sm" onClick={prevMonth} aria-label="Mes anterior" className="h-8 px-3 text-xs">
           ‹
         </Button>
@@ -137,7 +137,7 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
       </div>
 
       {/* Calendar grid */}
-      <Card className="mb-6">
+      <Card id="tour-calendar-grid" className="mb-6">
         <CardContent className="p-4 md:p-6">
           {/* Day headers */}
           <div className="grid grid-cols-7 gap-1 mb-2">
@@ -195,7 +195,7 @@ export default function CalendarPage({ progress, onGoToWorkout, weekDays, active
 
       {/* Selected day detail */}
       {selectedDate && (
-        <Card>
+        <Card id="tour-calendar-detail">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div>

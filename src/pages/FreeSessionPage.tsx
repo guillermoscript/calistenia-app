@@ -353,7 +353,7 @@ export default function FreeSessionPage({
         <div className="flex-1 min-w-0">
 
           {/* Search */}
-          <div className="relative mb-4">
+          <div id="tour-free-search" className="relative mb-4">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="7" cy="7" r="5" /><line x1="11" y1="11" x2="15" y2="15" />
             </svg>
@@ -380,7 +380,7 @@ export default function FreeSessionPage({
           </div>
 
           {/* Category filter */}
-          <div className="relative mb-5 md:mb-4"
+          <div id="tour-free-categories" className="relative mb-5 md:mb-4"
             style={{ maskImage: 'linear-gradient(to right, black calc(100% - 24px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 24px), transparent 100%)' }}
           >
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none md:flex-wrap md:overflow-visible md:pb-0 md:[mask-image:none]" role="group" aria-label="Filtrar por categoria">
@@ -426,7 +426,7 @@ export default function FreeSessionPage({
               )}
             </div>
           ) : (
-            <div className="space-y-1" role="list" aria-label="Catalogo de ejercicios">
+            <div id="tour-free-catalog" className="space-y-1" role="list" aria-label="Catalogo de ejercicios">
               {filtered.map(ex => {
                 const isSelected = selectedIds.has(ex.id)
                 const orderNum = selectedOrder.get(ex.id) ?? 0
@@ -492,7 +492,7 @@ export default function FreeSessionPage({
       {/* ── Mobile: floating bar + bottom sheet ─────────────────────────────── */}
       <div className="lg:hidden">
         {/* Floating bottom bar */}
-        <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg">
+        <div id="tour-free-bar" className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg">
           <div className="flex items-center gap-3 px-4 py-2.5">
             <button
               onClick={() => selected.length > 0 && setQueueOpen(!queueOpen)}

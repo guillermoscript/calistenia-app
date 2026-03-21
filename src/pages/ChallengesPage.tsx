@@ -42,6 +42,7 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
       <div className="flex items-end justify-between mb-6">
         <h1 className="font-bebas text-4xl md:text-5xl">DESAFIOS</h1>
         <Button
+          id="tour-challenges-create"
           onClick={() => navigate('/challenges/new')}
           size="sm"
           className="bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] tracking-widest h-9"
@@ -51,7 +52,7 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
       </div>
 
       {/* Filter pills */}
-      <div className="flex gap-1.5 mb-6">
+      <div id="tour-challenges-filters" className="flex gap-1.5 mb-6">
         {([
           { id: 'active' as Filter, label: 'Activos', count: active.length },
           { id: 'past' as Filter, label: 'Finalizados', count: past.length },
@@ -98,7 +99,7 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
 
       {/* Challenge cards */}
       {!loading && items.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div id="tour-challenges-list" className="flex flex-col gap-2">
           {items.map((ch, i) => (
             <div
               key={ch.id}

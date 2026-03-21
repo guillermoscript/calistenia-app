@@ -71,7 +71,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
       <h1 className="font-bebas text-4xl md:text-5xl mb-6">AMIGOS</h1>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 mb-6">
+      <div id="tour-friends-tabs" className="flex gap-1.5 mb-6">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -151,6 +151,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
       {tab === 'buscar' && (
         <div>
           <Input
+            id="tour-friends-search"
             autoFocus
             value={search}
             onChange={e => setSearch(e.target.value)}

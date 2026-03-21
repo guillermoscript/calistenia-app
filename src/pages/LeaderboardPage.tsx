@@ -43,7 +43,7 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
       <h1 className="font-bebas text-4xl md:text-5xl mb-6">RANKING</h1>
 
       {/* Category pills */}
-      <div className="flex gap-1.5 flex-wrap mb-4">
+      <div id="tour-leaderboard-categories" className="flex gap-1.5 flex-wrap mb-4">
         {CATEGORIES.map(cat => (
           <button
             key={cat.id}
@@ -110,7 +110,7 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
 
       {/* Ranking list */}
       {!loading && !error && currentEntries.length > 0 && (
-        <div className="flex flex-col gap-1.5">
+        <div id="tour-leaderboard-list" className="flex flex-col gap-1.5">
           {currentEntries.map((entry, i) => (
             <div
               key={entry.userId}

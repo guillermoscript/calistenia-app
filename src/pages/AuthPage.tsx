@@ -1,4 +1,5 @@
 import { useState, type InputHTMLAttributes } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -476,6 +477,12 @@ export default function AuthPage({ signIn, signUp, signInWithGoogle, authError, 
             {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
           </button>
         </p>
+
+        <div className="flex items-center justify-center gap-3 mt-4 text-xs text-[hsl(0_0%_40%)]">
+          <Link to="/legal#privacy" className="hover:text-[hsl(0_0%_60%)] transition-colors">Privacidad</Link>
+          <span>·</span>
+          <Link to="/legal#terms" className="hover:text-[hsl(0_0%_60%)] transition-colors">Condiciones</Link>
+        </div>
       </div>
     </div>
   )

@@ -43,6 +43,8 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Social</div>
       <h1 className="font-bebas text-4xl md:text-5xl mb-6">ACTIVIDAD</h1>
 
+      {/* Tour anchor for the whole feed */}
+
       {loading && (
         <div className="text-sm text-muted-foreground py-12 text-center">Cargando actividad...</div>
       )}
@@ -59,7 +61,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       )}
 
       {!loading && items.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div id="tour-feed-list" className="flex flex-col gap-2">
           {items.map((item, i) => {
             const reaction = getReaction(item.id)
             return (
@@ -138,7 +140,7 @@ function FeedCard({ item, onTap, onTapUser, reactionCount, hasReacted, onReact }
       </button>
 
       {/* Reaction */}
-      <div className="mt-2 flex items-center">
+      <div id="tour-feed-reaction" className="mt-2 flex items-center">
         <button
           onClick={(e) => { e.stopPropagation(); onReact() }}
           className={cn(

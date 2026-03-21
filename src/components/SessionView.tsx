@@ -204,7 +204,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
   const secs = String(remaining % 60).padStart(2, '0')
   const pct  = totalSecs > 0 ? (remaining / totalSecs) : 0
   const circumference = 2 * Math.PI * 54
-  const strokeDash    = circumference * pct
+  const strokeOffset  = circumference * (1 - pct)
   const isUrgent = remaining < 10
 
   return (
@@ -222,9 +222,10 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
             cx="66" cy="66" r="54" fill="none"
             stroke={isUrgent ? 'hsl(var(--destructive))' : 'hsl(var(--lime))'}
             strokeWidth="6"
-            strokeDasharray={`${strokeDash} ${circumference}`}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeOffset}
             strokeLinecap="round"
-            style={{ transition: 'stroke-dasharray 0.9s linear, stroke 0.3s' }}
+            style={{ transition: 'stroke-dashoffset 0.9s linear, stroke 0.3s' }}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
@@ -277,13 +278,11 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
 
 interface ExerciseScreenProps {
   step: Step
-  stepIdx: number
-  totalSteps: number
   onLogged: (data: { reps: string; note: string }) => void
   logs?: ExerciseLog[]
 }
 
-function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: ExerciseScreenProps) {
+function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
   const [editOpen,   setEditOpen]   = useState<boolean>(false)
   const [customReps, setCustomReps] = useState<string>('')
   const [customNote, setCustomNote] = useState<string>('')
@@ -314,16 +313,8 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
     setCustomReps(''); setCustomNote(''); setEditOpen(false)
   }
 
-  const pct = totalSteps > 0 ? ((stepIdx + 1) / totalSteps) : 0
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* progress bar */}
-      <div className="h-[3px] bg-muted">
-        <div className="h-full bg-lime rounded-r-sm transition-[width] duration-400"
-          style={{ width: `${pct * 100}%` }} />
-      </div>
-
       <style>{`
         @keyframes sessionFlash {
           0%   { background: hsl(var(--lime) / 0.1); }
@@ -332,9 +323,7 @@ function ExerciseScreen({ step, stepIdx, totalSteps, onLogged, logs = [] }: Exer
         .ex-session-flash { animation: sessionFlash 0.35s ease-out; }
       `}</style>
 
-      <div className={`flex-1 flex flex-col px-6 pb-8 overflow-auto ${flash ? 'ex-session-flash' : ''}`}>
-        {/* Priority stripe */}
-        <div className={cn('h-[3px] rounded-b-sm mb-7', PRIORITY_COLORS[exercise.priority]?.stripe || 'bg-muted')} />
+      <div className={`flex-1 flex flex-col px-6 pt-6 pb-8 overflow-auto ${flash ? 'ex-session-flash' : ''}`}>
 
         {/* Exercise name + set counter */}
         <div className="mb-2">
@@ -719,31 +708,38 @@ export default function SessionView({
     <div className="fixed inset-0 z-[60] bg-background flex flex-col overflow-hidden">
       {/* ── TOP BAR ── */}
       {phase !== 'celebrate' && (
-        <div className="flex items-center justify-between px-5 h-[52px] border-b border-border flex-shrink-0">
-          <button
-            onClick={() => setShowExit(true)}
-            className="bg-transparent border-none cursor-pointer text-muted-foreground font-mono text-[11px] tracking-wide py-1 flex items-center gap-1.5 hover:text-foreground transition-colors"
-          >
-            ← SALIR
-          </button>
+        <div className="flex-shrink-0">
+          <div className="flex items-center justify-between px-5 h-[52px]">
+            <button
+              onClick={() => setShowExit(true)}
+              className="bg-transparent border-none cursor-pointer text-muted-foreground font-mono text-[11px] tracking-wide py-1 flex items-center gap-1.5 hover:text-foreground transition-colors"
+            >
+              ← SALIR
+            </button>
 
-          <div className="text-center">
-            {phase === 'exercise' && currentStep && (
-              <div className="font-mono text-[9px] text-muted-foreground/50 tracking-[2px]">
-                {currentStep.exercise.name.toUpperCase()}
-              </div>
-            )}
-            {phase === 'rest' && (
-              <div className="font-mono text-[9px] text-muted-foreground tracking-[3px]">DESCANSO</div>
-            )}
-            {phase === 'note' && (
-              <div className="font-mono text-[9px] text-lime tracking-[3px]">COMPLETADO</div>
-            )}
+            <div className="text-center">
+              {phase === 'exercise' && currentStep && (
+                <div className="font-mono text-[9px] text-muted-foreground/50 tracking-[2px]">
+                  {currentStep.exercise.name.toUpperCase()}
+                </div>
+              )}
+              {phase === 'rest' && (
+                <div className="font-mono text-[9px] text-muted-foreground tracking-[3px]">DESCANSO</div>
+              )}
+              {phase === 'note' && (
+                <div className="font-mono text-[9px] text-lime tracking-[3px]">COMPLETADO</div>
+              )}
+            </div>
+
+            <div className="font-mono text-[10px] text-muted-foreground tracking-wide">
+              {phase === 'note' ? steps.length : stepIdx + 1}
+              <span className="text-muted-foreground/30">/{steps.length}</span>
+            </div>
           </div>
-
-          <div className="font-mono text-[10px] text-muted-foreground tracking-wide">
-            {phase === 'note' ? steps.length : stepIdx + 1}
-            <span className="text-muted-foreground/30">/{steps.length}</span>
+          {/* Session progress bar */}
+          <div className="h-[2px] bg-muted">
+            <div className="h-full bg-lime rounded-r-sm transition-[width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+              style={{ width: `${((phase === 'note' ? steps.length : stepIdx + 1) / steps.length) * 100}%` }} />
           </div>
         </div>
       )}
@@ -752,8 +748,6 @@ export default function SessionView({
         <ExerciseScreen
           key={stepIdx}
           step={currentStep}
-          stepIdx={stepIdx}
-          totalSteps={steps.length}
           onLogged={handleLogged}
           logs={getExerciseLogs(currentStep.exercise.id)}
         />

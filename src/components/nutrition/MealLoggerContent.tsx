@@ -352,7 +352,7 @@ export default function MealLoggerContent({
           {captureSubView === 'main' && (
             <>
               {/* ── Meal type selector ── */}
-              <div className="flex gap-1.5 p-1 bg-muted/50 rounded-xl">
+              <div id="tour-meallog-type" className="flex gap-1.5 p-1 bg-muted/50 rounded-xl">
                 {MEAL_OPTIONS.map(opt => (
                   <button
                     key={opt.id}
@@ -373,7 +373,7 @@ export default function MealLoggerContent({
               </div>
 
               {/* ── Main input area ── */}
-              <div className="space-y-3">
+              <div id="tour-meallog-input" className="space-y-3">
                 {/* Quick text input */}
                 <form
                   onSubmit={e => { e.preventDefault(); handleQuickTextSubmit() }}
@@ -516,6 +516,7 @@ export default function MealLoggerContent({
 
                 {/* Barcode scanner button */}
                 <button
+                  id="tour-meallog-barcode"
                   onClick={startScan}
                   className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
                 >

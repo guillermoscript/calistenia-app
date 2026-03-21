@@ -42,3 +42,6 @@ skills-lock.json
 # Editor
 .vscode/
 .idea/
+
+# Google OAuth client secret
+secret.json

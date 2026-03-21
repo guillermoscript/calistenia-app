@@ -315,7 +315,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       </div>
 
       {/* ── Add new ── */}
-      <div className="flex gap-2 mb-8">
+      <div id="tour-reminders-add" className="flex gap-2 mb-8">
         {([
           { type: 'meal' as const, label: 'Comida', icon: '🍽️' },
           { type: 'workout' as const, label: 'Ejercicio', icon: '💪' },
@@ -550,7 +550,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
       {/* ── Timeline ── */}
       {timeline.length > 0 ? (
-        <div className="relative">
+        <div id="tour-reminders-timeline" className="relative">
           {/* Vertical line */}
           <div className="absolute left-[2.75rem] top-0 bottom-0 w-px bg-border/50" />
 

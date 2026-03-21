@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense, type ReactNode } from 'react'
-import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useProgress } from './hooks/useProgress'
 import { usePrograms } from './hooks/usePrograms'
@@ -37,6 +37,7 @@ const ActivityFeedPage = lazy(() => import('./pages/ActivityFeedPage'))
 const ChallengesPage = lazy(() => import('./pages/ChallengesPage'))
 const ChallengeDetailPage = lazy(() => import('./pages/ChallengeDetailPage'))
 const CreateChallengePage = lazy(() => import('./pages/CreateChallengePage'))
+const LegalPage = lazy(() => import('./pages/LegalPage'))
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -559,6 +560,13 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
+          {open && (
+            <div className="flex items-center gap-2 px-2 mt-2 text-[11px] text-muted-foreground">
+              <Link to="/legal#privacy" className="hover:text-foreground transition-colors">Privacidad</Link>
+              <span>·</span>
+              <Link to="/legal#terms" className="hover:text-foreground transition-colors">Condiciones</Link>
+            </div>
+          )}
         </SidebarFooter>
       </Sidebar>
 
@@ -760,6 +768,14 @@ export default function App() {
   if (!authReady) return <Loader />
 
   if (!user) {
+    // Allow legal pages for non-authenticated users
+    if (location.pathname === '/legal') {
+      return (
+        <Suspense fallback={<Loader />}>
+          <LegalPage />
+        </Suspense>
+      )
+    }
     // Allow shared program pages for non-authenticated users
     if (location.pathname.startsWith('/shared/')) {
       const shareCode = location.pathname.replace('/shared/', '')
@@ -962,6 +978,7 @@ export default function App() {
                 onDuplicateProgram={handleDuplicateProgram}
               />
             } />
+            <Route path="/legal" element={<LegalPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           </Suspense>

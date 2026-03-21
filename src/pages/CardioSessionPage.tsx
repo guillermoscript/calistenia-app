@@ -101,7 +101,7 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
       {state === 'idle' && !savedSession && (
         <div className="space-y-6">
           {/* Activity selector */}
-          <div className="flex gap-2 p-1 bg-muted/50 rounded-xl" role="radiogroup" aria-label="Tipo de actividad">
+          <div id="tour-cardio-activity" className="flex gap-2 p-1 bg-muted/50 rounded-xl" role="radiogroup" aria-label="Tipo de actividad">
             {ACTIVITIES.map(act => (
               <button
                 key={act.id}
@@ -124,6 +124,7 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
 
           {/* Start button */}
           <Button
+            id="tour-cardio-start"
             onClick={() => start(selectedActivity)}
             className="w-full h-14 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-xl tracking-widest shadow-lg shadow-lime/10"
           >
@@ -131,14 +132,14 @@ export default function CardioSessionPage({ userId, userWeight }: CardioSessionP
           </Button>
 
           {/* History */}
-          <div>
+          <div id="tour-cardio-history">
             <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Historial</div>
             <CardioHistory sessions={history} loading={historyLoading} />
           </div>
 
           {/* Stats section */}
           {(weeklyStats.totalSessions > 0 || monthlyStats.totalSessions > 0) && (
-            <div>
+            <div id="tour-cardio-stats">
               <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Estadísticas</div>
               <CardioStats weeklyStats={weeklyStats} monthlyStats={monthlyStats} records={records} />
             </div>
