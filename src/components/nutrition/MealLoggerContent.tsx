@@ -4,7 +4,9 @@ import { Button } from '../ui/button'
 import FoodNameInput from './FoodNameInput'
 import PortionInput from './PortionInput'
 import MealProgressBar from './MealProgressBar'
+import BarcodeScanner from './BarcodeScanner'
 import { useFoodCatalog } from '../../hooks/useFoodCatalog'
+import { useBarcodeScanner } from '../../hooks/useBarcodeScanner'
 import { useFoodHistory } from '../../hooks/useFoodHistory'
 import { useMealTemplates } from '../../hooks/useMealTemplates'
 import { calcMacros, normalizeToBase100, migrateLegacyFood, createEmptyFood } from '../../lib/macro-calc'
@@ -79,9 +81,21 @@ function compressImage(file: File, maxSize = 1024): Promise<File> {
 export default function MealLoggerContent({
   onAnalyze, onSave, userId, dailyTotals, goals, getRecentEntries, onSaveSuccess,
 }: MealLoggerContentProps) {
-  const { saveFoodToCatalog } = useFoodCatalog()
+  const { saveFoodToCatalog, completeWithAI } = useFoodCatalog()
   const { getRecentFoods, getHourSuggestions, trackFood } = useFoodHistory(userId)
   const { getTemplates, saveTemplate, useTemplate, deleteTemplate } = useMealTemplates(userId)
+  const { scanning, loading: barcodeLoading, error: barcodeError, startScan, handleBarcode, closeScan, reset: resetBarcode } = useBarcodeScanner({
+    onIncompleteProduct: completeWithAI,
+  })
+
+  const handleBarcodeResult = async (barcode: string) => {
+    const food = await handleBarcode(barcode)
+    if (food) {
+      saveFoodToCatalog(food).catch(() => {})
+      setFoods([food])
+      setStep('review')
+    }
+  }
 
   const [step, setStep] = useState<'capture' | 'analyzing' | 'review' | 'saving' | 'success'>('capture')
   const [captureSubView, setCaptureSubView] = useState<'main' | 'repeatMeal' | 'templates'>('main')
@@ -254,6 +268,7 @@ export default function MealLoggerContent({
     setMealDescription('')
     setShowSaveTemplate(false)
     setTemplateName('')
+    resetBarcode()
   }
 
   const handleSaveTemplate = async () => {
@@ -308,6 +323,29 @@ export default function MealLoggerContent({
 
   return (
     <div className="space-y-4 motion-safe:animate-fade-in">
+      {/* Barcode scanner overlay */}
+      <BarcodeScanner
+        scanning={scanning}
+        onScan={handleBarcodeResult}
+        onClose={closeScan}
+      />
+
+      {/* Barcode loading */}
+      {barcodeLoading && (
+        <div className="p-4 rounded-xl bg-muted/30 border border-border flex items-center gap-3">
+          <div className="size-5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+          <span className="text-sm text-muted-foreground">Buscando info nutricional...</span>
+        </div>
+      )}
+
+      {/* Barcode error */}
+      {barcodeError && (
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-center justify-between">
+          <span>{barcodeError}</span>
+          <button onClick={resetBarcode} className="text-xs px-2 py-1 rounded bg-red-400/10 hover:bg-red-400/20 transition-colors">OK</button>
+        </div>
+      )}
+
       {/* Step: Capture */}
       {step === 'capture' && (
         <div className="space-y-5 motion-safe:animate-fade-in">
@@ -345,6 +383,7 @@ export default function MealLoggerContent({
                     value={quickText}
                     onChange={e => setQuickText(e.target.value)}
                     placeholder="¿Qué comiste? ej: pollo, arroz, ensalada"
+                    aria-label="¿Qué comiste?"
                     maxLength={500}
                     className="w-full h-12 text-base pl-4 pr-12 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/50 transition-all"
                   />
@@ -404,14 +443,14 @@ export default function MealLoggerContent({
                             <button
                               onClick={() => cameraInputRef.current?.click()}
                               className="size-9 rounded-lg flex items-center justify-center hover:bg-lime-400/10 transition-colors"
-                              title="Tomar foto"
+                              aria-label="Tomar foto"
                             >
                               <CameraIcon className="size-4 text-muted-foreground/60" />
                             </button>
                             <button
                               onClick={() => galleryInputRef.current?.click()}
                               className="size-9 rounded-lg flex items-center justify-center hover:bg-lime-400/10 transition-colors"
-                              title="Elegir de galeria"
+                              aria-label="Elegir de galería"
                             >
                               <GalleryIcon className="size-4 text-muted-foreground/60" />
                             </button>
@@ -474,6 +513,15 @@ export default function MealLoggerContent({
                     </button>
                   </div>
                 )}
+
+                {/* Barcode scanner button */}
+                <button
+                  onClick={startScan}
+                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
+                >
+                  <BarcodeIcon className="size-5 text-muted-foreground" />
+                  <span className="text-[10px] font-mono tracking-wide text-muted-foreground">ESCANEAR CÓDIGO DE BARRAS</span>
+                </button>
               </div>
 
               {/* Templates link */}
@@ -1044,6 +1092,20 @@ function BackIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="15 18 9 12 15 6" />
+    </svg>
+  )
+}
+
+function BarcodeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="1" />
+      <line x1="7" y1="8" x2="7" y2="16" />
+      <line x1="9" y1="8" x2="9" y2="16" strokeWidth="0.75" />
+      <line x1="11" y1="8" x2="11" y2="16" />
+      <line x1="13" y1="8" x2="13" y2="16" strokeWidth="2" />
+      <line x1="15.5" y1="8" x2="15.5" y2="16" strokeWidth="0.75" />
+      <line x1="17" y1="8" x2="17" y2="16" />
     </svg>
   )
 }
