@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PHASES as FALLBACK_PHASES } from '../data/workouts'
 import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
@@ -11,28 +12,53 @@ import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
 import WaterTracker from '../components/WaterTracker'
 import WorkoutReminderWidget from '../components/WorkoutReminderWidget'
+import CardioWidget from '../components/cardio/CardioWidget'
+import LeaderboardWidget from '../components/friends/LeaderboardWidget'
 import { useWater } from '../hooks/useWater'
-import type { Settings, Phase, WeekDay, ProgramMeta } from '../types'
+import { useLeaderboard } from '../hooks/useLeaderboard'
+import type { Settings, Phase, WeekDay, ProgramMeta, CardioSession } from '../types'
+import type { CardioAggregateStats } from '../hooks/useCardioStats'
 
 
-interface StatCardProps {
-  value: string | number
+// ── Quick Action Card ────────────────────────────────────────────────────────
+
+interface QuickActionProps {
+  icon: React.ReactNode
   label: string
-  sub?: string
-  accent?: string
+  description: string
+  accent: string
+  onClick: () => void
 }
 
-function StatCard({ value, label, sub, accent = 'text-lime' }: StatCardProps) {
+function QuickAction({ icon, label, description, accent, onClick }: QuickActionProps) {
   return (
-    <Card>
-      <CardContent className="p-5">
-        <div className={cn('font-bebas text-5xl leading-none mb-1', accent)}>{value}</div>
-        <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{label}</div>
-        {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
-      </CardContent>
-    </Card>
+    <button
+      onClick={onClick}
+      className={cn(
+        'group text-left p-3 sm:p-4 bg-card border border-border rounded-xl min-h-[56px]',
+        'hover:border-current transition-all duration-200',
+        'hover:shadow-sm active:scale-[0.98]',
+        accent,
+      )}
+    >
+      <div className="flex items-center sm:items-start gap-2.5 sm:gap-3">
+        <div className={cn(
+          'size-9 sm:size-10 rounded-lg flex items-center justify-center shrink-0 text-lg',
+          'bg-current/10 transition-colors',
+        )}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <div className="text-[13px] sm:text-sm font-medium text-foreground group-hover:text-current transition-colors">{label}</div>
+          <div className="text-[11px] text-muted-foreground leading-snug mt-0.5 hidden sm:block">{description}</div>
+        </div>
+      </div>
+    </button>
   )
 }
+
+
+// ── Goal Card ────────────────────────────────────────────────────────────────
 
 interface GoalDef {
   label: string
@@ -101,14 +127,35 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
           variant="outline"
           size="sm"
           onClick={() => setEditing(true)}
-          className="h-7 px-2.5 text-[11px] tracking-wide hover:border-lime hover:text-lime"
+          className="h-9 sm:h-7 px-3 sm:px-2.5 text-[11px] tracking-wide hover:border-lime hover:text-lime"
         >
-          ACTUALIZAR MARCA
+          REGISTRAR PR
         </Button>
       )}
     </div>
   )
 }
+
+
+// ── Greeting helper ──────────────────────────────────────────────────────────
+
+function getGreeting(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'Buenos dias'
+  if (h < 19) return 'Buenas tardes'
+  return 'Buenas noches'
+}
+
+function formatToday(): string {
+  return new Date().toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
+
+// ── Dashboard Page ───────────────────────────────────────────────────────────
 
 interface DashboardPageProps {
   settings: Settings
@@ -133,6 +180,9 @@ interface DashboardPageProps {
   nutritionTotals?: { calories: number; protein: number; carbs: number; fat: number }
   nutritionGoals?: { dailyCalories: number } | null
   onGoToNutrition?: () => void
+  cardioWeeklyStats?: CardioAggregateStats
+  cardioLastSession?: CardioSession | null
+  onGoToCardio?: () => void
 }
 
 export default function DashboardPage({
@@ -141,18 +191,15 @@ export default function DashboardPage({
   activeProgram, programs, phases: phasesProp, weekDays, onSelectProgram,
   onCreateProgram, onEditProgram, onDuplicateProgram, userId,
   nutritionTotals, nutritionGoals, onGoToNutrition,
+  cardioWeeklyStats, cardioLastSession, onGoToCardio,
 }: DashboardPageProps) {
+  const navigate = useNavigate()
   const PHASES = phasesProp || FALLBACK_PHASES
   const [showProgramModal, setShowProgramModal] = useState(false)
   const { todayTotal: waterTotal, goal: waterGoal, addWater } = useWater(userId ?? null)
-  const [windowWidth, setWindowWidth] = useState(() => window.innerWidth)
-  useEffect(() => {
-    const handler = () => setWindowWidth(window.innerWidth)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [])
-  const isMobile = windowWidth < 768
-
+  const { entries: leaderboardEntries, load: loadLeaderboard } = useLeaderboard(userId ?? null)
+  useEffect(() => { if (userId) loadLeaderboard() }, [userId, loadLeaderboard])
+  const weeklyLeaderboard = leaderboardEntries.sessions_week
   const totalSessions = getTotalSessions()
   const streak = getLongestStreak()
   const weeklyDone = getWeeklyDoneCount()
@@ -177,23 +224,32 @@ export default function DashboardPage({
 
   const [showConfig, setShowConfig] = useState(false)
 
+  // Build display name from userId or fallback
+  const greeting = getGreeting()
+  const todayFormatted = formatToday()
+
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
 
-      {/* ═══ ZONE 1: Header + What to do today ═══════════════════════════════ */}
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Dashboard</div>
-      <div className="flex items-center gap-4 mb-1 flex-wrap">
-        <div className={cn('font-bebas leading-none', isMobile ? 'text-4xl' : 'text-5xl')}>TU PROGRESO</div>
-        <Badge variant={usePB ? 'outline' : 'secondary'} className={cn('text-[9px]', usePB ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10' : 'text-amber-600 border-amber-500/40 bg-amber-500/10')}>
-          {usePB ? '● POCKETBASE' : '● LOCAL'}
-        </Badge>
-      </div>
-      <div className="text-sm text-muted-foreground mb-6">
-        Semana <strong className="text-foreground">{Math.min(weekElapsed, totalWeeks)}</strong> de {totalWeeks} ·{' '}
-        Día <strong className="text-foreground">{Math.min(daysElapsed + 1, totalWeeks * 7)}</strong> de {totalWeeks * 7}
-        {activeProgram && (
-          <span className="text-lime"> · {activeProgram.name}</span>
-        )}
+      {/* ═══ WELCOME HEADER ═══════════════════════════════════════════════════ */}
+      <div className="mb-6">
+        <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase mb-1">
+          {todayFormatted}
+        </div>
+        <h1 className="font-bebas leading-none mb-1 text-4xl md:text-5xl">
+          {greeting}
+        </h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="text-sm text-muted-foreground">
+            Semana <strong className="text-foreground">{Math.min(weekElapsed, totalWeeks)}</strong> de {totalWeeks}
+            {activeProgram && (
+              <span className="text-lime"> · {activeProgram.name}</span>
+            )}
+          </div>
+          <Badge variant={usePB ? 'outline' : 'secondary'} className={cn('text-[9px]', usePB ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10' : 'text-amber-600 border-amber-500/40 bg-amber-500/10')}>
+            {usePB ? '● Sincronizado' : '● Solo local'}
+          </Badge>
+        </div>
       </div>
 
       {/* Nudge — prominent when present */}
@@ -201,36 +257,82 @@ export default function DashboardPage({
         <div className="mb-6 p-4 md:p-5 bg-amber-500/5 border border-amber-500/30 rounded-xl flex items-center gap-4 flex-wrap">
           <div className="flex-1">
             <div className="text-[10px] text-amber-600 dark:text-amber-400 tracking-widest mb-1 uppercase">
-              Llevas {daysSinceLastSession} días sin entrenar
+              Llevas {daysSinceLastSession} dias sin entrenar
             </div>
             <div className="text-sm text-muted-foreground">No pierdas el ritmo — incluso 20 minutos hacen la diferencia.</div>
           </div>
           <Button
             onClick={onGoToWorkout}
-            className={cn('bg-amber-500 hover:bg-amber-400 text-white font-bebas text-lg tracking-wide', isMobile && 'w-full')}
+            className="bg-amber-500 hover:bg-amber-400 text-white font-bebas text-lg tracking-wide w-full sm:w-auto"
           >
             ENTRENAR HOY
           </Button>
         </div>
       )}
 
-      {/* Progress bar — compact, always visible */}
-      <Card id="tour-progress" className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex justify-between mb-2 text-sm">
-            <span className={cn('text-[11px]', phaseAccent.text)}>{phase.name} · Semanas {phase.weeks}</span>
-            <span className="text-[11px] text-muted-foreground">{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} className="h-1.5" />
-        </CardContent>
-      </Card>
+      {/* Progress bar */}
+      <div id="tour-progress" className="mb-6">
+        <div className="flex justify-between mb-2">
+          <span className={cn('text-[11px]', phaseAccent.text)}>{phase.name} · Semanas {phase.weeks}</span>
+          <span className="text-[11px] text-muted-foreground">{Math.round(progress)}%</span>
+        </div>
+        <Progress value={progress} className="h-1.5" />
+      </div>
 
-      {/* Today row: Nutrition + Water side by side */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      {/* ═══ QUICK ACTIONS ═══════════════════════════════════════════════════ */}
+      <div className="mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <QuickAction
+            icon={<svg className="size-5 text-lime" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="6" width="3" height="4" rx="0.5" /><rect x="12" y="6" width="3" height="4" rx="0.5" /><line x1="4" y1="8" x2="12" y2="8" /><rect x="2.5" y="5" width="2" height="6" rx="0.5" /><rect x="11.5" y="5" width="2" height="6" rx="0.5" /></svg>}
+            label="Entrenar"
+            description="Seguir tu programa de hoy"
+            accent="text-lime"
+            onClick={onGoToWorkout}
+          />
+          <QuickAction
+            icon={<svg className="size-5 text-amber-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 1v4a3 3 0 006 0V1" /><line x1="8" y1="8" x2="8" y2="15" /><line x1="5" y1="1" x2="5" y2="5" /><line x1="8" y1="1" x2="8" y2="4" /><line x1="11" y1="1" x2="11" y2="5" /></svg>}
+            label="Nutricion"
+            description="Registrar comidas y macros"
+            accent="text-amber-400"
+            onClick={() => navigate('/nutrition')}
+          />
+          <QuickAction
+            icon={<svg className="size-5 text-sky-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="10" cy="3" r="1.5" /><path d="M5 16l2-5 3 2v5" /><path d="M8 8l-3 3 1.5 1" /><path d="M8 8l2-2 3 1" /></svg>}
+            label="Cardio"
+            description="Correr, caminar o pedalear con GPS"
+            accent="text-sky-500"
+            onClick={() => navigate('/cardio')}
+          />
+          <QuickAction
+            icon={<svg className="size-5 text-pink-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="12" height="12" rx="2" /><line x1="5" y1="6" x2="11" y2="6" /><line x1="5" y1="8.5" x2="11" y2="8.5" /><line x1="5" y1="11" x2="9" y2="11" /><polyline points="10,3 12,5 14,1" strokeWidth="2" /></svg>}
+            label="Sesion Libre"
+            description="Entrena lo que quieras hoy"
+            accent="text-pink-500"
+            onClick={() => navigate('/free-session')}
+          />
+          <QuickAction
+            icon={<svg className="size-5 text-red-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="8" y1="1" x2="8" y2="15" /><rect x="5" y="3" width="6" height="2.5" rx="0.5" /><rect x="5" y="6.75" width="6" height="2.5" rx="0.5" /><rect x="5" y="10.5" width="6" height="2.5" rx="0.5" /></svg>}
+            label="Lumbar"
+            description="Rutina de espalda baja"
+            accent="text-red-500"
+            onClick={() => navigate('/lumbar')}
+          />
+          <QuickAction
+            icon={<svg className="size-5 text-purple-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="1,12 5,7 8,9 12,4 15,6" /><line x1="1" y1="14" x2="15" y2="14" /></svg>}
+            label="Progreso"
+            description="Ver tu historial y estadisticas"
+            accent="text-purple-500"
+            onClick={() => navigate('/progress')}
+          />
+        </div>
+      </div>
+
+      {/* ═══ TODAY'S SNAPSHOT ═════════════════════════════════════════════════ */}
+      <div className={cn('grid grid-cols-1 gap-4 mb-6', onGoToCardio && cardioWeeklyStats ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
         {onGoToNutrition && (
           <button onClick={onGoToNutrition} className="text-left p-4 bg-card border border-border rounded-xl hover:border-lime/30 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="relative size-11 shrink-0" role="img" aria-label={`${nutritionGoals ? Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100) : 0}% de calorías diarias`}>
+              <div className="relative size-11 shrink-0" role="img" aria-label={`${nutritionGoals ? Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100) : 0}% de calorias diarias`}>
                 <svg width="44" height="44" viewBox="0 0 44 44">
                   <circle cx="22" cy="22" r="17" fill="none" stroke="currentColor" className="text-muted" strokeWidth="4" />
                   <circle
@@ -254,14 +356,14 @@ export default function DashboardPage({
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Nutrición</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Nutricion</div>
                 {nutritionGoals ? (
                   <div className="text-sm">
                     <span className="text-foreground font-medium">{Math.round(nutritionTotals?.calories || 0)}</span>
                     <span className="text-muted-foreground"> / {nutritionGoals.dailyCalories} kcal</span>
                   </div>
                 ) : (
-                  <div className="text-xs text-muted-foreground">Configurar macros</div>
+                  <div className="text-xs text-muted-foreground">Define tu meta diaria</div>
                 )}
               </div>
             </div>
@@ -270,42 +372,49 @@ export default function DashboardPage({
         <div className={cn(!onGoToNutrition && 'col-span-full')}>
           <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} compact />
         </div>
+        {onGoToCardio && cardioWeeklyStats && (
+          <CardioWidget
+            weeklyStats={cardioWeeklyStats}
+            lastSession={cardioLastSession ?? null}
+            onNavigate={onGoToCardio}
+          />
+        )}
       </div>
+
+      {/* Leaderboard widget — only if following someone */}
+      {weeklyLeaderboard.length > 1 && (
+        <div className="mb-6">
+          <LeaderboardWidget
+            entries={weeklyLeaderboard}
+            onNavigate={() => navigate('/leaderboard')}
+          />
+        </div>
+      )}
 
       {/* Weekly Plan */}
       <div id="tour-weekly-plan" className="mb-6">
         <WeekPlanWidget selectedPhase={settings.phase || 1} isWorkoutDone={isWorkoutDone} weekDays={weekDays} />
       </div>
 
-      {/* ═══ ZONE 2: Stats + History ═════════════════════════════════════════ */}
-      <div className="border-t border-border pt-6 mb-6">
-        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Resumen</div>
-
-        {/* Compact stats row — 4 values inline */}
-        <div id="tour-stats" className="grid grid-cols-4 gap-3 mb-6">
+      {/* ═══ STATS + ACTIVITY ════════════════════════════════════════════════ */}
+      <div className="mb-6">
+        <div id="tour-stats" className="grid grid-cols-3 gap-3 mb-5">
           <div className="text-center">
             <div className="font-bebas text-3xl md:text-4xl text-lime leading-none">{totalSessions}</div>
-            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Sesiones</div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Total</div>
           </div>
           <div className="text-center">
-            <div className="flex items-center justify-center gap-1">
-              <span className={cn('font-bebas text-3xl md:text-4xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>{streak}</span>
-              {streak >= 3 && <span className="text-lg">🔥</span>}
-            </div>
-            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Racha</div>
+            <span className={cn('font-bebas text-3xl md:text-4xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>{streak}</span>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Mejor racha</div>
           </div>
           <div className="text-center">
             <div className="font-bebas text-3xl md:text-4xl text-amber-400 leading-none">{weeklyDone}<span className="text-lg text-muted-foreground">/{settings.weeklyGoal || 5}</span></div>
-            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Semana</div>
-          </div>
-          <div className="text-center">
-            <div className="font-bebas text-3xl md:text-4xl text-pink-500 leading-none">{Math.round(progress)}%</div>
-            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Programa</div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Esta semana</div>
           </div>
         </div>
 
         {/* Activity heatmap */}
-        <div className="flex gap-1 flex-wrap" role="img" aria-label={`${Object.values(monthActivity).filter(Boolean).length} días activos este mes`}>
+        <div className="flex gap-1 flex-wrap" role="img" aria-label={`${Object.values(monthActivity).filter(Boolean).length} dias activos este mes`}>
           {calDays.map(([date, active]) => (
             <div
               key={date}
@@ -323,14 +432,14 @@ export default function DashboardPage({
         </div>
       </div>
 
-      {/* ═══ ZONE 3: Configuration (collapsed) ═══════════════════════════════ */}
-      <div className="border-t border-border pt-6">
+      {/* ═══ CONFIGURATION (collapsed) ═══════════════════════════════════════ */}
+      <div className="pt-4">
         <button
           onClick={() => setShowConfig(c => !c)}
           className="flex items-center justify-between w-full mb-4 group"
         >
           <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase group-hover:text-foreground transition-colors">
-            Configuración
+            Configuracion
           </div>
           <svg
             className={cn('size-4 text-muted-foreground transition-transform', showConfig && 'rotate-180')}
@@ -352,14 +461,14 @@ export default function DashboardPage({
                 <div className="flex gap-2 shrink-0">
                   {programs && programs.length > 1 && (
                     <Button variant="outline" size="sm" onClick={() => setShowProgramModal(true)}
-                      className="text-[10px] tracking-widest hover:border-lime hover:text-lime h-8">
-                      CAMBIAR
+                      className="text-[10px] tracking-widest hover:border-lime hover:text-lime h-10 sm:h-8">
+                      CAMBIAR PROGRAMA
                     </Button>
                   )}
                   {onCreateProgram && (
                     <Button variant="outline" size="sm" onClick={onCreateProgram}
-                      className="text-[10px] tracking-widest hover:border-sky-500 hover:text-sky-500 h-8">
-                      + NUEVO
+                      className="text-[10px] tracking-widest hover:border-sky-500 hover:text-sky-500 h-10 sm:h-8">
+                      CREAR PROGRAMA
                     </Button>
                   )}
                 </div>
@@ -367,7 +476,7 @@ export default function DashboardPage({
             )}
 
             {/* Phase + Goals side by side */}
-            <div className={cn('grid gap-5', isMobile ? 'grid-cols-1' : 'grid-cols-2')}>
+            <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
               <Card className={cn('border-l-[3px]', phaseAccent.border)}>
                 <CardContent className="p-5">
                   <div className={cn('text-[10px] tracking-widest mb-2 uppercase', phaseAccent.text)}>Fase Actual</div>
@@ -380,7 +489,7 @@ export default function DashboardPage({
                       return (
                         <Button key={p.id} variant="outline" size="sm"
                           onClick={() => updateSettings({ phase: p.id })} aria-pressed={isSelected}
-                          className={cn('h-7 px-3 text-[10px] tracking-wide transition-all', isSelected && cn('border-current', pa.text))}>
+                          className={cn('h-9 sm:h-7 px-4 sm:px-3 text-[11px] sm:text-[10px] tracking-wide transition-all', isSelected && cn('border-current', pa.text))}>
                           F{p.id}
                         </Button>
                       )
