@@ -1,0 +1,142 @@
+import { useState, useCallback, useRef, useEffect } from 'react'
+import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+
+export interface FollowUser {
+  id: string
+  displayName: string
+  email: string
+}
+
+interface UseFollowsReturn {
+  following: FollowUser[]
+  followers: FollowUser[]
+  followingIds: Set<string>
+  followingCount: number
+  followersCount: number
+  loading: boolean
+  follow: (targetUserId: string) => Promise<boolean>
+  unfollow: (targetUserId: string) => Promise<boolean>
+  isFollowing: (targetUserId: string) => boolean
+  reload: () => Promise<void>
+}
+
+export function useFollows(userId: string | null): UseFollowsReturn {
+  const [following, setFollowing] = useState<FollowUser[]>([])
+  const [followers, setFollowers] = useState<FollowUser[]>([])
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(false)
+  const initialized = useRef(false)
+
+  const load = useCallback(async () => {
+    if (!userId) return
+    const available = await isPocketBaseAvailable()
+    if (!available) return
+
+    setLoading(true)
+    try {
+      const [followingRes, followersRes] = await Promise.all([
+        pb.collection('follows').getFullList({
+          filter: pb.filter('follower = {:uid}', { uid: userId }),
+          expand: 'following',
+          $autoCancel: false,
+        }),
+        pb.collection('follows').getFullList({
+          filter: pb.filter('following = {:uid}', { uid: userId }),
+          expand: 'follower',
+          $autoCancel: false,
+        }),
+      ])
+
+      const followingUsers: FollowUser[] = followingRes.map((r: any) => {
+        const u = r.expand?.following
+        return {
+          id: u?.id || r.following,
+          displayName: u?.display_name || u?.email?.split('@')[0] || '?',
+          email: u?.email || '',
+        }
+      })
+
+      const followerUsers: FollowUser[] = followersRes.map((r: any) => {
+        const u = r.expand?.follower
+        return {
+          id: u?.id || r.follower,
+          displayName: u?.display_name || u?.email?.split('@')[0] || '?',
+          email: u?.email || '',
+        }
+      })
+
+      setFollowing(followingUsers)
+      setFollowers(followerUsers)
+      setFollowingIds(new Set(followingUsers.map(u => u.id)))
+    } catch (e) {
+      console.warn('Failed to load follows:', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [userId])
+
+  useEffect(() => {
+    if (!initialized.current && userId) {
+      initialized.current = true
+      load()
+    }
+  }, [userId, load])
+
+  const follow = useCallback(async (targetUserId: string): Promise<boolean> => {
+    if (!userId) return false
+    try {
+      await pb.collection('follows').create({
+        follower: userId,
+        following: targetUserId,
+      })
+      // Optimistic update
+      setFollowingIds(prev => new Set([...prev, targetUserId]))
+      await load() // Reload full data
+      return true
+    } catch (e: any) {
+      // Duplicate follow — already following
+      if (e?.status === 400) return false
+      console.warn('Follow error:', e)
+      return false
+    }
+  }, [userId, load])
+
+  const unfollow = useCallback(async (targetUserId: string): Promise<boolean> => {
+    if (!userId) return false
+    try {
+      const record = await pb.collection('follows').getFirstListItem(
+        pb.filter('follower = {:me} && following = {:them}', { me: userId, them: targetUserId }),
+        { $autoCancel: false },
+      )
+      await pb.collection('follows').delete(record.id)
+      // Optimistic update
+      setFollowingIds(prev => {
+        const next = new Set(prev)
+        next.delete(targetUserId)
+        return next
+      })
+      await load()
+      return true
+    } catch (e) {
+      console.warn('Unfollow error:', e)
+      return false
+    }
+  }, [userId, load])
+
+  const isFollowing = useCallback((targetUserId: string): boolean => {
+    return followingIds.has(targetUserId)
+  }, [followingIds])
+
+  return {
+    following,
+    followers,
+    followingIds,
+    followingCount: following.length,
+    followersCount: followers.length,
+    loading,
+    follow,
+    unfollow,
+    isFollowing,
+    reload: load,
+  }
+}
