@@ -453,6 +453,11 @@ export default function OnboardingFlow({
                               TUYO
                             </Badge>
                           )}
+                          {!isOwn && !program.is_official && program.created_by_name && (
+                            <span className="text-[9px] text-muted-foreground">
+                              por {program.created_by_name}
+                            </span>
+                          )}
                         </div>
                         {program.description && (
                           <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">

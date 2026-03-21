@@ -197,6 +197,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     const catalogRes = await pb.collection('programs').getList(1, 100, {
       filter: 'is_active = true',
       sort: 'name',
+      expand: 'created_by',
       $autoCancel: false,
     })
     const catalog: ProgramMeta[] = catalogRes.items.map(p => ({
@@ -205,6 +206,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       description:    p.description,
       duration_weeks: p.duration_weeks,
       created_by:     p.created_by || undefined,
+      created_by_name: (p.expand as any)?.created_by?.display_name || undefined,
       is_official:    p.is_official || false,
       is_featured:    p.is_featured || false,
       difficulty:     p.difficulty || 'beginner',

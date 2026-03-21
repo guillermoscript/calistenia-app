@@ -174,6 +174,7 @@ export interface ProgramMeta {
   description: string
   duration_weeks: number
   created_by?: string
+  created_by_name?: string
   is_official?: boolean
   is_featured?: boolean
   difficulty?: ProgramDifficulty

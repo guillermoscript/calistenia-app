@@ -198,9 +198,13 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
         >
           {DIFFICULTY_LABELS[diff] || diff.toUpperCase()}
         </Badge>
-        {isOwn && (
+        {isOwn ? (
           <span className="text-[10px] font-mono tracking-wide text-sky-400/70">
             Creado por ti
+          </span>
+        ) : program.created_by_name && !program.is_official && (
+          <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
+            por {program.created_by_name}
           </span>
         )}
       </div>
