@@ -1,0 +1,110 @@
+import { useState, useCallback, useRef } from 'react'
+import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { WORKOUTS } from '../data/workouts'
+
+export interface FeedItem {
+  id: string
+  userId: string
+  displayName: string
+  completedAt: string
+  date: string
+  workoutKey: string
+  workoutTitle: string
+  phase: number
+  note: string
+}
+
+const CACHE_TTL = 60_000 // 1 minute
+
+export function useActivityFeed(userId: string | null) {
+  const [items, setItems] = useState<FeedItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const cacheRef = useRef<{ data: FeedItem[]; timestamp: number } | null>(null)
+
+  const load = useCallback(async () => {
+    if (!userId) return
+    const available = await isPocketBaseAvailable()
+    if (!available) return
+
+    // Check cache
+    if (cacheRef.current && Date.now() - cacheRef.current.timestamp < CACHE_TTL) {
+      setItems(cacheRef.current.data)
+      return
+    }
+
+    setLoading(true)
+    try {
+      // 1. Get who I follow
+      const followsRes = await pb.collection('follows').getFullList({
+        filter: pb.filter('follower = {:uid}', { uid: userId }),
+        $autoCancel: false,
+      })
+      const followedIds = followsRes.map((r: any) => r.following as string)
+
+      if (followedIds.length === 0) {
+        setItems([])
+        setLoading(false)
+        return
+      }
+
+      // 2. Fetch recent sessions for each followed user in parallel
+      const userSessionsPromises = followedIds.map(uid =>
+        pb.collection('sessions').getList(1, 20, {
+          filter: pb.filter('user = {:uid}', { uid }),
+          sort: '-completed_at',
+          $autoCancel: false,
+        }).catch(() => ({ items: [] as any[] }))
+      )
+
+      // 3. Fetch user display names in parallel
+      const userDataPromises = followedIds.map(uid =>
+        pb.collection('users').getOne(uid, { $autoCancel: false }).catch(() => null)
+      )
+
+      const [sessionResults, userData] = await Promise.all([
+        Promise.all(userSessionsPromises),
+        Promise.all(userDataPromises),
+      ])
+
+      // Build user lookup
+      const userMap = new Map<string, string>()
+      userData.forEach((u: any) => {
+        if (u) userMap.set(u.id, u.display_name || u.email?.split('@')[0] || '?')
+      })
+
+      // 4. Flatten, enrich, and sort
+      const allSessions = sessionResults
+        .flatMap(res => (res as any).items || [])
+        .sort((a: any, b: any) =>
+          new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
+        )
+        .slice(0, 50)
+
+      const feedItems: FeedItem[] = allSessions.map((s: any) => {
+        const workout = WORKOUTS[s.workout_key]
+        return {
+          id: s.id,
+          userId: s.user,
+          displayName: userMap.get(s.user) || '?',
+          completedAt: s.completed_at,
+          date: s.completed_at?.split(' ')[0] || s.created?.split(' ')[0] || '',
+          workoutKey: s.workout_key,
+          workoutTitle: workout?.title || s.workout_key,
+          phase: s.phase || 1,
+          note: s.note || '',
+        }
+      })
+
+      setItems(feedItems)
+      cacheRef.current = { data: feedItems, timestamp: Date.now() }
+    } catch (e: any) {
+      if (e?.status !== 404 && e?.status !== 0) {
+        console.warn('Activity feed load error:', e)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [userId])
+
+  return { items, loading, load }
+}

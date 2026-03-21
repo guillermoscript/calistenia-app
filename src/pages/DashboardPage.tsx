@@ -14,8 +14,10 @@ import WaterTracker from '../components/WaterTracker'
 import WorkoutReminderWidget from '../components/WorkoutReminderWidget'
 import CardioWidget from '../components/cardio/CardioWidget'
 import LeaderboardWidget from '../components/friends/LeaderboardWidget'
+import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
 import { useWater } from '../hooks/useWater'
 import { useLeaderboard } from '../hooks/useLeaderboard'
+import { useActivityFeed } from '../hooks/useActivityFeed'
 import type { Settings, Phase, WeekDay, ProgramMeta, CardioSession } from '../types'
 import type { CardioAggregateStats } from '../hooks/useCardioStats'
 
@@ -198,7 +200,8 @@ export default function DashboardPage({
   const [showProgramModal, setShowProgramModal] = useState(false)
   const { todayTotal: waterTotal, goal: waterGoal, addWater } = useWater(userId ?? null)
   const { entries: leaderboardEntries, load: loadLeaderboard } = useLeaderboard(userId ?? null)
-  useEffect(() => { if (userId) loadLeaderboard() }, [userId, loadLeaderboard])
+  const { items: feedItems, load: loadFeed } = useActivityFeed(userId ?? null)
+  useEffect(() => { if (userId) { loadLeaderboard(); loadFeed() } }, [userId, loadLeaderboard, loadFeed])
   const weeklyLeaderboard = leaderboardEntries.sessions_week
   const totalSessions = getTotalSessions()
   const streak = getLongestStreak()
@@ -382,12 +385,21 @@ export default function DashboardPage({
       </div>
 
       {/* Leaderboard widget — only if following someone */}
-      {weeklyLeaderboard.length > 1 && (
-        <div className="mb-6">
-          <LeaderboardWidget
-            entries={weeklyLeaderboard}
-            onNavigate={() => navigate('/leaderboard')}
-          />
+      {/* Social widgets — only if following someone */}
+      {(weeklyLeaderboard.length > 1 || feedItems.length > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {weeklyLeaderboard.length > 1 && (
+            <LeaderboardWidget
+              entries={weeklyLeaderboard}
+              onNavigate={() => navigate('/leaderboard')}
+            />
+          )}
+          {feedItems.length > 0 && (
+            <ActivityFeedWidget
+              items={feedItems}
+              onNavigate={() => navigate('/feed')}
+            />
+          )}
         </div>
       )}
 

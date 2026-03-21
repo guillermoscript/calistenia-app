@@ -33,6 +33,7 @@ const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
 const AddFriendPage = lazy(() => import('./pages/AddFriendPage'))
+const ActivityFeedPage = lazy(() => import('./pages/ActivityFeedPage'))
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -78,6 +79,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/exercises', label: 'Ejercicios', icon: ExerciseIcon },
   { path: '/free-session', label: 'Sesion Libre', icon: FreeSessionIcon },
   { path: '/cardio', label: 'Cardio', icon: RunningIcon },
+  { path: '/feed', label: 'Actividad', icon: ActivityIcon },
   { path: '/friends', label: 'Amigos', icon: FriendsIcon },
   { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
   { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
@@ -95,6 +97,7 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/programs\/[^/]+$/)) return 'Detalle Programa'
   if (pathname.match(/^\/exercises\/[^/]+$/)) return 'Detalle Ejercicio'
   if (pathname.match(/^\/session\/[^/]+\/[^/]+$/)) return 'Detalle Sesion'
+  if (pathname === '/feed') return 'Actividad'
   if (pathname === '/friends') return 'Amigos'
   if (pathname === '/leaderboard') return 'Ranking'
   if (pathname.match(/^\/add\/[^/]+$/)) return 'Agregar Amigo'
@@ -195,6 +198,13 @@ function RunningIcon({ className }: IconProps) {
       <path d="M5 16l2-5 3 2v5" />
       <path d="M8 8l-3 3 1.5 1" />
       <path d="M8 8l2-2 3 1" />
+    </svg>
+  )
+}
+function ActivityIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M1 8h3l2-4 2 8 2-4h5" />
     </svg>
   )
 }
@@ -897,6 +907,7 @@ export default function App() {
             <Route path="/session/:date/:workoutKey" element={
               <SessionDetailPage progress={progress} />
             } />
+            <Route path="/feed" element={<ActivityFeedPage userId={user.id} />} />
             <Route path="/friends" element={<FriendsPage userId={user.id} />} />
             <Route path="/leaderboard" element={<LeaderboardPage userId={user.id} />} />
             <Route path="/add/:userId" element={<AddFriendPage currentUserId={user.id} />} />
