@@ -45,6 +45,6 @@ export function loadLogo(): Promise<HTMLImageElement | null> {
     img.crossOrigin = 'anonymous'
     img.onload = () => { _logoCache = img; resolve(img) }
     img.onerror = () => resolve(null)
-    img.src = '/hard.png'
+    img.src = '/logo.png'
   })
 }

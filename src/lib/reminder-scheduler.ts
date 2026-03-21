@@ -55,8 +55,8 @@ async function fireNotification(reminder: SchedulableReminder): Promise<void> {
 
   const options: NotificationOptions & { data?: any } = {
     body,
-    icon: '/icons/icon-192.svg',
-    badge: '/icons/icon-192.svg',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     tag,
     data: { url },
   }

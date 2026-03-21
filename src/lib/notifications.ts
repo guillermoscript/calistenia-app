@@ -37,8 +37,8 @@ async function send(opts: NotifyOptions): Promise<void> {
   const notifOptions: NotificationOptions & { vibrate?: number[] } = {
     body: opts.body,
     tag: opts.tag,
-    icon: '/icons/icon-192.svg',
-    badge: '/icons/icon-192.svg',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     requireInteraction: opts.requireInteraction ?? false,
     silent: false,
     vibrate: opts.vibrate,
@@ -55,7 +55,7 @@ async function send(opts: NotifyOptions): Promise<void> {
   } catch {
     // Fallback to basic notification
     try {
-      new Notification(opts.title, { body: opts.body, tag: opts.tag, icon: '/icons/icon-192.svg' })
+      new Notification(opts.title, { body: opts.body, tag: opts.tag, icon: '/icons/icon-192.png' })
     } catch {}
   }
 }

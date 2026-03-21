@@ -44,8 +44,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Calistenia App'
   const options: NotificationOptions = {
     body: data.body || '',
-    icon: '/icons/icon-192.svg',
-    badge: '/icons/icon-192.svg',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     data: { url: data.url || '/nutrition' },
   }
 

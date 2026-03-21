@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { FoodItemSchema } from "./schemas.js";
 import { resolveModel, type Tier } from "./model-resolver.js";
 
@@ -17,9 +17,9 @@ const SYSTEM_PROMPT = `Eres un nutricionista experto. Proporciona información n
 export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
   const { model, name: modelName } = resolveModel(tier);
 
-  const { object, usage } = await generateObject({
+  const { output, usage } = await generateText({
     model,
-    schema: FoodItemSchema,
+    output: Output.object({ schema: FoodItemSchema }),
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       {
@@ -30,7 +30,7 @@ export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
   });
 
   return {
-    food: object,
+    food: output,
     model_used: modelName,
     usage: {
       prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
