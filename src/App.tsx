@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth'
 import { useProgress } from './hooks/useProgress'
 import { usePrograms } from './hooks/usePrograms'
 import { useNutrition } from './hooks/useNutrition'
+import { useCardioStats } from './hooks/useCardioStats'
 // Eagerly loaded: core pages the user sees first
 import DashboardPage from './pages/DashboardPage'
 import WorkoutPage from './pages/WorkoutPage'
@@ -26,6 +27,12 @@ const AdminPage = lazy(() => import('./pages/AdminPage'))
 const EditorPage = lazy(() => import('./pages/EditorPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const RemindersPage = lazy(() => import('./pages/RemindersPage'))
+const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
+const CardioSessionPage = lazy(() => import('./pages/CardioSessionPage'))
+const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
+const FriendsPage = lazy(() => import('./pages/FriendsPage'))
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
+const AddFriendPage = lazy(() => import('./pages/AddFriendPage'))
 import OfflineBanner from './components/OfflineBanner'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -69,6 +76,10 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/calendar',  label: 'Calendario', icon: CalendarNavIcon },
   { path: '/programs',  label: 'Programas',  icon: ProgramIcon },
   { path: '/exercises', label: 'Ejercicios', icon: ExerciseIcon },
+  { path: '/free-session', label: 'Sesion Libre', icon: FreeSessionIcon },
+  { path: '/cardio', label: 'Cardio', icon: RunningIcon },
+  { path: '/friends', label: 'Amigos', icon: FriendsIcon },
+  { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
   { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
 ]
 
@@ -83,10 +94,16 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/programs\/[^/]+\/edit$/)) return 'Editar Programa'
   if (pathname.match(/^\/programs\/[^/]+$/)) return 'Detalle Programa'
   if (pathname.match(/^\/exercises\/[^/]+$/)) return 'Detalle Ejercicio'
+  if (pathname.match(/^\/session\/[^/]+\/[^/]+$/)) return 'Detalle Sesion'
+  if (pathname === '/friends') return 'Amigos'
+  if (pathname === '/leaderboard') return 'Ranking'
+  if (pathname.match(/^\/add\/[^/]+$/)) return 'Agregar Amigo'
   if (pathname === '/calendar') return 'Calendario'
   if (pathname === '/nutrition/log') return 'Registrar Comida'
   if (pathname === '/reminders') return 'Recordatorios'
   if (pathname.match(/^\/shared\/[^/]+$/)) return 'Programa Compartido'
+  if (pathname === '/free-session') return 'Sesion Libre'
+  if (pathname === '/cardio') return 'Cardio'
   if (pathname === '/admin') return 'Admin'
   if (pathname === '/editor') return 'Editor'
   if (pathname.match(/^\/u\/[^/]+$/)) return 'Perfil'
@@ -171,6 +188,48 @@ function ExerciseIcon({ className }: IconProps) {
     </svg>
   )
 }
+function RunningIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="10" cy="3" r="1.5" />
+      <path d="M5 16l2-5 3 2v5" />
+      <path d="M8 8l-3 3 1.5 1" />
+      <path d="M8 8l2-2 3 1" />
+    </svg>
+  )
+}
+function FriendsIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="6" cy="5" r="2.5" />
+      <path d="M1 14c0-2.5 2-4 5-4s5 1.5 5 4" />
+      <circle cx="12" cy="5" r="2" />
+      <path d="M12 9c2 0 3.5 1 3.5 3" />
+    </svg>
+  )
+}
+function TrophyIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M4 2h8v5a4 4 0 01-8 0V2z" />
+      <path d="M4 4H2a1 1 0 00-1 1v1a2 2 0 002 2h1" />
+      <path d="M12 4h2a1 1 0 011 1v1a2 2 0 01-2 2h-1" />
+      <line x1="8" y1="11" x2="8" y2="13" />
+      <line x1="5" y1="14" x2="11" y2="14" />
+    </svg>
+  )
+}
+function FreeSessionIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="2" y="2" width="12" height="12" rx="2" />
+      <line x1="5" y1="6" x2="11" y2="6" />
+      <line x1="5" y1="8.5" x2="11" y2="8.5" />
+      <line x1="5" y1="11" x2="9" y2="11" />
+      <polyline points="10,3 12,5 14,1" strokeWidth="2" />
+    </svg>
+  )
+}
 function CalendarNavIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -244,37 +303,60 @@ const MOBILE_TABS: { path: string; label: string; icon: React.FC<IconProps> }[] 
 ]
 
 function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; pathname: string }) {
-  const isTabActive = (path: string) => {
-    if (path === '/') return pathname === '/'
-    return pathname.startsWith(path)
+  const getActiveIndex = () => {
+    for (let i = 0; i < MOBILE_TABS.length; i++) {
+      const p = MOBILE_TABS[i].path
+      if (p === '/' ? pathname === '/' : pathname.startsWith(p)) return i
+    }
+    return -1
   }
+  const activeIndex = getActiveIndex()
+  const tabWidthPercent = 100 / MOBILE_TABS.length
 
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border bg-background/95 backdrop-blur-lg"
+      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border/50 bg-background/95 backdrop-blur-lg"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="flex items-stretch">
-        {MOBILE_TABS.map(({ path, label, icon: Icon }) => {
-          const active = isTabActive(path)
-          return (
-            <button
-              key={path}
-              onClick={() => navigate(path)}
-              className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[48px] py-1.5 transition-colors relative',
-                active ? 'text-lime-400' : 'text-muted-foreground',
-              )}
-            >
-              {active && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-lime-400 rounded-full" />
-              )}
-              <Icon className="size-5" />
-              <span className="text-[9px] font-mono tracking-wide">{label}</span>
-            </button>
-          )
-        })}
+      {/* Sliding active indicator */}
+      <div className="relative">
+        {activeIndex >= 0 && (
+          <div
+            className="absolute top-0 h-[2px] transition-transform duration-[250ms] ease-[cubic-bezier(0.25,1,0.5,1)]"
+            style={{
+              width: `${tabWidthPercent}%`,
+              transform: `translateX(${activeIndex * 100}%)`,
+            }}
+          >
+            <div className="mx-auto w-10 h-full bg-lime-400 rounded-full" />
+          </div>
+        )}
+        <div className="flex items-stretch">
+          {MOBILE_TABS.map(({ path, label, icon: Icon }, i) => {
+            const active = i === activeIndex
+            return (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className={cn(
+                  'flex-1 flex flex-col items-center justify-center gap-1 min-h-[52px] py-2 relative',
+                  'transition-colors duration-200 ease-out',
+                  active ? 'text-lime-400' : 'text-muted-foreground active:text-foreground',
+                )}
+              >
+                <Icon className={cn(
+                  'size-5 transition-transform duration-200 ease-[cubic-bezier(0.25,1,0.5,1)]',
+                  active && 'scale-110',
+                )} />
+                <span className={cn(
+                  'text-[10px] tracking-wide transition-[font-weight,opacity] duration-200',
+                  active ? 'font-semibold' : 'font-medium',
+                )}>{label}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </nav>
   )
@@ -292,14 +374,56 @@ interface AppShellProps {
   children: ReactNode
 }
 
+// Grouped nav sections for sidebar
+const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
+  {
+    label: 'Entrenamiento',
+    items: [
+      { path: '/',          label: 'Dashboard',    icon: LayoutIcon },
+      { path: '/workout',   label: 'Entrenar',     icon: DumbbellIcon },
+      { path: '/free-session', label: 'Sesion Libre', icon: FreeSessionIcon },
+      { path: '/cardio',    label: 'Cardio',       icon: RunningIcon },
+      { path: '/lumbar',    label: 'Lumbar',        icon: SpineIcon },
+    ],
+  },
+  {
+    label: 'Seguimiento',
+    items: [
+      { path: '/progress',  label: 'Progreso',     icon: ChartIcon },
+      { path: '/nutrition',  label: 'Nutricion',    icon: NutritionIcon },
+      { path: '/calendar',  label: 'Calendario',   icon: CalendarNavIcon },
+    ],
+  },
+  {
+    label: 'Explorar',
+    items: [
+      { path: '/programs',  label: 'Programas',    icon: ProgramIcon },
+      { path: '/exercises',  label: 'Ejercicios',   icon: ExerciseIcon },
+    ],
+  },
+  {
+    label: 'Social',
+    items: [
+      { path: '/friends',    label: 'Amigos',       icon: FriendsIcon },
+      { path: '/leaderboard', label: 'Ranking',      icon: TrophyIcon },
+    ],
+  },
+]
+
 function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
-  const { open } = useSidebar()
+  const { open, isMobile, setOpenMobile } = useSidebar()
   const navigate = useNavigate()
   const location = useLocation()
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
     return location.pathname.startsWith(path)
+  }
+
+  // Navigate and close sidebar on mobile
+  const handleNav = (path: string) => {
+    navigate(path)
+    if (isMobile) setOpenMobile(false)
   }
 
   return (
@@ -315,98 +439,137 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
         </SidebarHeader>
 
         <SidebarContent className="px-2">
-          <SidebarMenu id="tour-sidebar-nav">
-            {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
-              <SidebarMenuItem key={path}>
-                <SidebarMenuButton
-                  isActive={isActive(path)}
-                  onClick={() => navigate(path)}
-                  tooltip={label}
-                >
-                  <Icon className="size-4 shrink-0" />
-                  <span>{label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+          <div id="tour-sidebar-nav" className="flex flex-col gap-4">
+            {NAV_SECTIONS.map((section) => (
+              <div key={section.label}>
+                {open && (
+                  <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    {section.label}
+                  </div>
+                )}
+                <SidebarMenu>
+                  {section.items.map(({ path, label, icon: Icon }) => (
+                    <SidebarMenuItem key={path}>
+                      <SidebarMenuButton
+                        isActive={isActive(path)}
+                        onClick={() => handleNav(path)}
+                        tooltip={label}
+                      >
+                        <Icon className="size-4 shrink-0" />
+                        <span>{label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </div>
             ))}
             {/* Role-based nav items */}
-            {userRole === 'admin' && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={isActive('/admin')}
-                  onClick={() => navigate('/admin')}
-                  tooltip="Admin"
-                >
-                  <ShieldIcon className="size-4 shrink-0" />
-                  <span>Admin</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+            {(userRole === 'admin' || userRole === 'editor') && (
+              <div>
+                {open && (
+                  <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    Gestión
+                  </div>
+                )}
+                <SidebarMenu>
+                  {userRole === 'admin' && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        isActive={isActive('/admin')}
+                        onClick={() => handleNav('/admin')}
+                        tooltip="Admin"
+                      >
+                        <ShieldIcon className="size-4 shrink-0" />
+                        <span>Admin</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  {(userRole === 'editor' || userRole === 'admin') && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        isActive={isActive('/editor')}
+                        onClick={() => handleNav('/editor')}
+                        tooltip="Editor"
+                      >
+                        <PencilIcon className="size-4 shrink-0" />
+                        <span>Editor</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                </SidebarMenu>
+              </div>
             )}
-            {userRole === 'editor' && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={isActive('/editor')}
-                  onClick={() => navigate('/editor')}
-                  tooltip="Editor"
-                >
-                  <PencilIcon className="size-4 shrink-0" />
-                  <span>Editor</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-          </SidebarMenu>
+          </div>
         </SidebarContent>
 
         <SidebarFooter className="px-2 py-3">
           <Separator className="mb-3 bg-border" />
           <div className="px-2 mb-2 flex items-center gap-2">
-            <div className="size-6 rounded-full bg-accent flex items-center justify-center text-xs font-medium text-foreground shrink-0">
+            <div className="size-7 rounded-full bg-accent flex items-center justify-center text-xs font-semibold text-foreground shrink-0">
               {displayName?.[0]?.toUpperCase() ?? '?'}
             </div>
             {open && (
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-foreground truncate">{displayName}</div>
-                <div className="text-xs text-muted-foreground">Fase {settings.phase}</div>
+                <div className="text-[11px] text-muted-foreground">Fase {settings.phase}</div>
               </div>
             )}
           </div>
-          <SidebarMenuButton onClick={signOut} className="text-muted-foreground hover:text-destructive">
-            <LogOutIcon className="size-4 shrink-0" />
-            <span>Cerrar sesion</span>
-          </SidebarMenuButton>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={toggleDark}
+                tooltip={dark ? 'Modo claro' : 'Modo oscuro'}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {dark ? <SunIcon className="size-4 shrink-0" /> : <MoonIcon className="size-4 shrink-0" />}
+                <span>{dark ? 'Modo claro' : 'Modo oscuro'}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={signOut} className="text-muted-foreground hover:text-destructive">
+                <LogOutIcon className="size-4 shrink-0" />
+                <span>Cerrar sesion</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
 
       {/* Main content area */}
       <SidebarInset>
-        {/* Top bar */}
-        <header className="sticky top-0 z-40 flex h-12 items-center gap-3 border-b border-border bg-background/95 backdrop-blur px-4">
+        {/* Top bar — compact on mobile, full on desktop */}
+        <header className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-border bg-background/95 backdrop-blur px-3 sm:px-4 sm:gap-3">
           <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-          <Separator orientation="vertical" className="h-4 bg-border" />
-          {/* Breadcrumb-style current section */}
-          <nav aria-label="breadcrumb">
-            <span className="text-sm font-medium text-foreground">
+          <Separator orientation="vertical" className="h-4 bg-border hidden sm:block" />
+          {/* Current section title */}
+          <nav aria-label="breadcrumb" className="flex-1 min-w-0">
+            <span className="text-sm font-medium text-foreground truncate block">
               {getBreadcrumb(location.pathname)}
             </span>
           </nav>
-          <div className="ml-auto flex items-center gap-3">
-            <span className="text-xs text-muted-foreground border border-border rounded px-2 py-0.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* Phase badge — desktop only */}
+            <span className="hidden sm:inline-flex text-[11px] text-muted-foreground border border-border rounded px-2 py-0.5 font-mono">
               Fase {settings.phase}
             </span>
+            {/* Help button — desktop only */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => replayTourForPage(location.pathname)}
-              className="size-7 text-muted-foreground hover:text-[hsl(var(--lime))]"
+              className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground"
               aria-label="Guia de la pagina"
               title="Guia de la pagina"
             >
               <span className="text-sm font-bold">?</span>
             </Button>
+            {/* Dark toggle — desktop only (moved to sidebar footer for mobile) */}
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleDark}
-              className="size-7 text-muted-foreground hover:text-foreground"
+              className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground"
               aria-label={dark ? 'Activar modo claro' : 'Activar modo oscuro'}
             >
               {dark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
@@ -525,6 +688,12 @@ export default function App() {
   } = usePrograms(user?.id ?? null)
 
   const { goals: nutritionGoals, getDailyTotals: getNutritionDailyTotals } = useNutrition(user?.id ?? null)
+  const { weeklyStats: cardioWeeklyStats, lastSession: cardioLastSession, loadStats: loadCardioStats } = useCardioStats(user?.id ?? null)
+
+  // Load cardio stats on mount
+  useEffect(() => {
+    if (user?.id) loadCardioStats()
+  }, [user?.id, loadCardioStats])
 
   const handleCreateProgram = () => {
     navigate('/programs/new')
@@ -649,6 +818,9 @@ export default function App() {
                 nutritionTotals={getNutritionDailyTotals()}
                 nutritionGoals={nutritionGoals}
                 onGoToNutrition={() => navigate('/nutrition')}
+                cardioWeeklyStats={cardioWeeklyStats}
+                cardioLastSession={cardioLastSession}
+                onGoToCardio={() => navigate('/cardio')}
               />
             } />
             <Route path="/workout" element={
@@ -712,7 +884,22 @@ export default function App() {
               />
             } />
             <Route path="/exercises" element={<ExerciseLibraryPage />} />
+            <Route path="/free-session" element={
+              <FreeSessionPage
+                onLogSet={logSet}
+                onMarkDone={markWorkoutDone}
+                onGoToDashboard={() => navigate('/')}
+                getExerciseLogs={getExerciseLogs}
+              />
+            } />
+            <Route path="/cardio" element={<CardioSessionPage userId={user.id} userWeight={nutritionGoals?.weight} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
+            <Route path="/session/:date/:workoutKey" element={
+              <SessionDetailPage progress={progress} />
+            } />
+            <Route path="/friends" element={<FriendsPage userId={user.id} />} />
+            <Route path="/leaderboard" element={<LeaderboardPage userId={user.id} />} />
+            <Route path="/add/:userId" element={<AddFriendPage currentUserId={user.id} />} />
             {/* Role-gated routes */}
             {userRole === 'admin' && (
               <Route path="/admin" element={<AdminPage programs={programs} />} />

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { pb } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
+import { useFollows } from '../hooks/useFollows'
 
 interface ProfileData {
   id: string
@@ -47,10 +48,13 @@ export default function UserProfilePage({
   currentUserSessions,
 }: UserProfilePageProps) {
   const { userId } = useParams<{ userId: string }>()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [comparing, setComparing] = useState(false)
   const isOwnProfile = currentUserId === userId
+  const { isFollowing, follow, unfollow, followingCount, followersCount } = useFollows(currentUserId || null)
+  const [followLoading, setFollowLoading] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -165,19 +169,39 @@ export default function UserProfilePage({
             Miembro desde {profile.memberSince} · Fase {profile.phase}
           </div>
         </div>
-        {!isOwnProfile && currentUserId && (
-          <Button
-            variant={comparing ? 'default' : 'outline'}
-            onClick={() => setComparing(c => !c)}
-            className={cn(
-              'text-[10px] tracking-widest',
-              comparing
-                ? 'bg-[hsl(var(--lime))] text-background'
-                : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
-            )}
-          >
-            {comparing ? 'OCULTAR' : 'COMPARAR'}
-          </Button>
+        {!isOwnProfile && currentUserId && userId && (
+          <div className="flex gap-2 shrink-0">
+            <Button
+              variant={isFollowing(userId) ? 'default' : 'outline'}
+              disabled={followLoading}
+              onClick={async () => {
+                setFollowLoading(true)
+                if (isFollowing(userId)) await unfollow(userId)
+                else await follow(userId)
+                setFollowLoading(false)
+              }}
+              className={cn(
+                'text-[10px] tracking-widest',
+                isFollowing(userId)
+                  ? 'bg-[hsl(var(--lime))] text-background hover:bg-red-500 hover:text-white'
+                  : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
+              )}
+            >
+              {followLoading ? '...' : isFollowing(userId) ? 'SIGUIENDO' : 'SEGUIR'}
+            </Button>
+            <Button
+              variant={comparing ? 'default' : 'outline'}
+              onClick={() => setComparing(c => !c)}
+              className={cn(
+                'text-[10px] tracking-widest',
+                comparing
+                  ? 'bg-[hsl(var(--lime))] text-background'
+                  : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
+              )}
+            >
+              {comparing ? 'OCULTAR' : 'COMPARAR'}
+            </Button>
+          </div>
         )}
       </div>
 
