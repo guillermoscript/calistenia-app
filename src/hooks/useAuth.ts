@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RecordModel } from 'pocketbase'
-import { pb, login, register, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
+import { pb, login, register, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
+import type { RegisterData } from '../lib/pocketbase'
 import type { UserRole, UserTier } from '../types'
 
 interface UseAuthReturn {
@@ -13,7 +14,8 @@ interface UseAuthReturn {
   isAdmin: boolean
   isEditor: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, displayName: string) => Promise<void>
+  signUp: (data: RegisterData) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   signOut: () => void
 }
 
@@ -77,21 +79,34 @@ export const useAuth = (): UseAuthReturn => {
   }, [])
 
   // ── signUp ───────────────────────────────────────────────────────────────
-  const signUp = useCallback(async (email: string, password: string, displayName: string) => {
+  const signUp = useCallback(async (data: RegisterData) => {
     setAuthError(null)
     setIsLoading(true)
     try {
-      await register(email, password, displayName)
-      // onChange listener actualiza `user` automáticamente
+      await register(data)
     } catch (err: any) {
-      const data = err?.response?.data || {}
-      if (data.email?.code === 'validation_not_unique') {
+      const d = err?.response?.data || {}
+      if (d.email?.code === 'validation_not_unique') {
         setAuthError('Ya existe una cuenta con ese email')
-      } else if (data.password?.message) {
-        setAuthError(`Contraseña inválida: ${data.password.message}`)
+      } else if (d.password?.message) {
+        setAuthError(`Contraseña inválida: ${d.password.message}`)
       } else {
         setAuthError(err?.message || 'Error al crear la cuenta')
       }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // ── signInWithGoogle ───────────────────────────────────────────────────
+  const signInWithGoogle = useCallback(async () => {
+    setAuthError(null)
+    setIsLoading(true)
+    try {
+      await loginWithOAuth2('google')
+    } catch (err: any) {
+      if (err?.isAbort) return // user closed popup
+      setAuthError(err?.message || 'Error al iniciar sesión con Google')
     } finally {
       setIsLoading(false)
     }
@@ -108,5 +123,5 @@ export const useAuth = (): UseAuthReturn => {
   const isAdmin = userRole === 'admin'
   const isEditor = userRole === 'editor'
 
-  return { user, authReady, authError, isLoading, userRole, userTier, isAdmin, isEditor, signIn, signUp, signOut }
+  return { user, authReady, authError, isLoading, userRole, userTier, isAdmin, isEditor, signIn, signUp, signInWithGoogle, signOut }
 }

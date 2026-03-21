@@ -683,7 +683,7 @@ export default function App() {
   const [onboardingDone, setOnboardingDone] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, authReady, authError, isLoading, userRole, signIn, signUp, signOut } = useAuth()
+  const { user, authReady, authError, isLoading, userRole, signIn, signUp, signInWithGoogle, signOut } = useAuth()
 
   // Check onboarding status once user is known
   useEffect(() => {
@@ -778,6 +778,7 @@ export default function App() {
         <AuthPage
           signIn={signIn}
           signUp={signUp}
+          signInWithGoogle={signInWithGoogle}
           authError={authError}
           isLoading={isLoading}
         />
@@ -798,6 +799,7 @@ export default function App() {
         programs={programs}
         activeProgram={activeProgram}
         userId={user.id}
+        user={user}
         onSelectProgram={selectProgram}
         onCreateProgram={() => {
           markOnboardingDone(user.id)

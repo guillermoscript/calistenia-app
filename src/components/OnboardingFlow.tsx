@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
 import { cn } from '../lib/utils'
+import { pb } from '../lib/pocketbase'
 import type { ProgramMeta } from '../types'
 
 const ONBOARDING_KEY_PREFIX = 'calistenia_onboarding_done'
@@ -24,10 +27,22 @@ interface OnboardingFlowProps {
   programs: ProgramMeta[]
   activeProgram: ProgramMeta | null
   userId?: string
+  user?: any
   onSelectProgram: (programId: string) => Promise<void>
   onCreateProgram: () => void
   onComplete: () => void
 }
+
+const LEVELS = [
+  { value: 'principiante', label: 'Principiante', desc: 'Nuevo en calistenia' },
+  { value: 'intermedio', label: 'Intermedio', desc: '6+ meses entrenando' },
+  { value: 'avanzado', label: 'Avanzado', desc: 'Muscle-ups, planche...' },
+]
+
+const SEX_OPTIONS = [
+  { value: 'male', label: 'Hombre' },
+  { value: 'female', label: 'Mujer' },
+]
 
 const SECTIONS = [
   {
@@ -62,15 +77,32 @@ export default function OnboardingFlow({
   programs,
   activeProgram,
   userId,
+  user,
   onSelectProgram,
   onCreateProgram,
   onComplete,
 }: OnboardingFlowProps) {
+  // Detect if profile data is missing (e.g. Google OAuth signup or skipped step)
+  const needsProfile = !user?.weight && !user?.height && !user?.level
+
   const [step, setStep] = useState(0)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
 
-  const totalSteps = 3
+  // Profile fields
+  const [weight, setWeight] = useState('')
+  const [height, setHeight] = useState('')
+  const [age, setAge] = useState('')
+  const [sex, setSex] = useState('')
+  const [level, setLevel] = useState('principiante')
+  const [goal, setGoal] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
+
+  // Steps: 0=welcome, 1=profile (conditional), 2=program, 3=orientation
+  const profileStep = needsProfile ? 1 : -1
+  const programStep = needsProfile ? 2 : 1
+  const orientationStep = needsProfile ? 3 : 2
+  const totalSteps = needsProfile ? 4 : 3
 
   const handleSelectProgram = async (programId: string) => {
     setSelectedProgramId(programId)
@@ -80,6 +112,25 @@ export default function OnboardingFlow({
     } finally {
       setSelecting(false)
     }
+  }
+
+  const handleSaveProfile = async () => {
+    if (!userId) return
+    setSavingProfile(true)
+    try {
+      await pb.collection('users').update(userId, {
+        weight: weight ? parseFloat(weight) : null,
+        height: height ? parseFloat(height) : null,
+        age: age ? parseInt(age, 10) : null,
+        sex: sex || null,
+        level: level || 'principiante',
+        goal: goal || '',
+      })
+    } catch (e) {
+      console.warn('Failed to save onboarding profile:', e)
+    }
+    setSavingProfile(false)
+    setStep(programStep)
   }
 
   const handleFinish = () => {
@@ -125,14 +176,16 @@ export default function OnboardingFlow({
                     Cada fase dura varias semanas y aumenta en dificultad.
                   </p>
                   <p>
-                    Lo primero es elegir tu programa — puede ser uno existente o puedes crear el tuyo.
+                    {needsProfile
+                      ? 'Primero vamos a conocerte un poco, luego elegirás tu programa.'
+                      : 'Lo primero es elegir tu programa — puede ser uno existente o puedes crear el tuyo.'}
                   </p>
                 </div>
               </CardContent>
             </Card>
 
             <Button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(needsProfile ? profileStep : programStep)}
               className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
             >
               EMPEZAR
@@ -147,8 +200,154 @@ export default function OnboardingFlow({
           </div>
         )}
 
-        {/* Step 1: Choose program */}
-        {step === 1 && (
+        {/* Step 1: Profile (only if needed) */}
+        {step === profileStep && (
+          <div className="animate-[fadeUp_0.5s_ease]">
+            <div className="text-center mb-6">
+              <div className="font-bebas text-3xl mb-1">CUÉNTANOS DE TI</div>
+              <div className="text-sm text-muted-foreground">
+                Esto nos ayuda a personalizar tu experiencia. Todo es opcional.
+              </div>
+            </div>
+
+            <Card className="mb-6">
+              <CardContent className="p-5 flex flex-col gap-4">
+                {/* Physical data */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="ob-weight" className="text-[11px] text-muted-foreground tracking-wide uppercase">Peso (kg)</Label>
+                    <Input
+                      id="ob-weight"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="75"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="ob-height" className="text-[11px] text-muted-foreground tracking-wide uppercase">Altura (cm)</Label>
+                    <Input
+                      id="ob-height"
+                      type="number"
+                      min="0"
+                      placeholder="175"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="ob-age" className="text-[11px] text-muted-foreground tracking-wide uppercase">Edad</Label>
+                    <Input
+                      id="ob-age"
+                      type="number"
+                      min="13"
+                      max="99"
+                      placeholder="28"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      className="h-10"
+                    />
+                  </div>
+                </div>
+
+                {/* Sex */}
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-[11px] text-muted-foreground tracking-wide uppercase">Sexo</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {SEX_OPTIONS.map(s => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => setSex(s.value)}
+                        className={cn(
+                          'h-10 rounded-md border text-sm transition-colors',
+                          sex === s.value
+                            ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/10 text-[hsl(var(--lime))]'
+                            : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                        )}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Level */}
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-[11px] text-muted-foreground tracking-wide uppercase">Nivel</Label>
+                  <div className="flex flex-col gap-2">
+                    {LEVELS.map(l => (
+                      <button
+                        key={l.value}
+                        type="button"
+                        onClick={() => setLevel(l.value)}
+                        className={cn(
+                          'flex items-center gap-3 px-3.5 py-2.5 rounded-md border text-left transition-colors',
+                          level === l.value
+                            ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/5'
+                            : 'border-border hover:border-foreground/30'
+                        )}
+                      >
+                        <div className={cn(
+                          'w-3 h-3 rounded-full border-2 shrink-0',
+                          level === l.value ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]' : 'border-muted-foreground/40'
+                        )} />
+                        <div>
+                          <p className={cn('text-sm', level === l.value ? 'text-[hsl(var(--lime))]' : 'text-foreground')}>{l.label}</p>
+                          <p className="text-xs text-muted-foreground">{l.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Goal */}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="ob-goal" className="text-[11px] text-muted-foreground tracking-wide uppercase">Objetivo</Label>
+                  <textarea
+                    id="ob-goal"
+                    value={goal}
+                    onChange={(e) => setGoal(e.target.value)}
+                    placeholder="Ej: 10 muscle-ups, bajar grasa corporal..."
+                    rows={2}
+                    className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setStep(0)}
+                className="flex-1 h-11 font-mono text-xs tracking-wide"
+              >
+                ATRÁS
+              </Button>
+              <Button
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
+              >
+                {savingProfile ? 'GUARDANDO...' : 'CONTINUAR'}
+              </Button>
+            </div>
+
+            <button
+              onClick={() => setStep(programStep)}
+              className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
+            >
+              Omitir por ahora
+            </button>
+          </div>
+        )}
+
+        {/* Step: Choose program */}
+        {step === programStep && (
           <div className="animate-[fadeUp_0.5s_ease]">
             <div className="text-center mb-6">
               <div className="font-bebas text-3xl mb-1">ELIGE TU PROGRAMA</div>
@@ -249,13 +448,13 @@ export default function OnboardingFlow({
             <div className="flex gap-3 mt-6">
               <Button
                 variant="outline"
-                onClick={() => setStep(0)}
+                onClick={() => setStep(needsProfile ? profileStep : 0)}
                 className="flex-1 h-11 font-mono text-xs tracking-wide"
               >
                 ATRÁS
               </Button>
               <Button
-                onClick={() => setStep(2)}
+                onClick={() => setStep(orientationStep)}
                 disabled={!selectedProgramId || selecting}
                 className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background disabled:opacity-40"
               >
@@ -265,8 +464,8 @@ export default function OnboardingFlow({
           </div>
         )}
 
-        {/* Step 2: Quick orientation */}
-        {step === 2 && (
+        {/* Step: Quick orientation */}
+        {step === orientationStep && (
           <div className="animate-[fadeUp_0.5s_ease]">
             <div className="text-center mb-6">
               <div className="font-bebas text-3xl mb-1">ASÍ FUNCIONA</div>
@@ -299,7 +498,7 @@ export default function OnboardingFlow({
             </Button>
 
             <button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(programStep)}
               className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
             >
               Volver a elegir programa

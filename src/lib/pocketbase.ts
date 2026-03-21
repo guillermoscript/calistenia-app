@@ -46,15 +46,38 @@ export const login = (email: string, password: string): Promise<RecordAuthRespon
 /**
  * Registro de nuevo usuario + login automático.
  */
-export const register = async (email: string, password: string, displayName?: string): Promise<RecordAuthResponse<RecordModel>> => {
-  await pb.collection('users').create({
-    email,
-    password,
-    passwordConfirm: password,
-    display_name: displayName || '',
-  })
-  return pb.collection('users').authWithPassword(email, password)
+export interface RegisterData {
+  email: string
+  password: string
+  display_name?: string
+  weight?: number | null
+  height?: number | null
+  age?: number | null
+  sex?: string
+  level?: string
+  goal?: string
 }
+export const register = async (data: RegisterData): Promise<RecordAuthResponse<RecordModel>> => {
+  await pb.collection('users').create({
+    email: data.email,
+    password: data.password,
+    passwordConfirm: data.password,
+    display_name: data.display_name || '',
+    weight: data.weight ?? null,
+    height: data.height ?? null,
+    age: data.age ?? null,
+    sex: data.sex || '',
+    level: data.level || 'principiante',
+    goal: data.goal || '',
+  })
+  return pb.collection('users').authWithPassword(data.email, data.password)
+}
+
+/**
+ * OAuth2 con Google (o cualquier provider configurado en PocketBase).
+ */
+export const loginWithOAuth2 = (provider: string): Promise<RecordAuthResponse<RecordModel>> =>
+  pb.collection('users').authWithOAuth2({ provider })
 
 /**
  * Refresca el token en el arranque de la app.

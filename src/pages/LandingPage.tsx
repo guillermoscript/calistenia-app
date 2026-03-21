@@ -1,11 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId, useRef, type ReactNode } from 'react'
 
 interface LandingPageProps {
   onGetStarted: () => void
 }
 
-/* ── Stagger helper ─────────────────────────────────────────── */
-function useStagger(count: number, baseDelay = 80) {
+/* ── Scroll reveal hook ──────────────────────────────────────── */
+function useReveal(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { threshold }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+  return { ref, visible }
+}
+
+function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  const { ref, visible } = useReveal(0.1)
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : 'translateY(20px)',
+        transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/* ── Stagger for hero ────────────────────────────────────────── */
+function useStagger(count: number, baseDelay = 100) {
   const [visible, setVisible] = useState<boolean[]>(Array(count).fill(false))
   useEffect(() => {
     const timers = Array.from({ length: count }, (_, i) =>
@@ -16,172 +50,630 @@ function useStagger(count: number, baseDelay = 80) {
   return visible
 }
 
-/* ── Feature data ───────────────────────────────────────────── */
-const FEATURES = [
-  {
-    title: 'Entrena con estructura',
-    desc: 'Programas de calistenia con progresiones claras. Registra series, repeticiones y peso.',
-    icon: (
-      <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
-        <rect x="3" y="12" width="4" height="8" rx="1" fill="currentColor" opacity=".6" />
-        <rect x="9" y="8" width="4" height="16" rx="1" fill="currentColor" opacity=".8" />
-        <rect x="15" y="4" width="4" height="24" rx="1" fill="currentColor" />
-        <rect x="21" y="10" width="4" height="12" rx="1" fill="currentColor" opacity=".7" />
-        <rect x="27" y="6" width="4" height="20" rx="1" fill="currentColor" opacity=".9" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Nutrición simple',
-    desc: 'Registra comidas, controla macros y agua. Base de datos de alimentos comunes.',
-    icon: (
-      <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
-        <circle cx="16" cy="16" r="12" stroke="currentColor" strokeWidth="2" fill="none" />
-        <path d="M16 8v8l5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Mira tu progreso',
-    desc: 'Gráficas de peso, volumen muscular, medidas corporales y fotos de progreso.',
-    icon: (
-      <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
-        <polyline points="4,24 10,16 16,20 22,10 28,14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        <circle cx="28" cy="14" r="2.5" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Calendario y rachas',
-    desc: 'Visualiza tu constancia. Cada día cuenta.',
-    icon: (
-      <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
-        <rect x="4" y="6" width="24" height="22" rx="3" stroke="currentColor" strokeWidth="2" fill="none" />
-        <line x1="4" y1="13" x2="28" y2="13" stroke="currentColor" strokeWidth="2" />
-        <line x1="11" y1="3" x2="11" y2="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <line x1="21" y1="3" x2="21" y2="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="11" cy="20" r="2" fill="currentColor" />
-        <circle cx="16" cy="20" r="2" fill="currentColor" />
-        <circle cx="21" cy="20" r="2" fill="currentColor" />
-      </svg>
-    ),
-  },
-]
+/* ── Mini UI mockup components ───────────────────────────────── */
+function MockWorkoutCard() {
+  return (
+    <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-5 w-full max-w-sm">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)]">Día 1 — Push</span>
+        <span className="text-xs text-lime font-medium">Fase 2</span>
+      </div>
+      {[
+        { name: 'Flexiones diamante', sets: '4×12', done: true },
+        { name: 'Dips en paralelas', sets: '3×10', done: true },
+        { name: 'Pike push-ups', sets: '3×8', done: false },
+      ].map((ex, i) => (
+        <div key={i} className="flex items-center gap-3 py-2.5 border-b border-[hsl(0_0%_10%)] last:border-0">
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+            ex.done ? 'border-lime bg-lime/20' : 'border-[hsl(0_0%_25%)]'
+          }`}>
+            {ex.done && (
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8l4 4 6-7" stroke="hsl(74 90% 57%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-[hsl(0_0%_90%)] truncate">{ex.name}</p>
+          </div>
+          <span className="text-xs text-[hsl(0_0%_50%)] tabular-nums">{ex.sets}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
-export default function LandingPage({ onGetStarted }: LandingPageProps) {
-  const vis = useStagger(FEATURES.length + 3, 100) // +3 for hero elements
+function MockProgressChart() {
+  const gradId = useId()
+  const points = [68, 67.5, 67.8, 67.2, 66.5, 66.8, 66.1, 65.5, 65.2, 65.8, 65.0, 64.5]
+  const maxVal = Math.max(...points)
+  const minVal = Math.min(...points)
+  const range = maxVal - minVal || 1
+  const w = 280
+  const h = 100
+  const pad = 8
+  const pathData = points
+    .map((p, i) => {
+      const x = pad + (i / (points.length - 1)) * (w - 2 * pad)
+      const y = pad + (1 - (p - minVal) / range) * (h - 2 * pad)
+      return `${i === 0 ? 'M' : 'L'}${x},${y}`
+    })
+    .join(' ')
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-lime/30">
+    <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-5 w-full max-w-sm">
+      <div className="flex items-baseline justify-between mb-1">
+        <span className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)]">Peso corporal</span>
+        <span className="text-2xl font-bebas tracking-wide text-[hsl(0_0%_95%)]">64.5 <span className="text-sm text-[hsl(0_0%_50%)]">kg</span></span>
+      </div>
+      <span className="text-xs text-lime">-3.5 kg en 12 semanas</span>
+      <svg viewBox={`0 0 ${w} ${h}`} className="mt-4 w-full" style={{ height: 100 }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(74 90% 57%)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="hsl(74 90% 57%)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={`${pathData} L${w - pad},${h - pad} L${pad},${h - pad} Z`} fill={`url(#${gradId})`} />
+        <path d={pathData} fill="none" stroke="hsl(74 90% 57%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={w - pad} cy={pad + (1 - (points[points.length - 1] - minVal) / range) * (h - 2 * pad)} r="4" fill="hsl(74 90% 57%)" />
+      </svg>
+    </div>
+  )
+}
+
+function MockNutrition() {
+  const macros = [
+    { label: 'Proteína', value: 142, max: 160, color: 'hsl(74 90% 57%)' },
+    { label: 'Carbos', value: 210, max: 250, color: 'hsl(45 90% 55%)' },
+    { label: 'Grasa', value: 55, max: 70, color: 'hsl(20 80% 55%)' },
+  ]
+  return (
+    <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-5 w-full max-w-sm">
+      <div className="flex items-baseline justify-between mb-4">
+        <span className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)]">Hoy</span>
+        <span className="text-2xl font-bebas tracking-wide text-[hsl(0_0%_95%)]">1,840 <span className="text-sm text-[hsl(0_0%_50%)]">kcal</span></span>
+      </div>
+      <div className="space-y-3">
+        {macros.map((m) => (
+          <div key={m.label}>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-[hsl(0_0%_60%)]">{m.label}</span>
+              <span className="text-[hsl(0_0%_80%)] tabular-nums">{m.value}g / {m.max}g</span>
+            </div>
+            <div className="h-1.5 bg-[hsl(0_0%_12%)] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${(m.value / m.max) * 100}%`, background: m.color }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MockCalendar() {
+  // 5 weeks × 7 days heatmap
+  const data = [
+    [0, 1, 0, 1, 1, 0, 0],
+    [1, 0, 1, 1, 0, 1, 0],
+    [1, 1, 0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 1, 1, 0],
+    [1, 1, 0, 1, 0, 0, 0],
+  ]
+  return (
+    <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)]">Marzo 2026</span>
+        <span className="text-xs text-lime font-medium">12 días racha</span>
+      </div>
+      <div className="grid grid-cols-7 gap-1.5">
+        {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+          <span key={d} className="text-[11px] text-center text-[hsl(0_0%_50%)]">{d}</span>
+        ))}
+        {data.flat().map((v, i) => (
+          <div
+            key={i}
+            className="aspect-square rounded-sm"
+            style={{
+              background: v ? 'hsl(74 90% 57% / 0.7)' : 'hsl(0 0% 10%)',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MockCardio() {
+  return (
+    <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-5 w-full max-w-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-6 h-6 rounded-full bg-lime/20 flex items-center justify-center">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="hsl(74 90% 57%)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </div>
+        <span className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)]">Carrera</span>
+      </div>
+      <div className="grid grid-cols-3 gap-4 text-center">
+        {[
+          { val: '5.2', unit: 'km', label: 'Distancia' },
+          { val: '27:14', unit: '', label: 'Tiempo' },
+          { val: "5'14\"", unit: '/km', label: 'Ritmo' },
+        ].map((s) => (
+          <div key={s.label}>
+            <p className="text-xl font-bebas text-[hsl(0_0%_95%)]">{s.val}<span className="text-xs text-[hsl(0_0%_50%)]">{s.unit}</span></p>
+            <p className="text-[11px] text-[hsl(0_0%_50%)] mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      {/* Fake route line */}
+      <div className="mt-4 h-16 rounded-lg bg-[hsl(0_0%_9%)] relative overflow-hidden">
+        <svg viewBox="0 0 200 50" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+          <path d="M10,40 Q40,10 80,25 T150,15 T190,35" fill="none" stroke="hsl(74 90% 57%)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+        </svg>
+      </div>
+    </div>
+  )
+}
+
+function MockSocial() {
+  const users = [
+    { name: 'Carlos M.', val: '184 pts', pos: 1 },
+    { name: 'Ana R.', val: '172 pts', pos: 2 },
+    { name: 'Tú', val: '168 pts', pos: 3, highlight: true },
+  ]
+  return (
+    <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-5 w-full max-w-sm">
+      <span className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)]">Tabla de líderes</span>
+      <div className="mt-3 space-y-2">
+        {users.map((u) => (
+          <div key={u.name} className={`flex items-center gap-3 px-3 py-2 rounded-lg ${u.highlight ? 'bg-lime/10 border border-lime/20' : ''}`}>
+            <span className="text-sm font-bebas w-5 text-center text-[hsl(0_0%_50%)]">{u.pos}</span>
+            <div className="w-7 h-7 rounded-full bg-[hsl(0_0%_15%)] flex items-center justify-center text-xs text-[hsl(0_0%_60%)]">
+              {u.name[0]}
+            </div>
+            <span className={`flex-1 text-sm ${u.highlight ? 'text-lime' : 'text-[hsl(0_0%_80%)]'}`}>{u.name}</span>
+            <span className="text-xs tabular-nums text-[hsl(0_0%_50%)]">{u.val}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Section label ───────────────────────────────────────────── */
+function SectionTag({ children }: { children: string }) {
+  return (
+    <span className="inline-block text-[11px] uppercase tracking-[0.25em] text-lime font-medium border border-lime/25 rounded-full px-3 py-1">
+      {children}
+    </span>
+  )
+}
+
+/* ── Stat counter ────────────────────────────────────────────── */
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div>
+      <p className="font-bebas text-[clamp(2.5rem,5vw,4rem)] leading-none tracking-tight">{value}</p>
+      <p className="text-sm text-muted-foreground mt-1">{label}</p>
+    </div>
+  )
+}
+
+/* ── Main landing page ───────────────────────────────────────── */
+export default function LandingPage({ onGetStarted }: LandingPageProps) {
+  const vis = useStagger(4, 120)
+
+  return (
+    <div className="min-h-screen bg-[hsl(0_0%_2%)] text-[hsl(0_0%_92%)] selection:bg-lime/20 overflow-x-hidden">
       {/* ── Nav ─────────────────────────────────── */}
-      <nav className="flex items-center justify-between px-6 py-5 max-w-5xl mx-auto">
-        <span className="font-bebas text-2xl tracking-wider">CALISTENIA</span>
+      <nav aria-label="Principal" className="flex items-center justify-between px-6 md:px-10 py-6 max-w-6xl mx-auto">
+        <div className="flex items-center gap-2.5">
+          <img src="/logo.png" alt="" className="w-8 h-8 rounded-lg" />
+          <span className="font-bebas text-2xl tracking-[0.15em] text-[hsl(0_0%_95%)]">CALISTENIA</span>
+        </div>
         <button
           onClick={onGetStarted}
-          className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="text-sm text-[hsl(0_0%_55%)] hover:text-[hsl(0_0%_90%)] transition-colors duration-200 px-3 py-2 -mr-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
         >
           Entrar
         </button>
       </nav>
 
+      <main>
       {/* ── Hero ────────────────────────────────── */}
-      <section className="px-6 pt-16 pb-24 max-w-5xl mx-auto">
-        <div className="max-w-2xl">
-          <h1
-            className="font-bebas text-[clamp(3.5rem,10vw,7rem)] leading-[0.9] tracking-tight"
+      <section className="px-6 md:px-10 pt-16 sm:pt-28 pb-20 sm:pb-32 max-w-6xl mx-auto">
+        <div className="max-w-3xl">
+          <p
+            className="text-sm uppercase tracking-[0.3em] text-lime mb-6"
             style={{
               opacity: vis[0] ? 1 : 0,
-              transform: vis[0] ? 'none' : 'translateY(12px)',
+              transform: vis[0] ? 'none' : 'translateY(8px)',
               transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
-            Tu entrenamiento.
+            Entrena con propósito
+          </p>
+          <h1
+            className="font-bebas text-[clamp(3.5rem,11vw,8rem)] leading-[0.88] tracking-tight"
+            style={{
+              opacity: vis[1] ? 1 : 0,
+              transform: vis[1] ? 'none' : 'translateY(16px)',
+              transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)',
+            }}
+          >
+            Tu cuerpo.{' '}
+            <br className="sm:hidden" />
+            Tu disciplina.
             <br />
             <span className="text-lime">Tu progreso.</span>
           </h1>
 
           <p
-            className="mt-6 text-lg text-muted-foreground max-w-md leading-relaxed"
-            style={{
-              opacity: vis[1] ? 1 : 0,
-              transform: vis[1] ? 'none' : 'translateY(8px)',
-              transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)',
-            }}
-          >
-            Registra tus entrenamientos, controla tu nutrición
-            y mide tu progreso — sin complicaciones.
-          </p>
-
-          <button
-            onClick={onGetStarted}
-            className="mt-10 inline-flex items-center gap-2 bg-foreground text-background font-medium text-sm px-7 py-3.5 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all"
+            className="mt-8 text-lg sm:text-xl text-[hsl(0_0%_52%)] max-w-lg leading-relaxed"
             style={{
               opacity: vis[2] ? 1 : 0,
               transform: vis[2] ? 'none' : 'translateY(8px)',
-              transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)',
+              transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
-            Empezar gratis
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+            Programas de calistenia, nutrición, cardio, progreso
+            y comunidad — todo en una app que funciona sin conexión.
+          </p>
+
+          <div
+            className="mt-10 flex flex-wrap items-center gap-4"
+            style={{
+              opacity: vis[3] ? 1 : 0,
+              transform: vis[3] ? 'none' : 'translateY(8px)',
+              transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)',
+            }}
+          >
+            <button
+              onClick={onGetStarted}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-lime text-[hsl(0_0%_5%)] font-semibold text-sm px-7 py-3.5 rounded-lg hover:brightness-110 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
+            >
+              Empezar gratis
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <span className="text-xs text-[hsl(0_0%_50%)] w-full sm:w-auto text-center sm:text-left">Gratis para siempre. Sin tarjeta.</span>
+          </div>
         </div>
       </section>
 
-      {/* ── Divider ─────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="h-px bg-border" />
-      </div>
+      {/* ── Stats bar ───────────────────────────── */}
+      <Reveal>
+        <div className="border-y border-[hsl(0_0%_10%)]">
+          <div className="max-w-6xl mx-auto px-6 md:px-10 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8">
+            <Stat value="100+" label="Ejercicios en la librería" />
+            <Stat value="4" label="Fases de periodización" />
+            <Stat value="PWA" label="Instala como app nativa" />
+            <Stat value="0" label="Costo — siempre gratis" />
+          </div>
+        </div>
+      </Reveal>
 
-      {/* ── Features ────────────────────────────── */}
-      <section className="px-6 py-20 max-w-5xl mx-auto">
-        <div className="grid sm:grid-cols-2 gap-x-16 gap-y-14">
-          {FEATURES.map((f, i) => (
-            <div
-              key={f.title}
-              style={{
-                opacity: vis[i + 3] ? 1 : 0,
-                transform: vis[i + 3] ? 'none' : 'translateY(10px)',
-                transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)',
-              }}
-            >
-              <div className="text-lime mb-3">{f.icon}</div>
-              <h3 className="font-bebas text-xl tracking-wide">{f.title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+      {/* ── Feature 1: Entrenamiento ─────────────── */}
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32">
+        <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
+          <Reveal>
+            <div>
+              <SectionTag>Entrenamiento</SectionTag>
+              <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
+                Programas con progresiones reales
+              </h2>
+              <p className="mt-5 text-[hsl(0_0%_50%)] leading-relaxed max-w-md">
+                Cuatro fases de periodización — desde base hasta pico. Cada día tiene su
+                enfoque: push, pull, piernas, cuerpo completo. Registra series, repeticiones,
+                peso y RPE.
+              </p>
+              <ul className="mt-6 space-y-2.5">
+                {[
+                  'Programas oficiales curados por expertos',
+                  'Crea y comparte tus propios programas',
+                  'Temporizador de descanso entre series',
+                  'Librería de 100+ ejercicios con videos',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
+                    <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
+          </Reveal>
+          <Reveal delay={150}>
+            <div className="flex justify-center lg:justify-end" aria-hidden="true">
+              <MockWorkoutCard />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── Feature 2: Progreso ──────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
+        <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
+          <Reveal delay={150} className="order-2 lg:order-1">
+            <div className="flex justify-center lg:justify-start" aria-hidden="true">
+              <MockProgressChart />
+            </div>
+          </Reveal>
+          <Reveal className="order-1 lg:order-2">
+            <div>
+              <SectionTag>Analíticas</SectionTag>
+              <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
+                Mide lo que importa
+              </h2>
+              <p className="mt-5 text-[hsl(0_0%_50%)] leading-relaxed max-w-md">
+                Gráficas de peso corporal, volumen muscular por grupo, medidas
+                corporales y fotos de antes/después. Calcula tu 1RM y registra PRs
+                en dominadas, flexiones, L-sit, pistol squat y handstand.
+              </p>
+              <ul className="mt-6 space-y-2.5">
+                {[
+                  'Gráficas de progreso a lo largo del tiempo',
+                  'Fotos de progreso con timeline',
+                  'Calculadora de 1RM automática',
+                  'Exporta tus datos cuando quieras',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
+                    <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── Feature 3: Nutrición ─────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
+        <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
+          <Reveal>
+            <div>
+              <SectionTag>Nutrición</SectionTag>
+              <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
+                Alimenta tu rendimiento
+              </h2>
+              <p className="mt-5 text-[hsl(0_0%_50%)] leading-relaxed max-w-md">
+                Registra comidas con búsqueda en Open Food Facts o escaneando el
+                código de barras. Controla proteínas, carbohidratos, grasas y agua.
+                Configura tus metas basadas en tu perfil.
+              </p>
+              <ul className="mt-6 space-y-2.5">
+                {[
+                  'Escaneo de código de barras',
+                  'Base de datos Open Food Facts',
+                  'Seguimiento de macros y agua',
+                  'Metas personalizadas por peso y objetivo',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
+                    <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+          <Reveal delay={150}>
+            <div className="flex justify-center lg:justify-end" aria-hidden="true">
+              <MockNutrition />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── Two-column: Cardio + Calendar ────────── */}
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
+        <div className="grid md:grid-cols-2 gap-14 md:gap-20">
+          {/* Cardio */}
+          <Reveal>
+            <div>
+              <SectionTag>Cardio</SectionTag>
+              <h2 className="font-bebas text-[clamp(1.8rem,4vw,2.8rem)] leading-[0.92] tracking-tight mt-5">
+                Corre, camina, pedalea
+              </h2>
+              <p className="mt-4 text-[hsl(0_0%_50%)] leading-relaxed text-sm">
+                Tracking GPS en tiempo real con distancia, ritmo, velocidad y elevación.
+                Ve tu ruta en el mapa y revisa splits por kilómetro.
+              </p>
+              <div className="mt-6" aria-hidden="true">
+                <MockCardio />
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Calendar */}
+          <Reveal delay={100}>
+            <div>
+              <SectionTag>Constancia</SectionTag>
+              <h2 className="font-bebas text-[clamp(1.8rem,4vw,2.8rem)] leading-[0.92] tracking-tight mt-5">
+                Cada día cuenta
+              </h2>
+              <p className="mt-4 text-[hsl(0_0%_50%)] leading-relaxed text-sm">
+                Heatmap de actividad al estilo GitHub. Ve tus rachas, identifica patrones
+                y mantén la motivación. Configura recordatorios para no perder el ritmo.
+              </p>
+              <div className="mt-6" aria-hidden="true">
+                <MockCalendar />
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── Feature 4: Social ────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
+        <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
+          <Reveal delay={150} className="order-2 lg:order-1">
+            <div className="flex justify-center lg:justify-start" aria-hidden="true">
+              <MockSocial />
+            </div>
+          </Reveal>
+          <Reveal className="order-1 lg:order-2">
+            <div>
+              <SectionTag>Social</SectionTag>
+              <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
+                Entrena con amigos
+              </h2>
+              <p className="mt-5 text-[hsl(0_0%_50%)] leading-relaxed max-w-md">
+                Sigue a tus amigos, ve su actividad en tu feed, reacciona con fuego
+                a sus logros. Compite en retos con tiempo límite y sube en la
+                tabla de líderes.
+              </p>
+              <ul className="mt-6 space-y-2.5">
+                {[
+                  'Feed de actividad con reacciones',
+                  'Retos y competencias con amigos',
+                  'Tabla de líderes por métricas',
+                  'Comparte programas por WhatsApp',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
+                    <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── Extras grid ──────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
+        <Reveal>
+          <SectionTag>Y más</SectionTag>
+          <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5 mb-14">
+            Todo lo que necesitas
+          </h2>
+        </Reveal>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-12">
+          {[
+            {
+              title: 'Protocolo lumbar',
+              desc: 'Programa dedicado de 7 ejercicios para prevención y alivio del dolor lumbar.',
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+                  <path d="M12 2C8 2 6 5 6 8c0 2 1 3.5 2 4.5S10 15 10 17h4c0-2 0-3.5 2-4.5S18 10 18 8c0-3-2-6-6-6z" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10 21h4M10 17v1a2 2 0 002 2 2 2 0 002-2v-1" strokeLinecap="round" />
+                </svg>
+              ),
+            },
+            {
+              title: 'Funciona sin conexión',
+              desc: 'App instalable (PWA) que funciona offline. Tus datos se sincronizan cuando vuelvas a estar conectado.',
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+                  <path d="M12 18h.01M8 21h8a1 1 0 001-1v-1a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1z" strokeLinecap="round" />
+                  <path d="M2 8.82a15 15 0 0120 0M5 12.86a10 10 0 0114 0M8.5 16.9a5 5 0 017 0" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ),
+            },
+            {
+              title: 'Recordatorios',
+              desc: 'Configura notificaciones para no olvidar tus entrenamientos ni comidas.',
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+                  <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9zM13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ),
+            },
+            {
+              title: 'Sesiones libres',
+              desc: 'Entrena fuera de programa. Crea sesiones personalizadas con cualquier ejercicio.',
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+                  <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                </svg>
+              ),
+            },
+            {
+              title: 'Perfiles públicos',
+              desc: 'Comparte tu perfil con estadísticas, rachas y logros. Visible para quien tú quieras.',
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 4-7 8-7s8 3 8 7" strokeLinecap="round" />
+                </svg>
+              ),
+            },
+            {
+              title: 'Tour interactivo',
+              desc: 'Aprende la app paso a paso con un tour guiado la primera vez que entras.',
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
+                </svg>
+              ),
+            },
+          ].map((f, i) => (
+            <Reveal key={f.title} delay={i * 60}>
+              <div className="group">
+                <div className="text-lime mb-3 opacity-70 group-hover:opacity-100 transition-opacity">{f.icon}</div>
+                <h3 className="font-bebas text-lg tracking-wide text-[hsl(0_0%_90%)]">{f.title}</h3>
+                <p className="mt-1.5 text-sm text-[hsl(0_0%_50%)] leading-relaxed">{f.desc}</p>
+              </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      {/* ── Divider ─────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="h-px bg-border" />
-      </div>
-
       {/* ── Bottom CTA ──────────────────────────── */}
-      <section className="px-6 py-24 max-w-5xl mx-auto text-center">
-        <h2 className="font-bebas text-[clamp(2rem,6vw,4rem)] leading-[0.95] tracking-tight">
-          Empieza hoy
-        </h2>
-        <p className="mt-4 text-muted-foreground max-w-sm mx-auto">
-          Sin distracciones. Solo tú y tu entrenamiento.
-        </p>
-        <button
-          onClick={onGetStarted}
-          className="mt-8 inline-flex items-center gap-2 bg-lime text-lime-foreground font-medium text-sm px-7 py-3.5 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all"
-        >
-          Crear cuenta
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+      <section className="border-t border-[hsl(0_0%_8%)]">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 py-20 sm:py-28 lg:py-36">
+          <Reveal>
+            <div className="max-w-2xl">
+              <h2 className="font-bebas text-[clamp(2.5rem,7vw,5rem)] leading-[0.88] tracking-tight">
+                Empieza hoy.
+                <br />
+                <span className="text-lime">Es gratis.</span>
+              </h2>
+              <p className="mt-6 text-[hsl(0_0%_48%)] text-lg max-w-md leading-relaxed">
+                Sin distracciones, sin suscripciones ocultas.
+                Solo tú, tu entrenamiento y tu progreso.
+              </p>
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <button
+                  onClick={onGetStarted}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-lime text-[hsl(0_0%_5%)] font-semibold text-sm px-8 py-4 rounded-lg hover:brightness-110 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
+                >
+                  Crear cuenta gratis
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </Reveal>
+        </div>
       </section>
 
+      </main>
       {/* ── Footer ──────────────────────────────── */}
-      <footer className="px-6 pb-8 max-w-5xl mx-auto">
-        <div className="h-px bg-border mb-6" />
-        <p className="text-xs text-muted-foreground">CALISTENIA &middot; Entrena con propósito</p>
+      <footer className="border-t border-[hsl(0_0%_8%)] px-6 md:px-10 py-8 max-w-6xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="" className="w-5 h-5 rounded opacity-50" />
+            <span className="font-bebas text-sm tracking-[0.2em] text-[hsl(0_0%_50%)]">CALISTENIA</span>
+          </div>
+          <p className="text-xs text-[hsl(0_0%_50%)]">Entrena con propósito</p>
+        </div>
       </footer>
     </div>
   )
