@@ -89,7 +89,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
     }
   }
 
-  // Debounced search by name only (no email for privacy)
+  // Debounced search by name or username (no email for privacy)
   useEffect(() => {
     if (tab !== 'buscar' || search.length < 2) {
       setSearchResults([])
@@ -102,7 +102,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
         const available = await isPocketBaseAvailable()
         if (!available) return
         const res = await pb.collection('users').getList(1, 20, {
-          filter: pb.filter('display_name ~ {:q}', { q: search }),
+          filter: pb.filter('display_name ~ {:q} || username ~ {:q}', { q: search }),
           $autoCancel: false,
         })
         setSearchResults(
@@ -110,7 +110,8 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
             .filter((u: any) => u.id !== userId)
             .map((u: any) => ({
               id: u.id,
-              displayName: u.display_name || '?',
+              displayName: u.display_name || u.username || '?',
+              username: u.username || '',
             }))
         )
       } catch {
@@ -277,11 +278,11 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
         <div role="tabpanel" id="tabpanel-buscar" aria-labelledby="tab-buscar">
           <Input
             id="tour-friends-search"
-            aria-label="Buscar usuarios por nombre"
+            aria-label="Buscar usuarios por nombre o username"
             autoFocus
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por nombre..."
+            placeholder="Buscar por nombre o username..."
             maxLength={50}
             className="mb-4"
           />
@@ -322,7 +323,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
             </div>
           )}
           {search.length < 2 && !searching && (
-            <div className="text-sm text-muted-foreground py-8 text-center">Escribe un nombre o correo para buscar</div>
+            <div className="text-sm text-muted-foreground py-8 text-center">Escribe un nombre o username para buscar</div>
           )}
         </div>
       )}
@@ -333,15 +334,14 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
 // ── User Row ─────────────────────────────────────────────────────────────────
 
 interface UserRowProps {
-  user: { id: string; displayName: string; email?: string }
+  user: { id: string; displayName: string; username?: string }
   isFollowing: boolean
   onFollow: () => void
   onUnfollow: () => void
   onTap: () => void
-  showEmail?: boolean
 }
 
-function UserRow({ user, isFollowing, onFollow, onUnfollow, onTap, showEmail }: UserRowProps) {
+function UserRow({ user, isFollowing, onFollow, onUnfollow, onTap }: UserRowProps) {
   const [actionLoading, setActionLoading] = useState(false)
 
   const handleAction = async (e: React.MouseEvent | React.KeyboardEvent) => {
@@ -377,8 +377,8 @@ function UserRow({ user, isFollowing, onFollow, onUnfollow, onTap, showEmail }: 
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{user.displayName}</div>
-        {showEmail && user.email && (
-          <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
+        {user.username && (
+          <div className="text-[11px] text-muted-foreground truncate">@{user.username}</div>
         )}
       </div>
       <Button

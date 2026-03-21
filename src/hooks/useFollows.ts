@@ -4,7 +4,7 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 export interface FollowUser {
   id: string
   displayName: string
-  email: string
+  username: string
 }
 
 interface UseFollowsReturn {
@@ -51,8 +51,8 @@ export function useFollows(userId: string | null): UseFollowsReturn {
         const u = r.expand?.following
         return {
           id: u?.id || r.following,
-          displayName: u?.display_name || u?.email?.split('@')[0] || '?',
-          email: u?.email || '',
+          displayName: u?.display_name || u?.username || '?',
+          username: u?.username || '',
         }
       })
 
@@ -60,8 +60,8 @@ export function useFollows(userId: string | null): UseFollowsReturn {
         const u = r.expand?.follower
         return {
           id: u?.id || r.follower,
-          displayName: u?.display_name || u?.email?.split('@')[0] || '?',
-          email: u?.email || '',
+          displayName: u?.display_name || u?.username || '?',
+          username: u?.username || '',
         }
       })
 
