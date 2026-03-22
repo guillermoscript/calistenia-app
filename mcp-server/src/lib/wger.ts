@@ -62,9 +62,9 @@ export interface WgerExerciseInfo {
 
 // ── API functions ───────────────────────────────────────────────────────────
 
-export async function searchWger(term: string, language = 'es'): Promise<WgerSearchSuggestion[]> {
+async function fetchWgerSearch(term: string, langCode: string): Promise<WgerSearchSuggestion[]> {
   try {
-    const url = `${WGER_BASE}/exercisesearch/?term=${encodeURIComponent(term)}&language=${language}&format=json`
+    const url = `${WGER_BASE}/exercisesearch/?term=${encodeURIComponent(term)}&language=${langCode}&format=json`
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
     if (!res.ok) return []
     const data: WgerSearchResponse = await res.json()
@@ -72,6 +72,14 @@ export async function searchWger(term: string, language = 'es'): Promise<WgerSea
   } catch {
     return []
   }
+}
+
+export async function searchWger(term: string, language = 'es'): Promise<WgerSearchSuggestion[]> {
+  const results = await fetchWgerSearch(term, language)
+  if (results.length > 0) return results
+  // Fallback to English when requested language returns nothing
+  if (language !== 'en') return fetchWgerSearch(term, 'en')
+  return []
 }
 
 export async function getWgerExerciseInfo(id: number): Promise<WgerExerciseInfo | null> {

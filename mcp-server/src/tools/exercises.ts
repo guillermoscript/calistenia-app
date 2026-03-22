@@ -254,4 +254,93 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
       }
     }
   );
+
+  // ──────────────────────────────────────────────────────────────
+  // CREATE EXERCISE
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "cal_create_exercise",
+    {
+      title: "Create Custom Exercise",
+      description:
+        "Create a new exercise in the local catalog. Use this to add custom exercises that can then be used in programs.",
+      inputSchema: z
+        .object({
+          name: z.string().min(2).describe("Exercise name"),
+          category: z
+            .enum(["push", "pull", "legs", "core", "full", "lumbar", "skill", "movilidad"])
+            .describe("Exercise category"),
+          muscles: z.string().optional().describe("Target muscles (e.g. 'Pecho, Tríceps')"),
+          description: z.string().optional().describe("Exercise description or technique cues"),
+          default_sets: z.number().int().min(1).default(3).describe("Default number of sets"),
+          default_reps: z.string().default("8-12").describe("Default reps (e.g. '8-12', '30s', 'max')"),
+          default_rest_seconds: z.number().int().default(60).describe("Default rest between sets in seconds"),
+          equipment: z
+            .array(z.string())
+            .optional()
+            .describe("Equipment needed (e.g. ['barra_dominadas', 'lastre'])"),
+          youtube: z.string().optional().describe("YouTube URL for demo video"),
+          is_timer: z.boolean().default(false).describe("Whether this is a timed exercise"),
+          default_timer_seconds: z.number().int().optional().describe("Timer duration if is_timer is true"),
+          note: z.string().optional().describe("Additional notes"),
+          priority: z
+            .enum(["primary", "secondary", "accessory"])
+            .default("primary")
+            .describe("Exercise priority level"),
+        })
+        .strict(),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    async (input) => {
+      try {
+        const slug = input.name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "");
+
+        // Check for duplicates by slug
+        try {
+          const existing = await pb.collection("exercises_catalog").getFirstListItem(`slug = "${slug}"`);
+          return {
+            content: [{ type: "text", text: `Exercise already exists: **${existing.name}** (ID: ${existing.id})` }],
+            structuredContent: { id: existing.id, name: existing.name, already_existed: true },
+          };
+        } catch {
+          // Not found — proceed
+        }
+
+        const record = await pb.collection("exercises_catalog").create({
+          name: input.name,
+          slug,
+          description: input.description || "",
+          muscles: input.muscles || "",
+          category: input.category,
+          equipment: input.equipment || [],
+          priority: input.priority,
+          default_sets: input.default_sets,
+          default_reps: input.default_reps,
+          default_rest_seconds: input.default_rest_seconds,
+          youtube: input.youtube || "",
+          is_timer: input.is_timer,
+          default_timer_seconds: input.default_timer_seconds || 0,
+          note: input.note || "",
+          source: "manual",
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Created exercise **${input.name}** (ID: ${record.id})\n- Category: ${input.category}\n- Muscles: ${input.muscles || "—"}\n- Defaults: ${input.default_sets} × ${input.default_reps}, ${input.default_rest_seconds}s rest`,
+            },
+          ],
+          structuredContent: { id: record.id, name: input.name, slug, category: input.category },
+        };
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
 }
