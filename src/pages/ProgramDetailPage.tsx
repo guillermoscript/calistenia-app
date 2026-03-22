@@ -532,18 +532,24 @@ export default function ProgramDetailPage({
       {phases.length > 0 && (
         <div className="mb-10 motion-safe:animate-fade-in" style={{ animationDelay: '250ms', animationFillMode: 'both' }}>
           <Tabs value={selectedPhase} onValueChange={setSelectedPhase}>
-            <TabsList className="mb-6 bg-muted/80 border border-border p-1 gap-1">
-              {phases.map(phase => (
-                <TabsTrigger
-                  key={phase.id}
-                  value={String(phase.id)}
-                  className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime/10 data-[state=active]:text-lime uppercase px-4 py-2"
-                >
-                  {phase.name}
-                  <span className="ml-2 text-[9px] text-muted-foreground">({phase.weeks})</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="relative mb-6">
+              <div className="overflow-x-auto scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
+                <TabsList className="bg-muted/80 border border-border p-1 gap-1 w-max md:w-auto">
+                  {phases.map(phase => (
+                    <TabsTrigger
+                      key={phase.id}
+                      value={String(phase.id)}
+                      className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime/10 data-[state=active]:text-lime uppercase px-3 md:px-4 py-2 shrink-0"
+                    >
+                      {phase.name}
+                      <span className="ml-1.5 text-[9px] text-muted-foreground hidden sm:inline">({phase.weeks})</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              {/* Fade mask — right edge scroll hint (mobile only) */}
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
+            </div>
 
             {phases.map(phase => (
               <TabsContent key={phase.id} value={String(phase.id)}>
