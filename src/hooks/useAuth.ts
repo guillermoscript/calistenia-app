@@ -127,6 +127,12 @@ export const useAuth = (): UseAuthReturn => {
           description: 'Referido se registró',
         })
 
+        // Auto-follow: referrer follows referred and vice versa
+        await Promise.all([
+          pb.collection('follows').create({ follower: referrer.id, following: user.id }).catch(() => {}),
+          pb.collection('follows').create({ follower: user.id, following: referrer.id }).catch(() => {}),
+        ])
+
         // Notify referrer
         await pb.collection('notifications').create({
           user: referrer.id,
