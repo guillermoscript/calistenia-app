@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { useFollows } from '../hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
@@ -13,6 +13,7 @@ interface SearchResult {
   id: string
   displayName: string
   username: string
+  avatarUrl: string | null
 }
 
 interface FriendsPageProps {
@@ -103,6 +104,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
               id: u.id,
               displayName: u.display_name || u.username || '?',
               username: u.username || '',
+              avatarUrl: getUserAvatarUrl(u, '100x100'),
             }))
         )
       } catch {
@@ -325,7 +327,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
 // ── User Row ─────────────────────────────────────────────────────────────────
 
 interface UserRowProps {
-  user: { id: string; displayName: string; username?: string }
+  user: { id: string; displayName: string; username?: string; avatarUrl?: string | null; avatar?: string; collectionId?: string; collectionName?: string }
   isFollowing: boolean
   onFollow: () => void
   onUnfollow: () => void
@@ -363,9 +365,16 @@ function UserRow({ user, isFollowing, onFollow, onUnfollow, onTap }: UserRowProp
       role="link"
       aria-label={`Ver perfil de ${user.displayName}`}
     >
-      <div className="size-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0" aria-hidden="true">
-        {user.displayName[0]?.toUpperCase() || '?'}
-      </div>
+      {(() => {
+        const url = (user as any).avatarUrl || (user.avatar ? pb.files.getUrl({ id: user.id, collectionId: user.collectionId || '_pb_users_auth_', collectionName: user.collectionName || 'users' } as any, user.avatar, { thumb: '100x100' }) : null)
+        return url ? (
+          <img src={url} alt={user.displayName} className="size-10 rounded-full object-cover shrink-0" />
+        ) : (
+          <div className="size-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0" aria-hidden="true">
+            {user.displayName[0]?.toUpperCase() || '?'}
+          </div>
+        )
+      })()}
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{user.displayName}</div>
         {user.username && (

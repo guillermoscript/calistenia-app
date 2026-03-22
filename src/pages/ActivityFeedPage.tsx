@@ -9,6 +9,7 @@ import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
 import { Button } from '../components/ui/button'
 import { PHASE_COLORS } from '../lib/style-tokens'
+import { shareWorkoutSession } from '../lib/share'
 
 function relativeTime(dateStr: string): string {
   const now = Date.now()
@@ -130,9 +131,13 @@ function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, on
       <div className="flex items-center gap-2.5 mb-2">
         <button
           onClick={(e) => { e.stopPropagation(); onTapUser() }}
-          className="size-8 rounded-full bg-accent flex items-center justify-center text-xs font-medium text-foreground shrink-0 hover:ring-2 hover:ring-lime/30 transition-all"
+          className="size-8 rounded-full bg-accent flex items-center justify-center text-xs font-medium text-foreground shrink-0 hover:ring-2 hover:ring-lime/30 transition-all overflow-hidden"
         >
-          {item.displayName[0]?.toUpperCase() || '?'}
+          {item.avatarUrl ? (
+            <img src={item.avatarUrl} alt={item.displayName} className="size-full object-cover" />
+          ) : (
+            item.displayName[0]?.toUpperCase() || '?'
+          )}
         </button>
         <div className="flex-1 min-w-0">
           <button
@@ -173,6 +178,21 @@ function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, on
             <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 3V3Z" />
           </svg>
           {commentCount > 0 && <span>{commentCount}</span>}
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            shareWorkoutSession(item.displayName, item.workoutTitle, item.date, item.workoutKey)
+          }}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-90 text-muted-foreground hover:text-pink-400 hover:bg-pink-500/10 border border-transparent"
+        >
+          <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="3" r="2" />
+            <circle cx="12" cy="13" r="2" />
+            <circle cx="4" cy="8" r="2" />
+            <line x1="5.8" y1="7" x2="10.2" y2="4" />
+            <line x1="5.8" y1="9" x2="10.2" y2="12" />
+          </svg>
         </button>
       </div>
     </div>

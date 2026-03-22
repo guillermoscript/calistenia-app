@@ -6,6 +6,8 @@ import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { METRIC_UNITS, daysRemaining, getMetricLabel } from '../lib/challenges'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
+import { ShareButton } from '../components/ShareButton'
+import { shareChallenge } from '../lib/share'
 import type { LeaderboardEntry } from '../hooks/useLeaderboard'
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -70,10 +72,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
     setInviting(null)
   }
 
-  const shareWhatsApp = () => {
-    const msg = `🎯 Unete a mi desafio "${challenge.title}" en Calistenia App!\n${window.location.href}`
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
-  }
+  const challengeId = id!
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -110,14 +109,10 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       {/* Share */}
       {isActive && (
         <div className="mb-6">
-          <Button
-            onClick={shareWhatsApp}
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] tracking-widest h-9 px-4"
-          >
-            <WhatsAppIcon className="size-3.5 mr-1.5" />
-            COMPARTIR POR WHATSAPP
-          </Button>
+          <ShareButton
+            onShare={(method) => shareChallenge(challenge.title, challengeId, method)}
+            className="hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+          />
         </div>
       )}
 
@@ -196,9 +191,13 @@ function RankRow({ entry, position, unit, onTap }: { entry: LeaderboardEntry; po
       <div className="w-8 text-center shrink-0">
         {medal ? <span className="text-lg">{medal}</span> : <span className="text-sm text-muted-foreground font-mono">{position}</span>}
       </div>
-      <div className="size-9 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0">
-        {entry.displayName[0]?.toUpperCase() || '?'}
-      </div>
+      {entry.avatarUrl ? (
+        <img src={entry.avatarUrl} alt={entry.displayName} className="size-9 rounded-full object-cover shrink-0" />
+      ) : (
+        <div className="size-9 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0">
+          {entry.displayName[0]?.toUpperCase() || '?'}
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className={cn('text-sm font-medium truncate', entry.isCurrentUser && 'text-lime')}>
           {entry.displayName}

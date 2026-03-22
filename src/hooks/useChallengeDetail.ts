@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import type { Challenge, ChallengeMetric } from '../types'
 import type { LeaderboardEntry } from './useLeaderboard'
 
@@ -60,6 +60,7 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
           return {
             userId: uid,
             displayName,
+            avatarUrl: user ? getUserAvatarUrl(user, '100x100') : null,
             value,
             isCurrentUser: uid === currentUserId,
           }

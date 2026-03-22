@@ -164,9 +164,13 @@ function RankRow({ entry, position, unit, onTap }: RankRowProps) {
       </div>
 
       {/* Avatar */}
-      <div className="size-9 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0">
-        {entry.displayName[0]?.toUpperCase() || '?'}
-      </div>
+      {entry.avatarUrl ? (
+        <img src={entry.avatarUrl} alt={entry.displayName} className="size-9 rounded-full object-cover shrink-0" />
+      ) : (
+        <div className="size-9 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0">
+          {entry.displayName[0]?.toUpperCase() || '?'}
+        </div>
+      )}
 
       {/* Name */}
       <div className="flex-1 min-w-0">

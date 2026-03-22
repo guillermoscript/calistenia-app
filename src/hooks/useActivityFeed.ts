@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 
 export interface FeedItem {
   id: string
   userId: string
   displayName: string
+  avatarUrl: string | null
   completedAt: string
   date: string
   workoutKey: string
@@ -67,9 +68,12 @@ export function useActivityFeed(userId: string | null) {
       ])
 
       // Build user lookup
-      const userMap = new Map<string, string>()
+      const userMap = new Map<string, { name: string; avatarUrl: string | null }>()
       userData.forEach((u: any) => {
-        if (u) userMap.set(u.id, u.display_name || u.email?.split('@')[0] || '?')
+        if (u) userMap.set(u.id, {
+          name: u.display_name || u.email?.split('@')[0] || '?',
+          avatarUrl: getUserAvatarUrl(u, '100x100'),
+        })
       })
 
       // 4. Flatten, enrich, and sort
@@ -85,7 +89,8 @@ export function useActivityFeed(userId: string | null) {
         return {
           id: s.id,
           userId: s.user,
-          displayName: userMap.get(s.user) || '?',
+          displayName: userMap.get(s.user)?.name || '?',
+          avatarUrl: userMap.get(s.user)?.avatarUrl || null,
           completedAt: s.completed_at,
           date: s.completed_at?.split(' ')[0] || s.created?.split(' ')[0] || '',
           workoutKey: s.workout_key,

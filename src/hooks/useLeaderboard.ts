@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 
 export interface LeaderboardEntry {
   userId: string
   displayName: string
+  avatarUrl: string | null
   value: number
   isCurrentUser: boolean
 }
@@ -89,11 +90,13 @@ export function useLeaderboard(userId: string | null) {
         ])
 
         const displayName = (userRes as any)?.display_name || (userRes as any)?.email?.split('@')[0] || '?'
+        const avatarUrl = userRes ? getUserAvatarUrl(userRes as any, '100x100') : null
         const isMe = uid === userId
 
         return {
           userId: uid,
           displayName,
+          avatarUrl,
           isCurrentUser: isMe,
           sessionsWeek: (weekSessionsRes as any)?.totalItems || 0,
           sessionsMonth: (monthSessionsRes as any)?.totalItems || 0,
@@ -113,6 +116,7 @@ export function useLeaderboard(userId: string | null) {
           .map(u => ({
             userId: u.userId,
             displayName: u.displayName,
+            avatarUrl: u.avatarUrl,
             value: (u as any)[key] as number,
             isCurrentUser: u.isCurrentUser,
           }))

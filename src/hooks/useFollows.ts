@@ -5,6 +5,9 @@ export interface FollowUser {
   id: string
   displayName: string
   username: string
+  avatar: string
+  collectionId: string
+  collectionName: string
 }
 
 interface UseFollowsReturn {
@@ -53,6 +56,9 @@ export function useFollows(userId: string | null): UseFollowsReturn {
           id: u?.id || r.following,
           displayName: u?.display_name || u?.username || '?',
           username: u?.username || '',
+          avatar: u?.avatar || '',
+          collectionId: u?.collectionId || '_pb_users_auth_',
+          collectionName: u?.collectionName || 'users',
         }
       })
 
@@ -62,6 +68,9 @@ export function useFollows(userId: string | null): UseFollowsReturn {
           id: u?.id || r.follower,
           displayName: u?.display_name || u?.username || '?',
           username: u?.username || '',
+          avatar: u?.avatar || '',
+          collectionId: u?.collectionId || '_pb_users_auth_',
+          collectionName: u?.collectionName || 'users',
         }
       })
 
