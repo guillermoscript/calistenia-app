@@ -276,19 +276,15 @@ export function useNutrition(userId: string | null) {
   // ─── CRUD: updateEntry ────────────────────────────────────────────────────
   const updateEntry = useCallback(async (entryId: string, data: Partial<NutritionEntry>): Promise<void> => {
     if (usePB && userId && !entryId.startsWith('local_')) {
-      try {
-        const pbData: Record<string, any> = {}
-        if (data.mealType !== undefined) pbData.meal_type = data.mealType
-        if (data.foods !== undefined) pbData.foods = JSON.stringify(data.foods)
-        if (data.totalCalories !== undefined) pbData.total_calories = data.totalCalories
-        if (data.totalProtein !== undefined) pbData.total_protein = data.totalProtein
-        if (data.totalCarbs !== undefined) pbData.total_carbs = data.totalCarbs
-        if (data.totalFat !== undefined) pbData.total_fat = data.totalFat
-        if (data.aiModel !== undefined) pbData.ai_model = data.aiModel
-        await pb.collection('nutrition_entries').update(entryId, pbData)
-      } catch (e) {
-        console.warn('PB nutrition_entries update error:', e)
-      }
+      const pbData: Record<string, any> = {}
+      if (data.mealType !== undefined) pbData.meal_type = data.mealType
+      if (data.foods !== undefined) pbData.foods = JSON.stringify(data.foods)
+      if (data.totalCalories !== undefined) pbData.total_calories = data.totalCalories
+      if (data.totalProtein !== undefined) pbData.total_protein = data.totalProtein
+      if (data.totalCarbs !== undefined) pbData.total_carbs = data.totalCarbs
+      if (data.totalFat !== undefined) pbData.total_fat = data.totalFat
+      if (data.aiModel !== undefined) pbData.ai_model = data.aiModel
+      await pb.collection('nutrition_entries').update(entryId, pbData)
     }
 
     setEntries(prev => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
 import NutritionDashboard from '../components/nutrition/NutritionDashboard'
@@ -8,11 +8,15 @@ import WeeklyNutritionChart from '../components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan, { type PlannedMeal } from '../components/nutrition/DailyMealPlan'
 import DailySummaryCard from '../components/nutrition/DailySummaryCard'
 import { useNutrition } from '../hooks/useNutrition'
+import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
+import { submitAnalyzeMealJob } from '../lib/ai-jobs-api'
+import { toast } from 'sonner'
 import { useWater } from '../hooks/useWater'
 import WaterTracker from '../components/WaterTracker'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { cn } from '../lib/utils'
 import type { NutritionGoal, NutritionEntry, FoodItem, Sex } from '../types'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
@@ -32,6 +36,22 @@ interface UserProfileData {
 export default function NutritionPage({ userId, trainingPhase }: NutritionPageProps) {
   const [profileData, setProfileData] = useState<UserProfileData>({})
   const [phaseChangeBanner, setPhaseChangeBanner] = useState(false)
+  const [showInsights, setShowInsights] = useState(false)
+  const { addJob, clearJob, canSubmit, pending, pendingLabels } = useBackgroundJobs()
+
+  const handleSendToBackground = useCallback((imageFiles: File[], mealType: string, description?: string) => {
+    if (!addJob('_pending', 'analyze-meal')) return
+    submitAnalyzeMealJob(imageFiles, mealType, description)
+      .then(id => {
+        clearJob('_pending')
+        addJob(id, 'analyze-meal')
+        toast.info('Analizando en segundo plano', { description: 'Recibiras una notificacion cuando termine', duration: 4000 })
+      })
+      .catch(() => {
+        clearJob('_pending')
+        toast.error('Error al iniciar el analisis', { description: 'Revisa tu conexion e intenta de nuevo' })
+      })
+  }, [addJob, clearJob])
 
   // Fetch user profile data for pre-filling nutrition goal setup
   useEffect(() => {
@@ -201,6 +221,21 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Alimentación</div>
       <div className="font-bebas text-4xl md:text-5xl mb-6">NUTRICIÓN</div>
 
+      {/* Pending background jobs indicator */}
+      {pending.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-lime-400/10 border border-lime-400/20 mb-4 motion-safe:animate-fade-in">
+          <div className="size-4 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin shrink-0" />
+          <div className="text-xs text-foreground min-w-0">
+            {pending.map((j, i) => (
+              <span key={j.id}>
+                {i > 0 && ' · '}
+                {pendingLabels[j.type] || 'Procesando'}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Date picker */}
       <div id="tour-nutrition-date" className="flex items-center gap-3 mb-6">
         <button
@@ -298,20 +333,15 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
           {/* US-15: Missed goals alert */}
           {missedGoalsAlert && (
-            <Card className="border-amber-400/30 bg-amber-400/5">
-              <CardContent className="p-4">
-                <div className="flex gap-3">
-                  <span className="text-xl shrink-0">📉</span>
-                  <div>
-                    <div className="text-sm font-medium text-amber-400">Llevas días sin alcanzar tu meta</div>
-                    <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                      En los últimos días tu ingesta calórica estuvo por debajo del 70% de tu objetivo.
-                      Considera usar el <strong>Plan del día</strong> o revisar tus metas.
-                    </div>
-                  </div>
+            <div className="flex gap-3 px-1">
+              <div className="w-1 shrink-0 rounded-full bg-amber-400/60" />
+              <div>
+                <div className="text-sm font-medium text-amber-400">Llevas días sin alcanzar tu meta</div>
+                <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Tu ingesta estuvo por debajo del 70%. Usa el <strong>Plan del día</strong> o revisa tus metas.
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Water tracker */}
@@ -320,8 +350,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           {/* Frequent meals quick-tap */}
           {isToday && frequentMeals.length > 0 && (
             <div>
-              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-1 uppercase">COMIDAS FRECUENTES</div>
-              <div className="text-[10px] text-muted-foreground/60 mb-3">Toca para registrar</div>
+              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">COMIDAS FRECUENTES</div>
               <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth">
                 {frequentMeals.map((entry, i) => {
                   const foodNames = entry.foods.map(f => f.name).filter(Boolean)
@@ -366,6 +395,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               entries={entries}
               onDeleteEntry={deleteEntry}
               onEditEntry={updateEntry}
+              selectedDate={selectedDate}
             />
           </div>
 
@@ -379,25 +409,42 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             />
           )}
 
-          {/* Macro suggestions */}
-          <MealSuggestions remaining={remaining} />
+          {/* Secondary zone — collapsed by default */}
+          <div>
+            <button
+              onClick={() => setShowInsights(v => !v)}
+              className="w-full flex items-center justify-between py-3 text-[10px] tracking-[0.3em] text-muted-foreground uppercase hover:text-foreground transition-colors"
+            >
+              <span>Sugerencias e historial</span>
+              <svg
+                className={cn('size-4 transition-transform duration-200', showInsights && 'rotate-180')}
+                viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+              >
+                <path d="M4 6l4 4 4-4" />
+              </svg>
+            </button>
 
-          {/* US-11/12: Weekly history chart */}
-          <WeeklyNutritionChart
-            history={weeklyHistory}
-            calorieGoal={goals.dailyCalories}
-          />
+            {showInsights && (
+              <div className="space-y-8 pb-4">
+                <MealSuggestions remaining={remaining} />
 
-          {/* Daily summary shareable card */}
-          {dailyTotals.calories > 0 && isToday && (
-            <DailySummaryCard
-              date={selectedDate}
-              totals={dailyTotals}
-              goals={goals}
-              waterMl={waterTotal}
-              waterGoal={waterGoal}
-            />
-          )}
+                <WeeklyNutritionChart
+                  history={weeklyHistory}
+                  calorieGoal={goals.dailyCalories}
+                />
+
+                {dailyTotals.calories > 0 && isToday && (
+                  <DailySummaryCard
+                    date={selectedDate}
+                    totals={dailyTotals}
+                    goals={goals}
+                    waterMl={waterTotal}
+                    waterGoal={waterGoal}
+                  />
+                )}
+              </div>
+            )}
+          </div>
 
           {/* FAB for meal logging */}
           <div id="tour-meal-logger">
@@ -408,6 +455,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               dailyTotals={dailyTotals}
               goals={goals}
               getRecentEntries={getRecentEntries}
+              onSendToBackground={canSubmit ? handleSendToBackground : undefined}
             />
           </div>
         </div>

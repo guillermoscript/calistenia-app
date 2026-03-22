@@ -15,6 +15,7 @@ import { analyzeMealImage } from "./meal-analyzer.js";
 import { lookupFoodByName } from "./food-lookup.js";
 import { generateDailyMealPlan } from "./meal-plan-generator.js";
 import { sendPushToUser } from "./push-sender.js";
+import { processJob, getAdminPB } from "./job-processor.js";
 import type { Tier } from "./model-resolver.js";
 
 // ── Auth error ────────────────────────────────────────────────────────────────
@@ -264,6 +265,188 @@ export function createApiRouter(): Router {
         const result = await sendPushToUser(user_id, { title, body, url });
         return res.json(result);
       } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // ── Job-based routes (async processing) ───────────────────────────────────
+
+  const MAX_PENDING_JOBS = 2;
+
+  async function checkJobLimit(userId: string, res: any): Promise<boolean> {
+    const pb = await getAdminPB();
+    const active = await pb.collection("ai_jobs").getList(1, 1, {
+      filter: pb.filter(
+        "user = {:uid} && (status = 'pending' || status = 'processing')",
+        { uid: userId }
+      ),
+    });
+    if (active.totalItems >= MAX_PENDING_JOBS) {
+      res.status(429).json({
+        error: `Solo puedes tener ${MAX_PENDING_JOBS} analisis en proceso a la vez. Espera a que termine uno.`,
+      });
+      return false;
+    }
+    return true;
+  }
+
+  // Async meal analysis — returns job ID immediately
+  router.post(
+    "/jobs/analyze-meal",
+    requireAuth,
+    rateLimit,
+    imageUpload.array("images", 5),
+    async (req: any, res: any, next: any) => {
+      try {
+        const files: Express.Multer.File[] = req.files || [];
+        if (files.length === 0) {
+          return res.status(400).json({ error: "Se requiere al menos una imagen de la comida" });
+        }
+        const mealType = req.body.meal_type ?? "comida";
+        const description = req.body.description ?? "";
+        const tier: Tier = req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+
+        if (!(await checkJobLimit(req.user.id, res))) return;
+
+        const pb = await getAdminPB();
+
+        // Build FormData to create the PocketBase record with file uploads
+        const formData = new FormData();
+        formData.append("user", req.user.id);
+        formData.append("type", "analyze-meal");
+        formData.append("status", "pending");
+        formData.append("input", JSON.stringify({ meal_type: mealType, description, tier }));
+
+        for (const file of files) {
+          const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimetype });
+          formData.append("input_images", blob, file.originalname);
+        }
+
+        const record = await pb.collection("ai_jobs").create(formData);
+
+        processJob(record.id).catch((err) =>
+          console.error("[job-processor-error]", record.id, err)
+        );
+
+        return res.status(202).json({ job_id: record.id });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Async food lookup — returns job ID immediately
+  router.post(
+    "/jobs/lookup-food",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        const foodName = req.body?.food_name?.trim();
+        if (!foodName) {
+          return res.status(400).json({ error: "Se requiere el nombre del alimento" });
+        }
+        const tier: Tier =
+          req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+
+        if (!(await checkJobLimit(req.user.id, res))) return;
+
+        const pb = await getAdminPB();
+        const record = await pb.collection("ai_jobs").create({
+          user: req.user.id,
+          type: "lookup-food",
+          status: "pending",
+          input: { food_name: foodName, tier },
+        });
+
+        processJob(record.id).catch((err) =>
+          console.error("[job-processor-error]", record.id, err)
+        );
+
+        return res.status(202).json({ job_id: record.id });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Async meal plan generation — returns job ID immediately
+  router.post(
+    "/jobs/generate-meal-plan",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        const {
+          remaining_calories,
+          remaining_protein,
+          remaining_carbs,
+          remaining_fat,
+          logged_meal_types = [],
+        } = req.body ?? {};
+
+        if (remaining_calories == null) {
+          return res.status(400).json({ error: "Se requieren los macros restantes" });
+        }
+        const tier: Tier =
+          req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+
+        if (!(await checkJobLimit(req.user.id, res))) return;
+
+        const pb = await getAdminPB();
+        const record = await pb.collection("ai_jobs").create({
+          user: req.user.id,
+          type: "generate-meal-plan",
+          status: "pending",
+          input: {
+            remaining_calories,
+            remaining_protein,
+            remaining_carbs,
+            remaining_fat,
+            logged_meal_types,
+            tier,
+          },
+        });
+
+        processJob(record.id).catch((err) =>
+          console.error("[job-processor-error]", record.id, err)
+        );
+
+        return res.status(202).json({ job_id: record.id });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Get job status and result
+  router.get(
+    "/jobs/:id",
+    requireAuth,
+    async (req: any, res: any, next: any) => {
+      try {
+        const pb = await getAdminPB();
+        const job = await pb.collection("ai_jobs").getOne(req.params.id);
+
+        if (job.user !== req.user.id) {
+          return res.status(404).json({ error: "Trabajo no encontrado" });
+        }
+
+        return res.json({
+          id: job.id,
+          type: job.type,
+          status: job.status,
+          result: job.result,
+          error: job.error,
+          created: job.created,
+          updated: job.updated,
+        });
+      } catch (err: any) {
+        // PocketBase 404 → return 404
+        if (err.status === 404) {
+          return res.status(404).json({ error: "Trabajo no encontrado" });
+        }
         next(err);
       }
     }

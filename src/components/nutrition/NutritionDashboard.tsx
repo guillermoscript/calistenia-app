@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { cn } from '../../lib/utils'
-import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 import EditMealSheet from './EditMealSheet'
@@ -14,6 +13,7 @@ interface NutritionDashboardProps {
   entries: NutritionEntry[]
   onDeleteEntry?: (id: string) => void
   onEditEntry?: (id: string, data: Partial<NutritionEntry>) => Promise<void>
+  selectedDate?: string
 }
 
 
@@ -28,7 +28,6 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
   return (
     <div className="relative flex items-center justify-center" role="img" aria-label={`${Math.round(consumed)} de ${target} calorías consumidas`}>
       <svg width="140" height="140" viewBox="0 0 140 140">
-        {/* Background ring */}
         <circle
           cx="70" cy="70" r={radius}
           fill="none"
@@ -36,7 +35,6 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
           className="text-muted"
           strokeWidth="10"
         />
-        {/* Progress ring */}
         <circle
           cx="70" cy="70" r={radius}
           fill="none"
@@ -67,12 +65,14 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
   )
 }
 
-export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry }: NutritionDashboardProps) {
+export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry, selectedDate }: NutritionDashboardProps) {
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
 
   if (!goals) return null
+
+  const isToday = !selectedDate || selectedDate === new Date().toISOString().split('T')[0]
 
   const formatTime = (isoString: string) => {
     try {
@@ -83,56 +83,81 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
     }
   }
 
+  // Scale visual weight by calories relative to goal
+  const maxCal = goals.dailyCalories * 0.5 // a single meal > 50% of goal is "large"
+  const getEntryWeight = (cal: number) => {
+    if (cal >= maxCal) return 'large'
+    if (cal >= maxCal * 0.4) return 'medium'
+    return 'small'
+  }
+
   return (
     <div className="space-y-6">
       {/* Calorie gauge + macros */}
-      <Card>
-        <CardContent className="p-5">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <CalorieGauge consumed={dailyTotals.calories} target={goals.dailyCalories} />
-            <div className="flex-1 w-full space-y-3">
-              <MacroBar label="Proteína" current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
-              <MacroBar label="Carbos" current={dailyTotals.carbs} target={goals.dailyCarbs} color="bg-amber-400" />
-              <MacroBar label="Grasa" current={dailyTotals.fat} target={goals.dailyFat} color="bg-pink-500" />
-            </div>
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          <CalorieGauge consumed={dailyTotals.calories} target={goals.dailyCalories} />
+          <div className="flex-1 w-full space-y-3">
+            <MacroBar label="Proteína" current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
+            <MacroBar label="Carbos" current={dailyTotals.carbs} target={goals.dailyCarbs} color="bg-amber-400" />
+            <MacroBar label="Grasa" current={dailyTotals.fat} target={goals.dailyFat} color="bg-pink-500" />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Meal timeline */}
       <div>
-        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Comidas de hoy</div>
+        <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">
+          {isToday ? 'Comidas de hoy' : 'Comidas del día'}
+        </div>
         {entries.length === 0 ? ((() => {
           const hour = new Date().getHours()
-          const emptyPrompt = hour < 10 ? '¿Qué desayunaste hoy?' : hour < 15 ? '¿Ya almorzaste?' : '¿Qué comiste hoy?'
+          const emptyPrompt = isToday
+            ? (hour < 10 ? '¿Qué desayunaste hoy?' : hour < 15 ? '¿Ya almorzaste?' : '¿Qué comiste hoy?')
+            : 'Sin registros este día'
           return (
-            <Card>
-              <CardContent className="p-5 text-center">
-                <div className="text-muted-foreground text-sm">{emptyPrompt}</div>
-                <div className="text-xs text-muted-foreground mt-1">Usa el botón + para registrar</div>
-              </CardContent>
-            </Card>
+            <div className="py-8 text-center">
+              <div className="text-muted-foreground text-sm">{emptyPrompt}</div>
+              {isToday && <div className="text-xs text-muted-foreground/60 mt-1">Usa el botón + para registrar</div>}
+            </div>
           )
         })()
         ) : (
-          <div className="space-y-3">
-            {entries.map((entry, idx) => {
-              const mealInfo = MEAL_TYPE_COLORS[entry.mealType] || MEAL_TYPE_COLORS.snack
-              const entryId = entry.id || `entry-${idx}`
-              const isExpanded = expandedEntry === entryId
-              return (
-                <Card key={entryId} className="overflow-hidden transition-all duration-300">
-                  <CardContent className="p-0">
-                    <button
-                      onClick={() => setExpandedEntry(isExpanded ? null : entryId)}
-                      className="w-full p-4 text-left"
-                      aria-expanded={isExpanded}
-                      aria-label={`${mealInfo.label} - ${Math.round(entry.totalCalories)} kcal`}
-                    >
-                      <div className="flex gap-3">
-                        {/* Photo thumbnail */}
-                        {((entry.photoUrls && entry.photoUrls.length > 0) || entry.photoUrl) && (
-                          <div className="shrink-0 size-14 rounded-lg overflow-hidden bg-muted relative">
+          <div className="relative">
+            {/* Timeline line */}
+            <div className="absolute left-[18px] top-2 bottom-2 w-px bg-border" />
+
+            <div className="space-y-1">
+              {entries.map((entry, idx) => {
+                const mealInfo = MEAL_TYPE_COLORS[entry.mealType] || MEAL_TYPE_COLORS.snack
+                const entryId = entry.id || `entry-${idx}`
+                const isExpanded = expandedEntry === entryId
+                const weight = getEntryWeight(entry.totalCalories)
+
+                return (
+                  <div key={entryId} className="relative">
+                    {/* Timeline dot */}
+                    <div className={cn(
+                      'absolute left-[14px] top-4 rounded-full border-2 border-background z-10',
+                      weight === 'large' ? 'size-[10px]' : 'size-2',
+                      mealInfo.color.replace('text-', 'bg-'),
+                    )} />
+
+                    <div className={cn(
+                      'ml-10 rounded-lg transition-all duration-200',
+                      weight === 'large' && 'bg-card border border-border',
+                      weight === 'medium' && 'hover:bg-card/50',
+                    )}>
+                      <div className={cn(
+                        'flex items-center gap-3',
+                        weight === 'large' ? 'p-4' : weight === 'medium' ? 'px-3 py-3' : 'px-3 py-2',
+                      )}>
+                        {/* Photo thumbnail — only for large entries */}
+                        {weight === 'large' && ((entry.photoUrls && entry.photoUrls.length > 0) || entry.photoUrl) && (
+                          <button
+                            onClick={() => setExpandedEntry(isExpanded ? null : entryId)}
+                            className="shrink-0 size-12 rounded-lg overflow-hidden bg-muted relative"
+                          >
                             <img
                               src={(entry.photoUrls?.[0]) || entry.photoUrl}
                               alt=""
@@ -140,113 +165,125 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               loading="lazy"
                             />
                             {entry.photoUrls && entry.photoUrls.length > 1 && (
-                              <div className="absolute bottom-0.5 right-0.5 text-[8px] font-mono text-white bg-black/60 backdrop-blur-sm px-1 rounded">
+                              <div className="absolute bottom-0 right-0 text-[8px] font-mono text-white bg-black/60 px-1 rounded-tl">
                                 +{entry.photoUrls.length - 1}
                               </div>
                             )}
-                          </div>
+                          </button>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3">
+
+                        {/* Content — click to expand */}
+                        <button
+                          onClick={() => setExpandedEntry(isExpanded ? null : entryId)}
+                          className="flex-1 min-w-0 text-left"
+                          aria-expanded={isExpanded}
+                        >
+                          <div className="flex items-center gap-2">
                             <span className={cn(
-                              'text-[9px] tracking-widest px-2 py-0.5 rounded border',
-                              mealInfo.bg, mealInfo.color
+                              'text-[9px] tracking-widest',
+                              mealInfo.color,
                             )}>
                               {mealInfo.label.toUpperCase()}
                             </span>
-                            <span className="text-xs text-muted-foreground">{formatTime(entry.loggedAt)}</span>
-                            <span className="ml-auto font-bebas text-lg text-foreground">{Math.round(entry.totalCalories)} kcal</span>
+                            <span className="text-[10px] text-muted-foreground/60">{formatTime(entry.loggedAt)}</span>
+                            <span className={cn(
+                              'ml-auto tabular-nums',
+                              weight === 'large' ? 'font-bebas text-xl text-foreground' : 'text-xs text-foreground font-medium',
+                            )}>
+                              {Math.round(entry.totalCalories)}
+                              <span className={weight === 'large' ? 'text-sm text-muted-foreground ml-0.5' : 'text-muted-foreground ml-0.5'}>kcal</span>
+                            </span>
                           </div>
-                          {(() => {
+
+                          {/* Food names — only for medium/large */}
+                          {weight !== 'small' && (() => {
                             const foodNames = entry.foods.map(f => f.name).filter(Boolean)
                             const summary = foodNames.length > 0
                               ? foodNames.join(', ')
                               : `${entry.foods.length} alimento${entry.foods.length !== 1 ? 's' : ''}`
                             return (
-                              <div className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
-                                {summary}
+                              <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{summary}</div>
+                            )
+                          })()}
+
+                          {/* Macros row */}
+                          <div className={cn(
+                            'flex gap-3 text-[10px]',
+                            weight === 'large' ? 'mt-2' : 'mt-1',
+                          )}>
+                            <span className="text-sky-500">{Math.round(entry.totalProtein)}g P</span>
+                            <span className="text-amber-400">{Math.round(entry.totalCarbs)}g C</span>
+                            <span className="text-pink-500">{Math.round(entry.totalFat)}g G</span>
+                          </div>
+                        </button>
+
+                        {/* Actions */}
+                        {entry.id && (
+                          <div className="flex gap-0.5 shrink-0 self-start">
+                            {onEditEntry && (
+                              <button
+                                onClick={() => setEditingEntry(entry)}
+                                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
+                                aria-label="Editar"
+                              >
+                                <EditIcon className="size-3.5" />
+                              </button>
+                            )}
+                            {onDeleteEntry && (
+                              <button
+                                onClick={() => setDeleteConfirmId(entry.id!)}
+                                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                aria-label="Eliminar"
+                              >
+                                <TrashIcon className="size-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Expanded detail — only per-food breakdown (no repeated totals) */}
+                      {isExpanded && (
+                        <div className={cn(
+                          'border-t border-border/50',
+                          weight === 'large' ? 'px-4 pb-4' : 'px-3 pb-3',
+                        )}>
+                          {/* Photo gallery */}
+                          {(() => {
+                            const photos = (entry.photoUrls && entry.photoUrls.length > 0)
+                              ? entry.photoUrls
+                              : entry.photoUrl ? [entry.photoUrl] : []
+                            if (photos.length === 0) return null
+                            return (
+                              <div className="flex gap-2 pt-3 pb-2 overflow-x-auto scrollbar-none -mx-1 px-1">
+                                {photos.map((url, pi) => (
+                                  <img
+                                    key={pi}
+                                    src={url}
+                                    alt={`Foto ${pi + 1}`}
+                                    className="shrink-0 h-28 rounded-lg object-cover"
+                                    loading="lazy"
+                                  />
+                                ))}
                               </div>
                             )
                           })()}
-                          <div className="flex gap-3 mt-1.5 text-[10px]">
-                            <span className="text-sky-500">{Math.round(entry.totalProtein)}g prot</span>
-                            <span className="text-amber-400">{Math.round(entry.totalCarbs)}g carbs</span>
-                            <span className="text-pink-500">{Math.round(entry.totalFat)}g grasa</span>
+                          <div className="pt-3 space-y-1.5">
+                            {entry.foods.map((food, fi) => (
+                              <div key={fi} className="flex items-center gap-2 text-xs">
+                                <span className="flex-1 text-foreground/80">{food.name || 'Sin nombre'}</span>
+                                <span className="text-muted-foreground/60 text-[10px]">{(food as any).portionAmount ?? ''}{(food as any).portionUnit ?? (food as any).portion ?? ''}</span>
+                                <span className="text-muted-foreground w-12 text-right tabular-nums">{food.calories} kcal</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                    </button>
-
-                    {/* Expanded detail */}
-                    {isExpanded && (
-                      <div className="px-4 pb-4 border-t border-border">
-                        {/* Photo gallery */}
-                        {(() => {
-                          const photos = (entry.photoUrls && entry.photoUrls.length > 0)
-                            ? entry.photoUrls
-                            : entry.photoUrl ? [entry.photoUrl] : []
-                          if (photos.length === 0) return null
-                          return (
-                            <div className="flex gap-2 pt-3 pb-2 overflow-x-auto scrollbar-none -mx-1 px-1">
-                              {photos.map((url, pi) => (
-                                <img
-                                  key={pi}
-                                  src={url}
-                                  alt={`Foto ${pi + 1}`}
-                                  className="shrink-0 h-32 rounded-lg object-cover"
-                                  loading="lazy"
-                                />
-                              ))}
-                            </div>
-                          )
-                        })()}
-                        <div className="pt-3 space-y-2">
-                          {entry.foods.map((food, fi) => (
-                            <div key={fi} className="flex items-center gap-3 text-xs">
-                              <span className="flex-1 text-foreground">{food.name || 'Sin nombre'}</span>
-                              <span className="text-muted-foreground">{(food as any).portionAmount ?? ''}{(food as any).portionUnit ?? (food as any).portion ?? ''}</span>
-                              <span className="text-sky-500 w-12 text-right">{food.protein}p</span>
-                              <span className="text-amber-400 w-12 text-right">{food.carbs}c</span>
-                              <span className="text-pink-500 w-12 text-right">{food.fat}g</span>
-                              <span className="text-foreground w-14 text-right">{food.calories} kcal</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                          <div className="flex gap-4 text-xs">
-                            <span className="text-sky-500">{Math.round(entry.totalProtein)}g prot</span>
-                            <span className="text-amber-400">{Math.round(entry.totalCarbs)}g carbs</span>
-                            <span className="text-pink-500">{Math.round(entry.totalFat)}g grasa</span>
-                          </div>
-                          <div className="flex gap-1">
-                            {onEditEntry && entry.id && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); setEditingEntry(entry) }}
-                                className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-muted"
-                              >
-                                <EditIcon className="size-3.5" />
-                              </Button>
-                            )}
-                            {onDeleteEntry && entry.id && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(entry.id!) }}
-                                className="h-7 px-2 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                              >
-                                <TrashIcon className="size-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
       </div>

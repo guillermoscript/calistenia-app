@@ -23,6 +23,10 @@ export interface MealLoggerContentProps {
   getRecentEntries: () => Promise<NutritionEntry[]>
   /** Called after successful save (e.g. to navigate away or close modal) */
   onSaveSuccess?: () => void
+  /** Send current analysis to background processing */
+  onSendToBackground?: (imageFiles: File[], mealType: string, description?: string) => void
+  /** Pre-populated analysis from a completed background job */
+  initialAnalysis?: { foods: FoodItem[]; meal_description?: string } | null
 }
 
 const MEAL_OPTIONS: { id: MealType; label: string; icon: string }[] = [
@@ -80,6 +84,7 @@ function compressImage(file: File, maxSize = 1024): Promise<File> {
 
 export default function MealLoggerContent({
   onAnalyze, onSave, userId, dailyTotals, goals, getRecentEntries, onSaveSuccess,
+  onSendToBackground, initialAnalysis,
 }: MealLoggerContentProps) {
   const { saveFoodToCatalog, completeWithAI } = useFoodCatalog()
   const { getRecentFoods, getHourSuggestions, trackFood } = useFoodHistory(userId)
@@ -145,12 +150,23 @@ export default function MealLoggerContent({
     setImagePreviews(prev => prev.filter((_, i) => i !== index))
   }
 
+  const [showBgOption, setShowBgOption] = useState(false)
+  const bgTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
   const handleAnalyze = async () => {
     if (imageFiles.length === 0) return
+
     cancelledRef.current = false
     abortControllerRef.current = new AbortController()
     setStep('analyzing')
     setError(null)
+    setShowBgOption(false)
+
+    // Show "no esperar" option after 20s
+    if (onSendToBackground) {
+      bgTimerRef.current = setTimeout(() => setShowBgOption(true), 20_000)
+    }
+
     try {
       const result = await onAnalyze(imageFiles, mealType, imageDescription.trim() || undefined)
       if (cancelledRef.current) return
@@ -174,15 +190,42 @@ export default function MealLoggerContent({
       setStep('capture')
     } finally {
       abortControllerRef.current = null
+      clearTimeout(bgTimerRef.current)
+      setShowBgOption(false)
     }
   }
 
-  const handleCancelAnalysis = () => {
+  // "No esperar" during analysis → send to background instead of wasting the API call
+  const handleSendToBackground = () => {
+    if (!onSendToBackground || imageFiles.length === 0) return
     cancelledRef.current = true
     abortControllerRef.current?.abort()
     abortControllerRef.current = null
-    setStep('capture')
+    clearTimeout(bgTimerRef.current)
+    setShowBgOption(false)
+    onSendToBackground(imageFiles, mealType, imageDescription.trim() || undefined)
+    onSaveSuccess?.()
   }
+
+  // Cleanup bg timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(bgTimerRef.current)
+  }, [])
+
+  // Load initial analysis from a completed background job
+  useEffect(() => {
+    if (initialAnalysis && initialAnalysis.foods.length > 0) {
+      const normalized = initialAnalysis.foods.map(f => {
+        if (!('baseCal100' in f) || !(f as any).baseCal100) {
+          return migrateLegacyFood(f as any)
+        }
+        return f
+      })
+      setFoods(normalized)
+      setMealDescription(initialAnalysis.meal_description || '')
+      setStep('review')
+    }
+  }, [initialAnalysis])
 
   const handleQuickTextSubmit = () => {
     const text = quickText.trim()
@@ -665,12 +708,21 @@ export default function MealLoggerContent({
               ))}
             </>
           )}
-          <button
-            onClick={handleCancelAnalysis}
-            className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
-          >
-            Cancelar
-          </button>
+          {showBgOption && onSendToBackground ? (
+            <button
+              onClick={handleSendToBackground}
+              className="w-full text-center text-xs text-lime-400 hover:text-lime-300 font-medium transition-colors py-2 motion-safe:animate-fade-in"
+            >
+              No esperar — avisame cuando termine
+            </button>
+          ) : !onSendToBackground ? (
+            <button
+              onClick={() => { cancelledRef.current = true; abortControllerRef.current?.abort(); abortControllerRef.current = null; setStep('capture') }}
+              className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
+            >
+              Cancelar
+            </button>
+          ) : null}
         </div>
       )}
 

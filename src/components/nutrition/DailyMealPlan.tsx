@@ -1,10 +1,13 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { toast } from 'sonner'
 import { pb } from '../../lib/pocketbase'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { AI_API_URL } from '../../lib/ai-api'
 import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
+import { submitMealPlanJob } from '../../lib/ai-jobs-api'
+import { useBackgroundJobs } from '../../hooks/useBackgroundJobs'
 
 interface MacroTarget {
   calories: number
@@ -38,12 +41,36 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
   const [open, setOpen] = useState(false)
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
   const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set())
+  const [showBgOption, setShowBgOption] = useState(false)
+  const bgTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const { addJob, canSubmit } = useBackgroundJobs()
+
+  const handleSendToBackground = useCallback(() => {
+    if (!canSubmit) return
+    setShowBgOption(false)
+    clearTimeout(bgTimerRef.current)
+    submitMealPlanJob({
+      remaining_calories: Math.round(remaining.calories),
+      remaining_protein: Math.round(remaining.protein),
+      remaining_carbs: Math.round(remaining.carbs),
+      remaining_fat: Math.round(remaining.fat),
+      logged_meal_types: loggedMealTypes,
+    }).then(id => {
+      if (!addJob(id, 'generate-meal-plan')) return
+      setLoading(false)
+      toast.info('Generando plan en segundo plano', { description: 'Recibiras una notificacion cuando termine', duration: 4000 })
+    }).catch(() => {
+      toast.error('Error al iniciar la generacion', { description: 'Revisa tu conexion e intenta de nuevo' })
+    })
+  }, [remaining, loggedMealTypes, addJob, canSubmit])
 
   const generate = useCallback(async () => {
     setLoading(true)
     setError(null)
     setOpen(true)
     setSavedIndices(new Set())
+    setShowBgOption(false)
+    bgTimerRef.current = setTimeout(() => setShowBgOption(canSubmit), 20_000)
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (pb.authStore.token) headers['Authorization'] = `Bearer ${pb.authStore.token}`
@@ -69,6 +96,8 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
       setError(e.message || 'Error al generar el plan. Intenta de nuevo.')
     } finally {
       setLoading(false)
+      setShowBgOption(false)
+      clearTimeout(bgTimerRef.current)
     }
   }, [remaining, loggedMealTypes])
 
@@ -139,6 +168,14 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                 <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
               ))}
             </div>
+            {showBgOption && (
+              <button
+                onClick={handleSendToBackground}
+                className="w-full text-center text-xs text-lime-400 hover:text-lime-300 font-medium transition-colors py-2 mt-3"
+              >
+                No esperar — avisame cuando termine
+              </button>
+            )}
           </CardContent>
         </Card>
       )}

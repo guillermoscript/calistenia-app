@@ -48,6 +48,8 @@ import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from './lib/offlineQueue'
 import { pb } from './lib/pocketbase'
 import { cn } from './lib/utils'
+import { Toaster } from 'sonner'
+import { BackgroundJobsProvider } from './contexts/BackgroundJobsContext'
 import type { Settings } from './types'
 import {
   SidebarProvider,
@@ -710,6 +712,16 @@ export default function App() {
     return cleanup
   }, [])
 
+  // Listen for SPA navigation events (from background job toasts)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const url = (e as CustomEvent).detail
+      if (typeof url === 'string') navigate(url)
+    }
+    window.addEventListener('app:navigate', handler)
+    return () => window.removeEventListener('app:navigate', handler)
+  }, [navigate])
+
   const toggleDark = () => {
     setDark(d => {
       const next = !d
@@ -835,6 +847,7 @@ export default function App() {
   return (
     <>
     <OfflineBanner />
+    <BackgroundJobsProvider>
     <CardioSessionProvider userId={user.id} userWeight={nutritionGoals?.weight}>
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -993,7 +1006,9 @@ export default function App() {
     <ActiveCardioBar />
     </CardioSessionProvider>
 
+    </BackgroundJobsProvider>
     <InstallPrompt />
+    <Toaster position="bottom-center" richColors closeButton />
     </>
   )
 }
