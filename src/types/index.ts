@@ -375,6 +375,33 @@ export interface ChallengeParticipant {
   user: string
 }
 
+// ─── Comments ───────────────────────────────────────────────────────────────
+
+export interface CommentRecord {
+  id: string
+  session_id: string
+  author: string
+  text: string
+  parent_id: string | null
+  created: string
+}
+
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_invite'
+
+export interface NotificationRecord {
+  id: string
+  user: string
+  type: NotificationType
+  actor: string
+  reference_id: string
+  reference_type: string
+  read: boolean
+  data?: Record<string, any>
+  created: string
+}
+
 // ─── Sleep Tracking ──────────────────────────────────────────────────────────
 
 export interface SleepEntry {

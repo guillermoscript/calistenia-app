@@ -1,7 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useActivityFeed, type FeedItem } from '../hooks/useActivityFeed'
 import { useReactions } from '../hooks/useReactions'
+import { useComments } from '../hooks/useComments'
+import { EmojiPicker } from '../components/social/EmojiPicker'
+import { CommentsSheet } from '../components/social/CommentsSheet'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
 import { Button } from '../components/ui/button'
@@ -28,23 +31,25 @@ interface ActivityFeedPageProps {
 export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const navigate = useNavigate()
   const { items, loading, load } = useActivityFeed(userId)
-  const { loadForSessions, toggleReaction, getReaction } = useReactions(userId)
+  const { loadForSessions, toggleReaction, getReactions } = useReactions(userId)
+  const { getComments, loadCommentCounts, addComment, deleteComment, getCommentCount, commentsBySession } = useComments(userId)
+  const [commentsSessionId, setCommentsSessionId] = useState<string | null>(null)
 
   useEffect(() => { load() }, [load])
 
-  // Load reactions once feed items are available
+  // Load reactions and comment counts once feed items are available
   useEffect(() => {
     if (items.length > 0) {
-      loadForSessions(items.map(i => i.id))
+      const ids = items.map(i => i.id)
+      loadForSessions(ids)
+      loadCommentCounts(ids)
     }
-  }, [items, loadForSessions])
+  }, [items, loadForSessions, loadCommentCounts])
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
       <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Social</div>
       <h1 className="font-bebas text-4xl md:text-5xl mb-6">ACTIVIDAD</h1>
-
-      {/* Tour anchor for the whole feed */}
 
       {loading && (
         <Loader label="Cargando actividad..." className="py-12" />
@@ -64,7 +69,8 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       {!loading && items.length > 0 && (
         <div id="tour-feed-list" className="flex flex-col gap-2">
           {items.map((item, i) => {
-            const reaction = getReaction(item.id)
+            const reactions = getReactions(item.id)
+            const commentCount = getCommentCount(item.id)
             return (
               <div
                 key={item.id}
@@ -75,14 +81,29 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
                   item={item}
                   onTap={() => navigate(`/session/${item.date}/${item.workoutKey}`)}
                   onTapUser={() => navigate(`/u/${item.userId}`)}
-                  reactionCount={reaction.count}
-                  hasReacted={reaction.hasReacted}
-                  onReact={() => toggleReaction(item.id)}
+                  reactions={reactions}
+                  onReact={(emoji) => toggleReaction(item.id, emoji)}
+                  commentCount={commentCount}
+                  onComment={() => setCommentsSessionId(item.id)}
                 />
               </div>
             )
           })}
         </div>
+      )}
+
+      {/* Comments Sheet */}
+      {commentsSessionId && (
+        <CommentsSheet
+          sessionId={commentsSessionId}
+          isOpen={!!commentsSessionId}
+          onClose={() => setCommentsSessionId(null)}
+          comments={commentsBySession[commentsSessionId] || []}
+          onLoadComments={getComments}
+          onAddComment={addComment}
+          onDeleteComment={deleteComment}
+          currentUserId={userId}
+        />
       )}
     </div>
   )
@@ -94,12 +115,13 @@ interface FeedCardProps {
   item: FeedItem
   onTap: () => void
   onTapUser: () => void
-  reactionCount: number
-  hasReacted: boolean
-  onReact: () => void
+  reactions: Record<string, { count: number; hasReacted: boolean }>
+  onReact: (emoji: string) => void
+  commentCount: number
+  onComment: () => void
 }
 
-function FeedCard({ item, onTap, onTapUser, reactionCount, hasReacted, onReact }: FeedCardProps) {
+function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, onComment }: FeedCardProps) {
   const phaseColor = PHASE_COLORS[item.phase]
 
   return (
@@ -140,19 +162,17 @@ function FeedCard({ item, onTap, onTapUser, reactionCount, hasReacted, onReact }
         <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
       </button>
 
-      {/* Reaction */}
-      <div id="tour-feed-reaction" className="mt-2 flex items-center">
+      {/* Reactions + Comment */}
+      <div id="tour-feed-reaction" className="mt-2 flex items-center gap-2">
+        <EmojiPicker reactions={reactions} onToggle={onReact} />
         <button
-          onClick={(e) => { e.stopPropagation(); onReact() }}
-          className={cn(
-            'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-90',
-            hasReacted
-              ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
-              : 'text-muted-foreground hover:text-orange-400 hover:bg-orange-500/10 border border-transparent',
-          )}
+          onClick={(e) => { e.stopPropagation(); onComment() }}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-90 text-muted-foreground hover:text-sky-400 hover:bg-sky-500/10 border border-transparent"
         >
-          <span className={cn('text-sm', hasReacted && 'motion-safe:animate-scale-in')}>🔥</span>
-          {reactionCount > 0 && <span>{reactionCount}</span>}
+          <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 3V3Z" />
+          </svg>
+          {commentCount > 0 && <span>{commentCount}</span>}
         </button>
       </div>
     </div>

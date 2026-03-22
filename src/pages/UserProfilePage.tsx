@@ -28,6 +28,8 @@ interface ProfileData {
   prs: Record<string, number>
   // Activity
   monthActivity: Record<string, boolean>
+  // Active program
+  activeProgram: { name: string; id: string } | null
 }
 
 const PR_DEFS = [
@@ -106,6 +108,18 @@ export default function UserProfilePage() {
           }
         } catch { /* no sessions collection or access */ }
 
+        // Fetch active program
+        let activeProgram: { name: string; id: string } | null = null
+        try {
+          const upRes = await pb.collection('user_programs').getFirstListItem(
+            pb.filter('user = {:uid} && is_current = true', { uid: userId }),
+            { expand: 'program', $autoCancel: false }
+          )
+          if (upRes.expand?.program) {
+            activeProgram = { name: (upRes.expand.program as any).name, id: (upRes.expand.program as any).id }
+          }
+        } catch { /* no active program */ }
+
         setProfile({
           id: user.id,
           displayName: user.display_name || user.email?.split('@')[0] || '',
@@ -126,6 +140,7 @@ export default function UserProfilePage() {
             pr_handstand: settings.pr_handstand || 0,
           },
           monthActivity,
+          activeProgram,
         })
       } catch (e) {
         console.error('UserProfilePage: load error', e)
@@ -219,6 +234,31 @@ export default function UserProfilePage() {
         <StatBox label="Mejor racha" value={profile.bestStreak} accent="text-amber-400" unit="dias" />
         <StatBox label="Nivel" value={profile.level} accent="text-pink-500" />
       </div>
+
+      {/* Programa actual */}
+      {profile.activeProgram ? (
+        <Card className="mb-8">
+          <CardContent className="p-5">
+            <div className="text-[10px] text-muted-foreground tracking-widest mb-2 uppercase">Programa actual</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">{profile.activeProgram.name}</div>
+                <div className="text-xs text-muted-foreground">Fase {profile.phase}</div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/u/${userId}/routine`)}
+                className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+              >
+                VER RUTINA
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="mb-8 text-xs text-muted-foreground text-center py-4">Sin programa activo</div>
+      )}
 
       {/* PRs */}
       <Card className="mb-8">

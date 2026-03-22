@@ -195,6 +195,15 @@ export function SleepIcon({ className }: IconProps) {
   )
 }
 
+export function BellIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M8 1.5a4 4 0 00-4 4v3l-1.5 2h11L12 8.5v-3a4 4 0 00-4-4z" />
+      <path d="M6.5 13.5a1.5 1.5 0 003 0" />
+    </svg>
+  )
+}
+
 export function SunIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">

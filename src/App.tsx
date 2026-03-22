@@ -37,6 +37,8 @@ const ActivityFeedPage = lazy(() => import('./pages/ActivityFeedPage'))
 const ChallengesPage = lazy(() => import('./pages/ChallengesPage'))
 const ChallengeDetailPage = lazy(() => import('./pages/ChallengeDetailPage'))
 const CreateChallengePage = lazy(() => import('./pages/CreateChallengePage'))
+const RoutineViewPage = lazy(() => import('./pages/RoutineViewPage'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
 const SleepPage = lazy(() => import('./pages/SleepPage'))
 import OfflineBanner from './components/OfflineBanner'
@@ -71,7 +73,7 @@ import {
   LayoutIcon, DumbbellIcon, SpineIcon, ChartIcon, NutritionIcon,
   ProfileIcon, ProgramIcon, ExerciseIcon, RunningIcon, ChallengeIcon,
   ActivityIcon, FriendsIcon, TrophyIcon, FreeSessionIcon, CalendarNavIcon,
-  ShieldIcon, PencilIcon, LogOutIcon, SunIcon, MoonIcon, SleepIcon,
+  ShieldIcon, PencilIcon, LogOutIcon, SunIcon, MoonIcon, SleepIcon, BellIcon,
 } from './components/icons/nav-icons'
 
 interface NavItem {
@@ -96,6 +98,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/friends', label: 'Amigos', icon: FriendsIcon },
   { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
   { path: '/challenges', label: 'Desafios', icon: ChallengeIcon },
+  { path: '/notifications', label: 'Notificaciones', icon: BellIcon },
   { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
 ]
 
@@ -133,7 +136,9 @@ function getBreadcrumb(pathname: string): string {
   if (pathname === '/cardio') return 'Cardio'
   if (pathname === '/admin') return 'Admin'
   if (pathname === '/editor') return 'Editor'
+  if (pathname.match(/^\/u\/[^/]+\/routine$/)) return 'Rutina'
   if (RE_USER_PROFILE.test(pathname)) return 'Perfil'
+  if (pathname === '/notifications') return 'Notificaciones'
   return 'Dashboard'
 }
 
@@ -494,6 +499,8 @@ function AuthenticatedApp({
             <Route path="/friends" element={<FriendsPage userId={userId!} />} />
             <Route path="/leaderboard" element={<LeaderboardPage userId={userId!} />} />
             <Route path="/add/:userId" element={<AddFriendPage currentUserId={userId!} />} />
+            <Route path="/u/:userId/routine" element={<RoutineViewPage />} />
+            <Route path="/notifications" element={<NotificationsPage userId={userId!} />} />
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}
             <Route path="/u/:userId" element={<UserProfilePage />} />
