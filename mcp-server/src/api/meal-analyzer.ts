@@ -1,7 +1,7 @@
 import { generateText, Output, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { MealAnalysisSchema } from "./schemas.js";
-import { resolveModel, type Tier } from "./model-resolver.js";
+import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
 
 interface ImageInput {
   buffer: Buffer;
@@ -15,7 +15,7 @@ interface MealAnalysisInput {
   tier: Tier;
 }
 
-// ── Open Food Facts API helpers ──────────────────────────────────────────────
+// ── Food database API helpers ────────────────────────────────────────────────
 
 interface OFFNutriments {
   "energy-kcal_100g"?: number;
@@ -118,7 +118,7 @@ const searchFoodDatabase = tool({
       message:
         totalFound > 0
           ? `Se encontraron ${totalFound} productos en Open Food Facts. Los valores son por cada 100g — multiplica por el peso estimado de la porción visible.`
-          : "No se encontraron productos en Open Food Facts. Usa tablas nutricionales estándar (USDA, FAO).",
+          : "No se encontraron productos en Open Food Facts. Usa web_search/google_search para buscar datos nutricionales, o tablas estándar.",
     };
   },
 });
@@ -132,7 +132,8 @@ Analiza la imagen de la comida proporcionada y devuelve información nutricional
 
 1. PRIMERO: Observa la imagen e identifica todos los alimentos visibles.
 2. SEGUNDO: Usa la herramienta search_food_database para buscar esos alimentos en Open Food Facts. Esto te dará valores nutricionales reales por cada 100g de producto.
-3. TERCERO: Genera tu análisis final combinando lo que ves en la imagen con los datos reales encontrados. Calcula los valores finales multiplicando los datos por 100g por el peso estimado de cada porción visible. Si no encontraste datos para algún alimento, usa tablas nutricionales estándar.
+3. TERCERO: Si no encontraste datos suficientes en Open Food Facts para algún alimento, usa web_search/google_search para buscar sus valores nutricionales en la web.
+4. CUARTO: Genera tu análisis final combinando lo que ves en la imagen con los datos reales encontrados. Calcula los valores finales multiplicando los datos por 100g por el peso estimado de cada porción visible.
 
 ## Instrucciones de análisis
 
@@ -156,7 +157,8 @@ export async function analyzeMealImage({
   description,
   tier,
 }: MealAnalysisInput) {
-  const { model, name: modelName } = resolveModel(tier);
+  const { model, name: modelName, provider } = resolveModel(tier);
+  const webSearchTools = resolveWebSearchTool(provider);
 
   let userText =
     images.length > 1
@@ -176,7 +178,7 @@ export async function analyzeMealImage({
   const { output, steps } = await generateText({
     model,
     output: Output.object({ schema: MealAnalysisSchema }),
-    tools: { search_food_database: searchFoodDatabase },
+    tools: { search_food_database: searchFoodDatabase, ...webSearchTools },
     stopWhen: stepCountIs(7),
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
