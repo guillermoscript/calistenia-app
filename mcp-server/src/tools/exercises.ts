@@ -91,7 +91,7 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
       try {
         // Check deduplication
         try {
-          const existing = await pb.collection("exercises_catalog").getFirstListItem(`wger_id = ${wger_id}`);
+          const existing = await pb.collection("exercises_catalog").getFirstListItem(pb.filter('wger_id = {:wger_id}', { wger_id }));
           return {
             content: [{ type: "text", text: `Exercise already exists: **${existing.name}** (ID: ${existing.id})` }],
             structuredContent: { id: existing.id, name: existing.name, already_existed: true },
@@ -194,19 +194,23 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
     },
     async ({ limit, offset, search, category, equipment, response_format }) => {
       try {
-        const filters: string[] = [];
+        const conditions: string[] = [];
+        const params: Record<string, unknown> = {};
 
         if (search) {
-          filters.push(`name ~ "${search}"`);
+          conditions.push('name ~ {:search}');
+          params.search = search;
         }
         if (category) {
-          filters.push(`category = "${category}"`);
+          conditions.push('category = {:category}');
+          params.category = category;
         }
         if (equipment) {
-          filters.push(`equipment ~ "${equipment}"`);
+          conditions.push('equipment ~ {:equipment}');
+          params.equipment = equipment;
         }
 
-        const filter = filters.length > 0 ? filters.join(" && ") : "";
+        const filter = conditions.length > 0 ? pb.filter(conditions.join(' && '), params) : "";
 
         const result = await pb.collection("exercises_catalog").getList(offset / limit + 1, limit, {
           filter,
@@ -302,7 +306,7 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
 
         // Check for duplicates by slug
         try {
-          const existing = await pb.collection("exercises_catalog").getFirstListItem(`slug = "${slug}"`);
+          const existing = await pb.collection("exercises_catalog").getFirstListItem(pb.filter('slug = {:slug}', { slug }));
           return {
             content: [{ type: "text", text: `Exercise already exists: **${existing.name}** (ID: ${existing.id})` }],
             structuredContent: { id: existing.id, name: existing.name, already_existed: true },

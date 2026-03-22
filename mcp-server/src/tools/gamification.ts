@@ -104,13 +104,14 @@ function computeWeeklyGoalStreak(sessionDates: string[], weeklyGoal: number): nu
 /** Full stat recalculation from source data. */
 async function computeAllStats(pb: PocketBase, userId: string): Promise<ComputedStats> {
   // Fetch all source data in parallel
+  const userFilter = pb.filter('user = {:userId}', { userId });
   const [sessions, sets, nutritionEntries, lumbarChecks, weightEntries, settings] = await Promise.all([
-    pb.collection("sessions").getFullList({ filter: `user = "${userId}"`, sort: "completed_at", fields: "completed_at" }),
-    pb.collection("sets_log").getFullList({ filter: `user = "${userId}"`, fields: "id" }),
-    pb.collection("nutrition_entries").getFullList({ filter: `user = "${userId}"`, sort: "logged_at", fields: "logged_at" }),
-    pb.collection("lumbar_checks").getFullList({ filter: `user = "${userId}"`, fields: "id" }),
-    pb.collection("weight_entries").getFullList({ filter: `user = "${userId}"`, fields: "id" }),
-    pb.collection("settings").getFirstListItem(`user = "${userId}"`).catch(() => null),
+    pb.collection("sessions").getFullList({ filter: userFilter, sort: "completed_at", fields: "completed_at", requestKey: null }),
+    pb.collection("sets_log").getFullList({ filter: userFilter, fields: "id", requestKey: null }),
+    pb.collection("nutrition_entries").getFullList({ filter: userFilter, sort: "logged_at", fields: "logged_at", requestKey: null }),
+    pb.collection("lumbar_checks").getFullList({ filter: userFilter, fields: "id", requestKey: null }),
+    pb.collection("weight_entries").getFullList({ filter: userFilter, fields: "id", requestKey: null }),
+    pb.collection("settings").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
   ]);
 
   const sessionDates = sessions.map((s) => (s.completed_at as string).slice(0, 10));
@@ -154,10 +155,13 @@ async function ensureAchievementsCatalog(pb: PocketBase): Promise<void> {
   const existing = await pb.collection("achievements").getFullList({ fields: "key" });
   const existingKeys = new Set(existing.map((a) => a.key as string));
 
-  for (const ach of ACHIEVEMENTS) {
-    if (!existingKeys.has(ach.key)) {
-      await pb.collection("achievements").create(ach);
+  const missing = ACHIEVEMENTS.filter((ach) => !existingKeys.has(ach.key));
+  if (missing.length > 0) {
+    const batch = pb.createBatch();
+    for (const ach of missing) {
+      batch.collection("achievements").create(ach);
     }
+    await batch.send();
   }
 }
 
@@ -169,7 +173,7 @@ async function checkAchievements(
 ): Promise<{ newly_unlocked: string[]; total_unlocked: number; achievement_xp: number }> {
   const allAchievements = await pb.collection("achievements").getFullList({ sort: "sort_order" });
   const userAchievements = await pb.collection("user_achievements").getFullList({
-    filter: `user = "${userId}"`,
+    filter: pb.filter('user = {:userId}', { userId }),
   });
   const unlockedMap = new Map(userAchievements.map((ua) => [ua.achievement as string, ua]));
 
@@ -190,6 +194,9 @@ async function checkAchievements(
   let achievementXp = 0;
   let totalUnlocked = 0;
 
+  const batch = pb.createBatch();
+  let hasBatchOps = false;
+
   for (const ach of allAchievements) {
     const currentValue = statValues[ach.requirement_type as string] ?? 0;
     const requiredValue = ach.requirement_value as number;
@@ -208,28 +215,34 @@ async function checkAchievements(
         existingUA.progress !== progress ||
         existingUA.unlocked !== isUnlocked
       ) {
-        await pb.collection("user_achievements").update(existingUA.id, {
+        batch.collection("user_achievements").update(existingUA.id, {
           progress,
           unlocked: isUnlocked,
           unlocked_at: isUnlocked && !existingUA.unlocked ? new Date().toISOString() : existingUA.unlocked_at,
         });
+        hasBatchOps = true;
         if (isUnlocked && !existingUA.unlocked) {
           newlyUnlocked.push(ach.name as string);
         }
       }
     } else {
       // Create user_achievement record
-      await pb.collection("user_achievements").create({
+      batch.collection("user_achievements").create({
         user: userId,
         achievement: ach.id,
         progress,
         unlocked: isUnlocked,
         unlocked_at: isUnlocked ? new Date().toISOString() : null,
       });
+      hasBatchOps = true;
       if (isUnlocked) {
         newlyUnlocked.push(ach.name as string);
       }
     }
+  }
+
+  if (hasBatchOps) {
+    await batch.send();
   }
 
   return { newly_unlocked: newlyUnlocked, total_unlocked: totalUnlocked, achievement_xp: achievementXp };
@@ -279,7 +292,7 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
         // 5. Upsert user_stats
         const existing = await pb
           .collection("user_stats")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
 
         if (existing) {
@@ -349,7 +362,7 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
       try {
         const stats = await pb
           .collection("user_stats")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
 
         if (!stats) {
@@ -453,15 +466,14 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
     },
     async ({ category, status, response_format }) => {
       try {
-        let achFilter = "";
-        if (category) achFilter = `category = "${category}"`;
+        const achFilter = category ? pb.filter('category = {:category}', { category }) : undefined;
         const allAch = await pb.collection("achievements").getFullList({
-          filter: achFilter || undefined,
+          filter: achFilter,
           sort: "sort_order",
         });
 
         const userAch = await pb.collection("user_achievements").getFullList({
-          filter: `user = "${userId}"`,
+          filter: pb.filter('user = {:userId}', { userId }),
         });
         const progressMap = new Map(
           userAch.map((ua) => [

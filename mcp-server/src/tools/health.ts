@@ -84,7 +84,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
       try {
         const from = daysAgo(days);
         const entries = await pb.collection("sleep_entries").getList(offset / limit + 1, limit, {
-          filter: `user = "${userId}" && date >= "${from}"`,
+          filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
           sort: "-date",
         });
 
@@ -161,7 +161,8 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
         // Get today's total
         const todayStr = today();
         const todayEntries = await pb.collection("water_entries").getFullList({
-          filter: `user = "${userId}" && logged_at >= "${todayStr}"`,
+          filter: pb.filter('user = {:userId} && logged_at >= {:todayStr}', { userId, todayStr }),
+          fields: 'amount_ml',
         });
         const totalMl = todayEntries.reduce((s, e) => s + (e.amount_ml as number), 0);
 
@@ -192,8 +193,9 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
       try {
         const todayStr = today();
         const entries = await pb.collection("water_entries").getFullList({
-          filter: `user = "${userId}" && logged_at >= "${todayStr}"`,
+          filter: pb.filter('user = {:userId} && logged_at >= {:todayStr}', { userId, todayStr }),
           sort: "logged_at",
+          fields: 'amount_ml',
         });
 
         const totalMl = entries.reduce((s, e) => s + (e.amount_ml as number), 0);
@@ -288,7 +290,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
       try {
         const from = daysAgo(days);
         const result = await pb.collection("body_measurements").getList(offset / limit + 1, limit, {
-          filter: `user = "${userId}" && date >= "${from}"`,
+          filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
           sort: "-date",
         });
 

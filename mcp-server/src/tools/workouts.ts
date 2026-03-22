@@ -46,13 +46,15 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
         const from = from_date ?? daysAgo(30);
         const to = to_date ?? today();
 
-        let filter = `user = "${userId}" && completed_at >= "${from}" && completed_at <= "${to} 23:59:59"`;
-        if (phase) filter += ` && phase = ${phase}`;
-        if (workout_key) filter += ` && workout_key = "${workout_key}"`;
+        const conditions = ['user = {:userId}', 'completed_at >= {:from}', 'completed_at <= {:to}'];
+        const params: Record<string, unknown> = { userId, from, to: `${to} 23:59:59` };
+        if (phase) { conditions.push('phase = {:phase}'); params.phase = phase; }
+        if (workout_key) { conditions.push('workout_key = {:workout_key}'); params.workout_key = workout_key; }
 
         const result = await pb.collection("sessions").getList(offset / limit + 1, limit, {
-          filter,
+          filter: pb.filter(conditions.join(' && '), params),
           sort: "-completed_at",
+          fields: "id,workout_key,phase,day,completed_at,note",
         });
 
         if (result.items.length === 0) {
@@ -220,13 +222,15 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
         const from = from_date ?? daysAgo(30);
         const to = to_date ?? today();
 
-        let filter = `user = "${userId}" && logged_at >= "${from}" && logged_at <= "${to} 23:59:59"`;
-        if (exercise_id) filter += ` && exercise_id = "${exercise_id}"`;
-        if (workout_key) filter += ` && workout_key = "${workout_key}"`;
+        const conditions = ['user = {:userId}', 'logged_at >= {:from}', 'logged_at <= {:to}'];
+        const params: Record<string, unknown> = { userId, from, to: `${to} 23:59:59` };
+        if (exercise_id) { conditions.push('exercise_id = {:exercise_id}'); params.exercise_id = exercise_id; }
+        if (workout_key) { conditions.push('workout_key = {:workout_key}'); params.workout_key = workout_key; }
 
         const result = await pb.collection("sets_log").getList(offset / limit + 1, limit, {
-          filter,
+          filter: pb.filter(conditions.join(' && '), params),
           sort: "-logged_at",
+          fields: "id,exercise_id,workout_key,reps,note,logged_at",
         });
 
         if (result.items.length === 0) {
@@ -354,8 +358,9 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
       try {
         const from = daysAgo(days);
         const result = await pb.collection("sets_log").getFullList({
-          filter: `user = "${userId}" && exercise_id = "${exercise_id}" && logged_at >= "${from}"`,
+          filter: pb.filter('user = {:userId} && exercise_id = {:exercise_id} && logged_at >= {:from}', { userId, exercise_id, from }),
           sort: "logged_at",
+          fields: "id,exercise_id,reps,logged_at,workout_key,note",
         });
 
         if (result.length === 0) {

@@ -30,7 +30,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
       try {
         const settings = await pb
           .collection("settings")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
 
         if (!settings) {
@@ -124,7 +124,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
 
         const existing = await pb
           .collection("settings")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
 
         let record;
@@ -169,7 +169,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         const to = to_date ?? today();
 
         const result = await pb.collection("weight_entries").getList(offset / limit + 1, limit, {
-          filter: `user = "${userId}" && date >= "${from}" && date <= "${to}"`,
+          filter: pb.filter('user = {:userId} && date >= {:from} && date <= {:to}', { userId, from, to }),
           sort: "-date",
         });
 
@@ -299,7 +299,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         const to = to_date ?? today();
 
         const result = await pb.collection("lumbar_checks").getList(offset / limit + 1, limit, {
-          filter: `user = "${userId}" && date >= "${from}" && date <= "${to}"`,
+          filter: pb.filter('user = {:userId} && date >= {:from} && date <= {:to}', { userId, from, to }),
           sort: "-date",
         });
 
@@ -434,17 +434,21 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
 
         const [sessions, weightEntries, lumbarChecks, settings] = await Promise.all([
           pb.collection("sessions").getFullList({
-            filter: `user = "${userId}" && completed_at >= "${from}"`,
+            filter: pb.filter('user = {:userId} && completed_at >= {:from}', { userId, from }),
             sort: "completed_at",
+            fields: "id,completed_at",
+            requestKey: null,
           }),
           pb.collection("weight_entries").getFullList({
-            filter: `user = "${userId}" && date >= "${from}"`,
+            filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
             sort: "date",
+            requestKey: null,
           }),
           pb.collection("lumbar_checks").getFullList({
-            filter: `user = "${userId}" && date >= "${from}"`,
+            filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
+            requestKey: null,
           }),
-          pb.collection("settings").getFirstListItem(`user = "${userId}"`).catch(() => null),
+          pb.collection("settings").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
         ]);
 
         // Workout consistency (sessions per week)

@@ -135,19 +135,22 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         const [lastLumbar, weekSessions, lastSession, settings, userPrograms] = await Promise.all([
           pb
             .collection("lumbar_checks")
-            .getFirstListItem(`user = "${userId}"`, { sort: "-date" })
+            .getFirstListItem(pb.filter('user = {:userId}', { userId }), { sort: "-date", requestKey: null })
             .catch(() => null),
           pb.collection("sessions").getFullList({
-            filter: `user = "${userId}" && completed_at >= "${weekStart}"`,
+            filter: pb.filter('user = {:userId} && completed_at >= {:weekStart}', { userId, weekStart }),
+            fields: 'id,workout_key,phase,day,completed_at',
+            requestKey: null,
           }),
           pb
             .collection("sessions")
-            .getFirstListItem(`user = "${userId}"`, { sort: "-completed_at" })
+            .getFirstListItem(pb.filter('user = {:userId}', { userId }), { sort: "-completed_at", fields: 'id,workout_key,phase,day,completed_at', requestKey: null })
             .catch(() => null),
-          pb.collection("settings").getFirstListItem(`user = "${userId}"`).catch(() => null),
+          pb.collection("settings").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
           pb.collection("user_programs").getFullList({
-            filter: `user = "${userId}" && is_current = true`,
+            filter: pb.filter('user = {:userId} && is_current = true', { userId }),
             expand: "program",
+            requestKey: null,
           }),
         ]);
 
@@ -240,7 +243,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
           const program = userPrograms[0].expand?.program as Record<string, unknown>;
           if (program) {
             const exercises = await pb.collection("program_exercises").getFullList({
-              filter: `program = "${program.id}" && phase_number = ${currentPhase} && day_id = "${todayDayId}"`,
+              filter: pb.filter('program = {:programId} && phase_number = {:phase} && day_id = {:dayId}', { programId: program.id as string, phase: currentPhase, dayId: todayDayId }),
               sort: "priority",
             });
 
@@ -347,7 +350,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         // Get progression chain for this exercise
         const progression = await pb
           .collection("exercise_progressions")
-          .getFirstListItem(`exercise_id = "${exercise_id}"`)
+          .getFirstListItem(pb.filter('exercise_id = {:exerciseId}', { exerciseId: exercise_id }))
           .catch(() => null);
 
         if (!progression) {
@@ -366,9 +369,11 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         const nextExerciseId = progression.next_exercise_id as string | null;
 
         // Get recent sets for this exercise (last 90 days)
+        const ninetyDaysAgo = daysAgo(90);
         const sets = await pb.collection("sets_log").getFullList({
-          filter: `user = "${userId}" && exercise_id = "${exercise_id}" && logged_at >= "${daysAgo(90)}"`,
+          filter: pb.filter('user = {:userId} && exercise_id = {:exerciseId} && logged_at >= {:from}', { userId, exerciseId: exercise_id, from: ninetyDaysAgo }),
           sort: "logged_at",
+          fields: 'id,exercise_id,reps,logged_at,workout_key',
         });
 
         if (sets.length === 0) {
@@ -407,7 +412,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         if (nextExerciseId) {
           nextExercise = await pb
             .collection("exercise_progressions")
-            .getFirstListItem(`exercise_id = "${nextExerciseId}"`)
+            .getFirstListItem(pb.filter('exercise_id = {:exerciseId}', { exerciseId: nextExerciseId }))
             .catch(() => null);
         }
 
@@ -491,7 +496,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
 
         // Get current program schedule
         const userPrograms = await pb.collection("user_programs").getFullList({
-          filter: `user = "${userId}" && is_current = true`,
+          filter: pb.filter('user = {:userId} && is_current = true', { userId }),
           expand: "program",
         });
 
@@ -504,20 +509,25 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         const programId = (userPrograms[0].expand?.program as Record<string, unknown>)?.id as string;
         const settings = await pb
           .collection("settings")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
         const currentPhase = (settings?.phase as number) ?? 1;
 
         const [programExercises, sessions, setsLog] = await Promise.all([
           pb.collection("program_exercises").getFullList({
-            filter: `program = "${programId}" && phase_number = ${currentPhase}`,
+            filter: pb.filter('program = {:programId} && phase_number = {:phase}', { programId, phase: currentPhase }),
             sort: "day_id,priority",
+            requestKey: null,
           }),
           pb.collection("sessions").getFullList({
-            filter: `user = "${userId}" && completed_at >= "${from}"`,
+            filter: pb.filter('user = {:userId} && completed_at >= {:from}', { userId, from }),
+            fields: 'id,workout_key,phase,day,completed_at',
+            requestKey: null,
           }),
           pb.collection("sets_log").getFullList({
-            filter: `user = "${userId}" && logged_at >= "${from}"`,
+            filter: pb.filter('user = {:userId} && logged_at >= {:from}', { userId, from }),
+            fields: 'id,exercise_id,reps,logged_at,workout_key',
+            requestKey: null,
           }),
         ]);
 
@@ -675,6 +685,9 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         const todayStr = today();
 
         // Fetch data for both periods in parallel
+        const todayEnd = `${todayStr} 23:59:59`;
+        const previousEnd = `${previousTo} 23:59:59`;
+
         const [
           currentSessions,
           previousSessions,
@@ -686,30 +699,46 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
           previousNutrition,
         ] = await Promise.all([
           pb.collection("sessions").getFullList({
-            filter: `user = "${userId}" && completed_at >= "${currentFrom}" && completed_at <= "${todayStr} 23:59:59"`,
+            filter: pb.filter('user = {:userId} && completed_at >= {:from} && completed_at <= {:to}', { userId, from: currentFrom, to: todayEnd }),
+            fields: 'id,workout_key,phase,day,completed_at',
+            requestKey: null,
           }),
           pb.collection("sessions").getFullList({
-            filter: `user = "${userId}" && completed_at >= "${previousFrom}" && completed_at <= "${previousTo} 23:59:59"`,
+            filter: pb.filter('user = {:userId} && completed_at >= {:from} && completed_at <= {:to}', { userId, from: previousFrom, to: previousEnd }),
+            fields: 'id,workout_key,phase,day,completed_at',
+            requestKey: null,
           }),
           pb.collection("sets_log").getFullList({
-            filter: `user = "${userId}" && logged_at >= "${currentFrom}" && logged_at <= "${todayStr} 23:59:59"`,
+            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from: currentFrom, to: todayEnd }),
+            fields: 'id,exercise_id,reps,logged_at,workout_key',
+            requestKey: null,
           }),
           pb.collection("sets_log").getFullList({
-            filter: `user = "${userId}" && logged_at >= "${previousFrom}" && logged_at <= "${previousTo} 23:59:59"`,
+            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from: previousFrom, to: previousEnd }),
+            fields: 'id,exercise_id,reps,logged_at,workout_key',
+            requestKey: null,
           }),
           pb.collection("weight_entries").getFullList({
-            filter: `user = "${userId}" && date >= "${currentFrom}" && date <= "${todayStr}"`,
+            filter: pb.filter('user = {:userId} && date >= {:from} && date <= {:to}', { userId, from: currentFrom, to: todayStr }),
             sort: "date",
+            fields: 'id,weight_kg,date',
+            requestKey: null,
           }),
           pb.collection("weight_entries").getFullList({
-            filter: `user = "${userId}" && date >= "${previousFrom}" && date <= "${previousTo}"`,
+            filter: pb.filter('user = {:userId} && date >= {:from} && date <= {:to}', { userId, from: previousFrom, to: previousTo }),
             sort: "date",
+            fields: 'id,weight_kg,date',
+            requestKey: null,
           }),
           pb.collection("nutrition_entries").getFullList({
-            filter: `user = "${userId}" && logged_at >= "${currentFrom}" && logged_at <= "${todayStr} 23:59:59"`,
+            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from: currentFrom, to: todayEnd }),
+            fields: 'id,total_calories,total_protein,total_carbs,total_fat,logged_at,meal_type',
+            requestKey: null,
           }),
           pb.collection("nutrition_entries").getFullList({
-            filter: `user = "${userId}" && logged_at >= "${previousFrom}" && logged_at <= "${previousTo} 23:59:59"`,
+            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from: previousFrom, to: previousEnd }),
+            fields: 'id,total_calories,total_protein,total_carbs,total_fat,logged_at,meal_type',
+            requestKey: null,
           }),
         ]);
 
@@ -864,7 +893,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
 
         const existing = await pb
           .collection("nutrition_goals")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
 
         if (existing) {
@@ -938,7 +967,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
       try {
         // Get current program
         const userPrograms = await pb.collection("user_programs").getFullList({
-          filter: `user = "${userId}" && is_current = true`,
+          filter: pb.filter('user = {:userId} && is_current = true', { userId }),
           expand: "program",
         });
 
@@ -952,7 +981,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
 
         const settings = await pb
           .collection("settings")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
         const currentPhase = (settings?.phase as number) ?? 1;
 
@@ -960,11 +989,14 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         const weekStart = startOfWeek();
         const [thisWeekSessions, programExercises] = await Promise.all([
           pb.collection("sessions").getFullList({
-            filter: `user = "${userId}" && completed_at >= "${weekStart}"`,
+            filter: pb.filter('user = {:userId} && completed_at >= {:weekStart}', { userId, weekStart }),
+            fields: 'id,workout_key,phase,day,completed_at',
+            requestKey: null,
           }),
           pb.collection("program_exercises").getFullList({
-            filter: `program = "${programId}" && phase_number = ${currentPhase}`,
+            filter: pb.filter('program = {:programId} && phase_number = {:phase}', { programId, phase: currentPhase }),
             sort: "day_id,sort_order",
+            requestKey: null,
           }),
         ]);
 

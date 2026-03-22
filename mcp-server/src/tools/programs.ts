@@ -29,8 +29,12 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     async ({ response_format }) => {
       try {
         const [programs, userPrograms] = await Promise.all([
-          pb.collection("programs").getFullList({ sort: "name" }),
-          pb.collection("user_programs").getFullList({ filter: `user = "${userId}"` }),
+          pb.collection("programs").getFullList({ sort: "name", requestKey: null }),
+          pb.collection("user_programs").getFullList({
+            filter: pb.filter('user = {:userId}', { userId }),
+            fields: 'id,program,is_current',
+            requestKey: null,
+          }),
         ]);
 
         const activeIds = new Set(userPrograms.filter((up) => up.is_current).map((up) => up.program));
@@ -93,7 +97,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     async ({ response_format }) => {
       try {
         const userPrograms = await pb.collection("user_programs").getFullList({
-          filter: `user = "${userId}" && is_current = true`,
+          filter: pb.filter('user = {:userId} && is_current = true', { userId }),
           expand: "program",
         });
 
@@ -116,14 +120,17 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         }
 
         // Load phases and exercises
+        const programId = program.id as string;
         const [phases, exercises] = await Promise.all([
           pb.collection("program_phases").getFullList({
-            filter: `program = "${program.id}"`,
+            filter: pb.filter('program = {:programId}', { programId }),
             sort: "sort_order",
+            requestKey: null,
           }),
           pb.collection("program_exercises").getFullList({
-            filter: `program = "${program.id}"`,
+            filter: pb.filter('program = {:programId}', { programId }),
             sort: "priority",
+            requestKey: null,
           }),
         ]);
 
@@ -224,16 +231,21 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
 
         // Deactivate current programs
         const current = await pb.collection("user_programs").getFullList({
-          filter: `user = "${userId}" && is_current = true`,
+          filter: pb.filter('user = {:userId} && is_current = true', { userId }),
+          fields: 'id,program,is_current',
         });
-        for (const up of current) {
-          await pb.collection("user_programs").update(up.id, { is_current: false });
+        if (current.length > 0) {
+          const deactivateBatch = pb.createBatch();
+          for (const up of current) {
+            deactivateBatch.collection("user_programs").update(up.id, { is_current: false });
+          }
+          await deactivateBatch.send();
         }
 
         // Check if user already has this program selected
         const existing = await pb
           .collection("user_programs")
-          .getFirstListItem(`user = "${userId}" && program = "${program_id}"`)
+          .getFirstListItem(pb.filter('user = {:userId} && program = {:program_id}', { userId, program_id }))
           .catch(() => null);
 
         if (existing) {
@@ -294,12 +306,19 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     },
     async ({ category, exercise_id, response_format }) => {
       try {
-        let filter = "";
-        if (category) filter = `category = "${category}"`;
-        if (exercise_id) filter = filter ? `${filter} && exercise_id = "${exercise_id}"` : `exercise_id = "${exercise_id}"`;
+        const conditions: string[] = [];
+        const params: Record<string, unknown> = {};
+        if (category) {
+          conditions.push('category = {:category}');
+          params.category = category;
+        }
+        if (exercise_id) {
+          conditions.push('exercise_id = {:exercise_id}');
+          params.exercise_id = exercise_id;
+        }
 
         const progressions = await pb.collection("exercise_progressions").getFullList({
-          filter: filter || undefined,
+          filter: conditions.length > 0 ? pb.filter(conditions.join(' && '), params) : undefined,
           sort: "category,difficulty_order",
         });
 
@@ -764,12 +783,14 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
 
         let totalExercises = 0;
 
-        // 2. Create phases and exercises
+        // 2. Create phases and exercises using batch
+        const batch = pb.createBatch();
+
         for (let pi = 0; pi < input.phases.length; pi++) {
           const phase = input.phases[pi];
           const phaseNumber = pi + 1;
 
-          await pb.collection("program_phases").create({
+          batch.collection("program_phases").create({
             program: program.id,
             phase_number: phaseNumber,
             name: phase.name,
@@ -781,7 +802,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           for (const day of phase.days) {
             for (let ei = 0; ei < day.exercises.length; ei++) {
               const ex = day.exercises[ei];
-              await pb.collection("program_exercises").create({
+              batch.collection("program_exercises").create({
                 program: program.id,
                 phase_number: phaseNumber,
                 day_id: day.day_id,
@@ -806,13 +827,20 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           }
         }
 
+        await batch.send();
+
         // 4. Optionally set as current program
         if (input.set_as_current) {
           const current = await pb.collection("user_programs").getFullList({
-            filter: `user = "${userId}" && is_current = true`,
+            filter: pb.filter('user = {:userId} && is_current = true', { userId }),
+            fields: 'id,program,is_current',
           });
-          for (const up of current) {
-            await pb.collection("user_programs").update(up.id, { is_current: false });
+          if (current.length > 0) {
+            const deactivateBatch = pb.createBatch();
+            for (const up of current) {
+              deactivateBatch.collection("user_programs").update(up.id, { is_current: false });
+            }
+            await deactivateBatch.send();
           }
           await pb.collection("user_programs").create({
             user: userId,
@@ -885,14 +913,24 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           created_by: userId,
         });
 
-        // Copy phases
-        const phases = await pb.collection("program_phases").getFullList({
-          filter: `program = "${program_id}"`,
-          sort: "sort_order",
-        });
+        // Copy phases and exercises
+        const [phases, exercises] = await Promise.all([
+          pb.collection("program_phases").getFullList({
+            filter: pb.filter('program = {:program_id}', { program_id }),
+            sort: "sort_order",
+            requestKey: null,
+          }),
+          pb.collection("program_exercises").getFullList({
+            filter: pb.filter('program = {:program_id}', { program_id }),
+            sort: "phase_number,day_id,sort_order",
+            requestKey: null,
+          }),
+        ]);
+
+        const copyBatch = pb.createBatch();
 
         for (const phase of phases) {
-          await pb.collection("program_phases").create({
+          copyBatch.collection("program_phases").create({
             program: newProgram.id,
             phase_number: phase.phase_number,
             name: phase.name,
@@ -903,14 +941,8 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           });
         }
 
-        // Copy exercises
-        const exercises = await pb.collection("program_exercises").getFullList({
-          filter: `program = "${program_id}"`,
-          sort: "phase_number,day_id,sort_order",
-        });
-
         for (const ex of exercises) {
-          await pb.collection("program_exercises").create({
+          copyBatch.collection("program_exercises").create({
             program: newProgram.id,
             phase_number: ex.phase_number,
             day_id: ex.day_id,
@@ -933,6 +965,8 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
             priority: ex.priority,
           });
         }
+
+        await copyBatch.send();
 
         return {
           content: [

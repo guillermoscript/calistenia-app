@@ -30,7 +30,7 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
       try {
         const goals = await pb
           .collection("nutrition_goals")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
 
         if (!goals) {
@@ -138,7 +138,7 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
 
         const existing = await pb
           .collection("nutrition_goals")
-          .getFirstListItem(`user = "${userId}"`)
+          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
           .catch(() => null);
 
         let record;
@@ -186,11 +186,15 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         const from = from_date ?? today();
         const to = to_date ?? today();
 
-        let filter = `user = "${userId}" && logged_at >= "${from}" && logged_at <= "${to} 23:59:59"`;
-        if (meal_type) filter += ` && meal_type = "${meal_type}"`;
+        const conditions = ['user = {:userId}', 'logged_at >= {:from}', 'logged_at <= {:to}'];
+        const params: Record<string, unknown> = { userId, from, to: `${to} 23:59:59` };
+        if (meal_type) {
+          conditions.push('meal_type = {:meal_type}');
+          params.meal_type = meal_type;
+        }
 
         const result = await pb.collection("nutrition_entries").getList(offset / limit + 1, limit, {
-          filter,
+          filter: pb.filter(conditions.join(' && '), params),
           sort: "logged_at",
         });
 
@@ -395,10 +399,11 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
 
         const [entries, goals] = await Promise.all([
           pb.collection("nutrition_entries").getFullList({
-            filter: `user = "${userId}" && logged_at >= "${from}" && logged_at <= "${to} 23:59:59"`,
+            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from, to: `${to} 23:59:59` }),
             sort: "logged_at",
+            requestKey: null,
           }),
-          pb.collection("nutrition_goals").getFirstListItem(`user = "${userId}"`).catch(() => null),
+          pb.collection("nutrition_goals").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
         ]);
 
         if (entries.length === 0) {
@@ -549,11 +554,15 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
     },
     async ({ meal_type }) => {
       try {
-        let filter = `user = "${userId}"`;
-        if (meal_type) filter += ` && meal_type = "${meal_type}"`;
+        const conditions = ['user = {:userId}'];
+        const params: Record<string, unknown> = { userId };
+        if (meal_type) {
+          conditions.push('meal_type = {:meal_type}');
+          params.meal_type = meal_type;
+        }
 
         const templates = await pb.collection("meal_templates").getFullList({
-          filter,
+          filter: pb.filter(conditions.join(' && '), params),
           sort: "-usage_count,-updated",
         });
 
@@ -640,11 +649,11 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
             total_fat: Math.round(totals.fat * 10) / 10,
             ai_model: "template",
             logged_at: logged_at ?? new Date().toISOString(),
-          }),
+          }, { requestKey: null }),
           pb.collection("meal_templates").update(template_id, {
-            usage_count: ((template.usage_count as number) || 0) + 1,
+            'usage_count+': 1,
             last_used_at: new Date().toISOString(),
-          }),
+          }, { requestKey: null }),
         ]);
 
         return {

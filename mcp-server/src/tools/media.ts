@@ -70,7 +70,7 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
           });
         } else if (program_id) {
           const exercises = await pb.collection("program_exercises").getFullList({
-            filter: `program = "${program_id}"`,
+            filter: pb.filter('program = {:program_id}', { program_id }),
             sort: "phase_number,sort_order",
           });
           for (const rec of exercises) {
