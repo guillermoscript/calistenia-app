@@ -2,7 +2,7 @@
 
 /**
  * Allow public read of user_stats for invite landing page social proof.
- * Stats (level, streak, sessions) are non-sensitive.
+ * Stats (level, streak, sessions) are non-sensitive public profile data.
  */
 migrate((app) => {
   const collection = app.findCollectionByNameOrId("user_stats")

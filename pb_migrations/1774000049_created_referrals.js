@@ -2,6 +2,11 @@
 
 /**
  * Create referrals collection to track user invitations.
+ *
+ * API rules:
+ * - list/view: only the referrer can see their own referrals
+ * - create: authenticated users, must set themselves as referrer
+ * - update/delete: locked (immutable ledger)
  */
 migrate((app) => {
   const challengesCollection = app.findCollectionByNameOrId("challenges")
@@ -22,11 +27,35 @@ migrate((app) => {
     ],
     listRule: 'referrer = @request.auth.id',
     viewRule: 'referrer = @request.auth.id',
-    createRule: '@request.auth.id != ""',
+    createRule: '@request.auth.id != "" && @request.body.referrer = @request.auth.id',
     updateRule: null,
     deleteRule: null,
   })
   app.save(collection)
+
+  // Add autodate fields (must be done after initial save)
+  const saved = app.findCollectionByNameOrId("referrals")
+  saved.fields.add(new Field({
+    "hidden": false,
+    "id": "autodate_referrals_created",
+    "name": "created",
+    "onCreate": true,
+    "onUpdate": false,
+    "presentable": false,
+    "system": false,
+    "type": "autodate"
+  }))
+  saved.fields.add(new Field({
+    "hidden": false,
+    "id": "autodate_referrals_updated",
+    "name": "updated",
+    "onCreate": true,
+    "onUpdate": true,
+    "presentable": false,
+    "system": false,
+    "type": "autodate"
+  }))
+  app.save(saved)
 }, (app) => {
   const collection = app.findCollectionByNameOrId("referrals")
   app.delete(collection)

@@ -3,6 +3,11 @@
 /**
  * Create point_transactions collection for referral points ledger.
  * Balance is computed on-read by summing amount (no separate balance table).
+ *
+ * API rules:
+ * - list/view: only the owner can see their own transactions
+ * - create: authenticated users, must set themselves as user
+ * - update/delete: locked (immutable ledger)
  */
 migrate((app) => {
   const collection = new Collection({
@@ -21,11 +26,35 @@ migrate((app) => {
     ],
     listRule: 'user = @request.auth.id',
     viewRule: 'user = @request.auth.id',
-    createRule: '@request.auth.id != ""',
+    createRule: '@request.auth.id != "" && @request.body.user = @request.auth.id',
     updateRule: null,
     deleteRule: null,
   })
   app.save(collection)
+
+  // Add autodate fields
+  const saved = app.findCollectionByNameOrId("point_transactions")
+  saved.fields.add(new Field({
+    "hidden": false,
+    "id": "autodate_transactions_created",
+    "name": "created",
+    "onCreate": true,
+    "onUpdate": false,
+    "presentable": false,
+    "system": false,
+    "type": "autodate"
+  }))
+  saved.fields.add(new Field({
+    "hidden": false,
+    "id": "autodate_transactions_updated",
+    "name": "updated",
+    "onCreate": true,
+    "onUpdate": true,
+    "presentable": false,
+    "system": false,
+    "type": "autodate"
+  }))
+  app.save(saved)
 }, (app) => {
   const collection = app.findCollectionByNameOrId("point_transactions")
   app.delete(collection)
