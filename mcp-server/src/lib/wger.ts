@@ -1,5 +1,9 @@
 /**
  * wger API client for MCP server (Node.js)
+ *
+ * Uses the wger.de public REST API v2.
+ * Search endpoint: /api/v2/exercise/search/
+ * Exercise info:   /api/v2/exerciseinfo/{id}/
  */
 
 const WGER_BASE = 'https://wger.de/api/v2'
@@ -9,8 +13,11 @@ const WGER_BASE = 'https://wger.de/api/v2'
 export interface WgerSearchSuggestion {
   data: {
     id: number
+    base_id: number
     name: string
-    category: { id: number; name: string }
+    category: string
+    image: string | null
+    image_thumbnail: string | null
   }
 }
 
@@ -64,8 +71,8 @@ export interface WgerExerciseInfo {
 
 async function fetchWgerSearch(term: string, langCode: string): Promise<WgerSearchSuggestion[]> {
   try {
-    const url = `${WGER_BASE}/exercisesearch/?term=${encodeURIComponent(term)}&language=${langCode}&format=json`
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
+    const url = `${WGER_BASE}/exercise/search/?term=${encodeURIComponent(term)}&language=${langCode}&format=json`
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
     if (!res.ok) return []
     const data: WgerSearchResponse = await res.json()
     return data.suggestions || []
@@ -95,7 +102,9 @@ export async function getWgerExerciseInfo(id: number): Promise<WgerExerciseInfo 
 
 export async function downloadWgerImage(url: string): Promise<Buffer | null> {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
+    // wger image URLs are relative — prepend base if needed
+    const fullUrl = url.startsWith('http') ? url : `https://wger.de${url}`
+    const res = await fetch(fullUrl, { signal: AbortSignal.timeout(10000) })
     if (!res.ok) return null
     const arrayBuffer = await res.arrayBuffer()
     return Buffer.from(arrayBuffer)

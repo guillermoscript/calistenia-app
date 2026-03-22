@@ -42,7 +42,7 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         const exercises = results.map((r) => ({
           wger_id: r.data.id,
           name: r.data.name,
-          category: r.data.category.name,
+          category: typeof r.data.category === "string" ? r.data.category : (r.data.category as any)?.name ?? "Unknown",
         }));
 
         const output = { count: exercises.length, term, language, exercises };
