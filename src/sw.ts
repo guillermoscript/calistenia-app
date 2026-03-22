@@ -49,7 +49,17 @@ self.addEventListener('push', (event) => {
     data: { url: data.url || '/nutrition' },
   }
 
-  event.waitUntil(self.registration.showNotification(title, options))
+  event.waitUntil(
+    self.registration.showNotification(title, options).then(() => {
+      // Forward job completion data to open clients for in-app toast
+      const jobMatch = data.url?.match(/[?&]job=([^&]+)/)
+      if (!jobMatch) return
+      return self.clients.matchAll({ type: 'window' }).then(clients => {
+        const payload = { type: 'AI_JOB_COMPLETE', job_id: jobMatch[1], ...data }
+        clients.forEach(client => client.postMessage(payload))
+      })
+    })
+  )
 })
 
 // Handle notification click — focus the app window
@@ -71,6 +81,10 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-// Auto-activate new service worker immediately
-self.addEventListener('install', () => self.skipWaiting())
+// Activate new service worker when the user accepts the update prompt
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
 self.addEventListener('activate', () => self.clients.claim())
