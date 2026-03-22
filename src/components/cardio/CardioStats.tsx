@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { formatPace, formatDuration } from '../../lib/geo'
-import type { CardioAggregateStats, PersonalRecords } from '../../hooks/useCardioStats'
+import type { CardioAggregateStats, PersonalRecords, WeeklyTrendPoint } from '../../hooks/useCardioStats'
 import { cn } from '../../lib/utils'
 
 interface CardioStatsProps {
   weeklyStats: CardioAggregateStats
   monthlyStats: CardioAggregateStats
   records: PersonalRecords
+  weeklyTrend?: WeeklyTrendPoint[]
 }
 
-export default function CardioStats({ weeklyStats, monthlyStats, records }: CardioStatsProps) {
+export default function CardioStats({ weeklyStats, monthlyStats, records, weeklyTrend }: CardioStatsProps) {
   const [period, setPeriod] = useState<'week' | 'month'>('week')
   const stats = period === 'week' ? weeklyStats : monthlyStats
 
@@ -63,6 +64,16 @@ export default function CardioStats({ weeklyStats, monthlyStats, records }: Card
         </div>
       </div>
 
+      {/* Weekly distance trend */}
+      {weeklyTrend && weeklyTrend.some(w => w.distance > 0) && (
+        <div>
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">
+            Distancia semanal
+          </div>
+          <WeeklyTrendChart data={weeklyTrend} />
+        </div>
+      )}
+
       {/* Personal records */}
       {hasRecords && (
         <div>
@@ -91,6 +102,51 @@ export default function CardioStats({ weeklyStats, monthlyStats, records }: Card
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function WeeklyTrendChart({ data }: { data: WeeklyTrendPoint[] }) {
+  const maxDist = Math.max(...data.map(d => d.distance), 1)
+  const currentWeekIdx = data.length - 1
+
+  return (
+    <div className="flex items-end gap-1.5 h-28 px-1">
+      {data.map((week, i) => {
+        const barHeight = maxDist > 0 ? (week.distance / maxDist) * 100 : 0
+        const isCurrent = i === currentWeekIdx
+        const isEmpty = week.distance === 0
+        return (
+          <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+            {/* Value label on top */}
+            {!isEmpty && (
+              <span className={cn(
+                'text-[9px] font-mono tabular-nums leading-none',
+                isCurrent ? 'text-lime' : 'text-muted-foreground'
+              )}>
+                {week.distance}
+              </span>
+            )}
+            {/* Bar */}
+            <div className="w-full flex-1 flex items-end">
+              <div
+                className={cn(
+                  'w-full rounded-t-sm transition-all duration-300',
+                  isEmpty ? 'bg-muted/30' : isCurrent ? 'bg-lime' : 'bg-lime/30',
+                )}
+                style={{ height: isEmpty ? '2px' : `${Math.max(barHeight, 8)}%` }}
+              />
+            </div>
+            {/* Week label */}
+            <span className={cn(
+              'text-[8px] font-mono truncate w-full text-center',
+              isCurrent ? 'text-foreground' : 'text-muted-foreground/60'
+            )}>
+              {week.weekLabel}
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }

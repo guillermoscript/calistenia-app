@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { cn } from '../../lib/utils'
+import { snapToRoads } from '../../lib/snapToRoads'
 import type { GpsPoint } from '../../types'
 
 interface RouteMapProps {
@@ -10,6 +11,8 @@ interface RouteMapProps {
   className?: string
   /** Show a pulsing marker at the last point (for live tracking) */
   live?: boolean
+  /** Activity type — used to pick the right OSRM profile for road snapping */
+  activityType?: 'running' | 'walking' | 'cycling'
 }
 
 // Voyager: a lighter, more readable CARTO style with labels and soft colors
@@ -22,7 +25,7 @@ const END_COLOR = '#ef4444'   // red-500  (finish pin — always red)
 /** Read the --lime CSS variable and convert to a usable hex/hsl string */
 function getLimeColor(): string {
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--lime').trim()
-  return raw ? `hsl(${raw})` : '#16a34a' // fallback to green-600
+  return raw ? `hsl(${raw})` : '#16a34a'
 }
 
 /** Build pulse CSS using the current theme lime color */
@@ -53,10 +56,11 @@ function injectPulseStyle(color: string) {
   pulseStyleEl.textContent = buildPulseCSS(color)
 }
 
-export default function RouteMap({ points, height = '300px', className, live = false }: RouteMapProps) {
+export default function RouteMap({ points, height = '300px', className, live = false, activityType }: RouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layersRef = useRef<L.LayerGroup | null>(null)
+  const [snappedCoords, setSnappedCoords] = useState<[number, number][] | null>(null)
 
   // Initialize map once
   useEffect(() => {
@@ -74,7 +78,6 @@ export default function RouteMap({ points, height = '300px', className, live = f
       r: L.Browser.retina ? '@2x' : '',
     }).addTo(map)
 
-    // Compact attribution in bottom-right
     L.control.attribution({ position: 'bottomright', prefix: false }).addTo(map)
     L.control.zoom({ position: 'bottomright' }).addTo(map)
 
@@ -88,7 +91,24 @@ export default function RouteMap({ points, height = '300px', className, live = f
     }
   }, [])
 
-  // Update route layers when points change
+  // Snap to roads for non-live views
+  useEffect(() => {
+    if (live || points.length < 2) {
+      setSnappedCoords(null)
+      return
+    }
+
+    let cancelled = false
+    const profile = activityType === 'cycling' ? 'cycling' : 'foot'
+
+    snapToRoads(points, profile).then(coords => {
+      if (!cancelled) setSnappedCoords(coords)
+    })
+
+    return () => { cancelled = true }
+  }, [points, live, activityType])
+
+  // Update route layers when points or snapped coords change
   useEffect(() => {
     const map = mapRef.current
     const layers = layersRef.current
@@ -97,10 +117,17 @@ export default function RouteMap({ points, height = '300px', className, live = f
     layers.clearLayers()
 
     const routeColor = getLimeColor()
-    const coords = points.map(p => [p.lat, p.lng] as L.LatLngTuple)
 
-    // Route polyline
-    const polyline = L.polyline(coords, {
+    // Use snapped coordinates for the route line if available, raw GPS otherwise
+    const routeCoords: L.LatLngTuple[] = (snappedCoords && !live)
+      ? snappedCoords.map(([lat, lng]) => [lat, lng] as L.LatLngTuple)
+      : points.map(p => [p.lat, p.lng] as L.LatLngTuple)
+
+    // Original GPS start/end for markers (always use raw points)
+    const rawCoords = points.map(p => [p.lat, p.lng] as L.LatLngTuple)
+
+    // Route polyline (snapped or raw)
+    const polyline = L.polyline(routeCoords, {
       color: routeColor,
       weight: 4,
       opacity: 0.85,
@@ -108,8 +135,8 @@ export default function RouteMap({ points, height = '300px', className, live = f
       lineJoin: 'round',
     }).addTo(layers)
 
-    // Start marker
-    L.circleMarker(coords[0], {
+    // Start marker (always at raw GPS start)
+    L.circleMarker(rawCoords[0], {
       radius: 7,
       color: START_COLOR,
       fillColor: START_COLOR,
@@ -117,9 +144,9 @@ export default function RouteMap({ points, height = '300px', className, live = f
       weight: 2,
     }).addTo(layers)
 
-    // End / live marker
-    if (coords.length > 1) {
-      const lastCoord = coords[coords.length - 1]
+    // End / live marker (always at raw GPS end)
+    if (rawCoords.length > 1) {
+      const lastCoord = rawCoords[rawCoords.length - 1]
 
       if (live) {
         injectPulseStyle(routeColor)
@@ -143,7 +170,7 @@ export default function RouteMap({ points, height = '300px', className, live = f
 
     // Fit bounds
     map.fitBounds(polyline.getBounds(), { padding: [30, 30] })
-  }, [points, live])
+  }, [points, snappedCoords, live])
 
   if (points.length === 0) {
     return (

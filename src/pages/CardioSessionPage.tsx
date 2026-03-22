@@ -10,6 +10,7 @@ import CardioStats from '../components/cardio/CardioStats'
 import CardioShareCard from '../components/cardio/CardioShareCard'
 import ElevationProfile from '../components/cardio/ElevationProfile'
 import { Button } from '../components/ui/button'
+import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { cn } from '../lib/utils'
 import type { CardioActivityType, CardioSession } from '../types'
 
@@ -25,17 +26,18 @@ interface CardioSessionPageProps {
 
 export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const {
-    state, activityType, points: pointsRef, pointsCount, distance, duration, currentPace, currentSpeed, currentSplit, error,
-    start, pause, resume, finish, discard, getHistory,
+    state, activityType, points: pointsRef, pointsCount, distance, duration,
+    currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
+    start, pause, resume, finish, discard, getHistory, deleteSession,
   } = useCardioSessionContext()
 
-  const { weeklyStats, monthlyStats, records, loadStats } = useCardioStats(userId)
+  const { weeklyStats, monthlyStats, records, weeklyTrend, loadStats } = useCardioStats(userId)
 
   const [selectedActivity, setSelectedActivity] = useState<CardioActivityType>('running')
   const [history, setHistory] = useState<CardioSession[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
-  const [note, setNote] = useState('')
   const [savedSession, setSavedSession] = useState<CardioSession | null>(null)
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
   // Load history and stats on mount and when returning to idle (after finishing a session)
   const isIdle = state === 'idle'
@@ -55,14 +57,17 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
   const handleDiscard = () => {
     discard()
-    setNote('')
     setSavedSession(null)
   }
 
   const handleNewSession = () => {
     discard()
-    setNote('')
     setSavedSession(null)
+  }
+
+  const handleDeleteSession = async (id: string) => {
+    await deleteSession(id)
+    setHistory(prev => prev.filter(s => s.id !== id))
   }
 
   const handleExportGPX = () => {
@@ -141,14 +146,14 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* History */}
           <div id="tour-cardio-history">
             <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Historial</div>
-            <CardioHistory sessions={history} loading={historyLoading} />
+            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} />
           </div>
 
           {/* Stats section */}
           {(weeklyStats.totalSessions > 0 || monthlyStats.totalSessions > 0) && (
             <div id="tour-cardio-stats">
               <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Estadísticas</div>
-              <CardioStats weeklyStats={weeklyStats} monthlyStats={monthlyStats} records={records} />
+              <CardioStats weeklyStats={weeklyStats} monthlyStats={monthlyStats} records={records} weeklyTrend={weeklyTrend} />
             </div>
           )}
         </div>
@@ -157,7 +162,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
       {/* Tracking / Paused view — optimized for glanceability during exercise */}
       {isTracking && (
         <div className="space-y-4 sm:space-y-6">
-          {/* Compact activity bar with status */}
+          {/* Compact activity bar with status + GPS quality */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xl">{ACTIVITIES.find(a => a.id === activityType)?.icon}</span>
@@ -165,14 +170,33 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 {ACTIVITIES.find(a => a.id === activityType)?.label}
               </span>
             </div>
-            {state === 'tracking' ? (
-              <div className="flex items-center gap-1.5">
-                <div className="size-2.5 rounded-full bg-red-500 motion-safe:animate-pulse" />
-                <span className="text-[11px] font-mono tracking-widest text-red-400">GRABANDO</span>
-              </div>
-            ) : (
-              <span className="text-[11px] font-mono tracking-widest text-amber-400 px-2.5 py-1 rounded-lg bg-amber-400/10">PAUSADO</span>
-            )}
+            <div className="flex items-center gap-3">
+              {/* GPS signal indicator */}
+              {state === 'tracking' && (
+                <div className="flex items-center gap-1" title={gpsAccuracy != null ? `Precisión: ${Math.round(gpsAccuracy)}m` : 'Sin señal GPS'}>
+                  <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7z" />
+                    <circle cx="12" cy="9" r="2.5" />
+                  </svg>
+                  <span className={cn(
+                    'text-[10px] font-mono tabular-nums',
+                    gpsAccuracy == null ? 'text-red-400' :
+                    gpsAccuracy <= 10 ? 'text-lime' :
+                    gpsAccuracy <= 20 ? 'text-amber-400' : 'text-red-400'
+                  )}>
+                    {gpsAccuracy != null ? `${Math.round(gpsAccuracy)}m` : '---'}
+                  </span>
+                </div>
+              )}
+              {state === 'tracking' ? (
+                <div className="flex items-center gap-1.5">
+                  <div className="size-2.5 rounded-full bg-red-500 motion-safe:animate-pulse" />
+                  <span className="text-[11px] font-mono tracking-widest text-red-400">GRABANDO</span>
+                </div>
+              ) : (
+                <span className="text-[11px] font-mono tracking-widest text-amber-400 px-2.5 py-1 rounded-lg bg-amber-400/10">PAUSADO</span>
+              )}
+            </div>
           </div>
 
           {/* Duration — the hero metric, readable from arm's length */}
@@ -213,7 +237,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
           {/* Live map — taller for route visibility */}
           {pointsCount > 1 && (
-            <RouteMap points={pointsRef.current} height="220px" live />
+            <RouteMap points={pointsRef.current} height="220px" live activityType={activityType} />
           )}
 
           {/* Controls — large touch targets for sweaty/gloved hands */}
@@ -252,15 +276,38 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             )}
           </div>
 
-          {/* Discard — intentionally small with padding to prevent accidental taps */}
+          {/* Note — available during pause for mid-session thoughts */}
+          {state === 'paused' && (
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Notas rápidas..."
+              maxLength={500}
+              rows={2}
+              className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/20 placeholder:text-muted-foreground/40 transition-all resize-none"
+            />
+          )}
+
+          {/* Discard — with confirmation */}
           <div className="pt-2">
             <button
-              onClick={handleDiscard}
+              onClick={() => setShowDiscardConfirm(true)}
               className="w-full text-center text-xs text-muted-foreground hover:text-red-400 transition-colors py-3"
             >
               Descartar sesión
             </button>
           </div>
+
+          <ConfirmDialog
+            open={showDiscardConfirm}
+            onOpenChange={setShowDiscardConfirm}
+            title="Descartar sesión"
+            description={`¿Descartar esta sesión de ${ACTIVITIES.find(a => a.id === activityType)?.label.toLowerCase()}? Se perderán todos los datos.`}
+            confirmLabel="DESCARTAR"
+            cancelLabel="SEGUIR"
+            variant="destructive"
+            onConfirm={handleDiscard}
+          />
         </div>
       )}
 
@@ -278,7 +325,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
           {/* Map */}
           {pointsCount > 1 && (
-            <RouteMap points={pointsRef.current} height="250px" />
+            <RouteMap points={pointsRef.current} height="250px" activityType={activityType} />
           )}
 
           {/* Elevation profile */}

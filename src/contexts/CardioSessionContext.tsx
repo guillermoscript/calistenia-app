@@ -22,12 +22,16 @@ interface CardioSessionContextValue {
   currentSpeed: number
   currentSplit: { km: number; elapsed: number } | null
   error: string | null
+  note: string
+  setNote: (note: string) => void
+  gpsAccuracy: number | null
   start: (type: CardioActivityType) => void
   pause: () => void
   resume: () => void
   finish: (note?: string) => Promise<CardioSession | null>
   discard: () => void
   getHistory: (limit?: number) => Promise<CardioSession[]>
+  deleteSession: (id: string) => Promise<void>
 }
 
 const CardioSessionContext = createContext<CardioSessionContextValue | null>(null)
@@ -96,6 +100,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const [currentSplit, setCurrentSplit] = useState<{ km: number; elapsed: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pointsCount, setPointsCount] = useState(0)
+  const [note, setNote] = useState('')
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
 
   const watchIdRef = useRef<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -184,6 +190,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude, altitude, speed, accuracy } = pos.coords
+        setGpsAccuracy(accuracy)
         if (accuracy > 30) return
 
         const point: GpsPoint = {
@@ -267,6 +274,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     setCurrentSpeed(0)
     setCurrentSplit(null)
     setError(null)
+    setNote('')
+    setGpsAccuracy(null)
     pausedDurationRef.current = 0
     startTimeRef.current = Date.now()
     lastSplitKmRef.current = 0
@@ -370,7 +379,18 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     setCurrentSpeed(0)
     setCurrentSplit(null)
     setError(null)
+    setNote('')
+    setGpsAccuracy(null)
   }, [stopTracking, releaseWakeLock])
+
+  const deleteSession = useCallback(async (id: string): Promise<void> => {
+    if (!userId) return
+    try {
+      await pb.collection('cardio_sessions').delete(id)
+    } catch (e) {
+      console.warn('Failed to delete cardio session:', e)
+    }
+  }, [userId])
 
   const getHistory = useCallback(async (limit = 20): Promise<CardioSession[]> => {
     if (!userId) return []
@@ -471,8 +491,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
   const value: CardioSessionContextValue = {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
-    currentPace, currentSpeed, currentSplit, error,
-    start, pause, resume, finish, discard, getHistory,
+    currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
+    start, pause, resume, finish, discard, getHistory, deleteSession,
   }
 
   return (

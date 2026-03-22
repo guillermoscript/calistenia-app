@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { formatDuration, formatPace, formatSpeed } from '../../lib/geo'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
+import { Button } from '../ui/button'
+import { ConfirmDialog } from '../ui/confirm-dialog'
 import RouteMap from './RouteMap'
 import CardioShareCard from './CardioShareCard'
 import ElevationProfile from './ElevationProfile'
@@ -10,10 +12,12 @@ import type { CardioSession } from '../../types'
 interface CardioHistoryProps {
   sessions: CardioSession[]
   loading?: boolean
+  onDelete?: (id: string) => Promise<void>
 }
 
-export default function CardioHistory({ sessions, loading }: CardioHistoryProps) {
+export default function CardioHistory({ sessions, loading, onDelete }: CardioHistoryProps) {
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   if (loading) {
     return (
@@ -97,7 +101,7 @@ export default function CardioHistory({ sessions, loading }: CardioHistoryProps)
               <div className="px-4 pb-4 space-y-4 border-t border-border/50 pt-4">
                 {/* Route map */}
                 {session.gps_points.length > 0 && (
-                  <RouteMap points={session.gps_points} height="220px" />
+                  <RouteMap points={session.gps_points} height="220px" activityType={session.activity_type} />
                 )}
 
                 {/* Elevation profile */}
@@ -185,15 +189,50 @@ export default function CardioHistory({ sessions, loading }: CardioHistoryProps)
                   )}
                 </div>
 
-                {/* Share */}
-                <div className="flex justify-end">
-                  <CardioShareCard session={session} />
+                {/* Actions */}
+                <div className="flex items-center justify-between">
+                  {onDelete && session.id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteConfirmId(session.id!)}
+                      className="h-8 px-2.5 text-xs text-muted-foreground hover:text-red-400 hover:bg-red-500/10 gap-1.5"
+                    >
+                      <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4M6.67 7.33v4M9.33 7.33v4" />
+                        <path d="M3.33 4h9.34l-.67 9.33a1.33 1.33 0 01-1.33 1.34H5.33A1.33 1.33 0 014 13.33L3.33 4z" />
+                      </svg>
+                      Eliminar
+                    </Button>
+                  )}
+                  <div className="ml-auto">
+                    <CardioShareCard session={session} />
+                  </div>
                 </div>
               </div>
             )}
           </div>
         )
       })}
+
+      {onDelete && (
+        <ConfirmDialog
+          open={deleteConfirmId !== null}
+          onOpenChange={(open) => { if (!open) setDeleteConfirmId(null) }}
+          title="Eliminar sesión"
+          description="¿Eliminar esta sesión de cardio? Esta acción no se puede deshacer."
+          confirmLabel="ELIMINAR"
+          cancelLabel="CANCELAR"
+          variant="destructive"
+          onConfirm={async () => {
+            if (deleteConfirmId) {
+              await onDelete(deleteConfirmId)
+              setDeleteConfirmId(null)
+              setExpanded(null)
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -18,6 +18,12 @@ export interface PersonalRecords {
   bestPace?: number
 }
 
+export interface WeeklyTrendPoint {
+  weekLabel: string    // e.g. "Mar 3"
+  distance: number     // km
+  sessions: number
+}
+
 const emptyStats: CardioAggregateStats = { totalDistance: 0, totalSessions: 0, totalDuration: 0, totalCalories: 0 }
 
 export function useCardioStats(userId: string | null) {
@@ -25,6 +31,7 @@ export function useCardioStats(userId: string | null) {
   const [monthlyStats, setMonthlyStats] = useState<CardioAggregateStats>(emptyStats)
   const [records, setRecords] = useState<PersonalRecords>({})
   const [lastSession, setLastSession] = useState<CardioSession | null>(null)
+  const [weeklyTrend, setWeeklyTrend] = useState<WeeklyTrendPoint[]>([])
   const [loading, setLoading] = useState(false)
   const lastFetchRef = useRef<number>(0)
   const CACHE_TTL = 30_000 // 30 seconds
@@ -142,10 +149,39 @@ export function useCardioStats(userId: string | null) {
       if (bestPace < Infinity) pr.bestPace = bestPace
 
       setRecords(pr)
+
+      // Weekly trend: aggregate distance per week for the last 8 weeks
+      const WEEKS = 8
+      const trend: WeeklyTrendPoint[] = []
+      for (let w = WEEKS - 1; w >= 0; w--) {
+        const wStart = new Date(now)
+        wStart.setDate(wStart.getDate() - wStart.getDay() + 1 - w * 7)
+        wStart.setHours(0, 0, 0, 0)
+        const wEnd = new Date(wStart)
+        wEnd.setDate(wEnd.getDate() + 7)
+        const wStartMs = wStart.getTime()
+        const wEndMs = wEnd.getTime()
+
+        let dist = 0
+        let count = 0
+        for (const s of allSessions) {
+          const t = new Date(s.started_at).getTime()
+          if (t >= wStartMs && t < wEndMs) {
+            dist += s.distance_km
+            count++
+          }
+        }
+        trend.push({
+          weekLabel: wStart.toLocaleDateString('es', { month: 'short', day: 'numeric' }),
+          distance: Math.round(dist * 10) / 10,
+          sessions: count,
+        })
+      }
+      setWeeklyTrend(trend)
     } finally {
       setLoading(false)
     }
   }, [userId])
 
-  return { weeklyStats, monthlyStats, records, lastSession, loading, loadStats }
+  return { weeklyStats, monthlyStats, records, lastSession, weeklyTrend, loading, loadStats }
 }
