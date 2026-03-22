@@ -853,4 +853,99 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
       }
     }
   );
+
+  // ──────────────────────────────────────────────────────────────
+  // DUPLICATE PROGRAM
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "cal_duplicate_program",
+    {
+      title: "Duplicate Training Program",
+      description:
+        "Clone an existing program with all its phases and exercises. Great for creating variations of a program.",
+      inputSchema: z
+        .object({
+          program_id: z.string().describe("Program ID to duplicate"),
+          new_name: z.string().optional().describe("Name for the copy (defaults to 'Original Name (copy)')"),
+        })
+        .strict(),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    },
+    async ({ program_id, new_name }) => {
+      try {
+        const original = await pb.collection("programs").getOne(program_id);
+
+        // Create new program
+        const newProgram = await pb.collection("programs").create({
+          name: new_name || `${original.name} (copy)`,
+          description: original.description,
+          duration_weeks: original.duration_weeks,
+          difficulty: original.difficulty || "",
+          is_active: true,
+          created_by: userId,
+        });
+
+        // Copy phases
+        const phases = await pb.collection("program_phases").getFullList({
+          filter: `program = "${program_id}"`,
+          sort: "sort_order",
+        });
+
+        for (const phase of phases) {
+          await pb.collection("program_phases").create({
+            program: newProgram.id,
+            phase_number: phase.phase_number,
+            name: phase.name,
+            weeks: phase.weeks,
+            color: phase.color || "",
+            bg_color: phase.bg_color || "",
+            sort_order: phase.sort_order,
+          });
+        }
+
+        // Copy exercises
+        const exercises = await pb.collection("program_exercises").getFullList({
+          filter: `program = "${program_id}"`,
+          sort: "phase_number,day_id,sort_order",
+        });
+
+        for (const ex of exercises) {
+          await pb.collection("program_exercises").create({
+            program: newProgram.id,
+            phase_number: ex.phase_number,
+            day_id: ex.day_id,
+            day_name: ex.day_name,
+            day_focus: ex.day_focus,
+            day_type: ex.day_type || "",
+            day_color: ex.day_color || "",
+            workout_title: ex.workout_title,
+            exercise_id: ex.exercise_id,
+            exercise_name: ex.exercise_name,
+            sets: ex.sets,
+            reps: ex.reps,
+            rest_seconds: ex.rest_seconds,
+            muscles: ex.muscles,
+            note: ex.note,
+            youtube: ex.youtube || "",
+            is_timer: ex.is_timer,
+            timer_seconds: ex.timer_seconds || 0,
+            sort_order: ex.sort_order,
+            priority: ex.priority,
+          });
+        }
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Duplicated **${original.name}** → **${newProgram.name}** (ID: ${newProgram.id})\nCopied ${phases.length} phases, ${exercises.length} exercises`,
+            },
+          ],
+          structuredContent: { id: newProgram.id, name: newProgram.name, phases: phases.length, exercises: exercises.length },
+        };
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
 }

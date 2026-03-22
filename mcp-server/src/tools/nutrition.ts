@@ -466,4 +466,199 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
       }
     }
   );
+
+  // ──────────────────────────────────────────────────────────────
+  // SAVE MEAL TEMPLATE
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "cal_save_meal_template",
+    {
+      title: "Save Meal Template",
+      description:
+        "Save a meal as a reusable template so you can quickly log it again later with cal_log_from_template.",
+      inputSchema: z
+        .object({
+          name: z.string().min(1).describe("Template name (e.g. 'My usual breakfast')"),
+          meal_type: z.enum(["desayuno", "almuerzo", "cena", "snack"]).describe("Meal type"),
+          foods: z
+            .array(
+              z.object({
+                name: z.string(),
+                portion: z.string(),
+                calories: z.number().int().min(0),
+                protein: z.number().min(0),
+                carbs: z.number().min(0),
+                fat: z.number().min(0),
+              })
+            )
+            .min(1)
+            .describe("Foods in this meal"),
+        })
+        .strict(),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    },
+    async ({ name, meal_type, foods }) => {
+      try {
+        const record = await pb.collection("meal_templates").create({
+          user: userId,
+          name,
+          meal_type,
+          foods,
+          usage_count: 0,
+        });
+
+        const totals = foods.reduce(
+          (acc, f) => ({
+            cal: acc.cal + f.calories,
+            p: acc.p + f.protein,
+            c: acc.c + f.carbs,
+            f: acc.f + f.fat,
+          }),
+          { cal: 0, p: 0, c: 0, f: 0 }
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Saved template **${name}** (${meal_type}): ${foods.length} foods, ${totals.cal} kcal\nUse \`cal_log_from_template\` with ID \`${record.id}\` to log it.`,
+            },
+          ],
+          structuredContent: { id: record.id, name },
+        };
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // LIST MEAL TEMPLATES
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "cal_list_meal_templates",
+    {
+      title: "List Meal Templates",
+      description: "List your saved meal templates.",
+      inputSchema: z
+        .object({
+          meal_type: z.enum(["desayuno", "almuerzo", "cena", "snack"]).optional().describe("Filter by meal type"),
+        })
+        .strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    },
+    async ({ meal_type }) => {
+      try {
+        let filter = `user = "${userId}"`;
+        if (meal_type) filter += ` && meal_type = "${meal_type}"`;
+
+        const templates = await pb.collection("meal_templates").getFullList({
+          filter,
+          sort: "-usage_count,-updated",
+        });
+
+        if (templates.length === 0) {
+          return { content: [{ type: "text", text: "No meal templates saved yet." }] };
+        }
+
+        const items = templates.map((t) => {
+          const foods = t.foods as Array<{ name: string; calories: number }>;
+          const totalCal = foods.reduce((s, f) => s + f.calories, 0);
+          return {
+            id: t.id,
+            name: t.name,
+            meal_type: t.meal_type,
+            foods_count: foods.length,
+            total_calories: totalCal,
+            usage_count: t.usage_count,
+          };
+        });
+
+        const lines = [`# Meal Templates\n`];
+        for (const t of items) {
+          lines.push(
+            `- **${t.name}** (${t.meal_type}) — ${t.total_calories} kcal, ${t.foods_count} foods · used ${t.usage_count}× · ID: \`${t.id}\``
+          );
+        }
+
+        return {
+          content: [{ type: "text", text: lines.join("\n") }],
+          structuredContent: { count: items.length, templates: items },
+        };
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // LOG FROM TEMPLATE
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "cal_log_from_template",
+    {
+      title: "Log Meal from Template",
+      description: "Quickly log a meal using a saved template. Increments the template's usage count.",
+      inputSchema: z
+        .object({
+          template_id: z.string().describe("Meal template ID"),
+          logged_at: z.string().optional().describe("Log datetime (ISO 8601). Defaults to now."),
+        })
+        .strict(),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    },
+    async ({ template_id, logged_at }) => {
+      try {
+        const template = await pb.collection("meal_templates").getOne(template_id);
+        const foods = template.foods as Array<{
+          name: string;
+          portion: string;
+          calories: number;
+          protein: number;
+          carbs: number;
+          fat: number;
+        }>;
+
+        const totals = foods.reduce(
+          (acc, f) => ({
+            calories: acc.calories + f.calories,
+            protein: acc.protein + f.protein,
+            carbs: acc.carbs + f.carbs,
+            fat: acc.fat + f.fat,
+          }),
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+
+        const [entry] = await Promise.all([
+          pb.collection("nutrition_entries").create({
+            user: userId,
+            meal_type: template.meal_type,
+            foods,
+            total_calories: Math.round(totals.calories),
+            total_protein: Math.round(totals.protein * 10) / 10,
+            total_carbs: Math.round(totals.carbs * 10) / 10,
+            total_fat: Math.round(totals.fat * 10) / 10,
+            ai_model: "template",
+            logged_at: logged_at ?? new Date().toISOString(),
+          }),
+          pb.collection("meal_templates").update(template_id, {
+            usage_count: ((template.usage_count as number) || 0) + 1,
+            last_used_at: new Date().toISOString(),
+          }),
+        ]);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Logged **${template.name}** (${template.meal_type}): ${totals.calories} kcal | P: ${totals.protein.toFixed(1)}g | C: ${totals.carbs.toFixed(1)}g | F: ${totals.fat.toFixed(1)}g`,
+            },
+          ],
+          structuredContent: { entry_id: entry.id, template_name: template.name, totals },
+        };
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
 }

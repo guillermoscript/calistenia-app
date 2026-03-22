@@ -920,4 +920,125 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
       }
     }
   );
+
+  // ──────────────────────────────────────────────────────────────
+  // TODAY'S WORKOUT — What should I do today?
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "cal_todays_workout",
+    {
+      title: "Get Today's Workout",
+      description:
+        "Shows what workout you should do today based on your current program and what you've done this week. " +
+        "Identifies the next unfinished workout day in the schedule.",
+      inputSchema: z.object({}).strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    },
+    async () => {
+      try {
+        // Get current program
+        const userPrograms = await pb.collection("user_programs").getFullList({
+          filter: `user = "${userId}" && is_current = true`,
+          expand: "program",
+        });
+
+        if (userPrograms.length === 0) {
+          return { content: [{ type: "text", text: "No active program. Use `cal_set_current_program` to select one." }] };
+        }
+
+        const program = userPrograms[0].expand?.program as Record<string, unknown>;
+        const programId = program?.id as string;
+        const programName = program?.name as string;
+
+        const settings = await pb
+          .collection("settings")
+          .getFirstListItem(`user = "${userId}"`)
+          .catch(() => null);
+        const currentPhase = (settings?.phase as number) ?? 1;
+
+        // Get this week's sessions and program exercises
+        const weekStart = startOfWeek();
+        const [thisWeekSessions, programExercises] = await Promise.all([
+          pb.collection("sessions").getFullList({
+            filter: `user = "${userId}" && completed_at >= "${weekStart}"`,
+          }),
+          pb.collection("program_exercises").getFullList({
+            filter: `program = "${programId}" && phase_number = ${currentPhase}`,
+            sort: "day_id,sort_order",
+          }),
+        ]);
+
+        // Group exercises by day
+        const dayMap = new Map<string, { name: string; focus: string; title: string; exercises: Array<{ name: string; sets: number; reps: string; rest: number; muscles: string }> }>();
+        for (const ex of programExercises) {
+          const dayId = ex.day_id as string;
+          if (!dayMap.has(dayId)) {
+            dayMap.set(dayId, {
+              name: ex.day_name as string,
+              focus: ex.day_focus as string,
+              title: ex.workout_title as string,
+              exercises: [],
+            });
+          }
+          dayMap.get(dayId)!.exercises.push({
+            name: ex.exercise_name as string,
+            sets: ex.sets as number,
+            reps: ex.reps as string,
+            rest: ex.rest_seconds as number,
+            muscles: ex.muscles as string,
+          });
+        }
+
+        // Find which days were completed this week
+        const completedDays = new Set(thisWeekSessions.map((s) => s.day as string));
+
+        // Find next unfinished day
+        const allDays = [...dayMap.entries()];
+        const nextDay = allDays.find(([dayId]) => !completedDays.has(dayId));
+
+        if (!nextDay) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `All ${allDays.length} workout days completed this week! Rest or do active recovery.`,
+              },
+            ],
+            structuredContent: { all_complete: true, completed: completedDays.size, total: allDays.length },
+          };
+        }
+
+        const [dayId, day] = nextDay;
+        const lines = [
+          `# Today's Workout`,
+          `**${programName}** — Phase ${currentPhase}\n`,
+          `## ${day.name}: ${day.focus}`,
+          day.title ? `*${day.title}*\n` : "",
+          `Week progress: ${completedDays.size}/${allDays.length} days done\n`,
+        ];
+
+        for (const ex of day.exercises) {
+          lines.push(`- **${ex.name}**: ${ex.sets} × ${ex.reps} | Rest: ${ex.rest}s`);
+          if (ex.muscles) lines.push(`  _${ex.muscles}_`);
+        }
+
+        lines.push(`\nTo log this workout use \`cal_log_full_workout\` with workout_key \`p${currentPhase}_${dayId}\``);
+
+        return {
+          content: [{ type: "text", text: lines.join("\n") }],
+          structuredContent: {
+            day_id: dayId,
+            day_name: day.name,
+            day_focus: day.focus,
+            phase: currentPhase,
+            workout_key: `p${currentPhase}_${dayId}`,
+            exercises: day.exercises,
+            week_progress: { completed: completedDays.size, total: allDays.length },
+          },
+        };
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
 }

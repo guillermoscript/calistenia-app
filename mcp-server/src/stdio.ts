@@ -36,6 +36,7 @@ import { registerProgressTools } from "./tools/progress.js";
 import { registerNutritionTools } from "./tools/nutrition.js";
 import { registerSmartTools } from "./tools/smart.js";
 import { registerGamificationTools } from "./tools/gamification.js";
+import { registerHealthTools } from "./tools/health.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
 
@@ -60,6 +61,7 @@ async function main() {
   registerNutritionTools(server, auth);
   registerSmartTools(server, auth);
   registerGamificationTools(server, auth);
+  registerHealthTools(server, auth);
   registerResources(server, auth);
   registerPrompts(server);
 
