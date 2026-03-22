@@ -8,6 +8,7 @@ import { Badge } from '../components/ui/badge'
 import { useWgerSearch } from '../hooks/useWgerSearch'
 import WgerResultCard from '../components/WgerResultCard'
 import type { Exercise, Priority } from '../types'
+import { SearchIcon } from '../components/icons/nav-icons'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -182,16 +183,6 @@ function mapPBRecord(rec: any): CatalogExercise {
   }
 }
 
-// ── Search icon ──────────────────────────────────────────────────────────────
-
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <circle cx="7" cy="7" r="5" />
-      <line x1="11" y1="11" x2="15" y2="15" />
-    </svg>
-  )
-}
 
 // ── Component ────────────────────────────────────────────────────────────────
 

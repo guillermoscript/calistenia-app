@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button'
 import type { ProgramMeta } from '../types'
 import type { RecordModel } from 'pocketbase'
 import ProgramDetailPage from './ProgramDetailPage'
+import { ArrowLeftIcon } from '../components/icons/nav-icons'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -12,17 +13,6 @@ interface PreviewExercise {
   sets: number | string
   reps: string
   muscles: string
-}
-
-// ── Icons ──────────────────────────────────────────────────────────────────
-
-function ArrowLeftIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <line x1="13" y1="8" x2="3" y2="8" />
-      <polyline points="7,4 3,8 7,12" />
-    </svg>
-  )
 }
 
 // ── SharedProgramPage ──────────────────────────────────────────────────────

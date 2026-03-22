@@ -24,10 +24,10 @@ export const DAY_TYPE_COLORS: Record<DayType, { badge: string; border: string }>
 }
 
 // ── Priority colors ─────────────────────────────────────────────────────────
-export const PRIORITY_COLORS: Record<Priority, { stripe: string; border: string; text: string }> = {
-  high: { stripe: 'bg-red-500',   border: 'border-l-red-500',   text: 'text-red-500' },
-  med:  { stripe: 'bg-amber-400', border: 'border-l-amber-400', text: 'text-amber-400' },
-  low:  { stripe: 'bg-sky-500',   border: 'border-l-sky-500',   text: 'text-sky-500' },
+export const PRIORITY_COLORS: Record<Priority, { stripe: string; border: string; text: string; badge: string }> = {
+  high: { stripe: 'bg-red-500',   border: 'border-l-red-500',   text: 'text-red-500',   badge: 'text-red-500 border-red-500/30' },
+  med:  { stripe: 'bg-amber-400', border: 'border-l-amber-400', text: 'text-amber-400', badge: 'text-amber-400 border-amber-400/30' },
+  low:  { stripe: 'bg-sky-500',   border: 'border-l-sky-500',   text: 'text-sky-500',   badge: 'text-sky-500 border-sky-500/30' },
 }
 
 // ── Cardio activity types ─────────────────────────────────────────────────

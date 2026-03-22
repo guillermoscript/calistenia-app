@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Skeleton } from '../components/ui/skeleton'
+import { ArrowLeftIcon } from '../components/icons/nav-icons'
 import type { Exercise, Priority } from '../types'
 import { pbCatalogEditUrl } from '../lib/pocketbase-admin'
 
@@ -227,14 +228,6 @@ function mapPBRecord(rec: any): CatalogExercise {
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
-function ArrowLeftIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <line x1="14" y1="8" x2="2" y2="8" />
-      <polyline points="6,4 2,8 6,12" />
-    </svg>
-  )
-}
 
 function ExternalLinkIcon({ className }: { className?: string }) {
   return (

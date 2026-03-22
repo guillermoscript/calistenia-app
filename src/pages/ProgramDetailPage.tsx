@@ -12,6 +12,9 @@ import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { PRIORITY_COLORS } from '../lib/style-tokens'
 import type { ProgramMeta, Priority } from '../types'
 import type { RecordModel } from 'pocketbase'
+import { ShareButton } from '../components/ShareButton'
+import { shareProgram } from '../lib/share'
+import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -49,33 +52,6 @@ interface ProgramExercise {
   pbRecordId?: string
 }
 
-// ── Share helper ───────────────────────────────────────────────────────────
-
-async function shareProgram(programId: string, programName: string, method: 'native' | 'whatsapp' | 'copy' = 'native') {
-  const url = `${window.location.origin}/shared/${programId}`
-  const message = `💪 Mira este programa de calistenia: ${programName}\n${url}`
-
-  if (method === 'whatsapp') {
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
-    return
-  }
-
-  if (method === 'native' && navigator.share) {
-    try {
-      await navigator.share({ title: programName, text: `Mira este programa: ${programName}`, url })
-      return
-    } catch { /* cancelled */ }
-  }
-
-  // Fallback: copy to clipboard
-  try {
-    await navigator.clipboard.writeText(url)
-    alert('Enlace copiado al portapapeles')
-  } catch {
-    prompt('Copia este enlace:', url)
-  }
-}
-
 const PRIORITY_LABEL: Record<string, string> = {
   high: 'Alta',
   med: 'Media',
@@ -86,51 +62,29 @@ const PRIORITY_LABEL: Record<string, string> = {
 
 const DAY_ORDER = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
 
-// ── Icons ──────────────────────────────────────────────────────────────────
-
-function ArrowLeftIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <line x1="13" y1="8" x2="3" y2="8" />
-      <polyline points="7,4 3,8 7,12" />
-    </svg>
-  )
+function formatRelativeDate(isoDate: string): { text: string; fresh: boolean } {
+  const days = Math.floor((Date.now() - new Date(isoDate).getTime()) / 86400000)
+  const fresh = days < 7
+  if (days === 0) return { text: 'hoy', fresh }
+  if (days === 1) return { text: 'ayer', fresh }
+  if (days < 7) return { text: `hace ${days} días`, fresh }
+  if (days < 30) return { text: `hace ${Math.floor(days / 7)} sem`, fresh }
+  return { text: `hace ${Math.floor(days / 30)} mes${Math.floor(days / 30) > 1 ? 'es' : ''}`, fresh }
 }
 
-function ShareIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <circle cx="12" cy="3" r="2" />
-      <circle cx="12" cy="13" r="2" />
-      <circle cx="4" cy="8" r="2" />
-      <line x1="5.8" y1="7" x2="10.2" y2="4" />
-      <line x1="5.8" y1="9" x2="10.2" y2="12" />
-    </svg>
-  )
+// Map JS getDay() (0=Sun) to our day IDs
+const JS_DAY_TO_ID: Record<number, string> = {
+  0: 'dom', 1: 'lun', 2: 'mar', 3: 'mie', 4: 'jue', 5: 'vie', 6: 'sab',
 }
+const TODAY_DAY_ID = JS_DAY_TO_ID[new Date().getDay()]
 
-function CopyIcon({ className }: { className?: string }) {
+function ChevronIcon({ className, expanded }: { className?: string; expanded: boolean }) {
   return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <rect x="5" y="5" width="9" height="9" rx="1" />
-      <path d="M3 11V3a1 1 0 011-1h8" />
-    </svg>
-  )
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="3,8 7,12 13,4" />
-    </svg>
-  )
-}
-
-function EditIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M11.5 2.5l2 2L5 13H3v-2z" />
-      <line x1="9.5" y1="4.5" x2="11.5" y2="6.5" />
+    <svg
+      className={cn(className, 'transition-transform duration-200', expanded && 'rotate-180')}
+      viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"
+    >
+      <polyline points="4,6 8,10 12,6" />
     </svg>
   )
 }
@@ -176,9 +130,13 @@ export default function ProgramDetailPage({
   const [selectedPhase, setSelectedPhase] = useState<string>('1')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())
+  const [lastSessions, setLastSessions] = useState<Record<string, string>>({})
 
   const isActive = activeProgram?.id === programId
   const isOwn = program?.created_by === userId
+  const currentUser = getCurrentUser()
+  const isAdminOrEditor = currentUser?.role === 'admin' || currentUser?.role === 'editor'
 
   // ── Fetch program data ─────────────────────────────────────────────────
 
@@ -264,6 +222,27 @@ export default function ProgramDetailPage({
       })
       setWorkouts(Object.values(workoutMap))
 
+      // Fetch last session per workout day (for history context)
+      if (userId) {
+        try {
+          const sessionsRes = await pb.collection('sessions').getList(1, 200, {
+            filter: pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId }),
+            sort: '-completed_at',
+            $autoCancel: false,
+          })
+          const sessionMap: Record<string, string> = {}
+          sessionsRes.items.forEach((s: RecordModel) => {
+            const key = s.workout_key as string
+            if (key && !sessionMap[key]) {
+              sessionMap[key] = s.completed_at || s.created
+            }
+          })
+          setLastSessions(sessionMap)
+        } catch {
+          // Not critical
+        }
+      }
+
       // Fetch related programs (others in catalog)
       try {
         const relatedRes = await pb.collection('programs').getList(1, 6, {
@@ -318,11 +297,28 @@ export default function ProgramDetailPage({
   // ── Phase workouts ─────────────────────────────────────────────────────
 
   const phaseNum = parseInt(selectedPhase)
-  const phaseWorkouts = workouts
-    .filter(w => w.phase === phaseNum)
-    .sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day))
+  const phaseWorkouts = useMemo(() =>
+    workouts
+      .filter(w => w.phase === phaseNum)
+      .sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day)),
+    [workouts, phaseNum]
+  )
 
-  const currentPhase = phases.find(p => p.id === phaseNum)
+  // Auto-expand first day when phase changes
+  useEffect(() => {
+    if (phaseWorkouts.length > 0) {
+      setExpandedDays(new Set([`${phaseWorkouts[0].phase}_${phaseWorkouts[0].day}`]))
+    }
+  }, [phaseNum, phaseWorkouts.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleDay = useCallback((key: string) => {
+    setExpandedDays(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
 
   // Total exercise count
   const totalExercises = workouts.reduce((sum, w) => sum + w.exercises.length, 0)
@@ -350,7 +346,7 @@ export default function ProgramDetailPage({
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12" role="status" aria-busy="true" aria-label="Cargando programa">
         <div className="animate-pulse space-y-6">
           <div className="h-6 bg-muted rounded w-24" />
           <div className="h-14 bg-muted rounded w-2/3" />
@@ -371,13 +367,13 @@ export default function ProgramDetailPage({
   if (error || !program) {
     return (
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
+        <button onClick={onBack} aria-label="Volver a programas" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
           <ArrowLeftIcon className="size-4" />
           <span className="font-mono text-[11px] tracking-widest uppercase">Volver</span>
         </button>
         <div className="text-center py-20">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
-            <svg className="size-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center motion-safe:animate-scale-in">
+            <svg className="size-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
               <line x1="15" y1="9" x2="9" y2="15" />
               <line x1="9" y1="9" x2="15" y2="15" />
@@ -393,44 +389,46 @@ export default function ProgramDetailPage({
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
 
       {/* Back button */}
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 -ml-1">
+      <button onClick={onBack} aria-label="Volver a programas" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 -ml-1">
         <ArrowLeftIcon className="size-4" />
         <span className="font-mono text-[11px] tracking-widest uppercase">Volver a programas</span>
       </button>
 
       {/* Hero section */}
       <div className="mb-10">
-        <div className="text-[11px] text-muted-foreground tracking-[0.3em] mb-2 uppercase font-mono">
+        <div className="text-[11px] text-muted-foreground tracking-[0.3em] mb-2 uppercase font-mono motion-safe:animate-fade-in">
           {isSharedView ? 'Programa Compartido' : 'Detalle del Programa'}
         </div>
-        <h1 className="font-bebas text-4xl md:text-6xl leading-none mb-4 tracking-wide">{program.name}</h1>
+        <h1 className="font-bebas text-4xl md:text-6xl leading-none mb-4 tracking-wide motion-safe:animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'both' }}>{program.name}</h1>
         {program.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6">{program.description}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>{program.description}</p>
         )}
 
         {/* Meta stats */}
-        <div className="flex items-center gap-4 flex-wrap mb-6">
+        <div className="flex items-center gap-4 flex-wrap mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
           {program.duration_weeks > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-lime-400 font-bebas text-xl">{program.duration_weeks}</span>
-              <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">semanas</span>
-            </div>
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-lime font-bebas text-xl">{program.duration_weeks}</span>
+                <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">semanas</span>
+              </div>
+              <div className="w-px h-5 bg-muted" />
+            </>
           )}
-          <div className="w-px h-5 bg-muted" />
           <div className="flex items-center gap-2">
-            <span className="text-lime-400 font-bebas text-xl">{phases.length}</span>
+            <span className="text-lime font-bebas text-xl">{phases.length}</span>
             <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">fase{phases.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="w-px h-5 bg-muted" />
           <div className="flex items-center gap-2">
-            <span className="text-lime-400 font-bebas text-xl">{totalExercises}</span>
+            <span className="text-lime font-bebas text-xl">{totalExercises}</span>
             <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">ejercicios</span>
           </div>
           {totalDurationMinutes > 0 && (
             <>
               <div className="w-px h-5 bg-muted" />
               <div className="flex items-center gap-2">
-                <span className="text-lime-400 font-bebas text-xl">{formatDuration(totalDurationMinutes)}</span>
+                <span className="text-lime font-bebas text-xl">{formatDuration(totalDurationMinutes)}</span>
                 <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">total est.</span>
               </div>
             </>
@@ -460,13 +458,13 @@ export default function ProgramDetailPage({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap motion-safe:animate-fade-in" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
           {isSharedView && !userId ? (
             <Button
               onClick={onLogin}
-              className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10"
+              className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform"
             >
-              REGISTRATE PARA USAR ESTE PROGRAMA
+              REGÍSTRATE PARA USAR ESTE PROGRAMA
             </Button>
           ) : (
             <>
@@ -474,16 +472,17 @@ export default function ProgramDetailPage({
                 <Button
                   onClick={handleSelectProgram}
                   disabled={actionLoading === 'select'}
-                  className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10"
+                  className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform"
                 >
                   <CheckIcon className="size-4 mr-2" />
-                  {actionLoading === 'select' ? 'ACTIVANDO...' : isSharedView ? 'ANADIR A MIS PROGRAMAS' : 'USAR PROGRAMA'}
+                  {actionLoading === 'select' ? 'ACTIVANDO...' : isSharedView ? 'AÑADIR A MIS PROGRAMAS' : 'USAR PROGRAMA'}
                 </Button>
               )}
               {isActive && (
-                <Button disabled className="font-bebas text-lg tracking-widest px-6 h-11 opacity-50">
-                  <CheckIcon className="size-4 mr-2" />
-                  PROGRAMA ACTIVO
+                <Button asChild className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform motion-safe:animate-workday-pulse">
+                  <Link to="/workout">
+                    IR A ENTRENAR
+                  </Link>
                 </Button>
               )}
               {onDuplicateProgram && (
@@ -497,22 +496,11 @@ export default function ProgramDetailPage({
                   {actionLoading === 'duplicate' ? 'DUPLICANDO...' : 'DUPLICAR'}
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={() => shareProgram(programId, program.name, 'whatsapp')}
-                className="font-mono text-[11px] tracking-widest h-11 px-5 border-emerald-500/30 text-emerald-400 hover:border-emerald-500/50 hover:bg-emerald-500/5"
-              >
-                <span className="mr-2 text-sm">📲</span>
-                WHATSAPP
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => shareProgram(programId, program.name)}
+              <ShareButton
+                onShare={(method) => shareProgram(program.name, programId, method)}
                 className="font-mono text-[11px] tracking-widest h-11 px-5 border-border hover:border-pink-500/50 hover:text-pink-400"
-              >
-                <ShareIcon className="size-3.5 mr-2" />
-                COMPARTIR
-              </Button>
+                size="default"
+              />
               {onEditProgram && (isOwn || userRole === 'admin' || userRole === 'editor') && (
                 <Button
                   variant="outline"
@@ -542,14 +530,14 @@ export default function ProgramDetailPage({
 
       {/* Phase Tabs + Exercise List */}
       {phases.length > 0 && (
-        <div className="mb-10">
+        <div className="mb-10 motion-safe:animate-fade-in" style={{ animationDelay: '250ms', animationFillMode: 'both' }}>
           <Tabs value={selectedPhase} onValueChange={setSelectedPhase}>
             <TabsList className="mb-6 bg-muted/80 border border-border p-1 gap-1">
               {phases.map(phase => (
                 <TabsTrigger
                   key={phase.id}
                   value={String(phase.id)}
-                  className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2"
+                  className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime/10 data-[state=active]:text-lime uppercase px-4 py-2"
                 >
                   {phase.name}
                   <span className="ml-2 text-[9px] text-muted-foreground">({phase.weeks})</span>
@@ -568,132 +556,153 @@ export default function ProgramDetailPage({
 
                 {/* Day workouts */}
                 {phaseWorkouts.length === 0 ? (
-                  <div className="text-center py-16 text-muted-foreground text-sm">
-                    No hay ejercicios en esta fase.
+                  <div className="text-center py-16 motion-safe:animate-fade-in">
+                    <div className="font-bebas text-2xl text-muted-foreground/40 mb-2 tracking-widest">SIN EJERCICIOS</div>
+                    <p className="text-sm text-muted-foreground">Esta fase aún no tiene ejercicios configurados.</p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {phaseWorkouts.map(workout => (
-                      <div key={`${workout.phase}_${workout.day}`} className="rounded-xl bg-muted/60 overflow-hidden">
-                        {/* Day header */}
-                        <div className="px-5 py-4 border-b border-border/60">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <span className="font-bebas text-xl tracking-widest text-foreground uppercase">
-                                {workout.dayName}
-                              </span>
-                              {workout.dayFocus && (
-                                <span className="text-[11px] text-muted-foreground font-mono tracking-wide">
-                                  {workout.dayFocus}
+                  <div className="space-y-4">
+                    {phaseWorkouts.map((workout, wi) => {
+                      const dayKey = `${workout.phase}_${workout.day}`
+                      const isExpanded = expandedDays.has(dayKey)
+                      const workoutKey = `p${workout.phase}_${workout.day}`
+                      const lastSession = lastSessions[workoutKey]
+                      const sessionInfo = lastSession ? formatRelativeDate(lastSession) : null
+                      const isToday = isActive && workout.day === TODAY_DAY_ID
+
+                      return (
+                        <div key={dayKey} className={cn(
+                          'rounded-xl bg-muted/60 overflow-hidden motion-safe:animate-slide-up',
+                          isToday && 'ring-1 ring-lime/30',
+                        )} style={{ animationDelay: `${wi * 75}ms`, animationFillMode: 'both' }}>
+                          {/* Day header — clickable */}
+                          <button
+                            type="button"
+                            onClick={() => toggleDay(dayKey)}
+                            className="w-full text-left px-5 py-4 flex items-center justify-between gap-3 hover:bg-muted/30 transition-colors"
+                            aria-expanded={isExpanded}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <span className={cn(
+                                  'font-bebas text-xl tracking-widest uppercase',
+                                  isToday ? 'text-lime' : 'text-foreground',
+                                )}>
+                                  {workout.dayName}
                                 </span>
+                                {isToday && (
+                                  <span className="text-[9px] font-mono tracking-widest text-lime bg-lime/10 px-1.5 py-0.5 rounded-full uppercase">
+                                    Hoy
+                                  </span>
+                                )}
+                                {workout.dayFocus && (
+                                  <span className="text-[11px] text-muted-foreground font-mono tracking-wide">
+                                    {workout.dayFocus}
+                                  </span>
+                                )}
+                                <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase">
+                                  {workout.exercises.length} ej · ~{workoutDurations[dayKey] || 0} min
+                                </span>
+                              </div>
+                              {sessionInfo && (
+                                <div className={cn(
+                                  'text-[10px] font-mono mt-1',
+                                  sessionInfo.fresh ? 'text-emerald-400/70' : 'text-amber-400/50',
+                                )}>
+                                  Último: {sessionInfo.text}
+                                </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-3">
-                              {workoutDurations[`${workout.phase}_${workout.day}`] > 0 && (
-                                <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">
-                                  ~{workoutDurations[`${workout.phase}_${workout.day}`]} min
-                                </span>
-                              )}
-                              <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase">
-                                {workout.exercises.length} ejercicio{workout.exercises.length !== 1 ? 's' : ''}
-                              </span>
+                            <ChevronIcon className="size-4 text-muted-foreground shrink-0" expanded={isExpanded} />
+                          </button>
+
+                          {/* Exercise list — collapsible */}
+                          {isExpanded && (
+                            <div className="border-t border-border/60 motion-safe:animate-fade-in">
+                              {workout.exercises.map((exercise, idx) => (
+                                <div
+                                  key={`${exercise.id}_${idx}`}
+                                  className={cn(
+                                    'px-5 py-4 border-l-[3px] flex items-center gap-4 hover:bg-muted/30 transition-colors',
+                                    PRIORITY_COLORS[exercise.priority as Priority]?.border || 'border-l-border',
+                                    idx < workout.exercises.length - 1 && 'border-b border-border/40',
+                                  )}
+                                >
+                                  {/* Demo thumbnail */}
+                                  {exercise.demoImages && exercise.demoImages.length > 0 && exercise.demoImages[0] && (
+                                    <div className="w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0">
+                                      <img
+                                        src={exercise.demoImages[0]}
+                                        alt={exercise.name}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Sets x Reps in accent */}
+                                  <div className="shrink-0 w-16 text-center">
+                                    <span className="font-bebas text-lg text-lime tracking-wide">
+                                      {exercise.sets}x{exercise.reps}
+                                    </span>
+                                  </div>
+
+                                  {/* Exercise info */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                      <Link
+                                        to={`/exercises/${exercise.id}`}
+                                        className="text-[13px] font-semibold text-foreground truncate hover:text-lime transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        {exercise.name}
+                                      </Link>
+                                      {isAdminOrEditor && exercise.pbRecordId && (
+                                        <a
+                                          href={pbExerciseEditUrl(exercise.pbRecordId)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="text-amber-400/60 hover:text-amber-400 transition-colors shrink-0"
+                                          aria-label={`Editar ${exercise.name} en PocketBase`}
+                                        >
+                                          <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                                            <path d="M11.5 1.5l3 3L5 14H2v-3L11.5 1.5z" />
+                                          </svg>
+                                        </a>
+                                      )}
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          'text-[8px] font-mono px-1.5 py-0 shrink-0',
+                                          PRIORITY_COLORS[exercise.priority as Priority]?.badge,
+                                        )}
+                                      >
+                                        {PRIORITY_LABEL[exercise.priority]}
+                                      </Badge>
+                                    </div>
+                                    {exercise.muscles && (
+                                      <div className="text-[11px] text-muted-foreground">
+                                        {exercise.muscles.split(',').map(m => m.trim()).filter(Boolean).join(' · ')}
+                                      </div>
+                                    )}
+                                    <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/60 font-mono">
+                                      {exercise.rest > 0 && <span>Descanso: {exercise.rest}s</span>}
+                                      {exercise.isTimer && exercise.timerSeconds && (
+                                        <span>Timer: {exercise.timerSeconds}s</span>
+                                      )}
+                                    </div>
+                                    {exercise.note && (
+                                      <div className="text-[10px] text-muted-foreground/60 mt-1 italic">{exercise.note}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          </div>
-                          {workout.title && workout.title !== workout.dayFocus && (
-                            <div className="text-[11px] text-muted-foreground mt-1">{workout.title}</div>
                           )}
                         </div>
-
-                        {/* Exercise list */}
-                        <div>
-                          {workout.exercises.map((exercise, idx) => (
-                            <div
-                              key={`${exercise.id}_${idx}`}
-                              className={cn(
-                                'px-5 py-4 border-l-[3px] flex items-center gap-4 hover:bg-muted/30 transition-colors',
-                                PRIORITY_COLORS[exercise.priority as Priority]?.border || 'border-l-border',
-                                idx < workout.exercises.length - 1 && 'border-b border-border/40',
-                              )}
-                            >
-                              {/* Demo thumbnail */}
-                              {exercise.demoImages && exercise.demoImages.length > 0 && exercise.demoImages[0] && (
-                                <div className="w-14 h-14 rounded-lg bg-muted overflow-hidden shrink-0">
-                                  <img
-                                    src={exercise.demoImages[0]}
-                                    alt={exercise.name}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                  />
-                                </div>
-                              )}
-
-                              {/* Sets x Reps in accent */}
-                              <div className="shrink-0 w-16 text-center">
-                                <span className="font-bebas text-lg text-lime-400 tracking-wide">
-                                  {exercise.sets}x{exercise.reps}
-                                </span>
-                              </div>
-
-                              {/* Exercise info */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <Link
-                                    to={`/exercises/${exercise.id}`}
-                                    className="text-[13px] font-semibold text-foreground truncate hover:text-lime-400 transition-colors"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {exercise.name}
-                                  </Link>
-                                  {(() => {
-                                    const u = getCurrentUser()
-                                    const role = u?.role as string | undefined
-                                    return (role === 'admin' || role === 'editor') && exercise.pbRecordId ? (
-                                      <a
-                                        href={pbExerciseEditUrl(exercise.pbRecordId)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="text-amber-400/60 hover:text-amber-400 transition-colors shrink-0"
-                                        title="Editar en PocketBase"
-                                      >
-                                        <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                          <path d="M11.5 1.5l3 3L5 14H2v-3L11.5 1.5z" />
-                                        </svg>
-                                      </a>
-                                    ) : null
-                                  })()}
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      'text-[8px] font-mono px-1.5 py-0 shrink-0',
-                                      exercise.priority === 'high' && 'text-red-400 border-red-400/30',
-                                      exercise.priority === 'med' && 'text-amber-400 border-amber-400/30',
-                                      exercise.priority === 'low' && 'text-emerald-400 border-emerald-400/30',
-                                    )}
-                                  >
-                                    {PRIORITY_LABEL[exercise.priority]}
-                                  </Badge>
-                                </div>
-                                {exercise.muscles && (
-                                  <div className="text-[11px] text-muted-foreground">
-                                    {exercise.muscles.split(',').map(m => m.trim()).filter(Boolean).join(' · ')}
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/60 font-mono">
-                                  {exercise.rest > 0 && <span>Descanso: {exercise.rest}s</span>}
-                                  {exercise.isTimer && exercise.timerSeconds && (
-                                    <span>Timer: {exercise.timerSeconds}s</span>
-                                  )}
-                                </div>
-                                {exercise.note && (
-                                  <div className="text-[10px] text-muted-foreground/60 mt-1 italic">{exercise.note}</div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </TabsContent>
@@ -707,13 +716,15 @@ export default function ProgramDetailPage({
         <div className="mt-16 mb-8">
           <h2 className="font-bebas text-2xl tracking-widest mb-6 uppercase">También te puede interesar</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {relatedPrograms.slice(0, 3).map(rp => (
-              <div
+            {relatedPrograms.slice(0, 3).map((rp, ri) => (
+              <button
                 key={rp.id}
-                className="group cursor-pointer rounded-xl bg-muted/60 p-5 transition-all hover:bg-muted/60"
+                type="button"
+                className="group text-left cursor-pointer rounded-xl bg-muted/60 p-5 transition-all hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-safe:animate-fade-in"
+                style={{ animationDelay: `${ri * 100}ms`, animationFillMode: 'both' }}
                 onClick={() => onNavigateToProgram?.(rp.id)}
               >
-                <h3 className="font-bebas text-lg tracking-wide text-foreground group-hover:text-lime-400 transition-colors mb-2 uppercase">
+                <h3 className="font-bebas text-lg tracking-wide text-foreground group-hover:text-lime transition-colors mb-2 uppercase">
                   {rp.name}
                 </h3>
                 {rp.description && (
@@ -724,7 +735,7 @@ export default function ProgramDetailPage({
                     {rp.duration_weeks} semanas
                   </span>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -734,7 +745,7 @@ export default function ProgramDetailPage({
           open={showDeleteConfirm}
           onOpenChange={setShowDeleteConfirm}
           title="Eliminar programa"
-          description="¿Eliminar este programa? Esta accion no se puede deshacer."
+          description="¿Eliminar este programa? Esta acción no se puede deshacer."
           confirmLabel="ELIMINAR"
           cancelLabel="CANCELAR"
           variant="destructive"

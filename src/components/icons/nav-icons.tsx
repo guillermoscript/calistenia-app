@@ -240,3 +240,70 @@ export function MoonIcon({ className }: IconProps) {
     </svg>
   )
 }
+
+// ── Action icons ──────────────────────────────────────────────────────────────
+
+export function ArrowLeftIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <line x1="13" y1="8" x2="3" y2="8" />
+      <polyline points="7,4 3,8 7,12" />
+    </svg>
+  )
+}
+
+export function CheckIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <polyline points="3,8 7,12 13,4" />
+    </svg>
+  )
+}
+
+export function CopyIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <rect x="5" y="5" width="9" height="9" rx="1" />
+      <path d="M3 11V3a1 1 0 011-1h8" />
+    </svg>
+  )
+}
+
+export function EditIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <path d="M11.5 2.5l2 2L5 13H3v-2z" />
+      <line x1="9.5" y1="4.5" x2="11.5" y2="6.5" />
+    </svg>
+  )
+}
+
+export function ShareIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <circle cx="12" cy="3" r="2" />
+      <circle cx="12" cy="13" r="2" />
+      <circle cx="4" cy="8" r="2" />
+      <line x1="5.8" y1="7" x2="10.2" y2="4" />
+      <line x1="5.8" y1="9" x2="10.2" y2="12" />
+    </svg>
+  )
+}
+
+export function SearchIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" />
+      <line x1="11" y1="11" x2="15" y2="15" />
+    </svg>
+  )
+}
+
+export function PlusIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <line x1="8" y1="3" x2="8" y2="13" />
+      <line x1="3" y1="8" x2="13" y2="8" />
+    </svg>
+  )
+}
