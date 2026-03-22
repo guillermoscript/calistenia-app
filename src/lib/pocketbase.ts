@@ -37,43 +37,6 @@ export const isPocketBaseAvailable = async (): Promise<boolean> => {
 }
 
 /**
- * Login con email + password.
- * Lanza ClientResponseError si las credenciales son incorrectas.
- */
-export const login = (email: string, password: string): Promise<RecordAuthResponse<RecordModel>> =>
-  pb.collection('users').authWithPassword(email, password)
-
-/**
- * Registro de nuevo usuario + login automático.
- */
-export interface RegisterData {
-  email: string
-  password: string
-  display_name?: string
-  weight?: number | null
-  height?: number | null
-  age?: number | null
-  sex?: string
-  level?: string
-  goal?: string
-}
-export const register = async (data: RegisterData): Promise<RecordAuthResponse<RecordModel>> => {
-  await pb.collection('users').create({
-    email: data.email,
-    password: data.password,
-    passwordConfirm: data.password,
-    display_name: data.display_name || '',
-    weight: data.weight ?? null,
-    height: data.height ?? null,
-    age: data.age ?? null,
-    sex: data.sex || '',
-    level: data.level || 'principiante',
-    goal: data.goal || '',
-  })
-  return pb.collection('users').authWithPassword(data.email, data.password)
-}
-
-/**
  * OAuth2 con Google (o cualquier provider configurado en PocketBase).
  * After login, if the user has no avatar yet, fetches their Google profile picture
  * and uploads it to PocketBase.

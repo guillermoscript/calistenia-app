@@ -1,7 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { type RecordModel } from 'pocketbase'
 import { useAuth } from '../hooks/useAuth'
-import type { RegisterData } from '../lib/pocketbase'
 import type { UserRole, UserTier } from '../types'
 
 // ── Context interface ───────────────────────────────────────────────────────
@@ -19,8 +18,6 @@ interface AuthState {
 }
 
 interface AuthActions {
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (data: RegisterData) => Promise<void>
   signInWithGoogle: () => Promise<void>
   signOut: () => void
 }
@@ -54,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const {
     user, authReady, authError, isLoading,
     userRole, userTier, isAdmin, isEditor,
-    signIn, signUp, signInWithGoogle, signOut,
+    signInWithGoogle, signOut,
   } = useAuth()
 
   const state = useMemo<AuthState>(() => ({
@@ -70,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }), [user, authReady, authError, isLoading, userRole, userTier, isAdmin, isEditor])
 
   const actions = useMemo<AuthActions>(() => ({
-    signIn, signUp, signInWithGoogle, signOut,
-  }), [signIn, signUp, signInWithGoogle, signOut])
+    signInWithGoogle, signOut,
+  }), [signInWithGoogle, signOut])
 
   const value = useMemo(() => ({ state, actions }), [state, actions])
 

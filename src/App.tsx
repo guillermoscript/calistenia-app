@@ -542,7 +542,7 @@ function AppInner() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, userId, authReady, authError, isLoading } = useAuthState()
-  const { signIn, signUp, signInWithGoogle } = useAuthActions()
+  const { signInWithGoogle } = useAuthActions()
 
   useEffect(() => {
     if (user) setOnboardingDone(isOnboardingDone(user.id))
@@ -586,7 +586,7 @@ function AppInner() {
       const shareCode = location.pathname.replace('/shared/', '')
       return <div className="min-h-screen bg-background"><SharedProgramPage programId={shareCode} onBack={goToDashboard} onLogin={goToAuth} /></div>
     }
-    if (location.pathname === '/auth') return <AuthPage signIn={signIn} signUp={signUp} signInWithGoogle={signInWithGoogle} authError={authError} isLoading={isLoading} />
+    if (location.pathname === '/auth') return <AuthPage signInWithGoogle={signInWithGoogle} authError={authError} isLoading={isLoading} />
     return <LandingPage onGetStarted={goToAuth} />
   }
 
