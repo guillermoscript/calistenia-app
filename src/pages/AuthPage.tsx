@@ -1,10 +1,11 @@
-import { useState, type InputHTMLAttributes } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, type InputHTMLAttributes } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import type { RegisterData } from '@/lib/pocketbase'
+import { captureReferralCode } from '@/hooks/useAuth'
 
 interface AuthPageProps {
   signIn: (email: string, password: string) => Promise<void>
@@ -60,7 +61,8 @@ function PasswordInput(props: InputHTMLAttributes<HTMLInputElement>) {
 }
 
 export default function AuthPage({ signIn, signUp, signInWithGoogle, authError, isLoading }: AuthPageProps) {
-  const [mode, setMode] = useState<AuthMode>('login')
+  const [searchParams] = useSearchParams()
+  const [mode, setMode] = useState<AuthMode>(() => searchParams.get('ref') ? 'register' : 'login')
 
   // Step: 0 = credentials, 1 = profile data
   const [step, setStep] = useState(0)
@@ -75,6 +77,12 @@ export default function AuthPage({ signIn, signUp, signInWithGoogle, authError, 
   const [sex, setSex] = useState('')
   const [level, setLevel] = useState('principiante')
   const [goal, setGoal] = useState('')
+
+  // Capture ?ref= query param to localStorage
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref) captureReferralCode(ref)
+  }, [searchParams])
 
   const switchMode = (m: AuthMode) => {
     setMode(m)

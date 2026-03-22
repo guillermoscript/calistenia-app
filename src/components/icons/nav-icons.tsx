@@ -220,6 +220,19 @@ export function SunIcon({ className }: IconProps) {
   )
 }
 
+export function ReferralIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="5" cy="5" r="2.5" />
+      <path d="M0.5 13c0-2 1.5-3.5 4.5-3.5" />
+      <circle cx="11" cy="5" r="2.5" />
+      <path d="M15.5 13c0-2-1.5-3.5-4.5-3.5" />
+      <path d="M8 9v4" />
+      <path d="M6 11h4" />
+    </svg>
+  )
+}
+
 export function MoonIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">

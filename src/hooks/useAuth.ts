@@ -1,8 +1,22 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { RecordModel } from 'pocketbase'
 import { pb, login, register, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
 import type { RegisterData } from '../lib/pocketbase'
 import type { UserRole, UserTier } from '../types'
+
+const REFERRAL_CODE_KEY = 'calistenia_referral_code'
+
+/** Save referral code from URL to localStorage so it survives the registration flow. */
+export function captureReferralCode(code: string) {
+  localStorage.setItem(REFERRAL_CODE_KEY, code)
+}
+
+/** Get and clear stored referral code. */
+function consumeReferralCode(): string | null {
+  const code = localStorage.getItem(REFERRAL_CODE_KEY)
+  if (code) localStorage.removeItem(REFERRAL_CODE_KEY)
+  return code
+}
 
 interface UseAuthReturn {
   user: RecordModel | null
@@ -78,13 +92,88 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [])
 
+  // Track whether we just registered (to trigger post-registration side effects)
+  const justRegistered = useRef(false)
+
+  // ── Post-registration: generate referral code + track referral ──────────
+  useEffect(() => {
+    if (!justRegistered.current || !user) return
+    justRegistered.current = false
+
+    const postRegister = async () => {
+      // Generate referral code for the new user
+      const displayName = user.display_name || user.email?.split('@')[0] || 'USER'
+      try {
+        const sanitized = displayName
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9\s]/g, '')
+          .replace(/\s+/g, '-')
+          .toUpperCase()
+          .slice(0, 10) || 'USER'
+
+        const hash = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+          .map((b: number) => b.toString(36).toUpperCase())
+          .join('')
+          .slice(0, 6)
+
+        const code = `${sanitized}-${hash}`
+        await pb.collection('users').update(user.id, { referral_code: code }).catch(() => {})
+      } catch { /* non-critical */ }
+
+      // Track referral if there's a stored referral code
+      const referrerCode = consumeReferralCode()
+      if (!referrerCode) return
+
+      try {
+        const referrerUsers = await pb.collection('users').getList(1, 1, {
+          filter: pb.filter('referral_code = {:code}', { code: referrerCode }),
+          $autoCancel: false,
+        })
+        if (referrerUsers.items.length === 0) return
+
+        const referrer = referrerUsers.items[0]
+        if (referrer.id === user.id) return // block self-referral
+
+        await pb.collection('referrals').create({
+          referrer: referrer.id,
+          referred: user.id,
+          source: 'quick_invite',
+        })
+
+        await pb.collection('point_transactions').create({
+          user: referrer.id,
+          amount: 100,
+          type: 'referral_signup',
+          reference_id: user.id,
+          description: 'Referido se registró',
+        })
+
+        // Notify referrer
+        await pb.collection('notifications').create({
+          user: referrer.id,
+          type: 'referral_signup',
+          actor: user.id,
+          reference_id: user.id,
+          reference_type: 'user',
+          read: false,
+          data: { referredName: user.display_name || user.email?.split('@')[0] || '' },
+        }).catch(() => {})
+      } catch { /* non-critical */ }
+    }
+
+    postRegister()
+  }, [user])
+
   // ── signUp ───────────────────────────────────────────────────────────────
   const signUp = useCallback(async (data: RegisterData) => {
     setAuthError(null)
     setIsLoading(true)
     try {
+      justRegistered.current = true
       await register(data)
     } catch (err: any) {
+      justRegistered.current = false
       const d = err?.response?.data || {}
       if (d.email?.code === 'validation_not_unique') {
         setAuthError('Ya existe una cuenta con ese email')

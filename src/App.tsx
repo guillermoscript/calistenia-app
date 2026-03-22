@@ -41,6 +41,8 @@ const RoutineViewPage = lazy(() => import('./pages/RoutineViewPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
 const SleepPage = lazy(() => import('./pages/SleepPage'))
+const InviteLandingPage = lazy(() => import('./pages/InviteLandingPage'))
+const ReferralsPage = lazy(() => import('./pages/ReferralsPage'))
 import OfflineBanner from './components/OfflineBanner'
 import ActiveCardioBar from './components/cardio/ActiveCardioBar'
 import { CardioSessionProvider } from './contexts/CardioSessionContext'
@@ -74,6 +76,7 @@ import {
   ProfileIcon, ProgramIcon, ExerciseIcon, RunningIcon, ChallengeIcon,
   ActivityIcon, FriendsIcon, TrophyIcon, FreeSessionIcon, CalendarNavIcon,
   ShieldIcon, PencilIcon, LogOutIcon, SunIcon, MoonIcon, SleepIcon, BellIcon,
+  ReferralIcon,
 } from './components/icons/nav-icons'
 
 interface NavItem {
@@ -98,6 +101,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/friends', label: 'Amigos', icon: FriendsIcon },
   { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
   { path: '/challenges', label: 'Desafios', icon: ChallengeIcon },
+  { path: '/referrals', label: 'Referidos', icon: ReferralIcon },
   { path: '/notifications', label: 'Notificaciones', icon: BellIcon },
   { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
 ]
@@ -139,6 +143,7 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/u\/[^/]+\/routine$/)) return 'Rutina'
   if (RE_USER_PROFILE.test(pathname)) return 'Perfil'
   if (pathname === '/notifications') return 'Notificaciones'
+  if (pathname === '/referrals') return 'Referidos'
   return 'Dashboard'
 }
 
@@ -240,6 +245,7 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     { path: '/friends', label: 'Amigos', icon: FriendsIcon },
     { path: '/challenges', label: 'Desafios', icon: ChallengeIcon },
     { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
+    { path: '/referrals', label: 'Referidos', icon: ReferralIcon },
   ]},
 ]
 
@@ -501,6 +507,7 @@ function AuthenticatedApp({
             <Route path="/add/:userId" element={<AddFriendPage currentUserId={userId!} />} />
             <Route path="/u/:userId/routine" element={<RoutineViewPage />} />
             <Route path="/notifications" element={<NotificationsPage userId={userId!} />} />
+            <Route path="/referrals" element={<ReferralsPage userId={userId!} />} />
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}
             <Route path="/u/:userId" element={<UserProfilePage />} />
@@ -567,6 +574,11 @@ function AppInner() {
   const goToAuth = useCallback(() => navigate('/auth'), [navigate])
 
   if (!authReady) return <AppLoader />
+
+  // Public invite landing — accessible both logged-in and logged-out
+  if (location.pathname.startsWith('/invite/')) {
+    return <Suspense fallback={<Loader />}><Routes><Route path="/invite/:code/challenge/:challengeId" element={<InviteLandingPage />} /><Route path="/invite/:code" element={<InviteLandingPage />} /></Routes></Suspense>
+  }
 
   if (!user) {
     if (location.pathname === '/legal') return <Suspense fallback={<Loader />}><LegalPage /></Suspense>

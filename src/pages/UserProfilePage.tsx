@@ -10,6 +10,10 @@ import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
 import { useFollows } from '../hooks/useFollows'
+import { ShareButton } from '../components/ShareButton'
+import { shareProfile, shareReferralInvite } from '../lib/share'
+import { useReferrals } from '../hooks/useReferrals'
+import type { ShareMethod } from '../lib/share'
 
 interface ProfileData {
   id: string
@@ -55,6 +59,8 @@ export default function UserProfilePage() {
   const isOwnProfile = currentUserId === userId
   const { isFollowing, follow, unfollow, followingCount, followersCount } = useFollows(currentUserId || null)
   const [followLoading, setFollowLoading] = useState(false)
+  const { stats: referralStats, getReferralStats } = useReferrals(currentUserId || null)
+  const [referralCode, setReferralCode] = useState<string | null>(null)
 
   useEffect(() => {
     if (!userId) return
@@ -151,6 +157,23 @@ export default function UserProfilePage() {
     load()
   }, [userId])
 
+  // Load referral stats and code for own profile
+  useEffect(() => {
+    if (!isOwnProfile || !currentUserId) return
+    getReferralStats()
+    pb.collection('users').getOne(currentUserId, { fields: 'referral_code', $autoCancel: false })
+      .then((u: any) => setReferralCode(u.referral_code || null))
+      .catch(() => {})
+  }, [isOwnProfile, currentUserId, getReferralStats])
+
+  const handleInvite = () => {
+    if (referralCode) {
+      shareReferralInvite(profile?.displayName || '', referralCode, 'native')
+    } else {
+      navigate('/referrals')
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16">
@@ -189,42 +212,51 @@ export default function UserProfilePage() {
             </div>
           </div>
         </div>
-        {!isOwnProfile && currentUserId && userId && (
-          <div className="flex gap-2">
-            <Button
-              variant={isFollowing(userId) ? 'default' : 'outline'}
-              size="sm"
-              disabled={followLoading}
-              onClick={async () => {
-                setFollowLoading(true)
-                if (isFollowing(userId)) await unfollow(userId)
-                else await follow(userId)
-                setFollowLoading(false)
-              }}
-              className={cn(
-                'text-[10px] tracking-widest h-9 active:scale-95 transition-all',
-                isFollowing(userId)
-                  ? 'bg-[hsl(var(--lime))] text-background hover:bg-red-500 hover:text-white'
-                  : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
-              )}
-            >
-              {followLoading ? '...' : isFollowing(userId) ? 'SIGUIENDO' : 'SEGUIR'}
-            </Button>
-            <Button
-              variant={comparing ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setComparing(c => !c)}
-              className={cn(
-                'text-[10px] tracking-widest h-9',
-                comparing
-                  ? 'bg-[hsl(var(--lime))] text-background'
-                  : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
-              )}
-            >
-              {comparing ? 'OCULTAR' : 'COMPARAR'}
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          {!isOwnProfile && currentUserId && userId && (
+            <>
+              <Button
+                variant={isFollowing(userId) ? 'default' : 'outline'}
+                size="sm"
+                disabled={followLoading}
+                onClick={async () => {
+                  setFollowLoading(true)
+                  if (isFollowing(userId)) await unfollow(userId)
+                  else await follow(userId)
+                  setFollowLoading(false)
+                }}
+                className={cn(
+                  'text-[10px] tracking-widest h-9 active:scale-95 transition-all',
+                  isFollowing(userId)
+                    ? 'bg-[hsl(var(--lime))] text-background hover:bg-red-500 hover:text-white'
+                    : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
+                )}
+              >
+                {followLoading ? '...' : isFollowing(userId) ? 'SIGUIENDO' : 'SEGUIR'}
+              </Button>
+              <Button
+                variant={comparing ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setComparing(c => !c)}
+                className={cn(
+                  'text-[10px] tracking-widest h-9',
+                  comparing
+                    ? 'bg-[hsl(var(--lime))] text-background'
+                    : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
+                )}
+              >
+                {comparing ? 'OCULTAR' : 'COMPARAR'}
+              </Button>
+            </>
+          )}
+          {userId && (
+            <ShareButton
+              onShare={(method: ShareMethod) => shareProfile(profile.displayName, userId, method)}
+              onInvite={isOwnProfile ? handleInvite : undefined}
+              className="hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+            />
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -291,6 +323,48 @@ export default function UserProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Referral stats — own profile only */}
+      {isOwnProfile && (
+        <Card className="mb-8">
+          <CardContent className="p-5">
+            <div className="text-[10px] text-muted-foreground tracking-widest mb-3 uppercase">Referidos y Puntos</div>
+            <div className="grid grid-cols-3 gap-4 mb-3">
+              <div>
+                <div className="font-bebas text-2xl leading-none text-[hsl(var(--lime))]">{referralStats.totalReferred}</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">Referidos</div>
+              </div>
+              <div>
+                <div className="font-bebas text-2xl leading-none text-amber-400">{referralStats.pointsBalance}</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">Puntos</div>
+              </div>
+              <div>
+                <div className="font-bebas text-2xl leading-none text-sky-500">{referralStats.totalEarned}</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">Total ganado</div>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground mb-3">Tus puntos desbloquearan funciones de IA proximamente</div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/referrals')}
+                className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+              >
+                VER MIS REFERIDOS
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleInvite}
+                className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+              >
+                INVITAR AMIGO
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Activity calendar */}
       <div className="mb-8">
