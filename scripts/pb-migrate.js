@@ -538,7 +538,134 @@ async function main() {
   }
   console.log()
 
-  // ── 11. Seed: Calistenia 6M program ─────────────────────────────────────────
+  // ── 12. Referral system: referral_code on users ──────────────────────────────
+  {
+    const usersCol = (await pb.collections.getFullList()).find(c => c.name === 'users')
+    if (usersCol) {
+      const hasReferralCode = (usersCol.fields || []).some(f => f.name === 'referral_code')
+      if (!hasReferralCode) {
+        process.stdout.write('Adding referral_code to users... ')
+        const newFields = [...(usersCol.fields || []), {
+          name: 'referral_code', type: 'text', required: false, max: 20,
+          pattern: '^[A-Z0-9\\-]*$',
+        }]
+        const newIndexes = [...(usersCol.indexes || []),
+          "CREATE UNIQUE INDEX idx_users_referral_code ON users (referral_code) WHERE referral_code != ''"
+        ]
+        await pb.collections.update(usersCol.id, {
+          fields: newFields,
+          indexes: newIndexes,
+          listRule: '',
+          viewRule: '',
+        })
+        console.log('OK')
+      } else {
+        // Ensure public list/view for invite landing
+        if (usersCol.listRule !== '') {
+          process.stdout.write('Updating users list/view rules to public... ')
+          await pb.collections.update(usersCol.id, { listRule: '', viewRule: '' })
+          console.log('OK')
+        } else {
+          console.log('users.referral_code already exists, OK')
+        }
+      }
+    }
+  }
+
+  // ── 13. Referral system: referrals collection ───────────────────────────────
+  if (!existingNames.has('referrals')) {
+    console.log('Creando colección "referrals"...')
+    const challengesCol = (await pb.collections.getFullList()).find(c => c.name === 'challenges')
+    await pb.collections.create({
+      name: 'referrals', type: 'base',
+      fields: [
+        { name: 'referrer', type: 'relation', required: true, collectionId: '_pb_users_auth_', maxSelect: 1, cascadeDelete: false },
+        { name: 'referred', type: 'relation', required: true, collectionId: '_pb_users_auth_', maxSelect: 1, cascadeDelete: false },
+        { name: 'source', type: 'select', required: true, values: ['quick_invite', 'challenge'] },
+        { name: 'challenge_id', type: 'relation', required: false, collectionId: challengesCol?.id || 'challenges', maxSelect: 1, cascadeDelete: false },
+      ],
+      indexes: [
+        'CREATE INDEX idx_referrals_referrer ON referrals (referrer)',
+        'CREATE INDEX idx_referrals_referred ON referrals (referred)',
+        'CREATE UNIQUE INDEX idx_referrals_unique_pair ON referrals (referrer, referred)',
+      ],
+      listRule: 'referrer = @request.auth.id',
+      viewRule: 'referrer = @request.auth.id',
+      createRule: '@request.auth.id != "" && @request.body.referrer = @request.auth.id',
+      updateRule: null,
+      deleteRule: null,
+    })
+  } else {
+    console.log('referrals already exists, OK')
+  }
+  console.log('referrals OK\n')
+
+  // ── 14. Referral system: point_transactions collection ──────────────────────
+  if (!existingNames.has('point_transactions')) {
+    console.log('Creando colección "point_transactions"...')
+    await pb.collections.create({
+      name: 'point_transactions', type: 'base',
+      fields: [
+        { name: 'user', type: 'relation', required: true, collectionId: '_pb_users_auth_', maxSelect: 1, cascadeDelete: true },
+        { name: 'amount', type: 'number', required: true },
+        { name: 'type', type: 'select', required: true, values: ['referral_signup', 'referral_bonus', 'challenge_complete', 'ai_usage'] },
+        { name: 'reference_id', type: 'text', required: false },
+        { name: 'description', type: 'text', required: false },
+      ],
+      indexes: [
+        'CREATE INDEX idx_point_transactions_user ON point_transactions (user)',
+        'CREATE INDEX idx_point_transactions_type ON point_transactions (type)',
+      ],
+      listRule: 'user = @request.auth.id',
+      viewRule: 'user = @request.auth.id',
+      createRule: '@request.auth.id != "" && @request.body.user = @request.auth.id',
+      updateRule: null,
+      deleteRule: null,
+    })
+  } else {
+    console.log('point_transactions already exists, OK')
+  }
+  console.log('point_transactions OK\n')
+
+  // ── 15. Referral system: express fields on challenges ───────────────────────
+  {
+    const challengesCol = (await pb.collections.getFullList()).find(c => c.name === 'challenges')
+    if (challengesCol) {
+      const hasType = (challengesCol.fields || []).some(f => f.name === 'type')
+      if (!hasType) {
+        process.stdout.write('Adding express fields to challenges... ')
+        const exercisesCol = (await pb.collections.getFullList()).find(c => c.name === 'exercises_catalog')
+        const newFields = [...(challengesCol.fields || []),
+          { name: 'type', type: 'select', required: false, values: ['standard', 'express'] },
+          { name: 'exercise_id', type: 'relation', required: false, collectionId: exercisesCol?.id || 'exercises_catalog', maxSelect: 1, cascadeDelete: false },
+          { name: 'daily_target', type: 'number', required: false, min: 0 },
+          { name: 'duration_days', type: 'number', required: false, min: 1, onlyInt: true },
+        ]
+        const newIndexes = [...(challengesCol.indexes || []),
+          'CREATE INDEX idx_challenges_type ON challenges (type)',
+        ]
+        await pb.collections.update(challengesCol.id, { fields: newFields, indexes: newIndexes })
+        console.log('OK')
+      } else {
+        console.log('challenges express fields already exist, OK')
+      }
+    }
+  }
+
+  // ── 16. Public user_stats for invite landing ────────────────────────────────
+  {
+    const statsCol = (await pb.collections.getFullList()).find(c => c.name === 'user_stats')
+    if (statsCol && statsCol.listRule !== '') {
+      process.stdout.write('Setting user_stats to public read... ')
+      await pb.collections.update(statsCol.id, { listRule: '', viewRule: '' })
+      console.log('OK')
+    } else {
+      console.log('user_stats already public, OK')
+    }
+  }
+  console.log()
+
+  // ── 17. Seed: Calistenia 6M program ─────────────────────────────────────────
   // Idempotent: skip if already seeded
   const existingPrograms = await pb.collection('programs').getList(1, 10)
   const alreadySeeded = existingPrograms.items.some(p => p.name === 'Calistenia 6M')
