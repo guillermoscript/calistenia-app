@@ -1,0 +1,7 @@
+# Default owner for everything in the repo
+* @guillermoscript
+
+# Protect CI/CD and security-sensitive files
+.github/ @guillermoscript
+Dockerfile @guillermoscript
+docker-compose*.yml @guillermoscript

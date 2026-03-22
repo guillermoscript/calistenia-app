@@ -6,6 +6,8 @@ dist/
 
 # Environment — never commit real values
 .env
+.env.*
+!.env.example
 *.local
 
 # PocketBase runtime data (database, uploads, logs)
@@ -48,5 +50,11 @@ skills-lock.json
 .vscode/
 .idea/
 
-# Google OAuth client secret
+# Secrets and credentials
 secret.json
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
