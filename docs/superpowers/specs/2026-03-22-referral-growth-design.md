@@ -13,12 +13,14 @@ Ambos flujos pasan por una landing personalizada con preview (stats, rutina o ch
 ## Sistema de Referidos y Puntos
 
 ### Códigos de referido
-- Cada usuario tiene un código único auto-generado: `{DISPLAY_NAME}-{HASH_4}` (ej: `GUILLE-7X3K`)
+- Cada usuario tiene un código único auto-generado: `{DISPLAY_NAME}-{HASH_6}` (ej: `GUILLE-7X3K9P`)
+- Display name se sanitiza: uppercase, ASCII-only, max 10 chars, espacios → guiones
 - Se genera al crear la cuenta y se guarda en `users.referral_code`
+- En caso de colisión, se regenera el hash hasta encontrar uno único
 - Link de referido: `https://gym.guille.tech/invite/{código}`
 
 ### Tracking de referidos
-- Colección `referrals`: `referrer`, `referred`, `source` (quick_invite | challenge), `challenge_id` (opcional), `points_awarded`
+- Colección `referrals`: `referrer`, `referred`, `source` (quick_invite | challenge), `challenge_id` (opcional)
 - Al abrir un link de referido, el `referral_code` se guarda en localStorage para no perderlo durante el flujo de registro
 - Post-registro, se crea el registro en `referrals` automáticamente
 
@@ -31,9 +33,17 @@ Ambos flujos pasan por una landing personalizada con preview (stats, rutina o ch
 | Referido completa primer workout | 50 bonus |
 | Challenge completado con referido | 75 (ambos) |
 
+**Anti-abuso:**
+- Máximo 10 referidos por semana por usuario
+- No se puede referir a cuentas con el mismo email domain si es un dominio personal
+- El bonus de "primer workout" requiere un workout con al menos 1 ejercicio completado (mínimo 1 set loggeado), no solo abrir y cerrar sesión
+- Auto-referencia bloqueada: no se puede usar tu propio código
+
 **Gasto (futuro):**
 - Los puntos se canjean por uso de funciones de IA
+- El gasto de puntos se maneja server-side: el cliente solicita una feature de IA y el hook determina el costo y descuenta. El cliente nunca especifica el monto
 - Valor por crédito a definir cuando se implemente el tier de pago
+- Mientras tanto, los puntos se acumulan visiblemente con mensaje: "Tus puntos desbloquearán funciones de IA próximamente"
 
 **Almacenamiento:**
 - `referral_points`: balance actual, total ganado, total gastado por usuario
@@ -71,7 +81,7 @@ Ambos flujos pasan por una landing personalizada con preview (stats, rutina o ch
 ### Open Graph meta tags
 - Meta tags dinámicos para preview en WhatsApp/redes sociales
 - Título, descripción, avatar del invitante
-- Se resuelve con meta tags inyectados server-side (función serverless o endpoint PocketBase)
+- **Implementación:** Cloudflare Worker (o edge function equivalente) que intercepta requests a `/invite/*` de crawlers (detectados por User-Agent: WhatsApp, Telegram, Twitter, Facebook). Para crawlers, devuelve HTML estático con OG tags consultando PocketBase por el referral_code. Para browsers normales, sirve el SPA como siempre. Esto no requiere cambios en el stack actual del SPA
 
 ## Challenge Express
 
@@ -93,7 +103,11 @@ Título auto-generado: "Challenge de {ejercicio} — {meta} x {duración}" (edit
 - Los challenges standard existentes no se modifican
 
 ### Tracking automático
-- Cuando un participante loggea un workout con el ejercicio del challenge, se auto-registra progreso
+- Cuando un participante loggea un workout que incluye el ejercicio del challenge (match exacto por `exercise_id`), se auto-registra progreso
+- Las reps/minutos se acumulan dentro del mismo día si hay múltiples workouts
+- "Día completado" = alcanzar la meta diaria en ese día (no necesariamente consecutivos)
+- "Challenge completado" = alcanzar la meta diaria en al menos el 80% de los días del challenge (ej: 6 de 7 días)
+- Variaciones de ejercicios no cuentan (solo match exacto de exercise_id)
 - Vista del challenge: barra de progreso por participante, días completados vs total, streak dentro del challenge
 
 ### Vinculación con referidos
@@ -124,6 +138,12 @@ Título auto-generado: "Challenge de {ejercicio} — {meta} x {duración}" (edit
 2. Se une al challenge automáticamente
 3. No genera puntos de referido (ya tiene cuenta), sí los 75 por completar challenge
 
+### Edge cases
+- **Usuario loggeado abre su propio link:** muestra mensaje "Comparte este link con tus amigos" + botones de share
+- **Usuario loggeado abre link de otro (sin challenge):** redirect al perfil del invitante, no-op en referidos
+- **Usuario loggeado abre link de otro (con challenge):** muestra landing y permite unirse al challenge directamente
+- **Link de referido con código inválido:** redirect a página de registro normal sin asociación
+
 ## Modelo de Datos
 
 ### Colecciones nuevas
@@ -135,16 +155,11 @@ Título auto-generado: "Challenge de {ejercicio} — {meta} x {duración}" (edit
 | `referred` | relation (users) | Quien se registró |
 | `source` | select (quick_invite, challenge) | Tipo de invitación |
 | `challenge_id` | relation (challenges), nullable | Challenge asociado |
-| `points_awarded` | number | Puntos otorgados |
 | `created` | autodate | |
 
-#### `referral_points`
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `user` | relation (users), unique | Dueño de los puntos |
-| `balance` | number | Puntos disponibles |
-| `total_earned` | number | Total histórico ganado |
-| `total_spent` | number | Total gastado en IA |
+Nota: los puntos otorgados se derivan de `point_transactions` filtrando por `reference_id`, no se duplican aquí.
+
+Nota: No hay colección `referral_points` separada. El balance se calcula on-read sumando `point_transactions` del usuario. Esto evita problemas de sincronización y race conditions con PocketBase. Aceptable a escala MVP — si el rendimiento lo requiere en el futuro, se puede agregar una vista materializada.
 
 #### `point_transactions`
 | Campo | Tipo | Descripción |
@@ -183,9 +198,9 @@ Título auto-generado: "Challenge de {ejercicio} — {meta} x {duración}" (edit
 - `trackReferral(referrerCode)` — llamado post-registro para crear el vínculo
 
 #### `useReferralPoints()`
-- `getBalance()` — puntos disponibles
+- `getBalance()` — puntos disponibles (calculado sumando point_transactions)
 - `getTransactions()` — historial de transacciones
-- `spendPoints(amount, description)` — para futuro uso de IA
+- `requestAIFeature(featureId)` — solicita uso de IA, el server determina costo y descuenta (futuro)
 
 #### `useChallengeExpress()`
 - `createExpress(exerciseId, durationDays, dailyTarget)` — crea challenge express
