@@ -7,6 +7,17 @@
 migrate((app) => {
   const users = app.findCollectionByNameOrId("_pb_users_auth_")
 
+  // Skip if avatar field already exists (PocketBase includes it by default)
+  const existing = users.fields.find(f => f.name === "avatar")
+  if (existing) {
+    // Update thumbs on the existing field
+    existing.thumbs = ["100x100", "200x200"]
+    existing.maxSize = 5242880
+    existing.mimeTypes = ["image/jpeg", "image/png", "image/webp"]
+    app.save(users)
+    return
+  }
+
   users.fields.push(new Field({
     "hidden": false,
     "id": "file_user_avatar",
