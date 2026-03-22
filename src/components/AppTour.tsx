@@ -1,6 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react'
-import { driver, type DriveStep } from 'driver.js'
-import 'driver.js/dist/driver.css'
+import type { DriveStep } from 'driver.js'
 
 const TOUR_KEY_PREFIX = 'calistenia_tour'
 
@@ -517,13 +516,18 @@ const PAGE_TOURS: Record<string, { page: string; steps: DriveStep[] }> = {
 
 // ── Driver.js runner ──────────────────────────────────────────────────────────
 
-function runTour(steps: DriveStep[], onDone?: () => void) {
+async function runTour(steps: DriveStep[], onDone?: () => void) {
   const available = steps.filter(
     s => !s.element || document.querySelector(s.element as string)
   )
   if (available.length === 0) return
 
-  const d = driver({
+  const [{ driver: createDriver }] = await Promise.all([
+    import('driver.js'),
+    import('driver.js/dist/driver.css'),
+  ])
+
+  const d = createDriver({
     showProgress: true,
     animate: true,
     overlayColor: 'rgba(0, 0, 0, 0.75)',

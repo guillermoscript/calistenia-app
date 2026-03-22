@@ -1,18 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
-import type { ProgressMap, SessionDone, WeekDay, ProgramMeta } from '../types'
-
-interface CalendarPageProps {
-  progress: ProgressMap
-  onGoToWorkout: () => void
-  weekDays?: WeekDay[]
-  activeProgram?: ProgramMeta | null
-  currentPhase?: number
-}
+import { useWorkoutState } from '../contexts/WorkoutContext'
+import type { SessionDone, WeekDay } from '../types'
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const MONTH_NAMES = [
@@ -35,8 +28,11 @@ function formatDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-export default function CalendarPage({ progress, onGoToWorkout, weekDays, activeProgram, currentPhase }: CalendarPageProps) {
+export default function CalendarPage() {
+  const { progress, weekDays, activeProgram, settings } = useWorkoutState()
+  const currentPhase = settings.phase
   const navigate = useNavigate()
+  const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
   const today = new Date()
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())

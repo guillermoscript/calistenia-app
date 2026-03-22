@@ -1,16 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
-import type { ProgramMeta } from '../types'
-
-interface EditorPageProps {
-  programs: ProgramMeta[]
-  userId: string
-  onCreateProgram: () => void
-  onEditProgram: (programId: string) => void
-}
+import { useWorkoutState } from '../contexts/WorkoutContext'
+import { useAuthState } from '../contexts/AuthContext'
 
 const DIFFICULTY_LABELS: Record<string, string> = {
   beginner: 'PRINCIPIANTE',
@@ -18,7 +13,12 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   advanced: 'AVANZADO',
 }
 
-export default function EditorPage({ programs, userId, onCreateProgram, onEditProgram }: EditorPageProps) {
+export default function EditorPage() {
+  const { programs } = useWorkoutState()
+  const { userId } = useAuthState()
+  const navigate = useNavigate()
+  const onCreateProgram = useCallback(() => navigate('/programs/new'), [navigate])
+  const onEditProgram = useCallback((id: string) => navigate(`/programs/${id}/edit`), [navigate])
   const myOfficialPrograms = useMemo(
     () => programs.filter(p => p.is_official && p.created_by === userId),
     [programs, userId]

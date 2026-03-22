@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { WORKOUTS } from '../data/workouts'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
@@ -174,16 +176,10 @@ function useDebounce<T>(value: T, ms: number): T {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-interface FreeSessionPageProps {
-  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string }) => void
-  onMarkDone: (workoutKey: string, note: string) => void
-  onGoToDashboard: () => void
-  getExerciseLogs: (exerciseId: string) => ExerciseLog[]
-}
-
-export default function FreeSessionPage({
-  onLogSet, onMarkDone, onGoToDashboard, getExerciseLogs,
-}: FreeSessionPageProps) {
+export default function FreeSessionPage() {
+  const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
+  const navigate = useNavigate()
+  const onGoToDashboard = useCallback(() => navigate('/'), [navigate])
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)

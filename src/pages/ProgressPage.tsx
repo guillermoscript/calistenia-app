@@ -7,6 +7,8 @@ import { Separator } from '../components/ui/separator'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
 import { PHASE_COLORS } from '../lib/style-tokens'
+import { useWorkoutState } from '../contexts/WorkoutContext'
+import { useAuthState } from '../contexts/AuthContext'
 import type { ProgressMap, Settings, ProgramMeta, ExerciseLog, SetData } from '../types'
 import ProgressSummary from '../components/progress/ProgressSummary'
 import ExerciseChart from '../components/progress/ExerciseChart'
@@ -54,10 +56,7 @@ interface SessionLog {
 }
 
 interface ProgressPageProps {
-  progress: ProgressMap
-  settings: Settings
-  activeProgram: ProgramMeta | null
-  userId?: string | null
+  // All data now comes from WorkoutContext
 }
 
 function relativeDate(dateStr: string): string {
@@ -70,7 +69,9 @@ function relativeDate(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-export default function ProgressPage({ progress, settings, activeProgram, userId }: ProgressPageProps) {
+export default function ProgressPage() {
+  const { progress, settings, activeProgram } = useWorkoutState()
+  const { userId } = useAuthState()
   const navigate = useNavigate()
   const { weights } = useWeight(userId || null)
   const { photos } = useBodyPhotos(userId || null)
