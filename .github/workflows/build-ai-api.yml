@@ -42,7 +42,7 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta-ai
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ai-api
           tags: |
