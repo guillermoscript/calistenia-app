@@ -29,7 +29,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     async ({ response_format }) => {
       try {
         const [programs, userPrograms] = await Promise.all([
-          pb.collection("programs").getFullList({ filter: "is_active = true", sort: "name" }),
+          pb.collection("programs").getFullList({ sort: "name" }),
           pb.collection("user_programs").getFullList({ filter: `user = "${userId}"` }),
         ]);
 
