@@ -327,7 +327,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
 // ── User Row ─────────────────────────────────────────────────────────────────
 
 interface UserRowProps {
-  user: { id: string; displayName: string; username?: string; avatarUrl?: string | null; avatar?: string; collectionId?: string; collectionName?: string }
+  user: { id: string; displayName: string; username?: string; avatarUrl?: string | null }
   isFollowing: boolean
   onFollow: () => void
   onUnfollow: () => void
@@ -365,16 +365,13 @@ function UserRow({ user, isFollowing, onFollow, onUnfollow, onTap }: UserRowProp
       role="link"
       aria-label={`Ver perfil de ${user.displayName}`}
     >
-      {(() => {
-        const url = (user as any).avatarUrl || (user.avatar ? pb.files.getUrl({ id: user.id, collectionId: user.collectionId || '_pb_users_auth_', collectionName: user.collectionName || 'users' } as any, user.avatar, { thumb: '100x100' }) : null)
-        return url ? (
-          <img src={url} alt={user.displayName} className="size-10 rounded-full object-cover shrink-0" />
-        ) : (
-          <div className="size-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0" aria-hidden="true">
-            {user.displayName[0]?.toUpperCase() || '?'}
-          </div>
-        )
-      })()}
+      {user.avatarUrl ? (
+        <img src={user.avatarUrl} alt={user.displayName} className="size-10 rounded-full object-cover shrink-0" />
+      ) : (
+        <div className="size-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0" aria-hidden="true">
+          {user.displayName[0]?.toUpperCase() || '?'}
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{user.displayName}</div>
         {user.username && (

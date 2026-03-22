@@ -1,13 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 
 export interface FollowUser {
   id: string
   displayName: string
   username: string
-  avatar: string
-  collectionId: string
-  collectionName: string
+  avatarUrl: string | null
 }
 
 interface UseFollowsReturn {
@@ -56,9 +54,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
           id: u?.id || r.following,
           displayName: u?.display_name || u?.username || '?',
           username: u?.username || '',
-          avatar: u?.avatar || '',
-          collectionId: u?.collectionId || '_pb_users_auth_',
-          collectionName: u?.collectionName || 'users',
+          avatarUrl: u ? getUserAvatarUrl(u, '100x100') : null,
         }
       })
 
@@ -68,9 +64,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
           id: u?.id || r.follower,
           displayName: u?.display_name || u?.username || '?',
           username: u?.username || '',
-          avatar: u?.avatar || '',
-          collectionId: u?.collectionId || '_pb_users_auth_',
-          collectionName: u?.collectionName || 'users',
+          avatarUrl: u ? getUserAvatarUrl(u, '100x100') : null,
         }
       })
 
