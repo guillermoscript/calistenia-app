@@ -1,10 +1,12 @@
 /**
- * LumbarCheckModal — Quick daily lumbar check (3 questions)
+ * LumbarCheckModal — Quick daily lumbar check (2 questions + sleep status from sleep entries)
  */
 import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { pb } from '../lib/pocketbase'
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
+import { Badge } from './ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -12,6 +14,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog'
+import { useSleep } from '../hooks/useSleep'
 import type { LumbarCheck } from '../types'
 
 const LS_KEY = 'calistenia_lumbar_checks'
@@ -52,19 +55,29 @@ interface LumbarCheckModalProps {
 }
 
 export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckModalProps) {
+  const navigate = useNavigate()
   const [step, setStep]             = useState<number>(0)
   const [lumbarScore, setLumbarScore] = useState<PainLevel | null>(null)
-  const [sleptWell, setSleptWell]   = useState<boolean | null>(null)
   const [sittingHours, setSittingHours] = useState<string>('')
   const [saving, setSaving]         = useState<boolean>(false)
 
+  // Get sleep data from sleep tracking
+  const { didSleepWell: checkSleepWell } = useSleep(user?.id ?? null)
+  const today = new Date().toISOString().split('T')[0]
+  // Check last night (yesterday's date is the sleep entry date)
+  const yesterday = (() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 1)
+    return d.toISOString().split('T')[0]
+  })()
+  const sleepWellStatus = checkSleepWell(yesterday)
+
   const handleSave = useCallback(async () => {
     setSaving(true)
-    const today = new Date().toISOString().split('T')[0]
     const record: LumbarCheck = {
       date: today,
       lumbar_score: lumbarScore!,
-      slept_well: sleptWell!,
+      slept_well: sleepWellStatus ?? undefined,
       sitting_hours: parseFloat(sittingHours) || 0,
       created_at: new Date().toISOString(),
     }
@@ -75,7 +88,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
           user: user.id,
           date: today,
           lumbar_score: lumbarScore,
-          slept_well: sleptWell,
+          slept_well: sleepWellStatus ?? null,
           sitting_hours: parseFloat(sittingHours) || 0,
           checked_at: new Date().toISOString().replace('T', ' '),
         })
@@ -83,7 +96,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
     }
     setSaving(false)
     onDone()
-  }, [user, lumbarScore, sleptWell, sittingHours, onDone])
+  }, [user, lumbarScore, sleepWellStatus, sittingHours, onDone, today])
 
   return (
     <Dialog open modal>
@@ -98,7 +111,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
           <DialogDescription className="text-[13px]">30 segundos · Solo una vez al día</DialogDescription>
         </DialogHeader>
 
-        {/* Step indicator */}
+        {/* Step indicator — now 3 steps: lumbar, sleep status, sitting */}
         <div className="flex gap-1.5 mb-6">
           {[0, 1, 2].map(i => (
             <div key={i}
@@ -145,33 +158,63 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
           </div>
         )}
 
-        {/* Step 1: Sleep */}
+        {/* Step 1: Sleep status (read-only from sleep tracking) */}
         {step === 1 && (
           <div>
-            <div className="text-base font-semibold mb-5">¿Dormiste bien anoche?</div>
-            <div className="flex gap-3 mb-6">
-              {[
-                { val: true,  label: 'Sí, bien', cls: 'border-emerald-400 bg-emerald-400/10 text-emerald-400' },
-                { val: false, label: 'No mucho', cls: 'border-destructive bg-destructive/10 text-destructive' },
-              ].map(opt => (
-                <button
-                  key={String(opt.val)}
-                  onClick={() => setSleptWell(opt.val)}
-                  className={cn(
-                    'flex-1 py-5 rounded-lg border font-bebas text-xl cursor-pointer transition-all duration-150',
-                    sleptWell === opt.val
-                      ? opt.cls
-                      : 'border-border text-muted-foreground hover:border-border/80',
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <div className="text-base font-semibold mb-5">¿Cómo dormiste anoche?</div>
+
+            {sleepWellStatus !== null ? (
+              // Sleep entry exists — show read-only badge
+              <div className="mb-6">
+                <div className={cn(
+                  'flex items-center gap-3 p-4 rounded-lg border',
+                  sleepWellStatus
+                    ? 'border-emerald-400/30 bg-emerald-400/5'
+                    : 'border-destructive/30 bg-destructive/5',
+                )}>
+                  <div className="text-2xl">{sleepWellStatus ? '😊' : '😴'}</div>
+                  <div>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'text-sm font-bebas tracking-wide',
+                        sleepWellStatus
+                          ? 'border-emerald-400/40 text-emerald-400 bg-emerald-400/10'
+                          : 'border-destructive/40 text-destructive bg-destructive/10',
+                      )}
+                    >
+                      {sleepWellStatus ? 'Dormiste bien' : 'Dormiste mal'}
+                    </Badge>
+                    <div className="text-[11px] text-muted-foreground mt-1">
+                      Dato del registro de sueño
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // No sleep entry — show link to register
+              <div className="mb-6">
+                <div className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card">
+                  <div className="text-2xl">🌙</div>
+                  <div className="flex-1">
+                    <div className="text-sm text-muted-foreground mb-1">No hay registro de sueño</div>
+                    <button
+                      onClick={() => {
+                        onSkip()
+                        navigate('/sleep')
+                      }}
+                      className="text-sm text-indigo-400 hover:text-indigo-300 font-medium underline underline-offset-2 transition-colors"
+                    >
+                      Registrar sueño primero
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Button
               className="w-full font-bebas text-lg"
               onClick={() => setStep(2)}
-              disabled={sleptWell === null}
             >
               SIGUIENTE →
             </Button>

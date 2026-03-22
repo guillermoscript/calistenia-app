@@ -38,6 +38,7 @@ const ActivityFeedPage = lazy(() => import('./pages/ActivityFeedPage'))
 const ChallengesPage = lazy(() => import('./pages/ChallengesPage'))
 const ChallengeDetailPage = lazy(() => import('./pages/ChallengeDetailPage'))
 const CreateChallengePage = lazy(() => import('./pages/CreateChallengePage'))
+const SleepPage = lazy(() => import('./pages/SleepPage'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
 import OfflineBanner from './components/OfflineBanner'
 import ActiveCardioBar from './components/cardio/ActiveCardioBar'
@@ -88,6 +89,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/exercises', label: 'Ejercicios', icon: ExerciseIcon },
   { path: '/free-session', label: 'Sesion Libre', icon: FreeSessionIcon },
   { path: '/cardio', label: 'Cardio', icon: RunningIcon },
+  { path: '/sleep', label: 'Sueño', icon: SleepIcon },
   { path: '/feed', label: 'Actividad', icon: ActivityIcon },
   { path: '/friends', label: 'Amigos', icon: FriendsIcon },
   { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
@@ -120,6 +122,7 @@ function getBreadcrumb(pathname: string): string {
   if (pathname.match(/^\/shared\/[^/]+$/)) return 'Programa Compartido'
   if (pathname === '/free-session') return 'Sesion Libre'
   if (pathname === '/cardio') return 'Cardio'
+  if (pathname === '/sleep') return 'Sueño'
   if (pathname === '/admin') return 'Admin'
   if (pathname === '/editor') return 'Editor'
   if (pathname.match(/^\/u\/[^/]+$/)) return 'Perfil'
@@ -272,6 +275,13 @@ function CalendarNavIcon({ className }: IconProps) {
     </svg>
   )
 }
+function SleepIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z" />
+    </svg>
+  )
+}
 function ShieldIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -421,6 +431,7 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     items: [
       { path: '/progress',  label: 'Progreso',     icon: ChartIcon },
       { path: '/nutrition',  label: 'Nutricion',    icon: NutritionIcon },
+      { path: '/sleep',     label: 'Sueño',        icon: SleepIcon },
       { path: '/calendar',  label: 'Calendario',   icon: CalendarNavIcon },
     ],
   },
@@ -894,6 +905,7 @@ export default function App() {
               />
             } />
             <Route path="/lumbar" element={<LumbarPage user={user} />} />
+            <Route path="/sleep" element={<SleepPage userId={user.id} />} />
             <Route path="/nutrition" element={<NutritionPage userId={user.id} trainingPhase={settings.phase} />} />
             <Route path="/nutrition/log" element={<MealLoggerPage userId={user.id} />} />
             <Route path="/progress" element={

@@ -149,7 +149,7 @@ export interface Protocol {
 export interface LumbarCheck {
   date: string
   lumbar_score: number       // 1-5
-  slept_well: boolean
+  slept_well?: boolean       // derived from sleep_entries when available
   sitting_hours: number
   created_at: string         // ISO timestamp
 }
@@ -373,4 +373,23 @@ export interface ChallengeParticipant {
   id: string
   challenge: string
   user: string
+}
+
+// ─── Sleep Tracking ──────────────────────────────────────────────────────────
+
+export interface SleepEntry {
+  id: string
+  user: string
+  date: string
+  bedtime: string
+  wake_time: string
+  awakenings: number
+  quality: number
+  duration_minutes: number
+  caffeine?: boolean
+  screen_before_bed?: boolean
+  stress_level?: number
+  note?: string
+  created: string
+  updated: string
 }

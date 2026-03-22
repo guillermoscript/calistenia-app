@@ -13,9 +13,12 @@ import { Badge } from '../components/ui/badge'
 import WaterTracker from '../components/WaterTracker'
 import WorkoutReminderWidget from '../components/WorkoutReminderWidget'
 import CardioWidget from '../components/cardio/CardioWidget'
+import SleepDashboardWidget from '../components/sleep/SleepDashboardWidget'
+import type { SleepLastEntry } from '../components/sleep/SleepDashboardWidget'
 import LeaderboardWidget from '../components/friends/LeaderboardWidget'
 import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
 import { useWater } from '../hooks/useWater'
+import { useSleep } from '../hooks/useSleep'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { useActivityFeed } from '../hooks/useActivityFeed'
 import type { Settings, Phase, WeekDay, ProgramMeta, CardioSession } from '../types'
@@ -201,6 +204,12 @@ export default function DashboardPage({
   const { todayTotal: waterTotal, goal: waterGoal, addWater } = useWater(userId ?? null)
   const { entries: leaderboardEntries, load: loadLeaderboard } = useLeaderboard(userId ?? null)
   const { items: feedItems, load: loadFeed } = useActivityFeed(userId ?? null)
+  const { entries: sleepEntries } = useSleep(userId ?? null)
+  const sleepLastEntry: SleepLastEntry | null = useMemo(() => {
+    if (sleepEntries.length === 0) return null
+    const e = sleepEntries[0] // already sorted by date desc
+    return { date: e.date, duration_minutes: e.duration_minutes, quality: e.quality, bedtime: e.bedtime, wake_time: e.wake_time }
+  }, [sleepEntries])
   useEffect(() => { if (userId) { loadLeaderboard(); loadFeed() } }, [userId, loadLeaderboard, loadFeed])
   const weeklyLeaderboard = leaderboardEntries.sessions_week
   const totalSessions = getTotalSessions()
@@ -392,7 +401,7 @@ export default function DashboardPage({
       </div>
 
       {/* ═══ TODAY'S SNAPSHOT ═════════════════════════════════════════════════ */}
-      <div className={cn('grid grid-cols-1 gap-4 mb-6', onGoToCardio && cardioWeeklyStats ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
+      <div className={cn('grid grid-cols-1 gap-4 mb-6', 'sm:grid-cols-2 lg:grid-cols-3')}>
         {onGoToNutrition && (
           <button onClick={onGoToNutrition} className="text-left p-4 bg-card border border-border rounded-xl hover:border-lime/30 transition-colors">
             <div className="flex items-center gap-3">
@@ -443,6 +452,10 @@ export default function DashboardPage({
             onNavigate={onGoToCardio}
           />
         )}
+        <SleepDashboardWidget
+          lastEntry={sleepLastEntry}
+          onRegister={() => navigate('/sleep')}
+        />
       </div>
 
       {/* Leaderboard widget — only if following someone */}
