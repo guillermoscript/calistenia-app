@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { useAuthState } from '../contexts/AuthContext'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -36,19 +38,13 @@ const PR_DEFS = [
   { key: 'pr_handstand', label: 'Handstand libre',  unit: 's',    goal: 60, accent: 'text-red-500' },
 ]
 
-interface UserProfilePageProps {
-  currentUserId?: string
-  currentUserPrs?: Record<string, number>
-  currentUserStreak?: number
-  currentUserSessions?: number
-}
-
-export default function UserProfilePage({
-  currentUserId,
-  currentUserPrs,
-  currentUserStreak,
-  currentUserSessions,
-}: UserProfilePageProps) {
+export default function UserProfilePage() {
+  const { settings } = useWorkoutState()
+  const { getLongestStreak, getTotalSessions } = useWorkoutActions()
+  const { userId: currentUserId } = useAuthState()
+  const currentUserPrs = settings as unknown as Record<string, number>
+  const currentUserStreak = useMemo(() => getLongestStreak(), [getLongestStreak])
+  const currentUserSessions = useMemo(() => getTotalSessions(), [getTotalSessions])
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const [profile, setProfile] = useState<ProfileData | null>(null)

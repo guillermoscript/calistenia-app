@@ -84,6 +84,7 @@ export default defineConfig({
         manualChunks: {
           recharts: ['recharts'],
           react: ['react', 'react-dom', 'react-router-dom'],
+          leaflet: ['leaflet'],
         },
       },
     },

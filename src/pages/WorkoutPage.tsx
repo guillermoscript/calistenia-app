@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '../data/workouts'
+import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { useAuthState } from '../contexts/AuthContext'
 import { calculateWorkoutDuration } from '../lib/duration'
 import ExerciseCard from '../components/ExerciseCard'
 import RestTimer from '../components/RestTimer'
@@ -13,31 +15,18 @@ import { cn } from '../lib/utils'
 import { DAY_TYPE_COLORS } from '../lib/style-tokens'
 import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData } from '../types'
 
-interface WorkoutPageProps {
-  settings: Settings
-  onLogSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<void>
-  onMarkDone: (workoutKey: string, note?: string) => Promise<void>
-  isWorkoutDone: (workoutKey: string, date?: string) => boolean
-  getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
-  phases: Phase[]
-  weekDays: WeekDay[]
-  getWorkout: (phaseNumber: number, dayId: string) => Workout | null
-  onGoToDashboard: () => void
-  userId?: string
-  userRole?: import('../types').UserRole
-}
-
 type ViewMode = 'list' | 'session'
 
-export default function WorkoutPage({
-  settings, onLogSet, onMarkDone, isWorkoutDone, getExerciseLogs,
-  phases: phasesProp, weekDays: weekDaysProp, getWorkout: getWorkoutProp,
-  onGoToDashboard, userId, userRole,
-}: WorkoutPageProps) {
+export default function WorkoutPage() {
+  const { settings, phases: phasesProp, weekDays: weekDaysProp } = useWorkoutState()
+  const { logSet: onLogSet, markWorkoutDone: onMarkDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
+  const { userId, userRole } = useAuthState()
+  const navigate = useNavigate()
+  const onGoToDashboard = useCallback(() => navigate('/'), [navigate])
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const PHASES    = phasesProp    || FALLBACK_PHASES
   const WEEK_DAYS = weekDaysProp  || FALLBACK_WEEK_DAYS
-  const getWorkout = getWorkoutProp || fallbackGetWorkout
+  const getWorkout = getWorkoutAction || fallbackGetWorkout
 
   const [searchParams, setSearchParams] = useSearchParams()
   const dayParam = searchParams.get('day') as DayId | null

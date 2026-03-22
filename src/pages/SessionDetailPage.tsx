@@ -4,7 +4,7 @@ import { WORKOUTS } from '../data/workouts'
 import { useSessionDetail } from '../hooks/useSessionDetail'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import type { ProgressMap } from '../types'
+import { useWorkoutState } from '../contexts/WorkoutContext'
 import type { SessionExercise } from '../hooks/useSessionDetail'
 
 // ── Build exercise catalog from static workout data ──────────────────────────
@@ -108,11 +108,8 @@ function ExerciseSection({ exercise }: { exercise: SessionExercise }) {
 
 // ── Session Detail Page ──────────────────────────────────────────────────────
 
-interface SessionDetailPageProps {
-  progress: ProgressMap
-}
-
-export default function SessionDetailPage({ progress }: SessionDetailPageProps) {
+export default function SessionDetailPage() {
+  const { progress } = useWorkoutState()
   const { date, workoutKey } = useParams<{ date: string; workoutKey: string }>()
   const navigate = useNavigate()
 

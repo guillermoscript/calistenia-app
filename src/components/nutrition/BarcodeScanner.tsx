@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void
@@ -8,16 +7,22 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeScannerProps) {
-  const scannerRef = useRef<Html5Qrcode | null>(null)
+  const scannerRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!scanning || !containerRef.current) return
 
-    const scanner = new Html5Qrcode('barcode-reader')
-    scannerRef.current = scanner
+    let cancelled = false
 
-    scanner.start(
+    ;(async () => {
+      const { Html5Qrcode } = await import('html5-qrcode')
+      if (cancelled) return
+
+      const scanner = new Html5Qrcode('barcode-reader')
+      scannerRef.current = scanner
+
+      scanner.start(
       { facingMode: 'environment' },
       {
         fps: 10,
@@ -32,12 +37,14 @@ export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeSca
         }
       },
       () => { /* ignore scan failures */ }
-    ).catch((err) => {
+    ).catch((err: unknown) => {
       console.warn('Barcode scanner error:', err)
     })
+    })()
 
     return () => {
-      scanner.stop().catch(() => {})
+      cancelled = true
+      scannerRef.current?.stop().catch(() => {})
       scannerRef.current = null
     }
   }, [scanning, onScan])

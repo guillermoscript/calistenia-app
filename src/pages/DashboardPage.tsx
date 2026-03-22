@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PHASES as FALLBACK_PHASES } from '../data/workouts'
 import WeekPlanWidget from '../components/WeekPlanWidget'
@@ -21,7 +21,9 @@ import { useWater } from '../hooks/useWater'
 import { useSleep } from '../hooks/useSleep'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { useActivityFeed } from '../hooks/useActivityFeed'
-import type { Settings, Phase, WeekDay, ProgramMeta, CardioSession } from '../types'
+import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { useAuthState } from '../contexts/AuthContext'
+import type { CardioSession } from '../types'
 import type { CardioAggregateStats } from '../hooks/useCardioStats'
 
 
@@ -163,42 +165,33 @@ function formatToday(): string {
 // ── Dashboard Page ───────────────────────────────────────────────────────────
 
 interface DashboardPageProps {
-  settings: Settings
-  getTotalSessions: () => number
-  getLongestStreak: () => number
-  getWeeklyDoneCount: () => number
-  getMonthActivity: () => Record<string, boolean>
-  updateSettings: (newSettings: Partial<Settings>) => Promise<void>
-  usePB: boolean
-  isWorkoutDone: (workoutKey: string, date?: string) => boolean
-  getLastSessionDate: () => string | null
-  onGoToWorkout: () => void
-  activeProgram: ProgramMeta | null
-  programs: ProgramMeta[]
-  phases: Phase[]
-  weekDays: WeekDay[]
-  onSelectProgram: (programId: string) => Promise<void>
-  onCreateProgram?: () => void
-  onEditProgram?: (programId: string) => void
-  onDuplicateProgram?: (programId: string) => void
-  userId?: string
   nutritionTotals?: { calories: number; protein: number; carbs: number; fat: number }
   nutritionGoals?: { dailyCalories: number } | null
-  onGoToNutrition?: () => void
   cardioWeeklyStats?: CardioAggregateStats
   cardioLastSession?: CardioSession | null
-  onGoToCardio?: () => void
 }
 
 export default function DashboardPage({
-  settings, getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity,
-  updateSettings, usePB, isWorkoutDone, getLastSessionDate, onGoToWorkout,
-  activeProgram, programs, phases: phasesProp, weekDays, onSelectProgram,
-  onCreateProgram, onEditProgram, onDuplicateProgram, userId,
-  nutritionTotals, nutritionGoals, onGoToNutrition,
-  cardioWeeklyStats, cardioLastSession, onGoToCardio,
+  nutritionTotals, nutritionGoals,
+  cardioWeeklyStats, cardioLastSession,
 }: DashboardPageProps) {
+  const { settings, usePB, activeProgram, programs, phases: phasesProp, weekDays } = useWorkoutState()
+  const {
+    getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity,
+    updateSettings, isWorkoutDone, getLastSessionDate, selectProgram: onSelectProgram,
+    duplicateProgram,
+  } = useWorkoutActions()
+  const { userId } = useAuthState()
   const navigate = useNavigate()
+  const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
+  const onGoToNutrition = useCallback(() => navigate('/nutrition'), [navigate])
+  const onGoToCardio = useCallback(() => navigate('/cardio'), [navigate])
+  const onCreateProgram = useCallback(() => navigate('/programs/new'), [navigate])
+  const onEditProgram = useCallback((id: string) => navigate(`/programs/${id}/edit`), [navigate])
+  const onDuplicateProgram = useCallback(async (id: string) => {
+    const newId = await duplicateProgram(id)
+    if (newId) navigate(`/programs/${newId}/edit`)
+  }, [duplicateProgram, navigate])
   const PHASES = phasesProp || FALLBACK_PHASES
   const [showProgramModal, setShowProgramModal] = useState(false)
   const { todayTotal: waterTotal, goal: waterGoal, addWater } = useWater(userId ?? null)

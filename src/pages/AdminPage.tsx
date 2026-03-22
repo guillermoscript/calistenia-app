@@ -6,7 +6,8 @@ import { Badge } from '../components/ui/badge'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { cn } from '../lib/utils'
 import { PB_ADMIN_URL, pbCollectionUrl } from '../lib/pocketbase-admin'
-import type { ProgramMeta, UserRole } from '../types'
+import { useWorkoutState } from '../contexts/WorkoutContext'
+import type { UserRole } from '../types'
 
 type Tab = 'overview' | 'users' | 'programs'
 
@@ -27,7 +28,8 @@ interface AdminStats {
   officialPrograms: number
 }
 
-export default function AdminPage({ programs }: { programs: ProgramMeta[] }) {
+export default function AdminPage() {
+  const { programs } = useWorkoutState()
   const [tab, setTab] = useState<Tab>('overview')
   const [users, setUsers] = useState<UserRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')

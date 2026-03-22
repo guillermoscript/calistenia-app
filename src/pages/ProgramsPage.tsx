@@ -1,5 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils'
+import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { useAuthState } from '../contexts/AuthContext'
 import { inferDifficulty, DIFFICULTY_COLORS, type DifficultyLevel } from '../lib/difficulty'
 import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
 import { WORKOUTS } from '../data/workouts'
@@ -319,29 +322,18 @@ function SearchIcon({ className }: { className?: string }) {
 
 // ── Main Page ──────────────────────────────────────────────────────────────
 
-interface ProgramsPageProps {
-  programs: ProgramMeta[]
-  activeProgram: ProgramMeta | null
-  userId?: string
-  userRole?: UserRole
-  onSelectProgram: (programId: string) => void
-  onCreateProgram: () => void
-  onDeleteProgram?: (programId: string) => void
-  onEditProgram?: (programId: string) => void
-  onViewProgram?: (programId: string) => void
-}
-
-export default function ProgramsPage({
-  programs,
-  activeProgram,
-  userId,
-  userRole = 'user',
-  onSelectProgram,
-  onCreateProgram,
-  onDeleteProgram,
-  onEditProgram,
-  onViewProgram,
-}: ProgramsPageProps) {
+export default function ProgramsPage() {
+  const { programs, activeProgram } = useWorkoutState()
+  const { deleteProgram } = useWorkoutActions()
+  const { userId, userRole } = useAuthState()
+  const navigate = useNavigate()
+  const onSelectProgram = useCallback((id: string) => navigate(`/programs/${id}`), [navigate])
+  const onCreateProgram = useCallback(() => navigate('/programs/new'), [navigate])
+  const onEditProgram = useCallback((id: string) => navigate(`/programs/${id}/edit`), [navigate])
+  const onViewProgram = useCallback((_id?: string) => navigate('/workout'), [navigate])
+  const onDeleteProgram = useCallback(async (id: string) => {
+    await deleteProgram(id)
+  }, [deleteProgram])
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const [search, setSearch] = useState('')
 
