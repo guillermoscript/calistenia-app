@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useReferrals } from '../hooks/useReferrals'
 import { useReferralPoints, type PointTransaction } from '../hooks/useReferralPoints'
 import { useChallengeExpress } from '../hooks/useChallengeExpress'
@@ -9,6 +9,7 @@ import { InviteButton } from '../components/referrals/InviteButton'
 import { ChallengeExpressForm } from '../components/referrals/ChallengeExpressForm'
 import { Loader } from '../components/ui/loader'
 import { cn } from '../lib/utils'
+import { Copy, Check, Share2 } from 'lucide-react'
 
 interface ReferralsPageProps {
   userId: string
@@ -60,6 +61,11 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
         />
       </div>
 
+      {/* Invite link */}
+      {referralCode && (
+        <ReferralLinkCard referralCode={referralCode} />
+      )}
+
       {/* Stats */}
       <div className="mb-6">
         <ReferralStats stats={stats} />
@@ -101,6 +107,74 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
       ) : (
         <TransactionHistory transactions={transactions} />
       )}
+    </div>
+  )
+}
+
+function ReferralLinkCard({ referralCode }: { referralCode: string }) {
+  const [copied, setCopied] = useState(false)
+  const inviteUrl = `https://gym.guille.tech/invite/${referralCode}`
+
+  const copyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // fallback
+      const ta = document.createElement('textarea')
+      ta.value = inviteUrl
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [inviteUrl])
+
+  const shareLink = useCallback(async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Entrena conmigo en Calistenia App',
+          text: 'Te invito a entrenar juntos. Usa mi link para registrarte:',
+          url: inviteUrl,
+        })
+      } catch { /* user cancelled */ }
+    } else {
+      copyLink()
+    }
+  }, [inviteUrl, copyLink])
+
+  return (
+    <div className="mb-6 p-4 rounded-xl border border-border bg-card">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">Tu link de invitación</div>
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0 px-3 py-2.5 rounded-lg bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_15%)] text-sm text-[hsl(0_0%_70%)] truncate font-mono select-all">
+          {inviteUrl}
+        </div>
+        <button
+          onClick={copyLink}
+          className={cn(
+            'shrink-0 size-10 rounded-lg border flex items-center justify-center transition-all',
+            copied
+              ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
+              : 'border-[hsl(0_0%_15%)] bg-[hsl(0_0%_4%)] text-[hsl(0_0%_60%)] hover:text-[hsl(0_0%_90%)] hover:border-[hsl(0_0%_25%)]'
+          )}
+          title="Copiar link"
+        >
+          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+        </button>
+        <button
+          onClick={shareLink}
+          className="shrink-0 size-10 rounded-lg border border-[hsl(0_0%_15%)] bg-[hsl(0_0%_4%)] text-[hsl(0_0%_60%)] hover:text-[hsl(0_0%_90%)] hover:border-[hsl(0_0%_25%)] flex items-center justify-center transition-colors"
+          title="Compartir"
+        >
+          <Share2 className="size-4" />
+        </button>
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-2">Comparte este link y gana 100 puntos por cada amigo que se registre</p>
     </div>
   )
 }
