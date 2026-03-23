@@ -28,7 +28,7 @@ Single collection (`exercises_catalog`) with visibility fields and role-based AP
 | Rule | Value |
 |------|-------|
 | **List/View** | `@request.auth.id != "" && (status = "official" \|\| status = "promoted" \|\| created_by = @request.auth.id)` |
-| **Create** | `@request.auth.id != ""` |
+| **Create** | `@request.auth.id != "" && @request.body.created_by = @request.auth.id && @request.body.status = "private"` |
 | **Update** | `created_by = @request.auth.id` |
 | **Delete** | `created_by = @request.auth.id && status = "private"` |
 

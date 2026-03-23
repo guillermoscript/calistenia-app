@@ -6,6 +6,8 @@ export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest'
 
 export type Priority = 'high' | 'med' | 'low'
 
+export type ExerciseStatus = 'official' | 'private' | 'promoted'
+
 export interface Exercise {
   id: string
   name: string
@@ -24,6 +26,10 @@ export interface Exercise {
   demoVideo?: string
   supersetGroup?: string  // exercises with same group ID are done back-to-back
   equipment?: string[]
+  created_by?: string
+  status?: ExerciseStatus
+  variant_of?: string
+  promoted_from?: string
 }
 
 export interface Workout {

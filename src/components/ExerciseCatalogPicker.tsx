@@ -35,6 +35,10 @@ interface CatalogExercise {
   isTimer: boolean
   timerSeconds: number
   category: string
+  created_by?: string
+  status?: 'official' | 'private' | 'promoted'
+  variant_of?: string
+  promoted_from?: string
 }
 
 const CATEGORIES = [
