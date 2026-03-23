@@ -27,6 +27,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// Must be imported before any AI SDK usage
+import "./instrumentation.js";
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { AuthManager, validateEnvToken } from "./auth.js";

@@ -16,6 +16,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// Must be imported before any AI SDK usage
+import { shutdownTracing } from "./instrumentation.js";
+
 import express from "express";
 import cors from "cors";
 import type { IncomingMessage, ServerResponse } from "http";
@@ -206,7 +209,7 @@ app.listen(PORT, HOST, () => {
 });
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
-process.on("SIGINT", () => { console.error("\n[Shutdown] Bye!"); process.exit(0); });
-process.on("SIGTERM", () => { console.error("\n[Shutdown] Bye!"); process.exit(0); });
+process.on("SIGINT", async () => { console.error("\n[Shutdown] Flushing traces…"); await shutdownTracing(); process.exit(0); });
+process.on("SIGTERM", async () => { console.error("\n[Shutdown] Flushing traces…"); await shutdownTracing(); process.exit(0); });
 process.on("uncaughtException", (err) => { console.error("[Fatal]", err); process.exit(1); });
 process.on("unhandledRejection", (reason) => { console.error("[Fatal] Unhandled rejection:", reason); process.exit(1); });

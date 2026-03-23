@@ -1,6 +1,7 @@
 import { generateObject } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
+import { getPromptWithMeta } from "./prompts.js";
 
 const PlannedMealSchema = z.object({
   meal_type: z.enum(["desayuno", "almuerzo", "cena", "snack"]),
@@ -37,6 +38,7 @@ export async function generateDailyMealPlan({
   tier,
 }: MealPlanInput) {
   const { model, name: modelName } = resolveModel(tier);
+  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("meal-plan-generator");
 
   const pendingMeals = MEAL_ORDER.filter((m) => !loggedMealTypes.includes(m));
   const pendingLabel =
@@ -51,8 +53,13 @@ Usa alimentos comunes, porciones realistas, en español. Sé conciso.`;
   const { object, usage } = await generateObject({
     model,
     schema: MealPlanSchema,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "meal-plan-generator",
+      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
+    },
     messages: [
-      { role: "system", content: "Nutricionista experto. Respuestas concisas en español." },
+      { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
   });

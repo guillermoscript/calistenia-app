@@ -2,6 +2,7 @@ import { generateText, Output, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { FoodItemSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
+import { getPromptWithMeta } from "./prompts.js";
 
 interface FoodLookupInput {
   foodName: string;
@@ -63,35 +64,25 @@ const searchFoodDatabase = tool({
   },
 });
 
-// ── System prompt ───────────────────────────────────────────────────────────
-
-const SYSTEM_PROMPT = `Eres un nutricionista experto. Proporciona información nutricional precisa y realista para un alimento.
-
-## Flujo de trabajo
-
-1. PRIMERO: Usa la herramienta search_food_database para buscar el alimento en Open Food Facts.
-2. SEGUNDO: Si no encontraste datos suficientes, usa web_search/google_search para buscar información nutricional en la web.
-3. TERCERO: Genera tu respuesta combinando los datos encontrados. Prioriza datos de Open Food Facts.
-
-## Instrucciones
-- La porción debe ser una cantidad típica de consumo (ej: "100g", "1 pechuga mediana (150g)", "1 vaso (250ml)")
-- Los valores nutricionales deben corresponder exactamente a la porción indicada
-- Responde siempre en español
-- El campo "confidence" debe ser "high" si encontraste datos en la base de datos, "medium" si usaste web search, "low" si hay ambigüedad`;
-
 // ── Main lookup ─────────────────────────────────────────────────────────────
 
 export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
   const { model, name: modelName, provider } = resolveModel(tier);
   const webSearchTools = resolveWebSearchTool(provider);
+  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("food-lookup");
 
   const { output, steps } = await generateText({
     model,
     output: Output.object({ schema: FoodItemSchema }),
     tools: { search_food_database: searchFoodDatabase, ...webSearchTools },
     stopWhen: stepCountIs(5),
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "food-lookup",
+      metadata: { tier, modelName, foodName, ...(langfusePrompt && { langfusePrompt }) },
+    },
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       {
         role: "user",
         content: `Proporciona la información nutricional para: "${foodName}"`,
