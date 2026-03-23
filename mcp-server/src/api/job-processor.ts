@@ -5,29 +5,15 @@
  * stores the result, and sends a push notification on completion.
  */
 
-import PocketBase from "pocketbase";
-import config from "./config.js";
 import { analyzeMealImage } from "./meal-analyzer.js";
 import { lookupFoodByName } from "./food-lookup.js";
 import { generateDailyMealPlan } from "./meal-plan-generator.js";
 import { sendPushToUser } from "./push-sender.js";
+import { getAdminPB } from "./admin-pb.js";
 import type { Tier } from "./model-resolver.js";
 
-// ── Admin PocketBase helper (cached singleton) ──────────────────────────────
-
-let _adminPB: PocketBase | null = null;
-
-export async function getAdminPB(): Promise<PocketBase> {
-  if (_adminPB?.authStore.isValid) return _adminPB;
-
-  const pb = new PocketBase(config.pocketbaseUrl);
-  await pb.collection("_superusers").authWithPassword(
-    process.env.PB_SUPERUSER_EMAIL ?? "",
-    process.env.PB_SUPERUSER_PASSWORD ?? ""
-  );
-  _adminPB = pb;
-  return pb;
-}
+// Re-export for any existing consumers
+export { getAdminPB } from "./admin-pb.js";
 
 // ── Job processor ────────────────────────────────────────────────────────────
 

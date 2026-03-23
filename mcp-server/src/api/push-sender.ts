@@ -1,5 +1,5 @@
 import webpush from "web-push";
-import { getAdminPB } from "./job-processor.js";
+import { getAdminPB } from "./admin-pb.js";
 
 const vapidPublicKey = process.env.VITE_VAPID_PUBLIC_KEY || "";
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
