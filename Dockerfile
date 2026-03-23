@@ -18,6 +18,10 @@ ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL
 ARG VITE_AI_API_URL=""
 ENV VITE_AI_API_URL=$VITE_AI_API_URL
 
+# VAPID public key for Web Push subscriptions (baked into frontend JS)
+ARG VITE_VAPID_PUBLIC_KEY=""
+ENV VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
+
 RUN npm run build
 
 # ─────────────────────────────────────────────
@@ -47,6 +51,7 @@ WORKDIR /app
 
 COPY --from=pb-downloader /tmp/pb/pocketbase ./pocketbase
 COPY pb_migrations/ ./pb_migrations/
+COPY pb_hooks/ ./pb_hooks/
 COPY --from=frontend-builder /app/dist ./pb_public
 
 RUN mkdir -p /app/pb_data && chown -R pbuser:pbuser /app
@@ -62,4 +67,5 @@ CMD ["./pocketbase", "serve", \
      "--http=0.0.0.0:8090", \
      "--dir=/app/pb_data", \
      "--migrationsDir=/app/pb_migrations", \
+     "--hooksDir=/app/pb_hooks", \
      "--publicDir=/app/pb_public"]

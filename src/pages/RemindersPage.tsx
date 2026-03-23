@@ -64,7 +64,7 @@ type ReminderType = 'meal' | 'workout' | 'pause'
 // Unified reminder shape for the timeline
 interface TimelineItem {
   id: string
-  type: 'meal' | 'workout'
+  type: 'meal' | 'workout' | 'pause'
   hour: number
   minute: number
   days: number[]
@@ -151,14 +151,16 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     })
 
     workoutReminders.forEach(r => {
+      const isPause = r.reminderType === 'pause'
       items.push({
         id: `workout-${r.id}`,
-        type: 'workout',
+        type: isPause ? 'pause' : 'workout',
         hour: r.hour,
         minute: r.minute,
         days: r.daysOfWeek,
         enabled: r.enabled,
-        label: 'Entrenamiento',
+        label: isPause ? 'Pausa Activa' : 'Entrenamiento',
+        subLabel: isPause ? '🧘' : undefined,
       })
     })
 
@@ -203,6 +205,65 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     }
   }
 
+  // ── Test notification ────────────────────────────────────────────────────────
+  const [testingSend, setTestingSend] = useState(false)
+  const sendTestNotification = async () => {
+    setTestingSend(true)
+    try {
+      // 1. Request permission if needed
+      await setupNotifications()
+      // 2. Fire a local SW notification immediately
+      const reg = await navigator.serviceWorker?.ready
+      if (reg) {
+        await reg.showNotification('Test — Pausa Activa', {
+          body: 'Si ves esto, las notificaciones locales funcionan!',
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          tag: 'test-notification',
+          vibrate: [200, 100, 200],
+          requireInteraction: true,
+        } as NotificationOptions)
+        console.log('[test] local SW notification fired')
+      } else {
+        new Notification('Test — Pausa Activa', {
+          body: 'Si ves esto, las notificaciones locales funcionan!',
+          icon: '/icons/icon-192.png',
+          tag: 'test-notification',
+        })
+        console.log('[test] basic Notification API fired (no SW)')
+      }
+      // 3. Also test server-side push if push is enabled
+      if (pushEnabled && userId) {
+        console.log('[test] testing server push...')
+        const { pb } = await import('../lib/pocketbase')
+        try {
+          const aiApiUrl = import.meta.env.VITE_AI_API_URL || ''
+          const res = await fetch(`${aiApiUrl}/api/send-push`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${pb.authStore.token}`,
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              title: 'Test — Push Server',
+              body: 'Si ves esto, el push del servidor funciona!',
+              url: '/workout',
+            }),
+          })
+          const data = await res.json()
+          console.log('[test] push server response:', res.status, data)
+        } catch (e) {
+          console.warn('[test] push server error:', e)
+        }
+      }
+    } catch (e) {
+      console.warn('[test] error:', e)
+    } finally {
+      setTestingSend(false)
+    }
+  }
+
   // ── Save ────────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaving(true)
@@ -229,7 +290,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         for (let hr = startH; hr < endH; hr++) {
           for (let mn = 0; mn < 60; mn += interval) {
             if (hr === startH && mn === 0) continue
-            await saveWorkoutReminder(hr, mn, days)
+            await saveWorkoutReminder(hr, mn, days, 'pause')
           }
         }
       }
@@ -253,7 +314,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       const rawId = item.id.replace(/^(meal|workout)-/, '')
       if (item.type === 'meal') {
         await deleteMealReminder(rawId)
-      } else {
+      } else { // 'workout' or 'pause' — both stored in workout_reminders
         await deleteWorkoutReminder(rawId)
       }
     } catch (e) {
@@ -270,7 +331,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       const rawId = item.id.replace(/^(meal|workout)-/, '')
       if (item.type === 'meal') {
         await toggleMealReminder(rawId, !item.enabled)
-      } else {
+      } else { // 'workout' or 'pause'
         await toggleWorkoutReminder(rawId)
       }
     } catch (e) {
@@ -315,7 +376,13 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           <div className="flex items-center gap-1.5">
             <div className="size-2 rounded-full bg-sky-400" />
             <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-              {workoutReminders.length} ejercicio
+              {workoutReminders.filter(r => r.reminderType !== 'pause').length} ejercicio
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="size-2 rounded-full bg-violet-400" />
+            <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
+              {workoutReminders.filter(r => r.reminderType === 'pause').length} pausas
             </span>
           </div>
           {notifPermission === 'granted' ? (
@@ -332,6 +399,14 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
             </span>
           )}
         </div>
+        {/* Test notification button */}
+        <button
+          onClick={sendTestNotification}
+          disabled={testingSend}
+          className="mt-3 text-[10px] font-mono tracking-wide text-muted-foreground/50 hover:text-lime-400 transition-colors underline underline-offset-2"
+        >
+          {testingSend ? 'enviando test...' : 'probar notificación'}
+        </button>
       </div>
 
       {/* ── Add new ── */}

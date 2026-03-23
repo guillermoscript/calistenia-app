@@ -42,11 +42,13 @@ self.addEventListener('push', (event) => {
 
   const data = event.data.json()
   const title = data.title || 'Calistenia App'
-  const options: NotificationOptions = {
+  const options: NotificationOptions & { vibrate?: number[] } = {
     body: data.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     data: { url: data.url || '/nutrition' },
+    vibrate: [200, 100, 200],
+    requireInteraction: true,
   }
 
   event.waitUntil(
@@ -81,10 +83,112 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
+// ── Scheduled reminder notifications ──────────────────────────────────────────
+// The page sends the full reminder schedule to the SW via postMessage.
+// The SW maintains its own timers so notifications fire even when the page
+// is backgrounded on mobile (SW timers survive longer than page timers).
+
+interface SWReminder {
+  id: string
+  type: 'meal' | 'workout' | 'pause'
+  hour: number
+  minute: number
+  daysOfWeek: number[]
+  enabled: boolean
+  label: string
+}
+
+const scheduledTimers = new Map<string, ReturnType<typeof setTimeout>>()
+let swCheckInterval: ReturnType<typeof setInterval> | null = null
+let swReminders: SWReminder[] = []
+
+function isTodayIncludedSW(daysOfWeek: number[]): boolean {
+  return Array.isArray(daysOfWeek) && daysOfWeek.includes(new Date().getDay())
+}
+
+function fireSWNotification(reminder: SWReminder): void {
+  const titles: Record<string, string> = {
+    meal: reminder.label,
+    workout: 'Hora de entrenar!',
+    pause: 'Pausa Activa',
+  }
+  const bodies: Record<string, string> = {
+    meal: 'No te saltes esta comida — tu cuerpo lo necesita',
+    workout: 'Tu entrenamiento te espera. No pierdas la racha!',
+    pause: 'Levántate, estira y muévete — tu cuerpo lo agradece',
+  }
+  const urls: Record<string, string> = {
+    meal: '/nutrition',
+    workout: '/workout',
+    pause: '/workout',
+  }
+
+  self.registration.showNotification(titles[reminder.type] || 'Recordatorio', {
+    body: bodies[reminder.type] || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: `sw-${reminder.type}-${reminder.id}`,
+    data: { url: urls[reminder.type] || '/' },
+    vibrate: [200, 100, 200],
+    requireInteraction: true,
+  } as NotificationOptions)
+}
+
+function scheduleSWReminders(reminders: SWReminder[]): void {
+  console.log(`[sw-reminders] received ${reminders.length} reminders`)
+  // Clear existing timers
+  for (const timer of scheduledTimers.values()) clearTimeout(timer)
+  scheduledTimers.clear()
+  swReminders = reminders
+
+  const now = new Date()
+
+  for (const r of reminders) {
+    if (!r.enabled || !isTodayIncludedSW(r.daysOfWeek)) continue
+
+    const target = new Date()
+    target.setHours(r.hour, r.minute, 0, 0)
+    const delay = target.getTime() - now.getTime()
+
+    if (delay > 0 && delay < 24 * 60 * 60 * 1000) {
+      const timer = setTimeout(() => {
+        console.log(`[sw-reminders] firing: ${r.type} "${r.label}" at ${r.hour}:${String(r.minute).padStart(2, '0')}`)
+        fireSWNotification(r)
+        scheduledTimers.delete(r.id)
+      }, delay)
+      scheduledTimers.set(r.id, timer)
+    }
+  }
+
+  console.log(`[sw-reminders] scheduled ${scheduledTimers.size} timers for today`)
+
+  // Periodic safety check every 60s — catches timers frozen by the OS
+  if (swCheckInterval) clearInterval(swCheckInterval)
+  if (reminders.some(r => r.enabled)) {
+    let lastMinute = -1
+    swCheckInterval = setInterval(() => {
+      const n = new Date()
+      const currentMin = n.getHours() * 60 + n.getMinutes()
+      if (currentMin === lastMinute) return
+      lastMinute = currentMin
+
+      for (const r of swReminders) {
+        if (!r.enabled || !isTodayIncludedSW(r.daysOfWeek)) continue
+        if (r.hour * 60 + r.minute === currentMin && !scheduledTimers.has(r.id)) {
+          fireSWNotification(r)
+        }
+      }
+    }, 30_000)
+  }
+}
+
 // Activate new service worker when the user accepts the update prompt
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting()
+  }
+  if (event.data && event.data.type === 'SCHEDULE_REMINDERS') {
+    scheduleSWReminders(event.data.reminders || [])
   }
 })
 self.addEventListener('activate', () => self.clients.claim())

@@ -11,16 +11,22 @@ function parseDaysOfWeek(raw: unknown): number[] {
   return [1, 2, 3, 4, 5]
 }
 
+export type ReminderSubtype = 'workout' | 'pause'
+
 export interface WorkoutReminder {
   id: string
   hour: number
   minute: number
   daysOfWeek: number[] // 1=Mon..7=Sun
   enabled: boolean
+  reminderType: ReminderSubtype
 }
 
 const lsGet = (): WorkoutReminder[] => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] }
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]')
+    return raw.map((r: any) => ({ ...r, reminderType: r.reminderType || 'workout' }))
+  } catch { return [] }
 }
 const lsSet = (d: WorkoutReminder[]) => localStorage.setItem(LS_KEY, JSON.stringify(d))
 
@@ -49,6 +55,7 @@ export function useWorkoutReminders(userId: string | null = null) {
             minute: r.minute,
             daysOfWeek: parseDaysOfWeek(r.days_of_week),
             enabled: r.enabled,
+            reminderType: (r.reminder_type === 'pause' ? 'pause' : 'workout') as ReminderSubtype,
           }))
           setReminders(loaded)
           lsSet(loaded)
@@ -64,13 +71,14 @@ export function useWorkoutReminders(userId: string | null = null) {
 
   // Notification scheduling is handled centrally by reminder-scheduler.ts
 
-  const saveReminder = useCallback(async (hour: number, minute: number, daysOfWeek: number[] = [1, 2, 3, 4, 5]) => {
+  const saveReminder = useCallback(async (hour: number, minute: number, daysOfWeek: number[] = [1, 2, 3, 4, 5], reminderType: ReminderSubtype = 'workout') => {
     const reminder: WorkoutReminder = {
       id: `wr_${Date.now()}`,
       hour,
       minute,
       daysOfWeek,
       enabled: true,
+      reminderType,
     }
 
     if (usePB && userId) {
@@ -81,6 +89,7 @@ export function useWorkoutReminders(userId: string | null = null) {
           minute,
           days_of_week: daysOfWeek,
           enabled: true,
+          reminder_type: reminderType,
         })
         reminder.id = rec.id
       } catch (e) { console.warn('PB workout_reminders create error:', e) }

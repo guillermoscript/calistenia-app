@@ -15,10 +15,15 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_AI_API_URL: http://localhost:3001
+        VITE_VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY:-}
     container_name: calistenia-app
     restart: unless-stopped
     ports:
       - "8090:8090"
+    environment:
+      # PB hooks need these to call the AI API for push notifications
+      - AI_API_URL=http://ai-api:3001
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-}
     volumes:
       - ./pb_data_local:/app/pb_data
 
@@ -44,5 +49,9 @@ services:
       # Optional: rate limit tuning
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-10}
+      # Push notifications (VAPID + internal auth)
+      - VITE_VAPID_PUBLIC_KEY=${VITE_VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-}
     depends_on:
       - app

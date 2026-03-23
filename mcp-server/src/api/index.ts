@@ -250,10 +250,19 @@ export function createApiRouter(): Router {
     }
   );
 
-  // Push notification sending (internal use — authenticated with shared secret or user auth)
+  // Push notification sending (internal use — accepts internal API key OR user auth)
   router.post(
     "/send-push",
-    requireAuth,
+    async (req: any, res: any, next: any) => {
+      // Allow internal server-to-server calls via shared secret
+      const internalKey = process.env.INTERNAL_API_KEY;
+      const providedKey = req.headers["x-internal-key"];
+      if (internalKey && providedKey === internalKey) {
+        return next();
+      }
+      // Otherwise require normal user auth
+      return requireAuth(req, res, next);
+    },
     async (req: any, res: any, next: any) => {
       try {
         const { user_id, title, body, url } = req.body ?? {};

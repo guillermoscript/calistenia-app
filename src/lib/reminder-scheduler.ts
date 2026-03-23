@@ -11,7 +11,7 @@
 
 interface SchedulableReminder {
   id: string
-  type: 'meal' | 'workout'
+  type: 'meal' | 'workout' | 'pause'
   hour: number
   minute: number
   daysOfWeek: number[]
@@ -47,21 +47,34 @@ function getDelayMs(hour: number, minute: number): number {
 }
 
 async function fireNotification(reminder: SchedulableReminder): Promise<void> {
-  const title = reminder.type === 'meal'
-    ? reminder.label
-    : 'Hora de entrenar!'
-  const body = reminder.type === 'meal'
-    ? 'No te saltes esta comida — tu cuerpo lo necesita'
-    : 'Tu entrenamiento te espera. No pierdas la racha!'
+  const titles: Record<string, string> = {
+    meal: reminder.label,
+    workout: 'Hora de entrenar!',
+    pause: 'Pausa Activa',
+  }
+  const bodies: Record<string, string> = {
+    meal: 'No te saltes esta comida — tu cuerpo lo necesita',
+    workout: 'Tu entrenamiento te espera. No pierdas la racha!',
+    pause: 'Levántate, estira y muévete — tu cuerpo lo agradece',
+  }
+  const urls: Record<string, string> = {
+    meal: '/nutrition',
+    workout: '/workout',
+    pause: '/workout',
+  }
+  const title = titles[reminder.type] || titles.workout
+  const body = bodies[reminder.type] || bodies.workout
   const tag = `${reminder.type}-reminder-${reminder.id}`
-  const url = reminder.type === 'meal' ? '/nutrition' : '/workout'
+  const url = urls[reminder.type] || '/workout'
 
-  const options: NotificationOptions & { data?: any } = {
+  const options: NotificationOptions & { data?: any; vibrate?: number[] } = {
     body,
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag,
     data: { url },
+    vibrate: [200, 100, 200],
+    requireInteraction: true,
   }
 
   try {
@@ -139,10 +152,40 @@ function stopPeriodicCheck(): void {
 }
 
 /**
+ * Post the reminder schedule to the service worker so it can fire
+ * notifications even when the page is backgrounded on mobile.
+ */
+async function postToServiceWorker(reminders: SchedulableReminder[]): Promise<void> {
+  try {
+    const reg = await navigator.serviceWorker?.ready
+    if (reg?.active) {
+      reg.active.postMessage({
+        type: 'SCHEDULE_REMINDERS',
+        reminders: reminders.map(r => ({
+          id: r.id,
+          type: r.type,
+          hour: r.hour,
+          minute: r.minute,
+          daysOfWeek: r.daysOfWeek,
+          enabled: r.enabled,
+          label: r.label,
+        })),
+      })
+    }
+  } catch { /* SW not available — page-level timers are the fallback */ }
+}
+
+/**
  * Schedule all reminders. Call on app load and when reminders change.
  */
 export function scheduleAll(reminders: SchedulableReminder[]): void {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  const perm = 'Notification' in window ? Notification.permission : 'unsupported'
+  console.log(`[reminders] scheduleAll: ${reminders.length} reminders, permission=${perm}`)
+
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    console.warn('[reminders] skipped — notification permission not granted')
+    return
+  }
 
   currentReminders = reminders
 
@@ -150,10 +193,14 @@ export function scheduleAll(reminders: SchedulableReminder[]): void {
   for (const timer of activeTimers.values()) clearTimeout(timer)
   activeTimers.clear()
 
-  // Schedule each reminder
+  // Schedule each reminder (page-level fallback)
   for (const r of reminders) {
     scheduleOne(r)
   }
+
+  const scheduled = activeTimers.size
+  const enabled = reminders.filter(r => r.enabled).length
+  console.log(`[reminders] scheduled ${scheduled}/${enabled} enabled timers for today`)
 
   // Start the periodic safety net
   if (reminders.some(r => r.enabled)) {
@@ -161,6 +208,9 @@ export function scheduleAll(reminders: SchedulableReminder[]): void {
   } else {
     stopPeriodicCheck()
   }
+
+  // Also post to service worker for mobile background reliability
+  postToServiceWorker(reminders)
 }
 
 /**
@@ -168,7 +218,7 @@ export function scheduleAll(reminders: SchedulableReminder[]): void {
  */
 export function buildSchedulableReminders(
   mealReminders: Array<{ id?: string; mealType: string; hour: number; minute: number; daysOfWeek: number[]; enabled: boolean }>,
-  workoutReminders: Array<{ id: string; hour: number; minute: number; daysOfWeek: number[]; enabled: boolean }>,
+  workoutReminders: Array<{ id: string; hour: number; minute: number; daysOfWeek: number[]; enabled: boolean; reminderType?: string }>,
 ): SchedulableReminder[] {
   const items: SchedulableReminder[] = []
 
@@ -186,14 +236,15 @@ export function buildSchedulableReminders(
   }
 
   for (const r of workoutReminders) {
+    const isPause = r.reminderType === 'pause'
     items.push({
       id: `workout-${r.id}`,
-      type: 'workout',
+      type: isPause ? 'pause' : 'workout',
       hour: r.hour,
       minute: r.minute,
       daysOfWeek: r.daysOfWeek,
       enabled: r.enabled,
-      label: 'Hora de entrenar!',
+      label: isPause ? 'Pausa Activa' : 'Hora de entrenar!',
     })
   }
 

@@ -19,17 +19,27 @@ function parseDaysOfWeek(raw) {
  * Helper: send a push notification to a user via the API.
  */
 function sendPush(userId, title, body, url) {
+  const apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
+  const internalKey = $os.getenv("INTERNAL_API_KEY") || ""
+  const pushUrl = `${apiUrl}/api/send-push`
+
+  console.log(`[push] → ${pushUrl} | user=${userId} | title="${title}" | key=${internalKey ? "set" : "MISSING"}`)
+
   try {
-    const apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
-    $http.send({
-      url: `${apiUrl}/api/send-push`,
+    const headers = { "Content-Type": "application/json" }
+    if (internalKey) {
+      headers["X-Internal-Key"] = internalKey
+    }
+    const res = $http.send({
+      url: pushUrl,
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: headers,
       body: JSON.stringify({ user_id: userId, title, body, url }),
       timeout: 10,
     })
+    console.log(`[push] ← status=${res.statusCode} body=${res.raw}`)
   } catch (e) {
-    console.log("Push send error:", e)
+    console.log("[push] ✗ error:", e)
   }
 }
 
@@ -143,22 +153,34 @@ cronAdd("push_workout_reminders", "* * * * *", () => {
       0
     )
   } catch (e) {
+    console.log(`[workout-cron] query error at ${currentHour}:${currentMinute}:`, e)
     return
   }
 
+  console.log(`[workout-cron] ${currentHour}:${String(currentMinute).padStart(2, "0")} day=${currentDay} | found=${reminders ? reminders.length : 0} reminders`)
   if (!reminders || reminders.length === 0) return
 
   for (const reminder of reminders) {
     const userId = reminder.getString("user")
     const daysOfWeek = parseDaysOfWeek(reminder.get("days_of_week"))
+    const reminderType = reminder.getString("reminder_type") || "workout"
 
     if (!daysOfWeek.includes(currentDay)) continue
 
-    sendPush(
-      userId,
-      "Hora de entrenar!",
-      "Tu entrenamiento te espera. No pierdas la racha!",
-      "/workout"
-    )
+    if (reminderType === "pause") {
+      sendPush(
+        userId,
+        "Pausa Activa",
+        "Levántate, estira y muévete — tu cuerpo lo agradece",
+        "/workout"
+      )
+    } else {
+      sendPush(
+        userId,
+        "Hora de entrenar!",
+        "Tu entrenamiento te espera. No pierdas la racha!",
+        "/workout"
+      )
+    }
   }
 })
