@@ -12,13 +12,13 @@
     "seed": "node build/seed.js"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.58",
-    "@ai-sdk/google": "^3.0.43",
-    "@ai-sdk/openai": "^3.0.41",
+    "@ai-sdk/anthropic": "^3.0.63",
+    "@ai-sdk/google": "^3.0.53",
+    "@ai-sdk/openai": "^3.0.48",
     "@langfuse/otel": "^5.0.1",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@opentelemetry/sdk-node": "^0.213.0",
-    "ai": "^6.0.116",
+    "ai": "^6.0.137",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
