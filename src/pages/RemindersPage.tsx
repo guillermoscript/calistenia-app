@@ -240,8 +240,9 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         await updateWorkoutReminder(rawId, h, m, days)
       }
       setEditingItem(null)
-    } catch {
-      setError('No se pudo actualizar. Intenta de nuevo.')
+    } catch (e: any) {
+      console.error('Update reminder error:', e)
+      setError(e?.message || 'No se pudo actualizar. Intenta de nuevo.')
     } finally {
       setSaving(false)
     }

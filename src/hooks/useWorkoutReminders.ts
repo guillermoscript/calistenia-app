@@ -121,7 +121,7 @@ export function useWorkoutReminders(userId: string | null = null) {
 
   const updateReminder = useCallback(async (id: string, hour: number, minute: number, daysOfWeek: number[]) => {
     if (usePB && !id.startsWith('wr_')) {
-      try { await pb.collection('workout_reminders').update(id, { hour, minute, days_of_week: daysOfWeek }) } catch {}
+      await pb.collection('workout_reminders').update(id, { hour, minute, days_of_week: daysOfWeek })
     }
 
     setReminders(prev => {

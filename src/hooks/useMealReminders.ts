@@ -95,7 +95,7 @@ export function useMealReminders(userId: string | null) {
 
   const updateReminder = useCallback(async (id: string, hour: number, minute: number, daysOfWeek: number[]): Promise<void> => {
     if (usePB && !id.startsWith('mr_')) {
-      try { await pb.collection('meal_reminders').update(id, { hour, minute, days_of_week: daysOfWeek }) } catch {}
+      await pb.collection('meal_reminders').update(id, { hour, minute, days_of_week: daysOfWeek })
     }
 
     setReminders(prev => {
