@@ -1,0 +1,3 @@
+[     480ms] [WARNING] Failed to load profile: ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5176/node_modules/pocketbase/dist/pocketbase.es.mjs?v=12e7b52a:1:37329
+    at async load (http://localhost:5176/src/pages/ProfilePage.tsx:60:23) @ http://localhost:5176/src/pages/ProfilePage.tsx:67

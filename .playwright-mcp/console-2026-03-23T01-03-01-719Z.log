@@ -1,0 +1,24 @@
+[    5432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/collections/exercise_progressions/records?page=1&perPage=200&sort=category%2Cdifficulty_order:0
+[    5432ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:47
+[    5432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/collections/exercise_progressions/records?page=1&perPage=200&sort=category%2Cdifficulty_order:0
+[    5432ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:47
+[    5432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/collections/exercise_progressions/records?page=1&perPage=200&sort=category%2Cdifficulty_order:0
+[    5432ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:47
+[    5432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/collections/exercise_progressions/records?page=1&perPage=200&sort=category%2Cdifficulty_order:0
+[    5432ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:47
+[    5432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/collections/exercise_progressions/records?page=1&perPage=200&sort=category%2Cdifficulty_order:0
+[    5433ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:47
+[    5433ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/collections/exercise_progressions/records?page=1&perPage=200&sort=category%2Cdifficulty_order:0
+[    5433ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774227747040:47

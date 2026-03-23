@@ -1,0 +1,2 @@
+[     255ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=1&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27%20%26%26%20read%20%3D%20false:0
+[     255ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=1&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27%20%26%26%20read%20%3D%20false:0

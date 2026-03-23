@@ -31,9 +31,12 @@ const activeTimers = new Map<string, ReturnType<typeof setTimeout>>()
 let checkInterval: ReturnType<typeof setInterval> | null = null
 let currentReminders: SchedulableReminder[] = []
 
-function isTodayIncluded(daysOfWeek: number[]): boolean {
+function isTodayIncluded(daysOfWeek: number[] | string): boolean {
   const jsDay = new Date().getDay() // 0=Sun, 1=Mon...6=Sat
-  return daysOfWeek.includes(jsDay)
+  const days = typeof daysOfWeek === 'string'
+    ? ((): number[] => { try { return JSON.parse(daysOfWeek) } catch { return [] } })()
+    : daysOfWeek
+  return Array.isArray(days) && days.includes(jsDay)
 }
 
 function getDelayMs(hour: number, minute: number): number {

@@ -1,0 +1,42 @@
+[   33306ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/meal_reminders/records:0
+[   60585ms] [ERROR] React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+%s   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ RemindersPage 1. useCallback                useState
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5593
+[   60589ms] Error: Should have a queue. You are likely calling Hooks conditionally, which is not allowed. (https://react.dev/link/invalid-hook-call)
+    at updateReducerImpl (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5892:17)
+    at updateReducer (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5887:16)
+    at Object.useState (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18996:20)
+    at exports.useState (http://localhost:5173/node_modules/.vite/deps/chunk-RY7GF66K.js?v=cf501dc3:959:36)
+    at useMealReminders (http://localhost:5173/src/hooks/useMealReminders.ts?t=1774227209936:24:37)
+    at RemindersPage (http://localhost:5173/src/pages/RemindersPage.tsx?t=1774227209936:58:7)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+[   60589ms] [WARNING] %s
+
+%s
+ An error occurred in the <RemindersPage> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[   75921ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/pages/RemindersPage.tsx?t=1774227225303:0
+[   75921ms] [ERROR] [vite] Failed to reload /src/pages/RemindersPage.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:808
+[   81479ms] ReferenceError: getMealReminders is not defined
+    at RemindersPage (http://localhost:5173/src/pages/RemindersPage.tsx?t=1774227230741:87:15)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8484:199)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:11827:37)
+[   81479ms] [WARNING] %s
+
+%s
+ An error occurred in the <RemindersPage> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965

@@ -1,0 +1,141 @@
+[  304419ms] Error: useAuthContext must be used within AuthProvider
+    at useAuthContext (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774196052271:9:19)
+    at useAuthState (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774196052271:15:10)
+    at AppInner (http://localhost:5173/src/App.tsx?t=1774204725831:1225:61)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+[  304419ms] [WARNING] %s
+
+%s
+ An error occurred in the <AppInner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[  306252ms] Error: useAuthContext must be used within AuthProvider
+    at useAuthContext (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210715548:9:19)
+    at useAuthState (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210715548:15:10)
+    at AppInner (http://localhost:5173/src/App.tsx?t=1774210715548:1225:61)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+[  306252ms] [WARNING] %s
+
+%s
+ An error occurred in the <AppInner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[  327891ms] [ERROR] React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+%s   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ AuthProvider 1. useState                   useState
+2. useState                   useState
+3. useState                   useState
+4. useState                   useState
+5. useEffect                  useEffect
+6. useEffect                  useEffect
+7. useCallback                useRef
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5593
+[  327892ms] ReferenceError: signIn is not defined
+    at useAuth (http://localhost:5173/src/hooks/useAuth.ts?t=1774210739039:107:90)
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210739039:42:7)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12408:13)
+[  327892ms] [WARNING] %s
+
+%s
+ An error occurred in the <AuthProvider> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[  327953ms] ReferenceError: signIn is not defined
+    at useAuth (http://localhost:5173/src/hooks/useAuth.ts?t=1774210739039:107:90)
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210739039:42:7)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12408:13)
+[  327953ms] [WARNING] %s
+
+%s
+ An error occurred in the <AuthProvider> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[  330087ms] ReferenceError: signIn is not defined
+    at useAuth (http://localhost:5173/src/hooks/useAuth.ts?t=1774210741233:110:90)
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210741233:42:7)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12408:13)
+[  330087ms] [WARNING] %s
+
+%s
+ An error occurred in the <AuthProvider> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[  330172ms] ReferenceError: signIn is not defined
+    at useAuth (http://localhost:5173/src/hooks/useAuth.ts?t=1774210741233:110:90)
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210741233:42:7)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12408:13)
+[  330172ms] [WARNING] %s
+
+%s
+ An error occurred in the <AuthProvider> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[  331796ms] Error: useAuthContext must be used within AuthProvider
+    at useAuthContext (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210741233:9:19)
+    at useAuthState (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210741233:15:10)
+    at AppInner (http://localhost:5173/src/App.tsx?t=1774210741233:1225:61)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+[  331796ms] [WARNING] %s
+
+%s
+ An error occurred in the <AppInner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[  339719ms] ReferenceError: signIn is not defined
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774210750791:57:8)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:11827:37)
+[  339719ms] [WARNING] %s
+
+%s
+ An error occurred in the <AuthProvider> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965

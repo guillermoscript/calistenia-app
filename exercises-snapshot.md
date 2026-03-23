@@ -1,0 +1,1222 @@
+- generic [ref=e1]:
+  - generic:
+    - generic:
+      - generic: Sin conexion — los datos se guardan localmente
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Calistenia
+                  - generic: 6M
+              - generic:
+                - list:
+                  - listitem:
+                    - button "Dashboard":
+                      - img
+                      - generic: Dashboard
+                  - listitem:
+                    - button "Entrenar":
+                      - img
+                      - generic: Entrenar
+                  - listitem:
+                    - button "Lumbar":
+                      - img
+                      - generic: Lumbar
+                  - listitem:
+                    - button "Progreso":
+                      - img
+                      - generic: Progreso
+                  - listitem:
+                    - button "Nutricion":
+                      - img
+                      - generic: Nutricion
+                  - listitem:
+                    - button "Calendario":
+                      - img
+                      - generic: Calendario
+                  - listitem:
+                    - button "Programas":
+                      - img
+                      - generic: Programas
+                  - listitem:
+                    - button "Ejercicios":
+                      - img
+                      - generic: Ejercicios
+                  - listitem:
+                    - button "Sesion Libre":
+                      - img
+                      - generic: Sesion Libre
+                  - listitem:
+                    - button "Cardio":
+                      - img
+                      - generic: Cardio
+                  - listitem:
+                    - button "Perfil":
+                      - img
+                      - generic: Perfil
+              - generic:
+                - generic:
+                  - generic: T
+                  - generic:
+                    - generic: TestUser
+                    - generic: Fase 1
+                - button "Cerrar sesion":
+                  - img
+                  - generic: Cerrar sesion
+        - main:
+          - generic:
+            - button "Toggle Sidebar":
+              - img
+              - generic: Toggle Sidebar
+            - navigation "breadcrumb": Ejercicios
+            - generic:
+              - generic: Fase 1
+              - button "Guia de la pagina":
+                - generic: "?"
+              - button "Activar modo claro":
+                - img
+          - main:
+            - generic:
+              - generic:
+                - heading "EJERCICIOS" [level=1]
+                - paragraph: 100 ejercicios
+              - generic [ref=e240]:
+                - img [ref=e241]
+                - textbox "Buscar por nombre o musculo..." [ref=e244]
+              - generic:
+                - generic: Filtros
+              - generic:
+                - button "Todos"
+                - button "Push"
+                - button "Pull"
+                - button "Legs"
+                - button "Core"
+                - button "Lumbar"
+                - button "Full"
+                - button "Movilidad"
+                - button "Skill"
+              - generic:
+                - button "🔩 Barra de dominadas"
+                - button "🪜 Paralelas"
+                - button "⭕ Anillas"
+                - button "🔗 Banda elástica"
+                - button "🎒 Lastre/Peso"
+                - button "🟡 Fitball"
+                - button "☸️ Rueda abdominal"
+                - button "🪢 TRX"
+                - button "🪑 Banco/Silla"
+                - button "🔔 Kettlebell"
+                - button "🧱 Pared"
+                - button "🧻 Toalla"
+                - button "📦 Escalón"
+              - generic:
+                - button "TODOS"
+                - button "ADUCTORES"
+                - button "BÍCEPS"
+                - button "BÍCEPS"
+                - button "CADENA POSTERIOR"
+                - button "CADERA"
+                - button "CADERA COMPLETA"
+                - button "CADERAS"
+                - button "CÁPSULA DE CADERA"
+                - button "CARDIO"
+                - button "COLUMNA"
+                - button "COLUMNA COMPLETA"
+                - button "COLUMNA TORÁCICA"
+                - button "COLUMNA TORÁCICA COMPLETA"
+                - button "CORE"
+                - button "CORE"
+                - button "CORE ANTIROTACIÓN"
+                - button "CORE ANTIROTACIÓN"
+                - button "CORE ESTABILIZADOR"
+                - button "CORE PROFUNDO"
+                - button "CORE TOTAL"
+                - button "CUADRADO LUMBAR"
+                - button "CUÁDRICEPS"
+                - button "CUÁDRICEPS"
+                - button "DELTOIDES"
+                - button "DELTOIDES"
+                - button "DELTOIDES POSTERIOR"
+                - button "DORSAL"
+                - button "DORSAL"
+                - button "DORSAL ANCHO"
+                - button "DORSAL UNILATERAL"
+                - button "EQUILIBRIO"
+                - button "EQUILIBRIO"
+                - button "EQUILIBRIO TOTAL"
+                - button "ERECTORES"
+                - button "ESCÁPULAS"
+                - button "ESTABILIZADORES"
+                - button "EXPLOSIVIDAD"
+                - button "EXPLOSIVIDAD PIERNAS"
+                - button "EXPLOSIVIDAD TOTAL"
+                - button "FLEXORES"
+                - button "FLEXORES CADERA"
+                - button "FLEXORES DE CADERA"
+                - button "FULL BODY"
+                - button "FULL TIRÓN + EMPUJE"
+                - button "GASTROCNEMIO"
+                - button "GLÚTEO"
+                - button "GLÚTEO"
+                - button "GLÚTEOS"
+                - button "GLÚTEOS"
+                - button "HOMBROS"
+                - button "HOMBROS"
+                - button "HOMBROS ANTERIORES"
+                - button "ILÍACO"
+                - button "ISQUIOS"
+                - button "ISQUIOS"
+                - button "ISQUIOTIBIALES"
+                - button "LUMBAR"
+                - button "LUMBAR"
+                - button "MANGUITO"
+                - button "MOVILIDAD"
+                - button "OBLICUOS"
+                - button "OBLICUOS"
+                - button "PANTORRILLAS"
+                - button "PECHO"
+                - button "PECHO"
+                - button "PECHO BAJO"
+                - button "PECHO EXTERNO"
+                - button "PECHO INTERNO"
+                - button "PECHO UNILATERAL"
+                - button "PECHO UNILATERAL TOTAL"
+                - button "PIERNAS"
+                - button "PIRIFORME"
+                - button "PSOAS"
+                - button "PULL + PUSH COMPLETO"
+                - button "ROMBOIDES"
+                - button "ROMBOIDES"
+                - button "SOLEO"
+                - button "TOBILLO"
+                - button "TRAPECIO MEDIO"
+                - button "TRAPECIOS"
+                - button "TRÍCEPS"
+                - button "TRÍCEPS"
+                - button "TVA"
+                - button "VARIABLE"
+                - button "WRIST"
+              - generic:
+                - button "Archer Push-up Pecho unilateral PUSH 4 x 8/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Archer Push-up
+                    - paragraph: Pecho unilateral
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 8/lado
+                - button "Archer Push-up (Regresión) Pecho unilateral PUSH 3 x 6/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Archer Push-up (Regresión)
+                    - paragraph: Pecho unilateral
+                    - generic:
+                      - generic: PUSH
+                      - generic: 3 x 6/lado
+                - button "Australian Pull-up Dorsal · bíceps · romboides PULL 4 x 8-12":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Australian Pull-up
+                    - paragraph: Dorsal · bíceps · romboides
+                    - generic:
+                      - generic: PULL
+                      - generic: 4 x 8-12
+                - button "Back Lever Progresión Hombros · pecho · core SKILL 3 x 5-15s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Back Lever Progresión
+                    - paragraph: Hombros · pecho · core
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x 5-15s
+                - button "Bird-Dog Lumbar · core · glúteos CORE 3 x 12/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Bird-Dog
+                    - paragraph: Lumbar · core · glúteos
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 12/lado
+                - button "Box Jump (silla sólida) Explosividad total LEGS 4 x 8":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Box Jump (silla sólida)
+                    - paragraph: Explosividad total
+                    - generic:
+                      - generic: LEGS
+                      - generic: 4 x 8
+                - button "Bulgarian Split + Salto Explosividad piernas LEGS 3 x 8/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Bulgarian Split + Salto
+                    - paragraph: Explosividad piernas
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 8/lado
+                - button "Bulgarian Split Squat Cuádriceps · glúteo · isquios LEGS 4 x 10/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Bulgarian Split Squat
+                    - paragraph: Cuádriceps · glúteo · isquios
+                    - generic:
+                      - generic: LEGS
+                      - generic: 4 x 10/lado
+                - button "Burpees Full body · cardio FULL 3 x 8-10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Burpees
+                    - paragraph: Full body · cardio
+                    - generic:
+                      - generic: FULL
+                      - generic: 3 x 8-10
+                - button "Calf Raise Unilateral Gastrocnemio · soleo LEGS 3 x 15/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Calf Raise Unilateral
+                    - paragraph: Gastrocnemio · soleo
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 15/lado
+                - button "Calf Raises Pantorrillas · soleo LEGS 3 x 20":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Calf Raises
+                    - paragraph: Pantorrillas · soleo
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 20
+                - button "Cat-Cow Columna · lumbar MOVILIDAD 2 x 12 lentos":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Cat-Cow
+                    - paragraph: Columna · lumbar
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 2 x 12 lentos
+                - button "Child's Pose con Tracción Lumbar · dorsal · caderas MOVILIDAD 3 x 60s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Child's Pose con Tracción
+                    - paragraph: Lumbar · dorsal · caderas
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 60s
+                - button "Chin-up (agarre supino) Bíceps · dorsal PULL 4 x máx":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Chin-up (agarre supino)
+                    - paragraph: Bíceps · dorsal
+                    - generic:
+                      - generic: PULL
+                      - generic: 4 x máx
+                - button "Cossack Squat Aductores · cadera · movilidad MOVILIDAD 3 x 8/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Cossack Squat
+                    - paragraph: Aductores · cadera · movilidad
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 8/lado
+                - button "Dead Bug Core profundo · TvA CORE 3 x 10/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Dead Bug
+                    - paragraph: Core profundo · TvA
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 10/lado
+                - button "Dead Bug Avanzado Core · TvA CORE 3 x 12/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Dead Bug Avanzado
+                    - paragraph: Core · TvA
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 12/lado
+                - button "Diamond Push-up Tríceps · pecho interno PUSH 4 x 8-12":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Diamond Push-up
+                    - paragraph: Tríceps · pecho interno
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 8-12
+                - button "Dips en Silla Tríceps · hombros PUSH 3 x 8-12":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Dips en Silla
+                    - paragraph: Tríceps · hombros
+                    - generic:
+                      - generic: PUSH
+                      - generic: 3 x 8-12
+                - button "Dips Paralelas (2 sillas) Tríceps · pecho bajo PUSH 4 x 8-12":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Dips Paralelas (2 sillas)
+                    - paragraph: Tríceps · pecho bajo
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 8-12
+                - button "Dominadas Negativas Dorsal · bíceps PULL 3 x 5 (5s bajada)":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Dominadas Negativas
+                    - paragraph: Dorsal · bíceps
+                    - generic:
+                      - generic: PULL
+                      - generic: 3 x 5 (5s bajada)
+                - button "Face Pull (banda/toalla) Deltoides posterior · manguito PULL 3 x 12-15":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Face Pull (banda/toalla)
+                    - paragraph: Deltoides posterior · manguito
+                    - generic:
+                      - generic: PULL
+                      - generic: 3 x 12-15
+                - button "Front Lever Completo Dorsal · core · escápulas SKILL 4 x 5-10s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Front Lever Completo
+                    - paragraph: Dorsal · core · escápulas
+                    - generic:
+                      - generic: SKILL
+                      - generic: 4 x 5-10s
+                - button "Front Lever Single Leg Dorsal · core SKILL 3 x 10-15s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Front Lever Single Leg
+                    - paragraph: Dorsal · core
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x 10-15s
+                - button "Front Lever Tucked Dorsal · core · escápulas SKILL 4 x 10-20s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Front Lever Tucked
+                    - paragraph: Dorsal · core · escápulas
+                    - generic:
+                      - generic: SKILL
+                      - generic: 4 x 10-20s
+                - button "Glute Activation Peak Glúteos · isquios LUMBAR 4 x 20":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Glute Activation Peak
+                    - paragraph: Glúteos · isquios
+                    - generic:
+                      - generic: LUMBAR
+                      - generic: 4 x 20
+                - button "Glute Bridge Glúteos · isquios · lumbar LUMBAR 4 x 15":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Glute Bridge
+                    - paragraph: Glúteos · isquios · lumbar
+                    - generic:
+                      - generic: LUMBAR
+                      - generic: 4 x 15
+                - button "Glute Bridge con Pausa (3s) Glúteos · isquios LUMBAR 4 x 15":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Glute Bridge con Pausa (3s)
+                    - paragraph: Glúteos · isquios
+                    - generic:
+                      - generic: LUMBAR
+                      - generic: 4 x 15
+                - button "Glute Bridge March Glúteos · core estabilizador CORE 3 x 12/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Glute Bridge March
+                    - paragraph: Glúteos · core estabilizador
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 12/lado
+                - button "Glute Bridge Unilateral Glúteo · isquios LUMBAR 3 x 12/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Glute Bridge Unilateral
+                    - paragraph: Glúteo · isquios
+                    - generic:
+                      - generic: LUMBAR
+                      - generic: 3 x 12/lado
+                - button "Good Morning (sin peso) Isquios · lumbar · glúteos LEGS 3 x 12":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Good Morning (sin peso)
+                    - paragraph: Isquios · lumbar · glúteos
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 12
+                - button "Handstand 60s Libre Equilibrio total SKILL intentos x obj 60s libre":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Handstand 60s Libre
+                    - paragraph: Equilibrio total
+                    - generic:
+                      - generic: SKILL
+                      - generic: intentos x obj 60s libre
+                - button "Handstand contra Pared Hombros · core · equilibrio SKILL 3 x 30-60s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Handstand contra Pared
+                    - paragraph: Hombros · core · equilibrio
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x 30-60s
+                - button "Handstand Libre (intentos) Equilibrio · hombros · core SKILL múltiples x intentos 5-15s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Handstand Libre (intentos)
+                    - paragraph: Equilibrio · hombros · core
+                    - generic:
+                      - generic: SKILL
+                      - generic: múltiples x intentos 5-15s
+                - button "Handstand Push-up (pared) Deltoides · tríceps · core SKILL 5 x 5-8":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Handstand Push-up (pared)
+                    - paragraph: Deltoides · tríceps · core
+                    - generic:
+                      - generic: SKILL
+                      - generic: 5 x 5-8
+                - button "Hip Flexor 90/90 Psoas · cápsula de cadera MOVILIDAD 3 x 90s/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Hip Flexor 90/90
+                    - paragraph: Psoas · cápsula de cadera
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 90s/lado
+                - button "Hip Flexor Stretch (Psoas) Psoas · ilíaco MOVILIDAD 3 x 60s/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Hip Flexor Stretch (Psoas)
+                    - paragraph: Psoas · ilíaco
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 60s/lado
+                - button "Hip Mobility Full Routine Cadera completa · lumbar MOVILIDAD 1 x 10 min":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Hip Mobility Full Routine
+                    - paragraph: Cadera completa · lumbar
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 1 x 10 min
+                - button "Hollow Body Hold Core profundo · TvA CORE 3 x 20-30s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Hollow Body Hold
+                    - paragraph: Core profundo · TvA
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 20-30s
+                - button "Hollow Body Rock Core profundo CORE 3 x 15-20":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Hollow Body Rock
+                    - paragraph: Core profundo
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 15-20
+                - button "Hollow-to-Arch Swing Core total · dorsal · glúteos CORE 3 x 10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Hollow-to-Arch Swing
+                    - paragraph: Core total · dorsal · glúteos
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 10
+                - button "Human Flag Progresión Oblicuos · hombros · dorsal SKILL 3 x 5-10s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Human Flag Progresión
+                    - paragraph: Oblicuos · hombros · dorsal
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x 5-10s
+                - button "Inverted Row con Pausa Romboides · trapecio medio PULL 4 x 10-12":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Inverted Row con Pausa
+                    - paragraph: Romboides · trapecio medio
+                    - generic:
+                      - generic: PULL
+                      - generic: 4 x 10-12
+                - button "Jefferson Curl (muy lento) Columna · isquios · lumbar MOVILIDAD 3 x 8":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Jefferson Curl (muy lento)
+                    - paragraph: Columna · isquios · lumbar
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 8
+                - button "Jefferson Curl + Peso Columna · isquios MOVILIDAD 3 x 8 (con 2-5kg)":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Jefferson Curl + Peso
+                    - paragraph: Columna · isquios
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 8 (con 2-5kg)
+                - button "Jump Squat Piernas · explosividad LEGS 3 x 10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Jump Squat
+                    - paragraph: Piernas · explosividad
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 10
+                - button "L-sit 30s Core · flexores · hombros SKILL 5 x 30s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: L-sit 30s
+                    - paragraph: Core · flexores · hombros
+                    - generic:
+                      - generic: SKILL
+                      - generic: 5 x 30s
+                - button "L-sit 45s Objetivo Core · flexores · hombros SKILL 4 x máx (obj 45s)":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: L-sit 45s Objetivo
+                    - paragraph: Core · flexores · hombros
+                    - generic:
+                      - generic: SKILL
+                      - generic: 4 x máx (obj 45s)
+                - button "L-sit Paralelas/Sillas Core · flexores cadera · hombros SKILL 4 x 15-25s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: L-sit Paralelas/Sillas
+                    - paragraph: Core · flexores cadera · hombros
+                    - generic:
+                      - generic: SKILL
+                      - generic: 4 x 15-25s
+                - button "L-sit Progresión Core · flexores de cadera SKILL 3 x 15-20s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: L-sit Progresión
+                    - paragraph: Core · flexores de cadera
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x 15-20s
+                - button "Muscle-up Pull + Push completo SKILL 3 x 3-5 (o negativas)":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Muscle-up
+                    - paragraph: Pull + Push completo
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x 3-5 (o negativas)
+                - button "Muscle-up Negativo Full tirón + empuje SKILL 3 x 5 (5s)":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Muscle-up Negativo
+                    - paragraph: Full tirón + empuje
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x 5 (5s)
+                - button "Muscle-up x5 Flow Full tirón + empuje SKILL 4 x 5 seguidos":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Muscle-up x5 Flow
+                    - paragraph: Full tirón + empuje
+                    - generic:
+                      - generic: SKILL
+                      - generic: 4 x 5 seguidos
+                - button "Nordic Curl (Regresión) Isquiotibiales LEGS 3 x 6-8":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Nordic Curl (Regresión)
+                    - paragraph: Isquiotibiales
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 6-8
+                - button "Nordic Curl Completo Isquiotibiales LEGS 3 x 5-8":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Nordic Curl Completo
+                    - paragraph: Isquiotibiales
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 5-8
+                - button "Nordic Curl Full Isquiotibiales LEGS 4 x 8-10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Nordic Curl Full
+                    - paragraph: Isquiotibiales
+                    - generic:
+                      - generic: LEGS
+                      - generic: 4 x 8-10
+                - button "One-Arm Pull-up Progresión Dorsal unilateral PULL 4 x 3-5/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: One-Arm Pull-up Progresión
+                    - paragraph: Dorsal unilateral
+                    - generic:
+                      - generic: PULL
+                      - generic: 4 x 3-5/lado
+                - button "One-Arm Push-up Pecho unilateral total PUSH 4 x 5/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: One-Arm Push-up
+                    - paragraph: Pecho unilateral total
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 5/lado
+                - button "One-Arm Push-up Progresión Pecho unilateral total PUSH 4 x 5/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: One-Arm Push-up Progresión
+                    - paragraph: Pecho unilateral total
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 5/lado
+                - button "Pigeon Pose Glúteo · piriforme MOVILIDAD 2 x 90s/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pigeon Pose
+                    - paragraph: Glúteo · piriforme
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 2 x 90s/lado
+                - button "Pike HSPU Deltoides · tríceps PUSH 4 x 6-10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pike HSPU
+                    - paragraph: Deltoides · tríceps
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 6-10
+                - button "Pike Push-up Deltoides · tríceps PUSH 3 x 8-10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pike Push-up
+                    - paragraph: Deltoides · tríceps
+                    - generic:
+                      - generic: PUSH
+                      - generic: 3 x 8-10
+                - button "Pike Push-up Elevado Deltoides · tríceps PUSH 4 x 8-10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pike Push-up Elevado
+                    - paragraph: Deltoides · tríceps
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 8-10
+                - button "Pistol Squat Libre Cuádriceps · glúteo · equilibrio LEGS 4 x 5/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pistol Squat Libre
+                    - paragraph: Cuádriceps · glúteo · equilibrio
+                    - generic:
+                      - generic: LEGS
+                      - generic: 4 x 5/lado
+                - button "Pistol Squat Progresión Cuádriceps · glúteo · equilibrio LEGS 3 x 8/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pistol Squat Progresión
+                    - paragraph: Cuádriceps · glúteo · equilibrio
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 8/lado
+                - button "Pistol Squat Volumen Cuádriceps · glúteo LEGS 5 x 8/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pistol Squat Volumen
+                    - paragraph: Cuádriceps · glúteo
+                    - generic:
+                      - generic: LEGS
+                      - generic: 5 x 8/lado
+                - button "Planche Lean Hombros · wrist · core SKILL 4 x 20-30s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Planche Lean
+                    - paragraph: Hombros · wrist · core
+                    - generic:
+                      - generic: SKILL
+                      - generic: 4 x 20-30s
+                - button "Plank Core total CORE 3 x 30-45s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Plank
+                    - paragraph: Core total
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 30-45s
+                - button "Plank Toque de Hombros Core antirotación CORE 3 x 12/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Plank Toque de Hombros
+                    - paragraph: Core antirotación
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 12/lado
+                - button "Pseudo Planche Push-up Hombros anteriores · pecho SKILL 3 x 6-8":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pseudo Planche Push-up
+                    - paragraph: Hombros anteriores · pecho
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x 6-8
+                - button "Pull-up Asistida o Negativas Dorsal · bíceps PULL 4 x 5-8":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pull-up Asistida o Negativas
+                    - paragraph: Dorsal · bíceps
+                    - generic:
+                      - generic: PULL
+                      - generic: 4 x 5-8
+                - button "Pull-up con Mochila Dorsal · bíceps PULL 5 x 6-8":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pull-up con Mochila
+                    - paragraph: Dorsal · bíceps
+                    - generic:
+                      - generic: PULL
+                      - generic: 5 x 6-8
+                - button "Pull-up Estricto Dorsal ancho · bíceps PULL 5 x máx (obj 8-12)":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Pull-up Estricto
+                    - paragraph: Dorsal ancho · bíceps
+                    - generic:
+                      - generic: PULL
+                      - generic: 5 x máx (obj 8-12)
+                - button "Push-up Estándar Pecho · hombros · tríceps PUSH 4 x 8-12":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Push-up Estándar
+                    - paragraph: Pecho · hombros · tríceps
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 8-12
+                - button "Renegade Row Dorsal · core antirotación CORE 3 x 10/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Renegade Row
+                    - paragraph: Dorsal · core antirotación
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 10/lado
+                - button "Retracción Escapular Romboides · trapecios PULL 3 x 10-12":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Retracción Escapular
+                    - paragraph: Romboides · trapecios
+                    - generic:
+                      - generic: PULL
+                      - generic: 3 x 10-12
+                - button "Reverse Lunge Cuádriceps · glúteos · isquios LEGS 3 x 10/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Reverse Lunge
+                    - paragraph: Cuádriceps · glúteos · isquios
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 10/lado
+                - button "Ring Dips (o Dips con peso) Tríceps · pecho · estabilizadores PUSH 4 x 8-10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Ring Dips (o Dips con peso)
+                    - paragraph: Tríceps · pecho · estabilizadores
+                    - generic:
+                      - generic: PUSH
+                      - generic: 4 x 8-10
+                - button "Seated Forward Fold Isquiotibiales · lumbar MOVILIDAD 3 x 60s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Seated Forward Fold
+                    - paragraph: Isquiotibiales · lumbar
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 60s
+                - button "Sentadilla Goblet Cuádriceps · glúteos · core CORE 4 x 12-15":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Sentadilla Goblet
+                    - paragraph: Cuádriceps · glúteos · core
+                    - generic:
+                      - generic: CORE
+                      - generic: 4 x 12-15
+                - button "Shrimp Squat Completo Cuádriceps · tobillo · equilibrio LEGS 3 x 8/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Shrimp Squat Completo
+                    - paragraph: Cuádriceps · tobillo · equilibrio
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 8/lado
+                - button "Shrimp Squat Progresión Cuádriceps · equilibrio LEGS 3 x 6/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Shrimp Squat Progresión
+                    - paragraph: Cuádriceps · equilibrio
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 6/lado
+                - button "Side Plank Oblicuos · cuadrado lumbar CORE 3 x 30s/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Side Plank
+                    - paragraph: Oblicuos · cuadrado lumbar
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 30s/lado
+                - button "Single Leg RDL Isquios · glúteo · lumbar LUMBAR 3 x 10/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Single Leg RDL
+                    - paragraph: Isquios · glúteo · lumbar
+                    - generic:
+                      - generic: LUMBAR
+                      - generic: 3 x 10/lado
+                - button "Skill Complex (elige 3 skills) Variable SKILL 3 x según skill":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Skill Complex (elige 3 skills)
+                    - paragraph: Variable
+                    - generic:
+                      - generic: SKILL
+                      - generic: 3 x según skill
+                - button "Squat con Pausa (3s) Cuádriceps · glúteos LEGS 4 x 10":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Squat con Pausa (3s)
+                    - paragraph: Cuádriceps · glúteos
+                    - generic:
+                      - generic: LEGS
+                      - generic: 4 x 10
+                - button "Step-up Explosivo Glúteo · cuádriceps LEGS 3 x 10/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Step-up Explosivo
+                    - paragraph: Glúteo · cuádriceps
+                    - generic:
+                      - generic: LEGS
+                      - generic: 3 x 10/lado
+                - button "Stretching Psoas Psoas · ilíaco MOVILIDAD 2 x 90s/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Stretching Psoas
+                    - paragraph: Psoas · ilíaco
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 2 x 90s/lado
+                - button "Superman Hold Erectores · glúteos · lumbar LUMBAR 3 x 10 (3s arriba)":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Superman Hold
+                    - paragraph: Erectores · glúteos · lumbar
+                    - generic:
+                      - generic: LUMBAR
+                      - generic: 3 x 10 (3s arriba)
+                - button "Test de Fuerza Mensual Full body FULL 1 x máx en todo":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Test de Fuerza Mensual
+                    - paragraph: Full body
+                    - generic:
+                      - generic: FULL
+                      - generic: 1 x máx en todo
+                - button "Thoracic Extension (toalla) Columna torácica MOVILIDAD 3 x 60s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Thoracic Extension (toalla)
+                    - paragraph: Columna torácica
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 60s
+                - button "Thoracic Mobility Full Columna torácica completa MOVILIDAD 2 x 10 min total":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Thoracic Mobility Full
+                    - paragraph: Columna torácica completa
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 2 x 10 min total
+                - button "Thoracic Rotation Columna torácica · oblicuos MOVILIDAD 3 x 10/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Thoracic Rotation
+                    - paragraph: Columna torácica · oblicuos
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 10/lado
+                - button "Towel Pull Apart Deltoides posterior PULL 3 x 15":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Towel Pull Apart
+                    - paragraph: Deltoides posterior
+                    - generic:
+                      - generic: PULL
+                      - generic: 3 x 15
+                - button "Tuck Planche Hombros anteriores · core SKILL 4 x 5-15s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Tuck Planche
+                    - paragraph: Hombros anteriores · core
+                    - generic:
+                      - generic: SKILL
+                      - generic: 4 x 5-15s
+                - button "Typewriter Pull-up Dorsal unilateral PULL 3 x 6 totales":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Typewriter Pull-up
+                    - paragraph: Dorsal unilateral
+                    - generic:
+                      - generic: PULL
+                      - generic: 3 x 6 totales
+                - button "Wall Sit Cuádriceps · core CORE 3 x 45s":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Wall Sit
+                    - paragraph: Cuádriceps · core
+                    - generic:
+                      - generic: CORE
+                      - generic: 3 x 45s
+                - button "Wide Push-up Pecho externo · deltoides PUSH 3 x 10-15":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Wide Push-up
+                    - paragraph: Pecho externo · deltoides
+                    - generic:
+                      - generic: PUSH
+                      - generic: 3 x 10-15
+                - button "World's Greatest Stretch Full body · cadena posterior MOVILIDAD 3 x 6/lado":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: World's Greatest Stretch
+                    - paragraph: Full body · cadena posterior
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 3 x 6/lado
+                - button "Yoga Flow Lumbar (15 min) Columna completa · caderas MOVILIDAD 1 x 15 min":
+                  - generic:
+                    - img
+                  - generic:
+                    - generic:
+                      - generic: Yoga Flow Lumbar (15 min)
+                    - paragraph: Columna completa · caderas
+                    - generic:
+                      - generic: MOVILIDAD
+                      - generic: 1 x 15 min
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - paragraph: Instala Calistenia como app
+            - paragraph: Recibe notificaciones, accede sin conexion y abre mas rapido desde tu pantalla de inicio
+          - button "Cerrar": ×
+        - generic:
+          - generic: Busca el icono de instalar en la barra de direcciones de tu navegador
+          - button "Entendido"
+  - dialog "Buscar ejercicios" [ref=e245]:
+    - button "Close" [active] [ref=e246] [cursor=pointer]: ×
+    - banner [ref=e248]: Buscar ejercicios
+    - generic [ref=e249]: Busca por nombre entre todos los ejercicios disponibles.
+    - contentinfo [ref=e250]:
+      - generic [ref=e251]: 1 de 3
+      - generic [ref=e252]:
+        - button "Anterior" [disabled]
+        - button "Siguiente" [ref=e253] [cursor=pointer]
+  - img

@@ -1,0 +1,19 @@
+[     573ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/sleep_entries/records?page=1&perPage=500&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27&sort=-date:0
+[     659ms] [WARNING] PB sleep_entries load error, using localStorage ClientResponseError 404: Missing collection context.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async init (http://localhost:5173/src/hooks/useSleep.ts:63:23) @ http://localhost:5173/src/hooks/useSleep.ts:85
+[   10428ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/sleep_entries/records?page=1&perPage=500&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27&sort=-date:0
+[   10428ms] [WARNING] PB sleep_entries load error, using localStorage ClientResponseError 404: Missing collection context.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async init (http://localhost:5173/src/hooks/useSleep.ts:63:23) @ http://localhost:5173/src/hooks/useSleep.ts:85
+[   17068ms] [WARNING] Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. @ http://localhost:5173/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=cf501dc3:1501
+[   17070ms] [WARNING] Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. @ http://localhost:5173/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=cf501dc3:1501
+[   64734ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/sleep_entries/records:0
+[   64735ms] [WARNING] PB sleep create error: ClientResponseError 404: Missing or invalid collection context.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async http://localhost:5173/src/hooks/useSleep.ts:117:21
+    at async handleSave (http://localhost:5173/src/pages/SleepPage.tsx:273:7) @ http://localhost:5173/src/hooks/useSleep.ts:133
+[   80726ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/sleep_entries/records?page=1&perPage=500&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27&sort=-date:0
+[   80727ms] [WARNING] PB sleep_entries load error, using localStorage ClientResponseError 404: Missing collection context.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async init (http://localhost:5173/src/hooks/useSleep.ts:63:23) @ http://localhost:5173/src/hooks/useSleep.ts:85

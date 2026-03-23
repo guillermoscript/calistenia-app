@@ -1,0 +1,94 @@
+[  319785ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5176/src/App.tsx?t=1774189715341:0
+[  319785ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  355497ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5176/src/components/sleep/SleepDashboardWidget.tsx?t=1774189751064:0
+[  355497ms] [ERROR] [vite] Failed to reload /src/components/sleep/SleepDashboardWidget.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418408ms] Error: useAuthContext must be used within AuthProvider
+    at useAuthContext (http://localhost:5176/src/contexts/AuthContext.tsx:9:19)
+    at useAuthState (http://localhost:5176/src/contexts/AuthContext.tsx:15:10)
+    at AppInner (http://localhost:5176/src/App.tsx?t=1774189751080:1167:61)
+    at Object.react_stack_bottom_frame (http://localhost:5176/node_modules/.vite/deps/react-dom_client.js?v=ea6eda84:18509:20)
+    at renderWithHooks (http://localhost:5176/node_modules/.vite/deps/react-dom_client.js?v=ea6eda84:5654:24)
+    at updateFunctionComponent (http://localhost:5176/node_modules/.vite/deps/react-dom_client.js?v=ea6eda84:7475:21)
+    at beginWork (http://localhost:5176/node_modules/.vite/deps/react-dom_client.js?v=ea6eda84:8525:20)
+    at runWithFiberInDEV (http://localhost:5176/node_modules/.vite/deps/react-dom_client.js?v=ea6eda84:997:72)
+    at performUnitOfWork (http://localhost:5176/node_modules/.vite/deps/react-dom_client.js?v=ea6eda84:12561:98)
+    at workLoopSync (http://localhost:5176/node_modules/.vite/deps/react-dom_client.js?v=ea6eda84:12424:43)
+[  418407ms] [WARNING] %s
+
+%s
+ An error occurred in the <AppInner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5176/node_modules/.vite/deps/react-dom_client.js?v=ea6eda84:6965
+[  418416ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/contexts/WorkoutContext.tsx?t=1774189813917:0
+[  418416ms] [ERROR] [vite] Failed to reload /src/contexts/WorkoutContext.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418417ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/App.tsx?t=1774189813923:0
+[  418417ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418417ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813923:0
+[  418417ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418417ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/AppTour.tsx?t=1774189813926:0
+[  418417ms] [ERROR] [vite] Failed to reload /src/components/AppTour.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418418ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813926:0
+[  418418ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418418ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813929:0
+[  418418ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418419ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813932:0
+[  418419ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418420ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813935:0
+[  418420ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418421ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813936:0
+[  418421ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418422ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/button.tsx?t=1774189813943:0
+[  418422ms] [ERROR] [vite] Failed to reload /src/components/ui/button.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418422ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813943:0
+[  418422ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/card.tsx?t=1774189813946:0
+[  418423ms] [ERROR] [vite] Failed to reload /src/components/ui/card.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813946:0
+[  418423ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813949:0
+[  418424ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/dialog.tsx?t=1774189813949:0
+[  418424ms] [ERROR] [vite] Failed to reload /src/components/ui/dialog.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/input.tsx?t=1774189813952:0
+[  418425ms] [ERROR] [vite] Failed to reload /src/components/ui/input.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813952:0
+[  418425ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/label.tsx?t=1774189813955:0
+[  418426ms] [ERROR] [vite] Failed to reload /src/components/ui/label.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418426ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813955:0
+[  418426ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418427ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/progress.tsx?t=1774189813958:0
+[  418427ms] [ERROR] [vite] Failed to reload /src/components/ui/progress.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418427ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813958:0
+[  418427ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418428ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/separator.tsx?t=1774189813961:0
+[  418428ms] [ERROR] [vite] Failed to reload /src/components/ui/separator.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418428ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813961:0
+[  418428ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418429ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813964:0
+[  418429ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418429ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/sheet.tsx?t=1774189813964:0
+[  418429ms] [ERROR] [vite] Failed to reload /src/components/ui/sheet.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418430ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/sidebar.tsx?t=1774189813967:0
+[  418430ms] [ERROR] [vite] Failed to reload /src/components/ui/sidebar.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418430ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813967:0
+[  418430ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418431ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813970:0
+[  418431ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418431ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/tabs.tsx?t=1774189813970:0
+[  418431ms] [ERROR] [vite] Failed to reload /src/components/ui/tabs.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813973:0
+[  418432ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/textarea.tsx?t=1774189813973:0
+[  418432ms] [ERROR] [vite] Failed to reload /src/components/ui/textarea.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418433ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813976:0
+[  418433ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418433ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/components/ui/tooltip.tsx?t=1774189813976:0
+[  418433ms] [ERROR] [vite] Failed to reload /src/components/ui/tooltip.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418433ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813980:0
+[  418434ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418434ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813983:0
+[  418434ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418435ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5176/src/index.css?t=1774189813986:0
+[  418435ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5176/@vite/client:808
+[  418632ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5176/src/App.tsx:0
+[  917422ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ chrome-error://chromewebdata/:0

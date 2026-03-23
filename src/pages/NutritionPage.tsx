@@ -395,6 +395,19 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               entries={entries}
               onDeleteEntry={deleteEntry}
               onEditEntry={updateEntry}
+              onDuplicateEntry={async (entry) => {
+                await saveEntry({
+                  user: userId || undefined,
+                  mealType: entry.mealType,
+                  foods: entry.foods.map(f => ({ ...f })),
+                  totalCalories: entry.totalCalories,
+                  totalProtein: entry.totalProtein,
+                  totalCarbs: entry.totalCarbs,
+                  totalFat: entry.totalFat,
+                  loggedAt: new Date().toISOString(),
+                })
+                toast.success('Comida duplicada')
+              }}
               selectedDate={selectedDate}
             />
           </div>

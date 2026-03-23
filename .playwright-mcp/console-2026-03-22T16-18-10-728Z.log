@@ -1,0 +1,8 @@
+[     677ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/users/records?page=1&perPage=1&filter=referral_code%20%3D%20%27INVALID-CODE-123%27:0
+[     677ms] [ERROR] InviteLandingPage: load error ClientResponseError 400: Something went wrong while processing your request.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/pages/InviteLandingPage.tsx:29:23) @ http://localhost:5173/src/pages/InviteLandingPage.tsx:114
+[     679ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/users/records?page=1&perPage=1&filter=referral_code%20%3D%20%27INVALID-CODE-123%27:0
+[     684ms] [ERROR] InviteLandingPage: load error ClientResponseError 400: Something went wrong while processing your request.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/pages/InviteLandingPage.tsx:29:23) @ http://localhost:5173/src/pages/InviteLandingPage.tsx:114

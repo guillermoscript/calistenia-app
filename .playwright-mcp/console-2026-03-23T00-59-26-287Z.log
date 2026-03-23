@@ -1,0 +1,15 @@
+[  135308ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:45
+[  135308ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:45
+[  135308ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:45
+[  135308ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:45
+[  135308ms] [WARNING] Failed to load exercise progressions: ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:31:21) @ http://localhost:5173/src/hooks/useProgressions.ts?t=1774213317764:45

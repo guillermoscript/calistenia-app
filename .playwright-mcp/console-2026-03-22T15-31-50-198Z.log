@@ -1,0 +1,24 @@
+[     314ms] [ERROR] UserProfilePage: load error ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/pages/UserProfilePage.tsx?t=1774192471658:39:22) @ http://localhost:5173/src/pages/UserProfilePage.tsx?t=1774192471658:112
+[     329ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/sessions/records?page=1&perPage=100&filter=user%20%3D%20%275s0dt3u4ewyw89z%27%20%26%26%20created%20%3E%3D%20%272026-02-28%2023%3A00%3A00.000Z%27:0
+[   16534ms] [ERROR] RoutineViewPage: load error ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/pages/RoutineViewPage.tsx:26:22) @ http://localhost:5173/src/pages/RoutineViewPage.tsx:81
+[  401992ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.tsx:0
+[  421204ms] [ERROR] RoutineViewPage: load error ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/pages/RoutineViewPage.tsx:26:22) @ http://localhost:5173/src/pages/RoutineViewPage.tsx:81
+[  434200ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.tsx?t=1774193944299:0
+[  434200ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:808
+[  435443ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.tsx:0
+[  455409ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.tsx?t=1774193965513:0
+[  476655ms] [ERROR] RoutineViewPage: load error ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async load (http://localhost:5173/src/pages/RoutineViewPage.tsx:26:22) @ http://localhost:5173/src/pages/RoutineViewPage.tsx:81
+[  542283ms] [ERROR] [vite] SyntaxError: The requested module '/src/components/icons/nav-icons.tsx' does not provide an export named 'BellIcon' @ http://localhost:5173/@vite/client:808
+[  542283ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:808
+[  552847ms] [ERROR] [vite] SyntaxError: The requested module '/src/components/icons/nav-icons.tsx' does not provide an export named 'BellIcon' @ http://localhost:5173/@vite/client:808
+[  552847ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:808
+[  566984ms] [ERROR] [vite] SyntaxError: The requested module '/src/components/icons/nav-icons.tsx' does not provide an export named 'BellIcon' @ http://localhost:5173/@vite/client:808
+[  566984ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:808

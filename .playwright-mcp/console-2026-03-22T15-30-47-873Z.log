@@ -1,0 +1,2 @@
+[   45794ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=50&filter=user%20%3D%20%275s0dt3u4ewyw89z%27&sort=-created&expand=actor:0
+[   45795ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=50&filter=user%20%3D%20%275s0dt3u4ewyw89z%27&sort=-created&expand=actor:0

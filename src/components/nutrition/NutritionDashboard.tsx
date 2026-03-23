@@ -13,6 +13,7 @@ interface NutritionDashboardProps {
   entries: NutritionEntry[]
   onDeleteEntry?: (id: string) => void
   onEditEntry?: (id: string, data: Partial<NutritionEntry>) => Promise<void>
+  onDuplicateEntry?: (entry: NutritionEntry) => void
   selectedDate?: string
 }
 
@@ -65,7 +66,7 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
   )
 }
 
-export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry, selectedDate }: NutritionDashboardProps) {
+export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry, onDuplicateEntry, selectedDate }: NutritionDashboardProps) {
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
@@ -195,11 +196,19 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             </span>
                           </div>
 
-                          {/* Food names — only for medium/large */}
+                          {/* Food names — only for medium/large, with x2/x3 for repeated items */}
                           {weight !== 'small' && (() => {
-                            const foodNames = entry.foods.map(f => f.name).filter(Boolean)
-                            const summary = foodNames.length > 0
-                              ? foodNames.join(', ')
+                            const counts = new Map<string, number>()
+                            for (const f of entry.foods) {
+                              if (!f.name) continue
+                              counts.set(f.name, (counts.get(f.name) || 0) + 1)
+                            }
+                            const parts: string[] = []
+                            for (const [name, count] of counts) {
+                              parts.push(count > 1 ? `${name} x${count}` : name)
+                            }
+                            const summary = parts.length > 0
+                              ? parts.join(', ')
                               : `${entry.foods.length} alimento${entry.foods.length !== 1 ? 's' : ''}`
                             return (
                               <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{summary}</div>
@@ -220,6 +229,15 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                         {/* Actions */}
                         {entry.id && (
                           <div className="flex gap-0.5 shrink-0 self-start">
+                            {onDuplicateEntry && (
+                              <button
+                                onClick={() => onDuplicateEntry(entry)}
+                                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-lime hover:bg-lime/10 transition-colors"
+                                aria-label="Duplicar"
+                              >
+                                <CopyIcon className="size-3.5" />
+                              </button>
+                            )}
                             {onEditEntry && (
                               <button
                                 onClick={() => setEditingEntry(entry)}
@@ -269,13 +287,28 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             )
                           })()}
                           <div className="pt-3 space-y-1.5">
-                            {entry.foods.map((food, fi) => (
-                              <div key={fi} className="flex items-center gap-2 text-xs">
-                                <span className="flex-1 text-foreground/80">{food.name || 'Sin nombre'}</span>
-                                <span className="text-muted-foreground/60 text-[10px]">{(food as any).portionAmount ?? ''}{(food as any).portionUnit ?? (food as any).portion ?? ''}</span>
-                                <span className="text-muted-foreground w-12 text-right tabular-nums">{food.calories} kcal</span>
-                              </div>
-                            ))}
+                            {(() => {
+                              // Group foods by name to show x2, x3 with aggregated macros
+                              const grouped: { food: typeof entry.foods[0]; count: number }[] = []
+                              for (const food of entry.foods) {
+                                const existing = grouped.find(g => g.food.name === food.name && food.name)
+                                if (existing) {
+                                  existing.count++
+                                } else {
+                                  grouped.push({ food, count: 1 })
+                                }
+                              }
+                              return grouped.map((g, fi) => (
+                                <div key={fi} className="flex items-center gap-2 text-xs">
+                                  <span className="flex-1 text-foreground/80">
+                                    {g.food.name || 'Sin nombre'}
+                                    {g.count > 1 && <span className="text-lime ml-1 font-medium">x{g.count}</span>}
+                                  </span>
+                                  <span className="text-muted-foreground/60 text-[10px]">{(g.food as any).portionAmount ?? ''}{(g.food as any).portionUnit ?? (g.food as any).portion ?? ''}</span>
+                                  <span className="text-muted-foreground w-14 text-right tabular-nums">{Math.round(g.food.calories * g.count)} kcal</span>
+                                </div>
+                              ))
+                            })()}
                           </div>
                         </div>
                       )}
@@ -319,6 +352,15 @@ function EditIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M11.33 2a1.89 1.89 0 012.67 2.67L5.33 13.33 2 14l.67-3.33L11.33 2z" />
+    </svg>
+  )
+}
+
+function CopyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+      <path d="M10.5 5.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v6A1.5 1.5 0 003 10.5h2.5" />
     </svg>
   )
 }

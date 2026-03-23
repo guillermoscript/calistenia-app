@@ -1,0 +1,28 @@
+[     239ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=1&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27%20%26%26%20read%20%3D%20false:0
+[     239ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=1&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27%20%26%26%20read%20%3D%20false:0
+[     353ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=1&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27%20%26%26%20read%20%3D%20false:0
+[     353ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=50&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27&sort=-created&expand=actor:0
+[     353ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=1&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27%20%26%26%20read%20%3D%20false:0
+[     353ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8090/api/collections/notifications/records?page=1&perPage=50&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27&sort=-created&expand=actor:0
+[  489896ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  490200ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  490704ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  491708ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  492911ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  494415ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  496417ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  498420ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  500424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  502428ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  504430ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  506433ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  508437ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  510440ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  512444ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  514447ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  516451ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  518453ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  520455ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/realtime:0
+[  521258ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/health:0
+[  521258ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/collections/cardio_sessions/records?page=1&perPage=500&filter=user%20%3D%20%27vhdy4rvk21wl9k5%27&sort=-started_at&fields=id%2Cactivity_type%2Cdistance_km%2Cduration_seconds%2Cavg_pace%2Celevation_gain%2Cstarted_at%2Cfinished_at%2Cnote%2Ccalories_burned%2Cmax_pace%2Cavg_speed_kmh%2Cmax_speed_kmh%2Csplits:0
+[  521259ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8090/api/collections/users/auth-refresh:0

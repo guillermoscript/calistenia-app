@@ -1,0 +1,10 @@
+[   14655ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/meal_reminders/records:0
+[   14655ms] [WARNING] PB meal_reminders create error: ClientResponseError 400: Failed to create record.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async http://localhost:5173/src/hooks/useMealReminders.ts?t=1774227209936:70:21
+    at async handleSave (http://localhost:5173/src/pages/RemindersPage.tsx?t=1774227260136:153:9) @ http://localhost:5173/src/hooks/useMealReminders.ts?t=1774227209936:79
+[   28167ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/workout_reminders/records:0
+[   28167ms] [WARNING] PB workout_reminders create error: ClientResponseError 400: Failed to create record.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async http://localhost:5173/src/hooks/useWorkoutReminders.ts?t=1774226688262:67:21
+    at async handleSave (http://localhost:5173/src/pages/RemindersPage.tsx?t=1774227260136:155:9) @ http://localhost:5173/src/hooks/useWorkoutReminders.ts?t=1774226688262:75

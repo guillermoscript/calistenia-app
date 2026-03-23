@@ -5,6 +5,8 @@ import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { cn } from '../lib/utils'
+import { ShareButton } from '../components/ShareButton'
+import { shareRoutine } from '../lib/share'
 
 interface ProgramPhase {
   id: string
@@ -190,7 +192,15 @@ export default function RoutineViewPage() {
         <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">
           Programa actual de {userName}
         </div>
-        <h1 className="font-bebas text-3xl sm:text-4xl leading-none">{programName}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="font-bebas text-3xl sm:text-4xl leading-none">{programName}</h1>
+          {userId && (
+            <ShareButton
+              onShare={(method) => shareRoutine(userName, programName, userId, method)}
+              className="shrink-0 hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
+            />
+          )}
+        </div>
         {durationWeeks > 0 && (
           <div className="text-xs text-muted-foreground mt-1">{durationWeeks} semanas</div>
         )}

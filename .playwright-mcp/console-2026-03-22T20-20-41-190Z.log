@@ -1,0 +1,40 @@
+[ 4405730ms] Error: useAuthContext must be used within AuthProvider
+    at useAuthContext (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774213317764:9:19)
+    at useAuthState (http://localhost:5173/src/contexts/AuthContext.tsx?t=1774213317764:15:10)
+    at AppInner (http://localhost:5173/src/App.tsx?t=1774214489189:1225:61)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:12424:43)
+[ 4405729ms] [WARNING] %s
+
+%s
+ An error occurred in the <AppInner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=cf501dc3:6965
+[ 5921505ms] [ERROR] PocketBase nutrition load error, falling back to localStorage ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async Promise.all (index 0)
+    at async loadFromPB (http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:82:38)
+    at async init (http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:67:9) @ http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:135
+[ 5943105ms] [ERROR] PocketBase load error, falling back to localStorage ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async Promise.all (index 0)
+    at async loadFromPB (http://localhost:5173/src/hooks/useProgress.ts?t=1774213317764:72:38)
+    at async init (http://localhost:5173/src/hooks/useProgress.ts?t=1774213317764:47:9) @ http://localhost:5173/src/hooks/useProgress.ts?t=1774213317764:150
+[ 5943105ms] [ERROR] PocketBase load error, falling back to localStorage ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async Promise.all (index 1)
+    at async loadFromPB (http://localhost:5173/src/hooks/useProgress.ts?t=1774213317764:72:38) @ http://localhost:5173/src/hooks/useProgress.ts?t=1774213317764:150
+[ 5943106ms] [ERROR] PocketBase nutrition load error, falling back to localStorage ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async Promise.all (index 1)
+    at async loadFromPB (http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:82:38)
+    at async init (http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:67:9) @ http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:135
+[ 5943106ms] [ERROR] PocketBase nutrition load error, falling back to localStorage ClientResponseError 0: Something went wrong.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async Promise.all (index 0)
+    at async loadFromPB (http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:82:38)
+    at async init (http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:67:9) @ http://localhost:5173/src/hooks/useNutrition.ts?t=1774213317764:135

@@ -1,0 +1,14 @@
+[  158959ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:8090/api/collections/sessions/records:0
+[  158959ms] [WARNING] PB sessions error: ClientResponseError 400: Failed to create record.
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async http://localhost:5173/src/hooks/useProgress.ts?t=1774222277342:203:9 @ http://localhost:5173/src/hooks/useProgress.ts?t=1774222277342:204
+[  159393ms] [ERROR] Access to fetch at 'https://zenquotes.io/api/random' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5173/free-session:0
+[  159394ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://zenquotes.io/api/random:0
+[  159531ms] [ERROR] Access to fetch at 'https://zenquotes.io/api/random' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5173/free-session:0
+[  159532ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://zenquotes.io/api/random:0
+[  174850ms] [WARNING] PB weight_entries load error, using localStorage ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async init (http://localhost:5173/src/hooks/useWeight.ts:27:23) @ http://localhost:5173/src/hooks/useWeight.ts:39
+[  174850ms] [WARNING] PB body_photos load error ClientResponseError 0: The request was aborted (most likely autocancelled; you can find more info in https://github.com/pocketbase/js-sdk#auto-cancellation).
+    at http://localhost:5173/node_modules/pocketbase/dist/pocketbase.es.mjs?v=cf501dc3:1:37329
+    at async init (http://localhost:5173/src/hooks/useBodyPhotos.ts:16:23) @ http://localhost:5173/src/hooks/useBodyPhotos.ts:28

@@ -5,7 +5,7 @@ import { useMealReminders } from '../hooks/useMealReminders'
 import { useWorkoutReminders } from '../hooks/useWorkoutReminders'
 import { subscribeToPush, getSubscriptionStatus, getNotificationSupport, requestNotificationPermission } from '../lib/push-subscription'
 import { scheduleAll, buildSchedulableReminders, setupVisibilityRescheduler } from '../lib/reminder-scheduler'
-import type { MealReminder, MealType } from '../types'
+import type { MealType } from '../types'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -53,6 +53,12 @@ const MEAL_META: Record<string, { icon: string; label: string }> = {
   snack:    { icon: '🍎', label: 'Snack' },
 }
 
+const FORM_LABELS: Record<string, string> = {
+  meal: 'Nuevo recordatorio de comida',
+  workout: 'Nuevo recordatorio de ejercicio',
+  pause: 'Nuevas pausas activas',
+}
+
 type ReminderType = 'meal' | 'workout' | 'pause'
 
 // Unified reminder shape for the timeline
@@ -67,6 +73,18 @@ interface TimelineItem {
   subLabel?: string
 }
 
+function clampHour(val: string): string {
+  const n = parseInt(val)
+  if (isNaN(n)) return '00'
+  return String(Math.min(23, Math.max(0, n))).padStart(2, '0')
+}
+
+function clampMinute(val: string): string {
+  const n = parseInt(val)
+  if (isNaN(n)) return '00'
+  return String(Math.min(59, Math.max(0, n))).padStart(2, '0')
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 interface RemindersPageProps {
@@ -75,7 +93,7 @@ interface RemindersPageProps {
 
 export default function RemindersPage({ userId }: RemindersPageProps) {
   const {
-    getReminders: getMealReminders,
+    reminders: mealReminders,
     saveReminder: saveMealReminder,
     toggleReminder: toggleMealReminder,
     deleteReminder: deleteMealReminder,
@@ -87,7 +105,6 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     deleteReminder: deleteWorkoutReminder,
   } = useWorkoutReminders(userId)
 
-  const [mealReminders, setMealReminders] = useState<MealReminder[]>([])
   const [pushEnabled, setPushEnabled] = useState(false)
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>('default')
   const [showForm, setShowForm] = useState<ReminderType | null>(null)
@@ -95,6 +112,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set())
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   // Form state
   const [mealType, setMealType] = useState<MealType>('almuerzo')
@@ -109,11 +127,10 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
   useEffect(() => {
     if (!userId) return
-    getMealReminders().then(setMealReminders).catch(() => {})
     getSubscriptionStatus().then(setPushEnabled).catch(() => {})
     const support = getNotificationSupport()
     setNotifPermission(support.permission)
-  }, [userId, getMealReminders])
+  }, [userId])
 
   // ── Build sorted timeline ─────────────────────────────────────────────────
   const timeline = useMemo((): TimelineItem[] => {
@@ -164,29 +181,24 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
   const setupNotifications = async (): Promise<void> => {
     setWarning(null)
 
-    // Step 1: Request basic notification permission
     const granted = await requestNotificationPermission()
     setNotifPermission(granted ? 'granted' : ('Notification' in window ? Notification.permission : 'unsupported'))
 
     if (!granted) {
+      // Only warn for 'default' state (first prompt dismissed).
+      // 'denied' and 'unsupported' are covered by the persistent banner + header indicator.
       const support = getNotificationSupport()
-      if (!support.notifications) {
-        setWarning('Tu navegador no soporta notificaciones. Los recordatorios se guardan, pero no podras recibir alertas en este dispositivo.')
-      } else if (support.permission === 'denied') {
-        setWarning('Las notificaciones estan bloqueadas. Ve a los ajustes de tu navegador y permite notificaciones para este sitio.')
-      } else {
+      if (support.permission === 'default') {
         setWarning('Necesitas permitir notificaciones para recibir recordatorios.')
       }
       return
     }
 
-    // Step 2: Try push subscription (optional — works on supported browsers)
     if (userId) {
       const ok = await subscribeToPush(userId)
       setPushEnabled(ok)
       if (!ok) {
-        // Push not available but basic notifications work — this is fine for local scheduling
-        setWarning('Recordatorio guardado. Las notificaciones funcionaran mientras la app este abierta. Para recibir alertas con la app cerrada, instala la app desde el menu de tu navegador.')
+        setWarning('Las notificaciones funcionaran mientras la app este abierta. Para alertas con la app cerrada, instala la app desde el menu del navegador.')
       }
     }
   }
@@ -197,20 +209,27 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     setError(null)
     setWarning(null)
     try {
-      // Always save the reminder first — notifications are a bonus, not a gate
+      const h = parseInt(hour) || 0
+      const m = parseInt(minute) || 0
+      const clampedH = Math.min(23, Math.max(0, h))
+      const clampedM = Math.min(59, Math.max(0, m))
+
       if (showForm === 'meal') {
-        await saveMealReminder(mealType, parseInt(hour) || 12, parseInt(minute) || 0, days)
-        setMealReminders(await getMealReminders())
+        await saveMealReminder(mealType, clampedH, clampedM, days)
       } else if (showForm === 'workout') {
-        await saveWorkoutReminder(parseInt(hour) || 8, parseInt(minute) || 0, days)
+        await saveWorkoutReminder(clampedH, clampedM, days)
       } else if (showForm === 'pause') {
-        const interval = parseInt(pauseInterval) || 25
-        const startH = parseInt(pauseHourStart) || 9
-        const endH = parseInt(pauseHourEnd) || 18
-        for (let h = startH; h < endH; h++) {
-          for (let m = 0; m < 60; m += interval) {
-            if (h === startH && m === 0) continue
-            await saveWorkoutReminder(h, m, days)
+        const interval = Math.max(5, parseInt(pauseInterval) || 25)
+        const startH = Math.min(23, Math.max(0, parseInt(pauseHourStart) || 9))
+        const endH = Math.min(23, Math.max(0, parseInt(pauseHourEnd) || 18))
+        if (startH >= endH) {
+          setError('La hora de inicio debe ser menor que la hora de fin.')
+          return
+        }
+        for (let hr = startH; hr < endH; hr++) {
+          for (let mn = 0; mn < 60; mn += interval) {
+            if (hr === startH && mn === 0) continue
+            await saveWorkoutReminder(hr, mn, days)
           }
         }
       }
@@ -229,11 +248,11 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
   const handleDelete = async (item: TimelineItem) => {
     if (busyIds.has(item.id)) return
     setBusyIds(prev => new Set(prev).add(item.id))
+    setPendingDeleteId(null)
     try {
       const rawId = item.id.replace(/^(meal|workout)-/, '')
       if (item.type === 'meal') {
         await deleteMealReminder(rawId)
-        setMealReminders(prev => prev.filter(r => r.id !== rawId))
       } else {
         await deleteWorkoutReminder(rawId)
       }
@@ -251,7 +270,6 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       const rawId = item.id.replace(/^(meal|workout)-/, '')
       if (item.type === 'meal') {
         await toggleMealReminder(rawId, !item.enabled)
-        setMealReminders(prev => prev.map(r => r.id === rawId ? { ...r, enabled: !r.enabled } : r))
       } else {
         await toggleWorkoutReminder(rawId)
       }
@@ -268,6 +286,8 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
   const openForm = (type: ReminderType) => {
     setError(null)
+    setWarning(null)
+    setPendingDeleteId(null)
     setDays([1, 2, 3, 4, 5])
     if (type === 'meal') { setMealType('almuerzo'); setHour('12'); setMinute('00') }
     else if (type === 'workout') { setHour('08'); setMinute('00') }
@@ -315,7 +335,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       </div>
 
       {/* ── Add new ── */}
-      <div id="tour-reminders-add" className="flex gap-2 mb-8">
+      <div id="tour-reminders-add" className="flex gap-2 mb-8" role="group" aria-label="Tipo de recordatorio">
         {([
           { type: 'meal' as const, label: 'Comida', icon: '🍽️' },
           { type: 'workout' as const, label: 'Ejercicio', icon: '💪' },
@@ -324,6 +344,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           <button
             key={type}
             onClick={() => openForm(type)}
+            aria-pressed={showForm === type}
             className={cn(
               'flex-1 relative py-3 rounded-xl transition-all text-center',
               showForm === type
@@ -348,13 +369,14 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
       {/* ── Form ── */}
       {showForm && (
-        <div className="mb-8 motion-safe:animate-fade-in">
+        <fieldset className="mb-8 motion-safe:animate-fade-in border-0 p-0 m-0">
+          <legend className="sr-only">{FORM_LABELS[showForm]}</legend>
           {/* Form header line */}
           <div className={cn('h-px mb-5', showForm === 'meal' ? 'bg-amber-400/30' : showForm === 'workout' ? 'bg-sky-400/30' : 'bg-violet-400/30')} />
 
           {/* Meal type (meal only) */}
           {showForm === 'meal' && (
-            <div className="mb-5">
+            <div className="mb-5" role="group" aria-label="Tipo de comida">
               <div className="grid grid-cols-4 gap-2">
                 {(['desayuno', 'almuerzo', 'cena', 'snack'] as MealType[]).map(type => {
                   const meta = MEAL_META[type]
@@ -363,6 +385,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                     <button
                       key={type}
                       onClick={() => setMealType(type)}
+                      aria-pressed={active}
                       className={cn(
                         'py-3 rounded-xl transition-all',
                         active
@@ -387,13 +410,14 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           {/* Time (meal + workout) */}
           {showForm !== 'pause' ? (
             <div className="mb-5 space-y-3">
-              <div className="flex items-center">
+              <div className="flex items-center" role="group" aria-label="Hora del recordatorio">
                 <input
                   type="number"
                   min={0}
                   max={23}
                   value={hour}
                   onChange={e => setHour(e.target.value)}
+                  onBlur={() => setHour(clampHour(hour))}
                   aria-label="Hora"
                   className="w-[4.5rem] h-14 text-center font-bebas text-3xl bg-muted/30 rounded-xl border-0 focus:outline-none focus:ring-1 focus:ring-lime-400/30 tabular-nums"
                 />
@@ -405,12 +429,13 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                   step={5}
                   value={minute}
                   onChange={e => setMinute(e.target.value)}
+                  onBlur={() => setMinute(clampMinute(minute))}
                   aria-label="Minutos"
                   className="w-[4.5rem] h-14 text-center font-bebas text-3xl bg-muted/30 rounded-xl border-0 focus:outline-none focus:ring-1 focus:ring-lime-400/30 tabular-nums"
                 />
               </div>
               {/* Quick presets */}
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5" role="group" aria-label="Horas predefinidas">
                 {(showForm === 'meal'
                   ? [['07', '00'], ['12', '00'], ['15', '00'], ['20', '00']]
                   : [['06', '00'], ['07', '00'], ['08', '00'], ['18', '00']]
@@ -418,6 +443,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                   <button
                     key={`${h}${m}`}
                     onClick={() => { setHour(h); setMinute(m) }}
+                    aria-pressed={hour === h && minute === m}
                     className={cn(
                       'flex-1 py-2 rounded-xl text-[11px] font-mono tabular-nums transition-colors',
                       hour === h && minute === m
@@ -434,12 +460,13 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
             /* Pause settings */
             <div className="mb-5 space-y-4">
               <div>
-                <div className="text-[9px] text-muted-foreground/60 tracking-widest uppercase mb-2">Cada</div>
-                <div className="flex gap-1.5">
+                <div className="text-[10px] text-muted-foreground/60 tracking-widest uppercase mb-2">Cada</div>
+                <div className="flex gap-1.5" role="group" aria-label="Intervalo de pausas">
                   {['25', '30', '45', '60'].map(v => (
                     <button
                       key={v}
                       onClick={() => setPauseInterval(v)}
+                      aria-pressed={pauseInterval === v}
                       className={cn(
                         'flex-1 py-2.5 rounded-xl text-sm font-mono transition-all',
                         pauseInterval === v
@@ -453,20 +480,21 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                 </div>
               </div>
               <div>
-                <div className="text-[9px] text-muted-foreground/60 tracking-widest uppercase mb-2">Horario laboral</div>
-                <div className="flex items-center gap-2">
+                <div className="text-[10px] text-muted-foreground/60 tracking-widest uppercase mb-2">Horario laboral</div>
+                <div className="flex items-center gap-2" role="group" aria-label="Rango horario">
                   <input
                     type="number"
                     min={0}
                     max={23}
                     value={pauseHourStart}
                     onChange={e => setPauseHourStart(e.target.value)}
+                    onBlur={() => setPauseHourStart(clampHour(pauseHourStart))}
                     aria-label="Hora de inicio"
                     className="w-16 h-12 text-center font-bebas text-2xl bg-muted/30 rounded-xl border-0 focus:outline-none focus:ring-1 focus:ring-violet-400/30 tabular-nums"
                   />
                   <div className="flex flex-col items-center" aria-hidden="true">
                     <div className="w-4 h-px bg-muted-foreground/30" />
-                    <span className="text-[9px] text-muted-foreground/40 font-mono">a</span>
+                    <span className="text-[10px] text-muted-foreground/40 font-mono">a</span>
                     <div className="w-4 h-px bg-muted-foreground/30" />
                   </div>
                   <input
@@ -475,6 +503,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                     max={23}
                     value={pauseHourEnd}
                     onChange={e => setPauseHourEnd(e.target.value)}
+                    onBlur={() => setPauseHourEnd(clampHour(pauseHourEnd))}
                     aria-label="Hora de fin"
                     className="w-16 h-12 text-center font-bebas text-2xl bg-muted/30 rounded-xl border-0 focus:outline-none focus:ring-1 focus:ring-violet-400/30 tabular-nums"
                   />
@@ -485,12 +514,13 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           )}
 
           {/* Days */}
-          <div className="flex gap-1 mb-5">
+          <div className="flex gap-1 mb-5" role="group" aria-label="Dias de la semana">
             {DAY_LABELS.map(d => (
               <button
                 key={d.id}
                 onClick={() => toggleDay(d.id)}
-                title={d.full}
+                aria-pressed={days.includes(d.id)}
+                aria-label={d.full}
                 className={cn(
                   'flex-1 h-10 rounded-xl text-[11px] font-mono transition-all',
                   days.includes(d.id)
@@ -504,14 +534,14 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           </div>
 
           {error && (
-            <div className="text-[11px] text-red-400 mb-4 flex items-start gap-2">
+            <div className="text-[11px] text-red-400 mb-4 flex items-start gap-2" role="alert">
               <span className="shrink-0 mt-px">!</span>
               {error}
             </div>
           )}
 
           {warning && (
-            <div className="text-[11px] text-amber-400/80 mb-4 flex items-start gap-2 bg-amber-400/5 rounded-lg px-3 py-2.5 border border-amber-400/15">
+            <div className="text-[11px] text-amber-400/80 mb-4 flex items-start gap-2 bg-amber-400/5 rounded-lg px-3 py-2.5 border border-amber-400/15" role="status">
               <span className="shrink-0 mt-px">⚠</span>
               {warning}
             </div>
@@ -526,11 +556,11 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           </Button>
 
           <div className={cn('h-px mt-6', showForm === 'meal' ? 'bg-amber-400/30' : showForm === 'workout' ? 'bg-sky-400/30' : 'bg-violet-400/30')} />
-        </div>
+        </fieldset>
       )}
 
-      {/* Notification status banner */}
-      {notifPermission === 'denied' && timeline.length > 0 && (
+      {/* Notification status banner — hide when form is open to avoid duplicate warnings */}
+      {!showForm && notifPermission === 'denied' && timeline.length > 0 && (
         <div className="mb-6 px-4 py-3 rounded-xl bg-red-400/5 border border-red-400/15">
           <div className="text-[12px] text-red-400 font-medium mb-1">Notificaciones bloqueadas</div>
           <div className="text-[11px] text-muted-foreground leading-relaxed">
@@ -539,7 +569,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         </div>
       )}
 
-      {notifPermission === 'unsupported' && timeline.length > 0 && (
+      {!showForm && notifPermission === 'unsupported' && timeline.length > 0 && (
         <div className="mb-6 px-4 py-3 rounded-xl bg-amber-400/5 border border-amber-400/15">
           <div className="text-[12px] text-amber-400 font-medium mb-1">Notificaciones no soportadas</div>
           <div className="text-[11px] text-muted-foreground leading-relaxed">
@@ -561,12 +591,13 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
               const itemMinutes = item.hour * 60 + item.minute
               const isPast = itemMinutes < nowMinutes
               const isNext = !isPast && (i === 0 || (timeline[i - 1].hour * 60 + timeline[i - 1].minute) < nowMinutes)
+              const isConfirmingDelete = pendingDeleteId === item.id
 
               return (
                 <div
                   key={item.id}
                   className={cn(
-                    'group flex items-center gap-0 transition-opacity',
+                    'group flex items-center gap-0 transition-[opacity] duration-200',
                     !item.enabled && 'opacity-40',
                   )}
                 >
@@ -600,7 +631,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {item.subLabel && <span className="text-sm">{item.subLabel}</span>}
                         <span className="text-[13px] font-medium text-foreground truncate">{item.label}</span>
-                        <span className={cn('text-[8px] font-mono tracking-[0.15em] uppercase shrink-0', cfg.color)}>
+                        <span className={cn('text-[10px] font-mono tracking-[0.15em] uppercase shrink-0', cfg.color)}>
                           {cfg.label}
                         </span>
                       </div>
@@ -610,7 +641,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                           <span
                             key={d.id}
                             className={cn(
-                              'text-[8px] font-mono leading-none',
+                              'text-[10px] font-mono leading-none',
                               item.days.includes(d.id) ? cfg.color : 'text-muted-foreground/20'
                             )}
                           >
@@ -639,14 +670,33 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                       </div>
                     </button>
 
-                    {/* Delete — 44px touch target */}
-                    <button
-                      onClick={() => handleDelete(item)}
-                      className="size-11 flex items-center justify-center text-muted-foreground/30 hover:text-red-400 rounded-lg shrink-0 transition-colors sm:opacity-0 sm:group-hover:opacity-100 -mr-1.5"
-                      aria-label="Eliminar"
-                    >
-                      <XIcon className="size-3.5" />
-                    </button>
+                    {/* Delete — 44px touch target, with confirmation */}
+                    {isConfirmingDelete ? (
+                      <div className="flex items-center gap-0.5 shrink-0 -mr-1.5">
+                        <button
+                          onClick={() => handleDelete(item)}
+                          className="size-11 flex items-center justify-center text-red-400 rounded-lg transition-colors"
+                          aria-label="Confirmar eliminar"
+                        >
+                          <CheckIcon className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => setPendingDeleteId(null)}
+                          className="size-11 flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground rounded-lg transition-colors"
+                          aria-label="Cancelar"
+                        >
+                          <XIcon className="size-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setPendingDeleteId(item.id)}
+                        className="size-11 flex items-center justify-center text-muted-foreground/30 hover:text-red-400 rounded-lg shrink-0 transition-colors sm:opacity-0 sm:group-hover:opacity-100 -mr-1.5"
+                        aria-label="Eliminar"
+                      >
+                        <XIcon className="size-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               )
@@ -683,6 +733,14 @@ function XIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  )
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
     </svg>
   )
 }

@@ -3,6 +3,14 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 
 const LS_KEY = 'calistenia_workout_reminders'
 
+function parseDaysOfWeek(raw: unknown): number[] {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') {
+    try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) return parsed } catch {}
+  }
+  return [1, 2, 3, 4, 5]
+}
+
 export interface WorkoutReminder {
   id: string
   hour: number
@@ -39,7 +47,7 @@ export function useWorkoutReminders(userId: string | null = null) {
             id: r.id,
             hour: r.hour,
             minute: r.minute,
-            daysOfWeek: typeof r.days_of_week === 'string' ? JSON.parse(r.days_of_week) : r.days_of_week || [1, 2, 3, 4, 5],
+            daysOfWeek: parseDaysOfWeek(r.days_of_week),
             enabled: r.enabled,
           }))
           setReminders(loaded)
@@ -71,7 +79,7 @@ export function useWorkoutReminders(userId: string | null = null) {
           user: userId,
           hour,
           minute,
-          days_of_week: JSON.stringify(daysOfWeek),
+          days_of_week: daysOfWeek,
           enabled: true,
         })
         reminder.id = rec.id

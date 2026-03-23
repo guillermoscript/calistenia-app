@@ -1,25 +1,56 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Cron job: check meal reminders every minute and send push notifications
+/**
+ * Helper: parse days_of_week from a record.
+ * Handles both array and JSON-string formats.
+ */
+function parseDaysOfWeek(raw) {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    } catch (e) {}
+  }
+  return [1, 2, 3, 4, 5]
+}
+
+/**
+ * Helper: send a push notification to a user via the API.
+ */
+function sendPush(userId, title, body, url) {
+  try {
+    const apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
+    $http.send({
+      url: `${apiUrl}/api/send-push`,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, title, body, url }),
+      timeout: 10,
+    })
+  } catch (e) {
+    console.log("Push send error:", e)
+  }
+}
+
+// ── Meal reminders ─────────────────────────────────────────────────────────
 cronAdd("push_meal_reminders", "* * * * *", () => {
   const now = new Date()
   const currentHour = now.getHours()
   const currentMinute = now.getMinutes()
   const currentDay = now.getDay() // 0=Sunday
 
-  // Find active reminders matching current time
   let reminders
   try {
-    reminders = $app
-      .findRecordsByFilter(
-        "meal_reminders",
-        `enabled = true && hour = ${currentHour} && minute = ${currentMinute}`,
-        "-created",
-        100,
-        0
-      )
+    reminders = $app.findRecordsByFilter(
+      "meal_reminders",
+      `enabled = true && hour = ${currentHour} && minute = ${currentMinute}`,
+      "-created",
+      100,
+      0
+    )
   } catch (e) {
-    return // no reminders found
+    return
   }
 
   if (!reminders || reminders.length === 0) return
@@ -29,12 +60,11 @@ cronAdd("push_meal_reminders", "* * * * *", () => {
   for (const reminder of reminders) {
     const userId = reminder.getString("user")
     const mealType = reminder.getString("meal_type")
-    const daysOfWeek = reminder.get("days_of_week") || [1, 2, 3, 4, 5]
+    const daysOfWeek = parseDaysOfWeek(reminder.get("days_of_week"))
 
-    // Check if today is in allowed days
     if (!daysOfWeek.includes(currentDay)) continue
 
-    // Check if user already logged this meal type today
+    // Skip if user already logged this meal type today
     try {
       const logged = $app.findRecordsByFilter(
         "nutrition_entries",
@@ -43,12 +73,12 @@ cronAdd("push_meal_reminders", "* * * * *", () => {
         1,
         0
       )
-      if (logged && logged.length > 0) continue // already logged
+      if (logged && logged.length > 0) continue
     } catch (e) {
-      // No entries found — proceed with notification
+      // No entries found — proceed
     }
 
-    // Get today's calorie total for the notification body
+    // Get today's calorie progress for the notification body
     let todayCalories = 0
     let dailyGoal = 0
     try {
@@ -64,9 +94,7 @@ cronAdd("push_meal_reminders", "* * * * *", () => {
           todayCalories += entry.getFloat("total_calories")
         }
       }
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
 
     try {
       const goals = $app.findRecordsByFilter(
@@ -79,9 +107,7 @@ cronAdd("push_meal_reminders", "* * * * *", () => {
       if (goals && goals.length > 0) {
         dailyGoal = goals[0].getFloat("daily_calories")
       }
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
 
     const mealLabels = {
       desayuno: "desayuno",
@@ -96,26 +122,43 @@ cronAdd("push_meal_reminders", "* * * * *", () => {
       body = `Llevas ${Math.round(todayCalories)}/${Math.round(dailyGoal)} kcal hoy`
     }
 
-    // Send push via the API
-    try {
-      const apiUrl =
-        $os.getenv("AI_API_URL") || "http://localhost:3001"
-      $http.send({
-        url: `${apiUrl}/api/send-push`,
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          title: `Hora de registrar tu ${label}`,
-          body: body,
-          url: "/nutrition",
-        }),
-        timeout: 10,
-      })
-    } catch (e) {
-      console.log("Push send error:", e)
-    }
+    sendPush(userId, `Hora de registrar tu ${label}`, body, "/nutrition")
+  }
+})
+
+// ── Workout reminders ──────────────────────────────────────────────────────
+cronAdd("push_workout_reminders", "* * * * *", () => {
+  const now = new Date()
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
+  const currentDay = now.getDay() // 0=Sunday
+
+  let reminders
+  try {
+    reminders = $app.findRecordsByFilter(
+      "workout_reminders",
+      `enabled = true && hour = ${currentHour} && minute = ${currentMinute}`,
+      "-created",
+      100,
+      0
+    )
+  } catch (e) {
+    return
+  }
+
+  if (!reminders || reminders.length === 0) return
+
+  for (const reminder of reminders) {
+    const userId = reminder.getString("user")
+    const daysOfWeek = parseDaysOfWeek(reminder.get("days_of_week"))
+
+    if (!daysOfWeek.includes(currentDay)) continue
+
+    sendPush(
+      userId,
+      "Hora de entrenar!",
+      "Tu entrenamiento te espera. No pierdas la racha!",
+      "/workout"
+    )
   }
 })
