@@ -79,7 +79,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── OAuth 2.1 provider (PocketBase-backed) ───────────────────────────────────
 
-const oauthProvider = new PocketBaseOAuthProvider(PB_URL);
+const oauthProvider = new PocketBaseOAuthProvider(PB_URL, SERVER_URL);
 const serverUrl = new URL(SERVER_URL);
 const mcpUrl = new URL("/mcp", serverUrl);
 
@@ -94,8 +94,8 @@ app.use(
   })
 );
 
-// Login form handler (called from the OAuth authorize page)
-app.use(createLoginRouter(PB_URL));
+// Login form handler + OAuth provider callback
+app.use(createLoginRouter(PB_URL, SERVER_URL));
 
 // ── MCP endpoint (OAuth-protected) ───────────────────────────────────────────
 

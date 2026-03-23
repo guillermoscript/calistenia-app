@@ -2,14 +2,14 @@
  * OAuth 2.1 Authorization Server Provider for Calistenia MCP
  *
  * Implements the MCP SDK's OAuthServerProvider interface using PocketBase
- * as the identity provider. Supports:
- *   - Dynamic Client Registration (RFC 7591)
- *   - Authorization Code + PKCE (OAuth 2.1)
- *   - Token Refresh
- *   - Token Revocation (RFC 7009)
+ * as the identity provider. Supports Google OAuth (via PocketBase) and
+ * optional email/password fallback.
  *
- * All state is in-memory (clients, codes, tokens). A server restart
- * invalidates everything — clients re-register automatically.
+ * Flow for Google OAuth:
+ *   1. Claude Desktop → GET /authorize → renders login page with Google button
+ *   2. User clicks Google → redirected to Google OAuth
+ *   3. Google → GET /auth/callback → exchanges code with PocketBase
+ *   4. MCP server creates auth code → redirects to Claude Desktop
  */
 
 import { randomUUID } from "node:crypto";
@@ -33,6 +33,13 @@ interface PendingAuth {
   client: OAuthClientInformationFull;
   params: AuthorizationParams;
   createdAt: number;
+}
+
+/** Maps PocketBase OAuth state → our authId so we can find the pending auth after provider callback */
+interface PbOAuthPending {
+  authId: string;
+  providerName: string;
+  codeVerifier: string;
 }
 
 interface StoredAuthCode {
@@ -60,6 +67,7 @@ interface StoredToken {
 
 const clients = new Map<string, OAuthClientInformationFull>();
 const pendingAuths = new Map<string, PendingAuth>();
+const pbOAuthPendings = new Map<string, PbOAuthPending>(); // PB state → pending info
 const authCodes = new Map<string, StoredAuthCode>();
 const accessTokens = new Map<string, StoredToken>();
 const refreshTokens = new Map<string, string>(); // refreshToken → accessToken
@@ -68,7 +76,9 @@ const refreshTokens = new Map<string, string>(); // refreshToken → accessToken
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of pendingAuths) {
-    if (now - v.createdAt > 10 * 60 * 1000) pendingAuths.delete(k);
+    if (now - v.createdAt > 10 * 60 * 1000) {
+      pendingAuths.delete(k);
+    }
   }
   for (const [k, v] of authCodes) {
     if (now > v.expiresAt) authCodes.delete(k);
@@ -115,20 +125,59 @@ class InMemoryClientStore implements OAuthRegisteredClientsStore {
   }
 }
 
+// ── Helper: complete pending auth → create MCP auth code → redirect URL ─────
+
+function completePendingAuth(
+  authId: string,
+  userId: string,
+  pbToken: string,
+  email: string
+): string | null {
+  const pending = pendingAuths.get(authId);
+  if (!pending) return null;
+
+  pendingAuths.delete(authId);
+
+  const code = randomUUID();
+  authCodes.set(code, {
+    clientId: pending.client.client_id,
+    codeChallenge: pending.params.codeChallenge,
+    redirectUri: pending.params.redirectUri,
+    userId,
+    pbToken,
+    email,
+    scopes: pending.params.scopes ?? ["mcp:tools"],
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  });
+
+  console.error(`[OAuth] Auth code issued for ${email}`);
+
+  const redirectUrl = new URL(pending.params.redirectUri);
+  redirectUrl.searchParams.set("code", code);
+  if (pending.params.state) {
+    redirectUrl.searchParams.set("state", pending.params.state);
+  }
+
+  return redirectUrl.toString();
+}
+
 // ── OAuth Provider ───────────────────────────────────────────────────────────
 
 export class PocketBaseOAuthProvider implements OAuthServerProvider {
   private clientStore = new InMemoryClientStore();
 
-  constructor(private pbUrl: string) {}
+  constructor(
+    private pbUrl: string,
+    private serverUrl: string
+  ) {}
 
   get clientsStore(): OAuthRegisteredClientsStore {
     return this.clientStore;
   }
 
   /**
-   * Renders a login page. The form submits to POST /auth/login,
-   * which authenticates with PocketBase and redirects back with an auth code.
+   * Fetches PocketBase auth methods and renders a login page with
+   * Google OAuth button and optional email/password form.
    */
   async authorize(
     client: OAuthClientInformationFull,
@@ -138,10 +187,86 @@ export class PocketBaseOAuthProvider implements OAuthServerProvider {
     const authId = randomUUID();
     pendingAuths.set(authId, { client, params, createdAt: Date.now() });
 
+    // Fetch available auth methods from PocketBase
+    const pb = new PocketBase(this.pbUrl);
+    let providers: Array<{
+      name: string;
+      displayName: string;
+      state: string;
+      codeVerifier: string;
+      authURL: string;
+    }> = [];
+    let passwordEnabled = false;
+
+    try {
+      const methods = await pb.collection("users").listAuthMethods();
+      passwordEnabled = methods.password?.enabled ?? false;
+
+      if (methods.oauth2?.enabled && methods.oauth2.providers) {
+        const callbackUrl = `${this.serverUrl}/auth/callback`;
+        providers = methods.oauth2.providers.map((p: any) => {
+          // Store PB OAuth state → our authId mapping
+          pbOAuthPendings.set(p.state, {
+            authId,
+            providerName: p.name,
+            codeVerifier: p.codeVerifier,
+          });
+
+          // Build the full auth URL with our callback
+          const authUrl = new URL(p.authURL);
+          authUrl.searchParams.set("redirect_uri", callbackUrl);
+          return {
+            name: p.name,
+            displayName: p.displayName ?? p.name,
+            state: p.state,
+            codeVerifier: p.codeVerifier,
+            authURL: authUrl.toString(),
+          };
+        });
+      }
+    } catch (err) {
+      console.error("[OAuth] Failed to fetch PB auth methods:", err);
+    }
+
+    // Build provider buttons HTML
+    const providerButtons = providers
+      .map(
+        (p) =>
+          `<a href="${escapeHtml(p.authURL)}" class="btn provider-btn">${escapeHtml(p.displayName)}</a>`
+      )
+      .join("\n      ");
+
+    const passwordFormHtml = passwordEnabled
+      ? `
+      <div class="divider"><span>or</span></div>
+      <form id="f">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email" />
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+        <input type="hidden" name="auth_id" value="${authId}" />
+        <button type="submit" class="btn btn-secondary" id="btn">Sign In with Email</button>
+      </form>
+      <script>
+        document.getElementById("f").addEventListener("submit",async e=>{
+          e.preventDefault();
+          const btn=document.getElementById("btn"),err=document.getElementById("err");
+          btn.disabled=true;btn.textContent="Signing in...";err.style.display="none";
+          try{
+            const fd=new FormData(e.target);
+            const r=await fetch("/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.fromEntries(fd))});
+            const d=await r.json();
+            if(d.redirect){window.location.href=d.redirect}
+            else{err.textContent=d.error||"Invalid credentials";err.style.display="block";btn.disabled=false;btn.textContent="Sign In with Email"}
+          }catch{err.textContent="Network error";err.style.display="block";btn.disabled=false;btn.textContent="Sign In with Email"}
+        });
+      </script>`
+      : "";
+
     res.type("html").send(`<!DOCTYPE html>
 <html lang="en"><head>
   <meta charset="utf-8">
-  <title>Calistenia – Sign In</title>
+  <title>Calistenia - Sign In</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -152,41 +277,27 @@ export class PocketBaseOAuthProvider implements OAuthServerProvider {
     label{display:block;font-size:.875rem;margin-bottom:.25rem;color:#d4d4d4}
     input[type=email],input[type=password]{width:100%;padding:.625rem .75rem;border:1px solid #404040;border-radius:8px;background:#262626;color:#e5e5e5;font-size:1rem;margin-bottom:1rem}
     input:focus{outline:none;border-color:#3b82f6}
-    button{width:100%;padding:.75rem;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:500;transition:background .15s}
-    button:hover{background:#2563eb}
-    button:disabled{opacity:.6;cursor:not-allowed}
+    .btn{display:block;width:100%;padding:.75rem;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:500;transition:background .15s;text-align:center;text-decoration:none;margin-bottom:.5rem}
+    .provider-btn{background:#fff;color:#1a1a1a}
+    .provider-btn:hover{background:#e5e5e5}
+    .btn-secondary{background:#3b82f6;color:#fff}
+    .btn-secondary:hover{background:#2563eb}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
     .err{background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:.875rem;color:#fca5a5;display:none}
     .info{font-size:.8rem;color:#737373;margin-top:1rem;text-align:center}
+    .divider{display:flex;align-items:center;margin:1.25rem 0;color:#525252;font-size:.8rem}
+    .divider::before,.divider::after{content:'';flex:1;border-bottom:1px solid #333}
+    .divider span{padding:0 .75rem}
   </style>
 </head><body>
   <div class="card">
     <h1>Calistenia</h1>
     <p class="sub">Sign in to authorize access to your account.</p>
     <div class="err" id="err"></div>
-    <form id="f">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" required autocomplete="email" autofocus />
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" required autocomplete="current-password" />
-      <input type="hidden" name="auth_id" value="${authId}" />
-      <button type="submit" id="btn">Sign In</button>
-    </form>
+    ${providerButtons || "<p style='color:#737373;font-size:.875rem'>No login methods available</p>"}
+    ${passwordFormHtml}
     <p class="info">Requested by: ${escapeHtml(client.client_name ?? client.client_id)}</p>
   </div>
-  <script>
-    document.getElementById("f").addEventListener("submit",async e=>{
-      e.preventDefault();
-      const btn=document.getElementById("btn"),err=document.getElementById("err");
-      btn.disabled=true;btn.textContent="Signing in…";err.style.display="none";
-      try{
-        const fd=new FormData(e.target);
-        const r=await fetch("/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.fromEntries(fd))});
-        const d=await r.json();
-        if(d.redirect){window.location.href=d.redirect}
-        else{err.textContent=d.error||"Invalid credentials";err.style.display="block";btn.disabled=false;btn.textContent="Sign In"}
-      }catch{err.textContent="Network error";err.style.display="block";btn.disabled=false;btn.textContent="Sign In"}
-    });
-  </script>
 </body></html>`);
   }
 
@@ -337,11 +448,69 @@ export class PocketBaseOAuthProvider implements OAuthServerProvider {
   }
 }
 
-// ── Login route (form submission handler) ────────────────────────────────────
+// ── Auth routes ──────────────────────────────────────────────────────────────
 
-export function createLoginRouter(pbUrl: string): Router {
+export function createLoginRouter(pbUrl: string, serverUrl: string): Router {
   const router = Router();
 
+  // ── Google/OAuth provider callback ──────────────────────────────────────
+  router.get("/auth/callback", async (req: Request, res: Response) => {
+    const { code, state, error } = req.query as Record<string, string>;
+
+    if (error) {
+      res.status(400).send(`<h1>Authorization failed</h1><p>${escapeHtml(error)}</p>`);
+      return;
+    }
+
+    if (!state || !code) {
+      res.status(400).send("<h1>Missing code or state parameter</h1>");
+      return;
+    }
+
+    // Look up PocketBase OAuth pending by state
+    const pbPending = pbOAuthPendings.get(state);
+    if (!pbPending) {
+      res.status(400).send("<h1>Invalid or expired OAuth state</h1><p>Please try logging in again.</p>");
+      return;
+    }
+
+    pbOAuthPendings.delete(state);
+
+    try {
+      const pb = new PocketBase(pbUrl);
+      const callbackUrl = `${serverUrl}/auth/callback`;
+
+      // Exchange the provider code with PocketBase
+      const authResult = await pb.collection("users").authWithOAuth2Code(
+        pbPending.providerName,
+        code,
+        pbPending.codeVerifier,
+        callbackUrl
+      );
+
+      console.error(`[OAuth] PB OAuth success: ${authResult.record.email} via ${pbPending.providerName}`);
+
+      // Complete the MCP auth flow
+      const redirectUrl = completePendingAuth(
+        pbPending.authId,
+        authResult.record.id,
+        pb.authStore.token,
+        authResult.record.email as string
+      );
+
+      if (!redirectUrl) {
+        res.status(400).send("<h1>Authorization session expired</h1><p>Please try again.</p>");
+        return;
+      }
+
+      res.redirect(redirectUrl);
+    } catch (err) {
+      console.error("[OAuth] PB OAuth code exchange failed:", err instanceof Error ? err.message : err);
+      res.status(500).send("<h1>Authentication failed</h1><p>Could not complete sign-in. Please try again.</p>");
+    }
+  });
+
+  // ── Email/password login (fallback) ────────────────────────────────────
   router.post("/auth/login", async (req: Request, res: Response) => {
     const { email, password, auth_id } = req.body;
 
@@ -355,31 +524,19 @@ export function createLoginRouter(pbUrl: string): Router {
       const pb = new PocketBase(pbUrl);
       const authResult = await pb.collection("users").authWithPassword(email, password);
 
-      pendingAuths.delete(auth_id);
+      const redirectUrl = completePendingAuth(
+        auth_id,
+        authResult.record.id,
+        pb.authStore.token,
+        authResult.record.email as string
+      );
 
-      // Store authorization code
-      const code = randomUUID();
-      authCodes.set(code, {
-        clientId: pending.client.client_id,
-        codeChallenge: pending.params.codeChallenge,
-        redirectUri: pending.params.redirectUri,
-        userId: authResult.record.id,
-        pbToken: pb.authStore.token,
-        email: authResult.record.email as string,
-        scopes: pending.params.scopes ?? ["mcp:tools"],
-        expiresAt: Date.now() + 5 * 60 * 1000,
-      });
-
-      console.error(`[OAuth] Auth code issued for ${authResult.record.email}`);
-
-      // Redirect back to the client
-      const redirectUrl = new URL(pending.params.redirectUri);
-      redirectUrl.searchParams.set("code", code);
-      if (pending.params.state) {
-        redirectUrl.searchParams.set("state", pending.params.state);
+      if (!redirectUrl) {
+        res.status(400).json({ error: "Authorization session expired" });
+        return;
       }
 
-      res.json({ redirect: redirectUrl.toString() });
+      res.json({ redirect: redirectUrl });
     } catch (err) {
       console.error("[OAuth] Login failed:", err instanceof Error ? err.message : err);
       res.status(401).json({ error: "Invalid email or password" });
