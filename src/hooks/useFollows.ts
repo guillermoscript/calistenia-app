@@ -87,18 +87,14 @@ export function useFollows(userId: string | null): UseFollowsReturn {
 
   const follow = useCallback(async (targetUserId: string): Promise<boolean> => {
     if (!userId) return false
+    if (followingIds.has(targetUserId)) return true // Already following
     // Optimistic update — instant UI feedback
     setFollowingIds(prev => new Set([...prev, targetUserId]))
     try {
-      const authId = pb.authStore.record?.id
-      if (userId !== authId) {
-        console.warn('Follow: userId mismatch!', { userId, authId })
-      }
       await pb.collection('follows').create({
-        follower: authId,
+        follower: pb.authStore.record?.id ?? userId,
         following: targetUserId,
       })
-      load() // Reload full data in background
       return true
     } catch (e: any) {
       // Revert optimistic update
@@ -110,10 +106,11 @@ export function useFollows(userId: string | null): UseFollowsReturn {
       console.warn('Follow error:', e?.status, JSON.stringify(e?.response), e?.message)
       return false
     }
-  }, [userId, load])
+  }, [userId, followingIds])
 
   const unfollow = useCallback(async (targetUserId: string): Promise<boolean> => {
     if (!userId) return false
+    if (!followingIds.has(targetUserId)) return true // Already not following
     // Optimistic update — instant UI feedback
     setFollowingIds(prev => {
       const next = new Set(prev)
@@ -126,7 +123,6 @@ export function useFollows(userId: string | null): UseFollowsReturn {
         { $autoCancel: false },
       )
       await pb.collection('follows').delete(record.id)
-      load() // Reload full data in background
       return true
     } catch (e) {
       // Revert optimistic update
@@ -134,7 +130,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
       console.warn('Unfollow error:', e)
       return false
     }
-  }, [userId, load])
+  }, [userId, followingIds])
 
   const isFollowing = useCallback((targetUserId: string): boolean => {
     return followingIds.has(targetUserId)
