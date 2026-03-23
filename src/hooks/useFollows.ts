@@ -87,16 +87,22 @@ export function useFollows(userId: string | null): UseFollowsReturn {
 
   const follow = useCallback(async (targetUserId: string): Promise<boolean> => {
     if (!userId) return false
+    // Optimistic update — instant UI feedback
+    setFollowingIds(prev => new Set([...prev, targetUserId]))
     try {
       await pb.collection('follows').create({
         follower: userId,
         following: targetUserId,
       })
-      // Optimistic update
-      setFollowingIds(prev => new Set([...prev, targetUserId]))
-      await load() // Reload full data
+      load() // Reload full data in background
       return true
     } catch (e: any) {
+      // Revert optimistic update
+      setFollowingIds(prev => {
+        const next = new Set(prev)
+        next.delete(targetUserId)
+        return next
+      })
       console.warn('Follow error:', e?.status, e?.response?.data, e?.response?.message, e)
       return false
     }
@@ -104,21 +110,23 @@ export function useFollows(userId: string | null): UseFollowsReturn {
 
   const unfollow = useCallback(async (targetUserId: string): Promise<boolean> => {
     if (!userId) return false
+    // Optimistic update — instant UI feedback
+    setFollowingIds(prev => {
+      const next = new Set(prev)
+      next.delete(targetUserId)
+      return next
+    })
     try {
       const record = await pb.collection('follows').getFirstListItem(
         pb.filter('follower = {:me} && following = {:them}', { me: userId, them: targetUserId }),
         { $autoCancel: false },
       )
       await pb.collection('follows').delete(record.id)
-      // Optimistic update
-      setFollowingIds(prev => {
-        const next = new Set(prev)
-        next.delete(targetUserId)
-        return next
-      })
-      await load()
+      load() // Reload full data in background
       return true
     } catch (e) {
+      // Revert optimistic update
+      setFollowingIds(prev => new Set([...prev, targetUserId]))
       console.warn('Unfollow error:', e)
       return false
     }
