@@ -106,23 +106,32 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
 
   const query = search.trim()
 
-  // Search PocketBase with fallback: if 3-field filter fails, retry with 2-field
+  // Search with cascading fallbacks — try filters from broad to narrow
   const searchUsers = useCallback(async (page: number, q: string) => {
-    try {
-      return await pb.collection('users').getList(page, PAGE_SIZE, {
-        filter: pb.filter('display_name ~ {:q} || username ~ {:q} || name ~ {:q}', { q }),
-        $autoCancel: false,
-      })
-    } catch (e: any) {
-      // If filter failed (400 = bad filter), retry without name field
-      if (e?.status === 400) {
+    const filters = [
+      // 1. All three searchable name fields
+      () => pb.filter('display_name ~ {:q} || username ~ {:q} || name ~ {:q}', { q }),
+      // 2. Without built-in name field (may not be filterable in all PB versions)
+      () => pb.filter('display_name ~ {:q} || username ~ {:q}', { q }),
+      // 3. Single field — minimum viable search
+      () => pb.filter('username ~ {:q}', { q }),
+    ]
+
+    for (let i = 0; i < filters.length; i++) {
+      try {
         return await pb.collection('users').getList(page, PAGE_SIZE, {
-          filter: pb.filter('display_name ~ {:q} || username ~ {:q}', { q }),
+          filter: filters[i](),
           $autoCancel: false,
         })
+      } catch (e: any) {
+        console.error(`Search filter ${i + 1}/${filters.length} failed:`, e?.status, e?.message || e)
+        // If last filter also failed, throw to show error UI
+        if (i === filters.length - 1) throw e
+        // Otherwise try next filter
       }
-      throw e
     }
+    // TypeScript: unreachable but satisfies return type
+    throw new Error('All search filters failed')
   }, [])
 
   // Remote search — runs whenever the user types
@@ -148,8 +157,8 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
         setSearchResults(mapPbItems(res.items, userId))
         setHasMoreResults(res.totalPages > 1)
         setSearchPage(1)
-      } catch (e) {
-        console.error('Friend search failed:', e)
+      } catch (e: any) {
+        console.error('Friend search failed (all filters):', e?.status, e?.url, e?.message || e)
         setSearchError(true)
         setSearchResults([])
       } finally {
