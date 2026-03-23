@@ -22,11 +22,15 @@ export async function sendPushToUser(
   userId: string,
   payload: PushPayload
 ): Promise<{ sent: number; failed: number }> {
+  console.log(`[push-sender] sending to user=${userId}, vapid=${vapidPublicKey ? "set" : "MISSING"}/${vapidPrivateKey ? "set" : "MISSING"}`);
+
   const pb = await getAdminPB();
 
   const subs = await pb.collection("push_subscriptions").getList(1, 20, {
     filter: pb.filter("user = {:uid}", { uid: userId }),
   });
+
+  console.log(`[push-sender] found ${subs.items.length} subscriptions for user=${userId}`);
 
   let sent = 0;
   let failed = 0;
