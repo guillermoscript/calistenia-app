@@ -207,12 +207,17 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
   // ── Test notification ────────────────────────────────────────────────────────
   const [testingSend, setTestingSend] = useState(false)
+  const [testLog, setTestLog] = useState<string[]>([])
+  const log = (msg: string) => setTestLog(prev => [...prev, `${new Date().toLocaleTimeString()} ${msg}`])
+
   const sendTestNotification = async () => {
     setTestingSend(true)
+    setTestLog([])
     try {
-      // 1. Request permission if needed
+      log('requesting permission...')
       await setupNotifications()
-      // 2. Fire a local SW notification immediately
+
+      // 1. Fire a local SW notification
       const reg = await navigator.serviceWorker?.ready
       if (reg) {
         await reg.showNotification('Test — Pausa Activa', {
@@ -223,21 +228,23 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           vibrate: [200, 100, 200],
           requireInteraction: true,
         } as NotificationOptions)
-        console.log('[test] local SW notification fired')
+        log('local SW notification sent')
       } else {
         new Notification('Test — Pausa Activa', {
           body: 'Si ves esto, las notificaciones locales funcionan!',
           icon: '/icons/icon-192.png',
           tag: 'test-notification',
         })
-        console.log('[test] basic Notification API fired (no SW)')
+        log('basic Notification API fired (no SW)')
       }
-      // 3. Also test server-side push if push is enabled
+
+      // 2. Test server-side push
       if (pushEnabled && userId) {
-        console.log('[test] testing server push...')
+        log('testing server push...')
         const { pb } = await import('../lib/pocketbase')
+        const aiApiUrl = import.meta.env.VITE_AI_API_URL || ''
+        log(`API URL: ${aiApiUrl || '(empty)'}`)
         try {
-          const aiApiUrl = import.meta.env.VITE_AI_API_URL || ''
           const res = await fetch(`${aiApiUrl}/api/send-push`, {
             method: 'POST',
             headers: {
@@ -252,13 +259,15 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
             }),
           })
           const data = await res.json()
-          console.log('[test] push server response:', res.status, data)
-        } catch (e) {
-          console.warn('[test] push server error:', e)
+          log(`push response: ${res.status} ${JSON.stringify(data)}`)
+        } catch (e: any) {
+          log(`push ERROR: ${e.message || e}`)
         }
+      } else {
+        log(`push skipped: pushEnabled=${pushEnabled}, userId=${userId || 'null'}`)
       }
-    } catch (e) {
-      console.warn('[test] error:', e)
+    } catch (e: any) {
+      log(`error: ${e.message || e}`)
     } finally {
       setTestingSend(false)
     }
@@ -407,6 +416,18 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         >
           {testingSend ? 'enviando test...' : 'probar notificación'}
         </button>
+        {testLog.length > 0 && (
+          <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border/30 max-h-40 overflow-y-auto">
+            {testLog.map((line, i) => (
+              <div key={i} className={cn(
+                'text-[10px] font-mono leading-relaxed',
+                line.includes('ERROR') ? 'text-red-400' : line.includes('sent') || line.includes('200') ? 'text-emerald-400' : 'text-muted-foreground/70'
+              )}>
+                {line}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Add new ── */}
