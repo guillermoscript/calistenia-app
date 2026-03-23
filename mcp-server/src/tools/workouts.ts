@@ -108,16 +108,16 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
     {
       title: "Log Workout Session",
       description:
-        "Record a completed workout session. The workout_key identifies which workout was done (e.g. 'p1_lun' = Phase 1 Monday). Phase and day are auto-derived from the key if not provided.",
+        "Record a completed workout session. The workout_key identifies which workout was done (e.g. 'p1_lun' = Phase 1 Monday, 'free_timestamp' for free sessions). Phase and day are auto-derived from the key if not provided.",
       inputSchema: z
         .object({
           workout_key: z
             .string()
-            .describe("Workout identifier like 'p1_lun', 'p2_mie', etc. Format: p{phase}_{day_id}"),
-          phase: z.number().int().min(1).describe("Training phase number (1, 2, 3, ...)"),
+            .describe("Workout identifier like 'p1_lun', 'p2_mie', or 'free_{timestamp}' for free sessions"),
+          phase: z.number().int().min(0).describe("Training phase number (1-4 for programs, 0 for free sessions)"),
           day: z
             .string()
-            .describe("Day identifier: 'lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'"),
+            .describe("Day identifier: 'lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom', or 'free'"),
           completed_at: z
             .string()
             .optional()
