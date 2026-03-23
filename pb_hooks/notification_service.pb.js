@@ -8,31 +8,27 @@
  * API rules (notifications.createRule is null).
  *
  * To add a new notification type:
- * 1. Add a handler function below (e.g., notifyChallenge)
- * 2. Register it with onRecordAfterCreateSuccess for the collection
- * 3. Add the type string to NotificationsPage.tsx NOTIF_CONFIG
+ * 1. Add a handler function below
+ * 2. Register it with onRecordAfterCreateSuccess/onRecordAfterUpdateSuccess
+ * 3. Add the type string to NotificationsPage.tsx getNotificationMessage/getNotificationRoute
  */
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getUserName(userId) {
   try {
-    const user = $app.findRecordById("users", userId)
+    var user = $app.findRecordById("users", userId)
     return user.getString("display_name") || user.getString("name") || user.getString("email").split("@")[0] || ""
   } catch (e) {
     return ""
   }
 }
 
-/**
- * Create a self-notification (achievements, streaks — actor = user).
- * Skips the self-notify guard.
- */
 function createSelfNotification(userId, type, referenceId, referenceType, data) {
   if (!userId) return
   try {
-    const collection = $app.findCollectionByNameOrId("notifications")
-    const notif = new Record(collection)
+    var collection = $app.findCollectionByNameOrId("notifications")
+    var notif = new Record(collection)
     notif.set("user", userId)
     notif.set("type", type)
     notif.set("actor", userId)
@@ -42,16 +38,15 @@ function createSelfNotification(userId, type, referenceId, referenceType, data) 
     notif.set("data", JSON.stringify(data || {}))
     $app.save(notif)
   } catch (e) {
-    console.log(`[notif] self-create failed (type=${type}):`, e)
+    console.log("[notif] self-create failed (type=" + type + "):", e)
   }
 }
 
 function createNotification(userId, type, actorId, referenceId, referenceType, data) {
-  if (!userId || !actorId || userId === actorId) return // Don't notify yourself
-
+  if (!userId || !actorId || userId === actorId) return
   try {
-    const collection = $app.findCollectionByNameOrId("notifications")
-    const notif = new Record(collection)
+    var collection = $app.findCollectionByNameOrId("notifications")
+    var notif = new Record(collection)
     notif.set("user", userId)
     notif.set("type", type)
     notif.set("actor", actorId)
@@ -61,23 +56,23 @@ function createNotification(userId, type, actorId, referenceId, referenceType, d
     notif.set("data", JSON.stringify(data || {}))
     $app.save(notif)
   } catch (e) {
-    console.log(`[notif] create failed (type=${type}):`, e)
+    console.log("[notif] create failed (type=" + type + "):", e)
   }
 }
 
 function sendPush(userId, title, body, url) {
   try {
-    const apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
-    const internalKey = $os.getenv("INTERNAL_API_KEY") || ""
-    const headers = { "Content-Type": "application/json" }
+    var apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
+    var internalKey = $os.getenv("INTERNAL_API_KEY") || ""
+    var headers = { "Content-Type": "application/json" }
     if (internalKey) {
       headers["X-Internal-Key"] = internalKey
     }
     $http.send({
-      url: `${apiUrl}/api/send-push`,
+      url: apiUrl + "/api/send-push",
       method: "POST",
       headers: headers,
-      body: JSON.stringify({ user_id: userId, title, body, url }),
+      body: JSON.stringify({ user_id: userId, title: title, body: body, url: url }),
       timeout: 10,
     })
   } catch (e) {
@@ -87,52 +82,51 @@ function sendPush(userId, title, body, url) {
 
 // ── Follow notifications ─────────────────────────────────────────────────────
 
-onRecordAfterCreateSuccess((e) => {
-  const followerId = e.record.getString("follower")
-  const followingId = e.record.getString("following")
+onRecordAfterCreateSuccess(function(e) {
+  var followerId = e.record.getString("follower")
+  var followingId = e.record.getString("following")
 
   if (!followerId || !followingId) return
 
-  const followerName = getUserName(followerId)
+  var followerName = getUserName(followerId)
 
   createNotification(
-    followingId,        // recipient: the person being followed
+    followingId,
     "follow",
-    followerId,         // actor: the person who followed
-    followerId,         // reference_id: link to follower's profile
+    followerId,
+    followerId,
     "user",
-    { followerName }
+    { followerName: followerName }
   )
 
   sendPush(
     followingId,
-    `${followerName || "Alguien"} te sigue`,
+    (followerName || "Alguien") + " te sigue",
     "Tienes un nuevo seguidor",
-    `/u/${followerId}`
+    "/u/" + followerId
   )
 }, "follows")
 
 // ── Reaction notifications ───────────────────────────────────────────────────
 
-onRecordAfterCreateSuccess((e) => {
-  const reactorId = e.record.getString("reactor")
-  const sessionId = e.record.getString("session_id")
-  const emoji = e.record.getString("emoji") || "🔥"
+onRecordAfterCreateSuccess(function(e) {
+  var reactorId = e.record.getString("reactor")
+  var sessionId = e.record.getString("session_id")
+  var emoji = e.record.getString("emoji") || "🔥"
 
   if (!reactorId || !sessionId) return
 
-  // Find the session owner
-  let ownerId = ""
+  var ownerId = ""
   try {
-    const session = $app.findRecordById("sessions", sessionId)
+    var session = $app.findRecordById("sessions", sessionId)
     ownerId = session.getString("user")
-  } catch (e) {
+  } catch (err) {
     return
   }
 
   if (!ownerId || ownerId === reactorId) return
 
-  const reactorName = getUserName(reactorId)
+  var reactorName = getUserName(reactorId)
 
   createNotification(
     ownerId,
@@ -140,12 +134,12 @@ onRecordAfterCreateSuccess((e) => {
     reactorId,
     sessionId,
     "session",
-    { emoji, reactorName }
+    { emoji: emoji, reactorName: reactorName }
   )
 
   sendPush(
     ownerId,
-    `${reactorName || "Alguien"} ${emoji}`,
+    (reactorName || "Alguien") + " " + emoji,
     "Reacciono a tu sesion",
     "/feed"
   )
@@ -153,22 +147,22 @@ onRecordAfterCreateSuccess((e) => {
 
 // ── Comment notifications ────────────────────────────────────────────────────
 
-onRecordAfterCreateSuccess((e) => {
-  const authorId = e.record.getString("author")
-  const sessionId = e.record.getString("session_id")
-  const parentId = e.record.getString("parent_id")
-  const body = e.record.getString("body") || ""
-  const preview = body.length > 60 ? body.substring(0, 60) + "..." : body
+onRecordAfterCreateSuccess(function(e) {
+  var authorId = e.record.getString("author")
+  var sessionId = e.record.getString("session_id")
+  var parentId = e.record.getString("parent_id")
+  var commentBody = e.record.getString("body") || ""
+  var preview = commentBody.length > 60 ? commentBody.substring(0, 60) + "..." : commentBody
 
   if (!authorId || !sessionId) return
 
-  const authorName = getUserName(authorId)
+  var authorName = getUserName(authorId)
 
   // If it's a reply, notify the parent comment's author
   if (parentId) {
     try {
-      const parentComment = $app.findRecordById("comments", parentId)
-      const parentAuthorId = parentComment.getString("author")
+      var parentComment = $app.findRecordById("comments", parentId)
+      var parentAuthorId = parentComment.getString("author")
       if (parentAuthorId && parentAuthorId !== authorId) {
         createNotification(
           parentAuthorId,
@@ -176,71 +170,72 @@ onRecordAfterCreateSuccess((e) => {
           authorId,
           sessionId,
           "session",
-          { authorName, preview }
+          { authorName: authorName, preview: preview }
         )
         sendPush(
           parentAuthorId,
-          `${authorName || "Alguien"} respondio tu comentario`,
+          (authorName || "Alguien") + " respondio tu comentario",
           preview,
           "/feed"
         )
       }
-    } catch (e) { /* parent not found */ }
+    } catch (err) { /* parent not found */ }
   }
 
-  // Notify the session owner (if different from commenter and parent author)
+  // Notify the session owner
   try {
-    const session = $app.findRecordById("sessions", sessionId)
-    const ownerId = session.getString("user")
+    var session = $app.findRecordById("sessions", sessionId)
+    var ownerId = session.getString("user")
     if (ownerId && ownerId !== authorId) {
       // Avoid double notification if owner is also the parent comment author
-      if (!parentId || (() => {
+      var skipOwner = false
+      if (parentId) {
         try {
-          const parentComment = $app.findRecordById("comments", parentId)
-          return parentComment.getString("author") !== ownerId
-        } catch (e) { return true }
-      })()) {
+          var pc = $app.findRecordById("comments", parentId)
+          if (pc.getString("author") === ownerId) skipOwner = true
+        } catch (err) { /* ignore */ }
+      }
+      if (!skipOwner) {
         createNotification(
           ownerId,
           "comment",
           authorId,
           sessionId,
           "session",
-          { authorName, preview }
+          { authorName: authorName, preview: preview }
         )
         sendPush(
           ownerId,
-          `${authorName || "Alguien"} comento tu sesion`,
+          (authorName || "Alguien") + " comento tu sesion",
           preview,
           "/feed"
         )
       }
     }
-  } catch (e) { /* session not found */ }
+  } catch (err) { /* session not found */ }
 }, "comments")
 
 // ── Challenge join notifications ─────────────────────────────────────────────
 
-onRecordAfterCreateSuccess((e) => {
-  const userId = e.record.getString("user")
-  const challengeId = e.record.getString("challenge")
+onRecordAfterCreateSuccess(function(e) {
+  var userId = e.record.getString("user")
+  var challengeId = e.record.getString("challenge")
 
   if (!userId || !challengeId) return
 
-  // Find the challenge creator
-  let creatorId = ""
-  let challengeTitle = ""
+  var creatorId = ""
+  var challengeTitle = ""
   try {
-    const challenge = $app.findRecordById("challenges", challengeId)
+    var challenge = $app.findRecordById("challenges", challengeId)
     creatorId = challenge.getString("creator")
     challengeTitle = challenge.getString("title") || "un desafio"
-  } catch (e) {
+  } catch (err) {
     return
   }
 
   if (!creatorId || creatorId === userId) return
 
-  const userName = getUserName(userId)
+  var userName = getUserName(userId)
 
   createNotification(
     creatorId,
@@ -248,142 +243,105 @@ onRecordAfterCreateSuccess((e) => {
     userId,
     challengeId,
     "challenge",
-    { userName, challengeTitle }
+    { userName: userName, challengeTitle: challengeTitle }
   )
 
   sendPush(
     creatorId,
-    `${userName || "Alguien"} se unio a tu desafio`,
+    (userName || "Alguien") + " se unio a tu desafio",
     challengeTitle,
-    `/challenges/${challengeId}`
+    "/challenges/" + challengeId
   )
 }, "challenge_participants")
 
 // ── Challenge complete notifications ─────────────────────────────────────────
-// Fires when the challenge status is updated to "completed"
 
-onRecordAfterUpdateSuccess((e) => {
-  const status = e.record.getString("status")
-  const oldStatus = e.record.original().getString("status")
+onRecordAfterUpdateSuccess(function(e) {
+  var status = e.record.getString("status")
+  var oldStatus = e.record.original().getString("status")
 
-  // Only fire when status changes TO completed
   if (status !== "completed" || oldStatus === "completed") return
 
-  const challengeId = e.record.getId()
-  const creatorId = e.record.getString("creator")
-  const challengeTitle = e.record.getString("title") || "Desafio"
+  var challengeId = e.record.getId()
+  var creatorId = e.record.getString("creator")
+  var challengeTitle = e.record.getString("title") || "Desafio"
 
-  // Get all participants
-  let participants = []
+  var participants = []
   try {
     participants = $app.findRecordsByFilter(
       "challenge_participants",
-      `challenge = "${challengeId}"`,
+      "challenge = \"" + challengeId + "\"",
       "",
       100,
       0
     )
-  } catch (e) {
+  } catch (err) {
     return
   }
 
-  // Notify all participants (including creator)
-  const allUserIds = participants.map(function(p) { return p.getString("user") })
-  if (creatorId && !allUserIds.includes(creatorId)) {
-    allUserIds.push(creatorId)
+  // Collect all user IDs
+  var notified = {}
+  for (var i = 0; i < participants.length; i++) {
+    var uid = participants[i].getString("user")
+    if (uid && !notified[uid]) {
+      notified[uid] = true
+      createSelfNotification(uid, "challenge_complete", challengeId, "challenge", { challengeTitle: challengeTitle })
+      sendPush(uid, "Desafio completado!", challengeTitle, "/challenges/" + challengeId)
+    }
   }
-
-  for (const uid of allUserIds) {
-    createSelfNotification(
-      uid,
-      "challenge_complete",
-      challengeId,
-      "challenge",
-      { challengeTitle }
-    )
-
-    sendPush(
-      uid,
-      "Desafio completado!",
-      challengeTitle,
-      `/challenges/${challengeId}`
-    )
+  // Also notify creator if not already a participant
+  if (creatorId && !notified[creatorId]) {
+    createSelfNotification(creatorId, "challenge_complete", challengeId, "challenge", { challengeTitle: challengeTitle })
+    sendPush(creatorId, "Desafio completado!", challengeTitle, "/challenges/" + challengeId)
   }
 }, "challenges")
 
 // ── Achievement unlocked notifications ───────────────────────────────────────
 
-onRecordAfterUpdateSuccess((e) => {
-  const unlocked = e.record.getBool("unlocked")
-  const wasUnlocked = e.record.original().getBool("unlocked")
+onRecordAfterUpdateSuccess(function(e) {
+  var unlocked = e.record.getBool("unlocked")
+  var wasUnlocked = e.record.original().getBool("unlocked")
 
-  // Only fire when unlocked changes from false to true
   if (!unlocked || wasUnlocked) return
 
-  const userId = e.record.getString("user")
-  const achievementId = e.record.getString("achievement")
+  var userId = e.record.getString("user")
+  var achievementId = e.record.getString("achievement")
 
   if (!userId || !achievementId) return
 
-  // Get achievement details
-  let achievementName = ""
-  let achievementIcon = ""
+  var achievementName = ""
+  var achievementIcon = ""
   try {
-    const achievement = $app.findRecordById("achievements", achievementId)
+    var achievement = $app.findRecordById("achievements", achievementId)
     achievementName = achievement.getString("name") || "Logro"
     achievementIcon = achievement.getString("icon") || "🏅"
-  } catch (e) {
+  } catch (err) {
     return
   }
 
-  createSelfNotification(
-    userId,
-    "achievement",
-    achievementId,
-    "achievement",
-    { achievementName, achievementIcon }
-  )
-
-  sendPush(
-    userId,
-    `${achievementIcon} ${achievementName}`,
-    "Nuevo logro desbloqueado!",
-    "/profile"
-  )
+  createSelfNotification(userId, "achievement", achievementId, "achievement", { achievementName: achievementName, achievementIcon: achievementIcon })
+  sendPush(userId, achievementIcon + " " + achievementName, "Nuevo logro desbloqueado!", "/profile")
 }, "user_achievements")
 
 // ── Streak milestone notifications ───────────────────────────────────────────
 
-const STREAK_MILESTONES = [7, 14, 30, 50, 100, 200, 365]
+var STREAK_MILESTONES = [7, 14, 30, 50, 100, 200, 365]
 
-onRecordAfterUpdateSuccess((e) => {
-  const currentStreak = e.record.getInt("workout_streak_current")
-  const oldStreak = e.record.original().getInt("workout_streak_current")
+onRecordAfterUpdateSuccess(function(e) {
+  var currentStreak = e.record.getInt("workout_streak_current")
+  var oldStreak = e.record.original().getInt("workout_streak_current")
 
-  // Only fire when streak increases
   if (currentStreak <= oldStreak) return
 
-  const userId = e.record.getString("user")
+  var userId = e.record.getString("user")
   if (!userId) return
 
-  // Check if we crossed a milestone
-  for (const milestone of STREAK_MILESTONES) {
+  for (var i = 0; i < STREAK_MILESTONES.length; i++) {
+    var milestone = STREAK_MILESTONES[i]
     if (currentStreak >= milestone && oldStreak < milestone) {
-      createSelfNotification(
-        userId,
-        "streak",
-        String(milestone),
-        "streak",
-        { days: milestone }
-      )
-
-      sendPush(
-        userId,
-        `${milestone} dias seguidos!`,
-        "Tu racha de entrenamiento sigue creciendo",
-        "/progress"
-      )
-      break // Only one milestone notification per update
+      createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
+      sendPush(userId, milestone + " dias seguidos!", "Tu racha de entrenamiento sigue creciendo", "/progress")
+      break
     }
   }
 }, "user_stats")
