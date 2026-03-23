@@ -55,7 +55,7 @@ cronAdd("push_meal_reminders", "* * * * *", () => {
     reminders = $app.findRecordsByFilter(
       "meal_reminders",
       `enabled = true && hour = ${currentHour} && minute = ${currentMinute}`,
-      "-created",
+      "",
       100,
       0
     )
@@ -148,7 +148,7 @@ cronAdd("push_workout_reminders", "* * * * *", () => {
     reminders = $app.findRecordsByFilter(
       "workout_reminders",
       `enabled = true && hour = ${currentHour} && minute = ${currentMinute}`,
-      "-created",
+      "",
       100,
       0
     )
