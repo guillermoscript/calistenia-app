@@ -90,8 +90,12 @@ export function useFollows(userId: string | null): UseFollowsReturn {
     // Optimistic update — instant UI feedback
     setFollowingIds(prev => new Set([...prev, targetUserId]))
     try {
+      const authId = pb.authStore.record?.id
+      if (userId !== authId) {
+        console.warn('Follow: userId mismatch!', { userId, authId })
+      }
       await pb.collection('follows').create({
-        follower: userId,
+        follower: authId,
         following: targetUserId,
       })
       load() // Reload full data in background
@@ -103,7 +107,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
         next.delete(targetUserId)
         return next
       })
-      console.warn('Follow error:', e?.status, e?.response?.data, e?.response?.message, e)
+      console.warn('Follow error:', e?.status, JSON.stringify(e?.response), e?.message)
       return false
     }
   }, [userId, load])
