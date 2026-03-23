@@ -97,9 +97,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
       await load() // Reload full data
       return true
     } catch (e: any) {
-      // Duplicate follow — already following
-      if (e?.status === 400) return false
-      console.warn('Follow error:', e)
+      console.warn('Follow error:', e?.status, e?.response?.data, e?.response?.message, e)
       return false
     }
   }, [userId, load])
