@@ -28,6 +28,13 @@ export function useFollows(userId: string | null): UseFollowsReturn {
   const [loading, setLoading] = useState(false)
   const initialized = useRef(false)
 
+  // Ref mirror of followingIds — always current, no stale closures
+  const followingIdsRef = useRef(followingIds)
+  followingIdsRef.current = followingIds
+
+  // Track in-flight actions to prevent double-clicks
+  const pendingRef = useRef<Set<string>>(new Set())
+
   const load = useCallback(async () => {
     if (!userId) return
     const available = await isPocketBaseAvailable()
@@ -87,8 +94,12 @@ export function useFollows(userId: string | null): UseFollowsReturn {
 
   const follow = useCallback(async (targetUserId: string): Promise<boolean> => {
     if (!userId) return false
-    if (followingIds.has(targetUserId)) return true // Already following
-    // Optimistic update — instant UI feedback
+    // Guard: already following or action in flight
+    if (followingIdsRef.current.has(targetUserId)) return true
+    if (pendingRef.current.has(targetUserId)) return false
+    pendingRef.current.add(targetUserId)
+
+    // Optimistic update — instant UI
     setFollowingIds(prev => new Set([...prev, targetUserId]))
     try {
       await pb.collection('follows').create({
@@ -105,13 +116,19 @@ export function useFollows(userId: string | null): UseFollowsReturn {
       })
       console.warn('Follow error:', e?.status, JSON.stringify(e?.response), e?.message)
       return false
+    } finally {
+      pendingRef.current.delete(targetUserId)
     }
-  }, [userId, followingIds])
+  }, [userId])
 
   const unfollow = useCallback(async (targetUserId: string): Promise<boolean> => {
     if (!userId) return false
-    if (!followingIds.has(targetUserId)) return true // Already not following
-    // Optimistic update — instant UI feedback
+    // Guard: already not following or action in flight
+    if (!followingIdsRef.current.has(targetUserId)) return true
+    if (pendingRef.current.has(targetUserId)) return false
+    pendingRef.current.add(targetUserId)
+
+    // Optimistic update — instant UI
     setFollowingIds(prev => {
       const next = new Set(prev)
       next.delete(targetUserId)
@@ -129,8 +146,10 @@ export function useFollows(userId: string | null): UseFollowsReturn {
       setFollowingIds(prev => new Set([...prev, targetUserId]))
       console.warn('Unfollow error:', e)
       return false
+    } finally {
+      pendingRef.current.delete(targetUserId)
     }
-  }, [userId, followingIds])
+  }, [userId])
 
   const isFollowing = useCallback((targetUserId: string): boolean => {
     return followingIds.has(targetUserId)
