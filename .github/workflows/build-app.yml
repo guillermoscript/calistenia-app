@@ -7,6 +7,7 @@ on:
       - 'src/**'
       - 'public/**'
       - 'pb_migrations/**'
+      - 'pb_hooks/**'
       - 'Dockerfile'
       - 'package.json'
       - 'package-lock.json'
@@ -22,6 +23,7 @@ on:
       - 'src/**'
       - 'public/**'
       - 'pb_migrations/**'
+      - 'pb_hooks/**'
       - 'Dockerfile'
       - 'package.json'
       - 'package-lock.json'
@@ -79,6 +81,7 @@ jobs:
           build-args: |
             VITE_POCKETBASE_URL=${{ secrets.VITE_POCKETBASE_URL }}
             VITE_AI_API_URL=${{ secrets.VITE_AI_API_URL }}
+            VITE_VAPID_PUBLIC_KEY=${{ secrets.VITE_VAPID_PUBLIC_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
