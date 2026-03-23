@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { WORKOUTS } from '../data/workouts'
 import { useSessionDetail } from '../hooks/useSessionDetail'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { useWorkoutState } from '../contexts/WorkoutContext'
+import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import type { SessionExercise } from '../hooks/useSessionDetail'
 
 // ── Build exercise catalog from static workout data ──────────────────────────
@@ -21,11 +22,12 @@ function buildExerciseCatalog(): Record<string, { name: string; muscles: string 
   return catalog
 }
 
-const EXERCISE_CATALOG = buildExerciseCatalog()
+const STATIC_CATALOG = buildExerciseCatalog()
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseWorkoutKey(key: string): string {
+  if (key.startsWith('free_')) return 'Sesión Libre'
   const [phaseStr, day] = key.split('_')
   const phase = phaseStr.replace('p', '')
   const dayNames: Record<string, string> = {
@@ -113,11 +115,33 @@ export default function SessionDetailPage() {
   const { date, workoutKey } = useParams<{ date: string; workoutKey: string }>()
   const navigate = useNavigate()
 
+  // Enrich catalog with PB exercises_catalog for free sessions
+  const [catalog, setCatalog] = useState(STATIC_CATALOG)
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        if (!(await isPocketBaseAvailable())) return
+        const res = await pb.collection('exercises_catalog').getList(1, 200, { $autoCancel: false })
+        if (cancelled) return
+        const merged = { ...STATIC_CATALOG }
+        res.items.forEach((item: any) => {
+          if (!merged[item.id]) {
+            merged[item.id] = { name: item.name, muscles: item.muscles || '' }
+          }
+        })
+        setCatalog(merged)
+      } catch { /* static catalog fallback */ }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
   const { session, exercises } = useSessionDetail(
     progress,
     date || '',
     workoutKey || '',
-    EXERCISE_CATALOG,
+    catalog,
   )
 
   const totalSets = useMemo(
@@ -144,10 +168,10 @@ export default function SessionDetailPage() {
     )
   }
 
+  const isFreeSession = session.workoutKey.startsWith('free_')
   const workoutTitle = parseWorkoutKey(session.workoutKey)
-  // Try to get more specific title from WORKOUTS data
-  const workout = WORKOUTS[session.workoutKey]
-  const displayTitle = workout?.title || workoutTitle
+  const workout = isFreeSession ? null : WORKOUTS[session.workoutKey]
+  const displayTitle = isFreeSession ? 'Sesión Libre' : (workout?.title || workoutTitle)
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -167,9 +191,9 @@ export default function SessionDetailPage() {
         </div>
         <h1 className="font-bebas text-3xl md:text-4xl leading-none mb-2">{displayTitle}</h1>
         <div className="text-sm text-muted-foreground">
-          {workoutTitle}
+          {!isFreeSession && workoutTitle}
           {exercises.length > 0 && (
-            <span> · {exercises.length} ejercicios · {totalSets} series</span>
+            <span>{!isFreeSession && ' · '}{exercises.length} ejercicios · {totalSets} series</span>
           )}
         </div>
       </div>

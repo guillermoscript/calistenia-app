@@ -53,6 +53,8 @@ interface SessionLog {
   title: string
   phase: number | undefined
   note: string
+  isFree: boolean
+  exerciseCount: number
 }
 
 interface ProgressPageProps {
@@ -82,12 +84,21 @@ export default function ProgressPage() {
         const parts = key.split('_')
         const date = parts[1]
         const workoutKey = parts.slice(2).join('_')
-        const workout = WORKOUTS[workoutKey]
+        const isFree = workoutKey.startsWith('free_')
+        const workout = isFree ? null : WORKOUTS[workoutKey]
+        // Count exercises logged in this session
+        const exerciseCount = isFree
+          ? Object.keys(progress).filter(k =>
+              !k.startsWith('done_') && k.includes(workoutKey) && k.includes(date)
+            ).length
+          : 0
         return {
           type: 'session' as const, date, workoutKey,
-          title: workout?.title || workoutKey,
-          phase: workout?.phase,
+          title: isFree ? 'Sesión Libre' : (workout?.title || workoutKey),
+          phase: isFree ? undefined : workout?.phase,
           note: (val as { note?: string }).note || '',
+          isFree,
+          exerciseCount,
         }
       })
       .sort((a, b) => b.date.localeCompare(a.date))
@@ -155,7 +166,10 @@ export default function ProgressPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="text-xs text-muted-foreground w-16 shrink-0">{relativeDate(log.date)}</div>
                     <div className="min-w-0">
-                      <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{log.title}</div>
+                      <div className={cn('text-sm font-medium truncate', log.isFree ? 'text-violet-400' : phaseColor?.text)}>{log.title}</div>
+                      {log.isFree && log.exerciseCount > 0 && (
+                        <div className="text-[11px] text-muted-foreground">{log.exerciseCount} ejercicios</div>
+                      )}
                     </div>
                   </div>
                   <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
@@ -256,10 +270,15 @@ export default function ProgressPage() {
                       <div className="text-[11px] text-sky-600 dark:text-sky-400 font-mono whitespace-nowrap">{date}</div>
                       <div className="flex-1 flex gap-2 flex-wrap">
                         {logs.map((log, i) => {
-                          const pc = PHASE_COLORS[log.phase ?? 0] || { badge: 'border-border text-muted-foreground bg-transparent' }
+                          const pc = log.isFree
+                            ? { badge: 'border-violet-400/30 text-violet-400 bg-violet-400/10' }
+                            : (PHASE_COLORS[log.phase ?? 0] || { badge: 'border-border text-muted-foreground bg-transparent' })
                           return (
                             <Badge key={i} variant="outline" className={cn('text-[11px] font-mono', pc.badge)}>
                               {log.title}
+                              {log.isFree && log.exerciseCount > 0 && (
+                                <span className="ml-1 text-[10px] opacity-70">· {log.exerciseCount} ej.</span>
+                              )}
                             </Badge>
                           )
                         })}

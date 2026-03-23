@@ -97,8 +97,9 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
   const loadFromPB = async (uid: string): Promise<void> => {
     try {
       // Filter sessions by program if one is active
+      // Include both program sessions and free sessions (program = '')
       const sessionFilter = activeProgramId
-        ? pb.filter('user = {:uid} && program = {:pid}', { uid, pid: activeProgramId })
+        ? pb.filter('user = {:uid} && (program = {:pid} || program = "")', { uid, pid: activeProgramId })
         : pb.filter('user = {:uid}', { uid })
 
       const [sessionsRes, setsRes] = await Promise.all([
@@ -232,16 +233,17 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
 
     if (usePB && userId) {
       try {
+        const isFreeSession = workoutKey.startsWith('free_')
         const [phaseStr, day] = workoutKey.split('_')
         const sessionData: Record<string, any> = {
           user: userId,
           workout_key: workoutKey,
-          phase: parseInt(phaseStr.replace('p', '')),
-          day,
+          phase: isFreeSession ? 0 : parseInt(phaseStr.replace('p', '')),
+          day: isFreeSession ? 'free' : day,
           completed_at: new Date().toISOString().replace('T', ' '),
           note: note || '',
         }
-        if (activeProgramId) sessionData.program = activeProgramId
+        if (!isFreeSession && activeProgramId) sessionData.program = activeProgramId
         await pb.collection('sessions').create(sessionData)
       } catch (e) { console.warn('PB sessions error:', e) }
     }
