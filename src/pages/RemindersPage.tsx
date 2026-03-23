@@ -238,8 +238,16 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         log('basic Notification API fired (no SW)')
       }
 
-      // 2. Test server-side push
-      if (pushEnabled && userId) {
+      // 2. Re-subscribe to push (ensures subscription is saved to PB)
+      if (userId) {
+        log('subscribing to push...')
+        const subOk = await subscribeToPush(userId)
+        setPushEnabled(subOk)
+        log(subOk ? 'push subscription saved' : 'push subscription failed')
+      }
+
+      // 3. Test server-side push
+      if (userId) {
         log('testing server push...')
         const { pb } = await import('../lib/pocketbase')
         const aiApiUrl = import.meta.env.VITE_AI_API_URL || ''
@@ -263,8 +271,6 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         } catch (e: any) {
           log(`push ERROR: ${e.message || e}`)
         }
-      } else {
-        log(`push skipped: pushEnabled=${pushEnabled}, userId=${userId || 'null'}`)
       }
     } catch (e: any) {
       log(`error: ${e.message || e}`)
