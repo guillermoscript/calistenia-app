@@ -122,7 +122,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
           return
         }
         const res = await pb.collection('users').getList(1, 20, {
-          filter: pb.filter('display_name ~ {:q} || username ~ {:q}', { q: query }),
+          filter: pb.filter('display_name ~ {:q} || username ~ {:q} || name ~ {:q}', { q: query }),
           $autoCancel: false,
         })
         setSearchResults(

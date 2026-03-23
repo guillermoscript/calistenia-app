@@ -113,36 +113,12 @@ export const useAuth = (): UseAuthReturn => {
         const referrer = referrerUsers.items[0]
         if (referrer.id === user.id) return // block self-referral
 
+        // Create referral record — server hook handles follows, points, and notifications
         await pb.collection('referrals').create({
           referrer: referrer.id,
           referred: user.id,
           source: 'quick_invite',
         })
-
-        await pb.collection('point_transactions').create({
-          user: referrer.id,
-          amount: 100,
-          type: 'referral_signup',
-          reference_id: user.id,
-          description: 'Referido se registró',
-        })
-
-        // Auto-follow: referrer follows referred and vice versa
-        await Promise.all([
-          pb.collection('follows').create({ follower: referrer.id, following: user.id }).catch(() => {}),
-          pb.collection('follows').create({ follower: user.id, following: referrer.id }).catch(() => {}),
-        ])
-
-        // Notify referrer
-        await pb.collection('notifications').create({
-          user: referrer.id,
-          type: 'referral_signup',
-          actor: user.id,
-          reference_id: user.id,
-          reference_type: 'user',
-          read: false,
-          data: { referredName: user.display_name || user.email?.split('@')[0] || '' },
-        }).catch(() => {})
       } catch { /* non-critical */ }
     }
 
