@@ -52,7 +52,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
         const u = r.expand?.following
         return {
           id: u?.id || r.following,
-          displayName: u?.display_name || u?.username || '?',
+          displayName: u?.display_name || u?.name || u?.username || '?',
           username: u?.username || '',
           avatarUrl: u ? getUserAvatarUrl(u, '100x100') : null,
         }
@@ -62,7 +62,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
         const u = r.expand?.follower
         return {
           id: u?.id || r.follower,
-          displayName: u?.display_name || u?.username || '?',
+          displayName: u?.display_name || u?.name || u?.username || '?',
           username: u?.username || '',
           avatarUrl: u ? getUserAvatarUrl(u, '100x100') : null,
         }

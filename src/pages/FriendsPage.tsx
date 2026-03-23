@@ -104,10 +104,28 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
     }
   }
 
-  const query = search.trim().toLowerCase()
+  const query = search.trim()
+
+  // Search PocketBase with fallback: if 3-field filter fails, retry with 2-field
+  const searchUsers = useCallback(async (page: number, q: string) => {
+    try {
+      return await pb.collection('users').getList(page, PAGE_SIZE, {
+        filter: pb.filter('display_name ~ {:q} || username ~ {:q} || name ~ {:q}', { q }),
+        $autoCancel: false,
+      })
+    } catch (e: any) {
+      // If filter failed (400 = bad filter), retry without name field
+      if (e?.status === 400) {
+        return await pb.collection('users').getList(page, PAGE_SIZE, {
+          filter: pb.filter('display_name ~ {:q} || username ~ {:q}', { q }),
+          $autoCancel: false,
+        })
+      }
+      throw e
+    }
+  }, [])
 
   // Remote search — runs whenever the user types
-  // [C2 fix] retryTrigger added as dependency — incrementing it re-fires the search cleanly
   useEffect(() => {
     if (query.length < 1) {
       setSearchResults([])
@@ -125,10 +143,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
       setSearchPage(1)
       setHasMoreResults(false)
       try {
-        const res = await pb.collection('users').getList(1, PAGE_SIZE, {
-          filter: pb.filter('display_name ~ {:q} || username ~ {:q} || name ~ {:q}', { q: query }),
-          $autoCancel: false,
-        })
+        const res = await searchUsers(1, query)
         if (queryRef.current !== query) return // stale
         setSearchResults(mapPbItems(res.items, userId))
         setHasMoreResults(res.totalPages > 1)
@@ -142,7 +157,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
       }
     }, 300)
     return () => clearTimeout(debounceRef.current)
-  }, [query, userId, retryTrigger])
+  }, [query, userId, retryTrigger, searchUsers])
 
   // [C1 fix] loadMore uses the pure mapPbItems with userId param — no stale closures
   const loadMore = useCallback(async () => {
@@ -150,10 +165,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
     const nextPage = searchPage + 1
     setLoadingMore(true)
     try {
-      const res = await pb.collection('users').getList(nextPage, PAGE_SIZE, {
-        filter: pb.filter('display_name ~ {:q} || username ~ {:q} || name ~ {:q}', { q: query }),
-        $autoCancel: false,
-      })
+      const res = await searchUsers(nextPage, query)
       const newItems = mapPbItems(res.items, userId)
       setSearchResults(prev => {
         const existingIds = new Set(prev.map(r => r.id))
@@ -166,7 +178,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
     } finally {
       setLoadingMore(false)
     }
-  }, [loadingMore, hasMoreResults, searchPage, query, userId])
+  }, [loadingMore, hasMoreResults, searchPage, query, userId, searchUsers])
 
   // IntersectionObserver for infinite scroll sentinel
   useEffect(() => {
