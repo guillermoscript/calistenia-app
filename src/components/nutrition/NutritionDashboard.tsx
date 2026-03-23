@@ -154,13 +154,13 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                         weight === 'large' ? 'p-4' : weight === 'medium' ? 'px-3 py-3' : 'px-3 py-2',
                       )}>
                         {/* Photo thumbnail — only for large entries */}
-                        {weight === 'large' && ((entry.photoUrls && entry.photoUrls.length > 0) || entry.photoUrl) && (
+                        {weight === 'large' && entry.photoUrls && entry.photoUrls.length > 0 && (
                           <button
                             onClick={() => setExpandedEntry(isExpanded ? null : entryId)}
                             className="shrink-0 size-12 rounded-lg overflow-hidden bg-muted relative"
                           >
                             <img
-                              src={(entry.photoUrls?.[0]) || entry.photoUrl}
+                              src={entry.photoUrls[0]}
                               alt=""
                               className="w-full h-full object-cover"
                               loading="lazy"
@@ -268,9 +268,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                         )}>
                           {/* Photo gallery */}
                           {(() => {
-                            const photos = (entry.photoUrls && entry.photoUrls.length > 0)
-                              ? entry.photoUrls
-                              : entry.photoUrl ? [entry.photoUrl] : []
+                            const photos = entry.photoUrls ?? []
                             if (photos.length === 0) return null
                             return (
                               <div className="flex gap-2 pt-3 pb-2 overflow-x-auto scrollbar-none -mx-1 px-1">

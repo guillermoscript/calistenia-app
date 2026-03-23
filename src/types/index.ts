@@ -267,8 +267,6 @@ export interface MealReminder {
 export interface NutritionEntry {
   id?: string
   user?: string
-  /** @deprecated Use photoUrls instead */
-  photoUrl?: string
   photoUrls?: string[]
   mealType: 'desayuno' | 'almuerzo' | 'cena' | 'snack'
   foods: FoodItem[]

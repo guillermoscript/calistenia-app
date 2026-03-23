@@ -11,18 +11,13 @@ import type {
   FoodItem,
 } from '../types'
 
-/** Resolve photo URLs from a PocketBase record that may have `photo` (single) or `photos` (array) */
+/** Resolve photo URLs from a PocketBase record */
 function resolvePhotoUrls(rec: any): string[] {
   const urls: string[] = []
-  // New multi-photo field
   if (Array.isArray(rec.photos) && rec.photos.length > 0) {
     for (const filename of rec.photos) {
       urls.push(pb.files.getURL(rec, filename))
     }
-  }
-  // Legacy single-photo field
-  if (urls.length === 0 && rec.photo) {
-    urls.push(pb.files.getURL(rec, rec.photo))
   }
   return urls
 }
@@ -118,7 +113,6 @@ export function useNutrition(userId: string | null) {
       const mapped: NutritionEntry[] = entriesRes.items.map((r: any) => ({
         id: r.id,
         user: r.user,
-        photoUrl: r.photo ? pb.files.getURL(r, r.photo) : undefined,
         photoUrls: resolvePhotoUrls(r),
         mealType: r.meal_type,
         foods: r.foods || [],
@@ -231,7 +225,6 @@ export function useNutrition(userId: string | null) {
         saved = {
           id: rec.id,
           user: rec.user,
-          photoUrl: rec.photo ? pb.files.getURL(rec, rec.photo) : undefined,
           photoUrls: resolvePhotoUrls(rec),
           mealType: rec.meal_type,
           foods: rec.foods || [],
@@ -482,7 +475,6 @@ export function useNutrition(userId: string | null) {
         return res.items.map((r: any) => ({
           id: r.id,
           user: r.user,
-          photoUrl: r.photo ? pb.files.getURL(r, r.photo) : undefined,
           photoUrls: resolvePhotoUrls(r),
           mealType: r.meal_type,
           foods: r.foods || [],
