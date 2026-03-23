@@ -205,80 +205,6 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     }
   }
 
-  // ── Test notification ────────────────────────────────────────────────────────
-  const [testingSend, setTestingSend] = useState(false)
-  const [testLog, setTestLog] = useState<string[]>([])
-  const log = (msg: string) => setTestLog(prev => [...prev, `${new Date().toLocaleTimeString()} ${msg}`])
-
-  const sendTestNotification = async () => {
-    setTestingSend(true)
-    setTestLog([])
-    try {
-      log('requesting permission...')
-      await setupNotifications()
-
-      // 1. Fire a local SW notification
-      const reg = await navigator.serviceWorker?.ready
-      if (reg) {
-        await reg.showNotification('Test — Pausa Activa', {
-          body: 'Si ves esto, las notificaciones locales funcionan!',
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-192.png',
-          tag: 'test-notification',
-          vibrate: [200, 100, 200],
-          requireInteraction: true,
-        } as NotificationOptions)
-        log('local SW notification sent')
-      } else {
-        new Notification('Test — Pausa Activa', {
-          body: 'Si ves esto, las notificaciones locales funcionan!',
-          icon: '/icons/icon-192.png',
-          tag: 'test-notification',
-        })
-        log('basic Notification API fired (no SW)')
-      }
-
-      // 2. Re-subscribe to push (ensures subscription is saved to PB)
-      if (userId) {
-        log('subscribing to push...')
-        const subOk = await subscribeToPush(userId)
-        setPushEnabled(subOk)
-        log(subOk ? 'push subscription saved' : 'push subscription failed')
-      }
-
-      // 3. Test server-side push
-      if (userId) {
-        log('testing server push...')
-        const { pb } = await import('../lib/pocketbase')
-        const aiApiUrl = import.meta.env.VITE_AI_API_URL || ''
-        log(`API URL: ${aiApiUrl || '(empty)'}`)
-        try {
-          const res = await fetch(`${aiApiUrl}/api/send-push`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${pb.authStore.token}`,
-            },
-            body: JSON.stringify({
-              user_id: userId,
-              title: 'Test — Push Server',
-              body: 'Si ves esto, el push del servidor funciona!',
-              url: '/workout',
-            }),
-          })
-          const data = await res.json()
-          log(`push response: ${res.status} ${JSON.stringify(data)}`)
-        } catch (e: any) {
-          log(`push ERROR: ${e.message || e}`)
-        }
-      }
-    } catch (e: any) {
-      log(`error: ${e.message || e}`)
-    } finally {
-      setTestingSend(false)
-    }
-  }
-
   // ── Save ────────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaving(true)
@@ -414,26 +340,6 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
             </span>
           )}
         </div>
-        {/* Test notification button */}
-        <button
-          onClick={sendTestNotification}
-          disabled={testingSend}
-          className="mt-3 text-[10px] font-mono tracking-wide text-muted-foreground/50 hover:text-lime-400 transition-colors underline underline-offset-2"
-        >
-          {testingSend ? 'enviando test...' : 'probar notificación'}
-        </button>
-        {testLog.length > 0 && (
-          <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border/30 max-h-40 overflow-y-auto">
-            {testLog.map((line, i) => (
-              <div key={i} className={cn(
-                'text-[10px] font-mono leading-relaxed',
-                line.includes('ERROR') ? 'text-red-400' : line.includes('sent') || line.includes('200') ? 'text-emerald-400' : 'text-muted-foreground/70'
-              )}>
-                {line}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ── Add new ── */}

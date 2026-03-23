@@ -135,7 +135,6 @@ function fireSWNotification(reminder: SWReminder): void {
 }
 
 function scheduleSWReminders(reminders: SWReminder[]): void {
-  console.log(`[sw-reminders] received ${reminders.length} reminders`)
   // Clear existing timers
   for (const timer of scheduledTimers.values()) clearTimeout(timer)
   scheduledTimers.clear()
@@ -152,7 +151,6 @@ function scheduleSWReminders(reminders: SWReminder[]): void {
 
     if (delay > 0 && delay < 24 * 60 * 60 * 1000) {
       const timer = setTimeout(() => {
-        console.log(`[sw-reminders] firing: ${r.type} "${r.label}" at ${r.hour}:${String(r.minute).padStart(2, '0')}`)
         fireSWNotification(r)
         scheduledTimers.delete(r.id)
       }, delay)
@@ -160,7 +158,6 @@ function scheduleSWReminders(reminders: SWReminder[]): void {
     }
   }
 
-  console.log(`[sw-reminders] scheduled ${scheduledTimers.size} timers for today`)
 
   // Periodic safety check every 60s — catches timers frozen by the OS
   if (swCheckInterval) clearInterval(swCheckInterval)

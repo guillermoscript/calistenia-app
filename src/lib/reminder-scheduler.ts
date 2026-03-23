@@ -179,13 +179,7 @@ async function postToServiceWorker(reminders: SchedulableReminder[]): Promise<vo
  * Schedule all reminders. Call on app load and when reminders change.
  */
 export function scheduleAll(reminders: SchedulableReminder[]): void {
-  const perm = 'Notification' in window ? Notification.permission : 'unsupported'
-  console.log(`[reminders] scheduleAll: ${reminders.length} reminders, permission=${perm}`)
-
-  if (!('Notification' in window) || Notification.permission !== 'granted') {
-    console.warn('[reminders] skipped — notification permission not granted')
-    return
-  }
+  if (!('Notification' in window) || Notification.permission !== 'granted') return
 
   currentReminders = reminders
 
@@ -197,10 +191,6 @@ export function scheduleAll(reminders: SchedulableReminder[]): void {
   for (const r of reminders) {
     scheduleOne(r)
   }
-
-  const scheduled = activeTimers.size
-  const enabled = reminders.filter(r => r.enabled).length
-  console.log(`[reminders] scheduled ${scheduled}/${enabled} enabled timers for today`)
 
   // Start the periodic safety net
   if (reminders.some(r => r.enabled)) {
