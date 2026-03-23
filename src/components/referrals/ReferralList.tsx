@@ -26,7 +26,7 @@ export function ReferralList({ referrals }: ReferralListProps) {
             <div className="size-9 rounded-full bg-muted flex items-center justify-center text-sm font-bebas text-foreground shrink-0 overflow-hidden">
               {ref.referredAvatar ? (
                 <img
-                  src={pb.files.getUrl({ id: ref.referred, collectionId: '_pb_users_auth_', collectionName: 'users' } as any, ref.referredAvatar, { thumb: '100x100' })}
+                  src={pb.files.getURL({ id: ref.referred, collectionId: '_pb_users_auth_', collectionName: 'users' } as any, ref.referredAvatar, { thumb: '100x100' })}
                   alt={ref.referredName}
                   className="size-full object-cover"
                 />

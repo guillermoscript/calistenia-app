@@ -211,7 +211,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       is_featured:    p.is_featured || false,
       difficulty:     p.difficulty || 'beginner',
       cover_image:    p.cover_image || undefined,
-      cover_image_url: p.cover_image ? pb.files.getUrl(p, p.cover_image, { thumb: '400x0' }) : undefined,
+      cover_image_url: p.cover_image ? pb.files.getURL(p, p.cover_image, { thumb: '400x0' }) : undefined,
     }))
     setPrograms(catalog)
 

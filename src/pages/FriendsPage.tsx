@@ -20,8 +20,6 @@ interface FriendsPageProps {
   userId: string
 }
 
-const PAGE_SIZE = 20
-
 // ── Pure helper — no closures over component state ───────────────────────────
 // [C1 fix] Extracted as a pure function so it can't go stale inside useCallback
 function mapPbItems(items: any[], excludeUserId: string): SearchResult[] {
@@ -60,14 +58,10 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [searchPage, setSearchPage] = useState(1)
-  const [hasMoreResults, setHasMoreResults] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
   // [C2 fix] retryTrigger is a dependency of the search effect — incrementing it re-runs the search
   const [retryTrigger, setRetryTrigger] = useState(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const queryRef = useRef('')
   const tabsRef = useRef<HTMLDivElement>(null)
 
@@ -106,42 +100,30 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
 
   const query = search.trim()
 
-  // Search with cascading fallbacks — try filters from broad to narrow
-  const searchUsers = useCallback(async (page: number, q: string) => {
-    const filters = [
-      // 1. All three searchable name fields
-      () => pb.filter('display_name ~ {:q} || username ~ {:q} || name ~ {:q}', { q }),
-      // 2. Without built-in name field (may not be filterable in all PB versions)
-      () => pb.filter('display_name ~ {:q} || username ~ {:q}', { q }),
-      // 3. Single field — minimum viable search
-      () => pb.filter('username ~ {:q}', { q }),
-    ]
+  // Fetch all users once, then filter client-side.
+  // PocketBase v0.27 returns 400 on ~ (LIKE) filters for the auth collection.
+  const allUsersRef = useRef<SearchResult[]>([])
+  const allUsersLoaded = useRef(false)
 
-    for (let i = 0; i < filters.length; i++) {
-      try {
-        return await pb.collection('users').getList(page, PAGE_SIZE, {
-          filter: filters[i](),
-          $autoCancel: false,
-        })
-      } catch (e: any) {
-        console.error(`Search filter ${i + 1}/${filters.length} failed:`, e?.status, e?.message || e)
-        // If last filter also failed, throw to show error UI
-        if (i === filters.length - 1) throw e
-        // Otherwise try next filter
-      }
+  const loadAllUsers = useCallback(async () => {
+    if (allUsersLoaded.current) return allUsersRef.current
+    try {
+      const res = await pb.collection('users').getFullList({ $autoCancel: false })
+      allUsersRef.current = mapPbItems(res, userId)
+      allUsersLoaded.current = true
+      return allUsersRef.current
+    } catch (e) {
+      console.error('Failed to load users for search:', e)
+      throw e
     }
-    // TypeScript: unreachable but satisfies return type
-    throw new Error('All search filters failed')
-  }, [])
+  }, [userId])
 
-  // Remote search — runs whenever the user types
+  // Remote search — fetches all users, filters client-side
   useEffect(() => {
     if (query.length < 1) {
       setSearchResults([])
       setSearchError(false)
       setSearching(false)
-      setSearchPage(1)
-      setHasMoreResults(false)
       return
     }
     queryRef.current = query
@@ -149,59 +131,28 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
     debounceRef.current = setTimeout(async () => {
       setSearching(true)
       setSearchError(false)
-      setSearchPage(1)
-      setHasMoreResults(false)
       try {
-        const res = await searchUsers(1, query)
+        const allUsers = await loadAllUsers()
         if (queryRef.current !== query) return // stale
-        setSearchResults(mapPbItems(res.items, userId))
-        setHasMoreResults(res.totalPages > 1)
-        setSearchPage(1)
-      } catch (e: any) {
-        console.error('Friend search failed (all filters):', e?.status, e?.url, e?.message || e)
+        const q = query.toLowerCase()
+        const filtered = allUsers.filter(u =>
+          u.displayName.toLowerCase().includes(q) ||
+          u.username.toLowerCase().includes(q)
+        )
+        setSearchResults(filtered)
+      } catch (e) {
+        console.error('Friend search failed:', e)
         setSearchError(true)
         setSearchResults([])
       } finally {
         setSearching(false)
       }
-    }, 300)
+    }, 200)
     return () => clearTimeout(debounceRef.current)
-  }, [query, userId, retryTrigger, searchUsers])
+  }, [query, userId, retryTrigger, loadAllUsers])
 
   // [C1 fix] loadMore uses the pure mapPbItems with userId param — no stale closures
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMoreResults || query.length < 1) return
-    const nextPage = searchPage + 1
-    setLoadingMore(true)
-    try {
-      const res = await searchUsers(nextPage, query)
-      const newItems = mapPbItems(res.items, userId)
-      setSearchResults(prev => {
-        const existingIds = new Set(prev.map(r => r.id))
-        return [...prev, ...newItems.filter(r => !existingIds.has(r.id))]
-      })
-      setSearchPage(nextPage)
-      setHasMoreResults(nextPage < res.totalPages)
-    } catch (e) {
-      console.error('Load more failed:', e)
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, hasMoreResults, searchPage, query, userId, searchUsers])
-
-  // IntersectionObserver for infinite scroll sentinel
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      entries => { if (entries[0]?.isIntersecting) loadMore() },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loadMore])
-
-  // [H3 fix] Memoize sorted search results instead of sorting inline every render
+  // Memoize sorted search results
   const sortedSearchResults = useMemo(() =>
     searchResults.slice().sort((a, b) => {
       const aFollowed = followingIds.has(a.id) ? 0 : 1
@@ -324,7 +275,6 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
             {!searching && searchError && 'Error al buscar.'}
             {!searching && !searchError && searchResults.length === 0 && `No se encontraron resultados para "${search.trim()}"`}
             {!searching && searchResults.length > 0 && `${searchResults.length} resultado${searchResults.length !== 1 ? 's' : ''}`}
-            {loadingMore && 'Cargando más resultados...'}
           </div>
           {searching && (
             <div className="flex flex-col gap-1.5">
@@ -369,17 +319,6 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
                   />
                 ))}
               </div>
-              {/* Infinite scroll sentinel */}
-              {hasMoreResults && (
-                <div ref={sentinelRef} className="py-4">
-                  {loadingMore && (
-                    <div className="flex flex-col gap-1.5">
-                      <SkeletonRow />
-                      <SkeletonRow />
-                    </div>
-                  )}
-                </div>
-              )}
             </>
           )}
         </div>

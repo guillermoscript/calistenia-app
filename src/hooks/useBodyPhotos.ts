@@ -39,7 +39,7 @@ export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn
           })
           const entries: BodyPhoto[] = res.items.map((r: any) => ({
             id: r.id,
-            url: pb.files.getUrl(r, r.photo),
+            url: pb.files.getURL(r, r.photo),
             date: r.date?.split(' ')[0] || r.date,
             category: r.category || '',
             note: r.note || '',
@@ -71,7 +71,7 @@ export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn
       const rec = await pb.collection('body_photos').create(formData)
       const entry: BodyPhoto = {
         id: rec.id,
-        url: pb.files.getUrl(rec, (rec as any).photo),
+        url: pb.files.getURL(rec, (rec as any).photo),
         date,
         category,
         note: note || '',

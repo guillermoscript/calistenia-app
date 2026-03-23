@@ -102,7 +102,7 @@ export const getCurrentUser = (): RecordModel | null =>
  */
 export const getUserAvatarUrl = (user: RecordModel, thumb: string = '200x200'): string | null => {
   if (!user.avatar) return null
-  return pb.files.getUrl(user, user.avatar, { thumb })
+  return pb.files.getURL(user, user.avatar, { thumb })
 }
 
 export default pb
