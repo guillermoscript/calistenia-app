@@ -236,6 +236,7 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     { path: '/nutrition', label: 'Nutricion', icon: NutritionIcon },
     { path: '/sleep', label: 'Sueño', icon: SleepIcon },
     { path: '/calendar', label: 'Calendario', icon: CalendarNavIcon },
+    { path: '/reminders', label: 'Recordatorios', icon: BellIcon },
   ]},
   { label: 'Explorar', items: [
     { path: '/programs', label: 'Programas', icon: ProgramIcon },

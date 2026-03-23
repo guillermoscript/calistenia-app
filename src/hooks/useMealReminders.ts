@@ -93,6 +93,18 @@ export function useMealReminders(userId: string | null) {
     })
   }, [usePB, userId])
 
+  const updateReminder = useCallback(async (id: string, hour: number, minute: number, daysOfWeek: number[]): Promise<void> => {
+    if (usePB && !id.startsWith('mr_')) {
+      try { await pb.collection('meal_reminders').update(id, { hour, minute, days_of_week: daysOfWeek }) } catch {}
+    }
+
+    setReminders(prev => {
+      const updated = prev.map(r => r.id === id ? { ...r, hour, minute, daysOfWeek } : r)
+      lsSet(updated)
+      return updated
+    })
+  }, [usePB])
+
   const toggleReminder = useCallback(async (id: string, enabled: boolean): Promise<void> => {
     if (usePB && !id.startsWith('mr_')) {
       try { await pb.collection('meal_reminders').update(id, { enabled }) } catch {}
@@ -117,5 +129,5 @@ export function useMealReminders(userId: string | null) {
     })
   }, [usePB])
 
-  return { reminders, saveReminder, toggleReminder, deleteReminder }
+  return { reminders, saveReminder, updateReminder, toggleReminder, deleteReminder }
 }

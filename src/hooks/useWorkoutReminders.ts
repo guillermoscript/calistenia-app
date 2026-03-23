@@ -119,6 +119,18 @@ export function useWorkoutReminders(userId: string | null = null) {
     })
   }, [usePB, reminders])
 
+  const updateReminder = useCallback(async (id: string, hour: number, minute: number, daysOfWeek: number[]) => {
+    if (usePB && !id.startsWith('wr_')) {
+      try { await pb.collection('workout_reminders').update(id, { hour, minute, days_of_week: daysOfWeek }) } catch {}
+    }
+
+    setReminders(prev => {
+      const updated = prev.map(r => r.id === id ? { ...r, hour, minute, daysOfWeek } : r)
+      lsSet(updated)
+      return updated
+    })
+  }, [usePB])
+
   const deleteReminder = useCallback(async (id: string) => {
     if (usePB && !id.startsWith('wr_')) {
       try { await pb.collection('workout_reminders').delete(id) } catch {}
@@ -131,6 +143,6 @@ export function useWorkoutReminders(userId: string | null = null) {
     })
   }, [usePB])
 
-  return { reminders, saveReminder, toggleReminder, deleteReminder }
+  return { reminders, saveReminder, updateReminder, toggleReminder, deleteReminder }
 }
 
