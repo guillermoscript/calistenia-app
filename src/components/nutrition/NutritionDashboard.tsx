@@ -153,19 +153,22 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                         'flex items-center gap-3',
                         weight === 'large' ? 'p-4' : weight === 'medium' ? 'px-3 py-3' : 'px-3 py-2',
                       )}>
-                        {/* Photo thumbnail — only for large entries */}
-                        {weight === 'large' && entry.photoUrls && entry.photoUrls.length > 0 && (
+                        {/* Photo thumbnail */}
+                        {entry.photoUrls && entry.photoUrls.length > 0 && (
                           <button
                             onClick={() => setExpandedEntry(isExpanded ? null : entryId)}
-                            className="shrink-0 size-12 rounded-lg overflow-hidden bg-muted relative"
+                            className={cn(
+                              'shrink-0 rounded-lg overflow-hidden bg-muted relative',
+                              weight === 'large' ? 'size-12' : 'size-9',
+                            )}
                           >
                             <img
                               src={entry.photoUrls[0]}
-                              alt=""
+                              alt={`Foto de ${mealInfo.label.toLowerCase()}`}
                               className="w-full h-full object-cover"
                               loading="lazy"
                             />
-                            {entry.photoUrls && entry.photoUrls.length > 1 && (
+                            {entry.photoUrls.length > 1 && (
                               <div className="absolute bottom-0 right-0 text-[8px] font-mono text-white bg-black/60 px-1 rounded-tl">
                                 +{entry.photoUrls.length - 1}
                               </div>
@@ -277,7 +280,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                                     key={pi}
                                     src={url}
                                     alt={`Foto ${pi + 1}`}
-                                    className="shrink-0 h-28 rounded-lg object-cover"
+                                    className="shrink-0 h-28 max-w-48 rounded-lg object-cover"
                                     loading="lazy"
                                   />
                                 ))}
