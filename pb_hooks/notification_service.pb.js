@@ -24,6 +24,28 @@ function getUserName(userId) {
   }
 }
 
+/**
+ * Create a self-notification (achievements, streaks — actor = user).
+ * Skips the self-notify guard.
+ */
+function createSelfNotification(userId, type, referenceId, referenceType, data) {
+  if (!userId) return
+  try {
+    const collection = $app.findCollectionByNameOrId("notifications")
+    const notif = new Record(collection)
+    notif.set("user", userId)
+    notif.set("type", type)
+    notif.set("actor", userId)
+    notif.set("reference_id", referenceId)
+    notif.set("reference_type", referenceType)
+    notif.set("read", false)
+    notif.set("data", JSON.stringify(data || {}))
+    $app.save(notif)
+  } catch (e) {
+    console.log(`[notif] self-create failed (type=${type}):`, e)
+  }
+}
+
 function createNotification(userId, type, actorId, referenceId, referenceType, data) {
   if (!userId || !actorId || userId === actorId) return // Don't notify yourself
 
@@ -196,3 +218,172 @@ onRecordAfterCreateSuccess((e) => {
     }
   } catch (e) { /* session not found */ }
 }, "comments")
+
+// ── Challenge join notifications ─────────────────────────────────────────────
+
+onRecordAfterCreateSuccess((e) => {
+  const userId = e.record.getString("user")
+  const challengeId = e.record.getString("challenge")
+
+  if (!userId || !challengeId) return
+
+  // Find the challenge creator
+  let creatorId = ""
+  let challengeTitle = ""
+  try {
+    const challenge = $app.findRecordById("challenges", challengeId)
+    creatorId = challenge.getString("creator")
+    challengeTitle = challenge.getString("title") || "un desafio"
+  } catch (e) {
+    return
+  }
+
+  if (!creatorId || creatorId === userId) return
+
+  const userName = getUserName(userId)
+
+  createNotification(
+    creatorId,
+    "challenge_join",
+    userId,
+    challengeId,
+    "challenge",
+    { userName, challengeTitle }
+  )
+
+  sendPush(
+    creatorId,
+    `${userName || "Alguien"} se unio a tu desafio`,
+    challengeTitle,
+    `/challenges/${challengeId}`
+  )
+}, "challenge_participants")
+
+// ── Challenge complete notifications ─────────────────────────────────────────
+// Fires when the challenge status is updated to "completed"
+
+onRecordAfterUpdateSuccess((e) => {
+  const status = e.record.getString("status")
+  const oldStatus = e.record.original().getString("status")
+
+  // Only fire when status changes TO completed
+  if (status !== "completed" || oldStatus === "completed") return
+
+  const challengeId = e.record.getId()
+  const creatorId = e.record.getString("creator")
+  const challengeTitle = e.record.getString("title") || "Desafio"
+
+  // Get all participants
+  let participants = []
+  try {
+    participants = $app.findRecordsByFilter(
+      "challenge_participants",
+      `challenge = "${challengeId}"`,
+      "",
+      100,
+      0
+    )
+  } catch (e) {
+    return
+  }
+
+  // Notify all participants (including creator)
+  const allUserIds = participants.map(function(p) { return p.getString("user") })
+  if (creatorId && !allUserIds.includes(creatorId)) {
+    allUserIds.push(creatorId)
+  }
+
+  for (const uid of allUserIds) {
+    createSelfNotification(
+      uid,
+      "challenge_complete",
+      challengeId,
+      "challenge",
+      { challengeTitle }
+    )
+
+    sendPush(
+      uid,
+      "Desafio completado!",
+      challengeTitle,
+      `/challenges/${challengeId}`
+    )
+  }
+}, "challenges")
+
+// ── Achievement unlocked notifications ───────────────────────────────────────
+
+onRecordAfterUpdateSuccess((e) => {
+  const unlocked = e.record.getBool("unlocked")
+  const wasUnlocked = e.record.original().getBool("unlocked")
+
+  // Only fire when unlocked changes from false to true
+  if (!unlocked || wasUnlocked) return
+
+  const userId = e.record.getString("user")
+  const achievementId = e.record.getString("achievement")
+
+  if (!userId || !achievementId) return
+
+  // Get achievement details
+  let achievementName = ""
+  let achievementIcon = ""
+  try {
+    const achievement = $app.findRecordById("achievements", achievementId)
+    achievementName = achievement.getString("name") || "Logro"
+    achievementIcon = achievement.getString("icon") || "🏅"
+  } catch (e) {
+    return
+  }
+
+  createSelfNotification(
+    userId,
+    "achievement",
+    achievementId,
+    "achievement",
+    { achievementName, achievementIcon }
+  )
+
+  sendPush(
+    userId,
+    `${achievementIcon} ${achievementName}`,
+    "Nuevo logro desbloqueado!",
+    "/profile"
+  )
+}, "user_achievements")
+
+// ── Streak milestone notifications ───────────────────────────────────────────
+
+const STREAK_MILESTONES = [7, 14, 30, 50, 100, 200, 365]
+
+onRecordAfterUpdateSuccess((e) => {
+  const currentStreak = e.record.getInt("workout_streak_current")
+  const oldStreak = e.record.original().getInt("workout_streak_current")
+
+  // Only fire when streak increases
+  if (currentStreak <= oldStreak) return
+
+  const userId = e.record.getString("user")
+  if (!userId) return
+
+  // Check if we crossed a milestone
+  for (const milestone of STREAK_MILESTONES) {
+    if (currentStreak >= milestone && oldStreak < milestone) {
+      createSelfNotification(
+        userId,
+        "streak",
+        String(milestone),
+        "streak",
+        { days: milestone }
+      )
+
+      sendPush(
+        userId,
+        `${milestone} dias seguidos!`,
+        "Tu racha de entrenamiento sigue creciendo",
+        "/progress"
+      )
+      break // Only one milestone notification per update
+    }
+  }
+}, "user_stats")

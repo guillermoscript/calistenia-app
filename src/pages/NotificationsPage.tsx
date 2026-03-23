@@ -31,6 +31,14 @@ function getNotificationMessage(n: AppNotification): string {
       return `${n.actorName} respondio a tu comentario`
     case 'challenge_invite':
       return `${n.actorName} te invito a un desafio`
+    case 'challenge_join':
+      return `${n.actorName} se unio a tu desafio`
+    case 'challenge_complete':
+      return `El desafio ${n.data?.challengeTitle || ''} termino!`
+    case 'achievement':
+      return `${n.data?.achievementIcon || '🏅'} Desbloqueaste: ${n.data?.achievementName || 'un logro'}`
+    case 'streak':
+      return `${n.data?.days || ''} dias seguidos entrenando!`
     default:
       return `${n.actorName} interactuo contigo`
   }
@@ -45,7 +53,13 @@ function getNotificationRoute(n: AppNotification): string {
     case 'comment_reply':
       return '/feed'
     case 'challenge_invite':
+    case 'challenge_join':
+    case 'challenge_complete':
       return `/challenges/${n.referenceId}`
+    case 'achievement':
+      return '/profile'
+    case 'streak':
+      return '/progress'
     default:
       return '/'
   }

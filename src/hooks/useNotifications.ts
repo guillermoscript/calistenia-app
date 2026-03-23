@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 
-export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_invite' | 'referral_signup' | 'referral_bonus' | 'challenge_complete'
+export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_invite' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus'
 
 export interface AppNotification {
   id: string
