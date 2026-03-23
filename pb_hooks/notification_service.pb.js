@@ -13,6 +13,8 @@
  * 3. Add the type string to NotificationsPage.tsx getNotificationMessage/getNotificationRoute
  */
 
+console.log("[notification_service] hook file loaded")
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getUserName(userId) {
@@ -86,9 +88,12 @@ onRecordAfterCreateSuccess(function(e) {
   var followerId = e.record.getString("follower")
   var followingId = e.record.getString("following")
 
+  console.log("[notif-follow] triggered: follower=" + followerId + " following=" + followingId)
+
   if (!followerId || !followingId) return
 
   var followerName = getUserName(followerId)
+  console.log("[notif-follow] creating notification for " + followingId + " from " + followerName)
 
   createNotification(
     followingId,
