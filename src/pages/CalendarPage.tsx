@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/badge'
 import { useWorkoutState } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
 import type { SessionDone, WeekDay, CardioSession } from '../types'
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -67,6 +68,14 @@ export default function CalendarPage() {
   const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate())
   const days = useMemo(() => getMonthDays(viewYear, viewMonth), [viewYear, viewMonth])
 
+  // Re-fetch when user returns to the tab
+  const [refreshKey, setRefreshKey] = useState(0)
+  useEffect(() => {
+    const handler = () => { if (!document.hidden) setRefreshKey(k => k + 1) }
+    document.addEventListener('visibilitychange', handler)
+    return () => document.removeEventListener('visibilitychange', handler)
+  }, [])
+
   // Fetch cardio, nutrition, and water data for this month
   useEffect(() => {
     if (!userId) return
@@ -75,6 +84,8 @@ export default function CalendarPage() {
     const nextMonth = viewMonth === 11
       ? formatDate(viewYear + 1, 0, 1)
       : formatDate(viewYear, viewMonth + 1, 1)
+    const pbStart = localMidnightAsUTC(monthStart)
+    const pbEnd = localMidnightAsUTC(nextMonth)
 
     const load = async () => {
       const available = await isPocketBaseAvailable()
@@ -84,20 +95,20 @@ export default function CalendarPage() {
       const [cardioRes, nutritionRes, waterRes] = await Promise.allSettled([
         pb.collection('cardio_sessions').getList(1, 200, {
           filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at < {:end}', {
-            uid: userId, start: monthStart + ' 00:00:00', end: nextMonth + ' 00:00:00',
+            uid: userId, start: pbStart, end: pbEnd,
           }),
           sort: '-started_at',
           fields: 'id,activity_type,distance_km,duration_seconds,started_at,finished_at,note',
         }),
         pb.collection('nutrition_entries').getList(1, 500, {
           filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
-            uid: userId, start: monthStart + ' 00:00:00', end: nextMonth + ' 00:00:00',
+            uid: userId, start: pbStart, end: pbEnd,
           }),
           fields: 'id,logged_at,total_calories',
         }),
         pb.collection('water_entries').getList(1, 500, {
           filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
-            uid: userId, start: monthStart + ' 00:00:00', end: nextMonth + ' 00:00:00',
+            uid: userId, start: pbStart, end: pbEnd,
           }),
           fields: 'id,logged_at,amount_ml',
         }),
@@ -108,36 +119,42 @@ export default function CalendarPage() {
       // Cardio
       if (cardioRes.status === 'fulfilled') {
         setCardioSessions(cardioRes.value.items as unknown as CardioSession[])
+      } else {
+        console.warn('Calendar: cardio fetch failed', cardioRes.reason)
       }
 
-      // Nutrition — aggregate by date
+      // Nutrition — aggregate by date (convert UTC timestamps to local dates)
       if (nutritionRes.status === 'fulfilled') {
         const map: Record<string, DayNutritionSummary> = {}
         for (const item of nutritionRes.value.items) {
-          const date = ((item as any).logged_at || '').slice(0, 10)
+          const date = utcToLocalDateStr((item as any).logged_at || '')
           if (!date) continue
           if (!map[date]) map[date] = { meals: 0, calories: 0 }
           map[date].meals++
           map[date].calories += (item as any).total_calories || 0
         }
         setNutritionByDate(map)
+      } else {
+        console.warn('Calendar: nutrition fetch failed', nutritionRes.reason)
       }
 
-      // Water — aggregate by date
+      // Water — aggregate by date (convert UTC timestamps to local dates)
       if (waterRes.status === 'fulfilled') {
         const map: Record<string, DayWaterSummary> = {}
         for (const item of waterRes.value.items) {
-          const date = ((item as any).logged_at || '').slice(0, 10)
+          const date = utcToLocalDateStr((item as any).logged_at || '')
           if (!date) continue
           if (!map[date]) map[date] = { totalMl: 0 }
           map[date].totalMl += (item as any).amount_ml || 0
         }
         setWaterByDate(map)
+      } else {
+        console.warn('Calendar: water fetch failed', waterRes.reason)
       }
     }
     load()
     return () => { cancelled = true }
-  }, [userId, viewYear, viewMonth])
+  }, [userId, viewYear, viewMonth, refreshKey])
 
   // Build a map of date → entries for this month (workouts + cardio)
   const sessionsByDate = useMemo(() => {
@@ -159,7 +176,7 @@ export default function CalendarPage() {
 
     // Cardio sessions
     cardioSessions.forEach(cs => {
-      const date = (cs.started_at || '').slice(0, 10)
+      const date = utcToLocalDateStr(cs.started_at || '')
       if (!date) return
       if (!map[date]) map[date] = []
       map[date].push({

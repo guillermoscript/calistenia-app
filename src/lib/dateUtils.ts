@@ -129,13 +129,15 @@ export function localMidnightAsUTC(dateStr?: string): string {
   return result.toISOString().replace('T', ' ').slice(0, 19)
 }
 
-/** Human-friendly relative date label in Spanish (Hoy, Ayer, Hace N dias, or short date). */
+/** Human-friendly relative date label in Spanish (Hoy, Ayer, Hace N días, or short date). */
 export function relativeDate(dateStr: string): string {
   const today = todayStr()
   const yesterday = daysAgoStr(1)
   if (dateStr === today) return 'Hoy'
   if (dateStr === yesterday) return 'Ayer'
-  const diff = Math.floor((new Date(today).getTime() - new Date(dateStr).getTime()) / 86400000)
-  if (diff <= 7) return `Hace ${diff} dias`
+  const diff = Math.floor(
+    (new Date(today + 'T12:00:00').getTime() - new Date(dateStr + 'T12:00:00').getTime()) / 86400000
+  )
+  if (diff >= 2 && diff <= 7) return `Hace ${diff} días`
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }

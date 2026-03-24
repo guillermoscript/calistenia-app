@@ -38,24 +38,30 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
       .sort((a, b) => a.date.localeCompare(b.date))
   }, [logs])
 
-  if (chartData.length < 2) return null
+  const canShowChart = chartData.length >= 2
+
+  if (chartData.length === 0 && !lastSets) return null
 
   return (
     <Card>
       <CardContent className="p-0">
         <button
-          onClick={() => setOpen(o => !o)}
-          className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-muted/30 transition-colors"
+          onClick={() => canShowChart && setOpen(o => !o)}
+          className={cn('w-full px-4 py-3 flex items-center justify-between text-left transition-colors', canShowChart && 'hover:bg-muted/30')}
         >
           <div className="font-medium text-sm capitalize">{exerciseName.replace(/_/g, ' ')}</div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground font-mono">{chartData.length} sesiones</span>
-            <svg
-              className={cn('size-4 text-muted-foreground transition-transform', open && 'rotate-180')}
-              viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-            >
-              <polyline points="4,6 8,10 12,6" />
-            </svg>
+            <span className="text-[10px] text-muted-foreground font-mono">
+              {chartData.length} {chartData.length === 1 ? 'sesión' : 'sesiones'}
+            </span>
+            {canShowChart && (
+              <svg
+                className={cn('size-4 text-muted-foreground transition-transform', open && 'rotate-180')}
+                viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+              >
+                <polyline points="4,6 8,10 12,6" />
+              </svg>
+            )}
           </div>
         </button>
 
@@ -74,7 +80,7 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
           </div>
         )}
 
-        {open && (
+        {canShowChart && open && (
           <div className="px-4 pb-4">
             {showSessionType && chartData.some(d => d.isFree) && (
               <div className="flex gap-3 mb-2 text-[10px] text-muted-foreground">

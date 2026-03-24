@@ -1,6 +1,7 @@
 import type { ProgressMap, ExerciseLog } from '../types'
 
-export const isFreeSession = (workoutKey: string) => workoutKey.startsWith('free_')
+export const isFreeSession = (workoutKey: string | undefined | null): boolean =>
+  !!workoutKey && workoutKey.startsWith('free_')
 
 export function filterProgressByType(progress: ProgressMap, type: 'free' | 'program'): ProgressMap {
   return Object.fromEntries(

@@ -92,25 +92,31 @@ export default function FreeProgressPage() {
           <ProgressSummary progress={progress} settings={settings} filter="free" />
 
           {/* Exercise Charts with last-session sets */}
-          {Object.keys(exerciseLogs).length > 0 && (
-            <div className="mb-8">
-              <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Ejercicios</div>
-              <div className="flex flex-col gap-2.5">
-                {Object.entries(exerciseLogs).map(([exId, logs]) => {
-                  const latest = [...logs].sort((a, b) => b.date.localeCompare(a.date))[0]
-                  return (
-                    <ExerciseChart
-                      key={exId}
-                      exerciseName={exId}
-                      logs={logs}
-                      lastSets={latest?.sets}
-                      accentColor="violet"
-                    />
-                  )
-                })}
+          {(() => {
+            const visibleExercises = Object.entries(exerciseLogs).filter(([, logs]) =>
+              logs.some(l => l.sets.some(s => parseInt(s.reps, 10) > 0))
+            )
+            if (visibleExercises.length === 0) return null
+            return (
+              <div className="mb-8">
+                <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Ejercicios</div>
+                <div className="flex flex-col gap-2.5">
+                  {visibleExercises.map(([exId, logs]) => {
+                    const latest = [...logs].sort((a, b) => b.date.localeCompare(a.date))[0]
+                    return (
+                      <ExerciseChart
+                        key={exId}
+                        exerciseName={exId}
+                        logs={logs}
+                        lastSets={latest?.sets}
+                        accentColor="violet"
+                      />
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Session History */}
           <div className="mb-8">
