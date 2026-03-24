@@ -6,7 +6,7 @@ import { Badge } from '../components/ui/badge'
 import { Separator } from '../components/ui/separator'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
-import { todayStr, daysAgoStr } from '../lib/dateUtils'
+import { relativeDate } from '../lib/dateUtils'
 import { PHASE_COLORS } from '../lib/style-tokens'
 import { useWorkoutState } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
@@ -60,16 +60,6 @@ interface SessionLog {
 
 interface ProgressPageProps {
   // All data now comes from WorkoutContext
-}
-
-function relativeDate(dateStr: string): string {
-  const today = todayStr()
-  const yesterday = daysAgoStr(1)
-  if (dateStr === today) return 'Hoy'
-  if (dateStr === yesterday) return 'Ayer'
-  const diff = Math.floor((new Date(today).getTime() - new Date(dateStr).getTime()) / 86400000)
-  if (diff <= 7) return `Hace ${diff} dias`
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
 export default function ProgressPage() {
@@ -138,6 +128,7 @@ export default function ProgressPage() {
   }, [lumbarChecks])
 
   const programName = activeProgram?.name || null
+  const freeLogCount = allLogs.filter(l => l.isFree).length
 
   return (
     <div className="max-w-[860px] mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -169,7 +160,7 @@ export default function ProgressPage() {
                     <div className="min-w-0">
                       <div className={cn('text-sm font-medium truncate', log.isFree ? 'text-violet-400' : phaseColor?.text)}>{log.title}</div>
                       {log.isFree && log.exerciseCount > 0 && (
-                        <div className="text-[11px] text-muted-foreground">{log.exerciseCount} ejercicios</div>
+                        <div className="text-[11px] text-muted-foreground">{log.exerciseCount} {log.exerciseCount !== 1 ? 'ejercicios' : 'ejercicio'}</div>
                       )}
                     </div>
                   </div>
@@ -205,6 +196,22 @@ export default function ProgressPage() {
             <ProgressSummary progress={progress} settings={settings} />
           </div>
 
+          {/* Link to Free Progress */}
+          {freeLogCount > 0 && (
+            <button
+              onClick={() => navigate('/progress/free')}
+              className="w-full mb-8 px-4 py-3 bg-violet-400/5 border border-violet-400/20 rounded-lg hover:border-violet-400/40 transition-colors flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-violet-400 text-sm font-medium">Progreso de sesiones libres</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {freeLogCount} {freeLogCount !== 1 ? 'sesiones' : 'sesión'}
+                </span>
+              </div>
+              <svg className="size-4 text-violet-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+            </button>
+          )}
+
           {/* Exercise Charts */}
           {Object.keys(exerciseLogs).length > 0 && (
             <div id="tour-exercise-charts" className="mb-8">
@@ -213,9 +220,9 @@ export default function ProgressPage() {
                 {Object.entries(exerciseLogs).map(([exId, logs]) => (
                   <ExerciseChart
                     key={exId}
-                    exerciseId={exId}
                     exerciseName={exId}
                     logs={logs}
+                    showSessionType
                   />
                 ))}
               </div>

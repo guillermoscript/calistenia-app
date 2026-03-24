@@ -2,14 +2,17 @@ import { useMemo } from 'react'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
 import { todayStr as todayStrFn, toLocalDateStr } from '../../lib/dateUtils'
+import { isFreeSession } from '../../lib/progressUtils'
 import type { ProgressMap, Settings, ExerciseLog } from '../../types'
 
 interface ProgressSummaryProps {
   progress: ProgressMap
   settings: Settings
+  /** Filter stats by session type. Default 'all'. */
+  filter?: 'program' | 'free' | 'all'
 }
 
-export default function ProgressSummary({ progress, settings }: ProgressSummaryProps) {
+export default function ProgressSummary({ progress, settings, filter = 'all' }: ProgressSummaryProps) {
   const stats = useMemo(() => {
     const today = new Date()
     const todayStr = todayStrFn()
@@ -46,7 +49,12 @@ export default function ProgressSummary({ progress, settings }: ProgressSummaryP
     const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
     const prevMonthStartStr = toLocalDateStr(prevMonthStart)
 
-    const doneKeys = Object.keys(progress).filter(k => k.startsWith('done_'))
+    const doneKeys = Object.keys(progress).filter(k => {
+      if (!k.startsWith('done_')) return false
+      if (filter === 'all') return true
+      const wk = k.split('_').slice(2).join('_')
+      return filter === 'free' ? isFreeSession(wk) : !isFreeSession(wk)
+    })
 
     const sessionsThisWeek = doneKeys.filter(k =>
       thisWeekDates.some(d => k.includes(d))
@@ -70,9 +78,20 @@ export default function ProgressSummary({ progress, settings }: ProgressSummaryP
     const setsThisWeek = Object.values(progress)
       .filter((v): v is ExerciseLog => {
         const log = v as ExerciseLog
-        return !!log.exerciseId && !!log.sets && thisWeekDates.includes(log.date)
+        if (!log.exerciseId || !log.sets || !thisWeekDates.includes(log.date)) return false
+        if (filter === 'all') return true
+        return filter === 'free' ? isFreeSession(log.workoutKey) : !isFreeSession(log.workoutKey)
       })
       .reduce((acc, log) => acc + log.sets.length, 0)
+
+    // Count free sessions this week (for breakdown display)
+    const freeSessionsThisWeek = filter === 'all'
+      ? Object.keys(progress).filter(k =>
+          k.startsWith('done_') &&
+          thisWeekDates.some(d => k.includes(d)) &&
+          isFreeSession(k.split('_').slice(2).join('_'))
+        ).length
+      : 0
 
     return {
       sessionsThisWeek,
@@ -81,8 +100,9 @@ export default function ProgressSummary({ progress, settings }: ProgressSummaryP
       sessionsPrevMonth,
       setsThisWeek,
       weeklyGoal: settings.weeklyGoal || 5,
+      freeSessionsThisWeek,
     }
-  }, [progress, settings])
+  }, [progress, settings, filter])
 
   const weekDiff = stats.sessionsThisWeek - stats.sessionsPrevWeek
   const monthDiff = stats.sessionsThisMonth - stats.sessionsPrevMonth
@@ -91,11 +111,18 @@ export default function ProgressSummary({ progress, settings }: ProgressSummaryP
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
       <Card>
         <CardContent className="p-5">
-          <div className={cn('font-bebas text-[40px] leading-none', 'text-lime')}>
+          <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-lime')}>
             {stats.sessionsThisWeek}
-            <span className="text-lg text-muted-foreground">/{stats.weeklyGoal}</span>
+            {filter !== 'free' && <span className="text-lg text-muted-foreground">/{stats.weeklyGoal}</span>}
           </div>
-          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">Sesiones esta semana</div>
+          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
+            {filter === 'free' ? 'Sesiones libres esta semana' : 'Sesiones esta semana'}
+          </div>
+          {filter === 'all' && stats.freeSessionsThisWeek > 0 && (
+            <div className="text-[11px] mt-1 text-violet-400">
+              {stats.freeSessionsThisWeek} libre{stats.freeSessionsThisWeek !== 1 ? 's' : ''}
+            </div>
+          )}
           {weekDiff !== 0 && (
             <div className={cn('text-[11px] mt-1', weekDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
               {weekDiff > 0 ? '+' : ''}{weekDiff} vs semana anterior
@@ -106,10 +133,12 @@ export default function ProgressSummary({ progress, settings }: ProgressSummaryP
 
       <Card>
         <CardContent className="p-5">
-          <div className={cn('font-bebas text-[40px] leading-none', 'text-sky-500')}>
+          <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-sky-500')}>
             {stats.sessionsThisMonth}
           </div>
-          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">Sesiones este mes</div>
+          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
+            {filter === 'free' ? 'Sesiones libres este mes' : 'Sesiones este mes'}
+          </div>
           {monthDiff !== 0 && (
             <div className={cn('text-[11px] mt-1', monthDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
               {monthDiff > 0 ? '+' : ''}{monthDiff} vs mes anterior
@@ -120,10 +149,12 @@ export default function ProgressSummary({ progress, settings }: ProgressSummaryP
 
       <Card>
         <CardContent className="p-5">
-          <div className={cn('font-bebas text-[40px] leading-none', 'text-amber-400')}>
+          <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-amber-400')}>
             {stats.setsThisWeek}
           </div>
-          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">Series esta semana</div>
+          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
+            {filter === 'free' ? 'Series libres esta semana' : 'Series esta semana'}
+          </div>
         </CardContent>
       </Card>
     </div>

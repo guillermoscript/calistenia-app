@@ -2,15 +2,21 @@ import { useState, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
-import type { ExerciseLog } from '../../types'
+import { isFreeSession } from '../../lib/progressUtils'
+import type { ExerciseLog, SetData } from '../../types'
 
 interface ExerciseChartProps {
-  exerciseId: string
   exerciseName: string
   logs: ExerciseLog[]
+  /** When true, dots from free sessions are shown in violet */
+  showSessionType?: boolean
+  /** Show last session set pills below the header when collapsed */
+  lastSets?: SetData[]
+  /** Accent color for set pills and chart line (default: lime) */
+  accentColor?: 'lime' | 'violet'
 }
 
-export default function ExerciseChart({ exerciseId, exerciseName, logs }: ExerciseChartProps) {
+export default function ExerciseChart({ exerciseName, logs, showSessionType, lastSets, accentColor = 'lime' }: ExerciseChartProps) {
   const [open, setOpen] = useState(false)
 
   const chartData = useMemo(() => {
@@ -25,6 +31,7 @@ export default function ExerciseChart({ exerciseId, exerciseName, logs }: Exerci
         return {
           date: log.date,
           reps: maxReps,
+          isFree: isFreeSession(log.workoutKey),
         }
       })
       .filter(d => d.reps > 0)
@@ -52,8 +59,29 @@ export default function ExerciseChart({ exerciseId, exerciseName, logs }: Exerci
           </div>
         </button>
 
+        {lastSets && !open && (
+          <div className="px-4 pb-3 flex gap-1.5 flex-wrap">
+            {lastSets.map((s, i) => (
+              <span key={i} className={cn(
+                'px-2 py-0.5 rounded font-mono text-[11px] border',
+                accentColor === 'violet'
+                  ? 'bg-violet-400/5 border-violet-400/15 text-violet-400'
+                  : 'bg-lime/5 border-lime/15 text-lime'
+              )}>
+                S{i + 1}: {s.reps}
+              </span>
+            ))}
+          </div>
+        )}
+
         {open && (
           <div className="px-4 pb-4">
+            {showSessionType && chartData.some(d => d.isFree) && (
+              <div className="flex gap-3 mb-2 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-lime" />Programa</span>
+                <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-violet-400" />Libre</span>
+              </div>
+            )}
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
                 <XAxis
@@ -81,10 +109,17 @@ export default function ExerciseChart({ exerciseId, exerciseName, logs }: Exerci
                 <Line
                   type="monotone"
                   dataKey="reps"
-                  stroke="#a3e635"
+                  stroke={accentColor === 'violet' ? '#a78bfa' : '#a3e635'}
                   strokeWidth={2}
-                  dot={{ r: 3, fill: '#a3e635' }}
-                  activeDot={{ r: 5, fill: '#a3e635' }}
+                  dot={showSessionType
+                    ? (props: any) => {
+                        const { cx, cy, payload } = props
+                        const color = payload.isFree ? '#a78bfa' : '#a3e635'
+                        return <circle key={`${payload.date}`} cx={cx} cy={cy} r={3} fill={color} stroke="none" />
+                      }
+                    : { r: 3, fill: accentColor === 'violet' ? '#a78bfa' : '#a3e635' }
+                  }
+                  activeDot={{ r: 5, fill: accentColor === 'violet' ? '#a78bfa' : '#a3e635' }}
                 />
               </LineChart>
             </ResponsiveContainer>

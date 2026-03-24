@@ -28,6 +28,7 @@ const EditorPage = lazy(() => import('./pages/EditorPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const RemindersPage = lazy(() => import('./pages/RemindersPage'))
 const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
+const FreeProgressPage = lazy(() => import('./pages/FreeProgressPage'))
 const ActiveSessionPage = lazy(() => import('./pages/ActiveSessionPage'))
 const CardioSessionPage = lazy(() => import('./pages/CardioSessionPage'))
 const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
@@ -498,6 +499,7 @@ function AuthenticatedApp({
             <Route path="/nutrition" element={<NutritionPage userId={userId!} trainingPhase={settings.phase} />} />
             <Route path="/nutrition/log" element={<MealLoggerPage userId={userId!} />} />
             <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/progress/free" element={<FreeProgressPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/profile" element={<ProfilePage user={user!} />} />
             <Route path="/reminders" element={<RemindersPage userId={userId!} />} />
