@@ -633,6 +633,7 @@ interface SessionViewProps {
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
   setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
+  onMinimize?: () => void
 }
 
 export default function SessionView({
@@ -647,6 +648,7 @@ export default function SessionView({
   setRestForExercise,
   onMinimize,
 }: SessionViewProps) {
+  const navigate = useNavigate()
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
 
   const [stepIdx,   setStepIdx]   = useState<number>(0)
@@ -761,28 +763,19 @@ export default function SessionView({
   }, [onMarkDone, workoutKey, onExitSession])
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col overflow-hidden">
       {/* ── TOP BAR ── */}
       {phase !== 'celebrate' && (
         <div className="flex-shrink-0">
-          <div className="flex items-center justify-between px-5 h-[52px]">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowExit(true)}
-                className="bg-transparent border-none cursor-pointer text-muted-foreground font-mono text-[11px] tracking-wide py-1 flex items-center gap-1.5 hover:text-foreground transition-colors"
-              >
-                ← SALIR
-              </button>
-              {onMinimize && (
-                <button
-                  onClick={onMinimize}
-                  aria-label="Minimizar sesion"
-                  className="bg-transparent border-none cursor-pointer text-muted-foreground py-1 hover:text-foreground transition-colors"
-                >
-                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="13" x2="13" y2="13" /></svg>
-                </button>
-              )}
-            </div>
+          <div className="flex items-center justify-between px-4 h-[52px]">
+            {/* Back — just navigate away, session stays alive in context */}
+            <button
+              onClick={() => navigate(-1)}
+              className="bg-transparent border-none cursor-pointer text-muted-foreground py-1 flex items-center gap-1.5 hover:text-foreground transition-colors"
+              aria-label="Volver"
+            >
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
 
             <div className="text-center">
               {phase === 'exercise' && currentStep && (
@@ -796,17 +789,19 @@ export default function SessionView({
               {phase === 'note' && (
                 <div className="font-mono text-[9px] text-lime tracking-[3px]">COMPLETADO</div>
               )}
+              <div className="font-mono text-[8px] text-muted-foreground/40 tracking-wide">
+                {phase === 'note' ? exerciseBoundaries.length : currentExerciseIndex + 1}/{exerciseBoundaries.length} · {phase === 'note' ? steps.length : stepIdx + 1}/{steps.length} series
+              </div>
             </div>
 
-            <div className="text-right">
-              <div className="font-mono text-[10px] text-muted-foreground tracking-wide">
-                {phase === 'note' ? exerciseBoundaries.length : currentExerciseIndex + 1}
-                <span className="text-muted-foreground/30">/{exerciseBoundaries.length}</span>
-              </div>
-              <div className="font-mono text-[8px] text-muted-foreground/40 tracking-wide">
-                {phase === 'note' ? steps.length : stepIdx + 1}/{steps.length} series
-              </div>
-            </div>
+            {/* Discard button */}
+            <button
+              onClick={() => setShowExit(true)}
+              className="bg-transparent border-none cursor-pointer text-muted-foreground py-1 hover:text-red-400 transition-colors"
+              aria-label="Descartar sesion"
+            >
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
           </div>
           {/* Session progress bar */}
           <div className="h-[2px] bg-muted">
@@ -884,13 +879,15 @@ export default function SessionView({
         />
       )}
 
-      {/* Interrupt Dialog */}
+      {/* Discard Dialog */}
       <Dialog open={showExit} onOpenChange={setShowExit}>
         <DialogContent className="max-w-[320px] max-sm:max-w-[90vw]">
           <DialogHeader>
-            <DialogTitle className="font-bebas text-[28px] tracking-[2px]">¿Interrumpir sesión?</DialogTitle>
+            <DialogTitle className="font-bebas text-[28px] tracking-[2px]">¿Descartar sesión?</DialogTitle>
             <DialogDescription>
-              Las series que ya registraste se guardarán. La sesión quedará marcada como incompleta.
+              {setsCount > 0
+                ? `Llevas ${setsCount} serie${setsCount > 1 ? 's' : ''} registrada${setsCount > 1 ? 's' : ''}. Se guardarán pero la sesión quedará marcada como incompleta.`
+                : 'La sesión se descartará sin guardar nada.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col gap-2.5 sm:flex-col">
@@ -899,7 +896,7 @@ export default function SessionView({
               onClick={handleInterruptConfirm}
               className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 font-bebas text-lg tracking-wide"
             >
-              GUARDAR Y SALIR
+              DESCARTAR SESION
             </Button>
             <Button
               variant="outline"
