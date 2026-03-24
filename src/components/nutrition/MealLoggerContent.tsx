@@ -46,8 +46,8 @@ function getDefaultMealType(): MealType {
   return 'cena'
 }
 
-/** Compress image client-side to max 1024px */
-function compressImage(file: File, maxSize = 1024): Promise<File> {
+/** Compress image client-side to max 1536px (higher res = better AI food detection) */
+function compressImage(file: File, maxSize = 1536): Promise<File> {
   return new Promise((resolve) => {
     const img = new Image()
     const url = URL.createObjectURL(file)

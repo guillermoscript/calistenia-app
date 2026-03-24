@@ -7,17 +7,17 @@ import { UNIT_WEIGHT_GRAMS } from '../types'
 export function parsePortionString(str: string): { amount: number; unit: PortionUnit } {
   const s = str.trim().toLowerCase()
 
-  // Try to match number + unit
-  const match = s.match(/^([\d.,]+)\s*(g|kg|ml|l|oz|unidad|unidades)?$/i)
+  // Try to match number + unit (flexible: supports "175g", "175 g", "175gr", "175 gramos", etc.)
+  const match = s.match(/([\d.,]+)\s*(g(?:r(?:amos)?)?|kg|ml|l(?:itros?)?|oz|unidad(?:es)?)?/i)
   if (match) {
     const amount = parseFloat(match[1].replace(',', '.')) || 100
     let unit: PortionUnit = 'g'
     const rawUnit = (match[2] || 'g').toLowerCase()
     if (rawUnit === 'kg') unit = 'kg'
     else if (rawUnit === 'ml') unit = 'ml'
-    else if (rawUnit === 'l') unit = 'L'
+    else if (rawUnit === 'l' || rawUnit.startsWith('litro')) unit = 'L'
     else if (rawUnit === 'oz') unit = 'oz'
-    else if (rawUnit === 'unidad' || rawUnit === 'unidades') unit = 'unidad'
+    else if (rawUnit.startsWith('unidad')) unit = 'unidad'
     else unit = 'g'
     return { amount, unit }
   }
@@ -65,6 +65,7 @@ export function calcMacros(food: FoodItem): FoodItem {
 export function migrateLegacyFood(legacy: {
   name: string
   portion?: string
+  portionGrams?: number
   calories: number
   protein: number
   carbs: number
@@ -75,9 +76,14 @@ export function migrateLegacyFood(legacy: {
   const parsed = parsePortionString(legacy.portion || '100g')
   const unitWeight = UNIT_WEIGHT_GRAMS[parsed.unit]
 
+  // Use portionGrams from AI when available (more reliable than parsing string)
+  const portionAmount = legacy.portionGrams && legacy.portionGrams > 0
+    ? legacy.portionGrams
+    : parsed.amount
+
   const food: FoodItem = {
     name: legacy.name,
-    portionAmount: parsed.amount,
+    portionAmount,
     portionUnit: parsed.unit,
     unitWeightInGrams: unitWeight,
     calories: legacy.calories,

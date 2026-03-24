@@ -18,13 +18,16 @@ export const FoodItemSchema = z.object({
   portion: z
     .string()
     .describe('Tamaño de la porción estimada con precision realista. NUNCA uses valores redondeados a 50g (como 50g, 100g, 150g, 200g). Usa estimaciones visuales precisas como 175g, 185g, 220g, 135g, 280g. Para liquidos: 180ml, 330ml, etc. Para unidades: "1 unidad", "2 unidades".'),
+  portionGrams: z
+    .number()
+    .describe('Peso total estimado de la porción en GRAMOS (número). Ej: para "175g" → 175, para "1 unidad" de huevo → 60, para "250ml" de leche → 250. NUNCA uses valores redondeados a 50 (50, 100, 150, 200). Usa estimaciones precisas como 175, 185, 220, 135.'),
   portionNote: z
     .string()
     .describe('Nota breve explicando como se estimo la porcion (ej: "filete mediano", "vaso estandar 330ml", "puñado grande", "plato hondo lleno")'),
-  calories: z.number().describe("Calorías estimadas (kcal)"),
-  protein: z.number().describe("Proteína estimada (g)"),
-  carbs: z.number().describe("Carbohidratos estimados (g)"),
-  fat: z.number().describe("Grasa estimada (g)"),
+  calories: z.number().describe("Calorías estimadas para la porción indicada (kcal)"),
+  protein: z.number().describe("Proteína estimada para la porción indicada (g)"),
+  carbs: z.number().describe("Carbohidratos estimados para la porción indicada (g)"),
+  fat: z.number().describe("Grasa estimada para la porción indicada (g)"),
   confidence: z
     .enum(["high", "medium", "low"])
     .describe("Confianza en la identificación del alimento"),

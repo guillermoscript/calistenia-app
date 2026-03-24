@@ -34,13 +34,30 @@ interface OFFProduct {
   brands?: string;
   serving_size?: string;
   nutriments?: OFFNutriments;
+  completeness?: number;
+  nutrition_grade_fr?: string;
+}
+
+/** Score product data quality: prefer complete nutritional data */
+function dataQualityScore(p: OFFProduct): number {
+  let score = 0;
+  const n = p.nutriments;
+  if (!n) return 0;
+  if (n["energy-kcal_100g"] != null && n["energy-kcal_100g"] > 0) score += 3;
+  if (n.proteins_100g != null && n.proteins_100g >= 0) score += 2;
+  if (n.carbohydrates_100g != null && n.carbohydrates_100g >= 0) score += 2;
+  if (n.fat_100g != null && n.fat_100g >= 0) score += 2;
+  if (n.fiber_100g != null) score += 1;
+  if (p.completeness && p.completeness > 0.5) score += 1;
+  if (p.product_name_es) score += 1; // prefer Spanish-named products
+  return score;
 }
 
 async function searchOpenFoodFacts(
   query: string,
   locale = "es"
 ): Promise<OFFProduct[]> {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=5&lc=${locale}`;
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=10&lc=${locale}&fields=product_name,product_name_es,brands,serving_size,nutriments,completeness,nutrition_grade_fr`;
   const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
   if (!res.ok) return [];
   const data = await res.json();
@@ -93,6 +110,7 @@ const searchFoodDatabase = tool({
 
       const matches = products
         .filter((p) => p.nutriments?.["energy-kcal_100g"] != null)
+        .sort((a, b) => dataQualityScore(b) - dataQualityScore(a))
         .slice(0, 3)
         .map((p) => ({
           name: p.product_name_es || p.product_name || query,
@@ -155,7 +173,7 @@ export async function analyzeMealImage({
     model,
     output: Output.object({ schema: MealAnalysisSchema }),
     tools: { search_food_database: searchFoodDatabase, ...webSearchTools },
-    stopWhen: stepCountIs(7),
+    stopWhen: stepCountIs(10),
     experimental_telemetry: {
       isEnabled: true,
       functionId: "meal-analyzer",
@@ -183,6 +201,25 @@ export async function analyzeMealImage({
     (acc, step) => acc + (step.toolCalls?.length ?? 0),
     0
   );
+
+  // Post-processing: fix caloric consistency (P×4 + C×4 + F×9 ≈ kcal)
+  if (output?.foods) {
+    for (const food of output.foods) {
+      const computedCal = Math.round(food.protein * 4 + food.carbs * 4 + food.fat * 9);
+      const deviation = Math.abs(food.calories - computedCal) / Math.max(computedCal, 1);
+      // If calories deviate >25% from macros, trust macros and recalculate calories
+      if (deviation > 0.25 && computedCal > 0) {
+        food.calories = computedCal;
+      }
+    }
+    // Recalculate totals from individual foods
+    output.totals = {
+      calories: Math.round(output.foods.reduce((s, f) => s + f.calories, 0)),
+      protein: Math.round(output.foods.reduce((s, f) => s + f.protein, 0) * 10) / 10,
+      carbs: Math.round(output.foods.reduce((s, f) => s + f.carbs, 0) * 10) / 10,
+      fat: Math.round(output.foods.reduce((s, f) => s + f.fat, 0) * 10) / 10,
+    };
+  }
 
   return {
     analysis: output,
