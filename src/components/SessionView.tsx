@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Image } from 'lucide-react'
 import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
@@ -632,7 +633,6 @@ interface SessionViewProps {
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
   setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
-  onMinimize?: () => void
 }
 
 export default function SessionView({
