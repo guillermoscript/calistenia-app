@@ -1,11 +1,13 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { useWorkoutState } from '../contexts/WorkoutContext'
-import type { SessionDone, WeekDay } from '../types'
+import { useAuthState } from '../contexts/AuthContext'
+import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import type { SessionDone, WeekDay, CardioSession } from '../types'
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const MONTH_NAMES = [
@@ -28,8 +30,29 @@ function formatDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
+export interface CalendarEntry {
+  type: 'workout' | 'cardio'
+  date: string
+  workoutKey: string
+  note: string
+  // Cardio-specific fields
+  activityType?: string
+  distanceKm?: number
+  durationSeconds?: number
+}
+
+interface DayNutritionSummary {
+  meals: number
+  calories: number
+}
+
+interface DayWaterSummary {
+  totalMl: number
+}
+
 export default function CalendarPage() {
   const { progress, weekDays, activeProgram, settings } = useWorkoutState()
+  const { userId } = useAuthState()
   const currentPhase = settings.phase
   const navigate = useNavigate()
   const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
@@ -37,22 +60,121 @@ export default function CalendarPage() {
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([])
+  const [nutritionByDate, setNutritionByDate] = useState<Record<string, DayNutritionSummary>>({})
+  const [waterByDate, setWaterByDate] = useState<Record<string, DayWaterSummary>>({})
 
   const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate())
   const days = useMemo(() => getMonthDays(viewYear, viewMonth), [viewYear, viewMonth])
 
-  // Build a map of date → sessions for this month
+  // Fetch cardio, nutrition, and water data for this month
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    const monthStart = formatDate(viewYear, viewMonth, 1)
+    const nextMonth = viewMonth === 11
+      ? formatDate(viewYear + 1, 0, 1)
+      : formatDate(viewYear, viewMonth + 1, 1)
+
+    const load = async () => {
+      const available = await isPocketBaseAvailable()
+      if (!available || cancelled) return
+
+      // Fetch all three in parallel
+      const [cardioRes, nutritionRes, waterRes] = await Promise.allSettled([
+        pb.collection('cardio_sessions').getList(1, 200, {
+          filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at < {:end}', {
+            uid: userId, start: monthStart + ' 00:00:00', end: nextMonth + ' 00:00:00',
+          }),
+          sort: '-started_at',
+          fields: 'id,activity_type,distance_km,duration_seconds,started_at,finished_at,note',
+        }),
+        pb.collection('nutrition_entries').getList(1, 500, {
+          filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
+            uid: userId, start: monthStart + ' 00:00:00', end: nextMonth + ' 00:00:00',
+          }),
+          fields: 'id,logged_at,total_calories',
+        }),
+        pb.collection('water_entries').getList(1, 500, {
+          filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
+            uid: userId, start: monthStart + ' 00:00:00', end: nextMonth + ' 00:00:00',
+          }),
+          fields: 'id,logged_at,amount_ml',
+        }),
+      ])
+
+      if (cancelled) return
+
+      // Cardio
+      if (cardioRes.status === 'fulfilled') {
+        setCardioSessions(cardioRes.value.items as unknown as CardioSession[])
+      }
+
+      // Nutrition — aggregate by date
+      if (nutritionRes.status === 'fulfilled') {
+        const map: Record<string, DayNutritionSummary> = {}
+        for (const item of nutritionRes.value.items) {
+          const date = ((item as any).logged_at || '').slice(0, 10)
+          if (!date) continue
+          if (!map[date]) map[date] = { meals: 0, calories: 0 }
+          map[date].meals++
+          map[date].calories += (item as any).total_calories || 0
+        }
+        setNutritionByDate(map)
+      }
+
+      // Water — aggregate by date
+      if (waterRes.status === 'fulfilled') {
+        const map: Record<string, DayWaterSummary> = {}
+        for (const item of waterRes.value.items) {
+          const date = ((item as any).logged_at || '').slice(0, 10)
+          if (!date) continue
+          if (!map[date]) map[date] = { totalMl: 0 }
+          map[date].totalMl += (item as any).amount_ml || 0
+        }
+        setWaterByDate(map)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [userId, viewYear, viewMonth])
+
+  // Build a map of date → entries for this month (workouts + cardio)
   const sessionsByDate = useMemo(() => {
-    const map: Record<string, SessionDone[]> = {}
+    const map: Record<string, CalendarEntry[]> = {}
+
+    // Workout sessions from progress
     Object.entries(progress).forEach(([key, val]) => {
       if (!key.startsWith('done_')) return
       const session = val as SessionDone
       if (!session.date) return
       if (!map[session.date]) map[session.date] = []
-      map[session.date].push(session)
+      map[session.date].push({
+        type: 'workout',
+        date: session.date,
+        workoutKey: session.workoutKey,
+        note: session.note || '',
+      })
     })
+
+    // Cardio sessions
+    cardioSessions.forEach(cs => {
+      const date = (cs.started_at || '').slice(0, 10)
+      if (!date) return
+      if (!map[date]) map[date] = []
+      map[date].push({
+        type: 'cardio',
+        date,
+        workoutKey: `cardio_${cs.id}`,
+        note: cs.note || '',
+        activityType: cs.activity_type,
+        distanceKm: cs.distance_km,
+        durationSeconds: cs.duration_seconds,
+      })
+    })
+
     return map
-  }, [progress])
+  }, [progress, cardioSessions])
 
   const selectedSessions = selectedDate ? sessionsByDate[selectedDate] || [] : []
 
@@ -152,15 +274,18 @@ export default function CalendarPage() {
               if (d === null) return <div key={`empty-${i}`} />
               const date = formatDate(viewYear, viewMonth, d)
               const sessions = sessionsByDate[date] || []
+              const nutrition = nutritionByDate[date]
+              const water = waterByDate[date]
               const isToday = date === todayStr
               const isSelected = date === selectedDate
               const hasSession = sessions.length > 0
+              const hasAnyData = hasSession || !!nutrition || !!water
               const isFuture = date > todayStr
 
               return (
                 <button
                   key={date}
-                  aria-label={`${d} de ${MONTH_NAMES[viewMonth]}${hasSession ? `, ${sessions.length} sesión${sessions.length > 1 ? 'es' : ''}` : ''}${isToday ? ', hoy' : ''}`}
+                  aria-label={`${d} de ${MONTH_NAMES[viewMonth]}${hasSession ? `, ${sessions.length} ${sessions.length > 1 ? 'sesiones' : 'sesión'}` : ''}${nutrition ? `, ${nutrition.meals} comidas` : ''}${isToday ? ', hoy' : ''}`}
                   onClick={() => setSelectedDate(isSelected ? null : date)}
                   className={cn(
                     'aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all text-sm relative',
@@ -168,7 +293,8 @@ export default function CalendarPage() {
                     isToday && !isSelected && 'border border-lime/40',
                     isSelected && 'border-2 border-lime bg-lime/10',
                     hasSession && !isSelected && 'bg-lime/15 text-lime',
-                    !hasSession && !isToday && !isSelected && 'hover:bg-muted',
+                    !hasSession && hasAnyData && !isSelected && 'bg-muted/40',
+                    !hasAnyData && !isToday && !isSelected && 'hover:bg-muted',
                   )}
                 >
                   <span className={cn(
@@ -177,11 +303,16 @@ export default function CalendarPage() {
                   )}>
                     {d}
                   </span>
-                  {hasSession && (
+                  {hasAnyData && (
                     <div className="flex gap-0.5">
-                      {sessions.slice(0, 3).map((_, j) => (
-                        <div key={j} className="size-1 rounded-full bg-lime" />
+                      {sessions.slice(0, 2).map((s, j) => (
+                        <div key={j} className={cn(
+                          'size-1 rounded-full',
+                          s.type === 'cardio' ? 'bg-sky-400' : s.workoutKey.startsWith('free_') ? 'bg-violet-400' : 'bg-lime',
+                        )} />
                       ))}
+                      {nutrition && <div className="size-1 rounded-full bg-amber-400" />}
+                      {water && <div className="size-1 rounded-full bg-cyan-400" />}
                     </div>
                   )}
                 </button>
@@ -204,7 +335,7 @@ export default function CalendarPage() {
                 </div>
                 <div className="text-sm">
                   {selectedSessions.length > 0
-                    ? `${selectedSessions.length} sesión${selectedSessions.length > 1 ? 'es' : ''}`
+                    ? `${selectedSessions.length} ${selectedSessions.length > 1 ? 'sesiones' : 'sesión'}`
                     : 'Sin entrenamientos registrados'
                   }
                 </div>
@@ -222,21 +353,41 @@ export default function CalendarPage() {
 
             {selectedSessions.length > 0 ? (
               <div className="space-y-2">
-                {selectedSessions.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => navigate(`/session/${s.date}/${s.workoutKey}`)}
-                    className="w-full text-left px-4 py-3 bg-muted/30 rounded-lg border border-border hover:border-lime/30 transition-colors flex items-center justify-between gap-3"
-                  >
-                    <div>
-                      <div className="text-sm font-medium">{parseWorkoutKey(s.workoutKey)}</div>
-                      {s.note && (
-                        <div className="text-xs text-muted-foreground mt-1 italic">{s.note}</div>
-                      )}
-                    </div>
-                    <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
-                  </button>
-                ))}
+                {selectedSessions.map((s, i) => {
+                  const isCardio = s.type === 'cardio'
+                  const isFree = s.workoutKey.startsWith('free_')
+                  const accentHover = isCardio ? 'hover:border-sky-400/30' : isFree ? 'hover:border-violet-400/30' : 'hover:border-lime/30'
+                  const titleColor = isCardio ? 'text-sky-400' : isFree ? 'text-violet-400' : ''
+
+                  const cardioLabel = isCardio && s.activityType
+                    ? { running: 'Correr', walking: 'Caminar', cycling: 'Ciclismo' }[s.activityType] || 'Cardio'
+                    : null
+
+                  const cardioMeta = isCardio && s.distanceKm
+                    ? `${s.distanceKm.toFixed(2)} km${s.durationSeconds ? ` · ${Math.floor(s.durationSeconds / 60)} min` : ''}`
+                    : null
+
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => !isCardio ? navigate(`/session/${s.date}/${s.workoutKey}`) : navigate('/cardio')}
+                      className={cn('w-full text-left px-4 py-3 bg-muted/30 rounded-lg border border-border transition-colors flex items-center justify-between gap-3', accentHover)}
+                    >
+                      <div>
+                        <div className={cn('text-sm font-medium', titleColor)}>
+                          {isCardio ? (cardioLabel || 'Cardio') : parseWorkoutKey(s.workoutKey)}
+                        </div>
+                        {cardioMeta && (
+                          <div className="text-[11px] text-muted-foreground mt-0.5">{cardioMeta}</div>
+                        )}
+                        {s.note && (
+                          <div className="text-xs text-muted-foreground mt-1 italic">{s.note}</div>
+                        )}
+                      </div>
+                      <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+                    </button>
+                  )
+                })}
               </div>
             ) : selectedPlanned ? (
               <div>
@@ -263,6 +414,33 @@ export default function CalendarPage() {
               <div className="text-xs text-muted-foreground">No entrenaste este día</div>
             ) : (
               <div className="text-xs text-muted-foreground">Día por venir</div>
+            )}
+
+            {/* Nutrition & Water summary for selected day */}
+            {selectedDate && (nutritionByDate[selectedDate] || waterByDate[selectedDate]) && (
+              <div className={cn('flex gap-4 flex-wrap', selectedSessions.length > 0 || selectedPlanned ? 'mt-4 pt-4 border-t border-border/60' : 'mt-2')}>
+                {nutritionByDate[selectedDate] && (
+                  <button
+                    onClick={() => navigate('/nutrition')}
+                    className="flex items-center gap-2 px-3 py-2 bg-amber-400/5 border border-amber-400/15 rounded-lg hover:border-amber-400/30 transition-colors"
+                  >
+                    <div className="size-2 rounded-full bg-amber-400" />
+                    <div className="text-[11px]">
+                      <span className="text-amber-400 font-medium">{nutritionByDate[selectedDate].meals} {nutritionByDate[selectedDate].meals > 1 ? 'comidas' : 'comida'}</span>
+                      <span className="text-muted-foreground ml-1.5">{nutritionByDate[selectedDate].calories} kcal</span>
+                    </div>
+                  </button>
+                )}
+                {waterByDate[selectedDate] && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-cyan-400/5 border border-cyan-400/15 rounded-lg">
+                    <div className="size-2 rounded-full bg-cyan-400" />
+                    <div className="text-[11px]">
+                      <span className="text-cyan-400 font-medium">{waterByDate[selectedDate].totalMl} ml</span>
+                      <span className="text-muted-foreground ml-1.5">agua</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
