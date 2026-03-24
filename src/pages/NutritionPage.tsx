@@ -83,8 +83,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     localStorage.setItem(LS_LAST_PHASE, String(trainingPhase))
   }, [trainingPhase])
 
-  const { todayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal } = useWater(userId)
   const [selectedDate, setSelectedDate] = useState(() => todayStr())
+  const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
 
   const {
     goals,
@@ -97,9 +97,22 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     calculateMacros,
     getDailyTotals,
     getEntriesForDate,
+    fetchEntriesForDate,
     getWeeklyHistory,
     getRecentEntries,
   } = useNutrition(userId)
+
+  // Fetch entries on-demand when user navigates to a different date
+  useEffect(() => {
+    fetchEntriesForDate(selectedDate)
+  }, [selectedDate, fetchEntriesForDate])
+
+  // Preload last 7 days for weekly chart
+  useEffect(() => {
+    for (let i = 1; i <= 6; i++) {
+      fetchEntriesForDate(addDays(todayStr(), -i))
+    }
+  }, [fetchEntriesForDate])
 
   const [frequentMeals, setFrequentMeals] = useState<NutritionEntry[]>([])
 
@@ -224,8 +237,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
       {/* Pending background jobs indicator */}
       {pending.length > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-lime-400/10 border border-lime-400/20 mb-4 motion-safe:animate-fade-in">
-          <div className="size-4 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin shrink-0" />
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-lime/10 border border-lime/20 mb-4 motion-safe:animate-fade-in">
+          <div className="size-4 border-2 border-lime/30 border-t-lime rounded-full animate-spin shrink-0" />
           <div className="text-xs text-foreground min-w-0">
             {pending.map((j, i) => (
               <span key={j.id}>
@@ -241,7 +254,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       <div id="tour-nutrition-date" className="flex items-center gap-3 mb-6">
         <button
           onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime-400/40 text-muted-foreground hover:text-foreground transition-colors"
+          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Día anterior"
         >
           ‹
@@ -254,7 +267,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         />
         <button
           onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime-400/40 text-muted-foreground hover:text-foreground transition-colors"
+          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Día siguiente"
         >
           ›
@@ -262,7 +275,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         {!isToday && (
           <button
             onClick={() => setSelectedDate(todayStr())}
-            className="text-[10px] tracking-widest text-lime-400 hover:text-lime-400/80 uppercase"
+            className="text-[10px] tracking-widest text-lime hover:text-lime/80 uppercase"
           >
             HOY
           </button>
@@ -289,10 +302,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
           {/* US-14: Phase change banner */}
           {phaseChangeBanner && (
-            <Card className="border-lime-400/30 bg-lime-400/5">
+            <Card className="border-lime/30 bg-lime/5">
               <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap">
                 <div>
-                  <div className="text-sm font-medium text-lime-400">
+                  <div className="text-sm font-medium text-lime">
                     Entraste a Fase {trainingPhase} de entrenamiento
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
@@ -315,7 +328,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                       // Temporarily hide goals to show setup wizard
                       saveGoals({ ...goals, dailyCalories: -1 })
                     }}
-                    className="bg-lime-400 hover:bg-lime-300 text-zinc-900 text-[10px] font-bebas tracking-widest h-8 px-3"
+                    className="bg-lime hover:bg-lime/90 text-lime-foreground text-[10px] font-bebas tracking-widest h-8 px-3"
                   >
                     Recalcular
                   </Button>
@@ -338,7 +351,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           )}
 
           {/* Water tracker */}
-          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} onSetGoal={setWaterGoal} />
+          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={isToday ? addWater : undefined} onSetGoal={setWaterGoal} adding={waterAdding} />
 
           {/* Frequent meals quick-tap */}
           {isToday && frequentMeals.length > 0 && (

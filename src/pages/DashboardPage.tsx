@@ -195,7 +195,7 @@ export default function DashboardPage({
   }, [duplicateProgram, navigate])
   const PHASES = phasesProp || FALLBACK_PHASES
   const [showProgramModal, setShowProgramModal] = useState(false)
-  const { todayTotal: waterTotal, goal: waterGoal, addWater } = useWater(userId ?? null)
+  const { todayTotal: waterTotal, goal: waterGoal, addWater, adding: waterAdding } = useWater(userId ?? null)
   const { entries: leaderboardEntries, load: loadLeaderboard } = useLeaderboard(userId ?? null)
   const { items: feedItems, load: loadFeed } = useActivityFeed(userId ?? null)
   const { entries: sleepEntries } = useSleep(userId ?? null)
@@ -437,7 +437,7 @@ export default function DashboardPage({
           </button>
         )}
         <div className={cn(!onGoToNutrition && 'col-span-full')}>
-          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} compact />
+          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={addWater} adding={waterAdding} compact />
         </div>
         {onGoToCardio && cardioWeeklyStats && (
           <CardioWidget

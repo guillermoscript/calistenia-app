@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
-import { todayStr, toLocalDateStr, daysAgoStr, localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
+import { todayStr, toLocalDateStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
 import type {
   NutritionEntry,
   NutritionGoal,
@@ -59,12 +59,14 @@ export function useNutrition(userId: string | null) {
 
   const initialized = useRef(false)
   const lastUserId = useRef<string | null>(null)
+  const loadedDates = useRef<Set<string>>(new Set())
 
   // ─── Init / re-init cuando cambia el userId ─────────────────────────────
   useEffect(() => {
     if (lastUserId.current !== userId) {
       lastUserId.current = userId
       initialized.current = false
+      loadedDates.current = new Set()
       setEntries([])
       setGoals(null)
       setIsReady(false)
@@ -125,8 +127,19 @@ export function useNutrition(userId: string | null) {
         loggedAt: r.logged_at,
       }))
 
-      setEntries(mapped)
-      lsSetEntries(mapped)
+      // Merge with cached entries from other days instead of replacing
+      const cachedEntries = lsGetEntries()
+      const todayIds = new Set(mapped.map(e => e.id))
+      const todayDateStr = todayStr()
+      const otherDayEntries = cachedEntries.filter(
+        e => !todayIds.has(e.id) && utcToLocalDateStr(e.loggedAt) !== todayDateStr
+      )
+      const merged = [...mapped, ...otherDayEntries].sort(
+        (a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
+      )
+      setEntries(merged)
+      lsSetEntries(merged)
+      loadedDates.current.add(todayDateStr)
 
       if (goalsRes.items.length > 0) {
         const g: any = goalsRes.items[0]
@@ -156,6 +169,66 @@ export function useNutrition(userId: string | null) {
       loadFromLS()
     }
   }
+
+  // ─── On-demand fetch for a specific date ──────────────────────────────────
+  const fetchAbortRef = useRef<AbortController | null>(null)
+
+  const fetchEntriesForDate = useCallback(async (date: string): Promise<void> => {
+    if (loadedDates.current.has(date)) return
+    if (!usePB || !userId) return
+    loadedDates.current.add(date) // mark early to prevent duplicate requests
+
+    // Cancel previous in-flight fetch (rapid date navigation)
+    fetchAbortRef.current?.abort()
+    const controller = new AbortController()
+    fetchAbortRef.current = controller
+
+    try {
+      const dayStart = localMidnightAsUTC(date)
+      const dayEnd = localMidnightAsUTC(addDays(date, 1))
+      const res = await pb.collection('nutrition_entries').getList(1, 200, {
+        filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
+          uid: userId,
+          start: dayStart,
+          end: dayEnd,
+        }),
+        sort: '-logged_at',
+        $autoCancel: false,
+      })
+
+      if (controller.signal.aborted) return
+      if (res.items.length === 0) return
+
+      const mapped: NutritionEntry[] = res.items.map((r: any) => ({
+        id: r.id,
+        user: r.user,
+        photoUrls: resolvePhotoUrls(r),
+        mealType: r.meal_type,
+        foods: Array.isArray(r.foods) ? r.foods : [],
+        totalCalories: Number(r.total_calories) || 0,
+        totalProtein: Number(r.total_protein) || 0,
+        totalCarbs: Number(r.total_carbs) || 0,
+        totalFat: Number(r.total_fat) || 0,
+        aiModel: r.ai_model || undefined,
+        loggedAt: r.logged_at,
+      }))
+
+      setEntries(prev => {
+        const existingIds = new Set(prev.map(e => e.id))
+        const newEntries = mapped.filter(e => !existingIds.has(e.id))
+        if (newEntries.length === 0) return prev
+        const updated = [...prev, ...newEntries].sort(
+          (a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
+        )
+        lsSetEntries(updated)
+        return updated
+      })
+    } catch {
+      if (!controller.signal.aborted) {
+        loadedDates.current.delete(date) // allow retry on error
+      }
+    }
+  }, [usePB, userId])
 
   // ─── AI analysis ──────────────────────────────────────────────────────────
   const analyzeMeal = useCallback(async (
@@ -538,6 +611,7 @@ export function useNutrition(userId: string | null) {
     getWeeklyAverages,
     getWeeklyHistory,
     getEntriesForDate,
+    fetchEntriesForDate,
     getRemainingMacros,
     getRecentEntries,
   }

@@ -1,6 +1,12 @@
 import type { FoodItem, PortionUnit } from '../types'
 import { UNIT_WEIGHT_GRAMS } from '../types'
 
+/** Coerce to a finite non-negative number, fallback 0 */
+const safe = (v: unknown): number => {
+  const n = Number(v)
+  return Number.isFinite(n) && n >= 0 ? n : 0
+}
+
 /**
  * Parse a portion string like "100g", "250ml", "2 unidad" into amount + unit.
  */
@@ -30,16 +36,16 @@ export function parsePortionString(str: string): { amount: number; unit: Portion
  * Given a FoodItem with macros for the current portion, compute the base/100g values.
  */
 export function normalizeToBase100(food: FoodItem): FoodItem {
-  const totalGrams = food.portionAmount * food.unitWeightInGrams
+  const totalGrams = safe(food.portionAmount) * safe(food.unitWeightInGrams)
   if (totalGrams <= 0) return food
 
   const factor = 100 / totalGrams
   return {
     ...food,
-    baseCal100: Math.round(food.calories * factor * 10) / 10,
-    baseProt100: Math.round(food.protein * factor * 10) / 10,
-    baseCarbs100: Math.round(food.carbs * factor * 10) / 10,
-    baseFat100: Math.round(food.fat * factor * 10) / 10,
+    baseCal100: Math.round(safe(food.calories) * factor * 10) / 10,
+    baseProt100: Math.round(safe(food.protein) * factor * 10) / 10,
+    baseCarbs100: Math.round(safe(food.carbs) * factor * 10) / 10,
+    baseFat100: Math.round(safe(food.fat) * factor * 10) / 10,
   }
 }
 
@@ -47,15 +53,15 @@ export function normalizeToBase100(food: FoodItem): FoodItem {
  * Given a FoodItem with base/100g values, compute display macros for the current portion.
  */
 export function calcMacros(food: FoodItem): FoodItem {
-  const totalGrams = food.portionAmount * food.unitWeightInGrams
+  const totalGrams = safe(food.portionAmount) * safe(food.unitWeightInGrams)
   const factor = totalGrams / 100
 
   return {
     ...food,
-    calories: Math.round(food.baseCal100 * factor),
-    protein: Math.round(food.baseProt100 * factor * 10) / 10,
-    carbs: Math.round(food.baseCarbs100 * factor * 10) / 10,
-    fat: Math.round(food.baseFat100 * factor * 10) / 10,
+    calories: Math.round(safe(food.baseCal100) * factor),
+    protein: Math.round(safe(food.baseProt100) * factor * 10) / 10,
+    carbs: Math.round(safe(food.baseCarbs100) * factor * 10) / 10,
+    fat: Math.round(safe(food.baseFat100) * factor * 10) / 10,
   }
 }
 
@@ -86,10 +92,10 @@ export function migrateLegacyFood(legacy: {
     portionAmount,
     portionUnit: parsed.unit,
     unitWeightInGrams: unitWeight,
-    calories: legacy.calories,
-    protein: legacy.protein,
-    carbs: legacy.carbs,
-    fat: legacy.fat,
+    calories: safe(legacy.calories),
+    protein: safe(legacy.protein),
+    carbs: safe(legacy.carbs),
+    fat: safe(legacy.fat),
     baseCal100: 0,
     baseProt100: 0,
     baseCarbs100: 0,
