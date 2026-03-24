@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { cn } from '../../lib/utils'
+import { localHour } from '../../lib/dateUtils'
 import { Button } from '../ui/button'
 import FoodNameInput from './FoodNameInput'
 import PortionInput from './PortionInput'
@@ -38,7 +39,7 @@ const MEAL_OPTIONS: { id: MealType; label: string; icon: string }[] = [
 
 /** Auto-detect meal type based on current hour */
 function getDefaultMealType(): MealType {
-  const hour = new Date().getHours()
+  const hour = localHour()
   if (hour < 10) return 'desayuno'
   if (hour < 15) return 'almuerzo'
   if (hour < 18) return 'snack'
@@ -121,15 +122,41 @@ export default function MealLoggerContent({
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>([])
   const [hourSuggestions, setHourSuggestions] = useState<FoodItem[]>([])
   const [recentEntries, setRecentEntries] = useState<NutritionEntry[]>([])
+  const [recentSearch, setRecentSearch] = useState('')
+  const [recentTypeFilter, setRecentTypeFilter] = useState<MealType | ''>('')
+  const [recentPage, setRecentPage] = useState(1)
   const [templates, setTemplates] = useState<MealTemplate[]>([])
   const [templateName, setTemplateName] = useState('')
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
+
+  const RECENT_PAGE_SIZE = 10
+
+  const filteredRecentEntries = useMemo(() => {
+    let entries = recentEntries
+    if (recentTypeFilter) {
+      entries = entries.filter(e => e.mealType === recentTypeFilter)
+    }
+    if (recentSearch.trim()) {
+      const q = recentSearch.toLowerCase().trim()
+      entries = entries.filter(entry =>
+        entry.foods.some(f => f.name?.toLowerCase().includes(q)) ||
+        entry.mealType?.toLowerCase().includes(q)
+      )
+    }
+    return entries
+  }, [recentEntries, recentSearch, recentTypeFilter])
+
+  const paginatedRecentEntries = useMemo(() =>
+    filteredRecentEntries.slice(0, recentPage * RECENT_PAGE_SIZE)
+  , [filteredRecentEntries, recentPage])
+
+  const hasMoreRecent = paginatedRecentEntries.length < filteredRecentEntries.length
 
   // Load recents when review step opens
   useEffect(() => {
     if (step === 'review' && userId) {
       getRecentFoods(8).then(setRecentFoods).catch(() => {})
-      getHourSuggestions(new Date().getHours()).then(setHourSuggestions).catch(() => {})
+      getHourSuggestions(localHour()).then(setHourSuggestions).catch(() => {})
     }
   }, [step, userId, getRecentFoods, getHourSuggestions])
 
@@ -288,7 +315,7 @@ export default function MealLoggerContent({
         loggedAt: new Date().toISOString(),
       }, imageFiles.length > 0 ? imageFiles : undefined)
       foods.filter(f => f.name.trim()).forEach(f => saveFoodToCatalog(f))
-      const hour = new Date().getHours()
+      const hour = localHour()
       foods.filter(f => f.name.trim()).forEach(f => trackFood(f, mealType, hour))
       setStep('success')
     } catch {
@@ -325,6 +352,9 @@ export default function MealLoggerContent({
 
   const loadRepeatMeal = async () => {
     setCaptureSubView('repeatMeal')
+    setRecentSearch('')
+    setRecentTypeFilter('')
+    setRecentPage(1)
     try {
       const entries = await getRecentEntries()
       setRecentEntries(entries)
@@ -588,43 +618,104 @@ export default function MealLoggerContent({
           {captureSubView === 'repeatMeal' && (
             <div className="space-y-3 motion-safe:animate-fade-in">
               <div className="flex items-center gap-3">
-                <button onClick={() => setCaptureSubView('main')} className="size-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+                <button onClick={() => { setCaptureSubView('main'); setRecentSearch(''); setRecentTypeFilter(''); setRecentPage(1) }} className="size-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
                   <BackIcon className="size-4 text-muted-foreground" />
                 </button>
                 <div className="font-bebas text-lg tracking-wide">COMIDAS RECIENTES</div>
               </div>
-              {recentEntries.length === 0 ? (
-                <div className="text-center py-12">
+              {recentEntries.length > 0 && (
+                <>
+                  <div className="relative">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                    <input
+                      type="text"
+                      value={recentSearch}
+                      onChange={e => { setRecentSearch(e.target.value); setRecentPage(1) }}
+                      placeholder="Buscar plato..."
+                      className="w-full pl-9 pr-8 py-2 text-sm bg-muted/30 border border-border rounded-lg focus:outline-none focus:border-lime-400/80 focus:ring-1 focus:ring-lime-400/30 placeholder:text-muted-foreground/50 transition-colors"
+                    />
+                    {recentSearch && (
+                      <button
+                        onClick={() => { setRecentSearch(''); setRecentPage(1) }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="Limpiar búsqueda"
+                      >
+                        <CloseIcon className="size-3" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {(['' as const, ...MEAL_OPTIONS.map(m => m.id)] as const).map(type => (
+                      <button
+                        key={type || 'all'}
+                        onClick={() => { setRecentTypeFilter(type as MealType | ''); setRecentPage(1) }}
+                        className={cn(
+                          'px-2.5 py-1 text-[11px] rounded-full border transition-colors',
+                          recentTypeFilter === type
+                            ? 'bg-lime-400/15 border-lime-400/40 text-lime-400'
+                            : 'bg-muted/30 border-border text-muted-foreground hover:border-lime-400/20'
+                        )}
+                      >
+                        {type ? MEAL_OPTIONS.find(m => m.id === type)!.label : 'Todas'}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {filteredRecentEntries.length === 0 ? (
+                <div className="text-center py-10">
                   <div className="text-2xl mb-2">🍽️</div>
-                  <div className="text-sm text-muted-foreground">No hay comidas recientes</div>
+                  <div className="text-sm text-muted-foreground">
+                    {recentSearch.trim() || recentTypeFilter ? 'Sin resultados' : 'No hay comidas recientes'}
+                  </div>
+                  {(recentSearch.trim() || recentTypeFilter) && (
+                    <button
+                      onClick={() => { setRecentSearch(''); setRecentTypeFilter(''); setRecentPage(1) }}
+                      className="mt-2 text-xs text-lime-400 hover:underline"
+                    >
+                      Limpiar filtros
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {recentEntries.map((entry, i) => (
+                  {paginatedRecentEntries.map((entry, i) => (
                     <button
                       key={entry.id || i}
                       onClick={() => selectRecentEntry(entry)}
                       className="w-full text-left p-3.5 bg-muted/30 border border-border rounded-xl hover:border-lime-400/30 hover:bg-lime-400/[0.03] transition-all"
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[9px] font-mono tracking-widest px-2 py-0.5 rounded-full uppercase bg-muted text-muted-foreground">
+                        <span className="text-[10px] font-mono tracking-widest px-2 py-0.5 rounded-full uppercase bg-muted text-muted-foreground">
                           {entry.mealType}
                         </span>
                         <span className="text-[10px] text-muted-foreground tabular-nums">
-                          {new Date(entry.loggedAt).toLocaleDateString()}
+                          {new Date(entry.loggedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
-                      <div className="text-sm text-foreground leading-snug">
+                      <div className="text-sm text-foreground leading-snug truncate">
                         {entry.foods.map(f => f.name).filter(Boolean).join(', ') || 'Sin nombre'}
                       </div>
                       <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                        <span className="font-medium text-foreground/70">{Math.round(entry.totalCalories)} kcal</span>
+                        <span className="text-xs font-semibold text-foreground/80">{Math.round(entry.totalCalories)} kcal</span>
                         <span className="text-sky-500">P {Math.round(entry.totalProtein)}g</span>
                         <span className="text-amber-400">C {Math.round(entry.totalCarbs)}g</span>
                         <span className="text-pink-500">G {Math.round(entry.totalFat)}g</span>
                       </div>
                     </button>
                   ))}
+                  {hasMoreRecent && (
+                    <button
+                      onClick={() => setRecentPage(p => p + 1)}
+                      className="w-full py-2.5 text-xs text-muted-foreground hover:text-lime-400 border border-dashed border-border rounded-xl hover:border-lime-400/30 transition-colors"
+                    >
+                      Ver más ({filteredRecentEntries.length - paginatedRecentEntries.length} restantes)
+                    </button>
+                  )}
+                  <div className="text-center text-[10px] text-muted-foreground/50 tabular-nums">
+                    {filteredRecentEntries.length} comida{filteredRecentEntries.length !== 1 ? 's' : ''}
+                    {recentEntries.length !== filteredRecentEntries.length && ` de ${recentEntries.length}`}
+                  </div>
                 </div>
               )}
             </div>
@@ -1137,6 +1228,15 @@ function TemplateIcon({ className }: { className?: string }) {
       <line x1="8" y1="8" x2="16" y2="8" />
       <line x1="8" y1="12" x2="16" y2="12" />
       <line x1="8" y1="16" x2="12" y2="16" />
+    </svg>
+  )
+}
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   )
 }
