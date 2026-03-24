@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { useMealReminders } from '../hooks/useMealReminders'
@@ -176,14 +176,23 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
   // ── Schedule local notifications for all reminders ───────────────────────
   const visibilitySetup = useRef(false)
+  const mealRemindersRef = useRef(mealReminders)
+  const workoutRemindersRef = useRef(workoutReminders)
+  mealRemindersRef.current = mealReminders
+  workoutRemindersRef.current = workoutReminders
+
+  const reschedule = useCallback(() => {
+    const schedulable = buildSchedulableReminders(mealRemindersRef.current, workoutRemindersRef.current)
+    scheduleAll(schedulable)
+  }, [])
+
   useEffect(() => {
     if (!visibilitySetup.current) {
       visibilitySetup.current = true
       setupVisibilityRescheduler()
     }
-    const schedulable = buildSchedulableReminders(mealReminders, workoutReminders)
-    scheduleAll(schedulable)
-  }, [mealReminders, workoutReminders])
+    reschedule()
+  }, [mealReminders, workoutReminders, reschedule])
 
   // ── Notifications ─────────────────────────────────────────────────────────
   const setupNotifications = async (): Promise<void> => {
@@ -282,6 +291,10 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
 
       await setupNotifications()
       setShowForm(null)
+      // Explicitly reschedule after all reminders are created and state has
+      // settled — React 18 batching can delay the useEffect that normally
+      // handles this, causing newly created reminders to miss scheduling.
+      queueMicrotask(reschedule)
     } catch {
       setError('No se pudo guardar. Intenta de nuevo.')
     } finally {
