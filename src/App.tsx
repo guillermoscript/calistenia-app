@@ -476,6 +476,12 @@ function AuthenticatedApp({
     <BackgroundJobsProvider>
     <CardioSessionProvider userId={userId!} userWeight={nutritionGoals?.weight}>
     <ActiveSessionProvider getRestForExercise={getRestForExercise} setRestForExercise={setRestForExercise}>
+    {/* Session page renders full-screen, outside the app shell */}
+    {location.pathname === '/session' ? (
+      <Suspense fallback={<AppLoader />}>
+        <ActiveSessionPage />
+      </Suspense>
+    ) : (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppShell settings={settings} displayName={displayName} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
@@ -501,7 +507,6 @@ function AuthenticatedApp({
             <Route path="/programs/:id" element={<ProgramDetailPageRoute userId={userId!} userRole={userRole} />} />
             <Route path="/exercises" element={<ExerciseLibraryPage />} />
             <Route path="/free-session" element={<FreeSessionPage />} />
-            <Route path="/session" element={<ActiveSessionPage />} />
             <Route path="/cardio" element={<CardioSessionPage userId={userId!} />} />
             <Route path="/sleep" element={<SleepPage userId={userId!} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
@@ -528,6 +533,7 @@ function AuthenticatedApp({
         </AppShell>
       </div>
     </SidebarProvider>
+    )}
     <ActiveCardioBar />
     <ActiveSessionBubble />
     </ActiveSessionProvider>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
@@ -31,25 +31,25 @@ type CategoryId = 'todos' | 'push' | 'pull' | 'legs' | 'core' | 'lumbar' | 'full
 
 const CATEGORIES: { id: CategoryId; label: string; accent: string }[] = [
   { id: 'todos',     label: 'Todos',     accent: 'text-foreground' },
-  { id: 'push',      label: 'Push',      accent: 'text-lime-400' },
-  { id: 'pull',      label: 'Pull',      accent: 'text-sky-400' },
-  { id: 'legs',      label: 'Legs',      accent: 'text-pink-400' },
+  { id: 'push',      label: 'Push',      accent: 'text-lime' },
+  { id: 'pull',      label: 'Pull',      accent: 'text-sky-500' },
+  { id: 'legs',      label: 'Legs',      accent: 'text-pink-500' },
   { id: 'core',      label: 'Core',      accent: 'text-amber-400' },
-  { id: 'lumbar',    label: 'Lumbar',     accent: 'text-red-400' },
-  { id: 'full',      label: 'Full',      accent: 'text-yellow-400' },
+  { id: 'lumbar',    label: 'Lumbar',     accent: 'text-red-500' },
+  { id: 'full',      label: 'Full',      accent: 'text-amber-400' },
   { id: 'movilidad', label: 'Movilidad', accent: 'text-emerald-400' },
   { id: 'skill',     label: 'Skill',     accent: 'text-violet-400' },
 ]
 
 const CAT_BORDER: Record<string, string> = {
-  push: 'border-l-lime-500', pull: 'border-l-sky-500', legs: 'border-l-pink-500',
-  core: 'border-l-amber-400', lumbar: 'border-l-red-500', full: 'border-l-yellow-400',
+  push: 'border-l-lime', pull: 'border-l-sky-500', legs: 'border-l-pink-500',
+  core: 'border-l-amber-400', lumbar: 'border-l-red-500', full: 'border-l-amber-400',
   movilidad: 'border-l-emerald-400', skill: 'border-l-violet-400',
 }
 
 const CAT_TEXT: Record<string, string> = {
-  push: 'text-lime-400', pull: 'text-sky-400', legs: 'text-pink-400',
-  core: 'text-amber-400', lumbar: 'text-red-400', full: 'text-yellow-400',
+  push: 'text-lime', pull: 'text-sky-500', legs: 'text-pink-500',
+  core: 'text-amber-400', lumbar: 'text-red-500', full: 'text-amber-400',
   movilidad: 'text-emerald-400', skill: 'text-violet-400',
 }
 
@@ -318,22 +318,22 @@ export default function FreeSessionPage() {
       {sessionActive && (
         <button
           onClick={() => navigate('/session')}
-          className="w-full mb-4 flex items-center gap-3 rounded-xl border border-lime-500/30 bg-lime-500/10 px-4 py-3 transition-all active:scale-[0.99]"
+          className="w-full mb-4 flex items-center gap-3 rounded-xl border border-lime/30 bg-lime/10 px-4 py-3 transition-all active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-lime/40"
         >
           <div className="relative flex-shrink-0">
-            <div className="size-9 rounded-lg bg-lime-500/20 flex items-center justify-center">
-              <svg className="size-4 text-lime-400" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+            <div className="size-9 rounded-lg bg-lime/20 flex items-center justify-center">
+              <svg className="size-4 text-lime" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
             </div>
             <span className="absolute -top-0.5 -right-0.5 flex size-2.5">
-              <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-75" />
-              <span className="relative inline-flex rounded-full size-2.5 bg-lime-400" />
+              <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-lime opacity-75" />
+              <span className="relative inline-flex rounded-full size-2.5 bg-lime" />
             </span>
           </div>
           <div className="flex-1 text-left">
-            <div className="text-sm font-medium text-lime-300">Sesion en curso</div>
+            <div className="text-sm font-medium text-lime">Sesion en curso</div>
             <div className="text-[10px] text-muted-foreground">Toca para retomar tu sesion</div>
           </div>
-          <svg className="size-4 text-lime-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="size-4 text-lime flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </button>
@@ -365,7 +365,7 @@ export default function FreeSessionPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               className={cn(
-                'w-full pl-9 py-2.5 rounded-lg border border-border bg-card text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-lime-500/50 focus-visible:ring-2 focus-visible:ring-lime-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background transition-colors',
+                'w-full pl-9 py-2.5 rounded-lg border border-border bg-card text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-lime/50 focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background transition-colors',
                 search ? 'pr-14' : 'pr-3',
               )}
             />
@@ -373,7 +373,7 @@ export default function FreeSessionPage() {
               <button
                 onClick={() => setSearch('')}
                 aria-label="Borrar busqueda"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs px-1 py-0.5"
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs px-2.5 py-2 min-h-[44px] flex items-center"
               >
                 borrar
               </button>
@@ -391,7 +391,7 @@ export default function FreeSessionPage() {
                   onClick={() => setActiveCategory(cat.id)}
                   aria-pressed={activeCategory === cat.id}
                   className={cn(
-                    'shrink-0 px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border focus-visible:ring-2 focus-visible:ring-lime-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+                    'shrink-0 px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
                     activeCategory === cat.id
                       ? cn(cat.accent, 'border-current bg-accent/50')
                       : 'text-muted-foreground border-transparent hover:text-foreground',
@@ -419,7 +419,7 @@ export default function FreeSessionPage() {
                 {search ? `Sin resultados para "${search}"` : 'No hay ejercicios en esta categoria'}
               </div>
               {search && (
-                <button onClick={() => setSearch('')} className="mt-2 text-xs text-lime-400 hover:text-lime-300">
+                <button onClick={() => setSearch('')} className="mt-2 text-xs text-lime hover:text-lime/80">
                   Borrar busqueda
                 </button>
               )}
@@ -436,9 +436,9 @@ export default function FreeSessionPage() {
                     onClick={() => toggleExercise(ex)}
                     aria-pressed={isSelected}
                     className={cn(
-                      'w-full text-left flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-lime-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+                      'w-full text-left flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
                       isSelected
-                        ? 'bg-lime-500/5 border-l-lime-500'
+                        ? 'bg-lime/5 border-l-lime'
                         : cn('bg-card hover:bg-accent/30', CAT_BORDER[ex.category] || 'border-l-transparent'),
                     )}
                   >
@@ -446,7 +446,7 @@ export default function FreeSessionPage() {
                     <div className={cn(
                       'size-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-mono font-bold transition-all duration-200',
                       isSelected
-                        ? 'bg-lime-500 text-black'
+                        ? 'bg-lime text-lime-foreground'
                         : 'bg-muted/50 text-muted-foreground',
                     )}>
                       {isSelected ? orderNum : '+'}
@@ -501,7 +501,7 @@ export default function FreeSessionPage() {
             >
               <div className={cn(
                 'size-8 rounded-lg flex items-center justify-center font-bebas text-lg transition-colors',
-                selected.length > 0 ? 'bg-lime-500/15 text-lime-400' : 'bg-muted text-muted-foreground',
+                selected.length > 0 ? 'bg-lime/15 text-lime' : 'bg-muted text-muted-foreground',
               )}>
                 {selected.length}
               </div>
@@ -622,7 +622,7 @@ function SessionQueue({
           </button>
         </div>
         <div className="flex items-baseline gap-3">
-          <span className="font-bebas text-2xl leading-none text-lime-400">{selected.length}</span>
+          <span className="font-bebas text-2xl leading-none text-lime">{selected.length}</span>
           <span className="text-[10px] text-muted-foreground">
             ejercicio{selected.length !== 1 ? 's' : ''} · {totalSets} series · ~{estMin} min
           </span>
@@ -654,7 +654,7 @@ function SessionQueue({
 
 // ── Queue List (shared between mobile sheet and desktop sidebar) ──────────────
 
-function QueueList({
+const QueueList = memo(function QueueList({
   selected, onMoveUp, onMoveDown, onRemove,
 }: {
   selected: CatalogExercise[]
@@ -680,7 +680,7 @@ function QueueList({
               onClick={(e) => { e.stopPropagation(); onMoveUp(idx) }}
               disabled={idx === 0}
               aria-label={`Mover ${ex.name} arriba`}
-              className="p-2 rounded hover:bg-accent disabled:opacity-20 transition-colors focus-visible:ring-2 focus-visible:ring-lime-500/40"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-accent disabled:opacity-20 transition-colors focus-visible:ring-2 focus-visible:ring-lime/40"
             >
               <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="4,10 8,6 12,10" /></svg>
             </button>
@@ -688,14 +688,14 @@ function QueueList({
               onClick={(e) => { e.stopPropagation(); onMoveDown(idx) }}
               disabled={idx === selected.length - 1}
               aria-label={`Mover ${ex.name} abajo`}
-              className="p-2 rounded hover:bg-accent disabled:opacity-20 transition-colors focus-visible:ring-2 focus-visible:ring-lime-500/40"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-accent disabled:opacity-20 transition-colors focus-visible:ring-2 focus-visible:ring-lime/40"
             >
               <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="4,6 8,10 12,6" /></svg>
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onRemove(idx) }}
               aria-label={`Eliminar ${ex.name}`}
-              className="p-2 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors ml-0.5 focus-visible:ring-2 focus-visible:ring-red-500/40"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors ml-0.5 focus-visible:ring-2 focus-visible:ring-red-500/40"
             >
               <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="4" x2="12" y2="12" /><line x1="12" y1="4" x2="4" y2="12" /></svg>
             </button>
@@ -704,4 +704,4 @@ function QueueList({
       ))}
     </div>
   )
-}
+})

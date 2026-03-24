@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { useWorkoutActions } from '../contexts/WorkoutContext'
@@ -9,6 +9,13 @@ export default function ActiveSessionPage() {
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
   const navigate = useNavigate()
 
+  // Redirect to dashboard if no active session
+  useEffect(() => {
+    if (!isActive || !workout) {
+      navigate('/', { replace: true })
+    }
+  }, [isActive, workout, navigate])
+
   const handleGoToDashboard = useCallback(() => {
     endSession()
     navigate('/')
@@ -16,16 +23,14 @@ export default function ActiveSessionPage() {
 
   const handleExitSession = useCallback(() => {
     endSession()
-    navigate(-1)
+    navigate('/', { replace: true })
   }, [endSession, navigate])
 
   const handleMarkDone = useCallback((key: string, note: string) => {
     onMarkDone(key, note)
   }, [onMarkDone])
 
-  // If no active session, redirect to dashboard
   if (!isActive || !workout) {
-    navigate('/', { replace: true })
     return null
   }
 

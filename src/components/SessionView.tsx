@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Image } from 'lucide-react'
 import YoutubeModal from './YoutubeModal'
@@ -119,6 +119,7 @@ function Confetti() {
           borderRadius: p.shape,
           transform: `rotate(${p.rot}deg)`,
           animation: `confettiFall ${p.dur} ${p.delay} ease-in forwards`,
+          willChange: 'transform, opacity',
           zIndex: 9998,
           pointerEvents: 'none',
         }} />
@@ -212,12 +213,12 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
     <div
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="flex-1 flex flex-col items-center justify-center gap-8 px-6 select-none"
+      className="flex-1 flex flex-col items-center justify-center gap-8 px-6 select-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
     >
       <div className="text-[11px] tracking-[4px] text-muted-foreground uppercase font-mono">Descansando</div>
 
-      <div className="relative w-[132px] h-[132px]">
-        <svg width="132" height="132" className="-rotate-90">
+      <div className="relative w-[132px] h-[132px] sm:w-[160px] sm:h-[160px]">
+        <svg viewBox="0 0 132 132" className="-rotate-90 w-full h-full">
           <circle cx="66" cy="66" r="54" fill="none" stroke="hsl(var(--border))" strokeWidth="6" />
           <circle
             cx="66" cy="66" r="54" fill="none"
@@ -231,7 +232,8 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
           <span className={cn(
-            'font-bebas text-[42px] tracking-[2px] leading-none transition-colors duration-300',
+            'font-bebas tracking-[2px] leading-none transition-colors duration-300 tabular-nums',
+            'text-[42px] sm:text-[52px]',
             isUrgent ? 'text-destructive' : 'text-foreground'
           )}>
             {mins}:{secs}
@@ -254,12 +256,12 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
 
       {/* Adjust rest time */}
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={() => adjustTime(-15)}
-          className="font-mono text-[10px] text-muted-foreground hover:text-foreground">-15s</Button>
-        <Button variant="outline" size="sm" onClick={() => adjustTime(15)}
-          className="font-mono text-[10px] text-muted-foreground hover:text-foreground">+15s</Button>
-        <Button variant="outline" size="sm" onClick={() => adjustTime(30)}
-          className="font-mono text-[10px] text-muted-foreground hover:text-foreground">+30s</Button>
+        <Button variant="outline" onClick={() => adjustTime(-15)}
+          className="font-mono text-[11px] text-muted-foreground hover:text-foreground h-11 px-4">-15s</Button>
+        <Button variant="outline" onClick={() => adjustTime(15)}
+          className="font-mono text-[11px] text-muted-foreground hover:text-foreground h-11 px-4">+15s</Button>
+        <Button variant="outline" onClick={() => adjustTime(30)}
+          className="font-mono text-[11px] text-muted-foreground hover:text-foreground h-11 px-4">+30s</Button>
       </div>
 
       <Button
@@ -267,10 +269,10 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
         onClick={onSkip}
         className="border-lime/25 bg-lime/7 text-lime hover:bg-lime/15 font-mono text-[11px] tracking-[2px] px-8"
       >
-        SALTAR DESCANSO  →
+        SALTAR DESCANSO →
       </Button>
 
-      <div className="text-[11px] text-muted-foreground/50 font-mono">desliza → para saltar</div>
+      <div className="text-[11px] text-muted-foreground/50 font-mono sm:hidden">desliza → para saltar</div>
     </div>
   )
 }
@@ -283,7 +285,7 @@ interface ExerciseScreenProps {
   logs?: ExerciseLog[]
 }
 
-function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
+const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
   const [editOpen,   setEditOpen]   = useState<boolean>(false)
   const [customReps, setCustomReps] = useState<string>('')
   const [customNote, setCustomNote] = useState<string>('')
@@ -322,9 +324,19 @@ function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
           100% { background: transparent; }
         }
         .ex-session-flash { animation: sessionFlash 0.35s ease-out; }
+        @keyframes exerciseEnter {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .exercise-enter { animation: exerciseEnter 0.3s cubic-bezier(0.25, 1, 0.5, 1) both; }
+        @keyframes dotPulse {
+          0%   { transform: scaleY(1); }
+          50%  { transform: scaleY(1.8); }
+          100% { transform: scaleY(1); }
+        }
       `}</style>
 
-      <div className={`flex-1 flex flex-col px-6 pt-6 pb-8 overflow-auto ${flash ? 'ex-session-flash' : ''}`}>
+      <div className={`flex-1 flex flex-col px-5 sm:px-8 pt-6 pb-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] overflow-auto max-w-2xl mx-auto w-full motion-safe:exercise-enter ${flash ? 'ex-session-flash' : ''}`}>
 
         {/* Exercise name + set counter */}
         <div className="mb-2">
@@ -352,9 +364,11 @@ function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
         <div className="flex gap-2 items-center mb-5">
           {Array.from({ length: totalSets }).map((_, i) => (
             <div key={i} className={cn(
-              'w-7 h-1.5 rounded transition-colors duration-300',
+              'w-7 h-1.5 rounded transition-all duration-300',
               i < setNumber - 1 ? 'bg-lime' : i === setNumber - 1 ? 'bg-lime/40' : 'bg-border'
-            )} />
+            )}
+            style={i === setNumber - 2 && setNumber > 1 ? { animation: 'dotPulse 0.4s cubic-bezier(0.25, 1, 0.5, 1)' } : undefined}
+            />
           ))}
           <span className="font-mono text-[10px] text-muted-foreground ml-1">SERIE {setNumber}/{totalSets}</span>
         </div>
@@ -410,7 +424,8 @@ function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
         <div className="flex flex-col gap-2.5">
           <button
             onClick={handleQuick}
-            className="w-full py-[18px] px-4 rounded-lg cursor-pointer bg-lime/14 text-lime font-mono text-sm font-bold tracking-[1.5px] flex items-center justify-center gap-2.5 transition-[background] duration-100 hover:bg-lime/22 active:bg-lime/24"
+            aria-label={`Registrar serie completada con ${exercise.reps}`}
+            className="w-full py-[18px] px-4 rounded-lg cursor-pointer bg-lime/14 text-lime font-mono text-sm font-bold tracking-[1.5px] flex items-center justify-center gap-2.5 transition-all duration-100 hover:bg-lime/22 active:scale-[0.97] active:bg-lime/24 focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
           >
             <span className="text-xl leading-none">+</span>
             SERIE COMPLETADA — {exercise.reps}
@@ -419,8 +434,10 @@ function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
           <div className="flex gap-2">
             <button
               onClick={() => setEditOpen(v => !v)}
+              aria-label={editOpen ? 'Cerrar editor de reps' : 'Editar reps personalizadas'}
+              aria-expanded={editOpen}
               className={cn(
-                'flex-1 py-[11px] px-2.5 rounded-md cursor-pointer font-mono text-[10px] tracking-wide transition-all duration-150 border',
+                'flex-1 min-h-[44px] px-2.5 rounded-md cursor-pointer font-mono text-[10px] tracking-wide transition-all duration-150 border focus-visible:ring-2 focus-visible:ring-lime/40',
                 editOpen
                   ? 'border-lime/30 bg-lime/6 text-lime'
                   : 'border-border text-muted-foreground hover:border-lime/30 hover:text-lime'
@@ -432,8 +449,8 @@ function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
             {exercise.demoImages && exercise.demoImages.length > 0 && (
               <button
                 onClick={() => setShowMedia(true)}
-                className="py-[11px] px-3.5 rounded-md cursor-pointer border border-lime/20 bg-lime/5 text-lime text-sm leading-none hover:bg-lime/10 transition-all duration-150"
-                title="Ver media"
+                aria-label="Ver fotos del ejercicio"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md cursor-pointer border border-lime/20 bg-lime/5 text-lime text-sm leading-none hover:bg-lime/10 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-lime/40"
               >
                 <Image size={15} />
               </button>
@@ -441,8 +458,8 @@ function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
 
             <button
               onClick={() => setShowYoutube(true)}
-              className="py-[11px] px-3.5 rounded-md cursor-pointer border border-red-500/20 bg-red-500/5 text-red-500 text-sm leading-none hover:bg-red-500/10 transition-all duration-150"
-              title="Ver tutorial"
+              aria-label="Ver tutorial en YouTube"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md cursor-pointer border border-red-500/20 bg-red-500/5 text-red-500 text-sm leading-none hover:bg-red-500/10 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-red-500/40"
             >
               ▶
             </button>
@@ -487,7 +504,7 @@ function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
       {showMedia && <MediaViewer exercise={exercise} onClose={() => setShowMedia(false)} />}
     </div>
   )
-}
+})
 
 // ─── Note screen ──────────────────────────────────────────────────────────────
 
@@ -501,8 +518,8 @@ interface NoteScreenProps {
 function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: NoteScreenProps) {
   const [note, setNote] = useState<string>('')
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-6">
-      <div className="font-bebas text-5xl tracking-[2px] text-emerald-500 text-center leading-none">
+    <div className="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 py-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] gap-6 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-3 motion-safe:duration-300">
+      <div className="font-bebas text-4xl sm:text-5xl tracking-[2px] text-emerald-500 text-center leading-none">
         ¡Último set listo!
       </div>
       <div className="text-[11px] text-muted-foreground tracking-[2px] font-mono">
@@ -553,16 +570,19 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
 
   useEffect(() => {
-    fetch('https://zenquotes.io/api/random')
+    const ctrl = new AbortController()
+    fetch('https://zenquotes.io/api/random', { signal: ctrl.signal })
       .then(r => r.json())
       .then(([item]: [{ q?: string; a?: string }]) => { if (item?.q) setQuote(item as Quote) })
       .catch(() => {})
+    return () => ctrl.abort()
   }, [])
 
   return (
-    <div
+    <button
       onClick={onDone}
-      className="flex-1 flex flex-col items-center justify-center px-8 py-10 gap-7 cursor-pointer text-center relative"
+      className="flex-1 flex flex-col items-center justify-center px-6 sm:px-8 py-10 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] gap-7 cursor-pointer text-center relative bg-transparent border-none w-full focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-inset rounded-lg"
+      aria-label="Finalizar sesion e ir al dashboard"
     >
       <Confetti />
 
@@ -607,7 +627,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
         <div className="flex gap-3 items-center">
           <Button
             onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDone() }}
-            className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5"
+            className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5 bg-lime text-lime-foreground hover:bg-lime/90"
           >
             IR AL DASHBOARD
           </Button>
@@ -615,7 +635,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
         </div>
         <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -633,7 +653,6 @@ interface SessionViewProps {
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
   setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
-  onMinimize?: () => void
 }
 
 export default function SessionView({
@@ -646,7 +665,6 @@ export default function SessionView({
   getExerciseLogs,
   getRestForExercise,
   setRestForExercise,
-  onMinimize,
 }: SessionViewProps) {
   const navigate = useNavigate()
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
@@ -763,33 +781,33 @@ export default function SessionView({
   }, [onMarkDone, workoutKey, onExitSession])
 
   return (
-    <div className="min-h-screen bg-background flex flex-col overflow-hidden">
+    <div className="flex flex-col min-h-[100dvh] bg-background overflow-hidden">
       {/* ── TOP BAR ── */}
       {phase !== 'celebrate' && (
         <div className="flex-shrink-0">
-          <div className="flex items-center justify-between px-4 h-[52px]">
+          <div className="flex items-center justify-between px-4 h-[calc(52px+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)]">
             {/* Back — just navigate away, session stays alive in context */}
             <button
               onClick={() => navigate(-1)}
-              className="bg-transparent border-none cursor-pointer text-muted-foreground py-1 flex items-center gap-1.5 hover:text-foreground transition-colors"
+              className="bg-transparent border-none cursor-pointer text-muted-foreground min-w-[44px] min-h-[44px] flex items-center justify-center hover:text-foreground transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-lime/40"
               aria-label="Volver"
             >
               <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
 
-            <div className="text-center">
+            <div className="text-center min-w-0 flex-1 px-2">
               {phase === 'exercise' && currentStep && (
-                <div className="font-mono text-[9px] text-muted-foreground/50 tracking-[2px]">
+                <div className="font-mono text-[10px] text-muted-foreground/60 tracking-[2px] truncate">
                   {currentStep.exercise.name.toUpperCase()}
                 </div>
               )}
               {phase === 'rest' && (
-                <div className="font-mono text-[9px] text-muted-foreground tracking-[3px]">DESCANSO</div>
+                <div className="font-mono text-[10px] text-muted-foreground tracking-[3px]">DESCANSO</div>
               )}
               {phase === 'note' && (
-                <div className="font-mono text-[9px] text-lime tracking-[3px]">COMPLETADO</div>
+                <div className="font-mono text-[10px] text-lime tracking-[3px]">COMPLETADO</div>
               )}
-              <div className="font-mono text-[8px] text-muted-foreground/40 tracking-wide">
+              <div className="font-mono text-[9px] text-muted-foreground/40 tracking-wide tabular-nums">
                 {phase === 'note' ? exerciseBoundaries.length : currentExerciseIndex + 1}/{exerciseBoundaries.length} · {phase === 'note' ? steps.length : stepIdx + 1}/{steps.length} series
               </div>
             </div>
@@ -797,15 +815,15 @@ export default function SessionView({
             {/* Discard button */}
             <button
               onClick={() => setShowExit(true)}
-              className="bg-transparent border-none cursor-pointer text-muted-foreground py-1 hover:text-red-400 transition-colors"
+              className="bg-transparent border-none cursor-pointer text-muted-foreground min-w-[44px] min-h-[44px] flex items-center justify-center hover:text-red-400 transition-colors rounded-lg focus-visible:ring-2 focus-visible:ring-red-500/40"
               aria-label="Descartar sesion"
             >
               <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
           </div>
           {/* Session progress bar */}
-          <div className="h-[2px] bg-muted">
-            <div className="h-full bg-lime rounded-r-sm transition-[width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+          <div className="h-[3px] bg-muted">
+            <div className="h-full bg-lime rounded-r-full transition-[width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
               style={{ width: `${((phase === 'note' ? steps.length : stepIdx + 1) / steps.length) * 100}%` }} />
           </div>
         </div>
@@ -817,13 +835,13 @@ export default function SessionView({
           onTouchStart={handleSwipeStart}
           onTouchEnd={handleSwipeEnd}
         >
-          {/* Swipe navigation arrows */}
+          {/* Navigation arrows — hidden on mobile (swipe primary), visible on desktop */}
           {(hasPrevExercise || hasNextExercise) && (
-            <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex justify-between pointer-events-none z-10 px-1">
+            <div className="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-0 right-0 justify-between pointer-events-none z-10 px-2">
               {hasPrevExercise ? (
                 <button
                   onClick={goToPrevExercise}
-                  className="pointer-events-auto size-8 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  className="pointer-events-auto size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:ring-2 focus-visible:ring-lime/40"
                   aria-label="Ejercicio anterior"
                 >
                   <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="10,3 5,8 10,13" /></svg>
@@ -832,7 +850,7 @@ export default function SessionView({
               {hasNextExercise ? (
                 <button
                   onClick={goToNextExercise}
-                  className="pointer-events-auto size-8 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  className="pointer-events-auto size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:ring-2 focus-visible:ring-lime/40"
                   aria-label="Siguiente ejercicio"
                 >
                   <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6,3 11,8 6,13" /></svg>
@@ -896,7 +914,7 @@ export default function SessionView({
               onClick={handleInterruptConfirm}
               className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 font-bebas text-lg tracking-wide"
             >
-              DESCARTAR SESION
+              DESCARTAR SESIÓN
             </Button>
             <Button
               variant="outline"

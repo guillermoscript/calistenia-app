@@ -27,6 +27,7 @@ export default function ActiveSessionBubble() {
         'bg-lime-950/80 border-lime-500/30 shadow-lime-500/10',
         'transition-all duration-300 ease-out',
         'active:scale-[0.96]',
+        'focus-visible:ring-2 focus-visible:ring-lime/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         'motion-safe:animate-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-300',
       )}
       aria-label={`${title} activa — ${exerciseCount} ejercicios — toca para volver`}
@@ -59,7 +60,7 @@ export default function ActiveSessionBubble() {
       </div>
 
       {/* Arrow */}
-      <div className="flex-shrink-0 size-8 rounded-lg bg-lime-500/20 flex items-center justify-center ml-1">
+      <div className="flex-shrink-0 size-9 rounded-lg bg-lime-500/20 flex items-center justify-center ml-1">
         <svg className="size-4 text-lime-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 18 15 12 9 6" />
         </svg>
