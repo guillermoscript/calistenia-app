@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { getProductByBarcode, mapOFFToFoodItem, isIncompleteFood } from '../lib/openfoodfacts'
 import type { FoodItem } from '../types'
 
@@ -11,19 +11,30 @@ export function useBarcodeScanner(options?: BarcodeScannerOptions) {
   const [product, setProduct] = useState<FoodItem | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const startScan = useCallback(() => {
+    // Abort any in-flight barcode lookup
+    abortRef.current?.abort()
     setScanning(true)
     setProduct(null)
     setError(null)
+    setLoading(false)
   }, [])
 
   const handleBarcode = useCallback(async (barcode: string) => {
+    // Abort previous request if still in flight
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setScanning(false)
     setLoading(true)
     setError(null)
     try {
       const offProduct = await getProductByBarcode(barcode)
+      if (controller.signal.aborted) return null
+
       if (!offProduct) {
         setError('No encontramos ese código de barras. Prueba escribiendo el nombre del producto.')
         setLoading(false)
@@ -45,17 +56,21 @@ export function useBarcodeScanner(options?: BarcodeScannerOptions) {
         }
       }
 
+      if (controller.signal.aborted) return null
+
       setProduct(food)
       setLoading(false)
       return food
-    } catch {
+    } catch (err) {
+      if (controller.signal.aborted) return null
       setError('No se pudo conectar. Revisa tu conexión e intenta de nuevo.')
       setLoading(false)
       return null
     }
-  }, [options])
+  }, [options?.onIncompleteProduct])
 
   const reset = useCallback(() => {
+    abortRef.current?.abort()
     setScanning(false)
     setProduct(null)
     setLoading(false)

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { cn } from '../../lib/utils'
 import { localHour } from '../../lib/dateUtils'
 import { Button } from '../ui/button'
@@ -94,14 +94,14 @@ export default function MealLoggerContent({
     onIncompleteProduct: completeWithAI,
   })
 
-  const handleBarcodeResult = async (barcode: string) => {
+  const handleBarcodeResult = useCallback(async (barcode: string) => {
     const food = await handleBarcode(barcode)
     if (food) {
       saveFoodToCatalog(food).catch(() => {})
       setFoods([food])
       setStep('review')
     }
-  }
+  }, [handleBarcode, saveFoodToCatalog])
 
   const [step, setStep] = useState<'capture' | 'analyzing' | 'review' | 'saving' | 'success'>('capture')
   const [captureSubView, setCaptureSubView] = useState<'main' | 'repeatMeal' | 'templates'>('main')
