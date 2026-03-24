@@ -171,17 +171,12 @@ export function useNutrition(userId: string | null) {
   }
 
   // ─── On-demand fetch for a specific date ──────────────────────────────────
-  const fetchAbortRef = useRef<AbortController | null>(null)
-
+  // No shared AbortController — concurrent fetches for different dates must all complete.
+  // loadedDates.current prevents duplicate requests for the same date.
   const fetchEntriesForDate = useCallback(async (date: string): Promise<void> => {
     if (loadedDates.current.has(date)) return
     if (!usePB || !userId) return
     loadedDates.current.add(date) // mark early to prevent duplicate requests
-
-    // Cancel previous in-flight fetch (rapid date navigation)
-    fetchAbortRef.current?.abort()
-    const controller = new AbortController()
-    fetchAbortRef.current = controller
 
     try {
       const dayStart = localMidnightAsUTC(date)
@@ -196,7 +191,6 @@ export function useNutrition(userId: string | null) {
         $autoCancel: false,
       })
 
-      if (controller.signal.aborted) return
       if (res.items.length === 0) return
 
       const mapped: NutritionEntry[] = res.items.map((r: any) => ({
@@ -224,9 +218,7 @@ export function useNutrition(userId: string | null) {
         return updated
       })
     } catch {
-      if (!controller.signal.aborted) {
-        loadedDates.current.delete(date) // allow retry on error
-      }
+      loadedDates.current.delete(date) // allow retry on error
     }
   }, [usePB, userId])
 

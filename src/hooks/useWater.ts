@@ -48,7 +48,6 @@ export const useWater = (userId: string | null = null, selectedDate?: string): U
   const [adding, setAdding] = useState(false)
   const initialized = useRef(false)
   const loadedDates = useRef<Set<string>>(new Set())
-  const abortRef = useRef<AbortController | null>(null)
 
   const today = todayStr()
   const activeDate = selectedDate || today
@@ -98,15 +97,11 @@ export const useWater = (userId: string | null = null, selectedDate?: string): U
     init()
   }, [userId, today])
 
-  // On-demand fetch for selected date with AbortController
+  // On-demand fetch for selected date
   useEffect(() => {
     if (!usePB || !userId || !activeDate) return
     if (loadedDates.current.has(activeDate)) return
     loadedDates.current.add(activeDate)
-
-    const controller = new AbortController()
-    abortRef.current?.abort()
-    abortRef.current = controller
 
     const fetchDay = async () => {
       try {
@@ -119,7 +114,6 @@ export const useWater = (userId: string | null = null, selectedDate?: string): U
           sort: '-logged_at',
           $autoCancel: false,
         })
-        if (controller.signal.aborted) return
         const entries: WaterEntry[] = res.items.map((r: any) => ({
           id: r.id,
           amount_ml: Number(r.amount_ml) || 0,
@@ -132,14 +126,10 @@ export const useWater = (userId: string | null = null, selectedDate?: string): U
           return updated
         })
       } catch {
-        if (!controller.signal.aborted) {
-          loadedDates.current.delete(activeDate)
-        }
+        loadedDates.current.delete(activeDate)
       }
     }
     fetchDay()
-
-    return () => { controller.abort() }
   }, [usePB, userId, activeDate])
 
   const dayData = data[activeDate] || { entries: [], total: 0 }
