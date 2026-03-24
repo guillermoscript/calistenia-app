@@ -563,10 +563,11 @@ interface CelebrateScreenProps {
   workoutTitle: string
   totalSetsLogged: number
   durationMin: number
+  exercises: Exercise[]
   onDone: () => void
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }: CelebrateScreenProps) {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone }: CelebrateScreenProps) {
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
 
   useEffect(() => {
@@ -579,10 +580,10 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
   }, [])
 
   return (
-    <button
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div
       onClick={onDone}
-      className="flex-1 flex flex-col items-center justify-center px-6 sm:px-8 py-10 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] gap-7 cursor-pointer text-center relative bg-transparent border-none w-full focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-inset rounded-lg"
-      aria-label="Finalizar sesion e ir al dashboard"
+      className="flex-1 flex flex-col items-center justify-center px-6 sm:px-8 py-10 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] gap-7 cursor-pointer text-center relative w-full"
     >
       <Confetti />
 
@@ -631,11 +632,11 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
           >
             IR AL DASHBOARD
           </Button>
-          <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} />
+          <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} exercises={exercises} quote={quote} />
         </div>
         <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -893,6 +894,7 @@ export default function SessionView({
           workoutTitle={workout.title}
           totalSetsLogged={setsCount}
           durationMin={Math.round((Date.now() - sessionStartTime.current) / 60000)}
+          exercises={workout.exercises}
           onDone={onGoToDashboard}
         />
       )}
