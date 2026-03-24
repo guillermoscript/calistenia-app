@@ -39,12 +39,17 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
 
   const handleSave = async () => {
     const kg = parseFloat(weightInput)
-    if (isNaN(kg) || kg <= 0) return
+    if (isNaN(kg) || kg <= 0 || kg > 500) return
     setSaving(true)
-    await logWeight(kg, dateInput)
-    setWeightInput('')
-    setDateInput(todayStr())
-    setSaving(false)
+    try {
+      await logWeight(kg, dateInput)
+      setWeightInput('')
+      setDateInput(todayStr())
+    } catch {
+      // logWeight handles its own error display
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (!isReady) return null
@@ -65,7 +70,7 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
               value={weightInput}
               onChange={(e) => setWeightInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
-              placeholder="Ej: 75.5"
+              placeholder="75.5"
               className="h-9 text-sm"
             />
           </div>

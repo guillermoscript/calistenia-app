@@ -60,7 +60,7 @@ export default function VolumeLoadChart({ progress }: VolumeLoadChartProps) {
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Volume Load (4 semanas)</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Volumen de carga (4 semanas)</div>
       <Card>
         <CardContent className="p-5">
           <div className="flex items-baseline gap-3 mb-4">
@@ -100,12 +100,11 @@ export default function VolumeLoadChart({ progress }: VolumeLoadChartProps) {
             })}
           </div>
 
-          <div className="text-[10px] text-muted-foreground mt-3 pt-3 border-t border-border/60">
-            {hasWeightData
-              ? 'Volume = sets × reps × peso (kg)'
-              : 'Volume = total de series (agrega peso para ver kg totales)'
-            }
-          </div>
+          {!hasWeightData && (
+            <div className="text-[10px] text-muted-foreground mt-3 pt-3 border-t border-border/60">
+              Agrega peso a tus series para ver volumen en kg
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

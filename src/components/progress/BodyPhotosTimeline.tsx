@@ -25,15 +25,26 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
   const [note, setNote] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+
   const handleUpload = async () => {
     const file = fileRef.current?.files?.[0]
     if (!file) return
+    if (file.size > MAX_FILE_SIZE) {
+      alert('La foto es demasiado grande (máx. 10 MB)')
+      return
+    }
     setUploading(true)
-    await uploadPhoto(file, date, category, note)
-    setUploading(false)
-    setShowUpload(false)
-    setNote('')
-    if (fileRef.current) fileRef.current.value = ''
+    try {
+      await uploadPhoto(file, date, category, note)
+      setShowUpload(false)
+      setNote('')
+      if (fileRef.current) fileRef.current.value = ''
+    } catch {
+      // uploadPhoto handles its own error display
+    } finally {
+      setUploading(false)
+    }
   }
 
   if (!isReady) return null
@@ -100,7 +111,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
               <Input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Ej: Inicio de fase 2"
+                placeholder="Inicio de fase 2"
                 className="h-8 text-sm"
               />
             </div>
@@ -136,7 +147,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
                   )}
                 </div>
                 <button
-                  onClick={() => deletePhoto(photo.id)}
+                  onClick={() => { if (confirm('¿Eliminar esta foto?')) deletePhoto(photo.id) }}
                   className="absolute top-1.5 right-1.5 size-6 rounded-full bg-black/60 text-white/70 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs"
                   title="Eliminar"
                 >
@@ -147,7 +158,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
           </div>
         ) : (
           <div className="text-center text-muted-foreground text-sm py-6">
-            {userId ? 'Sube tu primera foto para registrar tu progreso visual' : 'Necesitas PocketBase para subir fotos'}
+            {userId ? 'Sube tu primera foto para registrar tu progreso visual' : 'Inicia sesión para subir fotos'}
           </div>
         )}
       </CardContent>

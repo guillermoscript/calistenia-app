@@ -23,26 +23,37 @@ interface BodyMeasurementsTrackerProps {
 export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrackerProps) {
   const { measurements, isReady, saveMeasurement, deleteMeasurement } = useBodyMeasurements(userId)
   const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [date, setDate] = useState(() => todayStr())
   const [values, setValues] = useState<Record<string, string>>({})
   const [note, setNote] = useState('')
 
+  const hasAnyValue = FIELDS.some(f => values[f.key] && parseFloat(values[f.key]) > 0)
+
   const handleSave = async () => {
-    const m: Omit<BodyMeasurement, 'id'> = {
-      date,
-      chest: values.chest ? parseFloat(values.chest) : undefined,
-      waist: values.waist ? parseFloat(values.waist) : undefined,
-      hips: values.hips ? parseFloat(values.hips) : undefined,
-      arm_left: values.arm_left ? parseFloat(values.arm_left) : undefined,
-      arm_right: values.arm_right ? parseFloat(values.arm_right) : undefined,
-      thigh_left: values.thigh_left ? parseFloat(values.thigh_left) : undefined,
-      thigh_right: values.thigh_right ? parseFloat(values.thigh_right) : undefined,
-      note,
+    if (!hasAnyValue) return
+    setSaving(true)
+    try {
+      const m: Omit<BodyMeasurement, 'id'> = {
+        date,
+        chest: values.chest ? parseFloat(values.chest) : undefined,
+        waist: values.waist ? parseFloat(values.waist) : undefined,
+        hips: values.hips ? parseFloat(values.hips) : undefined,
+        arm_left: values.arm_left ? parseFloat(values.arm_left) : undefined,
+        arm_right: values.arm_right ? parseFloat(values.arm_right) : undefined,
+        thigh_left: values.thigh_left ? parseFloat(values.thigh_left) : undefined,
+        thigh_right: values.thigh_right ? parseFloat(values.thigh_right) : undefined,
+        note,
+      }
+      await saveMeasurement(m)
+      setShowForm(false)
+      setValues({})
+      setNote('')
+    } catch {
+      // saveMeasurement handles its own error display
+    } finally {
+      setSaving(false)
     }
-    await saveMeasurement(m)
-    setShowForm(false)
-    setValues({})
-    setNote('')
   }
 
   if (!isReady) return null
@@ -98,9 +109,10 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
               />
               <Button
                 onClick={handleSave}
+                disabled={saving || !hasAnyValue}
                 className="h-8 bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] font-bold tracking-widest"
               >
-                GUARDAR
+                {saving ? '...' : 'GUARDAR'}
               </Button>
             </div>
           )}

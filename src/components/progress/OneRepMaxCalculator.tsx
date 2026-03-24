@@ -77,11 +77,11 @@ export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }:
   if (autoEstimates.length === 0 && !showManual) {
     return (
       <div className="mb-8">
-        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Estimacion 1RM</div>
+        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Estimación 1RM</div>
         <Card>
           <CardContent className="p-5">
             <div className="text-sm text-muted-foreground mb-3">
-              Registra sets con peso (lastre) para ver tu 1RM estimado por ejercicio.
+              Anota series con lastre para ver tu repetición máxima estimada.
             </div>
             <Button variant="outline" size="sm" onClick={() => setShowManual(true)}
               className="text-[10px] tracking-widest hover:border-lime hover:text-lime">
@@ -95,7 +95,7 @@ export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }:
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Estimacion 1RM</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Estimación 1RM</div>
       <Card>
         <CardContent className="p-5">
           {/* Auto estimates from logs */}
@@ -130,13 +130,13 @@ export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }:
                 <div className="flex gap-2">
                   <div>
                     <label className="text-[9px] text-muted-foreground block mb-1">Peso total (kg)</label>
-                    <Input type="number" value={manualWeight} onChange={e => setManualWeight(e.target.value)}
-                      placeholder="Ej: 80" className="h-8 w-24 text-xs" />
+                    <Input type="number" min="0" step="0.5" value={manualWeight} onChange={e => setManualWeight(e.target.value)}
+                      placeholder="80" className="h-8 w-24 text-xs" />
                   </div>
                   <div>
                     <label className="text-[9px] text-muted-foreground block mb-1">Reps</label>
-                    <Input type="number" value={manualReps} onChange={e => setManualReps(e.target.value)}
-                      placeholder="Ej: 8" className="h-8 w-20 text-xs" />
+                    <Input type="number" min="1" max="50" value={manualReps} onChange={e => setManualReps(e.target.value)}
+                      placeholder="8" className="h-8 w-20 text-xs" />
                   </div>
                   {manual1RM && (
                     <div className="flex items-end pb-0.5">

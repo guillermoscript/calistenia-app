@@ -76,7 +76,7 @@ export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) 
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Volumen semanal por musculo</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Volumen semanal por músculo</div>
       <Card>
         <CardContent className="p-5">
           <div className="space-y-2.5">
@@ -98,9 +98,6 @@ export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) 
                 </div>
               )
             })}
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-3 pt-3 border-t border-border/60">
-            Total: {volumeByGroup.reduce((s, [, v]) => s + v, 0)} series esta semana
           </div>
         </CardContent>
       </Card>

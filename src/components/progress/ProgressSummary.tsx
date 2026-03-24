@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
 import { todayStr as todayStrFn, toLocalDateStr } from '../../lib/dateUtils'
 import { isFreeSession } from '../../lib/progressUtils'
@@ -108,55 +107,44 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
   const monthDiff = stats.sessionsThisMonth - stats.sessionsPrevMonth
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <Card>
-        <CardContent className="p-5">
-          <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-lime')}>
-            {stats.sessionsThisWeek}
-            {filter !== 'free' && <span className="text-lg text-muted-foreground">/{stats.weeklyGoal}</span>}
+    <div className="grid grid-cols-3 gap-4 mb-8">
+      <div>
+        <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-lime')}>
+          {stats.sessionsThisWeek}
+          {filter !== 'free' && <span className="text-lg text-muted-foreground">/{stats.weeklyGoal}</span>}
+        </div>
+        <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
+          {filter === 'free' ? 'Libres / semana' : 'Sesiones / semana'}
+        </div>
+        {weekDiff !== 0 && (
+          <div className={cn('text-[11px] mt-1', weekDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
+            {weekDiff > 0 ? '+' : ''}{weekDiff} vs sem. pasada
           </div>
-          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
-            {filter === 'free' ? 'Sesiones libres esta semana' : 'Sesiones esta semana'}
-          </div>
-          {filter === 'all' && stats.freeSessionsThisWeek > 0 && (
-            <div className="text-[11px] mt-1 text-violet-400">
-              {stats.freeSessionsThisWeek} libre{stats.freeSessionsThisWeek !== 1 ? 's' : ''}
-            </div>
-          )}
-          {weekDiff !== 0 && (
-            <div className={cn('text-[11px] mt-1', weekDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
-              {weekDiff > 0 ? '+' : ''}{weekDiff} vs semana anterior
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      <Card>
-        <CardContent className="p-5">
-          <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-sky-500')}>
-            {stats.sessionsThisMonth}
+      <div>
+        <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-foreground')}>
+          {stats.sessionsThisMonth}
+        </div>
+        <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
+          {filter === 'free' ? 'Libres / mes' : 'Sesiones / mes'}
+        </div>
+        {monthDiff !== 0 && (
+          <div className={cn('text-[11px] mt-1', monthDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
+            {monthDiff > 0 ? '+' : ''}{monthDiff} vs mes pasado
           </div>
-          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
-            {filter === 'free' ? 'Sesiones libres este mes' : 'Sesiones este mes'}
-          </div>
-          {monthDiff !== 0 && (
-            <div className={cn('text-[11px] mt-1', monthDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
-              {monthDiff > 0 ? '+' : ''}{monthDiff} vs mes anterior
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      <Card>
-        <CardContent className="p-5">
-          <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-amber-400')}>
-            {stats.setsThisWeek}
-          </div>
-          <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
-            {filter === 'free' ? 'Series libres esta semana' : 'Series esta semana'}
-          </div>
-        </CardContent>
-      </Card>
+      <div>
+        <div className={cn('font-bebas text-[40px] leading-none', filter === 'free' ? 'text-violet-400' : 'text-foreground')}>
+          {stats.setsThisWeek}
+        </div>
+        <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
+          {filter === 'free' ? 'Series libres' : 'Series / semana'}
+        </div>
+      </div>
     </div>
   )
 }

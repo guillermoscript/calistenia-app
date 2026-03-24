@@ -1,6 +1,5 @@
 import { useCallback } from 'react'
 import { Button } from '../ui/button'
-import { Card, CardContent } from '../ui/card'
 import { todayStr } from '../../lib/dateUtils'
 import type { ProgressMap, ExerciseLog, SetData } from '../../types'
 import type { WeightEntry } from '../../hooks/useWeight'
@@ -64,33 +63,23 @@ export default function ExportData({ progress, weights }: ExportDataProps) {
   }, [weights])
 
   return (
-    <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Exportar datos</div>
-      <Card>
-        <CardContent className="p-5">
-          <div className="flex gap-3 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportSessions}
-              className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
-            >
-              SESIONES CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportWeight}
-              className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
-            >
-              PESO CSV
-            </Button>
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-2">
-            Descarga tus datos de entrenamiento y peso en formato CSV
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex gap-3 flex-wrap">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleExportSessions}
+        className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
+      >
+        EXPORTAR SESIONES
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleExportWeight}
+        className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
+      >
+        EXPORTAR PESO
+      </Button>
     </div>
   )
 }

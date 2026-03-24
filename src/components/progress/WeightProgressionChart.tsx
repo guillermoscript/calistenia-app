@@ -16,9 +16,8 @@ export default function WeightProgressionChart({ exerciseLogs }: WeightProgressi
     const data: Record<string, { date: string; maxWeight: number; maxReps: string }[]> = {}
     Object.entries(exerciseLogs).forEach(([exId, logs]) => {
       const points: { date: string; maxWeight: number; maxReps: string }[] = []
-      logs
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .forEach(log => {
+      const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date))
+      sorted.forEach(log => {
           const weighted = log.sets.filter(s => s.weight && s.weight > 0)
           if (weighted.length > 0) {
             const best = weighted.reduce((max, s) => (s.weight || 0) > (max.weight || 0) ? s : max)
@@ -39,7 +38,7 @@ export default function WeightProgressionChart({ exerciseLogs }: WeightProgressi
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Progresion de lastre</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Progresión de lastre</div>
       <Card>
         <CardContent className="p-5">
           {/* Exercise selector */}
