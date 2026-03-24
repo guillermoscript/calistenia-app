@@ -303,11 +303,16 @@ export default function MealLoggerContent({
   ), [foods])
 
   const handleSave = async () => {
+    const validFoods = foods.filter(f => f.name.trim())
+    if (validFoods.length === 0) {
+      setError('Agrega al menos un alimento con nombre.')
+      return
+    }
     setStep('saving')
     try {
       await onSave({
         mealType,
-        foods,
+        foods: validFoods,
         totalCalories: totals.calories,
         totalProtein: totals.protein,
         totalCarbs: totals.carbs,

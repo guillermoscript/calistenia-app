@@ -205,22 +205,37 @@ export function useNutrition(userId: string | null) {
 
     if (usePB && userId) {
       try {
-        const formData = new FormData()
-        formData.append('user', userId)
-        formData.append('meal_type', entry.mealType)
-        formData.append('foods', JSON.stringify(entry.foods))
-        formData.append('total_calories', String(entry.totalCalories))
-        formData.append('total_protein', String(entry.totalProtein))
-        formData.append('total_carbs', String(entry.totalCarbs))
-        formData.append('total_fat', String(entry.totalFat))
-        if (entry.aiModel) formData.append('ai_model', entry.aiModel)
+        let body: FormData | Record<string, any>
         if (photoFiles && photoFiles.length > 0) {
+          // Use FormData when there are photos to upload
+          const formData = new FormData()
+          formData.append('user', userId)
+          formData.append('meal_type', entry.mealType)
+          formData.append('foods', JSON.stringify(entry.foods))
+          formData.append('total_calories', String(entry.totalCalories || 0))
+          formData.append('total_protein', String(entry.totalProtein || 0))
+          formData.append('total_carbs', String(entry.totalCarbs || 0))
+          formData.append('total_fat', String(entry.totalFat || 0))
+          if (entry.aiModel) formData.append('ai_model', entry.aiModel)
           for (const file of photoFiles) {
             formData.append('photos', file)
           }
+          body = formData
+        } else {
+          // Use JSON for non-photo entries — PB treats "0" as blank in FormData
+          body = {
+            user: userId,
+            meal_type: entry.mealType,
+            foods: entry.foods,
+            total_calories: entry.totalCalories || 0,
+            total_protein: entry.totalProtein || 0,
+            total_carbs: entry.totalCarbs || 0,
+            total_fat: entry.totalFat || 0,
+            ...(entry.aiModel ? { ai_model: entry.aiModel } : {}),
+          }
         }
 
-        const created: any = await pb.collection('nutrition_entries').create(formData)
+        const created: any = await pb.collection('nutrition_entries').create(body)
         // Re-fetch to ensure file fields are fully populated
         const rec: any = await pb.collection('nutrition_entries').getOne(created.id, { $autoCancel: false })
         saved = {
