@@ -239,7 +239,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
         const sessionData: Record<string, any> = {
           user: userId,
           workout_key: workoutKey,
-          phase: isFreeSession ? 0 : parseInt(phaseStr.replace('p', '')),
+          phase: isFreeSession ? -1 : parseInt(phaseStr.replace('p', '')),
           day: isFreeSession ? 'free' : day,
           completed_at: new Date().toISOString().replace('T', ' '),
           note: note || '',
