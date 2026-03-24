@@ -1,11 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
-import { errorResult, PaginationSchema, ResponseFormat, today, daysAgo } from "../utils.js";
+import { errorResult, PaginationSchema, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
 
 export function registerHealthTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
   const userId = auth.getUserId();
+  const tz = auth.getTimezone();
 
   // ══════════════════════════════════════════════════════════════
   //  SLEEP
@@ -82,7 +83,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
     },
     async ({ days, limit, offset, response_format }) => {
       try {
-        const from = daysAgo(days);
+        const from = daysAgo(days, tz);
         const entries = await pb.collection("sleep_entries").getList(offset / limit + 1, limit, {
           filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
           sort: "-date",
@@ -94,7 +95,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
 
         const items = entries.items.map((e) => ({
           id: e.id,
-          date: (e.date as string).slice(0, 10),
+          date: toDateStr(e.date as string, tz),
           bedtime: e.bedtime,
           wake_time: e.wake_time,
           duration_minutes: e.duration_minutes,
@@ -159,7 +160,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
         });
 
         // Get today's total
-        const todayStr = today();
+        const todayStr = today(tz);
         const todayEntries = await pb.collection("water_entries").getFullList({
           filter: pb.filter('user = {:userId} && logged_at >= {:todayStr}', { userId, todayStr }),
           fields: 'amount_ml',
@@ -191,7 +192,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
     },
     async () => {
       try {
-        const todayStr = today();
+        const todayStr = today(tz);
         const entries = await pb.collection("water_entries").getFullList({
           filter: pb.filter('user = {:userId} && logged_at >= {:todayStr}', { userId, todayStr }),
           sort: "logged_at",
@@ -245,7 +246,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
       try {
         const data: Record<string, unknown> = {
           user: userId,
-          date: input.date || today(),
+          date: input.date || today(tz),
         };
         const parts: string[] = [];
         for (const key of ["chest", "waist", "hips", "arm_left", "arm_right", "thigh_left", "thigh_right"] as const) {
@@ -288,7 +289,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
     },
     async ({ days, limit, offset, response_format }) => {
       try {
-        const from = daysAgo(days);
+        const from = daysAgo(days, tz);
         const result = await pb.collection("body_measurements").getList(offset / limit + 1, limit, {
           filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
           sort: "-date",
@@ -300,7 +301,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
 
         const items = result.items.map((e) => ({
           id: e.id,
-          date: (e.date as string).slice(0, 10),
+          date: toDateStr(e.date as string, tz),
           chest: e.chest || null,
           waist: e.waist || null,
           hips: e.hips || null,

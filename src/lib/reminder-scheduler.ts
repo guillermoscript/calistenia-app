@@ -9,6 +9,8 @@
  * Automatically re-schedules on visibility change (tab refocus).
  */
 
+import { localDay, localMinutesSinceMidnight } from './dateUtils'
+
 interface SchedulableReminder {
   id: string
   type: 'meal' | 'workout' | 'pause'
@@ -32,7 +34,7 @@ let checkInterval: ReturnType<typeof setInterval> | null = null
 let currentReminders: SchedulableReminder[] = []
 
 function isTodayIncluded(daysOfWeek: number[] | string): boolean {
-  const jsDay = new Date().getDay() // 0=Sun, 1=Mon...6=Sat
+  const jsDay = localDay()
   const days = typeof daysOfWeek === 'string'
     ? ((): number[] => { try { return JSON.parse(daysOfWeek) } catch { return [] } })()
     : daysOfWeek
@@ -40,10 +42,9 @@ function isTodayIncluded(daysOfWeek: number[] | string): boolean {
 }
 
 function getDelayMs(hour: number, minute: number): number {
-  const now = new Date()
-  const target = new Date()
-  target.setHours(hour, minute, 0, 0)
-  return target.getTime() - now.getTime()
+  const targetMinutes = hour * 60 + minute
+  const nowMinutes = localMinutesSinceMidnight()
+  return (targetMinutes - nowMinutes) * 60 * 1000
 }
 
 async function fireNotification(reminder: SchedulableReminder): Promise<void> {

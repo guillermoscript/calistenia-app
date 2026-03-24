@@ -3,6 +3,7 @@ import {
   ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts'
 import { Card, CardContent } from '../ui/card'
+import { todayStr, toLocalDateStr } from '../../lib/dateUtils'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ function buildChartData(entries: SleepEntry[]): ChartDataPoint[] {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = toLocalDateStr(d)
     const entry = entries.find(e => e.date === dateStr)
     data.push({
       dayLabel: getDayLabel(dateStr),
@@ -114,7 +115,7 @@ function CustomTooltip({ active, payload, label }: any) {
 
 export default function SleepWeekChart({ entries }: SleepWeekChartProps) {
   const data = buildChartData(entries)
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
   const daysWithData = data.filter(d => d.hours > 0).length
   const avgHours = daysWithData > 0
     ? (data.reduce((sum, d) => sum + d.hours, 0) / daysWithData).toFixed(1)

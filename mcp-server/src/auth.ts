@@ -4,12 +4,14 @@ export interface UserContext {
   userId: string;
   token: string;
   email: string;
+  timezone: string;
 }
 
 export class AuthManager {
   private pb: PocketBase;
   private userId: string;
   private email: string;
+  private timezone: string;
 
   constructor(pbUrl: string, context: UserContext) {
     this.pb = new PocketBase(pbUrl);
@@ -17,6 +19,7 @@ export class AuthManager {
     this.pb.authStore.save(context.token, { id: context.userId } as any);
     this.userId = context.userId;
     this.email = context.email;
+    this.timezone = context.timezone;
   }
 
   getClient(): PocketBase {
@@ -29,6 +32,10 @@ export class AuthManager {
 
   getEmail(): string {
     return this.email;
+  }
+
+  getTimezone(): string {
+    return this.timezone;
   }
 }
 
@@ -57,6 +64,7 @@ export async function validateBearerToken(
       userId: result.record.id,
       token: pb.authStore.token,
       email: result.record.email as string,
+      timezone: (result.record as any).timezone || "UTC",
     };
   } catch {
     throw new Error(

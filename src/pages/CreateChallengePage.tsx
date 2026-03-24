@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useChallenges } from '../hooks/useChallenges'
 import { useFollows } from '../hooks/useFollows'
 import { cn } from '../lib/utils'
+import { todayStr, toLocalDateStr } from '../lib/dateUtils'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
@@ -28,7 +29,7 @@ const DURATION_PRESETS = [
 function addDays(date: string, days: number): string {
   const d = new Date(date)
   d.setDate(d.getDate() + days)
-  return d.toISOString().split('T')[0]
+  return toLocalDateStr(d)
 }
 
 interface CreateChallengePageProps {
@@ -40,7 +41,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   const { createChallenge } = useChallenges(userId)
   const { following } = useFollows(userId)
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')

@@ -13,8 +13,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Pause, PauseType, WorkDay } from '../types'
+import { todayStr } from '../lib/dateUtils'
 
-const TODAY = (): string => new Date().toISOString().split('T')[0]
+const TODAY = (): string => todayStr()
 const LS_KEY = (date: string): string => `calistenia_workday_${date}`
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────

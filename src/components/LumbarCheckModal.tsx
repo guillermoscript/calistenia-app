@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb } from '../lib/pocketbase'
 import { cn } from '../lib/utils'
+import { todayStr, daysAgoStr } from '../lib/dateUtils'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import {
@@ -63,13 +64,9 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
 
   // Get sleep data from sleep tracking
   const { didSleepWell: checkSleepWell } = useSleep(user?.id ?? null)
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
   // Check last night (yesterday's date is the sleep entry date)
-  const yesterday = (() => {
-    const d = new Date()
-    d.setDate(d.getDate() - 1)
-    return d.toISOString().split('T')[0]
-  })()
+  const yesterday = daysAgoStr(1)
   const sleepWellStatus = checkSleepWell(yesterday)
 
   const handleSave = useCallback(async () => {

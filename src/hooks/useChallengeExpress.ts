@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { todayStr, toLocalDateStr } from '../lib/dateUtils'
 
 export interface ExpressProgress {
   participantId: string
@@ -45,8 +46,8 @@ export function useChallengeExpress(userId: string | null) {
         creator: userId,
         title: challengeTitle,
         metric: 'reps',
-        starts_at: today.toISOString().split('T')[0],
-        ends_at: endDate.toISOString().split('T')[0],
+        starts_at: toLocalDateStr(today),
+        ends_at: toLocalDateStr(endDate),
         status: 'active',
         type: 'express',
         exercise_id: exerciseId,
@@ -140,7 +141,7 @@ export function useChallengeExpress(userId: string | null) {
           let streakBroken = false
 
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0]
+            const dateStr = toLocalDateStr(d)
             const value = dailyMap.get(dateStr) || 0
             const completed = value >= dailyTarget
             dailyProgress.push({ date: dateStr, value, completed })
@@ -150,7 +151,7 @@ export function useChallengeExpress(userId: string | null) {
               if (!streakBroken) currentStreak++
             } else {
               // Only break streak for past days
-              const today = new Date().toISOString().split('T')[0]
+              const today = todayStr()
               if (dateStr < today) streakBroken = true
             }
           }

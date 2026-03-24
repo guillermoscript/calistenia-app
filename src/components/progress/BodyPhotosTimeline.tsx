@@ -3,6 +3,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
+import { todayStr } from '../../lib/dateUtils'
 import { useBodyPhotos } from '../../hooks/useBodyPhotos'
 
 const CATEGORIES = [
@@ -20,7 +21,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
   const [uploading, setUploading] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [category, setCategory] = useState('front')
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(() => todayStr())
   const [note, setNote] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 

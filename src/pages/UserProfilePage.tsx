@@ -9,6 +9,7 @@ import { Loader } from '../components/ui/loader'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
+import { todayStr } from '../lib/dateUtils'
 import { useFollows } from '../hooks/useFollows'
 import { ShareButton } from '../components/ShareButton'
 import { shareProfile, shareReferralInvite } from '../lib/share'
@@ -190,7 +191,7 @@ export default function UserProfilePage() {
     )
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
   const calDays = Object.entries(profile.monthActivity)
 
   return (

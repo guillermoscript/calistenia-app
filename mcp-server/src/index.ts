@@ -114,12 +114,13 @@ async function mcpAuth(req: any, res: any, next: any) {
   bearerAuth(req, res, (err?: any) => {
     if (!err && req.auth) {
       // OAuth token validated — attach user context
-      const { userId, pbToken, email } = req.auth.extra as {
+      const { userId, pbToken, email, timezone } = req.auth.extra as {
         userId: string;
         pbToken: string;
         email: string;
+        timezone?: string;
       };
-      req.mcpAuth = new AuthManager(PB_URL, { userId, token: pbToken, email });
+      req.mcpAuth = new AuthManager(PB_URL, { userId, token: pbToken, email, timezone: timezone || "UTC" });
       return next();
     }
 

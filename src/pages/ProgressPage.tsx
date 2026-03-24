@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge'
 import { Separator } from '../components/ui/separator'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
+import { todayStr, daysAgoStr } from '../lib/dateUtils'
 import { PHASE_COLORS } from '../lib/style-tokens'
 import { useWorkoutState } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
@@ -62,8 +63,8 @@ interface ProgressPageProps {
 }
 
 function relativeDate(dateStr: string): string {
-  const today = new Date().toISOString().split('T')[0]
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  const today = todayStr()
+  const yesterday = daysAgoStr(1)
   if (dateStr === today) return 'Hoy'
   if (dateStr === yesterday) return 'Ayer'
   const diff = Math.floor((new Date(today).getTime() - new Date(dateStr).getTime()) / 86400000)

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '../lib/utils'
+import { localDay } from '../lib/dateUtils'
 import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
 import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
 import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
@@ -76,7 +77,7 @@ function formatRelativeDate(isoDate: string): { text: string; fresh: boolean } {
 const JS_DAY_TO_ID: Record<number, string> = {
   0: 'dom', 1: 'lun', 2: 'mar', 3: 'mie', 4: 'jue', 5: 'vie', 6: 'sab',
 }
-const TODAY_DAY_ID = JS_DAY_TO_ID[new Date().getDay()]
+const TODAY_DAY_ID = JS_DAY_TO_ID[localDay()]
 
 function ChevronIcon({ className, expanded }: { className?: string; expanded: boolean }) {
   return (

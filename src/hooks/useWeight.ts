@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { todayStr } from '../lib/dateUtils'
 
 const LS_KEY = 'calistenia_weight_entries'
 
@@ -66,7 +67,7 @@ export const useWeight = (userId: string | null = null): UseWeightReturn => {
   }, [userId])
 
   const logWeight = useCallback(async (weightKg: number, date?: string, note?: string) => {
-    const d = date || new Date().toISOString().split('T')[0]
+    const d = date || todayStr()
     const entry: WeightEntry = {
       id: `local_${Date.now()}`,
       weight_kg: weightKg,

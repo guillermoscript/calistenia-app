@@ -32,30 +32,33 @@ export function errorResult(message: string) {
   };
 }
 
-/** Format a JS Date or ISO string as YYYY-MM-DD */
-export function toDateStr(d: Date | string): string {
+/** Format a JS Date or ISO string as YYYY-MM-DD in the given timezone */
+export function toDateStr(d: Date | string, tz?: string): string {
   const date = typeof d === "string" ? new Date(d) : d;
-  return date.toISOString().slice(0, 10);
+  if (tz) {
+    return date.toLocaleDateString("sv-SE", { timeZone: tz });
+  }
+  return date.toLocaleDateString("sv-SE", { timeZone: "UTC" });
 }
 
-/** Today as YYYY-MM-DD */
-export function today(): string {
-  return toDateStr(new Date());
+/** Today as YYYY-MM-DD in the given timezone */
+export function today(tz?: string): string {
+  return toDateStr(new Date(), tz);
 }
 
-/** Start of current week (Monday) as YYYY-MM-DD */
-export function startOfWeek(): string {
-  const d = new Date();
+/** Start of current week (Monday) as YYYY-MM-DD in the given timezone */
+export function startOfWeek(tz?: string): string {
+  const todayStr = today(tz);
+  const d = new Date(`${todayStr}T12:00:00`);
   const day = d.getDay();
   const diff = (day === 0 ? -6 : 1) - day;
   d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return toDateStr(d);
+  return toDateStr(d, tz);
 }
 
-/** N days ago as YYYY-MM-DD */
-export function daysAgo(n: number): string {
+/** N days ago as YYYY-MM-DD in the given timezone */
+export function daysAgo(n: number, tz?: string): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return toDateStr(d);
+  return toDateStr(d, tz);
 }

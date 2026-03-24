@@ -4,6 +4,7 @@ import { PHASES as FALLBACK_PHASES } from '../data/workouts'
 import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
 import { cn } from '../lib/utils'
+import { todayStr, localHour, localDay } from '../lib/dateUtils'
 import { PHASE_COLORS } from '../lib/style-tokens'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -147,7 +148,7 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
 // ── Greeting helper ──────────────────────────────────────────────────────────
 
 function getGreeting(): string {
-  const h = new Date().getHours()
+  const h = localHour()
   if (h < 12) return 'Buenos dias'
   if (h < 19) return 'Buenas tardes'
   return 'Buenas noches'
@@ -217,7 +218,7 @@ export default function DashboardPage({
   const totalWeeks = activeProgram?.duration_weeks || 26
   const progress = Math.min(100, (daysElapsed / (totalWeeks * 7)) * 100)
   const calDays = Object.entries(monthActivity)
-  const today_str = new Date().toISOString().split('T')[0]
+  const today_str = todayStr()
 
   const daysSinceLastSession = useMemo(() => {
     const last = getLastSessionDate ? getLastSessionDate() : null
@@ -286,7 +287,7 @@ export default function DashboardPage({
 
       {/* ═══ TODAY'S WORKOUT HERO ══════════════════════════════════════════ */}
       {(() => {
-        const todayDayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[new Date().getDay()]
+        const todayDayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
         const todayDay = weekDays.find(d => d.id === todayDayId)
         const todayIsRest = todayDay?.type === 'rest'
         const todayWorkoutKey = `p${settings.phase || 1}_${todayDayId}`

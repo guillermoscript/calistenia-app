@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { daysAgoStr } from '../lib/dateUtils'
 import type { SleepEntry } from '../types'
 
 const LS_KEY = 'calistenia_sleep_entries'
@@ -136,10 +137,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
 
   // Weekly stats: last 7 days
   const weeklyStats = useMemo(() => {
-    const now = new Date()
-    const sevenDaysAgo = new Date(now)
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    const cutoff = sevenDaysAgo.toISOString().split('T')[0]
+    const cutoff = daysAgoStr(7)
     const recent = entries.filter(e => e.date >= cutoff)
     return computeStats(recent)
   }, [entries])

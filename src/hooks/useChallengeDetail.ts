@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { localMidnightAsUTC, addDays } from '../lib/dateUtils'
 import type { Challenge, ChallengeMetric } from '../types'
 import type { LeaderboardEntry } from './useLeaderboard'
 
@@ -43,8 +44,8 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
       setParticipantIds(pIds)
 
       // 3. Calculate scores per participant
-      const startStr = challengeData.starts_at + ' 00:00:00'
-      const endStr = challengeData.ends_at + ' 23:59:59'
+      const startStr = localMidnightAsUTC(challengeData.starts_at)
+      const endStr = localMidnightAsUTC(addDays(challengeData.ends_at, 1))
 
       const entries = await Promise.all(
         participants.map(async (p: any) => {

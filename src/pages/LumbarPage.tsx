@@ -6,6 +6,7 @@ import LumbarCheckModal from '../components/LumbarCheckModal'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
+import { todayStr } from '../lib/dateUtils'
 import type { Protocol, ProtocolExercise, Pause } from '../types'
 import { RecordModel } from 'pocketbase'
 
@@ -208,12 +209,11 @@ export default function LumbarPage({ user }: LumbarPageProps) {
   const [youtubeQuery, setYoutubeQuery]     = useState<string | null>(null)
   const [showLumbarCheck, setShowLumbarCheck] = useState(() => {
     const lastCheck = localStorage.getItem('calistenia_lumbar_check_date')
-    const today = new Date().toISOString().split('T')[0]
-    return lastCheck !== today
+    return lastCheck !== todayStr()
   })
 
   const handleLumbarCheckDone = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = todayStr()
     localStorage.setItem('calistenia_lumbar_check_date', today)
     setShowLumbarCheck(false)
   }, [])

@@ -3,6 +3,7 @@ import {
   ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts'
 import { Card, CardContent } from '../ui/card'
+import { todayStr } from '../../lib/dateUtils'
 
 interface DayData {
   date: string
@@ -53,7 +54,7 @@ function CustomTooltip({ active, payload, label }: any) {
 export default function WeeklyNutritionChart({ history, calorieGoal }: WeeklyNutritionChartProps) {
   const daysWithData = history.filter(d => d.calories > 0).length
   const daysOnTarget = history.filter(d => d.calories >= calorieGoal * 0.85).length
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
 
   return (
     <div>

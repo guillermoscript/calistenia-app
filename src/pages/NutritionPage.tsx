@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { todayStr, addDays } from '../lib/dateUtils'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
 import NutritionDashboard from '../components/nutrition/NutritionDashboard'
@@ -83,7 +84,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   }, [trainingPhase])
 
   const { todayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal } = useWater(userId)
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState(() => todayStr())
 
   const {
     goals,
@@ -213,7 +214,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     })
   }, [saveEntry, userId])
 
-  const isToday = selectedDate === new Date().toISOString().split('T')[0]
+  const isToday = selectedDate === todayStr()
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -239,11 +240,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       {/* Date picker */}
       <div id="tour-nutrition-date" className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => {
-            const d = new Date(selectedDate)
-            d.setDate(d.getDate() - 1)
-            setSelectedDate(d.toISOString().split('T')[0])
-          }}
+          onClick={() => setSelectedDate(addDays(selectedDate, -1))}
           className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime-400/40 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Día anterior"
         >
@@ -256,11 +253,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           className="w-auto h-8 text-xs"
         />
         <button
-          onClick={() => {
-            const d = new Date(selectedDate)
-            d.setDate(d.getDate() + 1)
-            setSelectedDate(d.toISOString().split('T')[0])
-          }}
+          onClick={() => setSelectedDate(addDays(selectedDate, 1))}
           className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime-400/40 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Día siguiente"
         >
@@ -268,7 +261,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         </button>
         {!isToday && (
           <button
-            onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+            onClick={() => setSelectedDate(todayStr())}
             className="text-[10px] tracking-widest text-lime-400 hover:text-lime-400/80 uppercase"
           >
             HOY

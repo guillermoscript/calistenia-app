@@ -5,6 +5,7 @@ import { useMealReminders } from '../hooks/useMealReminders'
 import { useWorkoutReminders } from '../hooks/useWorkoutReminders'
 import { subscribeToPush, getSubscriptionStatus, getNotificationSupport, requestNotificationPermission } from '../lib/push-subscription'
 import { scheduleAll, buildSchedulableReminders, setupVisibilityRescheduler } from '../lib/reminder-scheduler'
+import { localMinutesSinceMidnight } from '../lib/dateUtils'
 import type { MealType } from '../types'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -340,7 +341,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
   }
 
   // Current hour marker
-  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes()
+  const nowMinutes = localMinutesSinceMidnight()
 
   // ── Shared time+days editor ────────────────────────────────────────────────
   const renderTimeAndDays = (accentColor: string) => (

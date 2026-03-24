@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
+import { todayStr } from '../../lib/dateUtils'
 import type { ProgressMap, ExerciseLog, SetData } from '../../types'
 import type { WeightEntry } from '../../hooks/useWeight'
 
@@ -52,13 +53,13 @@ function downloadCSV(content: string, filename: string) {
 export default function ExportData({ progress, weights }: ExportDataProps) {
   const handleExportSessions = useCallback(() => {
     const csv = progressToCSV(progress)
-    const date = new Date().toISOString().split('T')[0]
+    const date = todayStr()
     downloadCSV(csv, `calistenia_sessions_${date}.csv`)
   }, [progress])
 
   const handleExportWeight = useCallback(() => {
     const csv = weightsToCSV(weights)
-    const date = new Date().toISOString().split('T')[0]
+    const date = todayStr()
     downloadCSV(csv, `calistenia_weight_${date}.csv`)
   }, [weights])
 

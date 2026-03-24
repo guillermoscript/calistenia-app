@@ -6,6 +6,7 @@ import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from ".
 export function registerProgressTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
   const userId = auth.getUserId();
+  const tz = auth.getTimezone();
 
   // ──────────────────────────────────────────────────────────────
   // GET SETTINGS
@@ -165,8 +166,8 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
     },
     async ({ limit, offset, from_date, to_date, response_format }) => {
       try {
-        const from = from_date ?? daysAgo(90);
-        const to = to_date ?? today();
+        const from = from_date ?? daysAgo(90, tz);
+        const to = to_date ?? today(tz);
 
         const result = await pb.collection("weight_entries").getList(offset / limit + 1, limit, {
           filter: pb.filter('user = {:userId} && date >= {:from} && date <= {:to}', { userId, from, to }),
@@ -237,7 +238,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         const record = await pb.collection("weight_entries").create({
           user: userId,
           weight_kg,
-          date: date ?? today(),
+          date: date ?? today(tz),
           note: note ?? "",
         });
 
@@ -295,8 +296,8 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
     },
     async ({ limit, offset, from_date, to_date, response_format }) => {
       try {
-        const from = from_date ?? daysAgo(30);
-        const to = to_date ?? today();
+        const from = from_date ?? daysAgo(30, tz);
+        const to = to_date ?? today(tz);
 
         const result = await pb.collection("lumbar_checks").getList(offset / limit + 1, limit, {
           filter: pb.filter('user = {:userId} && date >= {:from} && date <= {:to}', { userId, from, to }),
@@ -373,7 +374,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
       try {
         const record = await pb.collection("lumbar_checks").create({
           user: userId,
-          date: date ?? today(),
+          date: date ?? today(tz),
           lumbar_score,
           slept_well,
           sitting_hours,
@@ -430,7 +431,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
     },
     async ({ days, response_format }) => {
       try {
-        const from = daysAgo(days);
+        const from = daysAgo(days, tz);
 
         const [sessions, weightEntries, lumbarChecks, settings] = await Promise.all([
           pb.collection("sessions").getFullList({
@@ -472,7 +473,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         const output = {
           period_days: days,
           from_date: from,
-          to_date: today(),
+          to_date: today(tz),
           training: {
             total_sessions: sessions.length,
             sessions_per_week: Math.round(sessionsPerWeek * 10) / 10,
@@ -497,7 +498,7 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
 
           text = [
             `# Progress Summary — Last ${days} Days`,
-            `_${from} → ${today()}_\n`,
+            `_${from} → ${today(tz)}_\n`,
             `## Training`,
             `- Sessions: **${sessions.length}** total (avg **${sessionsPerWeek.toFixed(1)}/week**${consistency})`,
             settings?.phase ? `- Current Phase: **${settings.phase}**` : "",

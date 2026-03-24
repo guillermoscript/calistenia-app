@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
+import { setTimezone } from '../lib/dateUtils'
 import type { UserRole, UserTier } from '../types'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
@@ -27,6 +28,8 @@ interface UseAuthReturn {
   isAdmin: boolean
   isEditor: boolean
   signInWithGoogle: () => Promise<void>
+  signInWithEmail: (email: string, password: string) => Promise<void>
+  signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>
   signOut: () => void
 }
 
@@ -54,7 +57,10 @@ export const useAuth = (): UseAuthReturn => {
     const boot = async () => {
       await tryRefreshAuth()
       if (!cancelled) {
-        setUser(getCurrentUser())
+        const u = getCurrentUser()
+        if (u?.timezone) setTimezone(u.timezone)
+        else setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+        setUser(u)
         setAuthReady(true)
       }
     }
@@ -65,6 +71,8 @@ export const useAuth = (): UseAuthReturn => {
   // ── Escuchar cambios del authStore (login/logout/token expirado) ─────────
   useEffect(() => {
     const unsub = pb.authStore.onChange((_token: string, record: RecordModel | null) => {
+      if (record?.timezone) setTimezone(record.timezone)
+      else if (record) setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
       setUser(record ?? null)
     })
     return () => unsub()
@@ -143,6 +151,42 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [])
 
+  // ── signInWithEmail ──────────────────────────────────────────────────────
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    setAuthError(null)
+    setIsLoading(true)
+    try {
+      await pb.collection('users').authWithPassword(email, password)
+    } catch (err: any) {
+      setAuthError(err?.message || 'Error al iniciar sesión')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // ── signUpWithEmail ─────────────────────────────────────────────────────
+  const signUpWithEmail = useCallback(async (email: string, password: string, displayName: string) => {
+    setAuthError(null)
+    setIsLoading(true)
+    try {
+      await pb.collection('users').create({
+        email,
+        password,
+        passwordConfirm: password,
+        display_name: displayName,
+      })
+      // Auto-login after signup
+      const result = await pb.collection('users').authWithPassword(email, password)
+      if (result.record && !result.record.referral_code) {
+        justRegistered.current = true
+      }
+    } catch (err: any) {
+      setAuthError(err?.message || 'Error al crear cuenta')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   // ── signOut ──────────────────────────────────────────────────────────────
   const signOut = useCallback(() => {
     logout()
@@ -154,5 +198,5 @@ export const useAuth = (): UseAuthReturn => {
   const isAdmin = userRole === 'admin'
   const isEditor = userRole === 'editor'
 
-  return { user, authReady, authError, isLoading, userRole, userTier, isAdmin, isEditor, signInWithGoogle, signOut }
+  return { user, authReady, authError, isLoading, userRole, userTier, isAdmin, isEditor, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut }
 }

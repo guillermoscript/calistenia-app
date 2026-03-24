@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils'
+import { localDay } from '../lib/dateUtils'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '../data/workouts'
 import type { WeekDay } from '../types'
 
@@ -12,7 +13,7 @@ interface WeekPlanWidgetProps {
 export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays: weekDaysProp }: WeekPlanWidgetProps) {
   const navigate = useNavigate()
   const WEEK_DAYS = weekDaysProp || FALLBACK_WEEK_DAYS
-  const todayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[new Date().getDay()]
+  const todayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
 
   return (
     <div className="mb-8">

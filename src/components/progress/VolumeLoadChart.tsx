@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
+import { toLocalDateStr } from '../../lib/dateUtils'
 import type { ProgressMap, ExerciseLog } from '../../types'
 
 interface VolumeLoadChartProps {
@@ -18,8 +19,8 @@ export default function VolumeLoadChart({ progress }: VolumeLoadChartProps) {
       const weekEnd = new Date(weekStart)
       weekEnd.setDate(weekStart.getDate() + 7)
 
-      const startStr = weekStart.toISOString().split('T')[0]
-      const endStr = weekEnd.toISOString().split('T')[0]
+      const startStr = toLocalDateStr(weekStart)
+      const endStr = toLocalDateStr(weekEnd)
 
       let volume = 0
       let sets = 0

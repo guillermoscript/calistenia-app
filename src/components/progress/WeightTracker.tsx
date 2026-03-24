@@ -4,6 +4,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
+import { todayStr } from '../../lib/dateUtils'
 import { useWeight } from '../../hooks/useWeight'
 
 interface WeightTrackerProps {
@@ -13,7 +14,7 @@ interface WeightTrackerProps {
 export default function WeightTracker({ userId }: WeightTrackerProps) {
   const { weights, isReady, logWeight, deleteWeight } = useWeight(userId)
   const [weightInput, setWeightInput] = useState('')
-  const [dateInput, setDateInput] = useState(() => new Date().toISOString().split('T')[0])
+  const [dateInput, setDateInput] = useState(() => todayStr())
   const [saving, setSaving] = useState(false)
 
   const chartData = useMemo(() => {
@@ -42,7 +43,7 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
     setSaving(true)
     await logWeight(kg, dateInput)
     setWeightInput('')
-    setDateInput(new Date().toISOString().split('T')[0])
+    setDateInput(todayStr())
     setSaving(false)
   }
 

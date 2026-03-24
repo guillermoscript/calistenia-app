@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/utils'
+import { todayStr, localHour } from '../../lib/dateUtils'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 import EditMealSheet from './EditMealSheet'
@@ -73,7 +74,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
 
   if (!goals) return null
 
-  const isToday = !selectedDate || selectedDate === new Date().toISOString().split('T')[0]
+  const isToday = !selectedDate || selectedDate === todayStr()
 
   const formatTime = (isoString: string) => {
     try {
@@ -112,7 +113,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
           {isToday ? 'Comidas de hoy' : 'Comidas del día'}
         </div>
         {entries.length === 0 ? ((() => {
-          const hour = new Date().getHours()
+          const hour = localHour()
           const emptyPrompt = isToday
             ? (hour < 10 ? '¿Qué desayunaste hoy?' : hour < 15 ? '¿Ya almorzaste?' : '¿Qué comiste hoy?')
             : 'Sin registros este día'

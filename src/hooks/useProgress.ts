@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { todayStr, toLocalDateStr } from '../lib/dateUtils'
 import type { Settings, ProgressMap, SetData, ExerciseLog } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -89,7 +90,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
     const data = lsGet()
     setProgress(data)
     const s = lsGetSettings()
-    if (!s.startDate) { s.startDate = new Date().toISOString().split('T')[0]; lsSetSettings(s) }
+    if (!s.startDate) { s.startDate = todayStr(); lsSetSettings(s) }
     setSettingsState(s)
   }
 
@@ -165,7 +166,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
         } else {
           // No hay settings en PB aún, usar localStorage o defaults
           const s = lsGetSettings()
-          if (!s.startDate) { s.startDate = new Date().toISOString().split('T')[0]; lsSetSettings(s) }
+          if (!s.startDate) { s.startDate = todayStr(); lsSetSettings(s) }
           setSettingsState(s)
           // Crear registro de settings en PB para este usuario
           if (uid) {
@@ -191,7 +192,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
 
   // ─── logSet ──────────────────────────────────────────────────────────────
   const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => {
-    const date = new Date().toISOString().split('T')[0]
+    const date = todayStr()
     const key = `${date}_${workoutKey}_${exerciseId}`
 
     // Siempre guardar en localStorage (cache inmediato)
@@ -222,7 +223,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
 
   // ─── markWorkoutDone ─────────────────────────────────────────────────────
   const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '') => {
-    const date = new Date().toISOString().split('T')[0]
+    const date = todayStr()
     const key = `done_${date}_${workoutKey}`
 
     setProgress(prev => {
@@ -251,7 +252,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
 
   // ─── Helpers de consulta ─────────────────────────────────────────────────
   const isWorkoutDone = useCallback((workoutKey: string, date?: string): boolean => {
-    const d = date || new Date().toISOString().split('T')[0]
+    const d = date || todayStr()
     return !!progress[`done_${d}_${workoutKey}`]
   }, [progress])
 
@@ -267,7 +268,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
     const dates: string[] = []
     for (let i = 0; i < 7; i++) {
       const d = new Date(today); d.setDate(today.getDate() - today.getDay() + 1 + i)
-      dates.push(d.toISOString().split('T')[0])
+      dates.push(toLocalDateStr(d))
     }
     return Object.keys(progress).filter(k => k.startsWith('done_') && dates.some(d => k.includes(d))).length
   }, [progress])

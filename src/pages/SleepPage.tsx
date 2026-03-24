@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { daysAgoStr } from '../lib/dateUtils'
 import { useSleep, type SleepEntryInput } from '../hooks/useSleep'
 import SleepForm, { type SleepFormData } from '../components/sleep/SleepForm'
 import SleepWeekChart from '../components/sleep/SleepWeekChart'
@@ -169,9 +170,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
 
   // Last night's date = yesterday
   const lastNightDate = useMemo(() => {
-    const d = new Date()
-    d.setDate(d.getDate() - 1)
-    return d.toISOString().split('T')[0]
+    return daysAgoStr(1)
   }, [])
 
   const todayEntry = useMemo(() => {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
+import { todayStr, toLocalDateStr, daysAgoStr, localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
 import type {
   NutritionEntry,
   NutritionGoal,
@@ -39,7 +40,7 @@ const lsSetGoals = (d: NutritionGoal | null): void => {
   localStorage.setItem(LS_GOALS, JSON.stringify(d))
 }
 
-const todayStr = (): string => new Date().toISOString().split('T')[0]
+// todayStr is now imported from ../lib/dateUtils
 
 // ─── Activity-level multipliers (Mifflin-St Jeor) ───────────────────────────
 const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
@@ -94,12 +95,12 @@ export function useNutrition(userId: string | null) {
   // ─── Carga desde PocketBase ────────────────────────────────────────────────
   const loadFromPB = async (uid: string): Promise<void> => {
     try {
-      const today = todayStr()
+      const todayStart = localMidnightAsUTC()
       const [entriesRes, goalsRes] = await Promise.all([
         pb.collection('nutrition_entries').getList(1, 200, {
           filter: pb.filter('user = {:uid} && logged_at >= {:start}', {
             uid,
-            start: `${today} 00:00:00`,
+            start: todayStart,
           }),
           sort: '-logged_at',
           $autoCancel: false,
@@ -389,7 +390,7 @@ export function useNutrition(userId: string | null) {
   // ─── Computed: getDailyTotals ─────────────────────────────────────────────
   const getDailyTotals = useCallback((date?: string): DailyTotals => {
     const target = date || todayStr()
-    const dayEntries = entries.filter(e => e.loggedAt.startsWith(target))
+    const dayEntries = entries.filter(e => utcToLocalDateStr(e.loggedAt) === target)
     return dayEntries.reduce<DailyTotals>(
       (acc, e) => ({
         calories: acc.calories + e.totalCalories,
@@ -403,14 +404,11 @@ export function useNutrition(userId: string | null) {
 
   // ─── Computed: getWeeklyAverages ──────────────────────────────────────────
   const getWeeklyAverages = useCallback((): DailyTotals => {
-    const today = new Date()
     const totals: DailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 }
     let daysWithEntries = 0
 
     for (let i = 0; i < 7; i++) {
-      const d = new Date(today)
-      d.setDate(today.getDate() - i)
-      const dateStr = d.toISOString().split('T')[0]
+      const dateStr = daysAgoStr(i)
       const dayTotals = getDailyTotals(dateStr)
       if (dayTotals.calories > 0) {
         totals.calories += dayTotals.calories
@@ -433,7 +431,7 @@ export function useNutrition(userId: string | null) {
 
   // ─── Computed: getEntriesForDate ──────────────────────────────────────────
   const getEntriesForDate = useCallback((date: string): NutritionEntry[] => {
-    return entries.filter(e => e.loggedAt.startsWith(date))
+    return entries.filter(e => utcToLocalDateStr(e.loggedAt) === date)
   }, [entries])
 
   // ─── Computed: getWeeklyHistory ──────────────────────────────────────────
@@ -448,9 +446,8 @@ export function useNutrition(userId: string | null) {
     const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
     const result = []
     for (let i = 6; i >= 0; i--) {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().split('T')[0]
+      const dateStr = daysAgoStr(i)
+      const d = new Date(`${dateStr}T12:00:00`)
       const totals = getDailyTotals(dateStr)
       result.push({
         date: dateStr,

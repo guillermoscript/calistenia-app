@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '../data/workouts'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { localDay } from '../lib/dateUtils'
 import { useAuthState } from '../contexts/AuthContext'
 import { calculateWorkoutDuration } from '../lib/duration'
 import ExerciseCard from '../components/ExerciseCard'
@@ -53,7 +54,7 @@ export default function WorkoutPage() {
     setRestTime(null)
   }, [selectedDay])
 
-  const todayId  = (['dom','lun','mar','mie','jue','vie','sab'] as const)[new Date().getDay()]
+  const todayId  = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
   const workout  = selectedDay ? getWorkout(selectedPhase, selectedDay) : null
   const workoutDuration = useMemo(() => {
     if (!workout) return 0

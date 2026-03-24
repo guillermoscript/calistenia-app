@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { WORKOUTS } from '../../data/workouts'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
+import { toLocalDateStr } from '../../lib/dateUtils'
 import type { ProgressMap } from '../../types'
 
 // Map common muscle keywords to groups
@@ -44,7 +45,7 @@ export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) 
     const now = new Date()
     const weekStart = new Date(now)
     weekStart.setDate(now.getDate() - now.getDay() + 1) // Monday
-    const weekStartStr = weekStart.toISOString().split('T')[0]
+    const weekStartStr = toLocalDateStr(weekStart)
 
     const volume: Record<string, number> = {}
 

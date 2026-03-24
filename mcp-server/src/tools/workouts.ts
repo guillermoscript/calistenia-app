@@ -1,11 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
-import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from "../utils.js";
+import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 
 export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
   const userId = auth.getUserId();
+  const tz = auth.getTimezone();
 
   // ──────────────────────────────────────────────────────────────
   // LIST SESSIONS
@@ -43,8 +44,8 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
     },
     async ({ limit, offset, from_date, to_date, phase, workout_key, response_format }) => {
       try {
-        const from = from_date ?? daysAgo(30);
-        const to = to_date ?? today();
+        const from = from_date ?? daysAgo(30, tz);
+        const to = to_date ?? today(tz);
 
         const conditions = ['user = {:userId}', 'completed_at >= {:from}', 'completed_at <= {:to}'];
         const params: Record<string, unknown> = { userId, from, to: `${to} 23:59:59` };
@@ -87,7 +88,7 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
             `Found **${result.totalItems}** session(s)\n`,
           ];
           for (const s of sessions) {
-            lines.push(`- **${s.completed_at.slice(0, 10)}** — ${s.workout_key} (Phase ${s.phase}, ${s.day})`);
+            lines.push(`- **${toDateStr(s.completed_at, tz)}** — ${s.workout_key} (Phase ${s.phase}, ${s.day})`);
             if (s.note) lines.push(`  > ${s.note}`);
           }
           text = lines.join("\n");
@@ -144,7 +145,7 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
           content: [
             {
               type: "text",
-              text: `Session logged! **${workout_key}** completed on ${record.completed_at.slice(0, 10)} (Phase ${phase})`,
+              text: `Session logged! **${workout_key}** completed on ${toDateStr(record.completed_at, tz)} (Phase ${phase})`,
             },
           ],
           structuredContent: { id: record.id, workout_key, phase, day, completed_at: record.completed_at },
@@ -219,8 +220,8 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
     },
     async ({ limit, offset, exercise_id, from_date, to_date, workout_key, response_format }) => {
       try {
-        const from = from_date ?? daysAgo(30);
-        const to = to_date ?? today();
+        const from = from_date ?? daysAgo(30, tz);
+        const to = to_date ?? today(tz);
 
         const conditions = ['user = {:userId}', 'logged_at >= {:from}', 'logged_at <= {:to}'];
         const params: Record<string, unknown> = { userId, from, to: `${to} 23:59:59` };
@@ -262,7 +263,7 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
           for (const [ex, exSets] of Object.entries(grouped)) {
             lines.push(`\n## ${ex}`);
             for (const s of exSets) {
-              lines.push(`- **${s.logged_at.slice(0, 10)}** — ${s.reps} reps${s.note ? ` _(${s.note})_` : ""}`);
+              lines.push(`- **${toDateStr(s.logged_at, tz)}** — ${s.reps} reps${s.note ? ` _(${s.note})_` : ""}`);
             }
           }
           text = lines.join("\n");
@@ -356,7 +357,7 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
     },
     async ({ exercise_id, days, response_format }) => {
       try {
-        const from = daysAgo(days);
+        const from = daysAgo(days, tz);
         const result = await pb.collection("sets_log").getFullList({
           filter: pb.filter('user = {:userId} && exercise_id = {:exercise_id} && logged_at >= {:from}', { userId, exercise_id, from }),
           sort: "logged_at",
@@ -372,7 +373,7 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
         // Group by date
         const byDate: Record<string, string[]> = {};
         for (const s of result) {
-          const date = s.logged_at.slice(0, 10);
+          const date = toDateStr(s.logged_at, tz);
           if (!byDate[date]) byDate[date] = [];
           byDate[date].push(s.reps + (s.note ? ` (${s.note})` : ""));
         }

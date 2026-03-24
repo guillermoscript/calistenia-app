@@ -1,11 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
-import { errorResult, ResponseFormat, today, daysAgo, startOfWeek } from "../utils.js";
+import { errorResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
 
 export function registerSmartTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
   const userId = auth.getUserId();
+  const tz = auth.getTimezone();
 
   // ──────────────────────────────────────────────────────────────
   // LOG FULL WORKOUT — one call instead of 7+
@@ -129,8 +130,8 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
     },
     async () => {
       try {
-        const weekStart = startOfWeek();
-        const todayStr = today();
+        const weekStart = startOfWeek(tz);
+        const todayStr = today(tz);
 
         const [lastLumbar, weekSessions, lastSession, settings, userPrograms] = await Promise.all([
           pb
@@ -161,7 +162,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         // Lumbar health (0-3 points deduction)
         const lumbarScore = lastLumbar?.lumbar_score as number | undefined;
         const lumbarDate = lastLumbar?.date as string | undefined;
-        const lumbarRecent = lumbarDate === todayStr || lumbarDate === daysAgo(1);
+        const lumbarRecent = lumbarDate === todayStr || lumbarDate === daysAgo(1, tz);
 
         if (lumbarScore !== undefined && lumbarRecent) {
           if (lumbarScore <= 2) {
@@ -184,7 +185,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         // Days since last workout (0-2 deduction for overtraining, 0-1 bonus for rest)
         let daysSinceLastWorkout = 999;
         if (lastSession?.completed_at) {
-          const lastDate = new Date((lastSession.completed_at as string).slice(0, 10));
+          const lastDate = new Date(toDateStr(lastSession.completed_at as string, tz));
           daysSinceLastWorkout = Math.floor(
             (new Date(todayStr).getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
           );
@@ -266,7 +267,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
 
         // Already done today's workout?
         const alreadyDoneToday = weekSessions.some(
-          (s) => (s.completed_at as string).slice(0, 10) === todayStr
+          (s) => toDateStr(s.completed_at as string, tz) === todayStr
         );
 
         // Recommendation
@@ -369,7 +370,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         const nextExerciseId = progression.next_exercise_id as string | null;
 
         // Get recent sets for this exercise (last 90 days)
-        const ninetyDaysAgo = daysAgo(90);
+        const ninetyDaysAgo = daysAgo(90, tz);
         const sets = await pb.collection("sets_log").getFullList({
           filter: pb.filter('user = {:userId} && exercise_id = {:exerciseId} && logged_at >= {:from}', { userId, exerciseId: exercise_id, from: ninetyDaysAgo }),
           sort: "logged_at",
@@ -390,7 +391,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         // Group by session date, take max reps per session
         const bySession = new Map<string, number>();
         for (const s of sets) {
-          const date = (s.logged_at as string).slice(0, 10);
+          const date = toDateStr(s.logged_at as string, tz);
           const reps = parseInt(s.reps as string, 10);
           if (!isNaN(reps)) {
             bySession.set(date, Math.max(bySession.get(date) ?? 0, reps));
@@ -492,7 +493,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
     },
     async ({ weeks, response_format }) => {
       try {
-        const from = daysAgo(weeks * 7);
+        const from = daysAgo(weeks * 7, tz);
 
         // Get current program schedule
         const userPrograms = await pb.collection("user_programs").getFullList({
@@ -679,10 +680,10 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
     },
     async ({ period_days, response_format }) => {
       try {
-        const currentFrom = daysAgo(period_days);
-        const previousFrom = daysAgo(period_days * 2);
-        const previousTo = daysAgo(period_days + 1);
-        const todayStr = today();
+        const currentFrom = daysAgo(period_days, tz);
+        const previousFrom = daysAgo(period_days * 2, tz);
+        const previousTo = daysAgo(period_days + 1, tz);
+        const todayStr = today(tz);
 
         // Fetch data for both periods in parallel
         const todayEnd = `${todayStr} 23:59:59`;
@@ -756,7 +757,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
 
         const avgCalories = (entries: typeof currentNutrition) => {
           if (entries.length === 0) return null;
-          const days = new Set(entries.map((e) => (e.logged_at as string).slice(0, 10))).size;
+          const days = new Set(entries.map((e) => toDateStr(e.logged_at as string, tz))).size;
           return Math.round(entries.reduce((a, e) => a + (e.total_calories as number), 0) / days);
         };
 
@@ -986,7 +987,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         const currentPhase = (settings?.phase as number) ?? 1;
 
         // Get this week's sessions and program exercises
-        const weekStart = startOfWeek();
+        const weekStart = startOfWeek(tz);
         const [thisWeekSessions, programExercises] = await Promise.all([
           pb.collection("sessions").getFullList({
             filter: pb.filter('user = {:userId} && completed_at >= {:weekStart}', { userId, weekStart }),

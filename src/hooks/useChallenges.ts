@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { todayStr } from '../lib/dateUtils'
 import type { Challenge, ChallengeMetric, ChallengeStatus } from '../types'
 
 export interface ChallengeWithMeta extends Challenge {
@@ -36,7 +37,7 @@ export function useChallenges(userId: string | null) {
         $autoCancel: false,
       })
 
-      const today = new Date().toISOString().split('T')[0]
+      const today = todayStr()
       const challengeMap = new Map<string, ChallengeWithMeta>()
 
       for (const p of participations) {

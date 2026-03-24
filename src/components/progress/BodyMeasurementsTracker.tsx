@@ -3,6 +3,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
+import { todayStr } from '../../lib/dateUtils'
 import { useBodyMeasurements, type BodyMeasurement } from '../../hooks/useBodyMeasurements'
 
 const FIELDS: { key: keyof BodyMeasurement; label: string; short: string }[] = [
@@ -22,7 +23,7 @@ interface BodyMeasurementsTrackerProps {
 export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrackerProps) {
   const { measurements, isReady, saveMeasurement, deleteMeasurement } = useBodyMeasurements(userId)
   const [showForm, setShowForm] = useState(false)
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(() => todayStr())
   const [values, setValues] = useState<Record<string, string>>({})
   const [note, setNote] = useState('')
 

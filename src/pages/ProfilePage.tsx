@@ -7,6 +7,7 @@ import { Label } from '../components/ui/label'
 import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
+import { setTimezone as setGlobalTimezone, getTimezone } from '../lib/dateUtils'
 
 const LEVELS = [
   { value: 'principiante', label: 'Principiante' },
@@ -31,6 +32,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [timezone, setTimezone] = useState(() => getTimezone())
+  const [tzSearch, setTzSearch] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const profileUrl = `${window.location.origin}/u/${user?.id}`
@@ -71,6 +74,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           setLevel((rec as any).level || 'principiante')
           setGoal((rec as any).goal || '')
           setAvatarUrl(getUserAvatarUrl(rec as any, '200x200'))
+          if ((rec as any).timezone) setTimezone((rec as any).timezone)
         } catch (e) {
           console.warn('Failed to load profile:', e)
         }
@@ -136,7 +140,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           height: height ? parseFloat(height) : null,
           level,
           goal,
+          timezone,
         })
+        setGlobalTimezone(timezone)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
       }
@@ -309,6 +315,51 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 rows={3}
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="profile-timezone" className="text-[11px] text-muted-foreground mb-1.5 block">Zona horaria</Label>
+              <Input
+                id="profile-tz-search"
+                value={tzSearch}
+                onChange={(e) => setTzSearch(e.target.value)}
+                placeholder="Buscar zona horaria..."
+                className="h-8 text-xs mb-2"
+              />
+              <select
+                id="profile-timezone"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {(() => {
+                  try {
+                    const allTz = (Intl as any).supportedValuesOf('timeZone') as string[]
+                    const filtered = tzSearch
+                      ? allTz.filter(tz => tz.toLowerCase().includes(tzSearch.toLowerCase()))
+                      : allTz
+                    return filtered.map(tz => (
+                      <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+                    ))
+                  } catch {
+                    // Fallback for older browsers
+                    const common = [
+                      'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+                      'America/Bogota', 'America/Lima', 'America/Santiago', 'America/Buenos_Aires',
+                      'America/Mexico_City', 'America/Sao_Paulo',
+                      'Europe/Madrid', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome',
+                      'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Asia/Dubai',
+                      'Australia/Sydney', 'Pacific/Auckland',
+                    ]
+                    return common.map(tz => (
+                      <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+                    ))
+                  }
+                })()}
+              </select>
+              <div className="text-[10px] text-muted-foreground mt-1">
+                Actual: {timezone.replace(/_/g, ' ')}
+              </div>
             </div>
           </CardContent>
         </Card>

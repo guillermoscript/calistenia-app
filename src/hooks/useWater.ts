@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { todayStr, localMidnightAsUTC } from '../lib/dateUtils'
 
 const LS_KEY = 'calistenia_water'
 const DEFAULT_GOAL = 2500 // ml
@@ -41,7 +42,7 @@ export const useWater = (userId: string | null = null): UseWaterReturn => {
   const [isReady, setIsReady] = useState(false)
   const initialized = useRef(false)
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
 
   useEffect(() => {
     if (initialized.current) return
@@ -53,7 +54,7 @@ export const useWater = (userId: string | null = null): UseWaterReturn => {
 
       if (available && userId) {
         try {
-          const startOfDay = `${today} 00:00:00`
+          const startOfDay = localMidnightAsUTC(today)
           const [res, settingsRec] = await Promise.all([
             pb.collection('water_entries').getList(1, 100, {
               filter: pb.filter('user = {:uid} && logged_at >= {:start}', { uid: userId, start: startOfDay }),

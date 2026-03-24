@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
+import { todayStr } from '../lib/dateUtils'
 
 interface WorkoutShareCardProps {
   workoutTitle: string
@@ -27,7 +28,7 @@ function fillRRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin, date }: WorkoutShareCardProps) {
-  const dateStr = date || new Date().toISOString().split('T')[0]
+  const dateStr = date || todayStr()
 
   const handleShare = useCallback(async () => {
     try {

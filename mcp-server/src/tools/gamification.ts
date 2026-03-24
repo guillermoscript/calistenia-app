@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
-import { errorResult, ResponseFormat, today, daysAgo } from "../utils.js";
+import { errorResult, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
 import {
   ACHIEVEMENTS,
   XP_PER_SESSION,
@@ -36,7 +36,7 @@ interface ComputedStats {
 }
 
 /** Compute streaks from an array of date strings (YYYY-MM-DD), sorted asc. */
-function computeStreak(dates: string[]): { current: number; best: number } {
+function computeStreak(dates: string[], tz?: string): { current: number; best: number } {
   if (dates.length === 0) return { current: 0, best: 0 };
 
   const unique = [...new Set(dates)].sort();
@@ -58,7 +58,7 @@ function computeStreak(dates: string[]): { current: number; best: number } {
 
   // Check if the current streak is still active (last date is today or yesterday)
   const lastDate = new Date(unique[unique.length - 1]);
-  const todayDate = new Date(today());
+  const todayDate = new Date(today(tz));
   const daysSinceLast = (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
   if (daysSinceLast > 1) current = 0; // streak is broken
 
@@ -77,7 +77,7 @@ function computeWeeklyGoalStreak(sessionDates: string[], weeklyGoal: number): nu
     const dayOfWeek = d.getDay();
     const monday = new Date(d);
     monday.setDate(d.getDate() - ((dayOfWeek + 6) % 7));
-    const weekKey = monday.toISOString().slice(0, 10);
+    const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
     byWeek.set(weekKey, (byWeek.get(weekKey) ?? 0) + 1);
   }
 
@@ -102,7 +102,7 @@ function computeWeeklyGoalStreak(sessionDates: string[], weeklyGoal: number): nu
 }
 
 /** Full stat recalculation from source data. */
-async function computeAllStats(pb: PocketBase, userId: string): Promise<ComputedStats> {
+async function computeAllStats(pb: PocketBase, userId: string, tz?: string): Promise<ComputedStats> {
   // Fetch all source data in parallel
   const userFilter = pb.filter('user = {:userId}', { userId });
   const [sessions, sets, nutritionEntries, lumbarChecks, weightEntries, settings] = await Promise.all([
@@ -114,11 +114,11 @@ async function computeAllStats(pb: PocketBase, userId: string): Promise<Computed
     pb.collection("settings").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
   ]);
 
-  const sessionDates = sessions.map((s) => (s.completed_at as string).slice(0, 10));
-  const nutritionDates = nutritionEntries.map((n) => (n.logged_at as string).slice(0, 10));
+  const sessionDates = sessions.map((s) => toDateStr(s.completed_at as string, tz));
+  const nutritionDates = nutritionEntries.map((n) => toDateStr(n.logged_at as string, tz));
 
-  const workoutStreak = computeStreak(sessionDates);
-  const nutritionStreak = computeStreak(nutritionDates);
+  const workoutStreak = computeStreak(sessionDates, tz);
+  const nutritionStreak = computeStreak(nutritionDates, tz);
   const weeklyGoal = (settings?.weekly_goal as number) ?? 0;
   const weeklyGoalsHit = computeWeeklyGoalStreak(sessionDates, weeklyGoal);
 
@@ -253,6 +253,7 @@ async function checkAchievements(
 export function registerGamificationTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
   const userId = auth.getUserId();
+  const tz = auth.getTimezone();
 
   // ──────────────────────────────────────────────────────────────
   // SYNC STATS — The core engine
@@ -274,7 +275,7 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
         await ensureAchievementsCatalog(pb);
 
         // 2. Compute stats from source data
-        const stats = await computeAllStats(pb, userId);
+        const stats = await computeAllStats(pb, userId, tz);
 
         // 3. Check achievements (may create/update user_achievements)
         const achResult = await checkAchievements(pb, userId, stats);

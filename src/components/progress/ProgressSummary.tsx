@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
+import { todayStr as todayStrFn, toLocalDateStr } from '../../lib/dateUtils'
 import type { ProgressMap, Settings, ExerciseLog } from '../../types'
 
 interface ProgressSummaryProps {
@@ -11,7 +12,7 @@ interface ProgressSummaryProps {
 export default function ProgressSummary({ progress, settings }: ProgressSummaryProps) {
   const stats = useMemo(() => {
     const today = new Date()
-    const todayStr = today.toISOString().split('T')[0]
+    const todayStr = todayStrFn()
 
     // Current week (Mon-Sun)
     const dayOfWeek = today.getDay()
@@ -23,7 +24,7 @@ export default function ProgressSummary({ progress, settings }: ProgressSummaryP
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday)
       d.setDate(monday.getDate() + i)
-      thisWeekDates.push(d.toISOString().split('T')[0])
+      thisWeekDates.push(toLocalDateStr(d))
     }
 
     // Previous week
@@ -33,17 +34,17 @@ export default function ProgressSummary({ progress, settings }: ProgressSummaryP
     for (let i = 0; i < 7; i++) {
       const d = new Date(prevMonday)
       d.setDate(prevMonday.getDate() + i)
-      prevWeekDates.push(d.toISOString().split('T')[0])
+      prevWeekDates.push(toLocalDateStr(d))
     }
 
     // Current month
     const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
-    const monthEnd = nextMonth.toISOString().split('T')[0]
+    const monthEnd = toLocalDateStr(nextMonth)
 
     // Previous month
     const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-    const prevMonthStartStr = prevMonthStart.toISOString().split('T')[0]
+    const prevMonthStartStr = toLocalDateStr(prevMonthStart)
 
     const doneKeys = Object.keys(progress).filter(k => k.startsWith('done_'))
 

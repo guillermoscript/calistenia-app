@@ -1,11 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
-import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from "../utils.js";
+import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 
 export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
   const userId = auth.getUserId();
+  const tz = auth.getTimezone();
 
   // ──────────────────────────────────────────────────────────────
   // GET NUTRITION GOALS
@@ -183,8 +184,8 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
     },
     async ({ limit, offset, from_date, to_date, meal_type, response_format }) => {
       try {
-        const from = from_date ?? today();
-        const to = to_date ?? today();
+        const from = from_date ?? today(tz);
+        const to = to_date ?? today(tz);
 
         const conditions = ['user = {:userId}', 'logged_at >= {:from}', 'logged_at <= {:to}'];
         const params: Record<string, unknown> = { userId, from, to: `${to} 23:59:59` };
@@ -394,8 +395,8 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
     },
     async ({ from_date, to_date, response_format }) => {
       try {
-        const from = from_date ?? daysAgo(7);
-        const to = to_date ?? today();
+        const from = from_date ?? daysAgo(7, tz);
+        const to = to_date ?? today(tz);
 
         const [entries, goals] = await Promise.all([
           pb.collection("nutrition_entries").getFullList({
@@ -413,7 +414,7 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         // Group by day
         const byDay: Record<string, typeof entries> = {};
         for (const e of entries) {
-          const day = (e.logged_at as string).slice(0, 10);
+          const day = toDateStr(e.logged_at as string, tz);
           if (!byDay[day]) byDay[day] = [];
           byDay[day].push(e);
         }
