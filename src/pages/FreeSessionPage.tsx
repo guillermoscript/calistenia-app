@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
-import { useFreeSession } from '../contexts/FreeSessionContext'
+import { useActiveSession } from '../contexts/ActiveSessionContext'
+import type { Exercise, Workout } from '../types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -120,6 +122,16 @@ function mapPBRecord(rec: any): CatalogExercise {
   }
 }
 
+function catalogToExercise(cat: CatalogExercise): Exercise {
+  return {
+    id: cat.id, name: cat.name, sets: cat.sets, reps: cat.reps,
+    rest: cat.rest, muscles: cat.muscles, note: cat.note,
+    youtube: cat.youtube, priority: cat.priority,
+    isTimer: cat.isTimer, timerSeconds: cat.timerSeconds,
+    demoImages: cat.demoImages, demoVideo: cat.demoVideo,
+  }
+}
+
 function estimateDuration(exercises: CatalogExercise[]): number {
   let totalSecs = 0
   for (const ex of exercises) {
@@ -164,7 +176,8 @@ function useDebounce<T>(value: T, ms: number): T {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function FreeSessionPage() {
-  const { isActive: sessionActive, startSession: contextStartSession, maximize } = useFreeSession()
+  const { isActive: sessionActive, startSession: contextStartSession } = useActiveSession()
+  const navigate = useNavigate()
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -257,10 +270,15 @@ export default function FreeSessionPage() {
   const startSession = useCallback(() => {
     if (selected.length === 0 || startingRef.current) return
     startingRef.current = true
-    contextStartSession(selected)
+    const workout: Workout = {
+      phase: 0, day: 'lun', title: 'Sesion Libre',
+      exercises: selected.map(catalogToExercise),
+    }
+    contextStartSession(workout, `free_${Date.now()}`, 'free')
+    navigate('/session')
     // Reset guard after a tick so re-entry from exit works
     setTimeout(() => { startingRef.current = false }, 100)
-  }, [selected.length, contextStartSession, selected])
+  }, [selected.length, contextStartSession, selected, navigate])
 
   const handleRetryLoad = useCallback(() => {
     setLoading(true)
@@ -287,9 +305,7 @@ export default function FreeSessionPage() {
     load()
   }, [])
 
-  // ── Active session — the overlay handles rendering SessionView ──────────
-  // If session is active but minimized, show the builder with a resume banner
-  // If session is active and NOT minimized, the overlay is visible (covers this page)
+  // ── Active session — show resume banner ────────────────────────────────
 
   const totalSets = selected.reduce((sum, ex) => sum + (typeof ex.sets === 'number' ? ex.sets : 3), 0)
   const estMin = estimateDuration(selected)
@@ -301,7 +317,7 @@ export default function FreeSessionPage() {
       {/* ── Resume banner when session is minimized ────────────────────────── */}
       {sessionActive && (
         <button
-          onClick={maximize}
+          onClick={() => navigate('/session')}
           className="w-full mb-4 flex items-center gap-3 rounded-xl border border-lime-500/30 bg-lime-500/10 px-4 py-3 transition-all active:scale-[0.99]"
         >
           <div className="relative flex-shrink-0">

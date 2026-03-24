@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '../data/workouts'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { localDay } from '../lib/dateUtils'
 import { useAuthState } from '../contexts/AuthContext'
 import { calculateWorkoutDuration } from '../lib/duration'
 import ExerciseCard from '../components/ExerciseCard'
 import RestTimer from '../components/RestTimer'
-import SessionView from '../components/SessionView'
 import { useRestPreferences } from '../hooks/useRestPreferences'
 import { Button } from '../components/ui/button'
 import { triggerWorkoutDetailTour } from '../components/AppTour'
@@ -16,14 +16,12 @@ import { cn } from '../lib/utils'
 import { DAY_TYPE_COLORS } from '../lib/style-tokens'
 import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData } from '../types'
 
-type ViewMode = 'list' | 'session'
-
 export default function WorkoutPage() {
   const { settings, phases: phasesProp, weekDays: weekDaysProp } = useWorkoutState()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
+  const { startSession } = useActiveSession()
   const { userId, userRole } = useAuthState()
   const navigate = useNavigate()
-  const onGoToDashboard = useCallback(() => navigate('/'), [navigate])
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const PHASES    = phasesProp    || FALLBACK_PHASES
   const WEEK_DAYS = weekDaysProp  || FALLBACK_WEEK_DAYS
@@ -37,7 +35,6 @@ export default function WorkoutPage() {
   const [restTime,      setRestTime]      = useState<number | null>(null)
   const [restExerciseId, setRestExerciseId] = useState<string | null>(null)
   const { getRestForExercise, setRestForExercise } = useRestPreferences(userId ?? null)
-  const [viewMode,      setViewMode]      = useState<ViewMode>('list')
 
   useEffect(() => { if (settings?.phase) setSelectedPhase(settings.phase) }, [settings])
 
@@ -50,7 +47,6 @@ export default function WorkoutPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    setViewMode('list')
     setRestTime(null)
   }, [selectedDay])
 
@@ -65,26 +61,16 @@ export default function WorkoutPage() {
 
   // Trigger workout detail tour when a day is selected for the first time
   useEffect(() => {
-    if (workout && viewMode === 'list') {
+    if (workout) {
       triggerWorkoutDetailTour(userId)
     }
-  }, [!!workout, viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [!!workout]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (viewMode === 'session' && workout) {
-    return (
-      <SessionView
-        workout={workout}
-        workoutKey={workoutKey!}
-        onLogSet={onLogSet}
-        onMarkDone={onMarkDone}
-        onGoToDashboard={onGoToDashboard}
-        onExitSession={() => setViewMode('list')}
-        getExerciseLogs={getExerciseLogs}
-        getRestForExercise={getRestForExercise}
-        setRestForExercise={setRestForExercise}
-      />
-    )
-  }
+  const handleStartSession = useCallback(() => {
+    if (!workout || !workoutKey) return
+    startSession(workout, workoutKey, 'program')
+    navigate('/session')
+  }, [workout, workoutKey, startSession, navigate])
 
   const selectedDayType = WEEK_DAYS.find(d => d.id === selectedDay)?.type
 
@@ -194,7 +180,7 @@ export default function WorkoutPage() {
                 {!isDone && (
                   <Button
                     id="tour-start-session"
-                    onClick={() => setViewMode('session')}
+                    onClick={handleStartSession}
                     className="w-full md:w-auto font-bebas text-xl tracking-wide bg-lime text-lime-foreground hover:bg-lime/90"
                   >
                     ▶ EMPEZAR

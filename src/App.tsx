@@ -28,6 +28,7 @@ const EditorPage = lazy(() => import('./pages/EditorPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const RemindersPage = lazy(() => import('./pages/RemindersPage'))
 const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
+const ActiveSessionPage = lazy(() => import('./pages/ActiveSessionPage'))
 const CardioSessionPage = lazy(() => import('./pages/CardioSessionPage'))
 const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
@@ -45,9 +46,10 @@ const InviteLandingPage = lazy(() => import('./pages/InviteLandingPage'))
 const ReferralsPage = lazy(() => import('./pages/ReferralsPage'))
 import OfflineBanner from './components/OfflineBanner'
 import ActiveCardioBar from './components/cardio/ActiveCardioBar'
-import ActiveFreeSessionBubble from './components/ActiveFreeSessionBubble'
+import ActiveSessionBubble from './components/ActiveFreeSessionBubble'
 import { CardioSessionProvider } from './contexts/CardioSessionContext'
-import { FreeSessionProvider } from './contexts/FreeSessionContext'
+import { ActiveSessionProvider } from './contexts/ActiveSessionContext'
+import { useRestPreferences } from './hooks/useRestPreferences'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
 import AppTour, { replayTourForPage } from './components/AppTour'
@@ -451,6 +453,7 @@ function AuthenticatedApp({
   const { signOut } = useAuthActions()
   const { settings, pbReady, programs, activeProgram, programsReady } = useWorkoutState()
   const { selectProgram } = useWorkoutActions()
+  const { getRestForExercise, setRestForExercise } = useRestPreferences(userId ?? null)
 
   if (!pbReady || !programsReady) return <AppLoader />
 
@@ -472,7 +475,7 @@ function AuthenticatedApp({
     <OfflineBanner />
     <BackgroundJobsProvider>
     <CardioSessionProvider userId={userId!} userWeight={nutritionGoals?.weight}>
-    <FreeSessionProvider>
+    <ActiveSessionProvider getRestForExercise={getRestForExercise} setRestForExercise={setRestForExercise}>
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppShell settings={settings} displayName={displayName} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
@@ -498,6 +501,7 @@ function AuthenticatedApp({
             <Route path="/programs/:id" element={<ProgramDetailPageRoute userId={userId!} userRole={userRole} />} />
             <Route path="/exercises" element={<ExerciseLibraryPage />} />
             <Route path="/free-session" element={<FreeSessionPage />} />
+            <Route path="/session" element={<ActiveSessionPage />} />
             <Route path="/cardio" element={<CardioSessionPage userId={userId!} />} />
             <Route path="/sleep" element={<SleepPage userId={userId!} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
@@ -525,8 +529,8 @@ function AuthenticatedApp({
       </div>
     </SidebarProvider>
     <ActiveCardioBar />
-    <ActiveFreeSessionBubble />
-    </FreeSessionProvider>
+    <ActiveSessionBubble />
+    </ActiveSessionProvider>
     </CardioSessionProvider>
     </BackgroundJobsProvider>
     <InstallPrompt />
