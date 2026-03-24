@@ -438,7 +438,7 @@ export default function CalendarPage() {
               <div className={cn('flex gap-4 flex-wrap', selectedSessions.length > 0 || selectedPlanned ? 'mt-4 pt-4 border-t border-border/60' : 'mt-2')}>
                 {nutritionByDate[selectedDate] && (
                   <button
-                    onClick={() => navigate('/nutrition')}
+                    onClick={() => navigate(`/nutrition?date=${selectedDate}`)}
                     className="flex items-center gap-2 px-3 py-2 bg-amber-400/5 border border-amber-400/15 rounded-lg hover:border-amber-400/30 transition-colors"
                   >
                     <div className="size-2 rounded-full bg-amber-400" />

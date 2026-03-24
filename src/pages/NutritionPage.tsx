@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { todayStr, addDays } from '../lib/dateUtils'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
@@ -83,7 +84,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     localStorage.setItem(LS_LAST_PHASE, String(trainingPhase))
   }, [trainingPhase])
 
-  const [selectedDate, setSelectedDate] = useState(() => todayStr())
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [selectedDate, setSelectedDate] = useState(() => searchParams.get('date') || todayStr())
   const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
 
   const {
@@ -102,10 +104,13 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     getRecentEntries,
   } = useNutrition(userId)
 
-  // Fetch entries on-demand when user navigates to a different date
+  // Sync URL with selected date and fetch entries on-demand
   useEffect(() => {
     fetchEntriesForDate(selectedDate)
-  }, [selectedDate, fetchEntriesForDate])
+    // Keep URL in sync (replace to avoid polluting history on every date change)
+    const isToday = selectedDate === todayStr()
+    setSearchParams(isToday ? {} : { date: selectedDate }, { replace: true })
+  }, [selectedDate, fetchEntriesForDate, setSearchParams])
 
   // Preload last 7 days for weekly chart
   useEffect(() => {
