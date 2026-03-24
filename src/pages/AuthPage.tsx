@@ -1,21 +1,38 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { captureReferralCode } from '@/hooks/useAuth'
 
 interface AuthPageProps {
   signInWithGoogle: () => Promise<void>
+  signInWithEmail: (email: string, password: string) => Promise<void>
+  signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>
   authError: string | null
   isLoading: boolean
 }
 
-export default function AuthPage({ signInWithGoogle, authError, isLoading }: AuthPageProps) {
+export default function AuthPage({ signInWithGoogle, signInWithEmail, signUpWithEmail, authError, isLoading }: AuthPageProps) {
   const [searchParams] = useSearchParams()
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [displayName, setDisplayName] = useState('')
 
   // Capture ?ref= query param to localStorage
   useEffect(() => {
     const ref = searchParams.get('ref')
     if (ref) captureReferralCode(ref)
   }, [searchParams])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (mode === 'login') {
+      signInWithEmail(email, password)
+    } else {
+      signUpWithEmail(email, password, displayName)
+    }
+  }
+
+  const inputCls = 'w-full h-10 px-3 rounded-lg border border-[hsl(0_0%_15%)] bg-[hsl(0_0%_4%)] text-sm text-[hsl(0_0%_90%)] placeholder:text-[hsl(0_0%_35%)] focus:outline-none focus:border-[hsl(82_85%_55%/0.5)] transition-colors'
 
   return (
     <div className="min-h-screen bg-[hsl(0_0%_2%)] flex items-center justify-center p-6">
@@ -34,7 +51,7 @@ export default function AuthPage({ signInWithGoogle, authError, isLoading }: Aut
         <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl overflow-hidden">
           <div className="p-6 flex flex-col gap-4">
             <p className="text-center text-sm text-[hsl(0_0%_60%)]">
-              Inicia sesión para continuar
+              {mode === 'login' ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
             </p>
 
             {authError && (
@@ -43,6 +60,7 @@ export default function AuthPage({ signInWithGoogle, authError, isLoading }: Aut
               </div>
             )}
 
+            {/* Google */}
             <button
               type="button"
               onClick={signInWithGoogle}
@@ -57,6 +75,70 @@ export default function AuthPage({ signInWithGoogle, authError, isLoading }: Aut
               </svg>
               {isLoading ? 'Conectando...' : 'Continuar con Google'}
             </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-[hsl(0_0%_12%)]" />
+              <span className="text-[10px] text-[hsl(0_0%_40%)] tracking-widest uppercase">o</span>
+              <div className="flex-1 h-px bg-[hsl(0_0%_12%)]" />
+            </div>
+
+            {/* Email/Password form */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              {mode === 'signup' && (
+                <input
+                  type="text"
+                  placeholder="Nombre"
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  className={inputCls}
+                  required
+                />
+              )}
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className={inputCls}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className={inputCls}
+                required
+                minLength={8}
+              />
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 rounded-lg bg-[hsl(82_85%_55%)] text-black text-sm font-bold tracking-wide hover:bg-[hsl(82_85%_60%)] transition-colors disabled:opacity-50"
+              >
+                {isLoading ? 'Cargando...' : mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
+              </button>
+            </form>
+
+            {/* Toggle mode */}
+            <p className="text-center text-xs text-[hsl(0_0%_50%)]">
+              {mode === 'login' ? (
+                <>
+                  ¿No tienes cuenta?{' '}
+                  <button type="button" onClick={() => setMode('signup')} className="text-[hsl(82_85%_55%)] hover:underline">
+                    Regístrate
+                  </button>
+                </>
+              ) : (
+                <>
+                  ¿Ya tienes cuenta?{' '}
+                  <button type="button" onClick={() => setMode('login')} className="text-[hsl(82_85%_55%)] hover:underline">
+                    Inicia sesión
+                  </button>
+                </>
+              )}
+            </p>
           </div>
         </div>
 

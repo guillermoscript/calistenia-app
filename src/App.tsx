@@ -45,7 +45,9 @@ const InviteLandingPage = lazy(() => import('./pages/InviteLandingPage'))
 const ReferralsPage = lazy(() => import('./pages/ReferralsPage'))
 import OfflineBanner from './components/OfflineBanner'
 import ActiveCardioBar from './components/cardio/ActiveCardioBar'
+import ActiveFreeSessionBubble from './components/ActiveFreeSessionBubble'
 import { CardioSessionProvider } from './contexts/CardioSessionContext'
+import { FreeSessionProvider } from './contexts/FreeSessionContext'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
 import AppTour, { replayTourForPage } from './components/AppTour'
@@ -470,6 +472,7 @@ function AuthenticatedApp({
     <OfflineBanner />
     <BackgroundJobsProvider>
     <CardioSessionProvider userId={userId!} userWeight={nutritionGoals?.weight}>
+    <FreeSessionProvider>
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppShell settings={settings} displayName={displayName} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
@@ -522,6 +525,8 @@ function AuthenticatedApp({
       </div>
     </SidebarProvider>
     <ActiveCardioBar />
+    <ActiveFreeSessionBubble />
+    </FreeSessionProvider>
     </CardioSessionProvider>
     </BackgroundJobsProvider>
     <InstallPrompt />
@@ -543,7 +548,7 @@ function AppInner() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, userId, authReady, authError, isLoading } = useAuthState()
-  const { signInWithGoogle } = useAuthActions()
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuthActions()
 
   useEffect(() => {
     if (user) setOnboardingDone(isOnboardingDone(user.id))
@@ -587,7 +592,7 @@ function AppInner() {
       const shareCode = location.pathname.replace('/shared/', '')
       return <div className="min-h-screen bg-background"><SharedProgramPage programId={shareCode} onBack={goToDashboard} onLogin={goToAuth} /></div>
     }
-    if (location.pathname === '/auth') return <AuthPage signInWithGoogle={signInWithGoogle} authError={authError} isLoading={isLoading} />
+    if (location.pathname === '/auth') return <AuthPage signInWithGoogle={signInWithGoogle} signInWithEmail={signInWithEmail} signUpWithEmail={signUpWithEmail} authError={authError} isLoading={isLoading} />
     return <LandingPage onGetStarted={goToAuth} />
   }
 

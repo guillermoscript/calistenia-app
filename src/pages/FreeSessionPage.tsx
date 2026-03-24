@@ -1,13 +1,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { WORKOUTS } from '../data/workouts'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
-import SessionView from '../components/SessionView'
-import type { Exercise, Workout, ExerciseLog } from '../types'
+import { useFreeSession } from '../contexts/FreeSessionContext'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -123,16 +120,6 @@ function mapPBRecord(rec: any): CatalogExercise {
   }
 }
 
-function catalogToExercise(cat: CatalogExercise): Exercise {
-  return {
-    id: cat.id, name: cat.name, sets: cat.sets, reps: cat.reps,
-    rest: cat.rest, muscles: cat.muscles, note: cat.note,
-    youtube: cat.youtube, priority: cat.priority,
-    isTimer: cat.isTimer, timerSeconds: cat.timerSeconds,
-    demoImages: cat.demoImages, demoVideo: cat.demoVideo,
-  }
-}
-
 function estimateDuration(exercises: CatalogExercise[]): number {
   let totalSecs = 0
   for (const ex of exercises) {
@@ -177,18 +164,14 @@ function useDebounce<T>(value: T, ms: number): T {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function FreeSessionPage() {
-  const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
-  const navigate = useNavigate()
-  const onGoToDashboard = useCallback(() => navigate('/'), [navigate])
+  const { isActive: sessionActive, startSession: contextStartSession, maximize } = useFreeSession()
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<CategoryId>('todos')
   const [selected, setSelected] = useState<CatalogExercise[]>(loadSavedQueue)
-  const [sessionActive, setSessionActive] = useState(false)
   const [queueOpen, setQueueOpen] = useState(false)
-  const workoutKeyRef = useRef('')
   const startingRef = useRef(false)
 
   const debouncedSearch = useDebounce(search, 200)
@@ -274,11 +257,10 @@ export default function FreeSessionPage() {
   const startSession = useCallback(() => {
     if (selected.length === 0 || startingRef.current) return
     startingRef.current = true
-    workoutKeyRef.current = `free_${Date.now()}`
-    setSessionActive(true)
+    contextStartSession(selected)
     // Reset guard after a tick so re-entry from exit works
     setTimeout(() => { startingRef.current = false }, 100)
-  }, [selected.length])
+  }, [selected.length, contextStartSession, selected])
 
   const handleRetryLoad = useCallback(() => {
     setLoading(true)
@@ -305,28 +287,9 @@ export default function FreeSessionPage() {
     load()
   }, [])
 
-  // ── Active session ─────────────────────────────────────────────────────────
-  if (sessionActive) {
-    const workout: Workout = {
-      phase: 0, day: 'lun', title: 'Sesion Libre',
-      exercises: selected.map(catalogToExercise),
-    }
-    return (
-      <SessionView
-        workout={workout}
-        workoutKey={workoutKeyRef.current}
-        onLogSet={onLogSet}
-        onMarkDone={(key, note) => {
-          onMarkDone(key, note)
-          // Clear saved queue after completing session
-          saveQueue([])
-        }}
-        onGoToDashboard={onGoToDashboard}
-        onExitSession={() => setSessionActive(false)}
-        getExerciseLogs={getExerciseLogs}
-      />
-    )
-  }
+  // ── Active session — the overlay handles rendering SessionView ──────────
+  // If session is active but minimized, show the builder with a resume banner
+  // If session is active and NOT minimized, the overlay is visible (covers this page)
 
   const totalSets = selected.reduce((sum, ex) => sum + (typeof ex.sets === 'number' ? ex.sets : 3), 0)
   const estMin = estimateDuration(selected)
@@ -334,6 +297,31 @@ export default function FreeSessionPage() {
   // ── Builder UI ─────────────────────────────────────────────────────────────
   return (
     <div className="max-w-[900px] mx-auto px-4 py-6 md:px-6 md:py-8">
+
+      {/* ── Resume banner when session is minimized ────────────────────────── */}
+      {sessionActive && (
+        <button
+          onClick={maximize}
+          className="w-full mb-4 flex items-center gap-3 rounded-xl border border-lime-500/30 bg-lime-500/10 px-4 py-3 transition-all active:scale-[0.99]"
+        >
+          <div className="relative flex-shrink-0">
+            <div className="size-9 rounded-lg bg-lime-500/20 flex items-center justify-center">
+              <svg className="size-4 text-lime-400" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+            </div>
+            <span className="absolute -top-0.5 -right-0.5 flex size-2.5">
+              <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-75" />
+              <span className="relative inline-flex rounded-full size-2.5 bg-lime-400" />
+            </span>
+          </div>
+          <div className="flex-1 text-left">
+            <div className="text-sm font-medium text-lime-300">Sesion en curso</div>
+            <div className="text-[10px] text-muted-foreground">Toca para retomar tu sesion</div>
+          </div>
+          <svg className="size-4 text-lime-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      )}
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="mb-7">

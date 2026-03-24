@@ -97,6 +97,8 @@ export default function CalendarPage() {
 
   // Workout key to readable title
   const parseWorkoutKey = (key: string) => {
+    if (key.startsWith('free_')) return 'Sesión Libre'
+    if (key.startsWith('cardio_')) return 'Cardio'
     const [phaseStr, day] = key.split('_')
     const phase = phaseStr.replace('p', '')
     const dayNames: Record<string, string> = {

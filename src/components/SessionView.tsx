@@ -632,6 +632,7 @@ interface SessionViewProps {
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
   setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
+  onMinimize?: () => void
 }
 
 export default function SessionView({
@@ -644,6 +645,7 @@ export default function SessionView({
   getExerciseLogs,
   getRestForExercise,
   setRestForExercise,
+  onMinimize,
 }: SessionViewProps) {
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
 
@@ -653,9 +655,63 @@ export default function SessionView({
   const [showExit,  setShowExit]  = useState<boolean>(false)
   const sessionStartTime = useRef<number>(Date.now())
 
+  // Swipe gesture refs
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
+  const swiping = useRef(false)
+
   const currentStep = steps[stepIdx]
   const nextStep    = steps[stepIdx + 1] || null
   const isLastStep  = stepIdx === steps.length - 1
+
+  // Build exercise-level index for swipe navigation
+  // Maps exercise boundary → first step index of each unique exercise
+  const exerciseBoundaries = useRef<number[]>(
+    steps.reduce<number[]>((acc, s, i) => {
+      if (i === 0 || s.exercise.id !== steps[i - 1].exercise.id) acc.push(i)
+      return acc
+    }, [])
+  ).current
+
+  const currentExerciseIndex = exerciseBoundaries.findIndex((bIdx, i) => {
+    const nextBoundary = exerciseBoundaries[i + 1] ?? steps.length
+    return stepIdx >= bIdx && stepIdx < nextBoundary
+  })
+  const hasPrevExercise = currentExerciseIndex > 0
+  const hasNextExercise = currentExerciseIndex < exerciseBoundaries.length - 1
+
+  const goToPrevExercise = useCallback(() => {
+    if (currentExerciseIndex <= 0) return
+    const prevIdx = exerciseBoundaries[currentExerciseIndex - 1]
+    setStepIdx(prevIdx)
+    setPhase('exercise')
+  }, [currentExerciseIndex, exerciseBoundaries])
+
+  const goToNextExercise = useCallback(() => {
+    if (currentExerciseIndex >= exerciseBoundaries.length - 1) return
+    const nextIdx = exerciseBoundaries[currentExerciseIndex + 1]
+    setStepIdx(nextIdx)
+    setPhase('exercise')
+  }, [currentExerciseIndex, exerciseBoundaries])
+
+  const handleSwipeStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    swiping.current = false
+  }, [])
+
+  const handleSwipeEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    touchStartX.current = null
+    touchStartY.current = null
+    // Only trigger if horizontal swipe is dominant and > 70px
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) goToNextExercise()    // swipe left → next
+      else goToPrevExercise()            // swipe right → prev
+    }
+  }, [goToNextExercise, goToPrevExercise])
 
   // Request notification permission when session starts
   useEffect(() => { notif.requestPermission() }, [])
@@ -710,12 +766,23 @@ export default function SessionView({
       {phase !== 'celebrate' && (
         <div className="flex-shrink-0">
           <div className="flex items-center justify-between px-5 h-[52px]">
-            <button
-              onClick={() => setShowExit(true)}
-              className="bg-transparent border-none cursor-pointer text-muted-foreground font-mono text-[11px] tracking-wide py-1 flex items-center gap-1.5 hover:text-foreground transition-colors"
-            >
-              ← SALIR
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowExit(true)}
+                className="bg-transparent border-none cursor-pointer text-muted-foreground font-mono text-[11px] tracking-wide py-1 flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                ← SALIR
+              </button>
+              {onMinimize && (
+                <button
+                  onClick={onMinimize}
+                  aria-label="Minimizar sesion"
+                  className="bg-transparent border-none cursor-pointer text-muted-foreground py-1 hover:text-foreground transition-colors"
+                >
+                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="13" x2="13" y2="13" /></svg>
+                </button>
+              )}
+            </div>
 
             <div className="text-center">
               {phase === 'exercise' && currentStep && (
@@ -731,9 +798,14 @@ export default function SessionView({
               )}
             </div>
 
-            <div className="font-mono text-[10px] text-muted-foreground tracking-wide">
-              {phase === 'note' ? steps.length : stepIdx + 1}
-              <span className="text-muted-foreground/30">/{steps.length}</span>
+            <div className="text-right">
+              <div className="font-mono text-[10px] text-muted-foreground tracking-wide">
+                {phase === 'note' ? exerciseBoundaries.length : currentExerciseIndex + 1}
+                <span className="text-muted-foreground/30">/{exerciseBoundaries.length}</span>
+              </div>
+              <div className="font-mono text-[8px] text-muted-foreground/40 tracking-wide">
+                {phase === 'note' ? steps.length : stepIdx + 1}/{steps.length} series
+              </div>
             </div>
           </div>
           {/* Session progress bar */}
@@ -745,12 +817,41 @@ export default function SessionView({
       )}
 
       {phase === 'exercise' && currentStep && (
-        <ExerciseScreen
-          key={stepIdx}
-          step={currentStep}
-          onLogged={handleLogged}
-          logs={getExerciseLogs(currentStep.exercise.id)}
-        />
+        <div
+          className="flex-1 flex flex-col overflow-hidden relative"
+          onTouchStart={handleSwipeStart}
+          onTouchEnd={handleSwipeEnd}
+        >
+          {/* Swipe navigation arrows */}
+          {(hasPrevExercise || hasNextExercise) && (
+            <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex justify-between pointer-events-none z-10 px-1">
+              {hasPrevExercise ? (
+                <button
+                  onClick={goToPrevExercise}
+                  className="pointer-events-auto size-8 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  aria-label="Ejercicio anterior"
+                >
+                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="10,3 5,8 10,13" /></svg>
+                </button>
+              ) : <div />}
+              {hasNextExercise ? (
+                <button
+                  onClick={goToNextExercise}
+                  className="pointer-events-auto size-8 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  aria-label="Siguiente ejercicio"
+                >
+                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6,3 11,8 6,13" /></svg>
+                </button>
+              ) : <div />}
+            </div>
+          )}
+          <ExerciseScreen
+            key={stepIdx}
+            step={currentStep}
+            onLogged={handleLogged}
+            logs={getExerciseLogs(currentStep.exercise.id)}
+          />
+        </div>
       )}
 
       {phase === 'rest' && (

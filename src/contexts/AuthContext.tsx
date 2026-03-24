@@ -19,6 +19,8 @@ interface AuthState {
 
 interface AuthActions {
   signInWithGoogle: () => Promise<void>
+  signInWithEmail: (email: string, password: string) => Promise<void>
+  signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>
   signOut: () => void
 }
 
@@ -51,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const {
     user, authReady, authError, isLoading,
     userRole, userTier, isAdmin, isEditor,
-    signInWithGoogle, signOut,
+    signInWithGoogle, signInWithEmail, signUpWithEmail, signOut,
   } = useAuth()
 
   const state = useMemo<AuthState>(() => ({
@@ -67,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }), [user, authReady, authError, isLoading, userRole, userTier, isAdmin, isEditor])
 
   const actions = useMemo<AuthActions>(() => ({
-    signInWithGoogle, signOut,
-  }), [signInWithGoogle, signOut])
+    signInWithGoogle, signInWithEmail, signUpWithEmail, signOut,
+  }), [signInWithGoogle, signInWithEmail, signUpWithEmail, signOut])
 
   const value = useMemo(() => ({ state, actions }), [state, actions])
 
