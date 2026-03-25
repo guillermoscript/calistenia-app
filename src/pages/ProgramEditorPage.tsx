@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { cn } from '../lib/utils'
 import { useProgramEditor, type EditorExercise, type EditorPhase } from '../hooks/useProgramEditor'
 import ExerciseCatalogPicker from '../components/ExerciseCatalogPicker'
@@ -95,7 +96,10 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     if (err) return
     const savedId = await saveProgram(userId)
     if (savedId) {
+      toast.success('Programa guardado correctamente')
       navigate('/programs')
+    } else {
+      toast.error(state.error || 'No se pudo guardar el programa. Verifica tu conexión.')
     }
   }
 
