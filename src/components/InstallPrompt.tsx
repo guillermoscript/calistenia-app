@@ -84,19 +84,19 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-[100] max-w-sm mx-auto">
-      <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 shadow-2xl">
+      <div className="bg-card border border-border rounded-xl p-4 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-zinc-100">
+            <p className="text-sm font-medium text-foreground">
               Instala Calistenia como app
             </p>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               Recibe notificaciones, accede sin conexion y abre mas rapido desde tu pantalla de inicio
             </p>
           </div>
           <button
             onClick={handleDismiss}
-            className="text-zinc-500 hover:text-zinc-300 text-lg leading-none p-1"
+            className="text-muted-foreground hover:text-foreground text-lg leading-none p-1"
             aria-label="Cerrar"
           >
             &times;
@@ -105,21 +105,21 @@ export default function InstallPrompt() {
 
         {showManualGuide ? (
           <div className="mt-3">
-            <div className="text-[11px] text-zinc-300 leading-relaxed">
+            <div className="text-[11px] text-muted-foreground leading-relaxed">
               {browser.isIOS && browser.isSafari && (
-                <>Toca el boton <strong className="text-zinc-100">Compartir</strong> (cuadrado con flecha) y luego <strong className="text-zinc-100">Agregar a inicio</strong></>
+                <>Toca el boton <strong className="text-foreground">Compartir</strong> (cuadrado con flecha) y luego <strong className="text-foreground">Agregar a inicio</strong></>
               )}
               {browser.isIOS && browser.isFirefox && (
-                <>Abre esta pagina en <strong className="text-zinc-100">Safari</strong>, toca <strong className="text-zinc-100">Compartir</strong> y luego <strong className="text-zinc-100">Agregar a inicio</strong></>
+                <>Abre esta pagina en <strong className="text-foreground">Safari</strong>, toca <strong className="text-foreground">Compartir</strong> y luego <strong className="text-foreground">Agregar a inicio</strong></>
               )}
               {browser.isAndroid && browser.isFirefox && (
-                <>Toca el menu <strong className="text-zinc-100">⋮</strong> y selecciona <strong className="text-zinc-100">Instalar</strong> o <strong className="text-zinc-100">Agregar a inicio</strong></>
+                <>Toca el menu <strong className="text-foreground">⋮</strong> y selecciona <strong className="text-foreground">Instalar</strong> o <strong className="text-foreground">Agregar a inicio</strong></>
               )}
               {!browser.isIOS && !browser.isAndroid && browser.isFirefox && (
-                <>Abre el menu y busca <strong className="text-zinc-100">Instalar este sitio como aplicacion</strong> en la barra de direcciones</>
+                <>Abre el menu y busca <strong className="text-foreground">Instalar este sitio como aplicacion</strong> en la barra de direcciones</>
               )}
               {!browser.isIOS && !browser.isAndroid && browser.isSafari && (
-                <>Ve a <strong className="text-zinc-100">Archivo → Agregar al Dock</strong> para instalar como app</>
+                <>Ve a <strong className="text-foreground">Archivo → Agregar al Dock</strong> para instalar como app</>
               )}
               {!browser.isFirefox && !browser.isSafari && !browser.isIOS && (
                 <>Busca el icono de instalar en la barra de direcciones de tu navegador</>
@@ -127,7 +127,7 @@ export default function InstallPrompt() {
             </div>
             <button
               onClick={handleDismiss}
-              className="mt-3 w-full text-sm text-zinc-400 hover:text-zinc-200 py-2 transition-colors"
+              className="mt-3 w-full text-sm text-muted-foreground hover:text-foreground py-2 transition-colors"
             >
               Entendido
             </button>
@@ -136,13 +136,13 @@ export default function InstallPrompt() {
           <div className="mt-3 flex gap-2">
             <button
               onClick={handleInstall}
-              className="flex-1 bg-lime-500 hover:bg-lime-400 text-zinc-900 text-sm font-semibold rounded-lg px-4 py-2 transition-colors"
+              className="flex-1 bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-lime-foreground text-sm font-semibold rounded-lg px-4 py-2 transition-colors"
             >
               Instalar
             </button>
             <button
               onClick={handleDismiss}
-              className="text-sm text-zinc-400 hover:text-zinc-200 px-3 py-2 transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
             >
               Ahora no
             </button>

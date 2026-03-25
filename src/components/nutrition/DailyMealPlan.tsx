@@ -121,9 +121,9 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
           {loading ? (
             <span className="flex items-center gap-2">
               <span className="flex gap-0.5">
-                <span className="size-1.5 rounded-full bg-zinc-900 animate-bounce [animation-delay:0ms]" />
-                <span className="size-1.5 rounded-full bg-zinc-900 animate-bounce [animation-delay:150ms]" />
-                <span className="size-1.5 rounded-full bg-zinc-900 animate-bounce [animation-delay:300ms]" />
+                <span className="size-1.5 rounded-full bg-foreground animate-bounce [animation-delay:0ms]" />
+                <span className="size-1.5 rounded-full bg-foreground animate-bounce [animation-delay:150ms]" />
+                <span className="size-1.5 rounded-full bg-foreground animate-bounce [animation-delay:300ms]" />
               </span>
               GENERANDO
             </span>

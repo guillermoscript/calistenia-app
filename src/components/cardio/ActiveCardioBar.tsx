@@ -36,8 +36,8 @@ export default function ActiveCardioBar() {
         'transition-all duration-300 ease-out',
         'active:scale-[0.98]',
         isPaused
-          ? 'bg-amber-950/80 border-amber-500/30 shadow-amber-500/10 dark:bg-amber-950/80'
-          : 'bg-lime-950/80 border-lime-500/30 shadow-lime-500/10 dark:bg-zinc-950/80',
+          ? 'bg-amber-50/90 border-amber-300 shadow-amber-200/20 dark:bg-amber-950/80 dark:border-amber-500/30 dark:shadow-amber-500/10'
+          : 'bg-lime-50/90 border-lime-300 shadow-lime-200/20 dark:bg-zinc-950/80 dark:border-lime-500/30 dark:shadow-lime-500/10',
       )}
       aria-label="Sesión de cardio activa — toca para volver"
     >

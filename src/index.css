@@ -3,48 +3,48 @@
 
 @layer base {
   :root {
-    --background:              0 0% 100%;
-    --foreground:              0 0% 3.9%;
+    --background:              60 6% 97%;
+    --foreground:              0 0% 8%;
 
     --card:                    0 0% 100%;
-    --card-foreground:         0 0% 3.9%;
+    --card-foreground:         0 0% 8%;
 
     --popover:                 0 0% 100%;
-    --popover-foreground:      0 0% 3.9%;
+    --popover-foreground:      0 0% 8%;
 
-    --primary:                 0 0% 9%;
+    --primary:                 0 0% 12%;
     --primary-foreground:      0 0% 98%;
 
-    --secondary:               0 0% 96.1%;
-    --secondary-foreground:    0 0% 9%;
+    --secondary:               60 4% 93%;
+    --secondary-foreground:    0 0% 12%;
 
-    --muted:                   0 0% 96.1%;
-    --muted-foreground:        0 0% 45.1%;
+    --muted:                   60 4% 93%;
+    --muted-foreground:        0 0% 40%;
 
-    --accent:                  0 0% 96.1%;
-    --accent-foreground:       0 0% 9%;
+    --accent:                  60 4% 93%;
+    --accent-foreground:       0 0% 12%;
 
     --destructive:             0 84.2% 60.2%;
     --destructive-foreground:  0 0% 98%;
 
-    --border:                  0 0% 89.8%;
-    --input:                   0 0% 89.8%;
-    --ring:                    0 0% 3.9%;
+    --border:                  60 4% 87%;
+    --input:                   60 4% 87%;
+    --ring:                    0 0% 12%;
 
     --radius:                  0.5rem;
 
     /* Sidebar */
-    --sidebar-background:          0 0% 98%;
-    --sidebar-foreground:          0 0% 3.9%;
-    --sidebar-primary:             0 0% 9%;
+    --sidebar-background:          60 4% 95%;
+    --sidebar-foreground:          0 0% 8%;
+    --sidebar-primary:             0 0% 12%;
     --sidebar-primary-foreground:  0 0% 98%;
-    --sidebar-accent:              0 0% 93%;
-    --sidebar-accent-foreground:   0 0% 9%;
-    --sidebar-border:              0 0% 89.8%;
-    --sidebar-ring:                0 0% 3.9%;
+    --sidebar-accent:              60 4% 90%;
+    --sidebar-accent-foreground:   0 0% 12%;
+    --sidebar-border:              60 4% 87%;
+    --sidebar-ring:                0 0% 12%;
 
     /* Lime accent — used only for completed/active states */
-    --lime: 74 90% 44%;
+    --lime: 74 90% 38%;
     --lime-foreground: 0 0% 100%;
   }
 
@@ -157,25 +157,28 @@
 
 /* ── driver.js tour theme ─────────────────────────────────────────────────── */
 .driver-popover.calistenia-tour-popover {
-  background: hsl(0 0% 7%);
-  border: 1px solid hsl(0 0% 15%);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 12px;
-  color: hsl(0 0% 90%);
+  color: hsl(var(--foreground));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+.dark .driver-popover.calistenia-tour-popover {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 .driver-popover.calistenia-tour-popover .driver-popover-title {
   font-family: 'Bebas Neue', cursive;
   font-size: 22px;
   letter-spacing: 0.05em;
-  color: hsl(74 90% 57%);
+  color: hsl(var(--lime));
 }
 .driver-popover.calistenia-tour-popover .driver-popover-description {
-  color: hsl(0 0% 65%);
+  color: hsl(var(--muted-foreground));
   font-size: 13px;
   line-height: 1.5;
 }
 .driver-popover.calistenia-tour-popover .driver-popover-progress-text {
-  color: hsl(0 0% 45%);
+  color: hsl(var(--muted-foreground));
   font-size: 11px;
 }
 .driver-popover.calistenia-tour-popover .driver-popover-navigation-btns button {
@@ -188,31 +191,31 @@
 }
 .driver-popover.calistenia-tour-popover .driver-popover-next-btn,
 .driver-popover.calistenia-tour-popover .driver-popover-close-btn[data-button="done"] {
-  background: hsl(74 90% 57%);
-  color: hsl(0 0% 5%);
+  background: hsl(var(--lime));
+  color: hsl(var(--lime-foreground));
   border: none;
 }
 .driver-popover.calistenia-tour-popover .driver-popover-next-btn:hover {
-  background: hsl(74 90% 50%);
+  opacity: 0.9;
 }
 .driver-popover.calistenia-tour-popover .driver-popover-prev-btn {
   background: transparent;
-  border: 1px solid hsl(0 0% 20%);
-  color: hsl(0 0% 65%);
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
 }
 .driver-popover.calistenia-tour-popover .driver-popover-prev-btn:hover {
-  border-color: hsl(0 0% 35%);
-  color: hsl(0 0% 85%);
+  border-color: hsl(var(--ring));
+  color: hsl(var(--foreground));
 }
 .driver-popover.calistenia-tour-popover .driver-popover-arrow-side-left,
 .driver-popover.calistenia-tour-popover .driver-popover-arrow-side-right,
 .driver-popover.calistenia-tour-popover .driver-popover-arrow-side-top,
 .driver-popover.calistenia-tour-popover .driver-popover-arrow-side-bottom {
-  border-color: hsl(0 0% 7%);
+  border-color: hsl(var(--card));
 }
 .driver-popover.calistenia-tour-popover .driver-popover-close-btn {
-  color: hsl(0 0% 45%);
+  color: hsl(var(--muted-foreground));
 }
 .driver-popover.calistenia-tour-popover .driver-popover-close-btn:hover {
-  color: hsl(0 0% 85%);
+  color: hsl(var(--foreground));
 }

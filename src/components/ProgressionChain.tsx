@@ -51,9 +51,9 @@ export default function ProgressionChain({ chain, currentExerciseId, shouldAdvan
                       'relative px-3 py-2 rounded-lg border text-center transition-all duration-200 min-w-[90px] max-w-[120px]',
                       isCurrent && 'border-lime bg-lime/10 shadow-[0_0_8px_rgba(200,245,66,0.15)]',
                       isCompleted && 'border-emerald-500/30 bg-emerald-500/5',
-                      isFuture && !isNext && 'border-zinc-700/50 bg-zinc-800/30',
+                      isFuture && !isNext && 'border-border/50 bg-muted/30',
                       isNext && shouldAdvance && 'border-lime/50 bg-lime/5',
-                      isNext && !shouldAdvance && 'border-zinc-700/50 bg-zinc-800/30',
+                      isNext && !shouldAdvance && 'border-border/50 bg-muted/30',
                     )}
                   >
                     {/* Difficulty badge */}

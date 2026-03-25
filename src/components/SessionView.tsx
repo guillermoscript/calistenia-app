@@ -205,37 +205,70 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
   const mins = Math.floor(remaining / 60)
   const secs = String(remaining % 60).padStart(2, '0')
   const pct  = totalSecs > 0 ? (remaining / totalSecs) : 0
-  const circumference = 2 * Math.PI * 54
+  const ringR = 62
+  const ringSize = 148
+  const ringHalf = ringSize / 2
+  const ringStroke = 7
+  const circumference = 2 * Math.PI * ringR
   const strokeOffset  = circumference * (1 - pct)
-  const isUrgent = remaining < 10
+  const isUrgent = remaining > 0 && remaining < 10
+
+  const ringColor = isUrgent ? 'hsl(var(--destructive))' : 'hsl(var(--lime))'
+  const glowColor = isUrgent ? 'hsl(0 84% 60% / 0.18)' : 'hsl(var(--lime) / 0.1)'
 
   return (
     <div
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="flex-1 flex flex-col items-center justify-center gap-8 px-6 select-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
+      className="flex-1 flex flex-col items-center justify-center gap-7 px-6 select-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
     >
+      <style>{`
+        @keyframes restTickPulse {
+          0%   { transform: scale(1); }
+          15%  { transform: scale(1.03); }
+          100% { transform: scale(1); }
+        }
+        @keyframes restUrgentPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+      `}</style>
+
       <div className="text-[11px] tracking-[4px] text-muted-foreground uppercase font-mono">Descansando</div>
 
-      <div className="relative w-[132px] h-[132px] sm:w-[160px] sm:h-[160px]">
-        <svg viewBox="0 0 132 132" className="-rotate-90 w-full h-full">
-          <circle cx="66" cy="66" r="54" fill="none" stroke="hsl(var(--border))" strokeWidth="6" />
+      <div
+        className="relative rounded-full transition-shadow duration-500"
+        style={{
+          width: ringSize, height: ringSize,
+          boxShadow: `0 0 36px ${glowColor}`,
+          animation: isUrgent ? 'restUrgentPulse 1s ease-in-out infinite' : undefined,
+        }}
+      >
+        <svg width={ringSize} height={ringSize} className="-rotate-90">
+          <circle cx={ringHalf} cy={ringHalf} r={ringR} fill="none"
+            stroke="hsl(var(--border))" strokeWidth={ringStroke} opacity="0.3" />
           <circle
-            cx="66" cy="66" r="54" fill="none"
-            stroke={isUrgent ? 'hsl(var(--destructive))' : 'hsl(var(--lime))'}
-            strokeWidth="6"
+            cx={ringHalf} cy={ringHalf} r={ringR} fill="none"
+            stroke={ringColor}
+            strokeWidth={ringStroke}
             strokeDasharray={circumference}
             strokeDashoffset={strokeOffset}
             strokeLinecap="round"
-            style={{ transition: 'stroke-dashoffset 0.9s linear, stroke 0.3s' }}
+            style={{
+              transition: 'stroke-dashoffset 0.9s linear, stroke 0.3s',
+              willChange: 'stroke-dashoffset',
+            }}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={cn(
-            'font-bebas tracking-[2px] leading-none transition-colors duration-300 tabular-nums',
-            'text-[42px] sm:text-[52px]',
-            isUrgent ? 'text-destructive' : 'text-foreground'
-          )}>
+          <span
+            key={remaining}
+            className={cn(
+              'font-bebas tracking-[2px] leading-none tabular-nums text-[46px]',
+              isUrgent ? 'text-destructive' : 'text-foreground'
+            )}
+            style={{ animation: 'restTickPulse 0.3s cubic-bezier(0.22, 1, 0.36, 1)' }}
+          >
             {mins}:{secs}
           </span>
         </div>
@@ -281,7 +314,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
 
 interface ExerciseScreenProps {
   step: Step
-  onLogged: (data: { reps: string; note: string }) => void
+  onLogged: (data: { reps: string; note: string; weight?: number; rpe?: number }) => void
   logs?: ExerciseLog[]
 }
 
@@ -289,9 +322,12 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
   const [editOpen,   setEditOpen]   = useState<boolean>(false)
   const [customReps, setCustomReps] = useState<string>('')
   const [customNote, setCustomNote] = useState<string>('')
+  const [customWeight, setCustomWeight] = useState<string>('')
+  const [customRpe, setCustomRpe]   = useState<string>('')
   const [showYoutube, setShowYoutube] = useState<boolean>(false)
   const [showMedia, setShowMedia]   = useState<boolean>(false)
   const [flash, setFlash]           = useState<boolean>(false)
+  const [flyUp, setFlyUp]           = useState<number>(0)
 
   const { exercise, setNumber, totalSets } = step
   const recentLogs = logs.slice(0, 2)
@@ -303,17 +339,25 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
   }, 0) || 0
   const lastBestWeight = lastLog?.sets?.reduce((max: number, s: SetData) => (s.weight || 0) > max ? (s.weight || 0) : max, 0) || 0
 
-  const doLog = (reps: string | number, note: string = ''): void => {
+  // Parse "8-12" → "8", leave "12/lado", "máx" etc. as-is
+  const defaultReps = /^\d+-\d+$/.test(exercise.reps)
+    ? exercise.reps.split('-')[0]
+    : exercise.reps
+
+  const doLog = (reps: string | number, note: string = '', weight?: number, rpe?: number): void => {
     setFlash(true)
+    setFlyUp(n => n + 1)
     setTimeout(() => setFlash(false), 350)
-    onLogged({ reps: String(reps), note })
+    onLogged({ reps: String(reps), note, weight, rpe })
   }
 
-  const handleQuick = (): void => doLog(exercise.reps)
+  const handleQuick = (): void => doLog(defaultReps)
   const handleForm  = (): void => {
     if (!customReps) return
-    doLog(customReps, customNote)
-    setCustomReps(''); setCustomNote(''); setEditOpen(false)
+    const w = customWeight ? parseFloat(customWeight) : undefined
+    const r = customRpe ? parseInt(customRpe) : undefined
+    doLog(customReps, customNote, w, r)
+    setCustomReps(''); setCustomNote(''); setCustomWeight(''); setCustomRpe(''); setEditOpen(false)
   }
 
   return (
@@ -333,6 +377,24 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           0%   { transform: scaleY(1); }
           50%  { transform: scaleY(1.8); }
           100% { transform: scaleY(1); }
+        }
+        @keyframes formSlideIn {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .form-slide-in { animation: formSlideIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
+        @keyframes setFlyUp {
+          0%   { transform: translateY(0); opacity: 1; }
+          100% { transform: translateY(-48px); opacity: 0; }
+        }
+        @keyframes dotGlow {
+          0%   { box-shadow: 0 0 0 0 hsl(var(--lime) / 0.6); }
+          50%  { box-shadow: 0 0 8px 3px hsl(var(--lime) / 0.3); }
+          100% { box-shadow: 0 0 0 0 hsl(var(--lime) / 0); }
+        }
+        @keyframes dotBreathe {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.6; }
         }
       `}</style>
 
@@ -367,7 +429,13 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
               'w-7 h-1.5 rounded transition-all duration-300',
               i < setNumber - 1 ? 'bg-lime' : i === setNumber - 1 ? 'bg-lime/40' : 'bg-border'
             )}
-            style={i === setNumber - 2 && setNumber > 1 ? { animation: 'dotPulse 0.4s cubic-bezier(0.25, 1, 0.5, 1)' } : undefined}
+            style={
+              i === setNumber - 2 && setNumber > 1
+                ? { animation: 'dotPulse 0.4s cubic-bezier(0.25, 1, 0.5, 1), dotGlow 0.8s cubic-bezier(0.22, 1, 0.36, 1)' }
+                : i === setNumber - 1
+                  ? { animation: 'dotBreathe 2s ease-in-out infinite' }
+                  : undefined
+            }
             />
           ))}
           <span className="font-mono text-[10px] text-muted-foreground ml-1">SERIE {setNumber}/{totalSets}</span>
@@ -403,6 +471,8 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                 {log.sets?.map((s: SetData, j: number) => (
                   <span key={j} className="mr-1.5">
                     {j + 1}: <span className="text-muted-foreground/60">{s.reps}</span>
+                    {s.weight && <span className="text-amber-400/60 ml-0.5">+{s.weight}kg</span>}
+                    {s.rpe && <span className="text-pink-500/60 ml-0.5">RPE {s.rpe}</span>}
                     {s.note && <span className="text-muted-foreground/40 ml-0.5">({s.note})</span>}
                   </span>
                 ))}
@@ -413,7 +483,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
         {/* Timer for timed exercises */}
         {exercise.isTimer && (
-          <div className="mb-5 px-4 py-3 bg-sky-500/4 rounded-lg border border-sky-500/12 flex justify-center">
+          <div className="mb-5 py-6 flex justify-center">
             <Timer initialSeconds={exercise.timerSeconds} label={exercise.name} />
           </div>
         )}
@@ -422,19 +492,31 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
         {/* ── ACTION AREA ── */}
         <div className="flex flex-col gap-2.5">
-          <button
-            onClick={handleQuick}
-            aria-label={`Registrar serie completada con ${exercise.reps}`}
-            className="w-full py-[18px] px-4 rounded-lg cursor-pointer bg-lime/14 text-lime font-mono text-sm font-bold tracking-[1.5px] flex items-center justify-center gap-2.5 transition-all duration-100 hover:bg-lime/22 active:scale-[0.97] active:bg-lime/24 focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-          >
-            <span className="text-xl leading-none">+</span>
-            SERIE COMPLETADA — {exercise.reps}
-          </button>
+          <div className="relative">
+            <button
+              onClick={handleQuick}
+              aria-label={`Registrar serie completada con ${defaultReps}`}
+              className="w-full py-[18px] px-4 rounded-lg cursor-pointer bg-lime/14 text-lime font-mono text-sm font-bold tracking-[1.5px] flex items-center justify-center gap-2.5 transition-[background-color,transform] duration-100 hover:bg-lime/22 active:scale-[0.97] active:bg-lime/24 focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            >
+              <span className="text-xl leading-none">+</span>
+              SERIE COMPLETADA — {defaultReps}
+            </button>
+            {flyUp > 0 && (
+              <span
+                key={flyUp}
+                aria-hidden="true"
+                className="absolute right-4 top-1/2 font-bebas text-2xl text-lime pointer-events-none"
+                style={{ animation: 'setFlyUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards' }}
+              >
+                +1
+              </span>
+            )}
+          </div>
 
           <div className="flex gap-2">
             <button
               onClick={() => setEditOpen(v => !v)}
-              aria-label={editOpen ? 'Cerrar editor de reps' : 'Editar reps personalizadas'}
+              aria-label={editOpen ? 'Cerrar editor de serie' : 'Editar serie personalizada'}
               aria-expanded={editOpen}
               className={cn(
                 'flex-1 min-h-[44px] px-2.5 rounded-md cursor-pointer font-mono text-[10px] tracking-wide transition-all duration-150 border focus-visible:ring-2 focus-visible:ring-lime/40',
@@ -443,7 +525,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   : 'border-border text-muted-foreground hover:border-lime/30 hover:text-lime'
               )}
             >
-              ✏ EDITAR REPS
+              ✏ EDITAR
             </button>
 
             {exercise.demoImages && exercise.demoImages.length > 0 && (
@@ -466,33 +548,62 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           </div>
 
           {editOpen && (
-            <div className="px-3.5 py-3 bg-lime/4 rounded-lg border border-lime/12">
-              <div className="text-[9px] text-lime tracking-[2px] mb-2.5 uppercase font-mono">Reps personalizadas</div>
-              <div className="flex gap-2 flex-wrap">
+            <div className="px-3.5 py-3 bg-lime/4 rounded-lg border border-lime/12 form-slide-in">
+              <div className="text-[9px] text-lime tracking-[2px] mb-2.5 uppercase font-mono">Registrar serie personalizada</div>
+              <div className="flex gap-2">
                 <Input
                   value={customReps}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomReps(e.target.value)}
                   placeholder={`Reps (ej: ${exercise.reps})`}
-                  className="flex-1 min-w-[100px] h-8 text-xs"
+                  maxLength={20}
+                  aria-label="Repeticiones"
+                  className="flex-1 min-w-0 h-9 text-xs"
                 />
+                <Input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max="999"
+                  value={customWeight}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomWeight(e.target.value)}
+                  placeholder="Lastre kg"
+                  aria-label="Lastre en kilogramos"
+                  className="w-[88px] h-9 text-xs"
+                />
+                <Input
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={customRpe}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomRpe(e.target.value)}
+                  placeholder="RPE"
+                  title="Esfuerzo percibido (1-10)"
+                  aria-label="RPE del 1 al 10"
+                  className="w-[56px] h-9 text-xs"
+                />
+              </div>
+              <div className="flex gap-2 mt-2">
                 <Input
                   value={customNote}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomNote(e.target.value)}
-                  placeholder="Nota opcional…"
-                  className="flex-[2] min-w-[130px] h-8 text-xs"
+                  placeholder="Nota opcional"
+                  maxLength={200}
+                  aria-label="Nota opcional"
+                  className="flex-1 min-w-0 h-9 text-xs"
                 />
                 <Button
                   onClick={handleForm}
                   disabled={!customReps}
                   size="sm"
                   className={cn(
-                    'h-8 px-4 text-[11px] font-bold',
+                    'h-9 px-5 text-[11px] font-bold tracking-wide',
                     customReps
                       ? 'bg-lime text-lime-foreground hover:bg-lime/90'
                       : 'bg-lime/20 text-muted-foreground cursor-not-allowed'
                   )}
                 >
-                  ✓
+                  GUARDAR
                 </Button>
               </div>
             </div>
@@ -644,16 +755,26 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
 
 type SessionPhase = 'exercise' | 'rest' | 'note' | 'celebrate'
 
+interface SessionProgress {
+  stepIdx: number
+  phase: SessionPhase
+  setsCount: number
+}
+
 interface SessionViewProps {
   workout: Workout
   workoutKey: string
-  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string }) => void
+  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number; rpe?: number }) => void
   onMarkDone: (workoutKey: string, note: string) => void
   onGoToDashboard: () => void
   onExitSession: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
   setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
+  /** Persisted progress from context (survives navigation) */
+  initialProgress?: SessionProgress
+  /** Callback to persist progress changes to context */
+  onProgressChange?: (update: Partial<SessionProgress>) => void
 }
 
 export default function SessionView({
@@ -666,14 +787,21 @@ export default function SessionView({
   getExerciseLogs,
   getRestForExercise,
   setRestForExercise,
+  initialProgress,
+  onProgressChange,
 }: SessionViewProps) {
   const navigate = useNavigate()
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
 
-  const [stepIdx,   setStepIdx]   = useState<number>(0)
-  const [phase,     setPhase]     = useState<SessionPhase>('exercise')
-  const [setsCount, setSetsCount] = useState<number>(0)
+  const [stepIdx,   setStepIdx]   = useState<number>(initialProgress?.stepIdx ?? 0)
+  const [phase,     setPhase]     = useState<SessionPhase>(initialProgress?.phase ?? 'exercise')
+  const [setsCount, setSetsCount] = useState<number>(initialProgress?.setsCount ?? 0)
   const [showExit,  setShowExit]  = useState<boolean>(false)
+
+  // Sync progress to context so it survives navigation away and back
+  useEffect(() => {
+    onProgressChange?.({ stepIdx, phase, setsCount })
+  }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps
   const sessionStartTime = useRef<number>(Date.now())
 
   // Swipe gesture refs
@@ -737,8 +865,8 @@ export default function SessionView({
   // Request notification permission when session starts
   useEffect(() => { notif.requestPermission() }, [])
 
-  const handleLogged = useCallback(({ reps, note }: { reps: string; note: string }) => {
-    onLogSet(currentStep.exercise.id, workoutKey, { reps, note })
+  const handleLogged = useCallback(({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
+    onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
     const newCount = setsCount + 1
     setSetsCount(newCount)
     sounds.playSetComplete()

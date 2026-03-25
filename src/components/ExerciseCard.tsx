@@ -230,7 +230,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
 
           <button
             onClick={() => navigate(`/exercises/${exercise.id}`)}
-            className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-zinc-600/30 bg-zinc-500/5 text-zinc-400 hover:bg-zinc-500/10 hover:text-lime cursor-pointer transition-all duration-150"
+            className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-border text-muted-foreground hover:bg-muted/50 hover:text-lime cursor-pointer transition-all duration-150"
             title="Ver detalle del ejercicio"
           >
             <Info size={15} />

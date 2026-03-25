@@ -151,7 +151,7 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
     <div className="mb-6 p-4 rounded-xl border border-border bg-card">
       <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">Tu link de invitación</div>
       <div className="flex items-center gap-2">
-        <div className="flex-1 min-w-0 px-3 py-2.5 rounded-lg bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_15%)] text-sm text-[hsl(0_0%_70%)] truncate font-mono select-all">
+        <div className="flex-1 min-w-0 px-3 py-2.5 rounded-lg bg-muted border border-border text-sm text-muted-foreground truncate font-mono select-all">
           {inviteUrl}
         </div>
         <button
@@ -160,7 +160,7 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
             'shrink-0 size-10 rounded-lg border flex items-center justify-center transition-all',
             copied
               ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
-              : 'border-[hsl(0_0%_15%)] bg-[hsl(0_0%_4%)] text-[hsl(0_0%_60%)] hover:text-[hsl(0_0%_90%)] hover:border-[hsl(0_0%_25%)]'
+              : 'border-border bg-muted text-muted-foreground hover:text-foreground hover:border-border/70'
           )}
           title="Copiar link"
         >
@@ -168,7 +168,7 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
         </button>
         <button
           onClick={shareLink}
-          className="shrink-0 size-10 rounded-lg border border-[hsl(0_0%_15%)] bg-[hsl(0_0%_4%)] text-[hsl(0_0%_60%)] hover:text-[hsl(0_0%_90%)] hover:border-[hsl(0_0%_25%)] flex items-center justify-center transition-colors"
+          className="shrink-0 size-10 rounded-lg border border-border bg-muted text-muted-foreground hover:text-foreground hover:border-border/70 flex items-center justify-center transition-colors"
           title="Compartir"
         >
           <Share2 className="size-4" />

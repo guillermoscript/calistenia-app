@@ -37,59 +37,59 @@ function tone(
 /** Gentle descending chime — rest period starts */
 export function playRestStart(): void {
   try {
-    tone(660, 0, 0.25, 0.2)
-    tone(520, 0.15, 0.3, 0.15)
+    tone(660, 0, 0.3, 0.5, 'triangle')
+    tone(520, 0.15, 0.35, 0.4, 'triangle')
   } catch {}
 }
 
 /** Energetic ascending tones — rest is over, get ready */
 export function playGetReady(): void {
   try {
-    tone(440, 0, 0.15, 0.25)
-    tone(660, 0.12, 0.15, 0.3)
-    tone(880, 0.24, 0.25, 0.35)
+    tone(440, 0, 0.18, 0.6, 'square')
+    tone(660, 0.12, 0.18, 0.65, 'square')
+    tone(880, 0.24, 0.3, 0.7, 'square')
   } catch {}
 }
 
 /** Short tick — countdown 3, 2, 1 */
 export function playCountdownTick(): void {
   try {
-    tone(1000, 0, 0.08, 0.2)
+    tone(1000, 0, 0.1, 0.5, 'square')
   } catch {}
 }
 
-/** Subtle warning pulse — 10 seconds remaining */
+/** Warning pulse — 10 seconds remaining */
 export function playWarning(): void {
   try {
-    tone(600, 0, 0.12, 0.15, 'triangle')
-    tone(600, 0.15, 0.12, 0.15, 'triangle')
+    tone(600, 0, 0.15, 0.45, 'triangle')
+    tone(600, 0.18, 0.15, 0.45, 'triangle')
   } catch {}
 }
 
-/** Satisfying ding — set logged */
+/** Satisfying ding — set logged (loud enough for outdoor use) */
 export function playSetComplete(): void {
   try {
-    tone(880, 0, 0.12, 0.25)
-    tone(1100, 0.08, 0.18, 0.2)
+    tone(880, 0, 0.15, 0.7, 'square')
+    tone(1100, 0.1, 0.2, 0.6, 'square')
   } catch {}
 }
 
 /** Triumphant fanfare — entire session completed */
 export function playSessionComplete(): void {
   try {
-    tone(523, 0, 0.2, 0.25)     // C
-    tone(659, 0.15, 0.2, 0.25)  // E
-    tone(784, 0.3, 0.2, 0.3)    // G
-    tone(1047, 0.45, 0.4, 0.3)  // C octave
+    tone(523, 0, 0.25, 0.6, 'square')     // C
+    tone(659, 0.15, 0.25, 0.6, 'square')  // E
+    tone(784, 0.3, 0.25, 0.65, 'square')  // G
+    tone(1047, 0.45, 0.45, 0.7, 'square') // C octave
   } catch {}
 }
 
 /** Triple beep — timed exercise complete */
 export function playTimerComplete(): void {
   try {
-    tone(880, 0, 0.15, 0.3)
-    tone(880, 0.18, 0.15, 0.3)
-    tone(1100, 0.36, 0.25, 0.3)
+    tone(880, 0, 0.18, 0.6, 'square')
+    tone(880, 0.2, 0.18, 0.6, 'square')
+    tone(1100, 0.4, 0.3, 0.65, 'square')
   } catch {}
 }
 

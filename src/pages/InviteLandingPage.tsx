@@ -165,7 +165,7 @@ export default function InviteLandingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[hsl(0_0%_2%)] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader label="Cargando..." />
       </div>
     )
@@ -187,20 +187,20 @@ export default function InviteLandingPage() {
   // Own link: show share prompt
   if (isOwnLink) {
     return (
-      <div className="min-h-screen bg-[hsl(0_0%_2%)] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="w-full max-w-sm text-center">
           <div className="flex items-center justify-center gap-2.5 mb-6">
             <img src="/logo.png" alt="" className="w-9 h-9 rounded-lg" />
-            <span className="font-bebas text-3xl tracking-[0.15em] text-[hsl(0_0%_95%)]">CALISTENIA</span>
+            <span className="font-bebas text-3xl tracking-[0.15em] text-foreground">CALISTENIA</span>
           </div>
 
-          <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-6">
-            <div className="text-xs tracking-widest uppercase text-[hsl(0_0%_50%)] mb-3">TU LINK DE INVITACION</div>
-            <p className="text-sm text-[hsl(0_0%_80%)] mb-6">
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="text-xs tracking-widest uppercase text-muted-foreground mb-3">TU LINK DE INVITACION</div>
+            <p className="text-sm text-muted-foreground mb-6">
               Comparte este link con tus amigos para ganar puntos
             </p>
 
-            <div className="bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_15%)] rounded-lg px-3 py-2.5 text-sm text-[hsl(0_0%_60%)] mb-6 truncate select-all">
+            <div className="bg-muted border border-border rounded-lg px-3 py-2.5 text-sm text-muted-foreground mb-6 truncate select-all">
               {inviteUrl}
             </div>
 
@@ -208,13 +208,13 @@ export default function InviteLandingPage() {
               onShare={handleShare}
               label="COMPARTIR"
               size="default"
-              className="w-full bg-lime text-[hsl(0_0%_5%)] hover:bg-lime/90 border-0"
+              className="w-full bg-lime text-lime-foreground hover:bg-lime/90 border-0"
             />
           </div>
 
           <button
             onClick={() => navigate('/')}
-            className="mt-6 text-sm text-[hsl(0_0%_50%)] hover:text-[hsl(0_0%_70%)] transition-colors"
+            className="mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Volver al inicio
           </button>
@@ -239,22 +239,22 @@ export default function InviteLandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(0_0%_2%)] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2.5 mb-2">
             <img src="/logo.png" alt="" className="w-9 h-9 rounded-lg" />
-            <span className="font-bebas text-3xl tracking-[0.15em] text-[hsl(0_0%_95%)]">CALISTENIA</span>
+            <span className="font-bebas text-3xl tracking-[0.15em] text-foreground">CALISTENIA</span>
           </div>
         </div>
 
         {/* Card */}
-        <div className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="p-6">
             {/* Inviter header */}
             <div className="flex items-center gap-3 mb-5">
-              <div className="size-14 rounded-full bg-[hsl(0_0%_12%)] flex items-center justify-center text-xl font-bebas text-[hsl(0_0%_95%)] shrink-0 overflow-hidden">
+              <div className="size-14 rounded-full bg-muted flex items-center justify-center text-xl font-bebas text-foreground shrink-0 overflow-hidden">
                 {inviter.avatarUrl ? (
                   <img src={inviter.avatarUrl} alt={inviter.displayName} className="size-full object-cover" />
                 ) : (
@@ -262,8 +262,8 @@ export default function InviteLandingPage() {
                 )}
               </div>
               <div>
-                <div className="font-bebas text-2xl text-[hsl(0_0%_95%)] leading-none">{inviter.displayName}</div>
-                <p className="text-sm text-[hsl(0_0%_80%)] mt-1">te invito a entrenar juntos</p>
+                <div className="font-bebas text-2xl text-foreground leading-none">{inviter.displayName}</div>
+                <p className="text-sm text-muted-foreground mt-1">te invito a entrenar juntos</p>
               </div>
             </div>
 
@@ -276,10 +276,10 @@ export default function InviteLandingPage() {
 
             {/* Preview: challenge or program */}
             {challenge && (
-              <div className="bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_12%)] rounded-lg p-4 mb-6">
-                <div className="text-xs tracking-widest uppercase text-[hsl(0_0%_50%)] mb-2">CHALLENGE EXPRESS</div>
-                <div className="font-bebas text-lg text-[hsl(0_0%_95%)] leading-tight mb-3">{challenge.title}</div>
-                <div className="flex flex-col gap-1.5 text-sm text-[hsl(0_0%_80%)]">
+              <div className="bg-muted border border-border rounded-lg p-4 mb-6">
+                <div className="text-xs tracking-widest uppercase text-muted-foreground mb-2">CHALLENGE EXPRESS</div>
+                <div className="font-bebas text-lg text-foreground leading-tight mb-3">{challenge.title}</div>
+                <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                   {challenge.exerciseName && (
                     <div className="flex items-center gap-2">
                       <ExerciseIcon className="size-3.5 text-lime shrink-0" />
@@ -303,14 +303,14 @@ export default function InviteLandingPage() {
             )}
 
             {!challenge && program && (
-              <div className="bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_12%)] rounded-lg p-4 mb-6">
-                <div className="text-xs tracking-widest uppercase text-[hsl(0_0%_50%)] mb-2">PROGRAMA ACTUAL</div>
-                <div className="font-bebas text-lg text-[hsl(0_0%_95%)] leading-tight">{program.name}</div>
+              <div className="bg-muted border border-border rounded-lg p-4 mb-6">
+                <div className="text-xs tracking-widest uppercase text-muted-foreground mb-2">PROGRAMA ACTUAL</div>
+                <div className="font-bebas text-lg text-foreground leading-tight">{program.name}</div>
                 {program.durationWeeks > 0 && (
-                  <div className="text-xs text-[hsl(0_0%_50%)] mt-1">{program.durationWeeks} semanas</div>
+                  <div className="text-xs text-muted-foreground mt-1">{program.durationWeeks} semanas</div>
                 )}
                 {program.description && (
-                  <p className="text-sm text-[hsl(0_0%_60%)] mt-2 line-clamp-2">{program.description}</p>
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{program.description}</p>
                 )}
               </div>
             )}
@@ -319,7 +319,7 @@ export default function InviteLandingPage() {
             {isLoggedIn && challengeId ? (
               <Button
                 onClick={handleJoin}
-                className="w-full h-12 bg-lime text-[hsl(0_0%_5%)] hover:bg-lime/90 font-semibold text-sm"
+                className="w-full h-12 bg-lime text-lime-foreground hover:bg-lime/90 font-semibold text-sm"
               >
                 Unirme al challenge
               </Button>
@@ -327,11 +327,11 @@ export default function InviteLandingPage() {
               <>
                 <Button
                   onClick={handleJoin}
-                  className="w-full h-12 bg-lime text-[hsl(0_0%_5%)] hover:bg-lime/90 font-semibold text-sm"
+                  className="w-full h-12 bg-lime text-lime-foreground hover:bg-lime/90 font-semibold text-sm"
                 >
                   Unirme
                 </Button>
-                <p className="text-center mt-4 text-sm text-[hsl(0_0%_50%)]">
+                <p className="text-center mt-4 text-sm text-muted-foreground">
                   Ya tienes cuenta?{' '}
                   <button
                     onClick={handleLogin}
@@ -351,11 +351,11 @@ export default function InviteLandingPage() {
 
 function StatChip({ label, value, unit }: { label: string; value: number; unit?: string }) {
   return (
-    <div className="bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_12%)] rounded-lg p-3 text-center">
+    <div className="bg-muted border border-border rounded-lg p-3 text-center">
       <div className="font-bebas text-xl text-lime leading-none">
         {value}{unit && <span className="text-sm">{unit}</span>}
       </div>
-      <div className="text-[10px] tracking-widest uppercase text-[hsl(0_0%_50%)] mt-1">{label}</div>
+      <div className="text-[10px] tracking-widest uppercase text-muted-foreground mt-1">{label}</div>
     </div>
   )
 }
