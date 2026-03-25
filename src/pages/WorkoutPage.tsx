@@ -18,7 +18,7 @@ import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, Se
 
 export default function WorkoutPage() {
   const { settings, phases: phasesProp, weekDays: weekDaysProp } = useWorkoutState()
-  const { logSet: onLogSet, markWorkoutDone: onMarkDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
+  const { logSet: onLogSet, markWorkoutDone: onMarkDone, unmarkWorkoutDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { startSession } = useActiveSession()
   const { userId, userRole } = useAuthState()
   const navigate = useNavigate()
@@ -187,8 +187,25 @@ export default function WorkoutPage() {
                   </Button>
                 )}
                 {isDone && (
-                  <div className="px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-600 dark:text-emerald-400 font-bebas text-lg">
-                    ✓ COMPLETADO HOY
+                  <div className="flex gap-2 items-center flex-wrap w-full md:w-auto">
+                    <Button
+                      onClick={handleStartSession}
+                      variant="outline"
+                      className="font-bebas text-lg tracking-wide border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
+                    >
+                      ▶ REPETIR
+                    </Button>
+                    <div className="px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-600 dark:text-emerald-400 font-bebas text-lg flex items-center gap-2">
+                      ✓ COMPLETADO HOY
+                      <button
+                        onClick={() => workoutKey && unmarkWorkoutDone(workoutKey)}
+                        className="text-muted-foreground hover:text-red-400 transition-colors ml-1"
+                        aria-label="Desmarcar completado"
+                        title="Desmarcar completado"
+                      >
+                        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

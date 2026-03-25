@@ -24,6 +24,7 @@ interface UseProgressReturn {
   pbReady: boolean
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<void>
   markWorkoutDone: (workoutKey: string, note?: string) => Promise<void>
+  unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
   getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
   getWeeklyDoneCount: () => number
@@ -250,6 +251,30 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
     }
   }, [usePB, userId, activeProgramId])
 
+  // ─── unmarkWorkoutDone ───────────────────────────────────────────────────
+  const unmarkWorkoutDone = useCallback(async (workoutKey: string, date?: string) => {
+    const d = date || todayStr()
+    const key = `done_${d}_${workoutKey}`
+
+    setProgress(prev => {
+      const newProg = { ...prev }
+      delete newProg[key]
+      lsSet(newProg)
+      return newProg
+    })
+
+    if (usePB && userId) {
+      try {
+        const records = await pb.collection('sessions').getList(1, 1, {
+          filter: `user = "${userId}" && workout_key = "${workoutKey}" && completed_at >= "${d} 00:00:00" && completed_at <= "${d} 23:59:59"`,
+        })
+        if (records.items.length > 0) {
+          await pb.collection('sessions').delete(records.items[0].id)
+        }
+      } catch (e) { console.warn('PB unmark session error:', e) }
+    }
+  }, [usePB, userId])
+
   // ─── Helpers de consulta ─────────────────────────────────────────────────
   const isWorkoutDone = useCallback((workoutKey: string, date?: string): boolean => {
     const d = date || todayStr()
@@ -374,7 +399,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
 
   return {
     progress, settings, usePB, pbReady,
-    logSet, markWorkoutDone, isWorkoutDone,
+    logSet, markWorkoutDone, unmarkWorkoutDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
     getLongestStreak, updateSettings, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,

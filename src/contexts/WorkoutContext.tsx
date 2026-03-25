@@ -23,6 +23,7 @@ interface WorkoutActions {
   // Progress actions
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<void>
   markWorkoutDone: (workoutKey: string, note?: string) => Promise<void>
+  unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   // Progress queries
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
@@ -38,6 +39,7 @@ interface WorkoutActions {
   selectProgram: (programId: string) => Promise<void>
   duplicateProgram: (programId: string) => Promise<string | null>
   deleteProgram: (programId: string) => Promise<boolean>
+  refreshPrograms: () => Promise<void>
 }
 
 interface WorkoutContextValue {
@@ -74,12 +76,12 @@ interface WorkoutProviderProps {
 export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const {
     programs, activeProgram, phases, weekDays, getWorkout,
-    selectProgram, duplicateProgram, deleteProgram, programsReady,
+    selectProgram, duplicateProgram, deleteProgram, refreshPrograms, programsReady,
   } = usePrograms(userId)
 
   const {
     progress, settings, usePB, pbReady,
-    logSet: rawLogSet, markWorkoutDone, isWorkoutDone,
+    logSet: rawLogSet, markWorkoutDone, unmarkWorkoutDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
     getLongestStreak, updateSettings, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
@@ -97,17 +99,17 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, programsReady])
 
   const actions = useMemo<WorkoutActions>(() => ({
-    logSet, markWorkoutDone, updateSettings,
+    logSet, markWorkoutDone, unmarkWorkoutDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
-    getWorkout, selectProgram, duplicateProgram, deleteProgram,
+    getWorkout, selectProgram, duplicateProgram, deleteProgram, refreshPrograms,
   }), [
-    logSet, markWorkoutDone, updateSettings,
+    logSet, markWorkoutDone, unmarkWorkoutDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
-    getWorkout, selectProgram, duplicateProgram, deleteProgram,
+    getWorkout, selectProgram, duplicateProgram, deleteProgram, refreshPrograms,
   ])
 
   const value = useMemo(() => ({ state, actions }), [state, actions])
