@@ -967,13 +967,13 @@ export default function SessionView({
           onTouchStart={handleSwipeStart}
           onTouchEnd={handleSwipeEnd}
         >
-          {/* Navigation arrows — hidden on mobile (swipe primary), visible on desktop */}
+          {/* Navigation arrows — always visible */}
           {(hasPrevExercise || hasNextExercise) && (
-            <div className="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-0 right-0 justify-between pointer-events-none z-10 px-2">
+            <div className="flex absolute top-1/2 -translate-y-1/2 left-0 right-0 justify-between pointer-events-none z-10 px-1 sm:px-2">
               {hasPrevExercise ? (
                 <button
                   onClick={goToPrevExercise}
-                  className="pointer-events-auto size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:ring-2 focus-visible:ring-lime/40"
+                  className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
                   aria-label="Ejercicio anterior"
                 >
                   <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="10,3 5,8 10,13" /></svg>
@@ -982,7 +982,7 @@ export default function SessionView({
               {hasNextExercise ? (
                 <button
                   onClick={goToNextExercise}
-                  className="pointer-events-auto size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:ring-2 focus-visible:ring-lime/40"
+                  className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
                   aria-label="Siguiente ejercicio"
                 >
                   <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6,3 11,8 6,13" /></svg>
@@ -1000,15 +1000,40 @@ export default function SessionView({
       )}
 
       {phase === 'rest' && (
-        <RestScreen
-          key={`rest-${stepIdx}`}
-          seconds={currentStep?.exercise.rest || 90}
-          exerciseId={currentStep?.exercise.id}
-          nextStep={nextStep}
-          onSkip={handleRestDone}
-          savedRest={currentStep && getRestForExercise ? getRestForExercise(currentStep.exercise.id, currentStep.exercise.rest || 90) : undefined}
-          onAdjust={setRestForExercise ? (id, secs) => setRestForExercise(id, secs) : undefined}
-        />
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* Navigation arrows during rest */}
+          {(hasPrevExercise || hasNextExercise) && (
+            <div className="flex absolute top-1/2 -translate-y-1/2 left-0 right-0 justify-between pointer-events-none z-10 px-1 sm:px-2">
+              {hasPrevExercise ? (
+                <button
+                  onClick={goToPrevExercise}
+                  className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
+                  aria-label="Ejercicio anterior"
+                >
+                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="10,3 5,8 10,13" /></svg>
+                </button>
+              ) : <div />}
+              {hasNextExercise ? (
+                <button
+                  onClick={goToNextExercise}
+                  className="pointer-events-auto size-9 sm:size-11 rounded-full bg-muted/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-lime/40"
+                  aria-label="Siguiente ejercicio"
+                >
+                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6,3 11,8 6,13" /></svg>
+                </button>
+              ) : <div />}
+            </div>
+          )}
+          <RestScreen
+            key={`rest-${stepIdx}`}
+            seconds={currentStep?.exercise.rest || 90}
+            exerciseId={currentStep?.exercise.id}
+            nextStep={nextStep}
+            onSkip={handleRestDone}
+            savedRest={currentStep && getRestForExercise ? getRestForExercise(currentStep.exercise.id, currentStep.exercise.rest || 90) : undefined}
+            onAdjust={setRestForExercise ? (id, secs) => setRestForExercise(id, secs) : undefined}
+          />
+        </div>
       )}
 
       {phase === 'note' && (
