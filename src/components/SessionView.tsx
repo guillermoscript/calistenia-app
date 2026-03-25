@@ -775,6 +775,8 @@ interface SessionViewProps {
   initialProgress?: SessionProgress
   /** Callback to persist progress changes to context */
   onProgressChange?: (update: Partial<SessionProgress>) => void
+  /** Original session start timestamp (for accurate duration after restore) */
+  startedAt?: number
 }
 
 export default function SessionView({
@@ -789,6 +791,7 @@ export default function SessionView({
   setRestForExercise,
   initialProgress,
   onProgressChange,
+  startedAt,
 }: SessionViewProps) {
   const navigate = useNavigate()
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
@@ -802,7 +805,7 @@ export default function SessionView({
   useEffect(() => {
     onProgressChange?.({ stepIdx, phase, setsCount })
   }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps
-  const sessionStartTime = useRef<number>(Date.now())
+  const sessionStartTime = useRef<number>(startedAt || Date.now())
 
   // Swipe gesture refs
   const touchStartX = useRef<number | null>(null)

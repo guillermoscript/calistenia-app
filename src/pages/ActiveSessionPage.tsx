@@ -5,7 +5,7 @@ import { useWorkoutActions } from '../contexts/WorkoutContext'
 import SessionView from '../components/SessionView'
 
 export default function ActiveSessionPage() {
-  const { isActive, workout, workoutKey, endSession, getRestForExercise, setRestForExercise, progress, setProgress } = useActiveSession()
+  const { isActive, workout, workoutKey, endSession, getRestForExercise, setRestForExercise, progress, setProgress, startedAt } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
   const navigate = useNavigate()
 
@@ -47,6 +47,7 @@ export default function ActiveSessionPage() {
       setRestForExercise={setRestForExercise}
       initialProgress={progress}
       onProgressChange={setProgress}
+      startedAt={startedAt}
     />
   )
 }

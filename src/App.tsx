@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, type ReactNode } from 'react'
 import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
 import { useNutrition } from './hooks/useNutrition'
@@ -49,7 +49,7 @@ import OfflineBanner from './components/OfflineBanner'
 import ActiveCardioBar from './components/cardio/ActiveCardioBar'
 import ActiveSessionBubble from './components/ActiveFreeSessionBubble'
 import { CardioSessionProvider } from './contexts/CardioSessionContext'
-import { ActiveSessionProvider } from './contexts/ActiveSessionContext'
+import { ActiveSessionProvider, useActiveSession } from './contexts/ActiveSessionContext'
 import { useRestPreferences } from './hooks/useRestPreferences'
 import InstallPrompt from './components/InstallPrompt'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
@@ -83,6 +83,23 @@ import {
   ShieldIcon, PencilIcon, LogOutIcon, SunIcon, MoonIcon, SleepIcon, BellIcon,
   ReferralIcon,
 } from './components/icons/nav-icons'
+
+/** Auto-navigates to /session on mount if a persisted session exists */
+function SessionRestoreNavigator() {
+  const { isActive } = useActiveSession()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const hasNavigated = useRef(false)
+
+  useEffect(() => {
+    if (isActive && location.pathname !== '/session' && !hasNavigated.current) {
+      hasNavigated.current = true
+      navigate('/session', { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return null
+}
 
 interface NavItem {
   path: string
@@ -538,6 +555,7 @@ function AuthenticatedApp({
     )}
     <ActiveCardioBar />
     <ActiveSessionBubble />
+    <SessionRestoreNavigator />
     </ActiveSessionProvider>
     </CardioSessionProvider>
     </BackgroundJobsProvider>
