@@ -18,7 +18,7 @@ function tone(
   freq: number,
   startAt: number,
   duration: number,
-  gain: number = 0.3,
+  gain: number = 0.5,
   type: OscillatorType = 'sine'
 ): void {
   const ctx = getCtx()
@@ -37,59 +37,59 @@ function tone(
 /** Gentle descending chime — rest period starts */
 export function playRestStart(): void {
   try {
-    tone(660, 0, 0.3, 0.5, 'triangle')
-    tone(520, 0.15, 0.35, 0.4, 'triangle')
+    tone(660, 0, 0.3, 0.8, 'triangle')
+    tone(520, 0.15, 0.35, 0.7, 'triangle')
   } catch {}
 }
 
 /** Energetic ascending tones — rest is over, get ready */
 export function playGetReady(): void {
   try {
-    tone(440, 0, 0.18, 0.6, 'square')
-    tone(660, 0.12, 0.18, 0.65, 'square')
-    tone(880, 0.24, 0.3, 0.7, 'square')
+    tone(440, 0, 0.18, 0.9, 'square')
+    tone(660, 0.12, 0.18, 0.95, 'square')
+    tone(880, 0.24, 0.3, 1.0, 'square')
   } catch {}
 }
 
 /** Short tick — countdown 3, 2, 1 */
 export function playCountdownTick(): void {
   try {
-    tone(1000, 0, 0.1, 0.5, 'square')
+    tone(1000, 0, 0.1, 0.8, 'square')
   } catch {}
 }
 
 /** Warning pulse — 10 seconds remaining */
 export function playWarning(): void {
   try {
-    tone(600, 0, 0.15, 0.45, 'triangle')
-    tone(600, 0.18, 0.15, 0.45, 'triangle')
+    tone(600, 0, 0.15, 0.75, 'triangle')
+    tone(600, 0.18, 0.15, 0.75, 'triangle')
   } catch {}
 }
 
 /** Satisfying ding — set logged (loud enough for outdoor use) */
 export function playSetComplete(): void {
   try {
-    tone(880, 0, 0.15, 0.7, 'square')
-    tone(1100, 0.1, 0.2, 0.6, 'square')
+    tone(880, 0, 0.15, 1.0, 'square')
+    tone(1100, 0.1, 0.2, 0.9, 'square')
   } catch {}
 }
 
 /** Triumphant fanfare — entire session completed */
 export function playSessionComplete(): void {
   try {
-    tone(523, 0, 0.25, 0.6, 'square')     // C
-    tone(659, 0.15, 0.25, 0.6, 'square')  // E
-    tone(784, 0.3, 0.25, 0.65, 'square')  // G
-    tone(1047, 0.45, 0.45, 0.7, 'square') // C octave
+    tone(523, 0, 0.25, 0.9, 'square')     // C
+    tone(659, 0.15, 0.25, 0.9, 'square')  // E
+    tone(784, 0.3, 0.25, 0.95, 'square')  // G
+    tone(1047, 0.45, 0.45, 1.0, 'square') // C octave
   } catch {}
 }
 
 /** Triple beep — timed exercise complete */
 export function playTimerComplete(): void {
   try {
-    tone(880, 0, 0.18, 0.6, 'square')
-    tone(880, 0.2, 0.18, 0.6, 'square')
-    tone(1100, 0.4, 0.3, 0.65, 'square')
+    tone(880, 0, 0.18, 0.9, 'square')
+    tone(880, 0.2, 0.18, 0.9, 'square')
+    tone(1100, 0.4, 0.3, 0.95, 'square')
   } catch {}
 }
 
