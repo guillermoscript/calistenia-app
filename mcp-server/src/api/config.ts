@@ -22,7 +22,7 @@ const config: AppConfig = {
   },
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10),
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX ?? "10", 10),
+    maxRequests: parseInt(process.env.RATE_LIMIT_MAX ?? "60", 10),
   },
   upload: {
     maxSizeMb: parseInt(process.env.UPLOAD_MAX_SIZE_MB ?? "10", 10),
