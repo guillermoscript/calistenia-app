@@ -120,7 +120,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
         )}>
           {program.name}
         </h3>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
           {program.is_featured && (
             <span className="text-[9px] font-mono tracking-widest text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
               RECOMENDADO
@@ -214,7 +214,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {isActive ? (
           <Button
             size="sm"
@@ -387,7 +387,7 @@ export default function ProgramsPage() {
             <div className="flex-1 h-px bg-border" />
             <span className="text-[10px] text-muted-foreground">{officialPrograms.length}</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {officialPrograms.map(program => (
               <ProgramCard
                 key={program.id}
@@ -430,7 +430,7 @@ export default function ProgramsPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {userPrograms.map(program => (
               <ProgramCard
                 key={program.id}
