@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
+import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
+import catalogData from '../data/exercise-catalog.json'
 import { useProgressions } from '../hooks/useProgressions'
 import { getExerciseEquipment, getEquipmentLabel, EQUIPMENT_CATALOG } from '../lib/equipment'
 import { calculateWorkoutDuration } from '../lib/duration'
@@ -142,6 +144,52 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
       }
     }
   }
+  // Check supplementary exercises
+  const supp = SUPPLEMENTARY_EXERCISES.find(ex => ex.id === idOrSlug)
+  if (supp) {
+    return {
+      id: supp.id,
+      slug: supp.id,
+      name: supp.name,
+      muscles: supp.muscles,
+      category: supp.category,
+      priority: supp.priority,
+      sets: supp.sets,
+      reps: supp.reps,
+      rest: supp.rest,
+      note: supp.note,
+      youtube: supp.youtube,
+      isTimer: supp.isTimer,
+      timerSeconds: supp.timerSeconds,
+      description: supp.note,
+    }
+  }
+
+  // Check catalog JSON
+  const cats = (catalogData as any).categories || {}
+  for (const catData of Object.values(cats) as any[]) {
+    const found = (catData.exercises || []).find((ex: any) => ex.id === idOrSlug)
+    if (found) {
+      return {
+        id: found.id,
+        slug: found.id,
+        name: found.name,
+        muscles: found.muscles || '',
+        category: found.category || 'full',
+        priority: found.priority || 'med',
+        sets: found.sets ?? 3,
+        reps: found.reps || '8-12',
+        rest: found.rest ?? 60,
+        note: found.note || '',
+        youtube: found.youtube_query || '',
+        isTimer: found.isTimer || false,
+        timerSeconds: found.timerSeconds,
+        demoImages: found.images?.length ? found.images : undefined,
+        description: found.note || '',
+      }
+    }
+  }
+
   return null
 }
 
@@ -199,6 +247,29 @@ function findSimilarExercises(exercise: CatalogExercise): CatalogExercise[] {
           timerSeconds: ex.timerSeconds,
         })
       }
+    }
+  }
+
+  // Also check supplementary exercises
+  for (const ex of SUPPLEMENTARY_EXERCISES) {
+    if (seen.has(ex.id)) continue
+    if (ex.category === exercise.category) {
+      seen.add(ex.id)
+      similar.push({
+        id: ex.id,
+        slug: ex.id,
+        name: ex.name,
+        muscles: ex.muscles,
+        category: ex.category,
+        priority: ex.priority,
+        sets: ex.sets,
+        reps: ex.reps,
+        rest: ex.rest,
+        note: ex.note,
+        youtube: ex.youtube,
+        isTimer: ex.isTimer,
+        timerSeconds: ex.timerSeconds,
+      })
     }
   }
 

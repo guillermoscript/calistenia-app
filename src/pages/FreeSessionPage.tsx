@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
+import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
+import catalogData from '../data/exercise-catalog.json'
+import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabel } from '../lib/equipment'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
@@ -106,6 +109,34 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
       })
     }
   }
+  // Add supplementary exercises
+  for (const ex of SUPPLEMENTARY_EXERCISES) {
+    if (seen.has(ex.id)) continue
+    seen.set(ex.id, {
+      id: ex.id, name: ex.name, muscles: ex.muscles,
+      category: ex.category, priority: ex.priority,
+      sets: ex.sets, reps: ex.reps, rest: ex.rest,
+      note: ex.note, youtube: ex.youtube,
+      isTimer: ex.isTimer, timerSeconds: ex.timerSeconds,
+    })
+  }
+
+  // Add exercises from master catalog JSON
+  const catalogCategories = (catalogData as any).categories || {}
+  for (const catData of Object.values(catalogCategories) as any[]) {
+    for (const ex of catData.exercises || []) {
+      if (seen.has(ex.id)) continue
+      seen.set(ex.id, {
+        id: ex.id, name: ex.name, muscles: ex.muscles || '',
+        category: ex.category || 'full', priority: ex.priority || 'med',
+        sets: ex.sets ?? 3, reps: ex.reps || '8-12', rest: ex.rest ?? 60,
+        note: ex.note || '', youtube: ex.youtube_query || '',
+        isTimer: ex.isTimer || false, timerSeconds: ex.timerSeconds,
+        demoImages: ex.images?.length ? ex.images : undefined,
+      })
+    }
+  }
+
   return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name))
 }
 
@@ -183,6 +214,7 @@ export default function FreeSessionPage() {
   const [loadError, setLoadError] = useState(false)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<CategoryId>('todos')
+  const [activeEquipment, setActiveEquipment] = useState<string | null>(null)
   const [selected, setSelected] = useState<CatalogExercise[]>(loadSavedQueue)
   const [queueOpen, setQueueOpen] = useState(false)
   const startingRef = useRef(false)
@@ -230,12 +262,18 @@ export default function FreeSessionPage() {
   const filtered = useMemo(() => {
     let result = catalog
     if (activeCategory !== 'todos') result = result.filter(ex => ex.category === activeCategory)
+    if (activeEquipment) {
+      result = result.filter(ex => {
+        const equipmentIds = getExerciseEquipment({ name: ex.name, note: ex.note })
+        return equipmentIds.includes(activeEquipment)
+      })
+    }
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase()
       result = result.filter(ex => ex.name.toLowerCase().includes(q) || ex.muscles.toLowerCase().includes(q))
     }
     return result
-  }, [catalog, activeCategory, debouncedSearch])
+  }, [catalog, activeCategory, activeEquipment, debouncedSearch])
 
   const selectedIds = useMemo(() => new Set(selected.map(e => e.id)), [selected])
   const selectedOrder = useMemo(() => {
@@ -401,6 +439,35 @@ export default function FreeSessionPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Equipment filter */}
+          <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none">
+            {EQUIPMENT_CATALOG.filter(e => e.id !== 'ninguno').map(eq => {
+              const isActive = activeEquipment === eq.id
+              return (
+                <button
+                  key={eq.id}
+                  onClick={() => setActiveEquipment(isActive ? null : eq.id)}
+                  className={cn(
+                    'shrink-0 px-3 py-1.5 rounded-md text-[11px] tracking-wide font-medium transition-all duration-200 border',
+                    isActive
+                      ? 'text-amber-400 border-amber-400/30 bg-amber-500/10'
+                      : 'text-muted-foreground border-transparent hover:text-foreground',
+                  )}
+                >
+                  {eq.icon} {eq.label}
+                </button>
+              )
+            })}
+            {activeEquipment && (
+              <button
+                onClick={() => setActiveEquipment(null)}
+                className="shrink-0 px-2 py-1.5 rounded-md text-[10px] text-muted-foreground/60 hover:text-muted-foreground"
+              >
+                limpiar
+              </button>
+            )}
           </div>
 
           {/* Exercise list */}

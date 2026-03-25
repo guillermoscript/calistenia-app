@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Image, ArrowUp, Info, Pencil } from 'lucide-react'
+import { Image, ArrowUp, Info, Pencil, MoreHorizontal } from 'lucide-react'
 import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
 import Timer from './Timer'
 import YoutubeModal from './YoutubeModal'
@@ -33,6 +33,8 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
   const [showEditForm, setShowEditForm] = useState<boolean>(false)
   const [showHistory, setShowHistory] = useState<boolean>(false)
   const [showProgression, setShowProgression] = useState<boolean>(false)
+  const [showOverflow, setShowOverflow] = useState<boolean>(false)
+  const overflowRef = useRef<HTMLDivElement>(null)
   const { getChainForExercise, shouldSuggestProgression } = useProgressions()
   const chain = getChainForExercise(exercise.id)
   const hasProgression = chain.length > 0
@@ -57,6 +59,16 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
 
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current) }, [])
+
+  // Close overflow menu on outside click
+  useEffect(() => {
+    if (!showOverflow) return
+    const handler = (e: MouseEvent) => {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) setShowOverflow(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showOverflow])
 
   const triggerFlash = (): void => {
     setFlash(true)
@@ -150,6 +162,22 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
           </div>
         )}
 
+        {/* Progression advancement suggestion */}
+        {advanceSuggested && setsLogged === 0 && (
+          <button
+            onClick={() => setShowProgression(true)}
+            className="w-full text-left text-[11px] bg-lime/5 rounded px-3 py-2.5 mt-2.5 border-l-2 border-lime/40 flex items-center gap-2 hover:bg-lime/10 transition-colors"
+          >
+            <ArrowUp size={14} className="text-lime flex-shrink-0" />
+            <span className="text-lime/90">
+              Listo para avanzar al siguiente nivel.{' '}
+              {chain.find(p => p.exerciseId === exercise.id)?.nextExerciseId && (
+                <strong className="text-lime">Ver progresion</strong>
+              )}
+            </span>
+          </button>
+        )}
+
         {/* Exercise note */}
         {exercise.note && (
           <div className="text-[12px] text-muted-foreground bg-muted/30 rounded px-3 py-2 mt-2.5 border-l-2 border-lime/20 italic leading-relaxed">
@@ -210,88 +238,102 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             </button>
           )}
 
-          {exercise.demoImages && exercise.demoImages.length > 0 && (
+          {/* Overflow menu for secondary actions */}
+          <div className="relative flex-shrink-0" ref={overflowRef}>
             <button
-              onClick={() => setShowMedia(true)}
-              className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-lime/18 bg-lime/5 text-lime hover:bg-lime/10 cursor-pointer transition-all duration-150"
-              title="Ver media"
-            >
-              <Image size={15} />
-            </button>
-          )}
-
-          <button
-            onClick={() => setShowYoutube(true)}
-            className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-red-500/18 bg-red-500/5 text-red-500 hover:bg-red-500/10 cursor-pointer transition-all duration-150"
-            title="Ver tutorial"
-          >
-            ▶
-          </button>
-
-          <button
-            onClick={() => navigate(`/exercises/${exercise.id}`)}
-            className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-border text-muted-foreground hover:bg-muted/50 hover:text-lime cursor-pointer transition-all duration-150"
-            title="Ver detalle del ejercicio"
-          >
-            <Info size={15} />
-          </button>
-
-          {isAdmin && exercise.pbRecordId && (
-            <a
-              href={pbExerciseEditUrl(exercise.pbRecordId)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="py-[13px] px-3.5 rounded-md text-[13px] leading-none flex-shrink-0 border border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10 cursor-pointer transition-all duration-150"
-              title="Editar en PocketBase"
-            >
-              <Pencil size={15} />
-            </a>
-          )}
-
-          {recentLogs.length > 0 && (
-            <button
-              onClick={() => setShowHistory(v => !v)}
+              onClick={() => setShowOverflow(v => !v)}
               className={cn(
-                'py-[13px] px-3 rounded-md font-mono text-[10px] tracking-[0.5px] flex-shrink-0 border transition-all duration-150',
-                showHistory
-                  ? 'border-border/50 bg-muted/30 text-foreground'
-                  : 'border-border text-muted-foreground hover:border-border/70'
+                'relative py-[13px] px-3 rounded-md text-[13px] leading-none border transition-all duration-150',
+                showOverflow
+                  ? 'border-border/70 bg-muted/50 text-foreground'
+                  : 'border-border text-muted-foreground hover:border-border/70 hover:text-foreground'
               )}
             >
-              HIST
-            </button>
-          )}
-
-          {hasProgression && (
-            <button
-              onClick={() => setShowProgression(true)}
-              className={cn(
-                'relative py-[13px] px-3 rounded-md font-mono text-[10px] tracking-[0.5px] flex-shrink-0 border transition-all duration-150',
-                'border-border text-muted-foreground hover:border-lime/30 hover:text-lime'
-              )}
-            >
-              PROG
+              <MoreHorizontal size={15} />
               {advanceSuggested && (
-                <span className="absolute -top-1.5 -right-1.5 text-lime">
-                  <ArrowUp size={12} className="animate-bounce" />
-                </span>
+                <span className="absolute -top-1 -right-1 size-2 rounded-full bg-lime animate-pulse" />
               )}
             </button>
-          )}
+
+            {showOverflow && (
+              <div className="absolute right-0 top-full mt-1.5 z-30 min-w-[180px] rounded-lg bg-card border border-border shadow-lg shadow-black/20 py-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                <button
+                  onClick={() => { setShowYoutube(true); setShowOverflow(false) }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
+                >
+                  <span className="text-red-500">▶</span>
+                  <span>Ver tutorial</span>
+                </button>
+
+                <button
+                  onClick={() => { navigate(`/exercises/${exercise.id}`); setShowOverflow(false) }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
+                >
+                  <Info size={14} className="text-muted-foreground" />
+                  <span>Ver detalle</span>
+                </button>
+
+                {exercise.demoImages && exercise.demoImages.length > 0 && (
+                  <button
+                    onClick={() => { setShowMedia(true); setShowOverflow(false) }}
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <Image size={14} className="text-lime" />
+                    <span>Ver media</span>
+                  </button>
+                )}
+
+                {recentLogs.length > 0 && (
+                  <button
+                    onClick={() => { setShowHistory(v => !v); setShowOverflow(false) }}
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <span className="font-mono text-[10px] text-sky-400">H</span>
+                    <span>Historial reciente</span>
+                  </button>
+                )}
+
+                {hasProgression && (
+                  <button
+                    onClick={() => { setShowProgression(true); setShowOverflow(false) }}
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <ArrowUp size={14} className={advanceSuggested ? 'text-lime' : 'text-muted-foreground'} />
+                    <span>Progresion{advanceSuggested && <span className="text-lime ml-1 text-[10px]">AVANZAR</span>}</span>
+                  </button>
+                )}
+
+                {isAdmin && exercise.pbRecordId && (
+                  <>
+                    <div className="h-px bg-border mx-3 my-1" />
+                    <a
+                      href={pbExerciseEditUrl(exercise.pbRecordId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowOverflow(false)}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors text-amber-400"
+                    >
+                      <Pencil size={14} />
+                      <span>Editar en PocketBase</span>
+                    </a>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* EDIT FORM */}
         {showEditForm && (
           <div className="mt-2.5 px-3.5 py-3 bg-lime/4 rounded-lg border border-lime/10">
             <div className="text-[10px] text-lime tracking-[2px] mb-2.5 uppercase">Registrar serie personalizada</div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
               <Input
                 value={logReps}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogReps(e.target.value)}
                 placeholder={`Reps (ej: ${exercise.reps})`}
                 maxLength={20}
-                className="flex-1 min-w-[110px] h-8 text-xs"
+                className="h-9 text-xs"
               />
               <Input
                 type="number"
@@ -300,8 +342,8 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 max="999"
                 value={logWeight}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogWeight(e.target.value)}
-                placeholder="Lastre kg"
-                className="w-[80px] h-8 text-xs"
+                placeholder="kg"
+                className="w-[72px] h-9 text-xs"
               />
               <Input
                 type="number"
@@ -313,21 +355,23 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 placeholder="RPE"
                 title="Esfuerzo percibido (1-10)"
                 aria-label="RPE - Esfuerzo percibido del 1 al 10"
-                className="w-[55px] h-8 text-xs"
+                className="w-[56px] h-9 text-xs"
               />
+            </div>
+            <div className="flex gap-2 mt-2">
               <Input
                 value={logNote}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogNote(e.target.value)}
-                placeholder="Nota"
+                placeholder="Nota (opcional)"
                 maxLength={200}
-                className="flex-[2] min-w-[80px] h-8 text-xs"
+                className="flex-1 h-9 text-xs"
               />
               <Button
                 onClick={handleFormLog}
                 disabled={!logReps}
                 size="sm"
                 className={cn(
-                  'h-8 px-4 text-[11px] font-bold',
+                  'h-9 px-5 text-[11px] font-bold',
                   logReps
                     ? 'bg-lime text-lime-foreground hover:bg-lime/90'
                     : 'bg-lime/20 text-muted-foreground cursor-not-allowed'

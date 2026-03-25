@@ -130,6 +130,7 @@ interface UseProgramsReturn {
   selectProgram: (programId: string) => Promise<void>
   duplicateProgram: (programId: string) => Promise<string | null>
   deleteProgram: (programId: string) => Promise<boolean>
+  refreshPrograms: () => Promise<void>
   programsReady: boolean
 }
 
@@ -458,6 +459,16 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     }
   }, [usePB, userId, activeProgram])
 
+  // ── refreshPrograms — re-fetch catalog from PB ──────────────────────────
+  const refreshPrograms = useCallback(async () => {
+    if (!userId || !usePB) return
+    try {
+      await loadFromPB(userId)
+    } catch (e) {
+      console.error('usePrograms: refreshPrograms error', e)
+    }
+  }, [userId, usePB]) // eslint-disable-line react-hooks/exhaustive-deps
+
   return {
     programs,
     activeProgram,
@@ -467,6 +478,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     selectProgram,
     duplicateProgram,
     deleteProgram,
+    refreshPrograms,
     programsReady,
   }
 }

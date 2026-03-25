@@ -8,6 +8,8 @@ export type Priority = 'high' | 'med' | 'low'
 
 export type ExerciseStatus = 'official' | 'private' | 'promoted'
 
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
+
 export interface Exercise {
   id: string
   name: string
@@ -30,6 +32,7 @@ export interface Exercise {
   status?: ExerciseStatus
   variant_of?: string
   promoted_from?: string
+  difficulty?: DifficultyLevel
 }
 
 export interface Workout {

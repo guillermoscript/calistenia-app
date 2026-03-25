@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { cn } from '../lib/utils'
 import { useProgramEditor, type EditorExercise, type EditorPhase } from '../hooks/useProgramEditor'
 import ExerciseCatalogPicker from '../components/ExerciseCatalogPicker'
+import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
@@ -55,6 +56,8 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     loadProgram, saveProgram, validate, resetEditor,
   } = useProgramEditor()
 
+  const { refreshPrograms } = useWorkoutActions()
+
   const [selectedPhaseTab, setSelectedPhaseTab] = useState(0)
   const [selectedDayId, setSelectedDayId] = useState('lun')
   const [showCatalog, setShowCatalog] = useState(false)
@@ -96,6 +99,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     if (err) return
     const savedId = await saveProgram(userId)
     if (savedId) {
+      await refreshPrograms()
       toast.success('Programa guardado correctamente')
       navigate('/programs')
     } else {

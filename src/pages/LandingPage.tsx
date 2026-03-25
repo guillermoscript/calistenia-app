@@ -352,7 +352,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <Reveal>
         <div className="border-y border-[hsl(0_0%_10%)]">
           <div className="max-w-6xl mx-auto px-6 md:px-10 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8">
-            <Stat value="100+" label="Ejercicios en la librería" />
+            <Stat value="150+" label="Ejercicios en la librería" />
             <Stat value="4" label="Fases de periodización" />
             <Stat value="PWA" label="Instala como app nativa" />
             <Stat value="0" label="Costo — siempre gratis" />
@@ -379,7 +379,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                   'Programas oficiales curados por expertos',
                   'Crea y comparte tus propios programas',
                   'Temporizador de descanso entre series',
-                  'Librería de 100+ ejercicios con videos',
+                  'Librería de 150+ ejercicios con videos',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
                     <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
