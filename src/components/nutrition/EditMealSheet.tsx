@@ -94,10 +94,10 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
         totalCarbs,
         totalFat,
       })
-      toast.success('Comida actualizada')
+      toast.success(t('nutrition.edit.mealUpdated'))
       onOpenChange(false)
     } catch {
-      toast.error('Error al guardar cambios')
+      toast.error(t('nutrition.edit.saveError'))
     } finally {
       setSaving(false)
     }
@@ -114,7 +114,7 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl overflow-hidden flex flex-col">
         <SheetHeader className="pb-2">
-          <SheetTitle className="font-bebas text-xl tracking-widest">EDITAR COMIDA</SheetTitle>
+          <SheetTitle className="font-bebas text-xl tracking-widest">{t('nutrition.edit.title')}</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-5 pb-4">
@@ -152,12 +152,12 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
                       value={food.name}
                       onChange={e => updateFood(i, 'name', e.target.value)}
                       className="h-8 text-sm flex-1"
-                      placeholder="Nombre del alimento"
+                      placeholder={t('nutrition.edit.foodNamePlaceholder')}
                     />
                     <button
                       onClick={() => removeFood(i)}
                       className="shrink-0 size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                      aria-label={`Eliminar ${food.name}`}
+                      aria-label={`${t('common.delete')} ${food.name}`}
                     >
                       <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path d="M4 4l8 8M12 4l-8 8" />
@@ -269,7 +269,7 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
               onClick={addFood}
               className="w-full py-2.5 rounded-xl border border-dashed border-border text-[10px] tracking-widest text-muted-foreground hover:text-lime hover:border-lime/40 transition-colors"
             >
-              + AGREGAR ALIMENTO
+              {t('nutrition.edit.addFood')}
             </button>
           </div>
 
@@ -289,7 +289,7 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
             disabled={saving || foods.length === 0}
             className="w-full h-12 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-widest"
           >
-            {saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
+            {saving ? t('nutrition.edit.saving') : t('nutrition.edit.saveChanges')}
           </Button>
         </div>
       </SheetContent>

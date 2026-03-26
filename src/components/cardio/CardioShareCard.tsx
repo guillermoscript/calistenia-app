@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
 import { formatPace, formatDuration, formatSpeed } from '../../lib/geo'
@@ -39,6 +40,7 @@ interface CardioShareCardProps {
 }
 
 export default function CardioShareCard({ session }: CardioShareCardProps) {
+  const { t } = useTranslation()
   const handleShare = useCallback(async () => {
     try {
       const scale = 2
@@ -93,7 +95,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       ctx.fillText(session.distance_km.toFixed(2), w / 2, 220)
       ctx.fillStyle = '#525252'
       ctx.font = '400 16px system-ui, -apple-system, sans-serif'
-      ctx.fillText('KILÓMETROS', w / 2, 248)
+      ctx.fillText(i18n.t('cardio.kilometers'), w / 2, 248)
       ctx.textAlign = 'left'
 
       // Stats grid 2x2
@@ -102,15 +104,15 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       const cardH = 100
 
       const statsData = [
-        { label: 'DURACIÓN', value: formatDuration(session.duration_seconds), color: '#fafafa' },
+        { label: i18n.t('cardio.duration').toUpperCase(), value: formatDuration(session.duration_seconds), color: '#fafafa' },
         {
-          label: isCycling ? 'VELOCIDAD' : 'RITMO',
+          label: isCycling ? i18n.t('cardio.speed').toUpperCase() : i18n.t('cardio.pace').toUpperCase(),
           value: isCycling ? `${formatSpeed(session.avg_speed_kmh || 0)} km/h` : formatPace(session.avg_pace),
           color: accent,
         },
-        { label: 'CALORÍAS', value: String(session.calories_burned || 0), unit: 'kcal', color: '#fb923c' },
+        { label: i18n.t('nutrition.calories').toUpperCase(), value: String(session.calories_burned || 0), unit: 'kcal', color: '#fb923c' },
         {
-          label: isCycling ? 'VEL. MÁX' : 'RITMO MÁX',
+          label: isCycling ? i18n.t('cardio.maxSpeed').toUpperCase() : i18n.t('cardio.maxPace').toUpperCase(),
           value: isCycling ? `${formatSpeed(session.max_speed_kmh || 0)} km/h` : formatPace(session.max_pace || 0),
           color: accent + '80',
         },
@@ -150,7 +152,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
         ctx.fillText(`${session.elevation_gain}m`, w / 2, nextY + 28)
         ctx.fillStyle = '#525252'
         ctx.font = '600 10px system-ui, -apple-system, sans-serif'
-        ctx.fillText('DESNIVEL', w / 2, nextY + 44)
+        ctx.fillText(i18n.t('cardio.elevation').toUpperCase(), w / 2, nextY + 44)
         ctx.textAlign = 'left'
         nextY += 70
       }
@@ -165,7 +167,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
         if (topSplits.length > 0) {
           ctx.fillStyle = '#404040'
           ctx.font = '600 11px system-ui, -apple-system, sans-serif'
-          ctx.fillText('M E J O R E S   S P L I T S', pad, nextY + 10)
+          ctx.fillText(i18n.t('cardio.splits').toUpperCase(), pad, nextY + 10)
           nextY += 25
 
           topSplits.forEach((split, i) => {
@@ -215,7 +217,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       onClick={handleShare}
       className="h-11 font-bebas text-lg tracking-wide border-border"
     >
-      COMPARTIR
+      {t('cardio.share')}
     </Button>
   )
 }

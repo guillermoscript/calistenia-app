@@ -21,6 +21,7 @@ interface NutritionDashboardProps {
 
 
 function CalorieGauge({ consumed, target }: { consumed: number; target: number }) {
+  const { t } = useTranslation()
   const pct = target > 0 ? Math.min(consumed / target, 1.2) : 0
   const clampedPct = Math.min(pct, 1)
   const radius = 52
@@ -29,7 +30,7 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
   const overBudget = consumed > target
 
   return (
-    <div className="relative flex items-center justify-center" role="img" aria-label={`${Math.round(consumed)} de ${target} calorías consumidas`}>
+    <div className="relative flex items-center justify-center" role="img" aria-label={t('nutrition.consumedOf', { consumed: Math.round(consumed), target })}>
       <svg width="140" height="140" viewBox="0 0 140 140">
         <circle
           cx="70" cy="70" r={radius}
@@ -102,9 +103,9 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <CalorieGauge consumed={dailyTotals.calories} target={goals.dailyCalories} />
           <div className="flex-1 w-full space-y-3">
-            <MacroBar label="Proteína" current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
-            <MacroBar label="Carbos" current={dailyTotals.carbs} target={goals.dailyCarbs} color="bg-amber-400" />
-            <MacroBar label="Grasa" current={dailyTotals.fat} target={goals.dailyFat} color="bg-pink-500" />
+            <MacroBar label={t('nutrition.protein')} current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
+            <MacroBar label={t('nutrition.carbs')} current={dailyTotals.carbs} target={goals.dailyCarbs} color="bg-amber-400" />
+            <MacroBar label={t('nutrition.fat')} current={dailyTotals.fat} target={goals.dailyFat} color="bg-pink-500" />
           </div>
         </div>
       </div>
@@ -112,17 +113,17 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
       {/* Meal timeline */}
       <div>
         <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">
-          {isToday ? 'Comidas de hoy' : 'Comidas del día'}
+          {isToday ? t('nutrition.mealsToday') : t('nutrition.mealsOfDay')}
         </div>
         {entries.length === 0 ? ((() => {
           const hour = localHour()
           const emptyPrompt = isToday
-            ? (hour < 10 ? '¿Qué desayunaste hoy?' : hour < 15 ? '¿Ya almorzaste?' : '¿Qué comiste hoy?')
-            : 'Sin registros este día'
+            ? (hour < 10 ? t('nutrition.whatBreakfast') : hour < 15 ? t('nutrition.didYouLunch') : t('nutrition.whatDidYouEat'))
+            : t('nutrition.noRecordsToday')
           return (
             <div className="py-8 text-center">
               <div className="text-muted-foreground text-sm">{emptyPrompt}</div>
-              {isToday && <div className="text-xs text-muted-foreground/60 mt-1">Usa el botón + para registrar</div>}
+              {isToday && <div className="text-xs text-muted-foreground/60 mt-1">{t('nutrition.useButtonToLog')}</div>}
             </div>
           )
         })()
@@ -167,7 +168,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                           >
                             <img
                               src={entry.photoUrls[0]}
-                              alt={`Foto de ${t(`meal.${entry.mealType}`).toLowerCase()}`}
+                              alt={t('nutrition.photoOf', { meal: t(`meal.${entry.mealType}`).toLowerCase() })}
                               className="w-full h-full object-cover"
                               loading="lazy"
                             />
@@ -215,7 +216,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             }
                             const summary = parts.length > 0
                               ? parts.join(', ')
-                              : `${entry.foods.length} alimento${entry.foods.length !== 1 ? 's' : ''}`
+                              : t('nutrition.foodCount', { count: entry.foods.length })
                             return (
                               <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{summary}</div>
                             )
@@ -282,7 +283,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                                   <img
                                     key={pi}
                                     src={url}
-                                    alt={`Foto ${pi + 1}`}
+                                    alt={t('nutrition.photo', { number: pi + 1 })}
                                     className="shrink-0 h-28 max-w-48 rounded-lg object-cover"
                                     loading="lazy"
                                   />
@@ -305,7 +306,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               return grouped.map((g, fi) => (
                                 <div key={fi} className="flex items-center gap-2 text-xs">
                                   <span className="flex-1 text-foreground/80">
-                                    {g.food.name || 'Sin nombre'}
+                                    {g.food.name || t('nutrition.noName')}
                                     {g.count > 1 && <span className="text-lime ml-1 font-medium">x{g.count}</span>}
                                   </span>
                                   <span className="text-muted-foreground/60 text-[10px]">{(g.food as any).portionAmount ?? ''}{(g.food as any).portionUnit ?? (g.food as any).portion ?? ''}</span>
@@ -329,10 +330,10 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
         <ConfirmDialog
           open={deleteConfirmId !== null}
           onOpenChange={(open) => { if (!open) setDeleteConfirmId(null) }}
-          title="Eliminar comida"
-          description="¿Eliminar este registro de comida?"
-          confirmLabel="ELIMINAR"
-          cancelLabel="CANCELAR"
+          title={t('nutrition.deleteMeal')}
+          description={t('nutrition.deleteMealConfirm')}
+          confirmLabel={t('common.delete').toUpperCase()}
+          cancelLabel={t('common.cancel').toUpperCase()}
           variant="destructive"
           onConfirm={() => {
             if (deleteConfirmId) onDeleteEntry(deleteConfirmId)

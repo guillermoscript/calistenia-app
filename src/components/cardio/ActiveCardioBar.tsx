@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useCardioSessionContext } from '../../contexts/CardioSessionContext'
 import { formatDuration, formatPace, formatSpeed } from '../../lib/geo'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
@@ -9,6 +10,7 @@ import { cn } from '../../lib/utils'
  * Shows live metrics and navigates to /cardio on tap.
  */
 export default function ActiveCardioBar() {
+  const { t } = useTranslation()
   const { state, activityType, distance, duration, currentPace, currentSpeed } = useCardioSessionContext()
   const navigate = useNavigate()
   const location = useLocation()
@@ -39,7 +41,7 @@ export default function ActiveCardioBar() {
           ? 'bg-amber-50/90 border-amber-300 shadow-amber-200/20 dark:bg-amber-950/80 dark:border-amber-500/30 dark:shadow-amber-500/10'
           : 'bg-lime-50/90 border-lime-300 shadow-lime-200/20 dark:bg-zinc-950/80 dark:border-lime-500/30 dark:shadow-lime-500/10',
       )}
-      aria-label="Sesión de cardio activa — toca para volver"
+      aria-label={t('cardio.activeSession')}
     >
       {/* GPS pulse indicator */}
       <div className="relative flex-shrink-0">
@@ -74,7 +76,7 @@ export default function ActiveCardioBar() {
             {formatDuration(duration)}
           </span>
           <span className="text-[10px] font-mono tracking-[0.2em] text-muted-foreground mt-0.5">
-            {isPaused ? 'PAUSADO' : 'EN CURSO'}
+            {isPaused ? t('cardio.paused') : t('cardio.inProgress')}
           </span>
         </div>
 

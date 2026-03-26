@@ -110,7 +110,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
         <div className="mb-8">
           <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">CARDIO</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
-            Seguimiento GPS
+            {t('cardio.gpsTracking')}
           </p>
         </div>
       )}
@@ -127,18 +127,18 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* Program banner */}
           {isFromProgram && (
             <div className="p-3 rounded-lg bg-emerald-400/10 border border-emerald-400/20 text-center">
-              <div className="text-[10px] text-emerald-400 tracking-widest uppercase mb-1">Desde tu programa</div>
+              <div className="text-[10px] text-emerald-400 tracking-widest uppercase mb-1">{t('cardio.fromProgram')}</div>
               {urlTargetKm && (
-                <span className="text-sm text-emerald-400 font-medium mr-3">Meta: {urlTargetKm} km</span>
+                <span className="text-sm text-emerald-400 font-medium mr-3">{t('cardio.targetKm', { km: urlTargetKm })}</span>
               )}
               {urlTargetMin && (
-                <span className="text-sm text-emerald-400 font-medium">Duracion: {urlTargetMin} min</span>
+                <span className="text-sm text-emerald-400 font-medium">{t('cardio.targetMin', { min: urlTargetMin })}</span>
               )}
             </div>
           )}
 
           {/* Activity selector */}
-          <div id="tour-cardio-activity" className="flex gap-2 p-1 bg-muted/50 rounded-xl" role="radiogroup" aria-label="Tipo de actividad">
+          <div id="tour-cardio-activity" className="flex gap-2 p-1 bg-muted/50 rounded-xl" role="radiogroup" aria-label={t('cardio.activityType')}>
             {ACTIVITIES.map(act => (
               <button
                 key={act.id}
@@ -174,19 +174,19 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 : 'bg-lime hover:bg-lime/90 text-zinc-900 shadow-lime/10'
             )}
           >
-            INICIAR {t(ACTIVITIES.find(a => a.id === selectedActivity)?.labelKey || 'cardio.running').toUpperCase()}
+            {t('cardio.start')} {t(ACTIVITIES.find(a => a.id === selectedActivity)?.labelKey || 'cardio.running').toUpperCase()}
           </Button>
 
           {/* History */}
           <div id="tour-cardio-history">
-            <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Historial</div>
+            <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.history')}</div>
             <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} />
           </div>
 
           {/* Stats section */}
           {(weeklyStats.totalSessions > 0 || monthlyStats.totalSessions > 0) && (
             <div id="tour-cardio-stats">
-              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">Estadísticas</div>
+              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.statistics')}</div>
               <CardioStats weeklyStats={weeklyStats} monthlyStats={monthlyStats} records={records} weeklyTrend={weeklyTrend} />
             </div>
           )}
@@ -207,7 +207,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             <div className="flex items-center gap-3">
               {/* GPS signal indicator */}
               {state === 'tracking' && (
-                <div className="flex items-center gap-1" title={gpsAccuracy != null ? `Precisión: ${Math.round(gpsAccuracy)}m` : 'Sin señal GPS'}>
+                <div className="flex items-center gap-1" title={gpsAccuracy != null ? t('cardio.accuracy', { meters: Math.round(gpsAccuracy) }) : t('cardio.noGps')}>
                   <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7z" />
                     <circle cx="12" cy="9" r="2.5" />
@@ -225,10 +225,10 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
               {state === 'tracking' ? (
                 <div className="flex items-center gap-1.5">
                   <div className="size-2.5 rounded-full bg-red-500 motion-safe:animate-pulse" />
-                  <span className="text-[11px] font-mono tracking-widest text-red-400">GRABANDO</span>
+                  <span className="text-[11px] font-mono tracking-widest text-red-400">{t('cardio.recording')}</span>
                 </div>
               ) : (
-                <span className="text-[11px] font-mono tracking-widest text-amber-400 px-2.5 py-1 rounded-lg bg-amber-400/10">PAUSADO</span>
+                <span className="text-[11px] font-mono tracking-widest text-amber-400 px-2.5 py-1 rounded-lg bg-amber-400/10">{t('cardio.paused')}</span>
               )}
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* Duration — the hero metric, readable from arm's length */}
           <div className="text-center">
             <div className="font-bebas text-6xl sm:text-7xl tabular-nums leading-none">{formatDuration(duration)}</div>
-            <div className="text-[11px] font-mono tracking-[0.3em] text-muted-foreground mt-1.5">DURACIÓN</div>
+            <div className="text-[11px] font-mono tracking-[0.3em] text-muted-foreground mt-1.5">{t('cardio.duration').toUpperCase()}</div>
           </div>
 
           {/* Secondary stats — distance + pace/speed */}
@@ -283,13 +283,13 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                   variant="outline"
                   className="flex-1 h-16 font-bebas text-xl tracking-widest border-amber-400/30 text-amber-400 hover:bg-amber-400/10 active:bg-amber-400/20"
                 >
-                  PAUSAR
+                  {t('cardio.pause')}
                 </Button>
                 <Button
                   onClick={handleFinish}
                   className="flex-1 h-16 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bebas text-xl tracking-widest"
                 >
-                  PARAR
+                  {t('cardio.stop')}
                 </Button>
               </>
             ) : (
@@ -298,13 +298,13 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                   onClick={resume}
                   className="flex-1 h-16 bg-lime hover:bg-lime/90 active:bg-lime/80 text-zinc-900 font-bebas text-xl tracking-widest"
                 >
-                  REANUDAR
+                  {t('cardio.resume')}
                 </Button>
                 <Button
                   onClick={handleFinish}
                   className="flex-1 h-16 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bebas text-xl tracking-widest"
                 >
-                  TERMINAR
+                  {t('cardio.end')}
                 </Button>
               </>
             )}
@@ -315,7 +315,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             <textarea
               value={note}
               onChange={e => setNote(e.target.value)}
-              placeholder="Notas rápidas..."
+              placeholder={t('cardio.quickNotes')}
               maxLength={500}
               rows={2}
               className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/20 placeholder:text-muted-foreground/40 transition-all resize-none"
@@ -328,17 +328,17 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
               onClick={() => setShowDiscardConfirm(true)}
               className="w-full text-center text-xs text-muted-foreground hover:text-red-400 transition-colors py-3"
             >
-              Descartar sesión
+              {t('cardio.discardSession')}
             </button>
           </div>
 
           <ConfirmDialog
             open={showDiscardConfirm}
             onOpenChange={setShowDiscardConfirm}
-            title="Descartar sesión"
-            description={`¿Descartar esta sesión de ${t(`cardio.${activityType}`).toLowerCase()}? Se perderán todos los datos.`}
-            confirmLabel="DESCARTAR"
-            cancelLabel="SEGUIR"
+            title={t('cardio.discardSession')}
+            description={t('cardio.discardConfirm', { activity: t(`cardio.${activityType}`).toLowerCase() })}
+            confirmLabel={t('cardio.discard')}
+            cancelLabel={t('cardio.continue')}
             variant="destructive"
             onConfirm={handleDiscard}
           />
@@ -354,7 +354,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <div className="text-lime font-bebas text-2xl tracking-wide">¡Sesión completada!</div>
+            <div className="text-lime font-bebas text-2xl tracking-wide">{t('cardio.sessionComplete')}</div>
           </div>
 
           {/* Map */}
@@ -375,7 +375,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             </div>
             <div className="text-center p-4 bg-muted/60 rounded-xl">
               <div className="font-bebas text-3xl tabular-nums">{formatDuration(displaySession?.duration_seconds ?? duration)}</div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">DURACIÓN</div>
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.duration').toUpperCase()}</div>
             </div>
             {isCycling(displaySession?.activity_type ?? activityType) ? (
               <div className="text-center p-4 bg-muted/60 rounded-xl">
@@ -385,7 +385,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             ) : (
               <div className="text-center p-4 bg-muted/60 rounded-xl">
                 <div className="font-bebas text-3xl text-sky-500 tabular-nums">{formatPace(displaySession?.avg_pace ?? currentPace)}</div>
-                <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">RITMO</div>
+                <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.pace').toUpperCase()}</div>
               </div>
             )}
           </div>
@@ -394,22 +394,22 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-3 bg-muted/40 rounded-xl">
               <div className="font-bebas text-2xl text-amber-400 tabular-nums">{displaySession?.calories_burned ?? 0}</div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">CALORÍAS</div>
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('nutrition.calories').toUpperCase()}</div>
             </div>
             <div className="text-center p-3 bg-muted/40 rounded-xl">
               <div className="font-bebas text-2xl text-amber-400 tabular-nums">{displaySession?.elevation_gain ?? 0}m</div>
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">DESNIVEL</div>
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.elevation').toUpperCase()}</div>
             </div>
             <div className="text-center p-3 bg-muted/40 rounded-xl">
               {isCycling(displaySession?.activity_type ?? activityType) ? (
                 <>
                   <div className="font-bebas text-2xl text-pink-500 tabular-nums">{formatSpeed(displaySession?.max_speed_kmh ?? 0)}</div>
-                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">VEL. MÁX</div>
+                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.maxSpeed').toUpperCase()}</div>
                 </>
               ) : (
                 <>
                   <div className="font-bebas text-2xl text-pink-500 tabular-nums">{formatPace(displaySession?.max_pace ?? 0)}</div>
-                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">RITMO MÁX</div>
+                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">{t('cardio.maxPace').toUpperCase()}</div>
                 </>
               )}
             </div>
@@ -418,7 +418,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* Splits table */}
           {displaySession?.splits && displaySession.splits.length > 0 && (
             <div>
-              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Splits</div>
+              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">{t('cardio.splits')}</div>
               <SplitsTable splits={displaySession.splits} />
             </div>
           )}
@@ -427,8 +427,8 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           <textarea
             value={note}
             onChange={e => setNote(e.target.value)}
-            placeholder="Notas sobre la sesión..."
-            aria-label="Notas sobre la sesión"
+            placeholder={t('cardio.sessionNotes')}
+            aria-label={t('cardio.sessionNotes')}
             maxLength={500}
             rows={2}
             className="w-full text-base px-3.5 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/20 placeholder:text-muted-foreground/40 transition-all resize-none"
@@ -440,7 +440,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
               onClick={handleNewSession}
               className="flex-1 h-11 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-wide"
             >
-              NUEVA SESIÓN
+              {t('cardio.newSession')}
             </Button>
             {pointsCount > 0 && (
               <Button

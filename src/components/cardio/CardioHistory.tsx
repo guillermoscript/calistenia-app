@@ -35,8 +35,8 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
     return (
       <div className="text-center py-12">
         <div className="text-3xl mb-3">🗺️</div>
-        <p className="text-sm text-muted-foreground">No hay sesiones de cardio</p>
-        <p className="text-xs text-muted-foreground/60 mt-1">Selecciona una actividad e inicia tu primera sesión</p>
+        <p className="text-sm text-muted-foreground">{t('cardio.noSessions')}</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">{t('cardio.startFirstSession')}</p>
       </div>
     )
   }
@@ -68,11 +68,11 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                 <div className="flex gap-3 sm:gap-4 text-right shrink-0">
                   <div>
                     <div className="text-sm font-bebas text-lime tabular-nums">{session.distance_km.toFixed(2)} km</div>
-                    <div className="text-[9px] text-muted-foreground">Distancia</div>
+                    <div className="text-[9px] text-muted-foreground">{t('cardio.distance')}</div>
                   </div>
                   <div>
                     <div className="text-sm font-bebas text-foreground tabular-nums">{formatDuration(session.duration_seconds)}</div>
-                    <div className="text-[9px] text-muted-foreground">Duración</div>
+                    <div className="text-[9px] text-muted-foreground">{t('cardio.duration')}</div>
                   </div>
                   <div>
                     {isCycling ? (
@@ -83,7 +83,7 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                     ) : (
                       <>
                         <div className="text-sm font-bebas text-sky-500 tabular-nums">{formatPace(session.avg_pace)}</div>
-                        <div className="text-[9px] text-muted-foreground">Ritmo</div>
+                        <div className="text-[9px] text-muted-foreground">{t('cardio.pace')}</div>
                       </>
                     )}
                   </div>
@@ -119,7 +119,7 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                   </div>
                   <div className="p-3 bg-muted/40 rounded-lg">
                     <div className="font-bebas text-2xl tabular-nums">{formatDuration(session.duration_seconds)}</div>
-                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">DURACIÓN</div>
+                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.duration').toUpperCase()}</div>
                   </div>
                   <div className="p-3 bg-muted/40 rounded-lg">
                     {isCycling ? (
@@ -130,7 +130,7 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                     ) : (
                       <>
                         <div className="font-bebas text-2xl text-sky-500 tabular-nums">{formatPace(session.avg_pace)}</div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">RITMO</div>
+                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.pace').toUpperCase()}</div>
                       </>
                     )}
                   </div>
@@ -144,18 +144,18 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                   </div>
                   <div className="p-2.5 bg-muted/40 rounded-lg">
                     <div className="font-bebas text-lg text-amber-400 tabular-nums">{session.elevation_gain}m</div>
-                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">DESNIVEL</div>
+                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.elevation').toUpperCase()}</div>
                   </div>
                   <div className="p-2.5 bg-muted/40 rounded-lg">
                     {isCycling ? (
                       <>
                         <div className="font-bebas text-lg text-pink-500 tabular-nums">{formatSpeed(session.max_speed_kmh || 0)}</div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">VEL MÁX</div>
+                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.maxSpeed').toUpperCase()}</div>
                       </>
                     ) : (
                       <>
                         <div className="font-bebas text-lg text-pink-500 tabular-nums">{formatPace(session.max_pace || 0)}</div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">RITMO MÁX</div>
+                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-0.5">{t('cardio.maxPace').toUpperCase()}</div>
                       </>
                     )}
                   </div>
@@ -164,7 +164,7 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                 {/* Splits table */}
                 {session.splits && session.splits.length > 0 && (
                   <div>
-                    <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Splits por km</div>
+                    <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('cardio.splitsPerKm')}</div>
                     <SplitsTable splits={session.splits} />
                   </div>
                 )}
@@ -179,15 +179,15 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                 {/* Timestamp detail */}
                 <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
                   <span>
-                    Inicio: {new Date(session.started_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                    {t('cardio.sessionStart') + ':'} {new Date(session.started_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                   {session.finished_at && (
                     <span>
-                      Fin: {new Date(session.finished_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                      {t('cardio.sessionEnd') + ':'} {new Date(session.finished_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
                   {session.gps_points.length > 0 && (
-                    <span>{session.gps_points.length} puntos GPS</span>
+                    <span>{t('cardio.gpsPoints', { count: session.gps_points.length })}</span>
                   )}
                 </div>
 
@@ -204,7 +204,7 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                         <path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4M6.67 7.33v4M9.33 7.33v4" />
                         <path d="M3.33 4h9.34l-.67 9.33a1.33 1.33 0 01-1.33 1.34H5.33A1.33 1.33 0 014 13.33L3.33 4z" />
                       </svg>
-                      Eliminar
+                      {t('common.delete')}
                     </Button>
                   )}
                   <div className="ml-auto">
@@ -221,10 +221,10 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
         <ConfirmDialog
           open={deleteConfirmId !== null}
           onOpenChange={(open) => { if (!open) setDeleteConfirmId(null) }}
-          title="Eliminar sesión"
-          description="¿Eliminar esta sesión de cardio? Esta acción no se puede deshacer."
-          confirmLabel="ELIMINAR"
-          cancelLabel="CANCELAR"
+          title={t('cardio.deleteSession')}
+          description={t('cardio.deleteSessionConfirm')}
+          confirmLabel={t('common.delete').toUpperCase()}
+          cancelLabel={t('common.cancel').toUpperCase()}
           variant="destructive"
           onConfirm={async () => {
             if (deleteConfirmId) {
