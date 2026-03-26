@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { useActivityFeed, type FeedItem } from '../hooks/useActivityFeed'
 import { useReactions } from '../hooks/useReactions'
 import { useComments } from '../hooks/useComments'
@@ -11,17 +13,17 @@ import { Button } from '../components/ui/button'
 import { PHASE_COLORS } from '../lib/style-tokens'
 import { shareWorkoutSession } from '../lib/share'
 
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr: string, t: TFunction): string {
   const now = Date.now()
   const then = new Date(dateStr.replace(' ', 'T')).getTime()
   const diffMin = Math.floor((now - then) / 60000)
-  if (diffMin < 1) return 'Ahora'
-  if (diffMin < 60) return `Hace ${diffMin}m`
+  if (diffMin < 1) return t('feed.now')
+  if (diffMin < 60) return t('feed.minutesAgo', { count: diffMin })
   const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return `Hace ${diffH}h`
+  if (diffH < 24) return t('feed.hoursAgo', { count: diffH })
   const diffD = Math.floor(diffH / 24)
-  if (diffD === 1) return 'Ayer'
-  if (diffD <= 7) return `Hace ${diffD} dias`
+  if (diffD === 1) return t('feed.yesterday')
+  if (diffD <= 7) return t('feed.daysAgo', { count: diffD })
   return new Date(dateStr.replace(' ', 'T')).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
@@ -31,6 +33,7 @@ interface ActivityFeedPageProps {
 
 export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { items, loading, load } = useActivityFeed(userId)
   const { loadForSessions, toggleReaction, getReactions } = useReactions(userId)
   const { getComments, loadCommentCounts, addComment, deleteComment, getCommentCount, commentsBySession } = useComments(userId)
@@ -49,20 +52,20 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Social</div>
-      <h1 className="font-bebas text-4xl md:text-5xl mb-6">ACTIVIDAD</h1>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('feed.section')}</div>
+      <h1 className="font-bebas text-4xl md:text-5xl mb-6">{t('feed.title')}</h1>
 
       {loading && (
-        <Loader label="Cargando actividad..." className="py-12" />
+        <Loader label={t('feed.loading')} className="py-12" />
       )}
 
       {!loading && items.length === 0 && (
         <div className="text-center py-16 motion-safe:animate-scale-in">
           <div className="text-3xl mb-3">📡</div>
-          <div className="text-sm text-muted-foreground mb-1">Sin actividad reciente</div>
-          <div className="text-xs text-muted-foreground mb-4">Cuando tus amigos entrenen, lo veras aqui</div>
+          <div className="text-sm text-muted-foreground mb-1">{t('feed.empty')}</div>
+          <div className="text-xs text-muted-foreground mb-4">{t('feed.emptyHint')}</div>
           <Button onClick={() => navigate('/friends')} className="bg-lime text-lime-foreground hover:bg-lime/90">
-            Buscar amigos
+            {t('feed.findFriends')}
           </Button>
         </div>
       )}
@@ -123,6 +126,7 @@ interface FeedCardProps {
 }
 
 function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, onComment }: FeedCardProps) {
+  const { t } = useTranslation()
   const phaseColor = PHASE_COLORS[item.phase]
 
   return (
@@ -147,7 +151,7 @@ function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, on
             {item.displayName}
           </button>
         </div>
-        <span className="text-[10px] text-muted-foreground shrink-0">{relativeTime(item.completedAt)}</span>
+        <span className="text-[10px] text-muted-foreground shrink-0">{relativeTime(item.completedAt, t)}</span>
       </div>
 
       {/* Workout */}

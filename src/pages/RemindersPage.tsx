@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { useMealReminders } from '../hooks/useMealReminders'
@@ -10,24 +11,24 @@ import type { MealType } from '../types'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const DAY_LABELS = [
-  { id: 1, label: 'L', full: 'Lunes' },
-  { id: 2, label: 'M', full: 'Martes' },
-  { id: 3, label: 'X', full: 'Miércoles' },
-  { id: 4, label: 'J', full: 'Jueves' },
-  { id: 5, label: 'V', full: 'Viernes' },
-  { id: 6, label: 'S', full: 'Sábado' },
-  { id: 0, label: 'D', full: 'Domingo' },
+const DAY_LABELS_KEYS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'] as const
+const DAY_LABELS_STATIC = [
+  { id: 1, label: 'L' },
+  { id: 2, label: 'M' },
+  { id: 3, label: 'X' },
+  { id: 4, label: 'J' },
+  { id: 5, label: 'V' },
+  { id: 6, label: 'S' },
+  { id: 0, label: 'D' },
 ]
 
-const TYPE_CONFIG = {
+const TYPE_CONFIG_STYLE = {
   meal: {
     color: 'text-amber-400',
     bg: 'bg-amber-400',
     bgFaint: 'bg-amber-400/8',
     border: 'border-amber-400/20',
     ring: 'ring-amber-400/30',
-    label: 'COMIDA',
   },
   workout: {
     color: 'text-sky-400',
@@ -35,7 +36,6 @@ const TYPE_CONFIG = {
     bgFaint: 'bg-sky-400/8',
     border: 'border-sky-400/20',
     ring: 'ring-sky-400/30',
-    label: 'EJERCICIO',
   },
   pause: {
     color: 'text-violet-400',
@@ -43,21 +43,14 @@ const TYPE_CONFIG = {
     bgFaint: 'bg-violet-400/8',
     border: 'border-violet-400/20',
     ring: 'ring-violet-400/30',
-    label: 'PAUSA',
   },
 } as const
 
-const MEAL_META: Record<string, { icon: string; label: string }> = {
-  desayuno: { icon: '☀️', label: 'Desayuno' },
-  almuerzo: { icon: '🍽️', label: 'Almuerzo' },
-  cena:     { icon: '🌙', label: 'Cena' },
-  snack:    { icon: '🍎', label: 'Snack' },
-}
-
-const FORM_LABELS: Record<string, string> = {
-  meal: 'Nuevo recordatorio de comida',
-  workout: 'Nuevo recordatorio de ejercicio',
-  pause: 'Nuevas pausas activas',
+const MEAL_ICONS: Record<string, string> = {
+  desayuno: '☀️',
+  almuerzo: '🍽️',
+  cena:     '🌙',
+  snack:    '🍎',
 }
 
 type ReminderType = 'meal' | 'workout' | 'pause'
@@ -94,6 +87,7 @@ interface RemindersPageProps {
 }
 
 export default function RemindersPage({ userId }: RemindersPageProps) {
+  const { t } = useTranslation()
   const {
     reminders: mealReminders,
     saveReminder: saveMealReminder,
@@ -108,6 +102,31 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     toggleReminder: toggleWorkoutReminder,
     deleteReminder: deleteWorkoutReminder,
   } = useWorkoutReminders(userId)
+
+  // i18n-aware computed labels
+  const DAY_LABELS = useMemo(() => DAY_LABELS_STATIC.map((d, i) => ({
+    ...d,
+    full: t(`day.${DAY_LABELS_KEYS[i]}`),
+  })), [t])
+
+  const TYPE_CONFIG = useMemo(() => ({
+    meal: { ...TYPE_CONFIG_STYLE.meal, label: t('reminders.mealType') },
+    workout: { ...TYPE_CONFIG_STYLE.workout, label: t('reminders.workoutType') },
+    pause: { ...TYPE_CONFIG_STYLE.pause, label: t('reminders.pauseType') },
+  }), [t])
+
+  const MEAL_META = useMemo(() => ({
+    desayuno: { icon: MEAL_ICONS.desayuno, label: t('meal.desayuno') },
+    almuerzo: { icon: MEAL_ICONS.almuerzo, label: t('meal.almuerzo') },
+    cena:     { icon: MEAL_ICONS.cena,     label: t('meal.cena') },
+    snack:    { icon: MEAL_ICONS.snack,    label: t('meal.snack') },
+  } as Record<string, { icon: string; label: string }>), [t])
+
+  const FORM_LABELS = useMemo(() => ({
+    meal: t('reminders.newMeal'),
+    workout: t('reminders.newWorkout'),
+    pause: t('reminders.newPause'),
+  } as Record<string, string>), [t])
 
   const [pushEnabled, setPushEnabled] = useState(false)
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>('default')
@@ -165,14 +184,14 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         minute: r.minute,
         days: r.daysOfWeek,
         enabled: r.enabled,
-        label: isPause ? 'Pausa Activa' : 'Entrenamiento',
+        label: isPause ? t('reminders.pauseType') : t('reminders.workoutType'),
         subLabel: isPause ? '🧘' : undefined,
       })
     })
 
     items.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute))
     return items
-  }, [mealReminders, workoutReminders])
+  }, [mealReminders, workoutReminders, MEAL_META, t])
 
   // ── Schedule local notifications for all reminders ───────────────────────
   const visibilitySetup = useRef(false)
@@ -411,25 +430,25 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       {/* Header */}
       <div className="mb-8">
         <div className="font-bebas text-[clamp(2.5rem,8vw,3.5rem)] leading-[0.9] tracking-wide">
-          RECORDA&shy;TORIOS
+          {t('reminders.title')}
         </div>
         <div className="flex items-center gap-4 mt-3">
           <div className="flex items-center gap-1.5">
             <div className="size-2 rounded-full bg-amber-400" />
             <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-              {mealReminders.length} comida
+              {mealReminders.length} {t('reminders.mealType').toLowerCase()}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="size-2 rounded-full bg-sky-400" />
             <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-              {workoutReminders.filter(r => r.reminderType !== 'pause').length} ejercicio
+              {workoutReminders.filter(r => r.reminderType !== 'pause').length} {t('reminders.workoutType').toLowerCase()}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="size-2 rounded-full bg-violet-400" />
             <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-              {workoutReminders.filter(r => r.reminderType === 'pause').length} pausas
+              {workoutReminders.filter(r => r.reminderType === 'pause').length} {t('reminders.pauseType').toLowerCase()}
             </span>
           </div>
           {notifPermission === 'granted' ? (
@@ -451,9 +470,9 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       {/* ── Add new ── */}
       <div id="tour-reminders-add" className="flex gap-2 mb-8" role="group" aria-label="Tipo de recordatorio">
         {([
-          { type: 'meal' as const, label: 'Comida', icon: '🍽️' },
-          { type: 'workout' as const, label: 'Ejercicio', icon: '💪' },
-          { type: 'pause' as const, label: 'Pausas', icon: '🧘' },
+          { type: 'meal' as const, label: t('reminders.mealType'), icon: '🍽️' },
+          { type: 'workout' as const, label: t('reminders.workoutType'), icon: '💪' },
+          { type: 'pause' as const, label: t('reminders.pauseType'), icon: '🧘' },
         ]).map(({ type, label, icon }) => (
           <button
             key={type}
@@ -646,7 +665,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
             disabled={saving || days.length === 0}
             className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest"
           >
-            {saving ? 'GUARDANDO...' : 'GUARDAR'}
+            {saving ? `${t('common.loading')}` : t('common.save').toUpperCase()}
           </Button>
 
           <div className={cn('h-px mt-6', showForm === 'meal' ? 'bg-amber-400/30' : showForm === 'workout' ? 'bg-sky-400/30' : 'bg-violet-400/30')} />
@@ -696,7 +715,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                         <span className="text-[13px] font-medium">{item.label}</span>
                         <span className={cn('text-[10px] font-mono tracking-[0.15em] uppercase', cfg.color)}>{cfg.label}</span>
                       </div>
-                      <button onClick={cancelEdit} className="size-8 flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground rounded-lg" aria-label="Cancelar edicion">
+                      <button onClick={cancelEdit} className="size-8 flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground rounded-lg" aria-label={t('common.cancel')}>
                         <XIcon className="size-3.5" />
                       </button>
                     </div>
@@ -716,13 +735,13 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                         disabled={saving || days.length === 0}
                         className="flex-1 h-10 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-base tracking-widest"
                       >
-                        {saving ? 'GUARDANDO...' : 'ACTUALIZAR'}
+                        {saving ? `${t('common.loading')}` : t('common.save').toUpperCase()}
                       </Button>
                       <button
                         onClick={cancelEdit}
                         className="h-10 px-4 rounded-xl text-[11px] font-mono text-muted-foreground/60 hover:text-muted-foreground bg-muted/20 hover:bg-muted/40 transition-colors"
                       >
-                        Cancelar
+                        {t('common.cancel')}
                       </button>
                     </div>
                   </div>
@@ -814,10 +833,10 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                     {/* Delete */}
                     {isConfirmingDelete ? (
                       <div className="flex items-center gap-0.5 shrink-0 -mr-1.5" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => handleDelete(item)} className="size-11 flex items-center justify-center text-red-400 rounded-lg transition-colors" aria-label="Confirmar eliminar">
+                        <button onClick={() => handleDelete(item)} className="size-11 flex items-center justify-center text-red-400 rounded-lg transition-colors" aria-label={t('common.confirm')}>
                           <CheckIcon className="size-4" />
                         </button>
-                        <button onClick={() => setPendingDeleteId(null)} className="size-11 flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground rounded-lg transition-colors" aria-label="Cancelar">
+                        <button onClick={() => setPendingDeleteId(null)} className="size-11 flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground rounded-lg transition-colors" aria-label={t('common.cancel')}>
                           <XIcon className="size-3.5" />
                         </button>
                       </div>
@@ -825,7 +844,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                       <button
                         onClick={e => { e.stopPropagation(); setPendingDeleteId(item.id) }}
                         className="size-11 flex items-center justify-center text-muted-foreground/30 hover:text-red-400 rounded-lg shrink-0 transition-colors sm:opacity-0 sm:group-hover:opacity-100 -mr-1.5"
-                        aria-label="Eliminar"
+                        aria-label={t('common.delete')}
                       >
                         <XIcon className="size-3.5" />
                       </button>

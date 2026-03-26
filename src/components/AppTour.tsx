@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { DriveStep } from 'driver.js'
 
 const TOUR_KEY_PREFIX = 'calistenia_tour'
@@ -516,7 +517,14 @@ const PAGE_TOURS: Record<string, { page: string; steps: DriveStep[] }> = {
 
 // ── Driver.js runner ──────────────────────────────────────────────────────────
 
-async function runTour(steps: DriveStep[], onDone?: () => void) {
+interface TourLabels {
+  next: string
+  prev: string
+  done: string
+  progress: string
+}
+
+async function runTour(steps: DriveStep[], onDone?: () => void, labels?: TourLabels) {
   const available = steps.filter(
     s => !s.element || document.querySelector(s.element as string)
   )
@@ -534,10 +542,10 @@ async function runTour(steps: DriveStep[], onDone?: () => void) {
     stagePadding: 8,
     stageRadius: 12,
     popoverClass: 'calistenia-tour-popover',
-    nextBtnText: 'Siguiente',
-    prevBtnText: 'Anterior',
-    doneBtnText: 'Listo',
-    progressText: '{{current}} de {{total}}',
+    nextBtnText: labels?.next || 'Next',
+    prevBtnText: labels?.prev || 'Previous',
+    doneBtnText: labels?.done || 'Done',
+    progressText: labels?.progress || '{{current}} of {{total}}',
     steps: available,
     onDestroyed: onDone,
   })
@@ -554,7 +562,15 @@ interface AppTourProps {
 }
 
 export default function AppTour({ pathname, userId, autoStart = false }: AppTourProps) {
+  const { t } = useTranslation()
   const hasRun = useRef(false)
+
+  const tourLabels: TourLabels = {
+    next: t('tour.next'),
+    prev: t('tour.prev'),
+    done: t('tour.done'),
+    progress: t('tour.progress', { current: '{{current}}', total: '{{total}}' }),
+  }
 
   useEffect(() => {
     hasRun.current = false
@@ -569,11 +585,11 @@ export default function AppTour({ pathname, userId, autoStart = false }: AppTour
 
     hasRun.current = true
     const timer = setTimeout(() => {
-      runTour(tourDef.steps, () => markPageTourDone(tourDef.page, userId))
+      runTour(tourDef.steps, () => markPageTourDone(tourDef.page, userId), tourLabels)
     }, 800)
 
     return () => clearTimeout(timer)
-  }, [pathname, userId, autoStart])
+  }, [pathname, userId, autoStart]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return null
 }

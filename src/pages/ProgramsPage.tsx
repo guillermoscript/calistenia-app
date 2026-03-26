@@ -121,17 +121,17 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
         <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
           {program.is_featured && (
             <span className="text-[9px] font-mono tracking-widest text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
-              RECOMENDADO
+              {t('programs.recommended')}
             </span>
           )}
           {program.is_official && !program.is_featured && (
             <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
-              OFICIAL
+              {t('programs.officialBadge')}
             </span>
           )}
           {isActive && (
             <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
-              ACTIVO
+              {t('programs.activeBadge')}
             </span>
           )}
           {(canEdit || (isOwn && onDelete)) && (
@@ -139,7 +139,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
               <button
                 onClick={() => setMenuOpen(v => !v)}
                 className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10 transition-colors"
-                aria-label="Más opciones"
+                aria-label={t('programs.moreOptions')}
               >
                 <DotsIcon className="size-3.5" />
               </button>
@@ -150,7 +150,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
                       onClick={() => { setMenuOpen(false); onEdit() }}
                       className="w-full text-left px-3 py-2 text-[12px] font-mono tracking-wide text-foreground hover:bg-muted transition-colors"
                     >
-                      Editar
+                      {t('common.edit')}
                     </button>
                   )}
                   {onDelete && isOwn && (
@@ -167,7 +167,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
                           : 'text-red-400 hover:bg-red-400/10',
                       )}
                     >
-                      {isActive ? 'Eliminar (activo)' : 'Eliminar'}
+                      {isActive ? t('programs.deleteActive') : t('programs.deleteLabel')}
                     </button>
                   )}
                 </div>
@@ -188,7 +188,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap mb-4">
         {program.duration_weeks > 0 && (
           <span className="text-[10px] font-mono tracking-wide text-muted-foreground uppercase">
-            {program.duration_weeks} semanas
+            {program.duration_weeks} {t('programs.weeks')}
           </span>
         )}
         <Badge
@@ -202,11 +202,11 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
         </Badge>
         {isOwn ? (
           <span className="text-[10px] font-mono tracking-wide text-sky-400/70">
-            Creado por ti
+            {t('programs.createdByYou')}
           </span>
         ) : program.created_by_name && !program.is_official && (
           <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-            por {program.created_by_name}
+            {t('programs.by', { name: program.created_by_name })}
           </span>
         )}
       </div>
@@ -219,7 +219,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
             onClick={(e) => { e.stopPropagation(); onView?.() }}
             className="h-8 px-4 text-[11px] font-bebas tracking-widest bg-emerald-500 hover:bg-emerald-400 text-white"
           >
-            ACTIVO — IR A ENTRENAR
+            {t('programs.goToWorkout')}
           </Button>
         ) : (
           <Button
@@ -227,7 +227,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
             onClick={(e) => { e.stopPropagation(); onSelect() }}
             className="h-8 px-4 text-[11px] font-bebas tracking-widest bg-lime-400 hover:bg-lime-300 text-zinc-900"
           >
-            USAR ESTE PROGRAMA
+            {t('programs.useProgram')}
           </Button>
         )}
         {canEdit && onEdit && (
@@ -238,7 +238,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
             className="h-8 px-3 text-[10px] font-mono tracking-widest border-border text-muted-foreground hover:border-amber-500/50 hover:text-amber-400"
           >
             <EditIcon className="size-3 mr-1.5" />
-            EDITAR
+            {t('programs.edit')}
           </Button>
         )}
         <Button
@@ -248,7 +248,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
           className="h-8 px-3 text-[10px] font-mono tracking-widest border-border text-muted-foreground hover:border-pink-500/50 hover:text-pink-400"
         >
           <ShareIcon className="size-3 mr-1.5" />
-          COMPARTIR
+          {t('programs.share')}
         </Button>
       </div>
 
@@ -256,10 +256,10 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
         <ConfirmDialog
           open={showDeleteConfirm}
           onOpenChange={setShowDeleteConfirm}
-          title="Eliminar programa"
-          description="¿Eliminar este programa? Esta accion no se puede deshacer."
-          confirmLabel="ELIMINAR"
-          cancelLabel="CANCELAR"
+          title={t('programs.deleteProgram')}
+          description={t('programs.deleteConfirm')}
+          confirmLabel={t('common.delete')}
+          cancelLabel={t('common.cancel')}
           variant="destructive"
           onConfirm={() => onDelete()}
         />
@@ -283,6 +283,7 @@ function DotsIcon({ className }: { className?: string }) {
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 export default function ProgramsPage() {
+  const { t } = useTranslation()
   const { programs, activeProgram } = useWorkoutState()
   const { deleteProgram } = useWorkoutActions()
   const { userId, userRole } = useAuthState()
@@ -333,9 +334,9 @@ export default function ProgramsPage() {
       {/* Hero header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div className="min-w-0">
-          <h1 className="font-bebas text-4xl sm:text-5xl md:text-7xl leading-none tracking-wide truncate">PROGRAMAS</h1>
+          <h1 className="font-bebas text-4xl sm:text-5xl md:text-7xl leading-none tracking-wide truncate">{t('programs.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
-            {sortedPrograms.length} programa{sortedPrograms.length !== 1 ? 's' : ''} disponible{sortedPrograms.length !== 1 ? 's' : ''}
+            {t('programs.available', { count: sortedPrograms.length })}
           </p>
         </div>
         <Button
@@ -344,7 +345,7 @@ export default function ProgramsPage() {
           className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime-400/10 w-full sm:w-auto shrink-0"
         >
           <PlusIcon className="size-4 mr-2" />
-          CREAR PROGRAMA
+          {t('programs.createProgram')}
         </Button>
       </div>
 
@@ -354,12 +355,8 @@ export default function ProgramsPage() {
           <div className="flex items-start gap-3">
             <div className="text-2xl shrink-0">📋</div>
             <div>
-              <div className="font-bebas text-xl text-[hsl(var(--lime))] mb-1">ELIGE UN PROGRAMA PARA EMPEZAR</div>
-              <div className="text-sm text-muted-foreground leading-relaxed">
-                Un programa es tu <strong className="text-foreground">plan de entrenamiento semanal</strong>.
-                Tiene ejercicios para cada día (Push, Pull, Legs...) y fases que van subiendo de dificultad.
-                Elige uno y empieza a entrenar hoy.
-              </div>
+              <div className="font-bebas text-xl text-[hsl(var(--lime))] mb-1">{t('programs.chooseToStart')}</div>
+              <div className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: t('programs.chooseToStartDesc') }} />
             </div>
           </div>
         </div>
@@ -372,7 +369,7 @@ export default function ProgramsPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar programas..."
+          placeholder={t('programs.searchPlaceholder')}
           className="w-full h-12 pl-11 pr-4 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-lime-400/30 focus:ring-1 focus:ring-lime-400/20 transition-all text-sm"
         />
       </div>
@@ -381,7 +378,7 @@ export default function ProgramsPage() {
       {officialPrograms.length > 0 && (
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Programas Oficiales</div>
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('programs.officialSection')}</div>
             <div className="flex-1 h-px bg-border" />
             <span className="text-[10px] text-muted-foreground">{officialPrograms.length}</span>
           </div>
@@ -408,7 +405,7 @@ export default function ProgramsPage() {
       <div className="mb-10">
         <div className="flex items-center gap-2 mb-4">
           <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">
-            {userPrograms.some(p => p.created_by === userId) ? 'Tus Programas y Comunidad' : 'Comunidad'}
+            {userPrograms.some(p => p.created_by === userId) ? t('programs.yourAndCommunity') : t('programs.communitySection')}
           </div>
           <div className="flex-1 h-px bg-border" />
           <span className="text-[10px] text-muted-foreground">{userPrograms.length}</span>
@@ -416,7 +413,7 @@ export default function ProgramsPage() {
         {userPrograms.length === 0 ? (
           <div className="text-center py-12 rounded-xl border-2 border-dashed border-border">
             <div className="text-muted-foreground text-sm mb-3">
-              {search ? 'No se encontraron programas.' : 'No hay programas de comunidad todavia.'}
+              {search ? t('programs.noResults') : t('programs.noCommunity')}
             </div>
             <Button
               variant="outline"
@@ -424,7 +421,7 @@ export default function ProgramsPage() {
               className="text-[11px] font-mono tracking-widest border-border hover:border-lime-400/40 hover:text-lime-400"
             >
               <PlusIcon className="size-3 mr-2" />
-              CREAR TU PRIMER PROGRAMA
+              {t('programs.createFirst')}
             </Button>
           </div>
         ) : (
@@ -450,7 +447,7 @@ export default function ProgramsPage() {
       {/* No results at all */}
       {sortedPrograms.length === 0 && search && (
         <div className="text-center py-16 text-muted-foreground text-sm">
-          No se encontraron programas con "{search}".
+          {t('programs.noSearchResults', { query: search })}
         </div>
       )}
     </div>

@@ -25,7 +25,9 @@ interface CardioSessionContextValue {
   note: string
   setNote: (note: string) => void
   gpsAccuracy: number | null
-  start: (type: CardioActivityType) => void
+  programId: string | null
+  programDayKey: string | null
+  start: (type: CardioActivityType, programId?: string, programDayKey?: string) => void
   pause: () => void
   resume: () => void
   finish: (note?: string) => Promise<CardioSession | null>
@@ -102,6 +104,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const [pointsCount, setPointsCount] = useState(0)
   const [note, setNote] = useState('')
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
+  const [programId, setProgramId] = useState<string | null>(null)
+  const [programDayKey, setProgramDayKey] = useState<string | null>(null)
 
   const watchIdRef = useRef<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -262,7 +266,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
   // ── Session actions ─────────────────────────────────────────────────────
 
-  const start = useCallback((type: CardioActivityType) => {
+  const start = useCallback((type: CardioActivityType, pId?: string, pDayKey?: string) => {
     setActivityType(type)
     activityTypeRef.current = type
     pointsRef.current = []
@@ -276,6 +280,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     setError(null)
     setNote('')
     setGpsAccuracy(null)
+    setProgramId(pId || null)
+    setProgramDayKey(pDayKey || null)
     pausedDurationRef.current = 0
     startTimeRef.current = Date.now()
     lastSplitKmRef.current = 0
@@ -346,14 +352,19 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       avg_speed_kmh: avgSpeedKmh,
       max_speed_kmh: maxSpeedKmh,
       splits,
+      program: programId || undefined,
+      program_day_key: programDayKey || undefined,
     }
 
     if (userId) {
       try {
-        const saved = await pb.collection('cardio_sessions').create({
+        const saveData: Record<string, unknown> = {
           user: userId,
           ...session,
-        })
+        }
+        if (programId) saveData.program = programId
+        if (programDayKey) saveData.program_day_key = programDayKey
+        const saved = await pb.collection('cardio_sessions').create(saveData)
         session.id = saved.id
       } catch (e) {
         console.warn('Failed to save cardio session:', e)
@@ -381,6 +392,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     setError(null)
     setNote('')
     setGpsAccuracy(null)
+    setProgramId(null)
+    setProgramDayKey(null)
   }, [stopTracking, releaseWakeLock])
 
   const deleteSession = useCallback(async (id: string): Promise<void> => {
@@ -492,6 +505,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const value: CardioSessionContextValue = {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
+    programId, programDayKey,
     start, pause, resume, finish, discard, getHistory, deleteSession,
   }
 

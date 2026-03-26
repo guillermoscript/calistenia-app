@@ -28,7 +28,7 @@ import {
   getWorkout as fallbackGetWorkout,
 } from '../data/workouts'
 import { nowLocalForPB } from '../lib/dateUtils'
-import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId } from '../types'
+import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -49,11 +49,34 @@ function buildPhases(phaseRecords: RecordModel[]): Phase[] {
 
 /**
  * Build WEEK_DAYS array from program_exercises PB records.
- * Uses the first exercise record per day_id for metadata.
+ * Uses day config records as primary source when available, falls back to exercise records.
  */
-function buildWeekDays(exerciseRecords: RecordModel[]): WeekDay[] {
+function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordModel[] = []): WeekDay[] {
   const ORDER: string[] = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
   const seen: Record<string, WeekDay> = {}
+
+  // Primary source: day config records
+  dayConfigRecords.forEach(dc => {
+    if (!seen[dc.day_id]) {
+      const day: WeekDay = {
+        id:    dc.day_id as DayId,
+        name:  dc.day_name,
+        focus: dc.day_focus,
+        type:  dc.day_type,
+        color: dc.day_color,
+      }
+      if (dc.day_type === 'cardio') {
+        day.cardioConfig = {
+          activityType: (dc.cardio_activity_type || 'running') as CardioActivityType,
+          targetDistanceKm: dc.cardio_target_distance_km || undefined,
+          targetDurationMin: dc.cardio_target_duration_min || undefined,
+        }
+      }
+      seen[dc.day_id] = day
+    }
+  })
+
+  // Fallback: exercise records for days not covered by day config
   exerciseRecords.forEach(r => {
     if (!seen[r.day_id]) {
       seen[r.day_id] = {
@@ -74,6 +97,24 @@ function buildWeekDays(exerciseRecords: RecordModel[]): WeekDay[] {
     if (!seen[id]) seen[id] = defaults[id]
   }
   return ORDER.map(id => seen[id]).filter(Boolean)
+}
+
+/**
+ * Build cardio day configs keyed by "p{phase}_{dayId}".
+ */
+function buildCardioDayConfigs(dayConfigRecords: RecordModel[]): Record<string, CardioDayConfig> {
+  const configs: Record<string, CardioDayConfig> = {}
+  dayConfigRecords.forEach(dc => {
+    if (dc.day_type === 'cardio') {
+      const key = `p${dc.phase_number}_${dc.day_id}`
+      configs[key] = {
+        activityType: (dc.cardio_activity_type || 'running') as CardioActivityType,
+        targetDistanceKm: dc.cardio_target_distance_km || undefined,
+        targetDurationMin: dc.cardio_target_duration_min || undefined,
+      }
+    }
+  })
+  return configs
 }
 
 /**
@@ -127,6 +168,7 @@ interface UseProgramsReturn {
   activeProgram: ProgramMeta | null
   phases: Phase[]
   weekDays: WeekDay[]
+  cardioDayConfigs: Record<string, CardioDayConfig>
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<void>
   duplicateProgram: (programId: string) => Promise<string | null>
@@ -143,6 +185,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   const [phases, setPhases]               = useState<Phase[]>(FALLBACK_PHASES)
   const [weekDays, setWeekDays]           = useState<WeekDay[]>(FALLBACK_WEEK_DAYS)
   const [workoutsMap, setWorkoutsMap]     = useState<WorkoutsMap>({})
+  const [cardioDayConfigs, setCardioDayConfigs] = useState<Record<string, CardioDayConfig>>({})
   const [programsReady, setProgramsReady] = useState(false)
   const [usePB, setUsePB]                 = useState(false)
 
@@ -159,6 +202,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       setPhases(FALLBACK_PHASES)
       setWeekDays(FALLBACK_WEEK_DAYS)
       setWorkoutsMap({})
+      setCardioDayConfigs({})
       setProgramsReady(false)
     }
 
@@ -249,26 +293,37 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   // ── loadProgramData ──────────────────────────────────────────────────────
   const loadProgramData = async (programId: string): Promise<void> => {
-    const [phasesRes, exercisesRes] = await Promise.all([
+    const filter = pb.filter('program = {:pid}', { pid: programId })
+    const [phasesRes, exercisesRes, dayConfigRes] = await Promise.all([
       pb.collection('program_phases').getList(1, 20, {
-        filter: pb.filter('program = {:pid}', { pid: programId }),
+        filter,
         sort:   'sort_order',
         $autoCancel: false,
       }),
       pb.collection('program_exercises').getList(1, 2000, {
-        filter: pb.filter('program = {:pid}', { pid: programId }),
+        filter,
         sort:   'phase_number,sort_order',
         $autoCancel: false,
+      }),
+      pb.collection('program_day_config').getList(1, 200, {
+        filter,
+        sort:   'phase_number,sort_order',
+        $autoCancel: false,
+      }).catch((e: any) => {
+        if (e?.status !== 404) console.warn('usePrograms: day config fetch failed', e)
+        return { items: [] }
       }),
     ])
 
     const builtPhases  = buildPhases(phasesRes.items)
-    const builtDays    = buildWeekDays(exercisesRes.items)
+    const builtDays    = buildWeekDays(exercisesRes.items, dayConfigRes.items)
     const builtWorkouts = buildWorkoutsMap(exercisesRes.items)
+    const builtCardioConfigs = buildCardioDayConfigs(dayConfigRes.items)
 
     if (builtPhases.length > 0)    setPhases(builtPhases)
     if (builtDays.length > 0)      setWeekDays(builtDays)
     if (Object.keys(builtWorkouts).length > 0) setWorkoutsMap(builtWorkouts)
+    setCardioDayConfigs(builtCardioConfigs)
   }
 
   // ── getWorkout ───────────────────────────────────────────────────────────
@@ -363,6 +418,30 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         })
       }
 
+      // 3b. Copy day config
+      try {
+        const dayConfigRes = await pb.collection('program_day_config').getList(1, 200, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+          sort:   'phase_number,sort_order',
+        })
+        for (const dc of dayConfigRes.items) {
+          const data: Record<string, unknown> = {
+            program:      newProgram.id,
+            phase_number: dc.phase_number,
+            day_id:       dc.day_id,
+            day_name:     dc.day_name,
+            day_type:     dc.day_type,
+            day_focus:    dc.day_focus,
+            day_color:    dc.day_color,
+            sort_order:   dc.sort_order,
+          }
+          if (dc.cardio_activity_type) data.cardio_activity_type = dc.cardio_activity_type
+          if (dc.cardio_target_distance_km) data.cardio_target_distance_km = dc.cardio_target_distance_km
+          if (dc.cardio_target_duration_min) data.cardio_target_duration_min = dc.cardio_target_duration_min
+          await pb.collection('program_day_config').create(data)
+        }
+      } catch { /* no day config */ }
+
       // 4. Copy exercises
       const exercisesRes = await pb.collection('program_exercises').getList(1, 2000, {
         filter: pb.filter('program = {:pid}', { pid: programId }),
@@ -424,6 +503,16 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         }
       } catch { /* no exercises */ }
 
+      // Delete day config for this program
+      try {
+        const dayConfigs = await pb.collection('program_day_config').getList(1, 200, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+        })
+        for (const dc of dayConfigs.items) {
+          await pb.collection('program_day_config').delete(dc.id)
+        }
+      } catch { /* no day config */ }
+
       // Delete phases for this program
       try {
         const phases = await pb.collection('program_phases').getList(1, 20, {
@@ -475,6 +564,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     activeProgram,
     phases,
     weekDays,
+    cardioDayConfigs,
     getWorkout,
     selectProgram,
     duplicateProgram,

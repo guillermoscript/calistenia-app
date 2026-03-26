@@ -1,18 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '../hooks/useLeaderboard'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
-
-const CATEGORIES: { id: LeaderboardCategory; label: string; unit: string; hasTimeFilter: boolean }[] = [
-  { id: 'sessions_week', label: 'Sesiones', unit: '', hasTimeFilter: true },
-  { id: 'streak', label: 'Racha', unit: 'dias', hasTimeFilter: false },
-  { id: 'pr_pullups', label: 'Pull-ups', unit: 'reps', hasTimeFilter: false },
-  { id: 'pr_pushups', label: 'Push-ups', unit: 'reps', hasTimeFilter: false },
-  { id: 'pr_lsit', label: 'L-sit', unit: 's', hasTimeFilter: false },
-  { id: 'pr_handstand', label: 'Handstand', unit: 's', hasTimeFilter: false },
-]
 
 type TimeFilter = 'week' | 'month'
 
@@ -24,7 +16,17 @@ interface LeaderboardPageProps {
 
 export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { entries, loading, error, load } = useLeaderboard(userId)
+
+  const CATEGORIES: { id: LeaderboardCategory; label: string; unit: string; hasTimeFilter: boolean }[] = [
+    { id: 'sessions_week', label: t('leaderboard.sessions'), unit: '', hasTimeFilter: true },
+    { id: 'streak', label: t('leaderboard.streak'), unit: t('leaderboard.streakUnit'), hasTimeFilter: false },
+    { id: 'pr_pullups', label: 'Pull-ups', unit: 'reps', hasTimeFilter: false },
+    { id: 'pr_pushups', label: 'Push-ups', unit: 'reps', hasTimeFilter: false },
+    { id: 'pr_lsit', label: 'L-sit', unit: 's', hasTimeFilter: false },
+    { id: 'pr_handstand', label: 'Handstand', unit: 's', hasTimeFilter: false },
+  ]
   const [category, setCategory] = useState<LeaderboardCategory>('sessions_week')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('week')
 
@@ -40,8 +42,8 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Competencia</div>
-      <h1 className="font-bebas text-4xl md:text-5xl mb-6">RANKING</h1>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('leaderboard.section')}</div>
+      <h1 className="font-bebas text-4xl md:text-5xl mb-6">{t('leaderboard.title')}</h1>
 
       {/* Category pills */}
       <div id="tour-leaderboard-categories" className="flex gap-1.5 flex-wrap mb-4">
@@ -73,7 +75,7 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
               timeFilter === 'week' ? 'text-amber-400 border-current bg-accent/50' : 'text-muted-foreground border-transparent hover:text-foreground',
             )}
           >
-            Esta semana
+            {t('leaderboard.thisWeek')}
           </button>
           <button
             onClick={() => setTimeFilter('month')}
@@ -83,14 +85,14 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
               timeFilter === 'month' ? 'text-amber-400 border-current bg-accent/50' : 'text-muted-foreground border-transparent hover:text-foreground',
             )}
           >
-            Este mes
+            {t('leaderboard.thisMonth')}
           </button>
         </div>
       )}
 
       {/* Loading */}
       {loading && (
-        <Loader label="Cargando ranking..." className="py-12" />
+        <Loader label={t('leaderboard.loading')} className="py-12" />
       )}
 
       {/* Error */}
@@ -102,9 +104,9 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
       {!loading && !error && !hasAnyFollows && (
         <div className="text-center py-16 motion-safe:animate-scale-in">
           <div className="text-3xl mb-3">🏆</div>
-          <div className="text-sm text-muted-foreground mb-4">Sigue a tus amigos para ver el ranking</div>
+          <div className="text-sm text-muted-foreground mb-4">{t('leaderboard.followToSee')}</div>
           <Button onClick={() => navigate('/friends')} className="bg-lime text-lime-foreground hover:bg-lime/90">
-            Buscar amigos
+            {t('leaderboard.findFriends')}
           </Button>
         </div>
       )}
@@ -142,6 +144,7 @@ interface RankRowProps {
 }
 
 function RankRow({ entry, position, unit, onTap }: RankRowProps) {
+  const { t } = useTranslation()
   const medal = MEDALS[position - 1]
 
   return (
@@ -176,7 +179,7 @@ function RankRow({ entry, position, unit, onTap }: RankRowProps) {
       <div className="flex-1 min-w-0">
         <div className={cn('text-sm font-medium truncate', entry.isCurrentUser && 'text-lime')}>
           {entry.displayName}
-          {entry.isCurrentUser && <span className="text-xs text-muted-foreground ml-1">(tu)</span>}
+          {entry.isCurrentUser && <span className="text-xs text-muted-foreground ml-1">{t('leaderboard.you')}</span>}
         </div>
       </div>
 

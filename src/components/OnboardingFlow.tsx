@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -33,58 +34,11 @@ interface OnboardingFlowProps {
   onComplete: () => void
 }
 
-const DIFFICULTY_LABELS: Record<string, string> = {
-  beginner: 'PRINCIPIANTE',
-  intermediate: 'INTERMEDIO',
-  advanced: 'AVANZADO',
-}
-
 const DIFFICULTY_STYLES: Record<string, string> = {
   beginner: 'text-emerald-400 border-emerald-400/30',
   intermediate: 'text-amber-400 border-amber-400/30',
   advanced: 'text-red-400 border-red-400/30',
 }
-
-const LEVELS = [
-  { value: 'principiante', label: 'Principiante', desc: 'Nuevo en calistenia' },
-  { value: 'intermedio', label: 'Intermedio', desc: '6+ meses entrenando' },
-  { value: 'avanzado', label: 'Avanzado', desc: 'Muscle-ups, planche...' },
-]
-
-const SEX_OPTIONS = [
-  { value: 'male', label: 'Hombre' },
-  { value: 'female', label: 'Mujer' },
-]
-
-const HOW_IT_WORKS = [
-  {
-    step: 1,
-    label: 'Elige un programa',
-    desc: 'Un programa es tu plan semanal de ejercicios. Tiene días asignados (Push, Pull, Legs...) y fases que van subiendo de nivel.',
-    accent: 'text-[hsl(var(--lime))]',
-    bg: 'bg-[hsl(var(--lime))]/10',
-  },
-  {
-    step: 2,
-    label: 'Entra y entrena',
-    desc: 'Desde el Dashboard toca el día que quieras. Verás los ejercicios con series, repeticiones y descansos. Dale a EMPEZAR y sigue la sesión guiada.',
-    accent: 'text-sky-400',
-    bg: 'bg-sky-400/10',
-  },
-  {
-    step: 3,
-    label: 'Registra y mejora',
-    desc: 'Cada serie que hagas se guarda. Verás tu racha, tus records personales y tu progreso semana a semana.',
-    accent: 'text-amber-400',
-    bg: 'bg-amber-400/10',
-  },
-]
-
-const EXTRAS = [
-  { icon: '🍽️', label: 'Nutricion', desc: 'Registra comidas con foto y AI. Lleva macros y calorias.' },
-  { icon: '🏃', label: 'Cardio', desc: 'Correr, caminar o pedalear con GPS y mapa en vivo.' },
-  { icon: '👥', label: 'Social', desc: 'Sigue amigos, compara stats y compite en retos.' },
-]
 
 export default function OnboardingFlow({
   displayName,
@@ -96,8 +50,51 @@ export default function OnboardingFlow({
   onCreateProgram,
   onComplete,
 }: OnboardingFlowProps) {
+  const { t } = useTranslation()
+
   // Detect if profile data is missing (e.g. Google OAuth signup or skipped step)
   const needsProfile = !user?.weight && !user?.height && !user?.level
+
+  const LEVELS = [
+    { value: 'principiante', label: t('onboarding.beginner'), desc: t('onboarding.beginnerDesc') },
+    { value: 'intermedio', label: t('onboarding.intermediate'), desc: t('onboarding.intermediateDesc') },
+    { value: 'avanzado', label: t('onboarding.advanced'), desc: t('onboarding.advancedDesc') },
+  ]
+
+  const SEX_OPTIONS = [
+    { value: 'male', label: t('onboarding.male') },
+    { value: 'female', label: t('onboarding.female') },
+  ]
+
+  const HOW_IT_WORKS = [
+    {
+      step: 1,
+      label: t('onboarding.step1Label'),
+      desc: t('onboarding.step1Desc'),
+      accent: 'text-[hsl(var(--lime))]',
+      bg: 'bg-[hsl(var(--lime))]/10',
+    },
+    {
+      step: 2,
+      label: t('onboarding.step2Label'),
+      desc: t('onboarding.step2Desc'),
+      accent: 'text-sky-400',
+      bg: 'bg-sky-400/10',
+    },
+    {
+      step: 3,
+      label: t('onboarding.step3Label'),
+      desc: t('onboarding.step3Desc'),
+      accent: 'text-amber-400',
+      bg: 'bg-amber-400/10',
+    },
+  ]
+
+  const EXTRAS = [
+    { icon: '🍽️', label: t('onboarding.nutritionExtra'), desc: t('onboarding.nutritionExtraDesc') },
+    { icon: '🏃', label: t('onboarding.cardioExtra'), desc: t('onboarding.cardioExtraDesc') },
+    { icon: '👥', label: t('onboarding.socialExtra'), desc: t('onboarding.socialExtraDesc') },
+  ]
 
   const [step, setStep] = useState(0)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
@@ -178,19 +175,19 @@ export default function OnboardingFlow({
               CALISTENIA
             </div>
             <div className="text-muted-foreground text-sm mb-6">
-              {firstName ? `${firstName}, bienvenido` : 'Bienvenido'} a tu entrenamiento
+              {firstName ? t('onboarding.welcomeMsg', { name: firstName }) : t('onboarding.welcomeDefault')}
             </div>
 
             {/* Visual flow explanation */}
             <div className="flex items-center justify-center gap-2 mb-6">
               {[
-                { icon: '📋', label: 'Programa' },
+                { icon: '📋', label: t('onboarding.programLabel') },
                 { icon: '→', label: '' },
-                { icon: '📅', label: 'Día' },
+                { icon: '📅', label: t('onboarding.dayLabel') },
                 { icon: '→', label: '' },
-                { icon: '💪', label: 'Ejercicios' },
+                { icon: '💪', label: t('onboarding.exercises') },
                 { icon: '→', label: '' },
-                { icon: '📈', label: 'Progreso' },
+                { icon: '📈', label: t('onboarding.progress') },
               ].map((item, i) => (
                 <div key={i} className="flex flex-col items-center">
                   <span className={cn('text-lg', item.label ? '' : 'text-muted-foreground/40 text-sm')}>{item.icon}</span>
@@ -203,13 +200,12 @@ export default function OnboardingFlow({
               <CardContent className="p-5">
                 <div className="text-sm text-muted-foreground leading-relaxed">
                   <p className="mb-2">
-                    <strong className="text-foreground">Asi funciona:</strong> eliges un programa de entrenamiento
-                    y cada día tiene ejercicios asignados. Entras, sigues la sesión guiada y todo se registra.
+                    <strong className="text-foreground">{t('onboarding.howItWorks')}</strong> {t('onboarding.howItWorksDetail')}
                   </p>
                   <p className="text-xs">
                     {needsProfile
-                      ? 'Primero te pedimos unos datos basicos, luego eliges tu programa.'
-                      : 'Solo necesitas elegir un programa para empezar.'}
+                      ? t('onboarding.needsProfileHint')
+                      : t('onboarding.justChooseProgram')}
                   </p>
                 </div>
               </CardContent>
@@ -219,14 +215,14 @@ export default function OnboardingFlow({
               onClick={() => setStep(needsProfile ? profileStep : programStep)}
               className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
             >
-              {needsProfile ? 'EMPEZAR' : 'ELEGIR PROGRAMA'}
+              {needsProfile ? t('onboarding.startBtn') : t('onboarding.chooseProgramBtn')}
             </Button>
 
             <button
               onClick={handleFinish}
               className="mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              Ya conozco la app, saltar
+              {t('onboarding.skipAll')}
             </button>
           </div>
         )}
@@ -235,9 +231,9 @@ export default function OnboardingFlow({
         {step === profileStep && (
           <div className="animate-[fadeUp_0.5s_ease]">
             <div className="text-center mb-6">
-              <div className="font-bebas text-3xl mb-1">CUÉNTANOS DE TI</div>
+              <div className="font-bebas text-3xl mb-1">{t('onboarding.aboutYou')}</div>
               <div className="text-sm text-muted-foreground">
-                Esto nos ayuda a personalizar tu experiencia. Todo es opcional.
+                {t('onboarding.aboutYouDesc')}
               </div>
             </div>
 
@@ -246,7 +242,7 @@ export default function OnboardingFlow({
                 {/* Physical data */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="ob-weight" className="text-[11px] text-muted-foreground tracking-wide uppercase">Peso (kg)</Label>
+                    <Label htmlFor="ob-weight" className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.weight')}</Label>
                     <Input
                       id="ob-weight"
                       type="number"
@@ -259,7 +255,7 @@ export default function OnboardingFlow({
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="ob-height" className="text-[11px] text-muted-foreground tracking-wide uppercase">Altura (cm)</Label>
+                    <Label htmlFor="ob-height" className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.height')}</Label>
                     <Input
                       id="ob-height"
                       type="number"
@@ -271,7 +267,7 @@ export default function OnboardingFlow({
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="ob-age" className="text-[11px] text-muted-foreground tracking-wide uppercase">Edad</Label>
+                    <Label htmlFor="ob-age" className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.age')}</Label>
                     <Input
                       id="ob-age"
                       type="number"
@@ -287,7 +283,7 @@ export default function OnboardingFlow({
 
                 {/* Sex */}
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-[11px] text-muted-foreground tracking-wide uppercase">Sexo</Label>
+                  <Label className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.sex')}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {SEX_OPTIONS.map(s => (
                       <button
@@ -309,7 +305,7 @@ export default function OnboardingFlow({
 
                 {/* Level */}
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-[11px] text-muted-foreground tracking-wide uppercase">Nivel</Label>
+                  <Label className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.level')}</Label>
                   <div className="flex flex-col gap-2">
                     {LEVELS.map(l => (
                       <button
@@ -338,12 +334,12 @@ export default function OnboardingFlow({
 
                 {/* Goal */}
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="ob-goal" className="text-[11px] text-muted-foreground tracking-wide uppercase">Objetivo</Label>
+                  <Label htmlFor="ob-goal" className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.goal')}</Label>
                   <textarea
                     id="ob-goal"
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
-                    placeholder="Ej: 10 muscle-ups, bajar grasa corporal..."
+                    placeholder={t('onboarding.goalPlaceholder')}
                     rows={2}
                     className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
                   />
@@ -357,14 +353,14 @@ export default function OnboardingFlow({
                 onClick={() => setStep(0)}
                 className="flex-1 h-11 font-mono text-xs tracking-wide"
               >
-                ATRÁS
+                {t('onboarding.back')}
               </Button>
               <Button
                 onClick={handleSaveProfile}
                 disabled={savingProfile}
                 className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
               >
-                {savingProfile ? 'GUARDANDO...' : 'CONTINUAR'}
+                {savingProfile ? t('onboarding.saving') : t('onboarding.continueBtn')}
               </Button>
             </div>
 
@@ -372,7 +368,7 @@ export default function OnboardingFlow({
               onClick={() => setStep(programStep)}
               className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
             >
-              Omitir por ahora
+              {t('onboarding.skipForNow')}
             </button>
           </div>
         )}
@@ -381,18 +377,16 @@ export default function OnboardingFlow({
         {step === programStep && (
           <div className="animate-[fadeUp_0.5s_ease]">
             <div className="text-center mb-4">
-              <div className="font-bebas text-3xl mb-1">ELIGE TU PROGRAMA</div>
+              <div className="font-bebas text-3xl mb-1">{t('onboarding.chooseProgramTitle')}</div>
               <div className="text-sm text-muted-foreground">
-                Un programa es tu plan semanal: tiene ejercicios para cada día y fases que suben de dificultad.
+                {t('onboarding.chooseProgramDesc')}
               </div>
             </div>
 
             {/* Hint for official programs */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-400/5 border border-amber-400/20 mb-4">
               <span className="text-amber-400 text-sm">★</span>
-              <span className="text-xs text-muted-foreground">
-                Los programas <strong className="text-amber-400">RECOMENDADOS</strong> son los mejores para empezar.
-              </span>
+              <span className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: t('onboarding.recommendedHint') }} />
             </div>
 
             <div className="space-y-3 mb-6 max-h-[50vh] overflow-y-auto pr-1">
@@ -440,22 +434,22 @@ export default function OnboardingFlow({
                           </span>
                           {program.is_featured && (
                             <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-amber-400 border-amber-400/30">
-                              RECOMENDADO
+                              {t('onboarding.recommended')}
                             </Badge>
                           )}
                           {program.is_official && !program.is_featured && (
                             <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-emerald-400 border-emerald-400/30">
-                              OFICIAL
+                              {t('onboarding.official')}
                             </Badge>
                           )}
                           {isOwn && !program.is_official && (
                             <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-sky-500 border-sky-500/30">
-                              TUYO
+                              {t('onboarding.yours')}
                             </Badge>
                           )}
                           {!isOwn && !program.is_official && program.created_by_name && (
                             <span className="text-[9px] text-muted-foreground">
-                              por {program.created_by_name}
+                              {t('onboarding.by', { name: program.created_by_name })}
                             </span>
                           )}
                         </div>
@@ -466,11 +460,11 @@ export default function OnboardingFlow({
                         )}
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[10px] text-muted-foreground">
-                            {program.duration_weeks} semanas
+                            {program.duration_weeks} {t('onboarding.weeks')}
                           </span>
                           {program.difficulty && (
                             <Badge variant="outline" className={cn('text-[8px] px-1.5 py-0', DIFFICULTY_STYLES[program.difficulty] || '')}>
-                              {DIFFICULTY_LABELS[program.difficulty] || program.difficulty}
+                              {t(`difficulty.${program.difficulty}`).toUpperCase()}
                             </Badge>
                           )}
                         </div>
@@ -491,7 +485,7 @@ export default function OnboardingFlow({
             >
               <CardContent className="p-4 text-center">
                 <div className="text-sm text-muted-foreground">
-                  <span className="text-sky-500 font-medium">+ Crear mi propio programa</span>
+                  <span className="text-sky-500 font-medium">{t('onboarding.createOwn')}</span>
                 </div>
               </CardContent>
             </Card>
@@ -502,14 +496,14 @@ export default function OnboardingFlow({
                 onClick={() => setStep(needsProfile ? profileStep : 0)}
                 className="flex-1 h-11 font-mono text-xs tracking-wide"
               >
-                ATRÁS
+                {t('onboarding.back')}
               </Button>
               <Button
                 onClick={() => setStep(orientationStep)}
                 disabled={!selectedProgramId || selecting}
                 className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background disabled:opacity-40"
               >
-                {selecting ? 'GUARDANDO...' : 'CONTINUAR'}
+                {selecting ? t('onboarding.saving') : t('onboarding.continueBtn')}
               </Button>
             </div>
           </div>
@@ -519,9 +513,9 @@ export default function OnboardingFlow({
         {step === orientationStep && (
           <div className="animate-[fadeUp_0.5s_ease]">
             <div className="text-center mb-6">
-              <div className="font-bebas text-3xl mb-1">COMO FUNCIONA</div>
+              <div className="font-bebas text-3xl mb-1">{t('onboarding.howItWorksTitle')}</div>
               <div className="text-sm text-muted-foreground">
-                Tu rutina diaria en 3 pasos.
+                {t('onboarding.dailyRoutine')}
               </div>
             </div>
 
@@ -547,7 +541,7 @@ export default function OnboardingFlow({
 
             {/* Extras */}
             <div className="border-t border-border pt-4 mb-6">
-              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">Tambien puedes</div>
+              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('onboarding.alsoCanDo')}</div>
               <div className="grid grid-cols-3 gap-2">
                 {EXTRAS.map((extra) => (
                   <div key={extra.label} className="text-center p-2.5 rounded-lg bg-card border border-border">
@@ -563,14 +557,14 @@ export default function OnboardingFlow({
               onClick={handleFinish}
               className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
             >
-              IR A ENTRENAR
+              {t('onboarding.goTrain')}
             </Button>
 
             <button
               onClick={() => setStep(programStep)}
               className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
             >
-              Volver a elegir programa
+              {t('onboarding.backToProgram')}
             </button>
           </div>
         )}

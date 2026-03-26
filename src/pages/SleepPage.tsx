@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { daysAgoStr } from '../lib/dateUtils'
 import { useSleep, type SleepEntryInput } from '../hooks/useSleep'
 import SleepForm, { type SleepFormData } from '../components/sleep/SleepForm'
@@ -18,14 +19,6 @@ import type { SleepEntry } from '../types'
 
 
 // ── Quality helpers ─────────────────────────────────────────────────────────
-
-const QUALITY_LABELS: Record<number, string> = {
-  1: 'Muy mal',
-  2: 'Mal',
-  3: 'Regular',
-  4: 'Bien',
-  5: 'Muy bien',
-}
 const QUALITY_COLORS: Record<number, string> = {
   1: 'text-red-500',
   2: 'text-orange-400',
@@ -73,6 +66,7 @@ interface SleepEntryRowProps {
 }
 
 function SleepEntryRow({ entry, onEdit, onDelete }: SleepEntryRowProps) {
+  const { t } = useTranslation()
   const [showConfirm, setShowConfirm] = useState(false)
 
   const dateLabel = useMemo(() => {
@@ -102,7 +96,7 @@ function SleepEntryRow({ entry, onEdit, onDelete }: SleepEntryRowProps) {
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-foreground capitalize">{dateLabel}</div>
         <div className="text-[11px] text-muted-foreground">
-          {entry.bedtime} - {entry.wake_time} · {formatDuration(entry.duration_minutes)} · {entry.awakenings} despertares
+          {entry.bedtime} - {entry.wake_time} · {formatDuration(entry.duration_minutes)} · {entry.awakenings} {t('sleep.awakenings')}
         </div>
       </div>
 
@@ -111,7 +105,7 @@ function SleepEntryRow({ entry, onEdit, onDelete }: SleepEntryRowProps) {
         <button
           onClick={(e) => { e.stopPropagation(); setShowConfirm(true) }}
           className="size-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-md"
-          aria-label="Eliminar"
+          aria-label={t('common.delete')}
         >
           <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M2 4h12M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M6 7v5M10 7v5M3 4l1 10a1 1 0 001 1h6a1 1 0 001-1l1-10" />
@@ -124,21 +118,21 @@ function SleepEntryRow({ entry, onEdit, onDelete }: SleepEntryRowProps) {
         <Dialog open onOpenChange={() => setShowConfirm(false)}>
           <DialogContent className="max-w-sm" onClick={(e) => e.stopPropagation()}>
             <DialogHeader>
-              <DialogTitle>Eliminar registro</DialogTitle>
+              <DialogTitle>{t('sleep.deleteEntry')}</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground mb-4">
-              ¿Eliminar el registro de sueño del {dateLabel}? Esta accion no se puede deshacer.
+              {t('sleep.deleteConfirm', { date: dateLabel })}
             </p>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setShowConfirm(false) }}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={(e) => { e.stopPropagation(); onDelete(entry.id); setShowConfirm(false) }}
               >
-                Eliminar
+                {t('common.delete')}
               </Button>
             </div>
           </DialogContent>
@@ -156,6 +150,7 @@ interface SleepPageProps {
 }
 
 export default function SleepPage({ userId }: SleepPageProps) {
+  const { t } = useTranslation()
   const {
     entries,
     isReady,
@@ -214,15 +209,15 @@ export default function SleepPage({ userId }: SleepPageProps) {
   }
 
   if (!isReady) {
-    return <Loader label="Cargando datos de sueño..." />
+    return <Loader label={t('sleep.loadingData')} />
   }
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="font-bebas text-4xl md:text-5xl leading-none mb-1">Sueño</h1>
-        <p className="text-sm text-muted-foreground">Registra y analiza tus patrones de sueño</p>
+        <h1 className="font-bebas text-4xl md:text-5xl leading-none mb-1">{t('sleep.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('sleep.subtitle')}</p>
       </div>
 
       {/* ═══ TODAY SUMMARY ══════════════════════════════════════════════════ */}
@@ -239,7 +234,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
           onClick={() => handleOpenEdit(todayEntry)}
         >
           <CardContent className="p-4 md:p-5">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-2">Anoche</div>
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-2">{t('sleep.lastNight')}</div>
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="font-bebas text-2xl leading-none mb-1">
@@ -247,7 +242,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {todayEntry.bedtime} - {todayEntry.wake_time}
-                  {todayEntry.awakenings > 0 && ` · ${todayEntry.awakenings} despertares`}
+                  {todayEntry.awakenings > 0 && ` · ${todayEntry.awakenings} ${t('sleep.awakenings')}`}
                 </div>
               </div>
               <div className="text-right">
@@ -255,7 +250,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
                   {formatQualityStars(todayEntry.quality)}
                 </div>
                 <div className={cn('text-xs', QUALITY_COLORS[todayEntry.quality])}>
-                  {QUALITY_LABELS[todayEntry.quality]}
+                  {t(`sleep.quality.${todayEntry.quality}`)}
                 </div>
               </div>
             </div>
@@ -277,8 +272,8 @@ export default function SleepPage({ userId }: SleepPageProps) {
               </svg>
             </div>
             <div>
-              <div className="font-bebas text-xl text-indigo-400 leading-none mb-0.5">Registrar sueño</div>
-              <div className="text-xs text-muted-foreground">¿Cómo dormiste anoche?</div>
+              <div className="font-bebas text-xl text-indigo-400 leading-none mb-0.5">{t('sleep.register')}</div>
+              <div className="text-xs text-muted-foreground">{t('sleep.howSleptLastNight')}</div>
             </div>
           </div>
         </button>
@@ -287,7 +282,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
       {/* ═══ WEEKLY CHART ═══════════════════════════════════════════════════ */}
       {entries.length > 0 && (
         <div className="mb-6">
-          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">Ultima semana</div>
+          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('sleep.lastWeek')}</div>
           <Card>
             <CardContent className="p-4">
               <SleepWeekChart entries={entries} />
@@ -299,25 +294,25 @@ export default function SleepPage({ userId }: SleepPageProps) {
       {/* ═══ STATS ══════════════════════════════════════════════════════════ */}
       {weeklyStats.entryCount > 0 && (
         <div className="mb-6">
-          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">Estadisticas (7 dias)</div>
+          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('sleep.stats7days')}</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard
-              label="Duracion promedio"
+              label={t('sleep.avgDuration')}
               value={formatDuration(Math.round(weeklyStats.avgDuration))}
               accent="text-indigo-400"
             />
             <StatCard
-              label="Calidad promedio"
+              label={t('sleep.avgQuality')}
               value={`${weeklyStats.avgQuality.toFixed(1)} / 5`}
               accent={weeklyStats.avgQuality >= 3 ? 'text-emerald-400' : 'text-amber-400'}
             />
             <StatCard
-              label="Despertares"
+              label={t('sleep.avgAwakenings')}
               value={weeklyStats.avgAwakenings.toFixed(1)}
               accent={weeklyStats.avgAwakenings <= 1 ? 'text-emerald-400' : 'text-amber-400'}
             />
             <StatCard
-              label="Regularidad horario"
+              label={t('sleep.scheduleRegularity')}
               value={`±${Math.round(weeklyStats.scheduleRegularity)} min`}
               accent={weeklyStats.scheduleRegularity <= 30 ? 'text-emerald-400' : 'text-amber-400'}
             />
@@ -328,13 +323,13 @@ export default function SleepPage({ userId }: SleepPageProps) {
       {/* ═══ HISTORY ════════════════════════════════════════════════════════ */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Historial</div>
+          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('sleep.historyLabel')}</div>
           <Button
             size="sm"
             onClick={handleOpenCreate}
             className="h-8 px-3 text-xs font-bebas tracking-wide"
           >
-            + REGISTRAR
+            {t('sleep.addEntry')}
           </Button>
         </div>
 
@@ -342,8 +337,8 @@ export default function SleepPage({ userId }: SleepPageProps) {
           <Card>
             <CardContent className="p-8 text-center">
               <div className="text-3xl mb-3">😴</div>
-              <div className="text-sm text-muted-foreground mb-1">No hay registros de sueño</div>
-              <div className="text-xs text-muted-foreground">Empieza a registrar tu sueño para ver tendencias</div>
+              <div className="text-sm text-muted-foreground mb-1">{t('sleep.noEntries')}</div>
+              <div className="text-xs text-muted-foreground">{t('sleep.startTracking')}</div>
             </CardContent>
           </Card>
         ) : (
@@ -370,7 +365,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
         <DialogContent className="max-w-md max-sm:max-w-[95vw]">
           <DialogHeader>
             <DialogTitle className="font-bebas text-2xl">
-              {editingEntry ? 'Editar registro' : 'Registrar sueño'}
+              {editingEntry ? t('sleep.editEntry') : t('sleep.register')}
             </DialogTitle>
           </DialogHeader>
           <SleepForm

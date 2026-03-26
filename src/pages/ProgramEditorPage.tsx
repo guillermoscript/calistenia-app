@@ -47,10 +47,10 @@ const CARDIO_TYPE_OPTIONS: { value: CardioActivityType; labelKey: string; icon: 
   { value: 'cycling', labelKey: 'cardio.cycling', icon: CARDIO_ACTIVITY.cycling.icon },
 ]
 
-const PRIORITY_OPTIONS: { value: 'high' | 'med' | 'low'; label: string; color: string }[] = [
-  { value: 'high', label: 'Alta',  color: 'text-red-400' },
-  { value: 'med',  label: 'Media', color: 'text-amber-400' },
-  { value: 'low',  label: 'Baja',  color: 'text-emerald-400' },
+const PRIORITY_OPTIONS: { value: 'high' | 'med' | 'low'; i18nKey: string; color: string }[] = [
+  { value: 'high', i18nKey: 'priority.high',  color: 'text-red-400' },
+  { value: 'med',  i18nKey: 'priority.med', color: 'text-amber-400' },
+  { value: 'low',  i18nKey: 'priority.low',  color: 'text-emerald-400' },
 ]
 
 const DAY_IDS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
@@ -111,10 +111,10 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     const savedId = await saveProgram(userId)
     if (savedId) {
       await refreshPrograms()
-      toast.success('Programa guardado correctamente')
+      toast.success(t('programEditor.saved'))
       navigate('/programs')
     } else {
-      toast.error(state.error || 'No se pudo guardar el programa. Verifica tu conexión.')
+      toast.error(state.error || t('programEditor.saveError'))
     }
   }
 
@@ -155,13 +155,13 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
               </svg>
             </Button>
             <div>
-              <div className="font-mono text-[9px] text-muted-foreground tracking-[3px]">EDITOR DE PROGRAMA</div>
-              <div className="font-bebas text-xl leading-none">{state.info.name || 'NUEVO PROGRAMA'}</div>
+              <div className="font-mono text-[9px] text-muted-foreground tracking-[3px]">{t('programEditor.editorTitle')}</div>
+              <div className="font-bebas text-xl leading-none">{state.info.name || t('programEditor.newProgram')}</div>
             </div>
           </div>
           {state.isDirty && (
             <Badge variant="outline" className="text-[9px] text-amber-400 border-amber-400/30">
-              SIN GUARDAR
+              {t('programEditor.unsaved')}
             </Badge>
           )}
         </div>
@@ -230,31 +230,31 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
             <div className="space-y-6">
               <Card>
                 <CardContent className="p-5 md:p-6 space-y-4">
-                  <div className="font-bebas text-2xl tracking-wide">INFORMACIÓN DEL PROGRAMA</div>
+                  <div className="font-bebas text-2xl tracking-wide">{t('programEditor.programInfo')}</div>
 
                   <div>
-                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Nombre *</label>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.nameLabel')}</label>
                     <Input
                       value={state.info.name}
                       onChange={e => updateInfo({ name: e.target.value })}
-                      placeholder="Ej: Calistenia 6 Meses"
+                      placeholder={t('programEditor.namePlaceholder')}
                       className="text-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Descripción</label>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.descLabel')}</label>
                     <Textarea
                       value={state.info.description}
                       onChange={e => updateInfo({ description: e.target.value })}
-                      placeholder="Descripción del programa..."
+                      placeholder={t('programEditor.descPlaceholder')}
                       rows={3}
                       className="text-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Duración (semanas)</label>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.durationLabel')}</label>
                     <Input
                       type="number"
                       min={1}
@@ -267,7 +267,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Dificultad</label>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.difficultyLabel')}</label>
                     <div className="flex gap-2">
                       {(['beginner', 'intermediate', 'advanced'] as const).map(d => (
                         <button
@@ -298,9 +298,9 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                           className="size-4 rounded accent-[hsl(var(--lime))]"
                         />
                         <div>
-                          <div className="text-sm font-medium">Publicar como programa oficial</div>
+                          <div className="text-sm font-medium">{t('programEditor.publishOfficial')}</div>
                           <div className="text-[11px] text-muted-foreground">
-                            Los programas oficiales aparecen en la sección principal y en el onboarding.
+                            {t('programEditor.publishDesc')}
                           </div>
                         </div>
                       </label>
@@ -677,7 +677,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                             className="h-7 rounded border border-input bg-background px-1 text-[10px]"
                           >
                             {PRIORITY_OPTIONS.map(p => (
-                              <option key={p.value} value={p.value}>{p.label}</option>
+                              <option key={p.value} value={p.value}>{t(p.i18nKey)}</option>
                             ))}
                           </select>
 

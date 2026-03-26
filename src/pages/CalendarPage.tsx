@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -9,12 +10,6 @@ import { useAuthState } from '../contexts/AuthContext'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
 import type { SessionDone, WeekDay, CardioSession } from '../types'
-
-const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-]
 
 function getMonthDays(year: number, month: number) {
   const first = new Date(year, month, 1)
@@ -52,11 +47,14 @@ interface DayWaterSummary {
 }
 
 export default function CalendarPage() {
+  const { t } = useTranslation()
   const { progress, weekDays, activeProgram, settings } = useWorkoutState()
   const { userId } = useAuthState()
   const currentPhase = settings.phase
   const navigate = useNavigate()
   const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
+  const DAY_NAMES = useMemo(() => Array.from({length: 7}, (_, i) => t(`dayShort.${i}`)), [t])
+  const MONTH_NAMES = useMemo(() => Array.from({length: 12}, (_, i) => t(`month.${i}`)), [t])
   const today = new Date()
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
@@ -236,38 +234,34 @@ export default function CalendarPage() {
 
   // Workout key to readable title
   const parseWorkoutKey = (key: string) => {
-    if (key.startsWith('free_')) return 'Sesión Libre'
-    if (key.startsWith('cardio_')) return 'Cardio'
+    if (key.startsWith('free_')) return t('calendar.freeSession')
+    if (key.startsWith('cardio_')) return t('calendar.cardio', { defaultValue: 'Cardio' })
     const [phaseStr, day] = key.split('_')
     const phase = phaseStr.replace('p', '')
-    const dayNames: Record<string, string> = {
-      lun: 'Lunes', mar: 'Martes', mie: 'Miércoles',
-      jue: 'Jueves', vie: 'Viernes', sab: 'Sábado', dom: 'Domingo',
-    }
-    return `Fase ${phase} — ${dayNames[day] || day}`
+    return t('calendar.phaseDay', { phase, day: t(`day.${day}`) || day })
   }
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Planificación</div>
-      <div className="font-bebas text-4xl md:text-5xl mb-6">CALENDARIO</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('calendar.section')}</div>
+      <div className="font-bebas text-4xl md:text-5xl mb-6">{t('calendar.title')}</div>
 
       {/* Month navigation */}
       <div id="tour-calendar-nav" className="flex items-center justify-between mb-6">
-        <Button variant="outline" size="sm" onClick={prevMonth} aria-label="Mes anterior" className="h-8 px-3 text-xs">
+        <Button variant="outline" size="sm" onClick={prevMonth} aria-label={t('calendar.prevMonth')} className="h-8 px-3 text-xs">
           ‹
         </Button>
         <div className="text-center">
           <div className="font-bebas text-2xl">{MONTH_NAMES[viewMonth]} {viewYear}</div>
           <div className="text-[10px] text-muted-foreground tracking-widest">
-            {monthStats.activeDays} días activos · {monthStats.totalSessions} sesiones
+            {t('calendar.activeDays', { count: monthStats.activeDays })} · {t('calendar.sessionCount', { count: monthStats.totalSessions })}
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={goToday} className="h-8 px-3 text-[10px] tracking-widest">
-            HOY
+            {t('calendar.todayBtn')}
           </Button>
-          <Button variant="outline" size="sm" onClick={nextMonth} aria-label="Mes siguiente" className="h-8 px-3 text-xs">
+          <Button variant="outline" size="sm" onClick={nextMonth} aria-label={t('calendar.nextMonth')} className="h-8 px-3 text-xs">
             ›
           </Button>
         </div>
@@ -302,7 +296,7 @@ export default function CalendarPage() {
               return (
                 <button
                   key={date}
-                  aria-label={`${d} de ${MONTH_NAMES[viewMonth]}${hasSession ? `, ${sessions.length} ${sessions.length > 1 ? 'sesiones' : 'sesión'}` : ''}${nutrition ? `, ${nutrition.meals} comidas` : ''}${isToday ? ', hoy' : ''}`}
+                  aria-label={`${d} ${t(`month.${viewMonth}`)}${hasSession ? `, ${t('calendar.sessionLabel', { count: sessions.length })}` : ''}${nutrition ? `, ${t('calendar.mealLabel', { count: nutrition.meals })}` : ''}${isToday ? `, ${t('common.today').toLowerCase()}` : ''}`}
                   onClick={() => setSelectedDate(isSelected ? null : date)}
                   className={cn(
                     'aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all text-sm relative',
@@ -352,8 +346,8 @@ export default function CalendarPage() {
                 </div>
                 <div className="text-sm">
                   {selectedSessions.length > 0
-                    ? `${selectedSessions.length} ${selectedSessions.length > 1 ? 'sesiones' : 'sesión'}`
-                    : 'Sin entrenamientos registrados'
+                    ? t('calendar.sessionLabel', { count: selectedSessions.length })
+                    : t('calendar.noWorkouts')
                   }
                 </div>
               </div>
@@ -363,7 +357,7 @@ export default function CalendarPage() {
                   size="sm"
                   className="bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] font-bold tracking-widest"
                 >
-                  ENTRENAR
+                  {t('calendar.train')}
                 </Button>
               )}
             </div>
@@ -377,7 +371,7 @@ export default function CalendarPage() {
                   const titleColor = isCardio ? 'text-sky-400' : isFree ? 'text-violet-400' : ''
 
                   const cardioLabel = isCardio && s.activityType
-                    ? { running: 'Correr', walking: 'Caminar', cycling: 'Ciclismo' }[s.activityType] || 'Cardio'
+                    ? { running: t('calendar.running'), walking: t('calendar.walking'), cycling: t('calendar.cycling') }[s.activityType] || 'Cardio'
                     : null
 
                   const cardioMeta = isCardio && s.distanceKm
@@ -409,12 +403,12 @@ export default function CalendarPage() {
             ) : selectedPlanned ? (
               <div>
                 {selectedPlanned.type === 'rest' ? (
-                  <div className="text-xs text-muted-foreground">Día de descanso</div>
+                  <div className="text-xs text-muted-foreground">{t('calendar.restDay')}</div>
                 ) : (
                   <div className="px-4 py-3 bg-muted/20 rounded-lg border border-border/60 border-l-[3px] border-l-lime/40">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-[9px] tracking-wide border-lime/30 text-lime bg-lime/10">
-                        PLANIFICADO
+                        {t('calendar.planned')}
                       </Badge>
                       {activeProgram && (
                         <span className="text-[9px] text-muted-foreground">{activeProgram.name}</span>
@@ -422,15 +416,15 @@ export default function CalendarPage() {
                     </div>
                     <div className="text-sm font-medium">{selectedPlanned.focus}</div>
                     <div className="text-[10px] text-muted-foreground mt-0.5">
-                      {selectedPlanned.name} · Fase {currentPhase || 1}
+                      {selectedPlanned.name} · {t('workout.phase')} {currentPhase || 1}
                     </div>
                   </div>
                 )}
               </div>
             ) : selectedDate <= todayStr ? (
-              <div className="text-xs text-muted-foreground">No entrenaste este día</div>
+              <div className="text-xs text-muted-foreground">{t('calendar.noTraining')}</div>
             ) : (
-              <div className="text-xs text-muted-foreground">Día por venir</div>
+              <div className="text-xs text-muted-foreground">{t('calendar.upcoming')}</div>
             )}
 
             {/* Nutrition & Water summary for selected day */}
@@ -443,7 +437,7 @@ export default function CalendarPage() {
                   >
                     <div className="size-2 rounded-full bg-amber-400" />
                     <div className="text-[11px]">
-                      <span className="text-amber-400 font-medium">{nutritionByDate[selectedDate].meals} {nutritionByDate[selectedDate].meals > 1 ? 'comidas' : 'comida'}</span>
+                      <span className="text-amber-400 font-medium">{t('calendar.mealLabel', { count: nutritionByDate[selectedDate].meals })}</span>
                       <span className="text-muted-foreground ml-1.5">{nutritionByDate[selectedDate].calories} kcal</span>
                     </div>
                   </button>
@@ -453,7 +447,7 @@ export default function CalendarPage() {
                     <div className="size-2 rounded-full bg-cyan-400" />
                     <div className="text-[11px]">
                       <span className="text-cyan-400 font-medium">{waterByDate[selectedDate].totalMl} ml</span>
-                      <span className="text-muted-foreground ml-1.5">agua</span>
+                      <span className="text-muted-foreground ml-1.5">{t('calendar.waterLabel')}</span>
                     </div>
                   </div>
                 )}

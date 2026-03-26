@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useWorkDay } from '../hooks/useWorkDay'
 import Timer from '../components/Timer'
 import YoutubeModal from '../components/YoutubeModal'
@@ -78,6 +79,7 @@ function fmtTimeOfDay(iso: string | null): string {
 
 // ─── WorkDayClock ─────────────────────────────────────────────────────────────
 function WorkDayClock() {
+  const { t } = useTranslation()
   const { workStart, workEnd, pauses, elapsed, next25, next60,
     isClockedIn, isClockedOut, checkIn, checkOut, formatTime } = useWorkDay()
 
@@ -96,7 +98,7 @@ function WorkDayClock() {
 
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <div className="text-[10px] text-muted-foreground tracking-[3px] mb-1.5 uppercase">Jornada Laboral</div>
+          <div className="text-[10px] text-muted-foreground tracking-[3px] mb-1.5 uppercase">{t('lumbar.workday')}</div>
           <div className={cn(
             'font-bebas text-[56px] leading-none tracking-[2px] mb-1',
             isClockedIn ? 'text-lime' : isClockedOut ? 'text-emerald-500' : 'text-muted-foreground/30'
@@ -104,16 +106,16 @@ function WorkDayClock() {
             {formatTime(elapsed)}
           </div>
           <div className="text-[11px] text-muted-foreground/60 flex gap-4 font-mono">
-            {workStart && <span>Entrada <span className="text-muted-foreground">{fmtTimeOfDay(workStart)}</span></span>}
-            {workEnd   && <span>Salida <span className="text-emerald-500">{fmtTimeOfDay(workEnd)}</span></span>}
+            {workStart && <span>{t('lumbar.clockIn')} <span className="text-muted-foreground">{fmtTimeOfDay(workStart)}</span></span>}
+            {workEnd   && <span>{t('lumbar.clockOut')} <span className="text-emerald-500">{fmtTimeOfDay(workEnd)}</span></span>}
           </div>
         </div>
 
         <div className="flex flex-col items-end gap-2.5">
           {isClockedIn && (
             <div className="flex gap-2.5 flex-wrap justify-end">
-              <CountdownPill label="próx 2min" seconds={next25} accentClass="text-sky-500" urgentBg="bg-sky-500/10" urgentBorder="border-sky-500/30" />
-              <CountdownPill label="próx 5min" seconds={next60} accentClass="text-lime" urgentBg="bg-lime/10" urgentBorder="border-lime/30" />
+              <CountdownPill label={t('lumbar.next2min')} seconds={next25} accentClass="text-sky-500" urgentBg="bg-sky-500/10" urgentBorder="border-sky-500/30" />
+              <CountdownPill label={t('lumbar.next5min')} seconds={next60} accentClass="text-lime" urgentBg="bg-lime/10" urgentBorder="border-lime/30" />
             </div>
           )}
           {!workStart && (
@@ -121,7 +123,7 @@ function WorkDayClock() {
               onClick={checkIn}
               className="bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-lg tracking-wide"
             >
-              ▶ INICIAR JORNADA
+              {t('lumbar.startWorkday')}
             </Button>
           )}
           {isClockedIn && (
@@ -130,12 +132,12 @@ function WorkDayClock() {
               onClick={checkOut}
               className="border-red-500/30 text-red-500 bg-red-500/10 hover:bg-red-500/20 hover:text-red-400 font-bebas text-lg tracking-wide"
             >
-              ■ TERMINAR JORNADA
+              {t('lumbar.endWorkday')}
             </Button>
           )}
           {isClockedOut && (
             <div className="text-[11px] text-emerald-500 font-mono px-3.5 py-2 border border-emerald-500/20 rounded-md">
-              ✓ Jornada completada
+              {t('lumbar.workdayComplete')}
             </div>
           )}
         </div>
@@ -144,7 +146,7 @@ function WorkDayClock() {
       {totalPauses > 0 && (
         <div className="mt-5 pt-4 border-t border-border">
           <div className="flex items-center gap-4 mb-2.5">
-            <div className="text-[10px] text-muted-foreground tracking-[2px] uppercase">Pausas hoy</div>
+            <div className="text-[10px] text-muted-foreground tracking-[2px] uppercase">{t('lumbar.pausesToday')}</div>
             <span className="font-mono text-[11px] text-sky-500"><span className="font-bebas text-base">{pauseCount25}</span> × 2min</span>
             <span className="font-mono text-[11px] text-lime"><span className="font-bebas text-base">{pauseCount60}</span> × 5min</span>
           </div>
@@ -165,7 +167,7 @@ function WorkDayClock() {
 
       {!workStart && (
         <div className="mt-3 text-[12px] text-muted-foreground/60 font-mono">
-          Al iniciar se pedirá permiso de notificaciones para las pausas activas.
+          {t('lumbar.notificationHint')}
         </div>
       )}
     </div>
@@ -205,6 +207,7 @@ interface LumbarPageProps {
 }
 
 export default function LumbarPage({ user }: LumbarPageProps) {
+  const { t } = useTranslation()
   const [activeProtocol, setActiveProtocol] = useState<string | null>(null)
   const [youtubeQuery, setYoutubeQuery]     = useState<string | null>(null)
   const [showLumbarCheck, setShowLumbarCheck] = useState(() => {
@@ -224,10 +227,10 @@ export default function LumbarPage({ user }: LumbarPageProps) {
 
   return (
     <div className="max-w-[860px] mx-auto px-4 py-6 md:px-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">Protocolo Lumbar</div>
-      <div className="font-bebas text-[36px] md:text-[52px] leading-none mb-2">LUMBAR &amp; POSTURA</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">{t('lumbar.section')}</div>
+      <div className="font-bebas text-[36px] md:text-[52px] leading-none mb-2">{t('lumbar.title')}</div>
       <p className="text-muted-foreground text-sm leading-relaxed mb-8 max-w-[600px]">
-        Tu arma principal contra el dolor de espalda como programador. Control de jornada laboral con pausas activas automáticas.
+        {t('lumbar.subtitle')}
       </p>
 
       <WorkDayClock />
@@ -291,7 +294,7 @@ export default function LumbarPage({ user }: LumbarPageProps) {
                           onClick={() => setYoutubeQuery(ex.youtube)}
                           className="h-7 px-3 text-[10px] border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:text-red-400 tracking-wide"
                         >
-                          ▶ TUTORIAL
+                          {t('lumbar.tutorial')}
                         </Button>
                       </div>
                       {ex.isTimer && ex.time && (

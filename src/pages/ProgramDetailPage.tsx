@@ -56,10 +56,10 @@ interface ProgramExercise {
   pbRecordId?: string
 }
 
-const PRIORITY_LABEL: Record<string, string> = {
-  high: 'Alta',
-  med: 'Media',
-  low: 'Baja',
+const PRIORITY_LABEL_KEY: Record<string, string> = {
+  high: 'priority.high',
+  med: 'priority.med',
+  low: 'priority.low',
 }
 
 // ── Day order ──────────────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ export default function ProgramDetailPage({
 
     const available = await isPocketBaseAvailable()
     if (!available) {
-      setError('No se puede conectar con el servidor.')
+      setError(t('programDetail.cannotConnect'))
       setLoading(false)
       return
     }
@@ -297,7 +297,7 @@ export default function ProgramDetailPage({
     } catch (e: any) {
       if (e?.code === 0) return // auto-cancelled, ignore
       console.error('ProgramDetailPage: fetch error', e)
-      setError('Error al cargar el programa.')
+      setError(t('programDetail.loadError'))
     } finally {
       setLoading(false)
     }
@@ -402,9 +402,9 @@ export default function ProgramDetailPage({
   if (error || !program) {
     return (
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
-        <button onClick={onBack} aria-label="Volver a programas" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
+        <button onClick={onBack} aria-label={t('programDetail.backToPrograms')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
           <ArrowLeftIcon className="size-4" />
-          <span className="font-mono text-[11px] tracking-widest uppercase">Volver</span>
+          <span className="font-mono text-[11px] tracking-widest uppercase">{t('programDetail.back')}</span>
         </button>
         <div className="text-center py-20">
           <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center motion-safe:animate-scale-in">
@@ -414,7 +414,7 @@ export default function ProgramDetailPage({
               <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
           </div>
-          <p className="text-muted-foreground text-sm">{error || 'Programa no encontrado.'}</p>
+          <p className="text-muted-foreground text-sm">{error || t('programDetail.notFound')}</p>
         </div>
       </div>
     )
@@ -424,15 +424,15 @@ export default function ProgramDetailPage({
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
 
       {/* Back button */}
-      <button onClick={onBack} aria-label="Volver a programas" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 -ml-1">
+      <button onClick={onBack} aria-label={t('programDetail.backToPrograms')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 -ml-1">
         <ArrowLeftIcon className="size-4" />
-        <span className="font-mono text-[11px] tracking-widest uppercase">Volver a programas</span>
+        <span className="font-mono text-[11px] tracking-widest uppercase">{t('programDetail.backToPrograms')}</span>
       </button>
 
       {/* Hero section */}
       <div className="mb-10">
         <div className="text-[11px] text-muted-foreground tracking-[0.3em] mb-2 uppercase font-mono motion-safe:animate-fade-in">
-          {isSharedView ? 'Programa Compartido' : 'Detalle del Programa'}
+          {isSharedView ? t('programDetail.sharedProgram') : t('programDetail.programDetail')}
         </div>
         <h1 className="font-bebas text-4xl md:text-6xl leading-none mb-4 tracking-wide motion-safe:animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'both' }}>{program.name}</h1>
         {program.description && (
@@ -445,19 +445,19 @@ export default function ProgramDetailPage({
             <>
               <div className="flex items-center gap-2">
                 <span className="text-lime font-bebas text-xl">{program.duration_weeks}</span>
-                <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">semanas</span>
+                <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programDetail.weeks')}</span>
               </div>
               <div className="w-px h-5 bg-muted" />
             </>
           )}
           <div className="flex items-center gap-2">
             <span className="text-lime font-bebas text-xl">{phases.length}</span>
-            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">fase{phases.length !== 1 ? 's' : ''}</span>
+            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programDetail.phases', { count: phases.length })}</span>
           </div>
           <div className="w-px h-5 bg-muted" />
           <div className="flex items-center gap-2">
             <span className="text-lime font-bebas text-xl">{totalExercises}</span>
-            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">ejercicios</span>
+            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programDetail.exercises')}</span>
           </div>
           {totalDurationMinutes > 0 && (
             <>
@@ -481,13 +481,13 @@ export default function ProgramDetailPage({
           {isOwn && (
             <>
               <div className="w-px h-5 bg-muted" />
-              <span className="text-[10px] font-mono tracking-widest text-sky-400/70 uppercase">Creado por ti</span>
+              <span className="text-[10px] font-mono tracking-widest text-sky-400/70 uppercase">{t('programDetail.createdByYou')}</span>
             </>
           )}
           {isActive && (
             <>
               <div className="w-px h-5 bg-muted" />
-              <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full uppercase">Activo</span>
+              <span className="text-[9px] font-mono tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full uppercase">{t('programDetail.active')}</span>
             </>
           )}
         </div>
@@ -499,7 +499,7 @@ export default function ProgramDetailPage({
               onClick={onLogin}
               className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform"
             >
-              REGÍSTRATE PARA USAR ESTE PROGRAMA
+              {t('programDetail.signUpToUse')}
             </Button>
           ) : (
             <>
@@ -510,13 +510,13 @@ export default function ProgramDetailPage({
                   className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform"
                 >
                   <CheckIcon className="size-4 mr-2" />
-                  {actionLoading === 'select' ? 'ACTIVANDO...' : isSharedView ? 'AÑADIR A MIS PROGRAMAS' : 'USAR PROGRAMA'}
+                  {actionLoading === 'select' ? t('programDetail.activating') : isSharedView ? t('programDetail.addToMine') : t('programDetail.useProgram')}
                 </Button>
               )}
               {isActive && (
                 <Button asChild className="bg-lime hover:bg-lime/90 active:scale-[0.98] text-zinc-900 font-bebas text-lg tracking-widest px-6 h-11 shadow-lg shadow-lime/10 transition-transform motion-safe:animate-workday-pulse">
                   <Link to="/workout">
-                    IR A ENTRENAR
+                    {t('programDetail.goToWorkout')}
                   </Link>
                 </Button>
               )}
@@ -528,7 +528,7 @@ export default function ProgramDetailPage({
                   className="font-mono text-[11px] tracking-widest h-11 px-5 border-border hover:border-sky-500/50 hover:text-sky-400"
                 >
                   <CopyIcon className="size-3.5 mr-2" />
-                  {actionLoading === 'duplicate' ? 'DUPLICANDO...' : 'DUPLICAR'}
+                  {actionLoading === 'duplicate' ? t('programDetail.duplicating') : t('programDetail.duplicate')}
                 </Button>
               )}
               <ShareButton
@@ -543,7 +543,7 @@ export default function ProgramDetailPage({
                   className="font-mono text-[11px] tracking-widest h-11 px-5 border-amber-500/20 text-amber-400 hover:border-amber-500/40 hover:bg-amber-500/5"
                 >
                   <EditIcon className="size-3.5 mr-2" />
-                  EDITAR
+                  {t('programDetail.edit')}
                 </Button>
               )}
               {onDeleteProgram && isOwn && !isActive && (
@@ -552,7 +552,7 @@ export default function ProgramDetailPage({
                   onClick={() => setShowDeleteConfirm(true)}
                   className="font-mono text-[11px] tracking-widest h-11 px-5 border-red-500/20 text-red-400 hover:border-red-500/40 hover:bg-red-500/5"
                 >
-                  ELIMINAR
+                  {t('common.delete')}
                 </Button>
               )}
             </>
@@ -591,15 +591,15 @@ export default function ProgramDetailPage({
                 {/* Phase info */}
                 <div className="mb-5">
                   <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase font-mono">
-                    Fase {phase.id} · Semanas {phase.weeks}
+                    {t('programDetail.phaseLabel', { id: phase.id })} · {t('programDetail.weeksLabel', { weeks: phase.weeks })}
                   </div>
                 </div>
 
                 {/* Day workouts */}
                 {phaseWorkouts.length === 0 ? (
                   <div className="text-center py-16 motion-safe:animate-fade-in">
-                    <div className="font-bebas text-2xl text-muted-foreground/40 mb-2 tracking-widest">SIN EJERCICIOS</div>
-                    <p className="text-sm text-muted-foreground">Esta fase aún no tiene ejercicios configurados.</p>
+                    <div className="font-bebas text-2xl text-muted-foreground/40 mb-2 tracking-widest">{t('programDetail.noExercises')}</div>
+                    <p className="text-sm text-muted-foreground">{t('programDetail.noExercisesDesc')}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -633,7 +633,7 @@ export default function ProgramDetailPage({
                                 </span>
                                 {isToday && (
                                   <span className="text-[9px] font-mono tracking-widest text-lime bg-lime/10 px-1.5 py-0.5 rounded-full uppercase">
-                                    Hoy
+                                    {t('programDetail.today')}
                                   </span>
                                 )}
                                 {workout.dayFocus && (
@@ -653,7 +653,7 @@ export default function ProgramDetailPage({
                                   'text-[10px] font-mono mt-1',
                                   sessionInfo.fresh ? 'text-emerald-400/70' : 'text-amber-400/50',
                                 )}>
-                                  Último: {sessionInfo.text}
+                                  {t('programDetail.lastSession')}: {sessionInfo.text}
                                 </div>
                               )}
                             </div>
@@ -669,10 +669,10 @@ export default function ProgramDetailPage({
                               </div>
                               <div className="flex justify-center gap-4 text-sm text-muted-foreground">
                                 {workout.cardioConfig?.targetDistanceKm && (
-                                  <span>Meta: <strong className="text-emerald-400">{workout.cardioConfig.targetDistanceKm} km</strong></span>
+                                  <span>{t('programDetail.goal')}: <strong className="text-emerald-400">{workout.cardioConfig.targetDistanceKm} km</strong></span>
                                 )}
                                 {workout.cardioConfig?.targetDurationMin && (
-                                  <span>Duracion: <strong className="text-emerald-400">{workout.cardioConfig.targetDurationMin} min</strong></span>
+                                  <span>{t('programDetail.duration')}: <strong className="text-emerald-400">{workout.cardioConfig.targetDurationMin} min</strong></span>
                                 )}
                               </div>
                             </div>
@@ -738,7 +738,7 @@ export default function ProgramDetailPage({
                                           PRIORITY_COLORS[exercise.priority as Priority]?.badge,
                                         )}
                                       >
-                                        {PRIORITY_LABEL[exercise.priority]}
+                                        {t(PRIORITY_LABEL_KEY[exercise.priority])}
                                       </Badge>
                                     </div>
                                     {exercise.muscles && (
@@ -747,7 +747,7 @@ export default function ProgramDetailPage({
                                       </div>
                                     )}
                                     <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/60 font-mono">
-                                      {exercise.rest > 0 && <span>Descanso: {exercise.rest}s</span>}
+                                      {exercise.rest > 0 && <span>{t('programDetail.rest')}: {exercise.rest}s</span>}
                                       {exercise.isTimer && exercise.timerSeconds && (
                                         <span>Timer: {exercise.timerSeconds}s</span>
                                       )}
@@ -774,7 +774,7 @@ export default function ProgramDetailPage({
       {/* Related programs */}
       {relatedPrograms.length > 0 && (
         <div className="mt-16 mb-8">
-          <h2 className="font-bebas text-2xl tracking-widest mb-6 uppercase">También te puede interesar</h2>
+          <h2 className="font-bebas text-2xl tracking-widest mb-6 uppercase">{t('programDetail.alsoInterested')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {relatedPrograms.slice(0, 3).map((rp, ri) => (
               <button
@@ -792,7 +792,7 @@ export default function ProgramDetailPage({
                 )}
                 {rp.duration_weeks > 0 && (
                   <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase">
-                    {rp.duration_weeks} semanas
+                    {rp.duration_weeks} {t('programDetail.weeks')}
                   </span>
                 )}
               </button>
@@ -804,10 +804,10 @@ export default function ProgramDetailPage({
         <ConfirmDialog
           open={showDeleteConfirm}
           onOpenChange={setShowDeleteConfirm}
-          title="Eliminar programa"
-          description="¿Eliminar este programa? Esta acción no se puede deshacer."
-          confirmLabel="ELIMINAR"
-          cancelLabel="CANCELAR"
+          title={t('programDetail.deleteProgram')}
+          description={t('programDetail.deleteConfirm')}
+          confirmLabel={t('common.delete')}
+          cancelLabel={t('common.cancel')}
           variant="destructive"
           onConfirm={() => onDeleteProgram(programId)}
         />

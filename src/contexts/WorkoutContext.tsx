@@ -1,7 +1,7 @@
 import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react'
 import { useProgress } from '../hooks/useProgress'
 import { usePrograms } from '../hooks/usePrograms'
-import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta } from '../types'
+import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig } from '../types'
 
 // ── Context interface (state + actions + meta) ──────────────────────────────
 
@@ -16,6 +16,7 @@ interface WorkoutState {
   activeProgram: ProgramMeta | null
   phases: Phase[]
   weekDays: WeekDay[]
+  cardioDayConfigs: Record<string, CardioDayConfig>
   programsReady: boolean
 }
 
@@ -75,7 +76,7 @@ interface WorkoutProviderProps {
 
 export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const {
-    programs, activeProgram, phases, weekDays, getWorkout,
+    programs, activeProgram, phases, weekDays, cardioDayConfigs, getWorkout,
     selectProgram, duplicateProgram, deleteProgram, refreshPrograms, programsReady,
   } = usePrograms(userId)
 
@@ -95,8 +96,8 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
 
   const state = useMemo<WorkoutState>(() => ({
     progress, settings, usePB, pbReady,
-    programs, activeProgram, phases, weekDays, programsReady,
-  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, programsReady])
+    programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady,
+  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady])
 
   const actions = useMemo<WorkoutActions>(() => ({
     logSet, markWorkoutDone, unmarkWorkoutDone, updateSettings,
