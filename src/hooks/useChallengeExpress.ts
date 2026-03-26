@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr } from '../lib/dateUtils'
+import { localize } from '../lib/i18n-db'
 
 export interface ExpressProgress {
   participantId: string
@@ -32,7 +33,7 @@ export function useChallengeExpress(userId: string | null) {
           const exercise = await pb.collection('exercises_catalog').getOne(exerciseId, {
             $autoCancel: false,
           })
-          challengeTitle = `Challenge de ${(exercise as any).name} — ${dailyTarget} x ${durationDays}d`
+          challengeTitle = `Challenge de ${localize((exercise as any).name, 'es')} — ${dailyTarget} x ${durationDays}d`
         } catch {
           challengeTitle = `Challenge express — ${dailyTarget} x ${durationDays}d`
         }

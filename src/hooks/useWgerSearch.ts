@@ -60,10 +60,10 @@ export function useWgerSearch() {
 
       // Build FormData for PocketBase
       const formData = new FormData()
-      formData.append('name', mapped.name)
+      formData.append('name', JSON.stringify(mapped.name))
       formData.append('slug', mapped.slug)
-      formData.append('description', mapped.description)
-      formData.append('muscles', mapped.muscles)
+      formData.append('description', JSON.stringify(mapped.description))
+      formData.append('muscles', JSON.stringify(mapped.muscles))
       formData.append('category', mapped.category)
       formData.append('equipment', JSON.stringify(mapped.equipment))
       formData.append('priority', mapped.priority)

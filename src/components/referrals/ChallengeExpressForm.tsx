@@ -5,6 +5,7 @@ import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
 import { pb } from '../../lib/pocketbase'
 import { shareContent } from '../../lib/share'
+import { localize } from '../../lib/i18n-db'
 
 const DURATION_OPTIONS = [
   { value: 7, label: '7 dias' },
@@ -43,7 +44,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
           fields: 'id,name',
           $autoCancel: false,
         })
-        setExercises(res.items.map((e: any) => ({ id: e.id, name: e.name })))
+        setExercises(res.items.map((e: any) => ({ id: e.id, name: localize(e.name, 'es') })))
       } catch { /* */ }
     }
     loadExercises()

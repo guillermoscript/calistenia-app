@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import type { ProgressMap, ExerciseLog, SessionDone } from '../types'
+import type { TranslatableField } from '../lib/i18n-db'
 
 export interface SessionSet {
   setNumber: number
@@ -12,8 +13,8 @@ export interface SessionSet {
 
 export interface SessionExercise {
   exerciseId: string
-  name: string
-  muscles: string
+  name: TranslatableField
+  muscles: TranslatableField
   sets: SessionSet[]
   bestSet: SessionSet | null
   hasWeight: boolean
@@ -34,7 +35,7 @@ export function useSessionDetail(
   progress: ProgressMap,
   date: string,
   workoutKey: string,
-  exerciseCatalog: Record<string, { name: string; muscles: string }>,
+  exerciseCatalog: Record<string, { name: TranslatableField; muscles: TranslatableField }>,
 ): SessionDetailResult {
   return useMemo(() => {
     // 1. Find session metadata

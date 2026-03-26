@@ -80,10 +80,10 @@ function mapCategory(info: WgerExerciseInfo): AppCategoryId {
 // ── Main mapping function ───────────────────────────────────────────────────
 
 export interface MappedExercise {
-  name: string
+  name: Record<string, string>
   slug: string
-  description: string
-  muscles: string
+  description: Record<string, string>
+  muscles: Record<string, string>
   category: string
   equipment: string[]
   priority: 'med'
@@ -103,27 +103,28 @@ export function mapWgerToExerciseCatalog(
   const langId = WGER_LANGUAGE_IDS[language] ?? WGER_LANGUAGE_IDS.es
   const enLangId = WGER_LANGUAGE_IDS.en
 
-  let name = info.name
-  let description = info.description || ''
-
   // Try target language first, then English, then default
   const targetTranslation = info.translations?.find(t => t.language === langId)
   const enTranslation = info.translations?.find(t => t.language === enLangId)
 
-  if (targetTranslation?.name) {
-    name = targetTranslation.name
-    description = targetTranslation.description || description
-  } else if (enTranslation?.name) {
-    name = enTranslation.name
-    description = enTranslation.description || description
-  }
+  const esName = targetTranslation?.name || ''
+  const enName = enTranslation?.name || info.name || ''
+  const displayName = esName || enName
 
-  // Strip HTML tags from description
-  description = description.replace(/<[^>]*>/g, '').trim()
+  const esDesc = (targetTranslation?.description || '').replace(/<[^>]*>/g, '').trim()
+  const enDesc = (enTranslation?.description || info.description || '').replace(/<[^>]*>/g, '').trim()
+
+  const nameField: Record<string, string> = { es: displayName }
+  if (enName && enName !== displayName) nameField.en = enName
+
+  const descField: Record<string, string> = { es: esDesc || enDesc }
+  if (enDesc) descField.en = enDesc
 
   // Map muscles
   const allMuscles = [...info.muscles, ...info.muscles_secondary]
   const muscleNames = [...new Set(allMuscles.map(m => MUSCLE_MAP[m.id] ?? m.name))]
+  const muscleStr = muscleNames.join(', ')
+  const musclesField: Record<string, string> = { es: muscleStr, en: muscleStr }
 
   // Map equipment
   const equipmentIds = info.equipment.length > 0
@@ -131,17 +132,17 @@ export function mapWgerToExerciseCatalog(
     : ['ninguno']
 
   // Generate slug
-  const slug = name
+  const slug = displayName
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
 
   return {
-    name,
+    name: nameField,
     slug,
-    description,
-    muscles: muscleNames.join(', '),
+    description: descField,
+    muscles: musclesField,
     category: mapCategory(info),
     equipment: equipmentIds,
     priority: 'med',

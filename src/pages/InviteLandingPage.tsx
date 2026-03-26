@@ -117,7 +117,8 @@ export default function InviteLandingPage() {
                 const ex = await pb.collection('exercises_catalog').getOne(ch.exercise_id, {
                   $autoCancel: false,
                 })
-                exerciseName = (ex as any).name || ''
+                const rawName = (ex as any).name
+                exerciseName = (typeof rawName === 'object' && rawName !== null) ? (rawName.es ?? rawName.en ?? '') : (rawName || '')
               } catch { /* */ }
             }
 
