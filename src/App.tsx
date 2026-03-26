@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
 import { useNutrition } from './hooks/useNutrition'
@@ -104,29 +105,29 @@ function SessionRestoreNavigator() {
 
 interface NavItem {
   path: string
-  label: string
+  labelKey: string
   icon: React.FC<IconProps>
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: '/',          label: 'Dashboard',  icon: LayoutIcon },
-  { path: '/workout',   label: 'Entrenar',   icon: DumbbellIcon },
-  { path: '/lumbar',    label: 'Lumbar',      icon: SpineIcon },
-  { path: '/progress',  label: 'Progreso',   icon: ChartIcon },
-  { path: '/nutrition', label: 'Nutricion',  icon: NutritionIcon },
-  { path: '/calendar',  label: 'Calendario', icon: CalendarNavIcon },
-  { path: '/sleep',     label: 'Sueño',      icon: SleepIcon },
-  { path: '/programs',  label: 'Programas',  icon: ProgramIcon },
-  { path: '/exercises', label: 'Ejercicios', icon: ExerciseIcon },
-  { path: '/free-session', label: 'Sesion Libre', icon: FreeSessionIcon },
-  { path: '/cardio', label: 'Cardio', icon: RunningIcon },
-  { path: '/feed', label: 'Actividad', icon: ActivityIcon },
-  { path: '/friends', label: 'Amigos', icon: FriendsIcon },
-  { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
-  { path: '/challenges', label: 'Desafios', icon: ChallengeIcon },
-  { path: '/referrals', label: 'Referidos', icon: ReferralIcon },
-  { path: '/notifications', label: 'Notificaciones', icon: BellIcon },
-  { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
+  { path: '/',          labelKey: 'nav.dashboard',      icon: LayoutIcon },
+  { path: '/workout',   labelKey: 'nav.workout',        icon: DumbbellIcon },
+  { path: '/lumbar',    labelKey: 'nav.lumbar',          icon: SpineIcon },
+  { path: '/progress',  labelKey: 'nav.progress',       icon: ChartIcon },
+  { path: '/nutrition', labelKey: 'nav.nutrition',       icon: NutritionIcon },
+  { path: '/calendar',  labelKey: 'nav.calendar',       icon: CalendarNavIcon },
+  { path: '/sleep',     labelKey: 'nav.sleep',           icon: SleepIcon },
+  { path: '/programs',  labelKey: 'nav.programs',        icon: ProgramIcon },
+  { path: '/exercises', labelKey: 'nav.exercises',       icon: ExerciseIcon },
+  { path: '/free-session', labelKey: 'nav.freeSession',  icon: FreeSessionIcon },
+  { path: '/cardio',    labelKey: 'nav.cardio',          icon: RunningIcon },
+  { path: '/feed',      labelKey: 'nav.activity',        icon: ActivityIcon },
+  { path: '/friends',   labelKey: 'nav.friends',         icon: FriendsIcon },
+  { path: '/leaderboard', labelKey: 'nav.leaderboard',   icon: TrophyIcon },
+  { path: '/challenges', labelKey: 'nav.challenges',     icon: ChallengeIcon },
+  { path: '/referrals', labelKey: 'nav.referrals',       icon: ReferralIcon },
+  { path: '/notifications', labelKey: 'nav.notifications', icon: BellIcon },
+  { path: '/profile',   labelKey: 'nav.profile',         icon: ProfileIcon },
 ]
 
 // ── Hoisted RegExp for breadcrumb matching ──────────────────────────────────
@@ -139,52 +140,40 @@ const RE_ADD_FRIEND = /^\/add\/[^/]+$/
 const RE_SHARED_PROGRAM = /^\/shared\/[^/]+$/
 const RE_USER_PROFILE = /^\/u\/[^/]+$/
 
-function getBreadcrumb(pathname: string): string {
+function getBreadcrumbKey(pathname: string): string {
   const exact = NAV_ITEMS.find(item => item.path === pathname)
-  if (exact) return exact.label
-  if (pathname === '/programs/new') return 'Nuevo Programa'
-  if (RE_PROGRAM_EDIT.test(pathname)) return 'Editar Programa'
-  if (RE_PROGRAM_DETAIL.test(pathname)) return 'Detalle Programa'
-  if (RE_EXERCISE_DETAIL.test(pathname)) return 'Detalle Ejercicio'
-  if (RE_SESSION_DETAIL.test(pathname)) return 'Detalle Sesion'
-  if (pathname === '/feed') return 'Actividad'
-  if (pathname === '/challenges') return 'Desafios'
-  if (pathname === '/challenges/new') return 'Nuevo Desafio'
-  if (RE_CHALLENGE_DETAIL.test(pathname)) return 'Detalle Desafio'
-  if (pathname === '/friends') return 'Amigos'
-  if (pathname === '/leaderboard') return 'Ranking'
-  if (RE_ADD_FRIEND.test(pathname)) return 'Agregar Amigo'
-  if (pathname === '/calendar') return 'Calendario'
-  if (pathname === '/nutrition/log') return 'Registrar Comida'
-  if (pathname === '/reminders') return 'Recordatorios'
-  if (RE_SHARED_PROGRAM.test(pathname)) return 'Programa Compartido'
-  if (pathname === '/sleep') return 'Sueño'
-  if (pathname === '/free-session') return 'Sesion Libre'
-  if (pathname === '/cardio') return 'Cardio'
-  if (pathname === '/admin') return 'Admin'
-  if (pathname === '/editor') return 'Editor'
-  if (pathname.match(/^\/u\/[^/]+\/routine$/)) return 'Rutina'
-  if (RE_USER_PROFILE.test(pathname)) return 'Perfil'
-  if (pathname === '/notifications') return 'Notificaciones'
-  if (pathname === '/referrals') return 'Referidos'
-  return 'Dashboard'
+  if (exact) return exact.labelKey
+  if (pathname === '/programs/new') return 'breadcrumb.newProgram'
+  if (RE_PROGRAM_EDIT.test(pathname)) return 'breadcrumb.editProgram'
+  if (RE_PROGRAM_DETAIL.test(pathname)) return 'breadcrumb.programDetail'
+  if (RE_EXERCISE_DETAIL.test(pathname)) return 'breadcrumb.exerciseDetail'
+  if (RE_SESSION_DETAIL.test(pathname)) return 'breadcrumb.sessionDetail'
+  if (pathname === '/challenges/new') return 'breadcrumb.newChallenge'
+  if (RE_CHALLENGE_DETAIL.test(pathname)) return 'breadcrumb.challengeDetail'
+  if (RE_ADD_FRIEND.test(pathname)) return 'breadcrumb.addFriend'
+  if (pathname === '/nutrition/log') return 'breadcrumb.logMeal'
+  if (RE_SHARED_PROGRAM.test(pathname)) return 'breadcrumb.sharedProgram'
+  if (pathname.match(/^\/u\/[^/]+\/routine$/)) return 'breadcrumb.routine'
+  if (RE_USER_PROFILE.test(pathname)) return 'nav.profile'
+  return 'nav.dashboard'
 }
 
 const AppLoader: React.FC = () => (
-  <Loader label="Cargando..." size="lg" fullScreen />
+  <Loader label="" size="lg" fullScreen />
 )
 
 // ── Mobile bottom tab bar ───────────────────────────────────────────────────
 
-const MOBILE_TABS: { path: string; label: string; icon: React.FC<IconProps> }[] = [
-  { path: '/',          label: 'Inicio',     icon: LayoutIcon },
-  { path: '/workout',   label: 'Entrenar',   icon: DumbbellIcon },
-  { path: '/nutrition', label: 'Nutrición',  icon: NutritionIcon },
-  { path: '/progress',  label: 'Progreso',   icon: ChartIcon },
-  { path: '/profile',   label: 'Perfil',     icon: ProfileIcon },
+const MOBILE_TABS: { path: string; labelKey: string; icon: React.FC<IconProps> }[] = [
+  { path: '/',          labelKey: 'nav.home',       icon: LayoutIcon },
+  { path: '/workout',   labelKey: 'nav.workout',    icon: DumbbellIcon },
+  { path: '/nutrition', labelKey: 'nav.nutrition',   icon: NutritionIcon },
+  { path: '/progress',  labelKey: 'nav.progress',    icon: ChartIcon },
+  { path: '/profile',   labelKey: 'nav.profile',     icon: ProfileIcon },
 ]
 
 function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; pathname: string }) {
+  const { t } = useTranslation()
   const getActiveIndex = () => {
     for (let i = 0; i < MOBILE_TABS.length; i++) {
       const p = MOBILE_TABS[i].path
@@ -197,7 +186,7 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
 
   return (
     <nav
-      aria-label="Navegación principal"
+      aria-label={t('nav.mainNavigation')}
       className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-border/50 bg-background/95 backdrop-blur-lg"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
@@ -211,7 +200,7 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
           </div>
         ) : null}
         <div className="flex items-stretch">
-          {MOBILE_TABS.map(({ path, label, icon: Icon }, i) => {
+          {MOBILE_TABS.map(({ path, labelKey, icon: Icon }, i) => {
             const active = i === activeIndex
             return (
               <button
@@ -224,7 +213,7 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
                 )}
               >
                 <Icon className={cn('size-5 transition-transform duration-200 ease-[cubic-bezier(0.25,1,0.5,1)]', active ? 'scale-110' : '')} />
-                <span className={cn('text-[10px] tracking-wide transition-[font-weight,opacity] duration-200', active ? 'font-semibold' : 'font-medium')}>{label}</span>
+                <span className={cn('text-[10px] tracking-wide transition-[font-weight,opacity] duration-200', active ? 'font-semibold' : 'font-medium')}>{t(labelKey)}</span>
               </button>
             )
           })}
@@ -246,34 +235,35 @@ interface AppShellProps {
   children: ReactNode
 }
 
-const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
-  { label: 'Entrenamiento', items: [
-    { path: '/', label: 'Dashboard', icon: LayoutIcon },
-    { path: '/workout', label: 'Entrenar', icon: DumbbellIcon },
-    { path: '/free-session', label: 'Sesion Libre', icon: FreeSessionIcon },
-    { path: '/cardio', label: 'Cardio', icon: RunningIcon },
-    { path: '/lumbar', label: 'Lumbar', icon: SpineIcon },
+const NAV_SECTIONS: { labelKey: string; items: NavItem[] }[] = [
+  { labelKey: 'nav.sectionTraining', items: [
+    { path: '/', labelKey: 'nav.dashboard', icon: LayoutIcon },
+    { path: '/workout', labelKey: 'nav.workout', icon: DumbbellIcon },
+    { path: '/free-session', labelKey: 'nav.freeSession', icon: FreeSessionIcon },
+    { path: '/cardio', labelKey: 'nav.cardio', icon: RunningIcon },
+    { path: '/lumbar', labelKey: 'nav.lumbar', icon: SpineIcon },
   ]},
-  { label: 'Seguimiento', items: [
-    { path: '/progress', label: 'Progreso', icon: ChartIcon },
-    { path: '/nutrition', label: 'Nutricion', icon: NutritionIcon },
-    { path: '/sleep', label: 'Sueño', icon: SleepIcon },
-    { path: '/calendar', label: 'Calendario', icon: CalendarNavIcon },
-    { path: '/reminders', label: 'Recordatorios', icon: BellIcon },
+  { labelKey: 'nav.sectionTracking', items: [
+    { path: '/progress', labelKey: 'nav.progress', icon: ChartIcon },
+    { path: '/nutrition', labelKey: 'nav.nutrition', icon: NutritionIcon },
+    { path: '/sleep', labelKey: 'nav.sleep', icon: SleepIcon },
+    { path: '/calendar', labelKey: 'nav.calendar', icon: CalendarNavIcon },
+    { path: '/reminders', labelKey: 'nav.reminders', icon: BellIcon },
   ]},
-  { label: 'Explorar', items: [
-    { path: '/programs', label: 'Programas', icon: ProgramIcon },
-    { path: '/exercises', label: 'Ejercicios', icon: ExerciseIcon },
+  { labelKey: 'nav.sectionExplore', items: [
+    { path: '/programs', labelKey: 'nav.programs', icon: ProgramIcon },
+    { path: '/exercises', labelKey: 'nav.exercises', icon: ExerciseIcon },
   ]},
-  { label: 'Social', items: [
-    { path: '/friends', label: 'Amigos', icon: FriendsIcon },
-    { path: '/challenges', label: 'Desafios', icon: ChallengeIcon },
-    { path: '/leaderboard', label: 'Ranking', icon: TrophyIcon },
-    { path: '/referrals', label: 'Referidos', icon: ReferralIcon },
+  { labelKey: 'nav.sectionSocial', items: [
+    { path: '/friends', labelKey: 'nav.friends', icon: FriendsIcon },
+    { path: '/challenges', labelKey: 'nav.challenges', icon: ChallengeIcon },
+    { path: '/leaderboard', labelKey: 'nav.leaderboard', icon: TrophyIcon },
+    { path: '/referrals', labelKey: 'nav.referrals', icon: ReferralIcon },
   ]},
 ]
 
 function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
+  const { t } = useTranslation()
   const { open, isMobile, setOpenMobile } = useSidebar()
   const navigate = useNavigate()
   const location = useLocation()
@@ -300,14 +290,14 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
         <SidebarContent className="px-2">
           <div id="tour-sidebar-nav" className="flex flex-col gap-4">
             {NAV_SECTIONS.map((section) => (
-              <div key={section.label}>
-                {open ? <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{section.label}</div> : null}
+              <div key={section.labelKey}>
+                {open ? <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{t(section.labelKey)}</div> : null}
                 <SidebarMenu>
-                  {section.items.map(({ path, label, icon: Icon }) => (
+                  {section.items.map(({ path, labelKey, icon: Icon }) => (
                     <SidebarMenuItem key={path}>
-                      <SidebarMenuButton isActive={isActive(path)} onClick={() => handleNav(path)} tooltip={label}>
+                      <SidebarMenuButton isActive={isActive(path)} onClick={() => handleNav(path)} tooltip={t(labelKey)}>
                         <Icon className="size-4 shrink-0" />
-                        <span>{label}</span>
+                        <span>{t(labelKey)}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -316,18 +306,18 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
             ))}
             {(userRole === 'admin' || userRole === 'editor') ? (
               <div>
-                {open ? <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Gestión</div> : null}
+                {open ? <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{t('nav.sectionManagement')}</div> : null}
                 <SidebarMenu>
                   {userRole === 'admin' ? (
                     <SidebarMenuItem>
-                      <SidebarMenuButton isActive={isActive('/admin')} onClick={() => handleNav('/admin')} tooltip="Admin">
-                        <ShieldIcon className="size-4 shrink-0" /><span>Admin</span>
+                      <SidebarMenuButton isActive={isActive('/admin')} onClick={() => handleNav('/admin')} tooltip={t('nav.admin')}>
+                        <ShieldIcon className="size-4 shrink-0" /><span>{t('nav.admin')}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ) : null}
                   <SidebarMenuItem>
-                    <SidebarMenuButton isActive={isActive('/editor')} onClick={() => handleNav('/editor')} tooltip="Editor">
-                      <PencilIcon className="size-4 shrink-0" /><span>Editor</span>
+                    <SidebarMenuButton isActive={isActive('/editor')} onClick={() => handleNav('/editor')} tooltip={t('nav.editor')}>
+                      <PencilIcon className="size-4 shrink-0" /><span>{t('nav.editor')}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
@@ -344,28 +334,28 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
             {open ? (
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-foreground truncate">{displayName}</div>
-                <div className="text-[11px] text-muted-foreground">Fase {settings.phase}</div>
+                <div className="text-[11px] text-muted-foreground">{t('nav.phase')} {settings.phase}</div>
               </div>
             ) : null}
           </div>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={toggleDark} tooltip={dark ? 'Modo claro' : 'Modo oscuro'} className="text-muted-foreground hover:text-foreground">
+              <SidebarMenuButton onClick={toggleDark} tooltip={dark ? t('nav.lightMode') : t('nav.darkMode')} className="text-muted-foreground hover:text-foreground">
                 {dark ? <SunIcon className="size-4 shrink-0" /> : <MoonIcon className="size-4 shrink-0" />}
-                <span>{dark ? 'Modo claro' : 'Modo oscuro'}</span>
+                <span>{dark ? t('nav.lightMode') : t('nav.darkMode')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={signOut} className="text-muted-foreground hover:text-destructive">
-                <LogOutIcon className="size-4 shrink-0" /><span>Cerrar sesion</span>
+                <LogOutIcon className="size-4 shrink-0" /><span>{t('nav.signOut')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
           {open ? (
             <div className="flex items-center gap-2 px-2 mt-2 text-[11px] text-muted-foreground">
-              <Link to="/legal#privacy" className="hover:text-foreground transition-colors">Privacidad</Link>
+              <Link to="/legal#privacy" className="hover:text-foreground transition-colors">{t('nav.privacy')}</Link>
               <span>·</span>
-              <Link to="/legal#terms" className="hover:text-foreground transition-colors">Condiciones</Link>
+              <Link to="/legal#terms" className="hover:text-foreground transition-colors">{t('nav.terms')}</Link>
               <span>·</span>
               <WhatsNewButton className="hover:text-foreground transition-colors" />
             </div>
@@ -377,14 +367,14 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
           <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
           <Separator orientation="vertical" className="h-4 bg-border hidden sm:block" />
           <nav aria-label="breadcrumb" className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-foreground truncate block">{getBreadcrumb(location.pathname)}</span>
+            <span className="text-sm font-medium text-foreground truncate block">{t(getBreadcrumbKey(location.pathname))}</span>
           </nav>
           <div className="flex items-center gap-1.5 sm:gap-2.5">
-            <span className="hidden sm:inline-flex text-[11px] text-muted-foreground border border-border rounded px-2 py-0.5 font-mono">Fase {settings.phase}</span>
-            <Button variant="ghost" size="icon" onClick={() => replayTourForPage(location.pathname)} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label="Guia de la pagina" title="Guia de la pagina">
+            <span className="hidden sm:inline-flex text-[11px] text-muted-foreground border border-border rounded px-2 py-0.5 font-mono">{t('nav.phase')} {settings.phase}</span>
+            <Button variant="ghost" size="icon" onClick={() => replayTourForPage(location.pathname)} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={t('nav.pageGuide')} title={t('nav.pageGuide')}>
               <span className="text-sm font-bold">?</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={toggleDark} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={dark ? 'Activar modo claro' : 'Activar modo oscuro'}>
+            <Button variant="ghost" size="icon" onClick={toggleDark} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={dark ? t('nav.lightMode') : t('nav.darkMode')}>
               {dark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
             </Button>
           </div>
