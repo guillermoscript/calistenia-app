@@ -3,6 +3,7 @@ import { useReferrals } from '../hooks/useReferrals'
 import { useReferralPoints, type PointTransaction } from '../hooks/useReferralPoints'
 import { useChallengeExpress } from '../hooks/useChallengeExpress'
 import { pb } from '../lib/pocketbase'
+import { utcToLocalDateStr } from '../lib/dateUtils'
 import { ReferralStats } from '../components/referrals/ReferralStats'
 import { ReferralList } from '../components/referrals/ReferralList'
 import { InviteButton } from '../components/referrals/InviteButton'
@@ -191,7 +192,7 @@ function TransactionHistory({ transactions }: { transactions: PointTransaction[]
   return (
     <div className="space-y-2">
       {transactions.map(tx => {
-        const date = tx.created?.split(' ')[0] || tx.created?.split('T')[0] || ''
+        const date = tx.created ? utcToLocalDateStr(tx.created) : ''
         const isPositive = tx.amount > 0
         return (
           <div key={tx.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card">

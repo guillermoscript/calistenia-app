@@ -9,7 +9,7 @@ import { Loader } from '../components/ui/loader'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
-import { todayStr } from '../lib/dateUtils'
+import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
 import { useFollows } from '../hooks/useFollows'
 import { ShareButton } from '../components/ShareButton'
 import { shareProfile, shareReferralInvite } from '../lib/share'
@@ -90,13 +90,13 @@ export default function UserProfilePage() {
         } catch { /* no settings yet */ }
 
         // Fetch recent sessions for activity calendar
-        const now = new Date()
-        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        const today = todayStr()
+        const yearMonth = today.slice(0, 7) // "YYYY-MM"
         const monthActivity: Record<string, boolean> = {}
         // Fill all days of the month
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+        const daysInMonth = new Date(parseInt(yearMonth.slice(0, 4)), parseInt(yearMonth.slice(5, 7)), 0).getDate()
         for (let d = 1; d <= daysInMonth; d++) {
-          const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+          const date = `${yearMonth}-${String(d).padStart(2, '0')}`
           monthActivity[date] = false
         }
 
@@ -104,11 +104,11 @@ export default function UserProfilePage() {
           const sessions = await pb.collection('sessions').getList(1, 100, {
             filter: pb.filter('user = {:uid} && created >= {:start}', {
               uid: userId,
-              start: firstOfMonth.toISOString().replace('T', ' '),
+              start: localMidnightAsUTC(`${yearMonth}-01`),
             }),
           })
           for (const s of sessions.items) {
-            const date = s.created?.split(' ')[0] || s.created?.split('T')[0]
+            const date = utcToLocalDateStr(s.created)
             if (date && monthActivity.hasOwnProperty(date)) {
               monthActivity[date] = true
             }
@@ -132,7 +132,7 @@ export default function UserProfilePage() {
           displayName: user.display_name || user.email?.split('@')[0] || '',
           avatarUrl: getUserAvatarUrl(user as any, '200x200'),
           email: user.email,
-          memberSince: user.created?.split(' ')[0] || user.created?.split('T')[0] || '',
+          memberSince: user.created ? utcToLocalDateStr(user.created) : '',
           totalSessions: stats.total_sessions || 0,
           bestStreak: stats.workout_streak_best || 0,
           currentStreak: stats.workout_streak_current || 0,

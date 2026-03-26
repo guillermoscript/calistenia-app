@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { startOfWeekStr, localMidnightAsUTC, todayStr } from '../lib/dateUtils'
+import dayjs from 'dayjs'
 
 export interface LeaderboardEntry {
   userId: string
@@ -58,14 +60,9 @@ export function useLeaderboard(userId: string | null) {
       }
 
       // 2. Fetch stats, settings, and session counts for all users
-      const now = new Date()
-      const weekStart = new Date(now)
-      weekStart.setDate(now.getDate() - now.getDay() + 1) // Monday
-      weekStart.setHours(0, 0, 0, 0)
-      const weekStartStr = weekStart.toISOString().replace('T', ' ')
-
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-      const monthStartStr = monthStart.toISOString().replace('T', ' ')
+      const weekStartStr = localMidnightAsUTC(startOfWeekStr())
+      const today = todayStr()
+      const monthStartStr = localMidnightAsUTC(`${today.slice(0, 7)}-01`)
 
       // Parallel fetch for each user
       const userDataPromises = allUserIds.map(async (uid) => {

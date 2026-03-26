@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
-import { localMidnightAsUTC, addDays } from '../lib/dateUtils'
+import { localMidnightAsUTC, addDays, utcToLocalDateStr } from '../lib/dateUtils'
 import type { Challenge, ChallengeMetric } from '../types'
 import type { LeaderboardEntry } from './useLeaderboard'
 
@@ -128,7 +128,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
         sort: 'completed_at',
         $autoCancel: false,
       })
-      const dates = [...new Set(sessions.map((s: any) => (s.completed_at?.split(' ')[0] || '')))]
+      const dates = [...new Set(sessions.map((s: any) => s.completed_at ? utcToLocalDateStr(s.completed_at) : ''))]
         .filter(Boolean)
         .sort()
       if (dates.length === 0) return 0

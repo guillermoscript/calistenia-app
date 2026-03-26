@@ -1,5 +1,14 @@
 import { useState, useCallback, useRef } from 'react'
 import { pb } from '../lib/pocketbase'
+import dayjs from 'dayjs'
+import isoWeek from 'dayjs/plugin/isoWeek'
+import tz from 'dayjs/plugin/timezone'
+import utcPlugin from 'dayjs/plugin/utc'
+import { getTimezone } from '../lib/dateUtils'
+
+dayjs.extend(utcPlugin)
+dayjs.extend(tz)
+dayjs.extend(isoWeek)
 import type { CardioSession, KmSplit } from '../types'
 
 export interface CardioAggregateStats {
@@ -81,14 +90,10 @@ export function useCardioStats(userId: string | null) {
       })()
 
       // Partition into time ranges client-side (one pass)
-      const now = new Date()
-      const weekStart = new Date(now)
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
-      weekStart.setHours(0, 0, 0, 0)
-      const weekStartMs = weekStart.getTime()
-
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-      const monthStartMs = monthStart.getTime()
+      const tz = getTimezone()
+      const nowLocal = dayjs().tz(tz)
+      const weekStartMs = nowLocal.isoWeekday(1).startOf('day').valueOf()
+      const monthStartMs = nowLocal.startOf('month').valueOf()
 
       const weeklySessions: CardioSession[] = []
       const monthlySessions: CardioSession[] = []
@@ -154,13 +159,9 @@ export function useCardioStats(userId: string | null) {
       const WEEKS = 8
       const trend: WeeklyTrendPoint[] = []
       for (let w = WEEKS - 1; w >= 0; w--) {
-        const wStart = new Date(now)
-        wStart.setDate(wStart.getDate() - wStart.getDay() + 1 - w * 7)
-        wStart.setHours(0, 0, 0, 0)
-        const wEnd = new Date(wStart)
-        wEnd.setDate(wEnd.getDate() + 7)
-        const wStartMs = wStart.getTime()
-        const wEndMs = wEnd.getTime()
+        const wStartDay = nowLocal.isoWeekday(1).subtract(w, 'week').startOf('day')
+        const wStartMs = wStartDay.valueOf()
+        const wEndMs = wStartDay.add(7, 'day').valueOf()
 
         let dist = 0
         let count = 0
@@ -172,7 +173,7 @@ export function useCardioStats(userId: string | null) {
           }
         }
         trend.push({
-          weekLabel: wStart.toLocaleDateString('es', { month: 'short', day: 'numeric' }),
+          weekLabel: wStartDay.toDate().toLocaleDateString('es', { month: 'short', day: 'numeric' }),
           distance: Math.round(dist * 10) / 10,
           sessions: count,
         })

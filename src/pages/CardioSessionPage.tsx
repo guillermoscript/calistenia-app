@@ -3,6 +3,7 @@ import { useCardioSessionContext } from '../contexts/CardioSessionContext'
 import { useCardioStats } from '../hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, pointsToGPX } from '../lib/geo'
 import { CARDIO_ACTIVITY } from '../lib/style-tokens'
+import { todayStr } from '../lib/dateUtils'
 import RouteMap from '../components/cardio/RouteMap'
 import CardioHistory from '../components/cardio/CardioHistory'
 import SplitsTable from '../components/cardio/SplitsTable'
@@ -78,7 +79,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${activityType}-${new Date().toISOString().slice(0, 10)}.gpx`
+    a.download = `${activityType}-${todayStr()}.gpx`
     a.click()
     URL.revokeObjectURL(url)
   }

@@ -7,7 +7,7 @@ import { Label } from '../components/ui/label'
 import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
-import { setTimezone as setGlobalTimezone, getTimezone } from '../lib/dateUtils'
+import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr } from '../lib/dateUtils'
 
 const LEVELS = [
   { value: 'principiante', label: 'Principiante' },
@@ -375,7 +375,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[11px] text-muted-foreground">Miembro desde</span>
-                <span className="text-sm text-foreground">{user?.created?.split(' ')[0] || '—'}</span>
+                <span className="text-sm text-foreground">{user?.created ? utcToLocalDateStr(user.created) : '—'}</span>
               </div>
             </div>
           </CardContent>

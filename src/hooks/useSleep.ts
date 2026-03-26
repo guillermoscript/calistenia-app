@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { daysAgoStr } from '../lib/dateUtils'
+import { daysAgoStr, nowLocalForPB } from '../lib/dateUtils'
 import type { SleepEntry } from '../types'
 
 const LS_KEY = 'calistenia_sleep_entries'
@@ -144,7 +144,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
 
   const saveSleepEntry = useCallback(async (input: SleepEntryInput) => {
     const duration_minutes = calculateDurationMinutes(input.bedtime, input.wake_time)
-    const now = new Date().toISOString()
+    const now = nowLocalForPB()
     const entry: SleepEntry = {
       ...input,
       id: `local_${Date.now()}`,
@@ -209,7 +209,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
     setEntries(prev => {
       const updated = prev.map(entry => {
         if (entry.id !== id) return entry
-        const merged = { ...entry, ...input, updated: new Date().toISOString() }
+        const merged = { ...entry, ...input, updated: nowLocalForPB() }
         // Recalculate duration if bedtime or wake_time changed
         if (input.bedtime || input.wake_time) {
           merged.duration_minutes = calculateDurationMinutes(merged.bedtime, merged.wake_time)

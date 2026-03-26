@@ -1,4 +1,5 @@
 import { getUserAvatarUrl, pb } from '../../lib/pocketbase'
+import { utcToLocalDateStr } from '../../lib/dateUtils'
 import type { Referral } from '../../hooks/useReferrals'
 
 interface ReferralListProps {
@@ -17,7 +18,7 @@ export function ReferralList({ referrals }: ReferralListProps) {
   return (
     <div className="space-y-2">
       {referrals.map((ref) => {
-        const date = ref.created?.split(' ')[0] || ref.created?.split('T')[0] || ''
+        const date = ref.created ? utcToLocalDateStr(ref.created) : ''
         return (
           <div
             key={ref.id}

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { utcToLocalDateStr } from '../lib/dateUtils'
 import { WORKOUTS } from '../data/workouts'
 
 export interface FeedItem {
@@ -92,7 +93,7 @@ export function useActivityFeed(userId: string | null) {
           displayName: userMap.get(s.user)?.name || '?',
           avatarUrl: userMap.get(s.user)?.avatarUrl || null,
           completedAt: s.completed_at,
-          date: s.completed_at?.split(' ')[0] || s.created?.split(' ')[0] || '',
+          date: utcToLocalDateStr(s.completed_at || s.created || ''),
           workoutKey: s.workout_key,
           workoutTitle: workout?.title || s.workout_key,
           phase: s.phase || 1,

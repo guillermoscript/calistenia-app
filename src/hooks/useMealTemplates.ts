@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { pb } from '../lib/pocketbase'
+import { nowLocalForPB } from '../lib/dateUtils'
 import type { FoodItem, MealType, MealTemplate } from '../types'
 
 export function useMealTemplates(userId: string | null) {
@@ -32,7 +33,7 @@ export function useMealTemplates(userId: string | null) {
       foods: JSON.stringify(foods),
       meal_type: mealType,
       usage_count: 0,
-      last_used_at: new Date().toISOString(),
+      last_used_at: nowLocalForPB(),
     })
   }, [userId])
 
@@ -40,7 +41,7 @@ export function useMealTemplates(userId: string | null) {
     const rec: any = await pb.collection('meal_templates').getOne(id)
     await pb.collection('meal_templates').update(id, {
       usage_count: (rec.usage_count || 0) + 1,
-      last_used_at: new Date().toISOString(),
+      last_used_at: nowLocalForPB(),
     })
     return rec.foods as FoodItem[]
   }, [])

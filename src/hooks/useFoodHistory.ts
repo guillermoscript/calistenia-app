@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { pb } from '../lib/pocketbase'
+import { nowLocalForPB } from '../lib/dateUtils'
 import type { FoodItem, MealType } from '../types'
 
 export function useFoodHistory(userId: string | null) {
@@ -47,7 +48,7 @@ export function useFoodHistory(userId: string | null) {
           meal_type: mealType,
           logged_hour: hour,
           usage_count: (rec as any).usage_count + 1,
-          last_used_at: new Date().toISOString(),
+          last_used_at: nowLocalForPB(),
         })
       } else {
         await pb.collection('food_history').create({
@@ -56,7 +57,7 @@ export function useFoodHistory(userId: string | null) {
           meal_type: mealType,
           logged_hour: hour,
           usage_count: 1,
-          last_used_at: new Date().toISOString(),
+          last_used_at: nowLocalForPB(),
         })
       }
     } catch (e) {
