@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -9,17 +10,12 @@ import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr } from '../lib/dateUtils'
 
-const LEVELS = [
-  { value: 'principiante', label: 'Principiante' },
-  { value: 'intermedio', label: 'Intermedio' },
-  { value: 'avanzado', label: 'Avanzado' },
-]
-
 interface ProfilePageProps {
   user: any
 }
 
 export default function ProfilePage({ user }: ProfilePageProps) {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [displayName, setDisplayName] = useState(user?.display_name || user?.name || '')
   const [weight, setWeight] = useState<string>('')
@@ -36,10 +32,18 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [tzSearch, setTzSearch] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
+
+  const LEVELS = [
+    { value: 'principiante', label: t('difficulty.beginner') },
+    { value: 'intermedio', label: t('difficulty.intermediate') },
+    { value: 'avanzado', label: t('difficulty.advanced') },
+  ]
+
   const profileUrl = `${window.location.origin}/u/${user?.id}`
 
   function shareWhatsApp() {
-    const msg = `💪 Sígueme en Calistenia App y entrenemos juntos!\n${profileUrl}`
+    const msg = `${t('profile.whatsappShare')}\n${profileUrl}`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -95,11 +99,11 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const bmiCategory = useMemo(() => {
     if (!bmi) return null
     const v = parseFloat(bmi)
-    if (v < 18.5) return { label: 'Bajo peso', color: 'text-amber-400' }
-    if (v < 25) return { label: 'Normal', color: 'text-emerald-500' }
-    if (v < 30) return { label: 'Sobrepeso', color: 'text-amber-400' }
-    return { label: 'Obesidad', color: 'text-red-500' }
-  }, [bmi])
+    if (v < 18.5) return { label: t('profile.bmiUnderweight'), color: 'text-amber-400' }
+    if (v < 25) return { label: t('profile.bmiNormal'), color: 'text-emerald-500' }
+    if (v < 30) return { label: t('profile.bmiOverweight'), color: 'text-amber-400' }
+    return { label: t('profile.bmiObese'), color: 'text-red-500' }
+  }, [bmi, t])
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -155,8 +159,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
 
   return (
     <div className="max-w-[600px] mx-auto px-4 py-6 md:px-6 md:py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">Cuenta</div>
-      <div className="font-bebas text-[36px] md:text-[52px] leading-none mb-8">PERFIL</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">{t('profile.accountLabel')}</div>
+      <div className="font-bebas text-[36px] md:text-[52px] leading-none mb-8">{t('profile.title')}</div>
 
       {/* Avatar */}
       <div className="flex flex-col items-center mb-6">
@@ -192,12 +196,12 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           onChange={handleAvatarChange}
           className="hidden"
         />
-        <span className="text-[10px] text-muted-foreground mt-2">Toca para cambiar foto</span>
+        <span className="text-[10px] text-muted-foreground mt-2">{t('profile.changePhoto')}</span>
       </div>
 
       {/* Share profile */}
       <div className="mb-6 rounded-xl border border-border bg-card p-4 motion-safe:animate-fade-in">
-        <div className="text-xs text-muted-foreground mb-3">Comparte tu perfil</div>
+        <div className="text-xs text-muted-foreground mb-3">{t('profile.shareProfile')}</div>
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={shareWhatsApp}
@@ -216,12 +220,12 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             {copied ? (
               <>
                 <svg className="size-3.5 mr-1.5 text-lime" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                COPIADO
+                {t('profile.copied')}
               </>
             ) : (
               <>
                 <svg className="size-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
-                COPIAR LINK
+                {t('profile.copyLink')}
               </>
             )}
           </Button>
@@ -232,22 +236,22 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         {/* Basic info */}
         <Card id="tour-personal-info">
           <CardContent className="p-5 flex flex-col gap-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">Información Personal</div>
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.personalInfo')}</div>
 
             <div>
-              <Label htmlFor="profile-name" className="text-[11px] text-muted-foreground mb-1.5 block">Nombre</Label>
+              <Label htmlFor="profile-name" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.name')}</Label>
               <Input
                 id="profile-name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Tu nombre"
+                placeholder={t('profile.namePlaceholder')}
                 className="h-10"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="profile-weight" className="text-[11px] text-muted-foreground mb-1.5 block">Peso (kg)</Label>
+                <Label htmlFor="profile-weight" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.weight')}</Label>
                 <Input
                   id="profile-weight"
                   type="number"
@@ -255,19 +259,19 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   min="0"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
-                  placeholder="Ej: 75"
+                  placeholder={t('profile.weightPlaceholder')}
                   className="h-10"
                 />
               </div>
               <div>
-                <Label htmlFor="profile-height" className="text-[11px] text-muted-foreground mb-1.5 block">Altura (cm)</Label>
+                <Label htmlFor="profile-height" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.height')}</Label>
                 <Input
                   id="profile-height"
                   type="number"
                   min="0"
                   value={height}
                   onChange={(e) => setHeight(e.target.value)}
-                  placeholder="Ej: 175"
+                  placeholder={t('profile.heightPlaceholder')}
                   className="h-10"
                 />
               </div>
@@ -278,14 +282,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               <div className="bg-muted/30 rounded-lg p-3 border border-border/60">
                 <div className="flex items-baseline gap-2">
                   <span className="font-bebas text-3xl leading-none text-foreground">{bmi}</span>
-                  <span className="text-[10px] text-muted-foreground tracking-wide uppercase">IMC</span>
+                  <span className="text-[10px] text-muted-foreground tracking-wide uppercase">{t('profile.bmiLabel')}</span>
                 </div>
                 <div className={cn('text-xs mt-0.5', bmiCategory.color)}>{bmiCategory.label}</div>
               </div>
             )}
 
             <div id="tour-level-selector">
-              <Label htmlFor="profile-level" className="text-[11px] text-muted-foreground mb-1.5 block">Nivel</Label>
+              <Label htmlFor="profile-level" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.level')}</Label>
               <div className="flex gap-2">
                 {LEVELS.map(l => (
                   <Button
@@ -306,24 +310,24 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </div>
 
             <div>
-              <Label htmlFor="profile-goal" className="text-[11px] text-muted-foreground mb-1.5 block">Objetivo</Label>
+              <Label htmlFor="profile-goal" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.goal')}</Label>
               <textarea
                 id="profile-goal"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
-                placeholder="Ej: Lograr 10 muscle-ups seguidos, bajar grasa corporal..."
+                placeholder={t('profile.goalPlaceholder')}
                 rows={3}
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               />
             </div>
 
             <div>
-              <Label htmlFor="profile-timezone" className="text-[11px] text-muted-foreground mb-1.5 block">Zona horaria</Label>
+              <Label htmlFor="profile-timezone" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.timezone')}</Label>
               <Input
                 id="profile-tz-search"
                 value={tzSearch}
                 onChange={(e) => setTzSearch(e.target.value)}
-                placeholder="Buscar zona horaria..."
+                placeholder={t('profile.searchTimezone')}
                 className="h-8 text-xs mb-2"
               />
               <select
@@ -358,23 +362,38 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 })()}
               </select>
               <div className="text-[10px] text-muted-foreground mt-1">
-                Actual: {timezone.replace(/_/g, ' ')}
+                {t('profile.currentTimezone')}: {timezone.replace(/_/g, ' ')}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Language */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('profile.language')}</div>
+            <select
+              value={currentLang}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="es">Español</option>
+              <option value="en">English</option>
+            </select>
           </CardContent>
         </Card>
 
         {/* Account info (read-only) */}
         <Card>
           <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">Cuenta</div>
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('profile.accountSection')}</div>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <span className="text-[11px] text-muted-foreground">Email</span>
+                <span className="text-[11px] text-muted-foreground">{t('profile.email')}</span>
                 <span className="text-sm text-foreground">{user?.email || '—'}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[11px] text-muted-foreground">Miembro desde</span>
+                <span className="text-[11px] text-muted-foreground">{t('profile.memberSince')}</span>
                 <span className="text-sm text-foreground">{user?.created ? utcToLocalDateStr(user.created) : '—'}</span>
               </div>
             </div>
@@ -390,8 +409,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             <div className="flex items-center gap-3">
               <span className="text-xl">🔔</span>
               <div>
-                <div className="text-sm font-medium">Recordatorios</div>
-                <div className="text-[10px] text-muted-foreground">Comidas, ejercicio y pausas activas</div>
+                <div className="text-sm font-medium">{t('profile.reminders')}</div>
+                <div className="text-[10px] text-muted-foreground">{t('profile.remindersDesc')}</div>
               </div>
             </div>
             <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -406,7 +425,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           disabled={saving}
           className="h-11 bg-lime text-zinc-900 hover:bg-lime/90 font-bebas text-lg tracking-wide"
         >
-          {saving ? 'GUARDANDO...' : saved ? '¡GUARDADO!' : 'GUARDAR CAMBIOS'}
+          {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
         </Button>
       </div>
     </div>

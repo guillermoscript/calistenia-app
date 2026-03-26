@@ -1,5 +1,6 @@
 import { useState, useEffect, useId, useRef, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 interface LandingPageProps {
   onGetStarted: () => void
@@ -267,6 +268,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 
 /* ── Main landing page ───────────────────────────────────────── */
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
+  const { t } = useTranslation()
   const vis = useStagger(4, 120)
 
   return (
@@ -281,7 +283,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           onClick={onGetStarted}
           className="text-sm text-[hsl(0_0%_55%)] hover:text-[hsl(0_0%_90%)] transition-colors duration-200 px-3 py-2 -mr-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
         >
-          Entrar
+          {t('landing.enter')}
         </button>
       </nav>
 
@@ -297,7 +299,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
-            Entrena con propósito
+            {t('landing.tagline')}
           </p>
           <h1
             className="font-bebas text-[clamp(3.5rem,11vw,8rem)] leading-[0.88] tracking-tight"
@@ -307,11 +309,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
-            Tu cuerpo.{' '}
+            {t('landing.heroTitle1')}{' '}
             <br className="sm:hidden" />
-            Tu disciplina.
+            {t('landing.heroTitle2')}
             <br />
-            <span className="text-lime">Tu progreso.</span>
+            <span className="text-lime">{t('landing.heroTitle3')}</span>
           </h1>
 
           <p
@@ -322,8 +324,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
-            Programas de calistenia, nutrición, cardio, progreso
-            y comunidad — todo en una app que funciona sin conexión.
+            {t('landing.heroDesc')}
           </p>
 
           <div
@@ -338,12 +339,12 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               onClick={onGetStarted}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-lime text-[hsl(0_0%_5%)] font-semibold text-sm px-7 py-3.5 rounded-lg hover:brightness-110 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
             >
-              Empezar gratis
+              {t('landing.startFree')}
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                 <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <span className="text-xs text-[hsl(0_0%_50%)] w-full sm:w-auto text-center sm:text-left">Gratis para siempre. Sin tarjeta.</span>
+            <span className="text-xs text-[hsl(0_0%_50%)] w-full sm:w-auto text-center sm:text-left">{t('landing.freeForever')}</span>
           </div>
         </div>
       </section>
@@ -352,10 +353,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <Reveal>
         <div className="border-y border-[hsl(0_0%_10%)]">
           <div className="max-w-6xl mx-auto px-6 md:px-10 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8">
-            <Stat value="150+" label="Ejercicios en la librería" />
-            <Stat value="4" label="Fases de periodización" />
-            <Stat value="PWA" label="Instala como app nativa" />
-            <Stat value="0" label="Costo — siempre gratis" />
+            <Stat value="150+" label={t('landing.statsExercises')} />
+            <Stat value="4" label={t('landing.statsPhases')} />
+            <Stat value="PWA" label={t('landing.statsPWA')} />
+            <Stat value="0" label={t('landing.statsCost')} />
           </div>
         </div>
       </Reveal>
@@ -365,21 +366,19 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
           <Reveal>
             <div>
-              <SectionTag>Entrenamiento</SectionTag>
+              <SectionTag>{t('landing.training')}</SectionTag>
               <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
-                Programas con progresiones reales
+                {t('landing.trainingTitle')}
               </h2>
               <p className="mt-5 text-[hsl(0_0%_50%)] leading-relaxed max-w-md">
-                Cuatro fases de periodización — desde base hasta pico. Cada día tiene su
-                enfoque: push, pull, piernas, cuerpo completo. Registra series, repeticiones,
-                peso y RPE.
+                {t('landing.trainingDesc')}
               </p>
               <ul className="mt-6 space-y-2.5">
                 {[
-                  'Programas oficiales curados por expertos',
-                  'Crea y comparte tus propios programas',
-                  'Temporizador de descanso entre series',
-                  'Librería de 150+ ejercicios con videos',
+                  t('landing.trainingFeature1'),
+                  t('landing.trainingFeature2'),
+                  t('landing.trainingFeature3'),
+                  t('landing.trainingFeature4'),
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
                     <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
@@ -409,21 +408,19 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </Reveal>
           <Reveal className="order-1 lg:order-2">
             <div>
-              <SectionTag>Analíticas</SectionTag>
+              <SectionTag>{t('landing.analytics')}</SectionTag>
               <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
-                Mide lo que importa
+                {t('landing.analyticsTitle')}
               </h2>
               <p className="mt-5 text-[hsl(0_0%_50%)] leading-relaxed max-w-md">
-                Gráficas de peso corporal, volumen muscular por grupo, medidas
-                corporales y fotos de antes/después. Calcula tu 1RM y registra PRs
-                en dominadas, flexiones, L-sit, pistol squat y handstand.
+                {t('landing.analyticsDesc')}
               </p>
               <ul className="mt-6 space-y-2.5">
                 {[
-                  'Gráficas de progreso a lo largo del tiempo',
-                  'Fotos de progreso con timeline',
-                  'Calculadora de 1RM automática',
-                  'Exporta tus datos cuando quieras',
+                  t('landing.analyticsFeature1'),
+                  t('landing.analyticsFeature2'),
+                  t('landing.analyticsFeature3'),
+                  t('landing.analyticsFeature4'),
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
                     <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
@@ -443,21 +440,19 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
           <Reveal>
             <div>
-              <SectionTag>Nutrición</SectionTag>
+              <SectionTag>{t('landing.nutrition')}</SectionTag>
               <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
-                Alimenta tu rendimiento
+                {t('landing.nutritionTitle')}
               </h2>
               <p className="mt-5 text-[hsl(0_0%_50%)] leading-relaxed max-w-md">
-                Registra comidas con búsqueda en Open Food Facts o escaneando el
-                código de barras. Controla proteínas, carbohidratos, grasas y agua.
-                Configura tus metas basadas en tu perfil.
+                {t('landing.nutritionDesc')}
               </p>
               <ul className="mt-6 space-y-2.5">
                 {[
-                  'Escaneo de código de barras',
-                  'Base de datos Open Food Facts',
-                  'Seguimiento de macros y agua',
-                  'Metas personalizadas por peso y objetivo',
+                  t('landing.nutritionFeature1'),
+                  t('landing.nutritionFeature2'),
+                  t('landing.nutritionFeature3'),
+                  t('landing.nutritionFeature4'),
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
                     <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
@@ -483,13 +478,12 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           {/* Cardio */}
           <Reveal>
             <div>
-              <SectionTag>Cardio</SectionTag>
+              <SectionTag>{t('landing.cardio')}</SectionTag>
               <h2 className="font-bebas text-[clamp(1.8rem,4vw,2.8rem)] leading-[0.92] tracking-tight mt-5">
-                Corre, camina, pedalea
+                {t('landing.cardioTitle')}
               </h2>
               <p className="mt-4 text-[hsl(0_0%_50%)] leading-relaxed text-sm">
-                Tracking GPS en tiempo real con distancia, ritmo, velocidad y elevación.
-                Ve tu ruta en el mapa y revisa splits por kilómetro.
+                {t('landing.cardioDesc')}
               </p>
               <div className="mt-6" aria-hidden="true">
                 <MockCardio />
@@ -500,13 +494,12 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           {/* Calendar */}
           <Reveal delay={100}>
             <div>
-              <SectionTag>Constancia</SectionTag>
+              <SectionTag>{t('landing.consistency')}</SectionTag>
               <h2 className="font-bebas text-[clamp(1.8rem,4vw,2.8rem)] leading-[0.92] tracking-tight mt-5">
-                Cada día cuenta
+                {t('landing.consistencyTitle')}
               </h2>
               <p className="mt-4 text-[hsl(0_0%_50%)] leading-relaxed text-sm">
-                Heatmap de actividad al estilo GitHub. Ve tus rachas, identifica patrones
-                y mantén la motivación. Configura recordatorios para no perder el ritmo.
+                {t('landing.consistencyDesc')}
               </p>
               <div className="mt-6" aria-hidden="true">
                 <MockCalendar />
@@ -526,21 +519,19 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </Reveal>
           <Reveal className="order-1 lg:order-2">
             <div>
-              <SectionTag>Social</SectionTag>
+              <SectionTag>{t('landing.social')}</SectionTag>
               <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
-                Entrena con amigos
+                {t('landing.socialTitle')}
               </h2>
               <p className="mt-5 text-[hsl(0_0%_50%)] leading-relaxed max-w-md">
-                Sigue a tus amigos, ve su actividad en tu feed, reacciona con fuego
-                a sus logros. Compite en retos con tiempo límite y sube en la
-                tabla de líderes.
+                {t('landing.socialDesc')}
               </p>
               <ul className="mt-6 space-y-2.5">
                 {[
-                  'Feed de actividad con reacciones',
-                  'Retos y competencias con amigos',
-                  'Tabla de líderes por métricas',
-                  'Comparte programas por WhatsApp',
+                  t('landing.socialFeature1'),
+                  t('landing.socialFeature2'),
+                  t('landing.socialFeature3'),
+                  t('landing.socialFeature4'),
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
                     <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
@@ -558,16 +549,16 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* ── Extras grid ──────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
         <Reveal>
-          <SectionTag>Y más</SectionTag>
+          <SectionTag>{t('landing.more')}</SectionTag>
           <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5 mb-14">
-            Todo lo que necesitas
+            {t('landing.moreTitle')}
           </h2>
         </Reveal>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-12">
           {[
             {
-              title: 'Protocolo lumbar',
-              desc: 'Programa dedicado de 7 ejercicios para prevención y alivio del dolor lumbar.',
+              title: t('landing.extraLumbar'),
+              desc: t('landing.extraLumbarDesc'),
               icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
                   <path d="M12 2C8 2 6 5 6 8c0 2 1 3.5 2 4.5S10 15 10 17h4c0-2 0-3.5 2-4.5S18 10 18 8c0-3-2-6-6-6z" strokeLinecap="round" strokeLinejoin="round" />
@@ -576,8 +567,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               ),
             },
             {
-              title: 'Funciona sin conexión',
-              desc: 'App instalable (PWA) que funciona offline. Tus datos se sincronizan cuando vuelvas a estar conectado.',
+              title: t('landing.extraOffline'),
+              desc: t('landing.extraOfflineDesc'),
               icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
                   <path d="M12 18h.01M8 21h8a1 1 0 001-1v-1a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1z" strokeLinecap="round" />
@@ -586,8 +577,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               ),
             },
             {
-              title: 'Recordatorios',
-              desc: 'Configura notificaciones para no olvidar tus entrenamientos ni comidas.',
+              title: t('landing.extraReminders'),
+              desc: t('landing.extraRemindersDesc'),
               icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
                   <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9zM13.73 21a2 2 0 01-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
@@ -595,8 +586,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               ),
             },
             {
-              title: 'Sesiones libres',
-              desc: 'Entrena fuera de programa. Crea sesiones personalizadas con cualquier ejercicio.',
+              title: t('landing.extraFreeSessions'),
+              desc: t('landing.extraFreeSessionsDesc'),
               icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
                   <path d="M12 5v14M5 12h14" strokeLinecap="round" />
@@ -604,8 +595,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               ),
             },
             {
-              title: 'Perfiles públicos',
-              desc: 'Comparte tu perfil con estadísticas, rachas y logros. Visible para quien tú quieras.',
+              title: t('landing.extraProfiles'),
+              desc: t('landing.extraProfilesDesc'),
               icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
                   <circle cx="12" cy="8" r="4" />
@@ -614,8 +605,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               ),
             },
             {
-              title: 'Tour interactivo',
-              desc: 'Aprende la app paso a paso con un tour guiado la primera vez que entras.',
+              title: t('landing.extraTour'),
+              desc: t('landing.extraTourDesc'),
               icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
                   <circle cx="12" cy="12" r="10" />
@@ -641,20 +632,19 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <Reveal>
             <div className="max-w-2xl">
               <h2 className="font-bebas text-[clamp(2.5rem,7vw,5rem)] leading-[0.88] tracking-tight">
-                Empieza hoy.
+                {t('landing.ctaTitle')}
                 <br />
-                <span className="text-lime">Es gratis.</span>
+                <span className="text-lime">{t('landing.ctaFree')}</span>
               </h2>
               <p className="mt-6 text-[hsl(0_0%_48%)] text-lg max-w-md leading-relaxed">
-                Sin distracciones, sin suscripciones ocultas.
-                Solo tú, tu entrenamiento y tu progreso.
+                {t('landing.ctaDesc')}
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-4">
                 <button
                   onClick={onGetStarted}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-lime text-[hsl(0_0%_5%)] font-semibold text-sm px-8 py-4 rounded-lg hover:brightness-110 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
                 >
-                  Crear cuenta gratis
+                  {t('landing.createFreeAccount')}
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                     <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -674,9 +664,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <span className="font-bebas text-sm tracking-[0.2em] text-[hsl(0_0%_50%)]">CALISTENIA</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-[hsl(0_0%_50%)]">
-            <Link to="/legal#privacy" className="hover:text-[hsl(0_0%_70%)] transition-colors">Privacidad</Link>
+            <Link to="/legal#privacy" className="hover:text-[hsl(0_0%_70%)] transition-colors">{t('landing.privacy')}</Link>
             <span>·</span>
-            <Link to="/legal#terms" className="hover:text-[hsl(0_0%_70%)] transition-colors">Condiciones</Link>
+            <Link to="/legal#terms" className="hover:text-[hsl(0_0%_70%)] transition-colors">{t('landing.terms')}</Link>
           </div>
         </div>
       </footer>
