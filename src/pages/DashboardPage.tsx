@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { PHASES as FALLBACK_PHASES } from '../data/workouts'
 import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
@@ -183,6 +184,7 @@ export default function DashboardPage({
     duplicateProgram,
   } = useWorkoutActions()
   const { userId } = useAuthState()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
   const onGoToNutrition = useCallback(() => navigate('/nutrition'), [navigate])
@@ -279,7 +281,7 @@ export default function DashboardPage({
       {/* Progress bar */}
       <div id="tour-progress" className="mb-6">
         <div className="flex justify-between mb-2">
-          <span className={cn('text-[11px]', phaseAccent.text)}>{phase.name} · Semanas {phase.weeks}</span>
+          <span className={cn('text-[11px]', phaseAccent.text)}>{phase.nameKey ? t(phase.nameKey) : phase.name} · Semanas {phase.weeks}</span>
           <span className="text-[11px] text-muted-foreground">{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-1.5" />
@@ -290,6 +292,7 @@ export default function DashboardPage({
         const todayDayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
         const todayDay = weekDays.find(d => d.id === todayDayId)
         const todayIsRest = todayDay?.type === 'rest'
+        const todayIsCardio = todayDay?.type === 'cardio'
         const todayWorkoutKey = `p${settings.phase || 1}_${todayDayId}`
         const todayDone = isWorkoutDone(todayWorkoutKey)
 
@@ -299,25 +302,33 @@ export default function DashboardPage({
               'mb-6 p-5 rounded-xl border-2 transition-all',
               todayDone
                 ? 'border-emerald-500/30 bg-emerald-500/5'
-                : todayIsRest
-                  ? 'border-border bg-card'
-                  : 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5 cursor-pointer hover:border-[hsl(var(--lime))]/50 active:scale-[0.99]',
+                : todayIsCardio
+                  ? 'border-emerald-400/30 bg-emerald-400/5 cursor-pointer hover:border-emerald-400/50 active:scale-[0.99]'
+                  : todayIsRest
+                    ? 'border-border bg-card'
+                    : 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5 cursor-pointer hover:border-[hsl(var(--lime))]/50 active:scale-[0.99]',
             )}
-            onClick={() => !todayIsRest && !todayDone && navigate(`/workout?day=${todayDayId}`)}
+            onClick={() => {
+              if (todayDone) return
+              if (todayIsCardio) navigate(`/workout?day=${todayDayId}`)
+              else if (!todayIsRest) navigate(`/workout?day=${todayDayId}`)
+            }}
             role={!todayIsRest && !todayDone ? 'button' : undefined}
           >
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">
-                  {todayDone ? 'Entrenamiento de hoy' : todayIsRest ? 'Hoy toca descanso' : 'Entrenamiento de hoy'}
+                  {todayDone ? 'Entrenamiento de hoy' : todayIsCardio ? 'Hoy toca cardio' : todayIsRest ? 'Hoy toca descanso' : 'Entrenamiento de hoy'}
                 </div>
                 <div className="font-bebas text-2xl md:text-3xl leading-none">
                   {todayDone ? (
                     <span className="text-emerald-500">COMPLETADO</span>
+                  ) : todayIsCardio ? (
+                    <span className="text-emerald-400">{todayDay?.focusKey ? t(todayDay.focusKey) : todayDay?.focus || 'CARDIO'}</span>
                   ) : todayIsRest ? (
                     <span className="text-muted-foreground">DIA DE DESCANSO</span>
                   ) : (
-                    <span className="text-[hsl(var(--lime))]">{todayDay?.focus || 'ENTRENAR'}</span>
+                    <span className="text-[hsl(var(--lime))]">{todayDay?.focusKey ? t(todayDay.focusKey) : todayDay?.focus || 'ENTRENAR'}</span>
                   )}
                 </div>
                 {activeProgram && (
@@ -332,6 +343,8 @@ export default function DashboardPage({
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                 </div>
+              ) : todayIsCardio ? (
+                <div className="text-3xl shrink-0">{todayDay?.cardioConfig?.activityType ? ({'running': '🏃', 'walking': '🚶', 'cycling': '🚴'} as Record<string, string>)[todayDay.cardioConfig.activityType] || '🏃' : '🏃'}</div>
               ) : todayIsRest ? (
                 <div className="text-3xl shrink-0">🧘</div>
               ) : (
@@ -578,7 +591,7 @@ export default function DashboardPage({
               <Card className={cn('border-l-[3px]', phaseAccent.border)}>
                 <CardContent className="p-5">
                   <div className={cn('text-[10px] tracking-widest mb-2 uppercase', phaseAccent.text)}>Fase Actual</div>
-                  <div className="font-bebas text-2xl mb-1">Fase {phase.id}: {phase.name}</div>
+                  <div className="font-bebas text-2xl mb-1">Fase {phase.id}: {phase.nameKey ? t(phase.nameKey) : phase.name}</div>
                   <div className="text-xs text-muted-foreground mb-3">Semanas {phase.weeks}</div>
                   <div className="flex gap-2 flex-wrap">
                     {PHASES.map(p => {

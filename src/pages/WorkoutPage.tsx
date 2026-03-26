@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '../data/workouts'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
@@ -13,14 +14,15 @@ import { Button } from '../components/ui/button'
 import { triggerWorkoutDetailTour } from '../components/AppTour'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
-import { DAY_TYPE_COLORS } from '../lib/style-tokens'
-import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData } from '../types'
+import { DAY_TYPE_COLORS, CARDIO_ACTIVITY } from '../lib/style-tokens'
+import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData, CardioDayConfig } from '../types'
 
 export default function WorkoutPage() {
-  const { settings, phases: phasesProp, weekDays: weekDaysProp } = useWorkoutState()
+  const { settings, phases: phasesProp, weekDays: weekDaysProp, cardioDayConfigs, activeProgram } = useWorkoutState()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, unmarkWorkoutDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { startSession } = useActiveSession()
   const { userId, userRole } = useAuthState()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const PHASES    = phasesProp    || FALLBACK_PHASES
@@ -98,7 +100,7 @@ export default function WorkoutPage() {
                     isSelected ? cn(pa, 'bg-accent/50') : 'text-muted-foreground'
                   )}
                 >
-                  F{p.id} — {p.name}
+                  F{p.id} — {p.nameKey ? t(p.nameKey) : p.name}
                 </Button>
               )
             })}
@@ -125,7 +127,7 @@ export default function WorkoutPage() {
               <button
                 key={day.id}
                 aria-pressed={isSelected}
-                aria-label={`${day.name} - ${day.focus}${done ? ' - completado' : ''}${isToday ? ' - hoy' : ''}`}
+                aria-label={`${day.nameKey ? t(day.nameKey) : day.name} - ${day.focusKey ? t(day.focusKey) : day.focus}${done ? ' - completado' : ''}${isToday ? ' - hoy' : ''}`}
                 onClick={() => setSelectedDay(day.id === selectedDay ? null : day.id)}
                 className={cn(
                   'relative rounded-md border text-center transition-all duration-200',
@@ -141,11 +143,11 @@ export default function WorkoutPage() {
               >
                 {done    && <div className="absolute top-[3px] right-[3px] size-1.5 rounded-full bg-emerald-500" />}
                 {isToday && <div className="absolute top-[3px] left-[3px] size-1 rounded-full bg-lime opacity-80" />}
-                <div className="text-[10px] tracking-[2px] mb-1 font-mono">{day.name.slice(0,3).toUpperCase()}</div>
-                <div className="text-[9px] leading-tight hidden md:block">{day.focus}</div>
+                <div className="text-[10px] tracking-[2px] mb-1 font-mono">{(day.nameKey ? t(day.nameKey) : day.name).slice(0,3).toUpperCase()}</div>
+                <div className="text-[9px] leading-tight hidden md:block">{day.focusKey ? t(day.focusKey) : day.focus}</div>
                 {/* Mobile: show just type icon */}
                 <div className="text-[10px] leading-tight md:hidden text-current opacity-70">
-                  {isRest ? '—' : done ? '✓' : day.focus.split(' ')[0].slice(0,4)}
+                  {day.type === 'cardio' ? CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.icon || '🏃' : isRest ? '—' : done ? '✓' : (day.focusKey ? t(day.focusKey) : day.focus).split(' ')[0].slice(0,4)}
                 </div>
               </button>
             )
@@ -172,7 +174,7 @@ export default function WorkoutPage() {
             <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center md:flex-wrap">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-[2px] mb-1 uppercase">
-                  Fase {selectedPhase} · {WEEK_DAYS.find(d => d.id === selectedDay)?.name.toUpperCase()} · {workout.exercises.length} ejercicios{workoutDuration > 0 ? ` · ~${workoutDuration} min` : ''}
+                  Fase {selectedPhase} · {(() => { const d = WEEK_DAYS.find(d => d.id === selectedDay); return d?.nameKey ? t(d.nameKey) : d?.name ?? '' })().toUpperCase()} · {workout.exercises.length} ejercicios{workoutDuration > 0 ? ` · ~${workoutDuration} min` : ''}
                 </div>
                 <div className="font-bebas text-[26px] md:text-[32px] leading-none">{workout.title}</div>
               </div>
@@ -222,12 +224,48 @@ export default function WorkoutPage() {
             ))}
           </div>
         </div>
-      ) : selectedDay && selectedDayType === 'rest' ? (
+      ) : selectedDay && selectedDayType === 'cardio' ? (() => {
+        const cardioKey = `p${selectedPhase}_${selectedDay}`
+        const cardioConfig = cardioDayConfigs[cardioKey]
+        const actType = cardioConfig?.activityType || 'running'
+        const actInfo = CARDIO_ACTIVITY[actType]
+        return (
+          <div className="text-center py-12 px-5">
+            <div className="text-5xl mb-4">{actInfo?.icon || '🏃'}</div>
+            <div className="font-bebas text-3xl mb-2 text-emerald-400">Dia de Cardio</div>
+            <div className="text-sm text-muted-foreground mb-1">
+              {actInfo?.label || 'Carrera'}
+            </div>
+            <div className="flex justify-center gap-4 text-sm text-muted-foreground mb-6">
+              {cardioConfig?.targetDistanceKm && (
+                <span>Meta: <strong className="text-emerald-400">{cardioConfig.targetDistanceKm} km</strong></span>
+              )}
+              {cardioConfig?.targetDurationMin && (
+                <span>Duracion: <strong className="text-emerald-400">{cardioConfig.targetDurationMin} min</strong></span>
+              )}
+            </div>
+            <Button
+              onClick={() => {
+                const params = new URLSearchParams()
+                params.set('activity', actType)
+                if (activeProgram?.id) params.set('program', activeProgram.id)
+                if (cardioKey) params.set('dayKey', cardioKey)
+                if (cardioConfig?.targetDistanceKm) params.set('targetKm', String(cardioConfig.targetDistanceKm))
+                if (cardioConfig?.targetDurationMin) params.set('targetMin', String(cardioConfig.targetDurationMin))
+                navigate(`/cardio?${params.toString()}`)
+              }}
+              className="font-bebas text-xl tracking-wide bg-emerald-500 hover:bg-emerald-400 text-white px-8 h-12"
+            >
+              EMPEZAR CARDIO
+            </Button>
+          </div>
+        )
+      })() : selectedDay && selectedDayType === 'rest' ? (
         <div className="text-center py-16 px-5 text-muted-foreground">
           <div className="text-5xl mb-4">🧘</div>
           <div className="font-bebas text-3xl mb-2">Día de descanso</div>
           <div className="text-sm mb-4">
-            {WEEK_DAYS.find(d => d.id === selectedDay)?.focus || 'Descanso'}
+            {(() => { const d = WEEK_DAYS.find(d => d.id === selectedDay); return d?.focusKey ? t(d.focusKey) : d?.focus ?? 'Descanso' })()}
           </div>
           <div className="text-xs text-muted-foreground/70">
             Puedes elegir otro día si quieres entrenar — no importa el día real.

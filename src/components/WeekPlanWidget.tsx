@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { localDay } from '../lib/dateUtils'
+import { CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '../data/workouts'
 import type { WeekDay } from '../types'
 
@@ -12,6 +14,7 @@ interface WeekPlanWidgetProps {
 
 export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays: weekDaysProp }: WeekPlanWidgetProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const WEEK_DAYS = weekDaysProp || FALLBACK_WEEK_DAYS
   const todayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
 
@@ -27,20 +30,22 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
           const done    = day.type !== 'rest' && isWorkoutDone(workoutKey)
           const isToday = day.id === todayId
           const isRest  = day.type === 'rest'
+          const isCardio = day.type === 'cardio'
 
           return (
             <button
               key={day.id}
               onClick={() => !isRest && navigate(`/workout?day=${day.id}`)}
-              disabled={isRest}
+              disabled={isRest && !isCardio}
               className={cn(
                 'relative rounded-lg border text-center transition-all duration-200',
                 'snap-start shrink-0 w-[48px] py-2.5 px-1',
                 'md:w-auto md:py-3 md:px-1.5',
                 done    && 'border-emerald-500/30 bg-emerald-500/5',
-                isToday && !done && 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5',
-                !done && !isToday && 'border-border bg-card',
-                isRest
+                isCardio && !done && 'border-emerald-400/30 bg-emerald-400/5',
+                isToday && !done && !isCardio && 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5',
+                !done && !isToday && !isCardio && 'border-border bg-card',
+                isRest && !isCardio
                   ? 'opacity-45 cursor-default'
                   : 'cursor-pointer hover:border-[hsl(var(--lime))]/50 hover:bg-[hsl(var(--lime))]/5 active:scale-95',
               )}
@@ -50,11 +55,13 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
               )}
               <div className={cn(
                 'font-mono text-[10px] tracking-[2px] mb-1.5',
-                isToday ? 'mt-1.5 text-[hsl(var(--lime))]' : 'text-muted-foreground',
+                isToday ? 'mt-1.5 text-[hsl(var(--lime))]' : isCardio ? 'text-emerald-400' : 'text-muted-foreground',
               )}>
-                {day.name.slice(0, 3).toUpperCase()}
+                {(day.nameKey ? t(day.nameKey) : day.name).slice(0, 3).toUpperCase()}
               </div>
-              {isRest ? (
+              {isCardio ? (
+                <div className="text-lg text-emerald-400">{CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
+              ) : isRest ? (
                 <div className="text-base text-muted-foreground">—</div>
               ) : done ? (
                 <div className="text-lg text-emerald-400">✓</div>
@@ -67,10 +74,11 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
               <div className={cn(
                 'text-[10px] mt-1.5 leading-tight',
                 done           ? 'text-emerald-400' :
+                isCardio       ? 'text-emerald-400/70' :
                 isToday        ? 'text-[hsl(var(--lime))]' :
                                  'text-muted-foreground/50',
               )}>
-                {day.focus.split(' ')[0]}
+                {isCardio ? CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.label || 'Cardio' : (day.focusKey ? t(day.focusKey) : day.focus).split(' ')[0]}
               </div>
             </button>
           )

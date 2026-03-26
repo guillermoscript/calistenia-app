@@ -1,20 +1,20 @@
 import type { Phase, WeekDay, Workout, WorkoutsMap, DayId } from '../types'
 
 export const PHASES: Phase[] = [
-  { id: 1, name: "Base & Activación", weeks: "1-6", color: "#c8f542", bg: "rgba(200,245,66,0.08)" },
-  { id: 2, name: "Fuerza Fundamental", weeks: "7-13", color: "#42c8f5", bg: "rgba(66,200,245,0.08)" },
-  { id: 3, name: "Intensidad & Skills", weeks: "14-20", color: "#f542c8", bg: "rgba(245,66,200,0.08)" },
-  { id: 4, name: "Peak & Consolidación", weeks: "21-26", color: "#f5c842", bg: "rgba(245,200,66,0.08)" },
+  { id: 1, name: "Base & Activación", nameKey: "phase.1", weeks: "1-6", color: "#c8f542", bg: "rgba(200,245,66,0.08)" },
+  { id: 2, name: "Fuerza Fundamental", nameKey: "phase.2", weeks: "7-13", color: "#42c8f5", bg: "rgba(66,200,245,0.08)" },
+  { id: 3, name: "Intensidad & Skills", nameKey: "phase.3", weeks: "14-20", color: "#f542c8", bg: "rgba(245,66,200,0.08)" },
+  { id: 4, name: "Peak & Consolidación", nameKey: "phase.4", weeks: "21-26", color: "#f5c842", bg: "rgba(245,200,66,0.08)" },
 ]
 
 export const WEEK_DAYS: WeekDay[] = [
-  { id: "lun", name: "Lunes",    focus: "Empuje + Core",     type: "push",   color: "#c8f542" },
-  { id: "mar", name: "Martes",   focus: "Tirón + Movilidad",  type: "pull",   color: "#42c8f5" },
-  { id: "mie", name: "Miércoles",focus: "Lumbar + Stretching",type: "lumbar", color: "#f54242" },
-  { id: "jue", name: "Jueves",   focus: "Piernas + Glúteos",  type: "legs",   color: "#f542c8" },
-  { id: "vie", name: "Viernes",  focus: "Full Body + Core",   type: "full",   color: "#f5c842" },
-  { id: "sab", name: "Sábado",   focus: "Caminata activa",    type: "rest",   color: "#888899" },
-  { id: "dom", name: "Domingo",  focus: "Descanso total",     type: "rest",   color: "#888899" },
+  { id: "lun", name: "Lunes",    nameKey: "day.lun", focus: "Empuje + Core",     focusKey: "dayFocus.lun", type: "push",   color: "#c8f542" },
+  { id: "mar", name: "Martes",   nameKey: "day.mar", focus: "Tirón + Movilidad",  focusKey: "dayFocus.mar", type: "pull",   color: "#42c8f5" },
+  { id: "mie", name: "Miércoles",nameKey: "day.mie", focus: "Lumbar + Stretching",focusKey: "dayFocus.mie", type: "lumbar", color: "#f54242" },
+  { id: "jue", name: "Jueves",   nameKey: "day.jue", focus: "Piernas + Glúteos",  focusKey: "dayFocus.jue", type: "legs",   color: "#f542c8" },
+  { id: "vie", name: "Viernes",  nameKey: "day.vie", focus: "Full Body + Core",   focusKey: "dayFocus.vie", type: "full",   color: "#f5c842" },
+  { id: "sab", name: "Sábado",   nameKey: "day.sab", focus: "Caminata activa",    focusKey: "dayFocus.sab", type: "rest",   color: "#888899" },
+  { id: "dom", name: "Domingo",  nameKey: "day.dom", focus: "Descanso total",     focusKey: "dayFocus.dom", type: "rest",   color: "#888899" },
 ]
 
 export const WORKOUTS: WorkoutsMap = {

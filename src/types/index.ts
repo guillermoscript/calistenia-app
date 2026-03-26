@@ -2,7 +2,7 @@
 
 export type DayId = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
 
-export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest'
+export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest' | 'cardio'
 
 export type Priority = 'high' | 'med' | 'low'
 
@@ -48,17 +48,27 @@ export type WorkoutsMap = Record<string, Workout>
 export interface Phase {
   id: number
   name: string
+  nameKey?: string
   weeks: string
   color: string
   bg: string
 }
 
+export interface CardioDayConfig {
+  activityType: CardioActivityType
+  targetDistanceKm?: number
+  targetDurationMin?: number
+}
+
 export interface WeekDay {
   id: DayId
   name: string
+  nameKey?: string
   focus: string
+  focusKey?: string
   type: DayType
   color: string
+  cardioConfig?: CardioDayConfig
 }
 
 // ─── Progress & Sessions ─────────────────────────────────────────────────────
@@ -342,6 +352,8 @@ export interface KmSplit {
 export interface CardioSession {
   id?: string
   user?: string
+  program?: string
+  program_day_key?: string
   activity_type: CardioActivityType
   gps_points: GpsPoint[]
   distance_km: number
