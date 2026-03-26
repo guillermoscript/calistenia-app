@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useCardioSessionContext } from '../contexts/CardioSessionContext'
 import { useCardioStats } from '../hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, pointsToGPX } from '../lib/geo'
@@ -34,7 +35,15 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
   const { weeklyStats, monthlyStats, records, weeklyTrend, loadStats } = useCardioStats(userId)
 
-  const [selectedActivity, setSelectedActivity] = useState<CardioActivityType>('running')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const programParam = searchParams.get('program')
+  const dayKeyParam = searchParams.get('dayKey')
+  const activityParam = searchParams.get('activity') as CardioActivityType | null
+  const targetKmParam = searchParams.get('targetKm')
+  const targetMinParam = searchParams.get('targetMin')
+  const isFromProgram = !!programParam
+
+  const [selectedActivity, setSelectedActivity] = useState<CardioActivityType>(activityParam || 'running')
   const [history, setHistory] = useState<CardioSession[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
   const [savedSession, setSavedSession] = useState<CardioSession | null>(null)
@@ -113,6 +122,18 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
       {/* Pre-session view */}
       {state === 'idle' && !savedSession && (
         <div className="space-y-6">
+          {/* Program banner */}
+          {isFromProgram && (
+            <div className="p-3 rounded-lg bg-lime/10 border border-lime/20 text-sm">
+              <div className="text-[10px] text-lime tracking-widest uppercase mb-1">Cardio del programa</div>
+              <div className="text-foreground">
+                {CARDIO_ACTIVITY[activityParam || 'running']?.icon} {CARDIO_ACTIVITY[activityParam || 'running']?.label}
+                {targetKmParam && ` · ${targetKmParam} km`}
+                {targetMinParam && ` · ${targetMinParam} min`}
+              </div>
+            </div>
+          )}
+
           {/* Activity selector */}
           <div id="tour-cardio-activity" className="flex gap-2 p-1 bg-muted/50 rounded-xl" role="radiogroup" aria-label="Tipo de actividad">
             {ACTIVITIES.map(act => (
@@ -138,8 +159,11 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* Start button */}
           <Button
             id="tour-cardio-start"
-            onClick={() => start(selectedActivity)}
-            className="w-full h-14 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-xl tracking-widest shadow-lg shadow-lime/10"
+            onClick={() => {
+              start(selectedActivity, programParam || undefined, dayKeyParam || undefined)
+              if (isFromProgram) setSearchParams({}, { replace: true })
+            }}
+            className="w-full h-14 font-bebas text-xl tracking-widest shadow-lg bg-lime hover:bg-lime/90 text-zinc-900 shadow-lime/10"
           >
             INICIAR {ACTIVITIES.find(a => a.id === selectedActivity)?.label.toUpperCase()}
           </Button>

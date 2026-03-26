@@ -5,7 +5,7 @@ import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
 import { cn } from '../lib/utils'
 import { todayStr, localHour, localDay } from '../lib/dateUtils'
-import { PHASE_COLORS } from '../lib/style-tokens'
+import { PHASE_COLORS, CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Progress } from '../components/ui/progress'
@@ -290,6 +290,7 @@ export default function DashboardPage({
         const todayDayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
         const todayDay = weekDays.find(d => d.id === todayDayId)
         const todayIsRest = todayDay?.type === 'rest'
+        const todayIsCardio = todayDay?.type === 'cardio'
         const todayWorkoutKey = `p${settings.phase || 1}_${todayDayId}`
         const todayDone = isWorkoutDone(todayWorkoutKey)
 
@@ -299,21 +300,29 @@ export default function DashboardPage({
               'mb-6 p-5 rounded-xl border-2 transition-all',
               todayDone
                 ? 'border-emerald-500/30 bg-emerald-500/5'
-                : todayIsRest
-                  ? 'border-border bg-card'
-                  : 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5 cursor-pointer hover:border-[hsl(var(--lime))]/50 active:scale-[0.99]',
+                : todayIsCardio
+                  ? 'border-emerald-400/30 bg-emerald-400/5 cursor-pointer hover:border-emerald-400/50 active:scale-[0.99]'
+                  : todayIsRest
+                    ? 'border-border bg-card'
+                    : 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5 cursor-pointer hover:border-[hsl(var(--lime))]/50 active:scale-[0.99]',
             )}
-            onClick={() => !todayIsRest && !todayDone && navigate(`/workout?day=${todayDayId}`)}
+            onClick={() => {
+              if (todayDone) return
+              if (todayIsCardio) navigate(`/workout?day=${todayDayId}`)
+              else if (!todayIsRest) navigate(`/workout?day=${todayDayId}`)
+            }}
             role={!todayIsRest && !todayDone ? 'button' : undefined}
           >
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">
-                  {todayDone ? 'Entrenamiento de hoy' : todayIsRest ? 'Hoy toca descanso' : 'Entrenamiento de hoy'}
+                  {todayDone ? 'Entrenamiento de hoy' : todayIsCardio ? 'Cardio de hoy' : todayIsRest ? 'Hoy toca descanso' : 'Entrenamiento de hoy'}
                 </div>
                 <div className="font-bebas text-2xl md:text-3xl leading-none">
                   {todayDone ? (
                     <span className="text-emerald-500">COMPLETADO</span>
+                  ) : todayIsCardio ? (
+                    <span className="text-emerald-400">{CARDIO_ACTIVITY[todayDay?.cardioConfig?.activityType || 'running']?.label || 'CARDIO'}</span>
                   ) : todayIsRest ? (
                     <span className="text-muted-foreground">DIA DE DESCANSO</span>
                   ) : (
@@ -332,6 +341,8 @@ export default function DashboardPage({
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                 </div>
+              ) : todayIsCardio ? (
+                <div className="text-3xl shrink-0">{CARDIO_ACTIVITY[todayDay?.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
               ) : todayIsRest ? (
                 <div className="text-3xl shrink-0">🧘</div>
               ) : (

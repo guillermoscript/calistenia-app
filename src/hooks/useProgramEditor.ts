@@ -28,6 +28,9 @@ export interface EditorDay {
   type: string
   color: string
   exercises: EditorExercise[]
+  cardioActivityType?: import('../types').CardioActivityType
+  cardioTargetDistanceKm?: number
+  cardioTargetDurationMin?: number
 }
 
 export interface EditorExercise {
@@ -287,7 +290,7 @@ export function useProgramEditor() {
 
     try {
       const program = await pb.collection('programs').getOne(programId, { $autoCancel: false })
-      const [phasesRes, exercisesRes] = await Promise.all([
+      const [phasesRes, exercisesRes, dayConfigRes] = await Promise.all([
         pb.collection('program_phases').getList(1, 20, {
           filter: pb.filter('program = {:pid}', { pid: programId }),
           sort: 'sort_order',
@@ -297,6 +300,14 @@ export function useProgramEditor() {
           filter: pb.filter('program = {:pid}', { pid: programId }),
           sort: 'phase_number,sort_order',
           $autoCancel: false,
+        }),
+        pb.collection('program_day_config').getList(1, 200, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+          sort: 'phase_number,sort_order',
+          $autoCancel: false,
+        }).catch((e: any) => {
+          if (e?.status !== 404) console.warn('useProgramEditor: day config fetch failed', e)
+          return { items: [] }
         }),
       ])
 
@@ -317,6 +328,21 @@ export function useProgramEditor() {
         }
       }
 
+      // Apply day config (overrides defaults for days that have config records)
+      for (const dc of dayConfigRes.items) {
+        const phaseIndex = dc.phase_number - 1
+        const key = `${phaseIndex}_${dc.day_id}`
+        if (days[key]) {
+          days[key].dayName = dc.day_name || days[key].dayName
+          days[key].focus = dc.day_focus || days[key].focus
+          days[key].type = dc.day_type || days[key].type
+          days[key].color = dc.day_color || days[key].color
+          if (dc.cardio_activity_type) days[key].cardioActivityType = dc.cardio_activity_type
+          if (dc.cardio_target_distance_km) days[key].cardioTargetDistanceKm = dc.cardio_target_distance_km
+          if (dc.cardio_target_duration_min) days[key].cardioTargetDurationMin = dc.cardio_target_duration_min
+        }
+      }
+
       // Populate exercises
       for (const r of exercisesRes.items) {
         const phaseIndex = r.phase_number - 1
@@ -331,11 +357,13 @@ export function useProgramEditor() {
             exercises: [],
           }
         }
-        // Update day metadata from first record
-        days[key].dayName = r.day_name
-        days[key].focus = r.day_focus
-        days[key].type = r.day_type
-        days[key].color = r.day_color
+        // Update day metadata from first record (only if no day config was loaded)
+        if (!dayConfigRes.items.some(dc => dc.phase_number - 1 === phaseIndex && dc.day_id === r.day_id)) {
+          days[key].dayName = r.day_name
+          days[key].focus = r.day_focus
+          days[key].type = r.day_type
+          days[key].color = r.day_color
+        }
 
         days[key].exercises.push({
           exerciseId: r.exercise_id,
@@ -443,13 +471,44 @@ export function useProgramEditor() {
         })
       }
 
-      // Create exercises
+      // Delete existing day config
+      try {
+        const existingDayConfig = await pb.collection('program_day_config').getList(1, 200, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+        })
+        for (const dc of existingDayConfig.items) {
+          await pb.collection('program_day_config').delete(dc.id)
+        }
+      } catch { /* no existing day config */ }
+
+      // Create day config for ALL days and exercises for non-cardio days
       let sortOrder = 0
+      let daySortOrder = 0
       for (let pi = 0; pi < state.phases.length; pi++) {
         for (const dayDef of DAY_DEFAULTS) {
           const dayKey = `${pi}_${dayDef.dayId}`
           const day = state.days[dayKey]
-          if (!day || day.exercises.length === 0) continue
+          if (!day) continue
+
+          daySortOrder++
+          const dayConfigData: Record<string, unknown> = {
+            program: programId,
+            phase_number: pi + 1,
+            day_id: day.dayId,
+            day_name: day.dayName,
+            day_type: day.type,
+            day_focus: day.focus,
+            day_color: day.color,
+            sort_order: daySortOrder,
+          }
+          if (day.type === 'cardio') {
+            dayConfigData.cardio_activity_type = day.cardioActivityType || 'running'
+            if (day.cardioTargetDistanceKm) dayConfigData.cardio_target_distance_km = day.cardioTargetDistanceKm
+            if (day.cardioTargetDurationMin) dayConfigData.cardio_target_duration_min = day.cardioTargetDurationMin
+          }
+          await pb.collection('program_day_config').create(dayConfigData)
+
+          if (day.type === 'cardio' || day.exercises.length === 0) continue
 
           for (const ex of day.exercises) {
             sortOrder++

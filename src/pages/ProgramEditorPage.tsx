@@ -10,6 +10,8 @@ import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
+import { CARDIO_ACTIVITY } from '../lib/style-tokens'
+import type { CardioActivityType } from '../types'
 
 interface ProgramEditorPageProps {
   userId: string
@@ -34,7 +36,14 @@ const DAY_TYPE_OPTIONS = [
   { value: 'core',   label: 'Core' },
   { value: 'lumbar', label: 'Lumbar' },
   { value: 'full',   label: 'Full' },
+  { value: 'cardio', label: 'Cardio' },
   { value: 'rest',   label: 'Descanso' },
+]
+
+const CARDIO_TYPE_OPTIONS: { value: CardioActivityType; label: string; icon: string }[] = [
+  { value: 'running', label: CARDIO_ACTIVITY.running.label, icon: CARDIO_ACTIVITY.running.icon },
+  { value: 'walking', label: CARDIO_ACTIVITY.walking.label, icon: CARDIO_ACTIVITY.walking.icon },
+  { value: 'cycling', label: CARDIO_ACTIVITY.cycling.label, icon: CARDIO_ACTIVITY.cycling.icon },
 ]
 
 const PRIORITY_OPTIONS: { value: 'high' | 'med' | 'low'; label: string; color: string }[] = [
@@ -440,6 +449,54 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                             ))}
                           </select>
                         </div>
+
+                        {/* Cardio config */}
+                        {day.type === 'cardio' && (
+                          <div className="space-y-2 pt-1 border-t border-border">
+                            <label className="text-[9px] text-emerald-400 tracking-widest uppercase block mb-1">Actividad Cardio</label>
+                            <div className="flex gap-1.5">
+                              {CARDIO_TYPE_OPTIONS.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => updateDay(dayKey, { cardioActivityType: opt.value } as any)}
+                                  className={cn(
+                                    'flex-1 py-1.5 rounded-md text-[10px] border transition-all text-center',
+                                    (day as any).cardioActivityType === opt.value
+                                      ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400'
+                                      : 'border-border text-muted-foreground hover:text-foreground'
+                                  )}
+                                >
+                                  {opt.icon} {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">Distancia (km)</label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step={0.5}
+                                  value={(day as any).cardioTargetDistanceKm || ''}
+                                  onChange={e => updateDay(dayKey, { cardioTargetDistanceKm: parseFloat(e.target.value) || undefined } as any)}
+                                  placeholder="Ej: 5"
+                                  className="text-sm h-8"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">Duracion (min)</label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  value={(day as any).cardioTargetDurationMin || ''}
+                                  onChange={e => updateDay(dayKey, { cardioTargetDurationMin: parseInt(e.target.value) || undefined } as any)}
+                                  placeholder="Ej: 30"
+                                  className="text-sm h-8"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )
@@ -511,8 +568,30 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                 </div>
               )}
 
+              {/* Cardio day summary */}
+              {currentDay?.type === 'cardio' && (
+                <Card className="border-emerald-400/30 bg-emerald-400/5">
+                  <CardContent className="p-5 text-center">
+                    <div className="text-3xl mb-2">
+                      {CARDIO_ACTIVITY[(currentDay as any).cardioActivityType || 'running']?.icon || '🏃'}
+                    </div>
+                    <div className="font-bebas text-xl text-emerald-400 tracking-wide">
+                      DIA DE CARDIO
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {CARDIO_ACTIVITY[(currentDay as any).cardioActivityType || 'running']?.label || 'Carrera'}
+                      {(currentDay as any).cardioTargetDistanceKm && ` · ${(currentDay as any).cardioTargetDistanceKm} km`}
+                      {(currentDay as any).cardioTargetDurationMin && ` · ${(currentDay as any).cardioTargetDurationMin} min`}
+                    </div>
+                    <div className="text-xs text-muted-foreground/60 mt-2">
+                      Los ejercicios no aplican para dias de cardio. Configura la actividad en el Paso 3.
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Exercise list */}
-              <div className="space-y-2">
+              {currentDay?.type !== 'cardio' && <div className="space-y-2">
                 {currentDay?.exercises.map((ex, ei) => {
                   const isExpanded = expandedExercise === ei
                   return (
@@ -675,9 +754,10 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                     No hay ejercicios para este día. Agrega del catálogo o crea uno custom.
                   </div>
                 )}
-              </div>
+              </div>}
 
               {/* Add buttons */}
+              {currentDay?.type !== 'cardio' && (
               <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => setShowCatalog(true)}
@@ -695,6 +775,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                   + EJERCICIO CUSTOM
                 </Button>
               </div>
+              )}
             </div>
           )}
         </div>

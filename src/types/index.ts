@@ -2,7 +2,7 @@
 
 export type DayId = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
 
-export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest'
+export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest' | 'cardio'
 
 export type Priority = 'high' | 'med' | 'low'
 
@@ -53,12 +53,19 @@ export interface Phase {
   bg: string
 }
 
+export interface CardioDayConfig {
+  activityType: CardioActivityType
+  targetDistanceKm?: number
+  targetDurationMin?: number
+}
+
 export interface WeekDay {
   id: DayId
   name: string
   focus: string
   type: DayType
   color: string
+  cardioConfig?: CardioDayConfig
 }
 
 // ─── Progress & Sessions ─────────────────────────────────────────────────────
@@ -356,6 +363,8 @@ export interface CardioSession {
   avg_speed_kmh?: number
   max_speed_kmh?: number
   splits?: KmSplit[]
+  program?: string
+  program_day_key?: string
 }
 
 // ─── Challenges ──────────────────────────────────────────────────────────────
@@ -427,3 +436,4 @@ export interface SleepEntry {
   created: string
   updated: string
 }
+// test marker

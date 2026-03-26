@@ -13,11 +13,11 @@ import { Button } from '../components/ui/button'
 import { triggerWorkoutDetailTour } from '../components/AppTour'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
-import { DAY_TYPE_COLORS } from '../lib/style-tokens'
-import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData } from '../types'
+import { DAY_TYPE_COLORS, CARDIO_ACTIVITY } from '../lib/style-tokens'
+import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData, CardioDayConfig } from '../types'
 
 export default function WorkoutPage() {
-  const { settings, phases: phasesProp, weekDays: weekDaysProp } = useWorkoutState()
+  const { settings, phases: phasesProp, weekDays: weekDaysProp, cardioDayConfigs, activeProgram } = useWorkoutState()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, unmarkWorkoutDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { startSession } = useActiveSession()
   const { userId, userRole } = useAuthState()
@@ -145,7 +145,7 @@ export default function WorkoutPage() {
                 <div className="text-[9px] leading-tight hidden md:block">{day.focus}</div>
                 {/* Mobile: show just type icon */}
                 <div className="text-[10px] leading-tight md:hidden text-current opacity-70">
-                  {isRest ? '—' : done ? '✓' : day.focus.split(' ')[0].slice(0,4)}
+                  {day.type === 'cardio' ? CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.icon || '🏃' : isRest ? '—' : done ? '✓' : day.focus.split(' ')[0].slice(0,4)}
                 </div>
               </button>
             )
@@ -222,7 +222,39 @@ export default function WorkoutPage() {
             ))}
           </div>
         </div>
-      ) : selectedDay && selectedDayType === 'rest' ? (
+      ) : selectedDay && selectedDayType === 'cardio' ? (() => {
+        const cardioKey = `p${selectedPhase}_${selectedDay}`
+        const cardioConfig = cardioDayConfigs[cardioKey]
+        const activity = cardioConfig?.activityType || 'running'
+        const activityInfo = CARDIO_ACTIVITY[activity] || CARDIO_ACTIVITY.running
+        return (
+          <div className="text-center py-12 px-5">
+            <div className="text-5xl mb-4">{activityInfo.icon}</div>
+            <div className="font-bebas text-3xl mb-2 text-lime">Dia de Cardio</div>
+            <div className="text-sm text-muted-foreground mb-1">{activityInfo.label}</div>
+            {(cardioConfig?.targetDistanceKm || cardioConfig?.targetDurationMin) && (
+              <div className="text-xs text-muted-foreground/70 mb-4">
+                {cardioConfig.targetDistanceKm && `${cardioConfig.targetDistanceKm} km`}
+                {cardioConfig.targetDistanceKm && cardioConfig.targetDurationMin && ' · '}
+                {cardioConfig.targetDurationMin && `${cardioConfig.targetDurationMin} min`}
+              </div>
+            )}
+            <Button
+              onClick={() => {
+                const params = new URLSearchParams({ activity })
+                if (activeProgram?.id) params.set('program', activeProgram.id)
+                if (selectedDay) params.set('dayKey', cardioKey)
+                if (cardioConfig?.targetDistanceKm) params.set('targetKm', String(cardioConfig.targetDistanceKm))
+                if (cardioConfig?.targetDurationMin) params.set('targetMin', String(cardioConfig.targetDurationMin))
+                navigate(`/cardio?${params.toString()}`)
+              }}
+              className="font-bebas text-xl tracking-wide bg-lime hover:bg-lime/90 text-lime-foreground px-8 h-12"
+            >
+              EMPEZAR CARDIO
+            </Button>
+          </div>
+        )
+      })() : selectedDay && selectedDayType === 'rest' ? (
         <div className="text-center py-16 px-5 text-muted-foreground">
           <div className="text-5xl mb-4">🧘</div>
           <div className="font-bebas text-3xl mb-2">Día de descanso</div>
