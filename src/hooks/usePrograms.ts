@@ -65,9 +65,9 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
         type:  dc.day_type,
         color: dc.day_color,
       }
-      if (dc.day_type === 'cardio') {
+      if (dc.day_type === 'cardio' && dc.cardio_activity_type) {
         day.cardioConfig = {
-          activityType: (dc.cardio_activity_type || 'running') as CardioActivityType,
+          activityType: dc.cardio_activity_type as CardioActivityType,
           targetDistanceKm: dc.cardio_target_distance_km || undefined,
           targetDurationMin: dc.cardio_target_duration_min || undefined,
         }
@@ -88,7 +88,7 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
       }
     }
   })
-  // also include rest days (sab/dom) even if they have no exercises — use defaults
+
   const defaults: Record<string, WeekDay> = {
     sab: { id: 'sab', name: 'Sábado',  focus: 'Caminata activa', type: 'rest', color: '#888899' },
     dom: { id: 'dom', name: 'Domingo', focus: 'Descanso total',  type: 'rest', color: '#888899' },
@@ -105,10 +105,10 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
 function buildCardioDayConfigs(dayConfigRecords: RecordModel[]): Record<string, CardioDayConfig> {
   const configs: Record<string, CardioDayConfig> = {}
   dayConfigRecords.forEach(dc => {
-    if (dc.day_type === 'cardio') {
+    if (dc.day_type === 'cardio' && dc.cardio_activity_type) {
       const key = `p${dc.phase_number}_${dc.day_id}`
       configs[key] = {
-        activityType: (dc.cardio_activity_type || 'running') as CardioActivityType,
+        activityType: dc.cardio_activity_type as CardioActivityType,
         targetDistanceKm: dc.cardio_target_distance_km || undefined,
         targetDurationMin: dc.cardio_target_duration_min || undefined,
       }
@@ -418,11 +418,11 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         })
       }
 
-      // 3b. Copy day config
+      // 4. Copy day config
       try {
         const dayConfigRes = await pb.collection('program_day_config').getList(1, 200, {
           filter: pb.filter('program = {:pid}', { pid: programId }),
-          sort:   'phase_number,sort_order',
+          sort: 'phase_number,sort_order',
         })
         for (const dc of dayConfigRes.items) {
           const data: Record<string, unknown> = {
@@ -440,9 +440,9 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           if (dc.cardio_target_duration_min) data.cardio_target_duration_min = dc.cardio_target_duration_min
           await pb.collection('program_day_config').create(data)
         }
-      } catch { /* no day config */ }
+      } catch { /* no day config to copy */ }
 
-      // 4. Copy exercises
+      // 5. Copy exercises
       const exercisesRes = await pb.collection('program_exercises').getList(1, 2000, {
         filter: pb.filter('program = {:pid}', { pid: programId }),
         sort:   'phase_number,sort_order',
@@ -472,7 +472,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         })
       }
 
-      // 5. Update local programs list
+      // 6. Update local programs list
       const newMeta: ProgramMeta = {
         id:             newProgram.id,
         name:           newProgram.name,

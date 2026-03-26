@@ -27,7 +27,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
       <div className="flex gap-1.5 overflow-x-auto pb-1 md:grid md:grid-cols-7 md:overflow-visible md:pb-0 snap-x snap-mandatory">
         {WEEK_DAYS.map(day => {
           const workoutKey = `p${selectedPhase}_${day.id}`
-          const done    = day.type !== 'rest' && isWorkoutDone(workoutKey)
+          const done    = day.type !== 'rest' && day.type !== 'cardio' && isWorkoutDone(workoutKey)
           const isToday = day.id === todayId
           const isRest  = day.type === 'rest'
           const isCardio = day.type === 'cardio'
@@ -35,7 +35,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
           return (
             <button
               key={day.id}
-              onClick={() => !isRest && navigate(`/workout?day=${day.id}`)}
+              onClick={() => !isRest && navigate(isCardio ? `/workout?day=${day.id}` : `/workout?day=${day.id}`)}
               disabled={isRest && !isCardio}
               className={cn(
                 'relative rounded-lg border text-center transition-all duration-200',
@@ -74,7 +74,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
               <div className={cn(
                 'text-[10px] mt-1.5 leading-tight',
                 done           ? 'text-emerald-400' :
-                isCardio       ? 'text-emerald-400/70' :
+                isCardio       ? 'text-emerald-400' :
                 isToday        ? 'text-[hsl(var(--lime))]' :
                                  'text-muted-foreground/50',
               )}>

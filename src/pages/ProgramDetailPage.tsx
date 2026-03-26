@@ -204,23 +204,25 @@ export default function ProgramDetailPage({
       // Build workouts grouped by phase+day
       const workoutMap: Record<string, ProgramWorkout> = {}
 
-      // First, add cardio day entries from day config
+      // First, add cardio days from day config
       dayConfigRes.items.forEach((dc: RecordModel) => {
         if (dc.day_type === 'cardio') {
           const key = `p${dc.phase_number}_${dc.day_id}`
-          workoutMap[key] = {
-            phase: dc.phase_number,
-            day: dc.day_id,
-            dayName: dc.day_name,
-            dayFocus: dc.day_focus,
-            dayType: 'cardio',
-            title: dc.day_focus,
-            exercises: [],
-            cardioConfig: {
-              activityType: (dc.cardio_activity_type || 'running') as CardioActivityType,
-              targetDistanceKm: dc.cardio_target_distance_km || undefined,
-              targetDurationMin: dc.cardio_target_duration_min || undefined,
-            },
+          if (!workoutMap[key]) {
+            workoutMap[key] = {
+              phase: dc.phase_number,
+              day: dc.day_id,
+              dayName: dc.day_name,
+              dayFocus: dc.day_focus,
+              dayType: 'cardio',
+              title: dc.day_focus,
+              exercises: [],
+              cardioConfig: {
+                activityType: (dc.cardio_activity_type || 'running') as CardioActivityType,
+                targetDistanceKm: dc.cardio_target_distance_km || undefined,
+                targetDurationMin: dc.cardio_target_duration_min || undefined,
+              },
+            }
           }
         }
       })
@@ -381,7 +383,7 @@ export default function ProgramDetailPage({
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12" role="status" aria-busy="true" aria-label="Cargando programa">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12" role="status" aria-busy="true" aria-label={t('common.loading')}>
         <div className="animate-pulse space-y-6">
           <div className="h-6 bg-muted rounded w-24" />
           <div className="h-14 bg-muted rounded w-2/3" />
@@ -643,8 +645,8 @@ export default function ProgramDetailPage({
                                 )}
                                 <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase">
                                   {workout.dayType === 'cardio'
-                                    ? `${CARDIO_ACTIVITY[workout.cardioConfig?.activityType || 'running']?.icon || '🏃'} Cardio`
-                                    : `${workout.exercises.length} ej · ~${workoutDurations[dayKey] || 0} min`
+                                    ? `${CARDIO_ACTIVITY[workout.cardioConfig?.activityType || 'running']?.icon || '🏃'} ${t(`cardio.${workout.cardioConfig?.activityType || 'running'}`)}`
+                                    : `${workout.exercises.length} ${t('programDetail.exercises')} · ~${workoutDurations[dayKey] || 0} ${t('common.minutes')}`
                                   }
                                 </span>
                               </div>

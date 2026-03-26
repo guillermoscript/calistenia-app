@@ -336,10 +336,10 @@ export function useProgramEditor() {
         const key = `${phaseIndex}_${dc.day_id}`
         dayConfigKeys.add(key)
         if (days[key]) {
-          days[key].dayName = dc.day_name
-          days[key].focus = dc.day_focus
-          days[key].type = dc.day_type
-          days[key].color = dc.day_color
+          days[key].dayName = dc.day_name || days[key].dayName
+          days[key].focus = dc.day_focus || days[key].focus
+          days[key].type = dc.day_type || days[key].type
+          days[key].color = dc.day_color || days[key].color
           if (dc.day_type === 'cardio') {
             days[key].cardioActivityType = dc.cardio_activity_type || 'running'
             days[key].cardioTargetDistanceKm = dc.cardio_target_distance_km || undefined

@@ -6,7 +6,7 @@ import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
 import { cn } from '../lib/utils'
 import { todayStr, localHour, localDay } from '../lib/dateUtils'
-import { PHASE_COLORS } from '../lib/style-tokens'
+import { PHASE_COLORS, CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Progress } from '../components/ui/progress'
@@ -322,7 +322,7 @@ export default function DashboardPage({
                   {todayDone ? (
                     <span className="text-emerald-500">{t('dashboard.completed')}</span>
                   ) : todayIsCardio ? (
-                    <span className="text-emerald-400">{todayDay?.focusKey ? t(todayDay.focusKey) : todayDay?.focus || 'CARDIO'}</span>
+                    <span className="text-emerald-400">{t(`cardio.${todayDay?.cardioConfig?.activityType || 'running'}`)}</span>
                   ) : todayIsRest ? (
                     <span className="text-muted-foreground">{t('dashboard.restDay')}</span>
                   ) : (
@@ -342,7 +342,7 @@ export default function DashboardPage({
                   </svg>
                 </div>
               ) : todayIsCardio ? (
-                <div className="text-3xl shrink-0">{todayDay?.cardioConfig?.activityType ? ({'running': '🏃', 'walking': '🚶', 'cycling': '🚴'} as Record<string, string>)[todayDay.cardioConfig.activityType] || '🏃' : '🏃'}</div>
+                <div className="text-3xl shrink-0">{CARDIO_ACTIVITY[todayDay?.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
               ) : todayIsRest ? (
                 <div className="text-3xl shrink-0">🧘</div>
               ) : (

@@ -266,7 +266,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
   // ── Session actions ─────────────────────────────────────────────────────
 
-  const start = useCallback((type: CardioActivityType, pId?: string, pDayKey?: string) => {
+  const start = useCallback((type: CardioActivityType, startProgramId?: string, startProgramDayKey?: string) => {
     setActivityType(type)
     activityTypeRef.current = type
     pointsRef.current = []
@@ -280,8 +280,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     setError(null)
     setNote('')
     setGpsAccuracy(null)
-    setProgramId(pId || null)
-    setProgramDayKey(pDayKey || null)
+    setProgramId(startProgramId || null)
+    setProgramDayKey(startProgramDayKey || null)
     pausedDurationRef.current = 0
     startTimeRef.current = Date.now()
     lastSplitKmRef.current = 0
@@ -355,6 +355,10 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       program: programId || undefined,
       program_day_key: programDayKey || undefined,
     }
+    if (programId) {
+      session.program = programId
+      session.program_day_key = programDayKey || undefined
+    }
 
     if (userId) {
       try {
@@ -372,7 +376,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     }
 
     return session
-  }, [stopTracking, releaseWakeLock, userId, userWeight])
+  }, [stopTracking, releaseWakeLock, userId, userWeight, programId, programDayKey])
 
   const discard = useCallback(() => {
     stopTracking()

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "view_session_stats",
+    "type": "view",
+    "system": false,
+    "id": "view_sess_st",
+    "schema": [],
+    "indexes": [],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "options": {
+      "query": "SELECT s.id as id, s.user, s.workout_key, s.completed_at, COUNT(sl.id) as total_sets, SUM(sl.reps) as total_reps, SUM(sl.weight_kg) as total_weight_lifted FROM sessions s LEFT JOIN sets_log sl ON sl.user = s.user AND sl.workout_key = s.workout_key GROUP BY s.id"
+    }
+  },
+  {
+    "name": "view_nutrition_daily",
+    "type": "view",
+    "system": false,
+    "id": "view_nutr_dy",
+    "schema": [],
+    "indexes": [],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "options": {
+      "query": "SELECT MIN(id) as id, user, DATE(logged_at) as log_date, SUM(total_calories) as total_calories, SUM(total_protein) as total_protein, SUM(total_carbs) as total_carbs, SUM(total_fat) as total_fat FROM nutrition_entries GROUP BY user, DATE(logged_at)"
+    }
+  }
+]
