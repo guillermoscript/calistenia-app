@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import i18n from '../lib/i18n'
 import { cn } from '../lib/utils'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -340,7 +341,7 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">
-                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-ES', {
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString(i18n.language, {
                     weekday: 'long', day: 'numeric', month: 'long',
                   })}
                 </div>

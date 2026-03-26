@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import i18n from '../../lib/i18n'
 import { cn } from '../../lib/utils'
 import { Loader } from '../ui/loader'
 import type { Comment } from '../../hooks/useComments'
@@ -18,14 +19,14 @@ function relativeTime(dateStr: string): string {
   const now = Date.now()
   const then = new Date(dateStr.replace(' ', 'T')).getTime()
   const diffMin = Math.floor((now - then) / 60000)
-  if (diffMin < 1) return 'Ahora'
-  if (diffMin < 60) return `Hace ${diffMin}m`
+  if (diffMin < 1) return i18n.t('feed.now')
+  if (diffMin < 60) return i18n.t('feed.minutesAgo', { count: diffMin })
   const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return `Hace ${diffH}h`
+  if (diffH < 24) return i18n.t('feed.hoursAgo', { count: diffH })
   const diffD = Math.floor(diffH / 24)
-  if (diffD === 1) return 'Ayer'
-  if (diffD <= 7) return `Hace ${diffD} dias`
-  return new Date(dateStr.replace(' ', 'T')).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+  if (diffD === 1) return i18n.t('common.yesterday')
+  if (diffD <= 7) return i18n.t('common.daysAgo', { count: diffD })
+  return new Date(dateStr.replace(' ', 'T')).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
 
 export function CommentsSheet({

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../lib/i18n'
 import { cn } from '../../lib/utils'
 import { localHour, nowLocalForPB } from '../../lib/dateUtils'
 import { Button } from '../ui/button'
@@ -697,7 +698,7 @@ export default function MealLoggerContent({
                           {entry.mealType}
                         </span>
                         <span className="text-[10px] text-muted-foreground tabular-nums">
-                          {new Date(entry.loggedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          {new Date(entry.loggedAt).toLocaleDateString(i18n.language, { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
                       <div className="text-sm text-foreground leading-snug truncate">

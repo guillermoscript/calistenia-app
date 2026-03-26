@@ -13,10 +13,10 @@ import './index.css'
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    toast('Nueva versión disponible', {
-      description: 'Actualiza para obtener las últimas mejoras.',
+    toast(i18n.t('toast.newVersion'), {
+      description: i18n.t('toast.newVersionDesc'),
       action: {
-        label: 'Actualizar',
+        label: i18n.t('toast.update'),
         onClick: () => updateSW(true),
       },
       duration: Infinity,

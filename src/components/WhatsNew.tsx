@@ -3,6 +3,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from './ui/dialog'
 import changelog from '../data/changelog.json'
+import i18n from '../lib/i18n'
 import { cn } from '../lib/utils'
 
 const APP_VERSION = __APP_VERSION__
@@ -42,7 +43,7 @@ const TYPE_STYLES: Record<string, { dot: string; label: string }> = {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', {
+    return new Date(iso + 'T00:00:00').toLocaleDateString(i18n.language, {
       day: 'numeric', month: 'short',
     })
   } catch {

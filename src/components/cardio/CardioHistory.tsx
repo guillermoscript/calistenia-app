@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatDuration, formatPace, formatSpeed } from '../../lib/geo'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../lib/i18n'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
@@ -62,7 +63,7 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                     {t(`cardio.${session.activity_type}`)}
                   </div>
                   <div className="text-[10px] text-muted-foreground tabular-nums">
-                    {new Date(session.started_at).toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    {new Date(session.started_at).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}
                   </div>
                 </div>
                 <div className="flex gap-3 sm:gap-4 text-right shrink-0">

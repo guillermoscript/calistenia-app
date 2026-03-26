@@ -225,7 +225,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
 function formatDate(isoStr: string): string {
   try {
     const d = new Date(isoStr)
-    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return d.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   } catch {
     return isoStr.split('T')[0]
   }

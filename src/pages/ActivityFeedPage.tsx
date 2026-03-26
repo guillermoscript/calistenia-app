@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
+import i18n from '../lib/i18n'
 import { useActivityFeed, type FeedItem } from '../hooks/useActivityFeed'
 import { useReactions } from '../hooks/useReactions'
 import { useComments } from '../hooks/useComments'
@@ -24,7 +25,7 @@ function relativeTime(dateStr: string, t: TFunction): string {
   const diffD = Math.floor(diffH / 24)
   if (diffD === 1) return t('feed.yesterday')
   if (diffD <= 7) return t('feed.daysAgo', { count: diffD })
-  return new Date(dateStr.replace(' ', 'T')).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+  return new Date(dateStr.replace(' ', 'T')).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
 
 interface ActivityFeedPageProps {

@@ -9,10 +9,19 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import isoWeek from 'dayjs/plugin/isoWeek'
+import 'dayjs/locale/es'
+import 'dayjs/locale/en'
+import i18n from './i18n'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(isoWeek)
+
+// Sync dayjs locale with i18n language
+dayjs.locale(i18n.language)
+i18n.on('languageChanged', (lng: string) => {
+  dayjs.locale(lng)
+})
 
 // Module-level timezone — defaults to browser detection, overridden on login.
 let _tz: string = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -105,13 +114,13 @@ export function localDateForPB(dateStr: string): string {
   return `${dateStr} 00:00:00`
 }
 
-/** Human-friendly relative date label in Spanish (Hoy, Ayer, Hace N días, or short date). */
+/** Human-friendly relative date label (Today, Yesterday, N days ago, or short date). */
 export function relativeDate(dateStr: string): string {
   const today = todayStr()
-  if (dateStr === today) return 'Hoy'
+  if (dateStr === today) return i18n.t('common.today')
   const yesterday = daysAgoStr(1)
-  if (dateStr === yesterday) return 'Ayer'
+  if (dateStr === yesterday) return i18n.t('common.yesterday')
   const diff = dayjs.tz(today, _tz).diff(dayjs.tz(dateStr, _tz), 'day')
-  if (diff >= 2 && diff <= 7) return `Hace ${diff} días`
-  return dayjs.tz(dateStr, _tz).toDate().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+  if (diff >= 2 && diff <= 7) return i18n.t('common.daysAgo', { count: diff })
+  return dayjs.tz(dateStr, _tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }

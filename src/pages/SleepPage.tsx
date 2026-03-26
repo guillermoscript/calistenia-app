@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import i18n from '../lib/i18n'
 import { daysAgoStr } from '../lib/dateUtils'
 import { useSleep, type SleepEntryInput } from '../hooks/useSleep'
 import SleepForm, { type SleepFormData } from '../components/sleep/SleepForm'
@@ -71,7 +72,7 @@ function SleepEntryRow({ entry, onEdit, onDelete }: SleepEntryRowProps) {
 
   const dateLabel = useMemo(() => {
     const d = new Date(entry.date + 'T12:00:00')
-    return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
+    return d.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })
   }, [entry.date])
 
   return (
