@@ -1,0 +1,1421 @@
+{
+  "generated": "2026-03-26T00:39:15.869Z",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-03-26",
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "order": 0,
+          "type": "feat",
+          "items": [
+            {
+              "description": "Exercise library enhancements, favorites, refreshPrograms, and misc updates",
+              "scope": null,
+              "breaking": false,
+              "hash": "ee2c3b4"
+            },
+            {
+              "description": "Allow unmarking completed workouts to redo them",
+              "scope": null,
+              "breaking": false,
+              "hash": "0a48bed"
+            },
+            {
+              "description": "Persist active workout sessions across app restarts",
+              "scope": null,
+              "breaking": false,
+              "hash": "c6164e1"
+            },
+            {
+              "description": "Session UX overhaul — concrete reps, weight tracking, timer countdown, persistent state",
+              "scope": null,
+              "breaking": false,
+              "hash": "d94e421"
+            },
+            {
+              "description": "On-demand date loading, hardening, and design normalization for nutrition/water",
+              "scope": null,
+              "breaking": false,
+              "hash": "a9d7c11"
+            },
+            {
+              "description": "Integrate cardio, nutrition, and water into calendar view",
+              "scope": null,
+              "breaking": false,
+              "hash": "fab22dd"
+            },
+            {
+              "description": "Separate free session progress into dedicated page with visual distinction",
+              "scope": null,
+              "breaking": false,
+              "hash": "e0200aa"
+            },
+            {
+              "description": "Improve meal analyzer accuracy with portionGrams, visual refs, and caloric validation",
+              "scope": null,
+              "breaking": false,
+              "hash": "28083de"
+            },
+            {
+              "description": "Redesign share card with exercise list, quote, and competition-style layout",
+              "scope": null,
+              "breaking": false,
+              "hash": "7c8f9ab"
+            },
+            {
+              "description": "Session as full-screen page with UX polish, a11y, and performance",
+              "scope": null,
+              "breaking": false,
+              "hash": "f705538"
+            },
+            {
+              "description": "Add active session tracking components",
+              "scope": null,
+              "breaking": false,
+              "hash": "a83636b"
+            },
+            {
+              "description": "Add email/password auth, free session bubble, and calendar improvements",
+              "scope": null,
+              "breaking": false,
+              "hash": "8d7fea9"
+            },
+            {
+              "description": "Add timezone support for all date/time logic",
+              "scope": null,
+              "breaking": false,
+              "hash": "2eb60a0"
+            },
+            {
+              "description": "Add search, filter chips, and pagination to repeat meals view",
+              "scope": null,
+              "breaking": false,
+              "hash": "d2bb762"
+            },
+            {
+              "description": "Add Langfuse observability and prompt management to MCP server",
+              "scope": null,
+              "breaking": false,
+              "hash": "504e605"
+            },
+            {
+              "description": "Add notifications for challenge join/complete, achievements, streaks",
+              "scope": null,
+              "breaking": false,
+              "hash": "85ea7d4"
+            },
+            {
+              "description": "Add server-side notification service for follows, reactions, comments",
+              "scope": null,
+              "breaking": false,
+              "hash": "807c620"
+            },
+            {
+              "description": "Add inline edit for reminders and sidebar nav link",
+              "scope": null,
+              "breaking": false,
+              "hash": "7cf5f07"
+            },
+            {
+              "description": "Add on-screen debug log to test notification button",
+              "scope": null,
+              "breaking": false,
+              "hash": "ce4ff3a"
+            },
+            {
+              "description": "Add a global friend search input, implement local filtering for following/followers tabs, and enhance remote search with error handling.",
+              "scope": null,
+              "breaking": false,
+              "hash": "8cd05fc"
+            },
+            {
+              "description": "Add meal duplicate button and grouped food display with multipliers",
+              "scope": null,
+              "breaking": false,
+              "hash": "bb7a9b4"
+            },
+            {
+              "description": "Exercise system redesign with private + promotion model",
+              "scope": null,
+              "breaking": false,
+              "hash": "cdba536"
+            },
+            {
+              "description": "Redesign ProgramDetailPage with collapsible days, session history, and UX improvements",
+              "scope": null,
+              "breaking": false,
+              "hash": "5071682"
+            },
+            {
+              "description": "Auto-follow between referrer and referred on signup",
+              "scope": null,
+              "breaking": false,
+              "hash": "c1860e9"
+            },
+            {
+              "description": "Add health tracking, meal templates, today's workout, and more MCP tools",
+              "scope": null,
+              "breaking": false,
+              "hash": "cbff5cf"
+            },
+            {
+              "description": "Add program creation tools and fix wger search",
+              "scope": null,
+              "breaking": false,
+              "hash": "9b1edcc"
+            },
+            {
+              "description": "Add OAuth 2.1 authorization to MCP server for remote clients",
+              "scope": null,
+              "breaking": false,
+              "hash": "f770489"
+            },
+            {
+              "description": "Add referral system collections to pb-migrate.js production script",
+              "scope": null,
+              "breaking": false,
+              "hash": "9f670f7"
+            },
+            {
+              "description": "Remove password login, keep Google-only auth to prevent bots",
+              "scope": null,
+              "breaking": false,
+              "hash": "25f2b70"
+            },
+            {
+              "description": "Show referral invite link prominently on ReferralsPage",
+              "scope": null,
+              "breaking": false,
+              "hash": "9f12453"
+            },
+            {
+              "description": "Add referral & growth system — invite links, points, challenge express",
+              "scope": null,
+              "breaking": false,
+              "hash": "77b7d2b"
+            },
+            {
+              "description": "Add social features v2 — reactions, comments, notifications, routine view",
+              "scope": null,
+              "breaking": false,
+              "hash": "dbb11ed"
+            },
+            {
+              "description": "Add sleep tracking with manual logging, weekly charts, and dashboard widget",
+              "scope": null,
+              "breaking": false,
+              "hash": "0c2d409"
+            },
+            {
+              "description": "Async AI job processing and nutrition UI improvements",
+              "scope": null,
+              "breaking": false,
+              "hash": "2306ec0"
+            },
+            {
+              "description": "PWA update prompt with toast instead of silent auto-reload",
+              "scope": null,
+              "breaking": false,
+              "hash": "ff6349f"
+            },
+            {
+              "description": "Add web search and Open Food Facts tools to AI nutrition endpoints",
+              "scope": null,
+              "breaking": false,
+              "hash": "e48c364"
+            },
+            {
+              "description": "Cardio session management, snap-to-roads, GPS indicator, and trends",
+              "scope": null,
+              "breaking": false,
+              "hash": "fbd7a5d"
+            },
+            {
+              "description": "Persistent cardio sessions, meal editing, and UI improvements",
+              "scope": null,
+              "breaking": false,
+              "hash": "57481a7"
+            },
+            {
+              "description": "Show program creator name on cards and onboarding",
+              "scope": null,
+              "breaking": false,
+              "hash": "24c0c07"
+            },
+            {
+              "description": "Add difficulty badges to onboarding and show all programs together",
+              "scope": null,
+              "breaking": false,
+              "hash": "f326475"
+            },
+            {
+              "description": "Improve onboarding, program discovery, and dashboard navigation",
+              "scope": null,
+              "breaking": false,
+              "hash": "404912d"
+            },
+            {
+              "description": "Add user avatar support with Google OAuth auto-fetch and manual upload",
+              "scope": null,
+              "breaking": false,
+              "hash": "57f898b"
+            },
+            {
+              "description": "Add legal page, improved app tour, timer enhancements, and misc UI fixes",
+              "scope": null,
+              "breaking": false,
+              "hash": "22725d0"
+            },
+            {
+              "description": "Add Open Graph and Twitter Card meta tags for social sharing",
+              "scope": null,
+              "breaking": false,
+              "hash": "8275485"
+            },
+            {
+              "description": "Improve cardio maps with dark tiles, live tracking, and elevation profile",
+              "scope": null,
+              "breaking": false,
+              "hash": "f08e6c6"
+            },
+            {
+              "description": "Redesign landing page, auth page with Google OAuth, and onboarding profile step",
+              "scope": null,
+              "breaking": false,
+              "hash": "9f23ecf"
+            },
+            {
+              "description": "Add WhatsApp share button for programs",
+              "scope": null,
+              "breaking": false,
+              "hash": "107de78"
+            },
+            {
+              "description": "Add social notification functions",
+              "scope": null,
+              "breaking": false,
+              "hash": "b05882c"
+            },
+            {
+              "description": "Add fire emoji reactions to activity feed",
+              "scope": null,
+              "breaking": false,
+              "hash": "3b45938"
+            },
+            {
+              "description": "Add challenges — time-bound competitions with friends",
+              "scope": null,
+              "breaking": false,
+              "hash": "414ccda"
+            },
+            {
+              "description": "Add activity feed showing friends' recent workouts",
+              "scope": null,
+              "breaking": false,
+              "hash": "97434a1"
+            },
+            {
+              "description": "Add barcode scanning and Open Food Facts integration",
+              "scope": null,
+              "breaking": false,
+              "hash": "51bb8d9"
+            },
+            {
+              "description": "Add cardio GPS tracking and free session pages",
+              "scope": null,
+              "breaking": false,
+              "hash": "ee7c55d"
+            },
+            {
+              "description": "Add equipment tags and cardio GPS tracking migrations",
+              "scope": null,
+              "breaking": false,
+              "hash": "5f18f77"
+            },
+            {
+              "description": "Integrate social features into app shell",
+              "scope": null,
+              "breaking": false,
+              "hash": "4742013"
+            },
+            {
+              "description": "Add Friends, Leaderboard, and AddFriend pages",
+              "scope": null,
+              "breaking": false,
+              "hash": "e095865"
+            },
+            {
+              "description": "Add useFollows and useLeaderboard hooks",
+              "scope": null,
+              "breaking": false,
+              "hash": "b65d4f0"
+            },
+            {
+              "description": "Add follows collection and relax API rules for social features",
+              "scope": null,
+              "breaking": false,
+              "hash": "b3bc1a5"
+            },
+            {
+              "description": "Add session history detail view",
+              "scope": null,
+              "breaking": false,
+              "hash": "017c145"
+            },
+            {
+              "description": "Redesign dashboard as home page with quick actions and distilled layout",
+              "scope": null,
+              "breaking": false,
+              "hash": "e7331bc"
+            },
+            {
+              "description": "Integrate wger API for exercise search and import",
+              "scope": null,
+              "breaking": false,
+              "hash": "0abf394"
+            },
+            {
+              "description": "Add app logo (hard.png) as favicon, PWA icons, and share card branding",
+              "scope": null,
+              "breaking": false,
+              "hash": "5eb9784"
+            },
+            {
+              "description": "Redesign share cards for Instagram Stories format (1080x1920)",
+              "scope": null,
+              "breaking": false,
+              "hash": "2be5857"
+            },
+            {
+              "description": "Improve meal analysis UX — realistic portions, slider, sectioned search, inline macro edit",
+              "scope": null,
+              "breaking": false,
+              "hash": "495768f"
+            },
+            {
+              "description": "Add gallery photo selection alongside camera capture",
+              "scope": null,
+              "breaking": false,
+              "hash": "3b8f97d"
+            },
+            {
+              "description": "Multi-photo meal logging (up to 5) with photo gallery in dashboard",
+              "scope": null,
+              "breaking": false,
+              "hash": "5dccd89"
+            },
+            {
+              "description": "Add description field for AI meal analysis context",
+              "scope": null,
+              "breaking": false,
+              "hash": "8020fa5"
+            },
+            {
+              "description": "Replace browser confirm() with ConfirmDialog component",
+              "scope": null,
+              "breaking": false,
+              "hash": "8eb64a5"
+            },
+            {
+              "description": "Program editing for own programs and admin edit on any program",
+              "scope": null,
+              "breaking": false,
+              "hash": "8aa9efc"
+            },
+            {
+              "description": "Reminders page, lastre tour step, mobile polish & hardening",
+              "scope": null,
+              "breaking": false,
+              "hash": "64d48f9"
+            },
+            {
+              "description": "Mobile bottom tab bar, meal logger UX redesign, save AI meals, fix notifications",
+              "scope": null,
+              "breaking": false,
+              "hash": "f532753"
+            },
+            {
+              "description": "Fix AI meal analysis, overhaul nutrition UX, improve accessibility",
+              "scope": null,
+              "breaking": false,
+              "hash": "e6537b0"
+            },
+            {
+              "description": "Add RPE tracking, volume load, 1RM calculator, workout share card, and superset mode",
+              "scope": null,
+              "breaking": false,
+              "hash": "9cc2165"
+            },
+            {
+              "description": "Implement new landing page and integrate it into the main application.",
+              "scope": null,
+              "breaking": false,
+              "hash": "0ea7288"
+            },
+            {
+              "description": "Persist rest preferences, workout reminders, and water goal to PocketBase",
+              "scope": null,
+              "breaking": false,
+              "hash": "9195f84"
+            },
+            {
+              "description": "Configurable rest timer, progressive overload hints, session duration, streak fire, shareable nutrition card, planned calendar",
+              "scope": null,
+              "breaking": false,
+              "hash": "640f948"
+            },
+            {
+              "description": "Add auto PRs, weight charts, muscle volume, body measurements, photo comparator, workout reminders, water goal config, CSV export",
+              "scope": null,
+              "breaking": false,
+              "hash": "a9bcc9e"
+            },
+            {
+              "description": "Add water tracking, exercise weight/lastre, calendar view, and common foods database",
+              "scope": null,
+              "breaking": false,
+              "hash": "2b3694b"
+            },
+            {
+              "description": "Add push notifications and meal reminders",
+              "scope": null,
+              "breaking": false,
+              "hash": "fdb624a"
+            },
+            {
+              "description": "Add meal templates, food history hooks, and getRecentEntries",
+              "scope": null,
+              "breaking": false,
+              "hash": "d7e4522"
+            },
+            {
+              "description": "Refactor FoodItem model with portion units, base100 macros, and new nutrition types",
+              "scope": null,
+              "breaking": false,
+              "hash": "9ad4c94"
+            },
+            {
+              "description": "Add PB migrations for meal templates, food history, reminders, push subs, and base100 fields",
+              "scope": null,
+              "breaking": false,
+              "hash": "78901db"
+            },
+            {
+              "description": "Expand program editor to 8 phases / 104 weeks with auto week distribution",
+              "scope": null,
+              "breaking": false,
+              "hash": "0b1c6bb"
+            },
+            {
+              "description": "Complete nutrition tracking with macro goals, weekly chart, and AI meal plan",
+              "scope": null,
+              "breaking": false,
+              "hash": "4b7de34"
+            },
+            {
+              "description": "Add smart food search with debounce, catalog dedup, and AI fallback",
+              "scope": null,
+              "breaking": false,
+              "hash": "b251a17"
+            },
+            {
+              "description": "Add delete and edit options to program cards via context menu",
+              "scope": null,
+              "breaking": false,
+              "hash": "34af7be"
+            },
+            {
+              "description": "Add program deletion for program creators",
+              "scope": null,
+              "breaking": false,
+              "hash": "a24f36b"
+            },
+            {
+              "description": "Add PB admin edit links to exercise detail and program detail pages",
+              "scope": null,
+              "breaking": false,
+              "hash": "0bac48e"
+            },
+            {
+              "description": "Add cover image to programs with PB admin deep links",
+              "scope": null,
+              "breaking": false,
+              "hash": "53dee5b"
+            },
+            {
+              "description": "Add PocketBase admin links for quick exercise editing",
+              "scope": null,
+              "breaking": false,
+              "hash": "5aff645"
+            },
+            {
+              "description": "Allow any workout on any day — unlock rest day selection",
+              "scope": null,
+              "breaking": false,
+              "hash": "c890f47"
+            },
+            {
+              "description": "Add MCP media management tools for exercise images and videos",
+              "scope": null,
+              "breaking": false,
+              "hash": "dd82acb"
+            },
+            {
+              "description": "Pre-fill nutrition goal setup with user profile data",
+              "scope": null,
+              "breaking": false,
+              "hash": "73d7390"
+            },
+            {
+              "description": "Add workout detail tour triggered on first day selection",
+              "scope": null,
+              "breaking": false,
+              "hash": "5cf1708"
+            },
+            {
+              "description": "Per-user localStorage, page-specific tours, and \"?\" replay button",
+              "scope": null,
+              "breaking": false,
+              "hash": "6e13fc8"
+            },
+            {
+              "description": "Add guided tour with driver.js for new users",
+              "scope": null,
+              "breaking": false,
+              "hash": "9469270"
+            },
+            {
+              "description": "Merge API server into MCP server — single service for deploy",
+              "scope": null,
+              "breaking": false,
+              "hash": "59220d8"
+            },
+            {
+              "description": "Add SaaS MVP with roles, official programs, and user profiles",
+              "scope": null,
+              "breaking": false,
+              "hash": "820aabc"
+            },
+            {
+              "description": "Add onboarding flow for first-time users with program selection",
+              "scope": null,
+              "breaking": false,
+              "hash": "e759062"
+            },
+            {
+              "description": "Upgrade to persistent interruptive notifications via Service Worker",
+              "scope": null,
+              "breaking": false,
+              "hash": "d2a9647"
+            },
+            {
+              "description": "Create database collections for achievements, user achievements, and user statistics",
+              "scope": null,
+              "breaking": false,
+              "hash": "28be02b"
+            },
+            {
+              "description": "Implement initial MCP server for Calistenia app, including data models, tools, authentication, and setup instructions.",
+              "scope": null,
+              "breaking": false,
+              "hash": "af9e090"
+            },
+            {
+              "description": "Upgrade AI API to Vercel AI SDK v6 with multi-provider support",
+              "scope": null,
+              "breaking": false,
+              "hash": "232d39d"
+            },
+            {
+              "description": "Add calisteniapp-inspired functionality across all pages",
+              "scope": null,
+              "breaking": false,
+              "hash": "5bb3382"
+            },
+            {
+              "description": "Add react-router, program/exercise pages, and sharing",
+              "scope": null,
+              "breaking": false,
+              "hash": "4069605"
+            },
+            {
+              "description": "Add PWA support with offline sync, install prompt, and service worker",
+              "scope": null,
+              "breaking": false,
+              "hash": "f3d1087"
+            },
+            {
+              "description": "Add progression system, enhanced progress with charts, and user profile",
+              "scope": null,
+              "breaking": false,
+              "hash": "3a8e170"
+            },
+            {
+              "description": "Add AI nutrition tracking with Vercel AI SDK",
+              "scope": null,
+              "breaking": false,
+              "hash": "1a4aff8"
+            },
+            {
+              "description": "Add exercise media, program customization, and exercise catalog",
+              "scope": null,
+              "breaking": false,
+              "hash": "a659f29"
+            },
+            {
+              "description": "Migrate entire codebase from JavaScript to TypeScript",
+              "scope": null,
+              "breaking": false,
+              "hash": "f23343f"
+            },
+            {
+              "description": "Configure Vite proxy and dynamically set PocketBase URL based on the environment.",
+              "scope": null,
+              "breaking": false,
+              "hash": "9afbb91"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "order": 1,
+          "type": "fix",
+          "items": [
+            {
+              "description": "Increase workout session sound volumes for outdoor use",
+              "scope": null,
+              "breaking": false,
+              "hash": "5bf1cf2"
+            },
+            {
+              "description": "Show exercise navigation arrows on mobile during session",
+              "scope": null,
+              "breaking": false,
+              "hash": "3618072"
+            },
+            {
+              "description": "Increase default rate limit from 10 to 60 requests/minute",
+              "scope": null,
+              "breaking": false,
+              "hash": "54f37f4"
+            },
+            {
+              "description": "Dedupe user_programs before adding UNIQUE index to prevent migration failure",
+              "scope": null,
+              "breaking": false,
+              "hash": "b87e847"
+            },
+            {
+              "description": "Program cards cramped at sm breakpoint — widen grid + wrap buttons",
+              "scope": null,
+              "breaking": false,
+              "hash": "e3315c1"
+            },
+            {
+              "description": "Show toast feedback when program save fails silently",
+              "scope": null,
+              "breaking": false,
+              "hash": "b40c5db"
+            },
+            {
+              "description": "Free sessions fail to save because PB rejects phase=0 as blank",
+              "scope": null,
+              "breaking": false,
+              "hash": "e67c481"
+            },
+            {
+              "description": "Remove shared AbortController that killed concurrent date fetches",
+              "scope": null,
+              "breaking": false,
+              "hash": "c2fb3ba"
+            },
+            {
+              "description": "Calendar→nutrition date navigation and null coercion in entry mapping",
+              "scope": null,
+              "breaking": false,
+              "hash": "93208e0"
+            },
+            {
+              "description": "Harden calendar timezone handling, exercise chart, and date utilities",
+              "scope": null,
+              "breaking": false,
+              "hash": "a849aca"
+            },
+            {
+              "description": "Active break notifications not firing on create due to React 18 batching",
+              "scope": null,
+              "breaking": false,
+              "hash": "39f221d"
+            },
+            {
+              "description": "Barcode scanner black screen after scan and harden camera error handling",
+              "scope": null,
+              "breaking": false,
+              "hash": "445a29c"
+            },
+            {
+              "description": "Manual meal save fails when any macro is 0 (e.g. fat-free protein)",
+              "scope": null,
+              "breaking": false,
+              "hash": "05b1eb2"
+            },
+            {
+              "description": "Add missing onMinimize prop to SessionViewProps interface",
+              "scope": null,
+              "breaking": false,
+              "hash": "1af7801"
+            },
+            {
+              "description": "Add missing dateUtils.ts required by MealLoggerContent and hooks",
+              "scope": null,
+              "breaking": false,
+              "hash": "e7309a4"
+            },
+            {
+              "description": "Support Google OAuth login for MCP authorization",
+              "scope": null,
+              "breaking": false,
+              "hash": "050ecce"
+            },
+            {
+              "description": "Wrap all notification hooks in try/catch to prevent 400 on follow",
+              "scope": null,
+              "breaking": false,
+              "hash": "b0d987a"
+            },
+            {
+              "description": "Bulletproof follow/unfollow toggle with ref-based state",
+              "scope": null,
+              "breaking": false,
+              "hash": "2c2be92"
+            },
+            {
+              "description": "Rewrite notification hooks with ES5 syntax for PocketBase goja compatibility",
+              "scope": null,
+              "breaking": false,
+              "hash": "aeae22d"
+            },
+            {
+              "description": "Smooth follow/unfollow toggle with proper optimistic updates",
+              "scope": null,
+              "breaking": false,
+              "hash": "912bdca"
+            },
+            {
+              "description": "Use pb.authStore.record.id directly for follow and improve error logging",
+              "scope": null,
+              "breaking": false,
+              "hash": "95fab6a"
+            },
+            {
+              "description": "Make follow/unfollow toggle instant with true optimistic updates",
+              "scope": null,
+              "breaking": false,
+              "hash": "31a6c87"
+            },
+            {
+              "description": "Log full PocketBase error on follow failure instead of swallowing 400s",
+              "scope": null,
+              "breaking": false,
+              "hash": "25ff001"
+            },
+            {
+              "description": "Show photo thumbnail for all entry sizes, not just large",
+              "scope": null,
+              "breaking": false,
+              "hash": "8aa605b"
+            },
+            {
+              "description": "Save meal photos by adding multi-file photos field to PB schema",
+              "scope": null,
+              "breaking": false,
+              "hash": "cb3d674"
+            },
+            {
+              "description": "Make hour/minute not required so value 0 doesn't fail validation",
+              "scope": null,
+              "breaking": false,
+              "hash": "7b8fdd8"
+            },
+            {
+              "description": "Let update errors propagate so UI shows the actual failure",
+              "scope": null,
+              "breaking": false,
+              "hash": "291dd86"
+            },
+            {
+              "description": "Client-side search (PB v0.27 rejects ~ filter) + getUrl→getURL",
+              "scope": null,
+              "breaking": false,
+              "hash": "bd7586c"
+            },
+            {
+              "description": "Cascading search fallback to diagnose and survive filter failures",
+              "scope": null,
+              "breaking": false,
+              "hash": "18d418f"
+            },
+            {
+              "description": "Resolve friend search error and ? display name",
+              "scope": null,
+              "breaking": false,
+              "hash": "305780e"
+            },
+            {
+              "description": "Add diagnostic logging to admin-pb and push-sender",
+              "scope": null,
+              "breaking": false,
+              "hash": "0e0a392"
+            },
+            {
+              "description": "Use superuser auth in push-sender to read push_subscriptions",
+              "scope": null,
+              "breaking": false,
+              "hash": "bb9b0a2"
+            },
+            {
+              "description": "Force re-subscribe to push on test to ensure PB has the subscription",
+              "scope": null,
+              "breaking": false,
+              "hash": "f5308d2"
+            },
+            {
+              "description": "Add pb_hooks to CI paths and VAPID key to build args",
+              "scope": null,
+              "breaking": false,
+              "hash": "646bd62"
+            },
+            {
+              "description": "Remove invalid sort field in PB cron queries",
+              "scope": null,
+              "breaking": false,
+              "hash": "821f80e"
+            },
+            {
+              "description": "Active pause reminders now use correct type and PWA push notifications work",
+              "scope": null,
+              "breaking": false,
+              "hash": "2d3bd99"
+            },
+            {
+              "description": "Repair broken referral pipeline and improve friend search",
+              "scope": null,
+              "breaking": false,
+              "hash": "bc9e167"
+            },
+            {
+              "description": "Update PB schema and MCP tool to support free session phase=0",
+              "scope": null,
+              "breaking": false,
+              "hash": "4f465a2"
+            },
+            {
+              "description": "Free session history saving and display",
+              "scope": null,
+              "breaking": false,
+              "hash": "7b70e49"
+            },
+            {
+              "description": "Make phase tabs horizontally scrollable on mobile",
+              "scope": null,
+              "breaking": false,
+              "hash": "776439e"
+            },
+            {
+              "description": "Apply PocketBase best practices across all MCP tools",
+              "scope": null,
+              "breaking": false,
+              "hash": "f16e26d"
+            },
+            {
+              "description": "Update wger API endpoint and response format",
+              "scope": null,
+              "breaking": false,
+              "hash": "a80e2f1"
+            },
+            {
+              "description": "Remove is_active filter from cal_list_programs to prevent query errors",
+              "scope": null,
+              "breaking": false,
+              "hash": "a104da9"
+            },
+            {
+              "description": "Show avatars in friends page (following/followers/search)",
+              "scope": null,
+              "breaking": false,
+              "hash": "5d67cc8"
+            },
+            {
+              "description": "Sync OAuth display_name from Google, show avatars across social pages",
+              "scope": null,
+              "breaking": false,
+              "hash": "2fe183f"
+            },
+            {
+              "description": "Consolidate PB migrations following pocketbase best practices",
+              "scope": null,
+              "breaking": false,
+              "hash": "05adb4b"
+            },
+            {
+              "description": "Add pb_migrations to CI paths so migration changes trigger builds",
+              "scope": null,
+              "breaking": false,
+              "hash": "9af6b38"
+            },
+            {
+              "description": "Make avatar migration idempotent to prevent PocketBase startup failure",
+              "scope": null,
+              "breaking": false,
+              "hash": "4b69983"
+            },
+            {
+              "description": "Remove email from search and display, use username instead",
+              "scope": null,
+              "breaking": false,
+              "hash": "e44f75c"
+            },
+            {
+              "description": "Allow public/ images in gitignore and add logo.png",
+              "scope": null,
+              "breaking": false,
+              "hash": "d7cb468"
+            },
+            {
+              "description": "Simplify challenge_participants createRule",
+              "scope": null,
+              "breaking": false,
+              "hash": "3dbc2ca"
+            },
+            {
+              "description": "Adapt UserProfilePage header for mobile",
+              "scope": null,
+              "breaking": false,
+              "hash": "93dc8a3"
+            },
+            {
+              "description": "Include equipment.ts exports needed by ExerciseLibraryPage",
+              "scope": null,
+              "breaking": false,
+              "hash": "ba79039"
+            },
+            {
+              "description": "Polish nutrition share card — progress bars, proper layout, no overlap",
+              "scope": null,
+              "breaking": false,
+              "hash": "e7ad2ab"
+            },
+            {
+              "description": "Show meal photos in dashboard card after save",
+              "scope": null,
+              "breaking": false,
+              "hash": "3cc2c65"
+            },
+            {
+              "description": "Show full portionNote, add meal description summary, fix daily calorie count",
+              "scope": null,
+              "breaking": false,
+              "hash": "32f1d09"
+            },
+            {
+              "description": "Make portionNote required in AI schema to fix structured output generation",
+              "scope": null,
+              "breaking": false,
+              "hash": "84e4bef"
+            },
+            {
+              "description": "Reliable notification scheduling for meal and workout reminders",
+              "scope": null,
+              "breaking": false,
+              "hash": "07413fc"
+            },
+            {
+              "description": "PocketBase 0.26 authStore.save type compatibility in mcp-server",
+              "scope": null,
+              "breaking": false,
+              "hash": "de04c6e"
+            },
+            {
+              "description": "Cross-browser notification support and PWA install prompt for all browsers",
+              "scope": null,
+              "breaking": false,
+              "hash": "9cca93d"
+            },
+            {
+              "description": "Share functionality with proper canShare check and reliable canvas rendering",
+              "scope": null,
+              "breaking": false,
+              "hash": "eaa3a11"
+            },
+            {
+              "description": "Rename mimeType to mediaType for AI SDK v6 ImagePart",
+              "scope": null,
+              "breaking": false,
+              "hash": "c7277b9"
+            },
+            {
+              "description": "Replace getFirstListItem with getList for settings collection",
+              "scope": null,
+              "breaking": false,
+              "hash": "1311b17"
+            },
+            {
+              "description": "Resolve PocketBase auto-cancellation errors across all hooks",
+              "scope": null,
+              "breaking": false,
+              "hash": "e1f203f"
+            },
+            {
+              "description": "Allow forward navigation in program editor step buttons",
+              "scope": null,
+              "breaking": false,
+              "hash": "2585e16"
+            },
+            {
+              "description": "Allow authenticated users to create programs (403 error)",
+              "scope": null,
+              "breaking": false,
+              "hash": "3fdc337"
+            },
+            {
+              "description": "Adapt UI for small mobile screens (320px+)",
+              "scope": null,
+              "breaking": false,
+              "hash": "73ba42a"
+            },
+            {
+              "description": "Clarify UX copy across the entire app",
+              "scope": null,
+              "breaking": false,
+              "hash": "6aceb32"
+            },
+            {
+              "description": "Harden accessibility and fix Spanish accents across all pages",
+              "scope": null,
+              "breaking": false,
+              "hash": "6c62ee6"
+            },
+            {
+              "description": "Update AI API URL to test.guille.tech",
+              "scope": null,
+              "breaking": false,
+              "hash": "4c24a61"
+            },
+            {
+              "description": "Use node-based healthcheck with longer start period",
+              "scope": null,
+              "breaking": false,
+              "hash": "8cd49fe"
+            },
+            {
+              "description": "Optimize AI meal plan generation for speed",
+              "scope": null,
+              "breaking": false,
+              "hash": "fdf3f3d"
+            },
+            {
+              "description": "Load dotenv in api config so .env works for local dev",
+              "scope": null,
+              "breaking": false,
+              "hash": "58b579f"
+            },
+            {
+              "description": "Replace createMcpExpressApp with plain express() to fix 404s",
+              "scope": null,
+              "breaking": false,
+              "hash": "a059918"
+            },
+            {
+              "description": "Use gym-server.guille.tech as default AI API URL in production",
+              "scope": null,
+              "breaking": false,
+              "hash": "7ea4e70"
+            },
+            {
+              "description": "Add missing pbRecordId to ProgramExercise interface",
+              "scope": null,
+              "breaking": false,
+              "hash": "b696169"
+            },
+            {
+              "description": "Correct missed-goals alert to check last 3 days instead of 6",
+              "scope": null,
+              "breaking": false,
+              "hash": "2d0ecd4"
+            },
+            {
+              "description": "Make SaaS fields optional in program save/duplicate",
+              "scope": null,
+              "breaking": false,
+              "hash": "709cff3"
+            },
+            {
+              "description": "Extend NotificationOptions type to include vibrate property",
+              "scope": null,
+              "breaking": false,
+              "hash": "88034ae"
+            },
+            {
+              "description": "Ensure deploy works for both app and AI API services",
+              "scope": null,
+              "breaking": false,
+              "hash": "52be2d3"
+            },
+            {
+              "description": "Default dark mode, persist theme, fix hardcoded colors across all pages",
+              "scope": null,
+              "breaking": false,
+              "hash": "68c8832"
+            },
+            {
+              "description": "Polish pages, fix security issue, add 404 redirect",
+              "scope": null,
+              "breaking": false,
+              "hash": "e47a066"
+            },
+            {
+              "description": "Polish pages, fix security issue, add 404 redirect",
+              "scope": null,
+              "breaking": false,
+              "hash": "d068215"
+            },
+            {
+              "description": "Make all PocketBase migrations idempotent",
+              "scope": null,
+              "breaking": false,
+              "hash": "e46df73"
+            }
+          ]
+        },
+        {
+          "label": "Rendimiento",
+          "emoji": "⚡",
+          "order": 2,
+          "type": "perf",
+          "items": [
+            {
+              "description": "Code-split routes and chunk heavy dependencies",
+              "scope": null,
+              "breaking": false,
+              "hash": "861a7c6"
+            }
+          ]
+        },
+        {
+          "label": "Mejoras internas",
+          "emoji": "♻️",
+          "order": 3,
+          "type": "refactor",
+          "items": [
+            {
+              "description": "Restructure ProgressPage into 3 tabs, distill UI, clarify copy, and harden",
+              "scope": null,
+              "breaking": false,
+              "hash": "cad8948"
+            },
+            {
+              "description": "Update session flow with ActiveSessionContext integration",
+              "scope": null,
+              "breaking": false,
+              "hash": "9025d4b"
+            },
+            {
+              "description": "Extract getAdminPB to own module, fix circular import",
+              "scope": null,
+              "breaking": false,
+              "hash": "12f5a07"
+            },
+            {
+              "description": "React best practices — contexts, bundle optimization, React 19 migration",
+              "scope": null,
+              "breaking": false,
+              "hash": "c7e1e9b"
+            },
+            {
+              "description": "Distill Dashboard into 3 visual zones",
+              "scope": null,
+              "breaking": false,
+              "hash": "ceaff7f"
+            },
+            {
+              "description": "Extract shared style tokens into lib/style-tokens.ts",
+              "scope": null,
+              "breaking": false,
+              "hash": "1cb2545"
+            },
+            {
+              "description": "Extract MealLogger into MealLoggerContent, PortionInput, MealProgressBar components",
+              "scope": null,
+              "breaking": false,
+              "hash": "3e65d5a"
+            },
+            {
+              "description": "Remove old api/ server, use mcp-server/ as single AI API image",
+              "scope": null,
+              "breaking": false,
+              "hash": "129388d"
+            },
+            {
+              "description": "Redistribute phase weeks on blur instead of every keystroke",
+              "scope": null,
+              "breaking": false,
+              "hash": "73aa46a"
+            },
+            {
+              "description": "Add JSDoc, configurable default models, deploy-ready setup",
+              "scope": null,
+              "breaking": false,
+              "hash": "66faf75"
+            },
+            {
+              "description": "Restructure AI API into services architecture",
+              "scope": null,
+              "breaking": false,
+              "hash": "4a63972"
+            }
+          ]
+        },
+        {
+          "label": "Mantenimiento",
+          "emoji": "🔧",
+          "order": 6,
+          "type": "chore",
+          "items": [
+            {
+              "description": "Add missing data files and useFavorites hook",
+              "scope": null,
+              "breaking": false,
+              "hash": "ada169b"
+            },
+            {
+              "description": "Remove debug logging and test notification UI",
+              "scope": null,
+              "breaking": false,
+              "hash": "e855fb5"
+            },
+            {
+              "description": "Update PWA icons with new branding",
+              "scope": null,
+              "breaking": false,
+              "hash": "dd085c0"
+            },
+            {
+              "description": "Update dependencies, PWA config, and misc fixes",
+              "scope": null,
+              "breaking": false,
+              "hash": "4303ca3"
+            },
+            {
+              "description": "Upgrade deps (React 19, PocketBase 0.26, Tailwind v4) and update AI models",
+              "scope": null,
+              "breaking": false,
+              "hash": "dda2713"
+            },
+            {
+              "description": "Remove playwright console logs",
+              "scope": null,
+              "breaking": false,
+              "hash": "93c07ad"
+            },
+            {
+              "description": "Update Docker GitHub Actions workflow configuration.",
+              "scope": null,
+              "breaking": false,
+              "hash": "b1e40b3"
+            },
+            {
+              "description": "Add .dockerignore to optimize Docker build context and simplify docker-compose.yml configuration.",
+              "scope": null,
+              "breaking": false,
+              "hash": "fbb858c"
+            }
+          ]
+        },
+        {
+          "label": "Otros",
+          "emoji": "📌",
+          "order": 99,
+          "type": "debug",
+          "items": [
+            {
+              "description": "Add load and follow trigger logs to notification_service",
+              "scope": null,
+              "breaking": false,
+              "hash": "3b0fe5c"
+            }
+          ]
+        },
+        {
+          "label": "Otros",
+          "emoji": "📌",
+          "order": 99,
+          "type": "improve",
+          "items": [
+            {
+              "description": "Redesign friend search UX, add infinite scroll, harden accessibility",
+              "scope": null,
+              "breaking": false,
+              "hash": "1c9fd4e"
+            }
+          ]
+        },
+        {
+          "label": "Otros",
+          "emoji": "📌",
+          "order": 99,
+          "type": "security",
+          "items": [
+            {
+              "description": "Harden PocketBase API rules across all collections",
+              "scope": null,
+              "breaking": false,
+              "hash": "cba35e1"
+            },
+            {
+              "description": "Add repo security configuration for public repo",
+              "scope": null,
+              "breaking": false,
+              "hash": "2110ca9"
+            }
+          ]
+        },
+        {
+          "label": "Otros",
+          "emoji": "📌",
+          "order": 99,
+          "type": "other",
+          "items": [
+            {
+              "description": "Revert \"feat: add referral system collections to pb-migrate.js production script\"",
+              "scope": null,
+              "breaking": false,
+              "hash": "f974718c0eb3045996212f415d9879248842a752"
+            },
+            {
+              "description": "Add Dockerfile, GitHub Actions workflow, and docker-compose for deployment",
+              "scope": null,
+              "breaking": false,
+              "hash": "ebd2c733948f5966e281930a17a8947b17b9a9ff"
+            },
+            {
+              "description": "Add local docker-compose bind-mount data directory to .gitignore",
+              "scope": null,
+              "breaking": false,
+              "hash": "c8707eb3b1cce4db9136988a39f99a0844c1e004"
+            },
+            {
+              "description": "Initial commit — Calistenia App",
+              "scope": null,
+              "breaking": false,
+              "hash": "767b27c4fb2f24db57a0ca82af1a4d6fac2901d9"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

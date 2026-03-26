@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "pb:serve": "./pocketbase serve",
-    "pb:migrate": "node scripts/pb-migrate.js"
+    "pb:migrate": "node scripts/pb-migrate.js",
+    "changelog": "node scripts/generate-changelog.mjs",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

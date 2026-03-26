@@ -52,6 +52,7 @@ import { CardioSessionProvider } from './contexts/CardioSessionContext'
 import { ActiveSessionProvider, useActiveSession } from './contexts/ActiveSessionContext'
 import { useRestPreferences } from './hooks/useRestPreferences'
 import InstallPrompt from './components/InstallPrompt'
+import WhatsNew, { WhatsNewButton } from './components/WhatsNew'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
 import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from './lib/offlineQueue'
@@ -365,6 +366,8 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
               <Link to="/legal#privacy" className="hover:text-foreground transition-colors">Privacidad</Link>
               <span>·</span>
               <Link to="/legal#terms" className="hover:text-foreground transition-colors">Condiciones</Link>
+              <span>·</span>
+              <WhatsNewButton className="hover:text-foreground transition-colors" />
             </div>
           ) : null}
         </SidebarFooter>
@@ -560,6 +563,7 @@ function AuthenticatedApp({
     </CardioSessionProvider>
     </BackgroundJobsProvider>
     <InstallPrompt />
+    <WhatsNew />
     <Toaster position="bottom-center" richColors closeButton />
     </>
   )
