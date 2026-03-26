@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
@@ -9,6 +10,7 @@ interface WeightProgressionChartProps {
 }
 
 export default function WeightProgressionChart({ exerciseLogs }: WeightProgressionChartProps) {
+  const { t } = useTranslation()
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null)
 
   // Build weight progression data per exercise
@@ -38,7 +40,7 @@ export default function WeightProgressionChart({ exerciseLogs }: WeightProgressi
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Progresión de lastre</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.weightProgression.title')}</div>
       <Card>
         <CardContent className="p-5">
           {/* Exercise selector */}
@@ -87,13 +89,13 @@ export default function WeightProgressionChart({ exerciseLogs }: WeightProgressi
           {points.length > 1 && (
             <div className="flex gap-4 mt-3 pt-3 border-t border-border/60 text-[11px]">
               <div className="text-muted-foreground">
-                Inicio: <span className="text-foreground">{points[0].maxWeight}kg</span>
+                {t('progress.weightProgression.start')}: <span className="text-foreground">{points[0].maxWeight}kg</span>
               </div>
               <div className="text-muted-foreground">
-                Actual: <span className="text-amber-400 font-medium">{points[points.length - 1].maxWeight}kg</span>
+                {t('progress.weightProgression.current')}: <span className="text-amber-400 font-medium">{points[points.length - 1].maxWeight}kg</span>
               </div>
               <div className="text-muted-foreground">
-                Progreso: <span className={cn(
+                {t('progress.weightProgression.progress')}: <span className={cn(
                   points[points.length - 1].maxWeight > points[0].maxWeight ? 'text-emerald-500' : 'text-muted-foreground'
                 )}>
                   +{(points[points.length - 1].maxWeight - points[0].maxWeight).toFixed(1)}kg

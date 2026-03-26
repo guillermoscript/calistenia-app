@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
@@ -9,6 +10,7 @@ interface PhotoComparatorProps {
 }
 
 export default function PhotoComparator({ photos }: PhotoComparatorProps) {
+  const { t } = useTranslation()
   const [category, setCategory] = useState('front')
   const [leftIdx, setLeftIdx] = useState(0)
   const [rightIdx, setRightIdx] = useState(0)
@@ -32,7 +34,7 @@ export default function PhotoComparator({ photos }: PhotoComparatorProps) {
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Comparar fotos</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.photoComparator.title')}</div>
       <Card>
         <CardContent className="p-5">
           {/* Category selector */}
@@ -48,7 +50,7 @@ export default function PhotoComparator({ photos }: PhotoComparatorProps) {
                   category === c && 'border-lime/50 text-lime bg-lime/10'
                 )}
               >
-                {c === 'front' ? 'Frente' : c === 'side' ? 'Lado' : c === 'back' ? 'Espalda' : c}
+                {c === 'front' ? t('progress.photoComparator.front') : c === 'side' ? t('progress.photoComparator.side') : c === 'back' ? t('progress.photoComparator.back') : c}
               </Button>
             ))}
           </div>
@@ -103,7 +105,7 @@ export default function PhotoComparator({ photos }: PhotoComparatorProps) {
           {/* Photo selectors */}
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
-              <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-2">Antes</div>
+              <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-2">{t('progress.photoComparator.before')}</div>
               <div className="flex gap-1 flex-wrap">
                 {filtered.map((p, i) => (
                   <button
@@ -122,7 +124,7 @@ export default function PhotoComparator({ photos }: PhotoComparatorProps) {
               </div>
             </div>
             <div>
-              <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-2">Despues</div>
+              <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-2">{t('progress.photoComparator.after')}</div>
               <div className="flex gap-1 flex-wrap">
                 {filtered.map((p, i) => (
                   <button

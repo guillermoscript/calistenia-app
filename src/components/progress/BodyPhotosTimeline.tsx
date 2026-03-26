@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -7,9 +8,9 @@ import { todayStr } from '../../lib/dateUtils'
 import { useBodyPhotos } from '../../hooks/useBodyPhotos'
 
 const CATEGORIES = [
-  { value: 'front', label: 'Frente' },
-  { value: 'side', label: 'Lado' },
-  { value: 'back', label: 'Espalda' },
+  { value: 'front', labelKey: 'progress.bodyPhotos.front' },
+  { value: 'side', labelKey: 'progress.bodyPhotos.side' },
+  { value: 'back', labelKey: 'progress.bodyPhotos.back' },
 ]
 
 interface BodyPhotosTimelineProps {
@@ -17,6 +18,7 @@ interface BodyPhotosTimelineProps {
 }
 
 export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) {
+  const { t } = useTranslation()
   const { photos, isReady, uploadPhoto, deletePhoto } = useBodyPhotos(userId)
   const [uploading, setUploading] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
@@ -31,7 +33,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
     const file = fileRef.current?.files?.[0]
     if (!file) return
     if (file.size > MAX_FILE_SIZE) {
-      alert('La foto es demasiado grande (máx. 10 MB)')
+      alert(t('progress.bodyPhotos.fileTooLarge'))
       return
     }
     setUploading(true)
@@ -53,14 +55,14 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
     <Card>
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
-          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Fotos de Progreso</div>
+          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('progress.bodyPhotos.title')}</div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowUpload(s => !s)}
             className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
           >
-            {showUpload ? 'CANCELAR' : '+ SUBIR FOTO'}
+            {showUpload ? t('progress.bodyPhotos.cancel') : t('progress.bodyPhotos.uploadPhoto')}
           </Button>
         </div>
 
@@ -68,7 +70,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
         {showUpload && (
           <div className="mb-4 p-4 bg-muted/20 rounded-lg border border-border/60 flex flex-col gap-3">
             <div>
-              <label className="text-[10px] text-muted-foreground mb-1 block">Foto</label>
+              <label className="text-[10px] text-muted-foreground mb-1 block">{t('progress.bodyPhotos.photo')}</label>
               <input
                 ref={fileRef}
                 type="file"
@@ -78,7 +80,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
             </div>
             <div className="flex gap-3 flex-wrap">
               <div>
-                <label className="text-[10px] text-muted-foreground mb-1 block">Categoria</label>
+                <label className="text-[10px] text-muted-foreground mb-1 block">{t('progress.bodyPhotos.category')}</label>
                 <div className="flex gap-1.5">
                   {CATEGORIES.map(c => (
                     <Button
@@ -91,13 +93,13 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
                         : 'h-7 px-3 text-[10px]'
                       }
                     >
-                      {c.label}
+                      {t(c.labelKey)}
                     </Button>
                   ))}
                 </div>
               </div>
               <div className="min-w-[140px]">
-                <label className="text-[10px] text-muted-foreground mb-1 block">Fecha</label>
+                <label className="text-[10px] text-muted-foreground mb-1 block">{t('progress.bodyPhotos.date')}</label>
                 <Input
                   type="date"
                   value={date}
@@ -107,11 +109,11 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
               </div>
             </div>
             <div>
-              <label className="text-[10px] text-muted-foreground mb-1 block">Nota (opcional)</label>
+              <label className="text-[10px] text-muted-foreground mb-1 block">{t('progress.bodyPhotos.noteOptional')}</label>
               <Input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Inicio de fase 2"
+                placeholder={t('progress.bodyPhotos.notePlaceholder')}
                 className="h-8 text-sm"
               />
             </div>
@@ -120,7 +122,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
               disabled={uploading}
               className="h-9 bg-lime text-zinc-900 hover:bg-lime/90 font-bebas text-sm tracking-wide self-start"
             >
-              {uploading ? 'SUBIENDO...' : 'SUBIR'}
+              {uploading ? t('progress.bodyPhotos.uploading') : t('progress.bodyPhotos.upload')}
             </Button>
           </div>
         )}
@@ -138,7 +140,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-b-lg">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <Badge variant="outline" className="text-[8px] border-lime/30 text-lime bg-lime/10 px-1.5 py-0">
-                      {CATEGORIES.find(c => c.value === photo.category)?.label || photo.category}
+                      {t(CATEGORIES.find(c => c.value === photo.category)?.labelKey || photo.category)}
                     </Badge>
                   </div>
                   <div className="text-[10px] text-foreground font-mono">{photo.date}</div>
@@ -147,9 +149,9 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
                   )}
                 </div>
                 <button
-                  onClick={() => { if (confirm('¿Eliminar esta foto?')) deletePhoto(photo.id) }}
+                  onClick={() => { if (confirm(t('progress.bodyPhotos.confirmDelete'))) deletePhoto(photo.id) }}
                   className="absolute top-1.5 right-1.5 size-6 rounded-full bg-black/60 text-white/70 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs"
-                  title="Eliminar"
+                  title={t('progress.bodyPhotos.delete')}
                 >
                   x
                 </button>
@@ -158,7 +160,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
           </div>
         ) : (
           <div className="text-center text-muted-foreground text-sm py-6">
-            {userId ? 'Sube tu primera foto para registrar tu progreso visual' : 'Inicia sesión para subir fotos'}
+            {userId ? t('progress.bodyPhotos.emptyState') : t('progress.bodyPhotos.loginRequired')}
           </div>
         )}
       </CardContent>

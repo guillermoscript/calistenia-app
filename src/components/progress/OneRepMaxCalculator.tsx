@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -31,6 +32,7 @@ interface OneRepMaxCalculatorProps {
 }
 
 export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }: OneRepMaxCalculatorProps) {
+  const { t } = useTranslation()
   const [manualWeight, setManualWeight] = useState('')
   const [manualReps, setManualReps] = useState('')
   const [showManual, setShowManual] = useState(false)
@@ -77,15 +79,15 @@ export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }:
   if (autoEstimates.length === 0 && !showManual) {
     return (
       <div className="mb-8">
-        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Estimación 1RM</div>
+        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.oneRepMax.title')}</div>
         <Card>
           <CardContent className="p-5">
             <div className="text-sm text-muted-foreground mb-3">
-              Anota series con lastre para ver tu repetición máxima estimada.
+              {t('progress.oneRepMax.emptyState')}
             </div>
             <Button variant="outline" size="sm" onClick={() => setShowManual(true)}
               className="text-[10px] tracking-widest hover:border-lime hover:text-lime">
-              CALCULADORA MANUAL
+              {t('progress.oneRepMax.manualCalculator')}
             </Button>
           </CardContent>
         </Card>
@@ -95,7 +97,7 @@ export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }:
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Estimación 1RM</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.oneRepMax.title')}</div>
       <Card>
         <CardContent className="p-5">
           {/* Auto estimates from logs */}
@@ -106,12 +108,12 @@ export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }:
                   <div>
                     <div className="text-[13px] font-medium capitalize">{e.exerciseId.replace(/_/g, ' ')}</div>
                     <div className="text-[10px] text-muted-foreground font-mono">
-                      {e.weight}kg × {e.reps} reps (BW+lastre)
+                      {e.weight}kg × {e.reps} reps ({t('progress.oneRepMax.bwPlusWeight')})
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-bebas text-2xl text-lime">{e.oneRM} kg</div>
-                    <div className="text-[9px] text-muted-foreground">1RM est.</div>
+                    <div className="text-[9px] text-muted-foreground">{t('progress.oneRepMax.estimated')}</div>
                   </div>
                 </div>
               ))}
@@ -122,19 +124,19 @@ export default function OneRepMaxCalculator({ exerciseLogs, bodyweightKg = 70 }:
           <div className="pt-3 border-t border-border/60">
             <Button variant="outline" size="sm" onClick={() => setShowManual(v => !v)}
               className="text-[10px] tracking-widest hover:border-lime hover:text-lime mb-3">
-              {showManual ? 'CERRAR' : 'CALCULADORA MANUAL'}
+              {showManual ? t('progress.oneRepMax.close') : t('progress.oneRepMax.manualCalculator')}
             </Button>
 
             {showManual && (
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <div>
-                    <label className="text-[9px] text-muted-foreground block mb-1">Peso total (kg)</label>
+                    <label className="text-[9px] text-muted-foreground block mb-1">{t('progress.oneRepMax.totalWeight')}</label>
                     <Input type="number" min="0" step="0.5" value={manualWeight} onChange={e => setManualWeight(e.target.value)}
                       placeholder="80" className="h-8 w-24 text-xs" />
                   </div>
                   <div>
-                    <label className="text-[9px] text-muted-foreground block mb-1">Reps</label>
+                    <label className="text-[9px] text-muted-foreground block mb-1">{t('progress.oneRepMax.reps')}</label>
                     <Input type="number" min="1" max="50" value={manualReps} onChange={e => setManualReps(e.target.value)}
                       placeholder="8" className="h-8 w-20 text-xs" />
                   </div>

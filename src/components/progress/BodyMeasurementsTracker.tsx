@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -6,14 +7,14 @@ import { cn } from '../../lib/utils'
 import { todayStr } from '../../lib/dateUtils'
 import { useBodyMeasurements, type BodyMeasurement } from '../../hooks/useBodyMeasurements'
 
-const FIELDS: { key: keyof BodyMeasurement; label: string; short: string }[] = [
-  { key: 'chest', label: 'Pecho', short: 'Pecho' },
-  { key: 'waist', label: 'Cintura', short: 'Cint.' },
-  { key: 'hips', label: 'Cadera', short: 'Cad.' },
-  { key: 'arm_left', label: 'Brazo izq', short: 'Br.I' },
-  { key: 'arm_right', label: 'Brazo der', short: 'Br.D' },
-  { key: 'thigh_left', label: 'Muslo izq', short: 'Mu.I' },
-  { key: 'thigh_right', label: 'Muslo der', short: 'Mu.D' },
+const FIELDS: { key: keyof BodyMeasurement; labelKey: string; shortKey: string }[] = [
+  { key: 'chest', labelKey: 'progress.bodyMeasurements.chest', shortKey: 'progress.bodyMeasurements.chestShort' },
+  { key: 'waist', labelKey: 'progress.bodyMeasurements.waist', shortKey: 'progress.bodyMeasurements.waistShort' },
+  { key: 'hips', labelKey: 'progress.bodyMeasurements.hips', shortKey: 'progress.bodyMeasurements.hipsShort' },
+  { key: 'arm_left', labelKey: 'progress.bodyMeasurements.armLeft', shortKey: 'progress.bodyMeasurements.armLeftShort' },
+  { key: 'arm_right', labelKey: 'progress.bodyMeasurements.armRight', shortKey: 'progress.bodyMeasurements.armRightShort' },
+  { key: 'thigh_left', labelKey: 'progress.bodyMeasurements.thighLeft', shortKey: 'progress.bodyMeasurements.thighLeftShort' },
+  { key: 'thigh_right', labelKey: 'progress.bodyMeasurements.thighRight', shortKey: 'progress.bodyMeasurements.thighRightShort' },
 ]
 
 interface BodyMeasurementsTrackerProps {
@@ -21,6 +22,7 @@ interface BodyMeasurementsTrackerProps {
 }
 
 export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrackerProps) {
+  const { t } = useTranslation()
   const { measurements, isReady, saveMeasurement, deleteMeasurement } = useBodyMeasurements(userId)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -63,12 +65,12 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Medidas corporales</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.bodyMeasurements.title')}</div>
       <Card>
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="text-[11px] text-muted-foreground">
-              {measurements.length > 0 ? `${measurements.length} registros` : 'Sin registros'}
+              {measurements.length > 0 ? t('progress.bodyMeasurements.recordCount', { count: measurements.length }) : t('progress.bodyMeasurements.noRecords')}
             </div>
             <Button
               variant="outline"
@@ -76,20 +78,20 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
               onClick={() => setShowForm(s => !s)}
               className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
             >
-              {showForm ? 'CANCELAR' : '+ MEDIR'}
+              {showForm ? t('progress.bodyMeasurements.cancel') : t('progress.bodyMeasurements.measure')}
             </Button>
           </div>
 
           {showForm && (
             <div className="mb-4 p-4 bg-muted/20 rounded-lg border border-border/60 space-y-3">
               <div>
-                <label className="text-[10px] text-muted-foreground mb-1 block">Fecha</label>
+                <label className="text-[10px] text-muted-foreground mb-1 block">{t('progress.bodyMeasurements.date')}</label>
                 <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-8 text-sm w-auto" />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {FIELDS.map(f => (
                   <div key={f.key}>
-                    <label className="text-[10px] text-muted-foreground mb-1 block">{f.label} (cm)</label>
+                    <label className="text-[10px] text-muted-foreground mb-1 block">{t(f.labelKey)} (cm)</label>
                     <Input
                       type="number"
                       step="0.5"
@@ -104,7 +106,7 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
               <Input
                 value={note}
                 onChange={e => setNote(e.target.value)}
-                placeholder="Nota opcional"
+                placeholder={t('progress.bodyMeasurements.optionalNote')}
                 className="h-8 text-sm"
               />
               <Button
@@ -112,7 +114,7 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
                 disabled={saving || !hasAnyValue}
                 className="h-8 bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] font-bold tracking-widest"
               >
-                {saving ? '...' : 'GUARDAR'}
+                {saving ? '...' : t('progress.bodyMeasurements.save')}
               </Button>
             </div>
           )}
@@ -127,7 +129,7 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
                 const diff = prv ? cur - prv : null
                 return (
                   <div key={f.key} className="flex items-center gap-3 py-1">
-                    <span className="text-[12px] text-muted-foreground w-20">{f.label}</span>
+                    <span className="text-[12px] text-muted-foreground w-20">{t(f.labelKey)}</span>
                     <span className="text-[13px] font-mono text-foreground">{cur} cm</span>
                     {diff !== null && (
                       <span className={cn(
@@ -141,7 +143,7 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
                 )
               }).filter(Boolean)}
               <div className="text-[10px] text-muted-foreground pt-2 border-t border-border/60">
-                Ultima medicion: {latest.date}
+                {t('progress.bodyMeasurements.lastMeasurement')}: {latest.date}
                 {latest.note && <span className="italic ml-2">— {latest.note}</span>}
               </div>
             </div>
@@ -150,13 +152,13 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
           {/* History */}
           {measurements.length > 1 && (
             <div className="mt-4 pt-4 border-t border-border/60">
-              <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-2">Historial</div>
+              <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-2">{t('progress.bodyMeasurements.history')}</div>
               <div className="overflow-x-auto">
                 <table className="w-full text-[10px]">
                   <thead>
                     <tr className="text-muted-foreground">
-                      <th className="text-left py-1 pr-2 font-mono">Fecha</th>
-                      {FIELDS.map(f => <th key={f.key} className="text-right py-1 px-1 font-mono">{f.short}</th>)}
+                      <th className="text-left py-1 pr-2 font-mono">{t('progress.bodyMeasurements.date')}</th>
+                      {FIELDS.map(f => <th key={f.key} className="text-right py-1 px-1 font-mono">{t(f.shortKey)}</th>)}
                     </tr>
                   </thead>
                   <tbody>
