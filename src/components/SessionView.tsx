@@ -676,9 +676,11 @@ interface CelebrateScreenProps {
   durationMin: number
   exercises: Exercise[]
   onDone: () => void
+  userName?: string
+  avatarUrl?: string | null
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone }: CelebrateScreenProps) {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl }: CelebrateScreenProps) {
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
 
   useEffect(() => {
@@ -743,7 +745,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           >
             IR AL DASHBOARD
           </Button>
-          <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} exercises={exercises} quote={quote} />
+          <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} exercises={exercises} quote={quote} userName={userName} avatarUrl={avatarUrl} />
         </div>
         <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
       </div>
@@ -777,6 +779,9 @@ interface SessionViewProps {
   onProgressChange?: (update: Partial<SessionProgress>) => void
   /** Original session start timestamp (for accurate duration after restore) */
   startedAt?: number
+  /** User profile for share card */
+  userName?: string
+  avatarUrl?: string | null
 }
 
 export default function SessionView({
@@ -792,6 +797,8 @@ export default function SessionView({
   initialProgress,
   onProgressChange,
   startedAt,
+  userName,
+  avatarUrl,
 }: SessionViewProps) {
   const navigate = useNavigate()
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
@@ -1052,6 +1059,8 @@ export default function SessionView({
           durationMin={Math.round((Date.now() - sessionStartTime.current) / 60000)}
           exercises={workout.exercises}
           onDone={onGoToDashboard}
+          userName={userName}
+          avatarUrl={avatarUrl}
         />
       )}
 

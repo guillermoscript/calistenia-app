@@ -1,13 +1,19 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { useWorkoutActions } from '../contexts/WorkoutContext'
+import { useAuthState } from '../contexts/AuthContext'
+import { getUserAvatarUrl } from '../lib/pocketbase'
 import SessionView from '../components/SessionView'
 
 export default function ActiveSessionPage() {
   const { isActive, workout, workoutKey, endSession, getRestForExercise, setRestForExercise, progress, setProgress, startedAt } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
+  const { user } = useAuthState()
   const navigate = useNavigate()
+
+  const userName = user?.display_name || user?.name || undefined
+  const avatarUrl = useMemo(() => user ? getUserAvatarUrl(user) : null, [user])
 
   // Redirect to dashboard if no active session
   useEffect(() => {
@@ -48,6 +54,8 @@ export default function ActiveSessionPage() {
       initialProgress={progress}
       onProgressChange={setProgress}
       startedAt={startedAt}
+      userName={userName}
+      avatarUrl={avatarUrl}
     />
   )
 }
