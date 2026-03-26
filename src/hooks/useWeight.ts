@@ -80,7 +80,7 @@ export const useWeight = (userId: string | null = null): UseWeightReturn => {
         const rec = await pb.collection('weight_entries').create({
           user: userId,
           weight_kg: weightKg,
-          date: d + ' 00:00:00.000Z',
+          date: d + ' 00:00:00',
           note: note || '',
         })
         entry.id = rec.id

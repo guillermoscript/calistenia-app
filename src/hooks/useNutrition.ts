@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
-import { todayStr, toLocalDateStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
+import { todayStr, toLocalDateStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
 import type {
   NutritionEntry,
   NutritionGoal,
@@ -266,7 +266,7 @@ export function useNutrition(userId: string | null) {
     entry: Omit<NutritionEntry, 'id'>,
     photoFiles?: File[],
   ): Promise<NutritionEntry> => {
-    let saved: NutritionEntry = { ...entry, id: `local_${Date.now()}`, loggedAt: entry.loggedAt || new Date().toISOString() }
+    let saved: NutritionEntry = { ...entry, id: `local_${Date.now()}`, loggedAt: entry.loggedAt || nowLocalForPB() }
 
     if (usePB && userId) {
       try {

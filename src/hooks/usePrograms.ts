@@ -27,6 +27,7 @@ import {
   WEEK_DAYS as FALLBACK_WEEK_DAYS,
   getWorkout as fallbackGetWorkout,
 } from '../data/workouts'
+import { nowLocalForPB } from '../lib/dateUtils'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId } from '../types'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -228,7 +229,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         userProgramRecord = await pb.collection('user_programs').create({
           user:       uid,
           program:    catalog[0].id,
-          started_at: new Date().toISOString().replace('T', ' '),
+          started_at: nowLocalForPB(),
           is_current: true,
         })
       }
@@ -307,7 +308,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         await pb.collection('user_programs').create({
           user:       userId,
           program:    programId,
-          started_at: new Date().toISOString().replace('T', ' '),
+          started_at: nowLocalForPB(),
           is_current: true,
         })
       }

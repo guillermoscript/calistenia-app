@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { todayStr, addDays } from '../lib/dateUtils'
+import { todayStr, addDays, nowLocalForPB } from '../lib/dateUtils'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
 import NutritionDashboard from '../components/nutrition/NutritionDashboard'
@@ -228,7 +228,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       totalCarbs: meal.carbs,
       totalFat: meal.fat,
       aiModel: 'meal-plan',
-      loggedAt: new Date().toISOString(),
+      loggedAt: nowLocalForPB(),
     })
   }, [saveEntry, userId])
 
@@ -379,7 +379,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                           totalProtein: entry.totalProtein,
                           totalCarbs: entry.totalCarbs,
                           totalFat: entry.totalFat,
-                          loggedAt: new Date().toISOString(),
+                          loggedAt: nowLocalForPB(),
                         })
                       }}
                       className="shrink-0 w-40 p-3 bg-card border border-border rounded-lg hover:border-lime/40 transition-colors text-left group"
@@ -415,7 +415,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                   totalProtein: entry.totalProtein,
                   totalCarbs: entry.totalCarbs,
                   totalFat: entry.totalFat,
-                  loggedAt: new Date().toISOString(),
+                  loggedAt: nowLocalForPB(),
                 })
                 toast.success('Comida duplicada')
               }}

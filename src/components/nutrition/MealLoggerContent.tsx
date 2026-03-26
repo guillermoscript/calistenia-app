@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { cn } from '../../lib/utils'
-import { localHour } from '../../lib/dateUtils'
+import { localHour, nowLocalForPB } from '../../lib/dateUtils'
 import { Button } from '../ui/button'
 import FoodNameInput from './FoodNameInput'
 import PortionInput from './PortionInput'
@@ -317,7 +317,7 @@ export default function MealLoggerContent({
         totalProtein: totals.protein,
         totalCarbs: totals.carbs,
         totalFat: totals.fat,
-        loggedAt: new Date().toISOString(),
+        loggedAt: nowLocalForPB(),
       }, imageFiles.length > 0 ? imageFiles : undefined)
       foods.filter(f => f.name.trim()).forEach(f => saveFoodToCatalog(f))
       const hour = localHour()

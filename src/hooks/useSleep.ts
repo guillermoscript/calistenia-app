@@ -158,7 +158,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
       try {
         const rec = await pb.collection('sleep_entries').create({
           user: userId,
-          date: input.date + ' 00:00:00.000Z',
+          date: input.date + ' 00:00:00',
           bedtime: input.bedtime,
           wake_time: input.wake_time,
           awakenings: input.awakenings,
@@ -198,7 +198,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
           }
         }
         if (input.date) {
-          data.date = input.date + ' 00:00:00.000Z'
+          data.date = input.date + ' 00:00:00'
         }
         await pb.collection('sleep_entries').update(id, data)
       } catch (e) {

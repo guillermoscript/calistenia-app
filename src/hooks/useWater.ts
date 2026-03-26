@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { todayStr, addDays, localMidnightAsUTC } from '../lib/dateUtils'
+import { todayStr, addDays, localMidnightAsUTC, nowLocalForPB } from '../lib/dateUtils'
 
 const LS_KEY = 'calistenia_water'
 const DEFAULT_GOAL = 2500 // ml
@@ -138,7 +138,7 @@ export const useWater = (userId: string | null = null, selectedDate?: string): U
     if (adding) return // prevent rapid double-clicks
     setAdding(true)
     const localId = `local_${Date.now()}`
-    const entry: WaterEntry = { id: localId, amount_ml: ml, logged_at: new Date().toISOString() }
+    const entry: WaterEntry = { id: localId, amount_ml: ml, logged_at: nowLocalForPB() }
 
     // Optimistic update
     setData(prev => {

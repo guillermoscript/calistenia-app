@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb } from '../lib/pocketbase'
 import { cn } from '../lib/utils'
-import { todayStr, daysAgoStr } from '../lib/dateUtils'
+import { todayStr, daysAgoStr, nowLocalForPB } from '../lib/dateUtils'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import {
@@ -76,7 +76,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
       lumbar_score: lumbarScore!,
       slept_well: sleepWellStatus ?? undefined,
       sitting_hours: parseFloat(sittingHours) || 0,
-      created_at: new Date().toISOString(),
+      created_at: nowLocalForPB(),
     }
     lsSaveCheck(record)
     if (user?.id) {
@@ -87,7 +87,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
           lumbar_score: lumbarScore,
           slept_well: sleepWellStatus ?? null,
           sitting_hours: parseFloat(sittingHours) || 0,
-          checked_at: new Date().toISOString().replace('T', ' '),
+          checked_at: nowLocalForPB(),
         })
       } catch {}
     }

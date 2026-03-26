@@ -80,7 +80,7 @@ export const useBodyMeasurements = (userId: string | null = null): UseBodyMeasur
       try {
         const rec = await pb.collection('body_measurements').create({
           user: userId,
-          date: m.date + ' 00:00:00.000Z',
+          date: m.date + ' 00:00:00',
           chest: m.chest || null,
           waist: m.waist || null,
           hips: m.hips || null,

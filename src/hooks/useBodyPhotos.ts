@@ -64,7 +64,7 @@ export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn
       const formData = new FormData()
       formData.append('user', userId)
       formData.append('photo', file)
-      formData.append('date', date + ' 00:00:00.000Z')
+      formData.append('date', date + ' 00:00:00')
       formData.append('category', category)
       formData.append('note', note || '')
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { todayStr, toLocalDateStr } from '../lib/dateUtils'
+import { todayStr, toLocalDateStr, nowLocalForPB, localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
 import type { Settings, ProgressMap, SetData, ExerciseLog } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -120,7 +120,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
       const prog: ProgressMap = {}
 
       sessionsRes.items.forEach((s: any) => {
-        const date = s.completed_at?.split(' ')[0] || s.created?.split(' ')[0]
+        const date = utcToLocalDateStr(s.completed_at || s.created)
         prog[`done_${date}_${s.workout_key}`] = {
           done: true, date, workoutKey: s.workout_key,
           note: s.note || '',
@@ -128,7 +128,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
       })
 
       setsRes.items.forEach((s: any) => {
-        const date = s.logged_at?.split(' ')[0] || s.created?.split(' ')[0]
+        const date = utcToLocalDateStr(s.logged_at || s.created)
         const key = `${date}_${s.workout_key}_${s.exercise_id}`
         if (!prog[key]) prog[key] = { sets: [], date, workoutKey: s.workout_key, exerciseId: s.exercise_id }
         const entry = prog[key] as ExerciseLog
@@ -216,7 +216,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
           note: setData.note || '',
           weight_kg: setData.weight ?? null,
           rpe: setData.rpe ?? null,
-          logged_at: new Date().toISOString().replace('T', ' '),
+          logged_at: nowLocalForPB(),
         })
       } catch (e) { console.warn('PB sets_log error:', e) }
     }
@@ -242,7 +242,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
           workout_key: workoutKey,
           phase: isFreeSession ? -1 : parseInt(phaseStr.replace('p', '')),
           day: isFreeSession ? 'free' : day,
-          completed_at: new Date().toISOString().replace('T', ' '),
+          completed_at: nowLocalForPB(),
           note: note || '',
         }
         if (!isFreeSession && activeProgramId) sessionData.program = activeProgramId
@@ -265,8 +265,11 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
 
     if (usePB && userId) {
       try {
+        const dayStart = localMidnightAsUTC(d)
+        const dayEndDate = new Date(new Date(`${d}T00:00:00`).getTime() + 86400000)
+        const dayEnd = localMidnightAsUTC(toLocalDateStr(dayEndDate))
         const records = await pb.collection('sessions').getList(1, 1, {
-          filter: `user = "${userId}" && workout_key = "${workoutKey}" && completed_at >= "${d} 00:00:00" && completed_at <= "${d} 23:59:59"`,
+          filter: `user = "${userId}" && workout_key = "${workoutKey}" && completed_at >= "${dayStart}" && completed_at < "${dayEnd}"`,
         })
         if (records.items.length > 0) {
           await pb.collection('sessions').delete(records.items[0].id)

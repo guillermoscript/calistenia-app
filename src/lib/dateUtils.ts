@@ -129,6 +129,40 @@ export function localMidnightAsUTC(dateStr?: string): string {
   return result.toISOString().replace('T', ' ').slice(0, 19)
 }
 
+/**
+ * Current timestamp formatted for PocketBase datetime fields.
+ * Uses the user's local time so that the date portion matches `todayStr()`.
+ *
+ * PocketBase stores datetime as UTC internally, but when we split the stored
+ * value to extract just the date (e.g. for "done_2026-03-26_p1_jue"), it must
+ * match the local calendar day. So we format the current instant in the user's
+ * timezone and send that as-is. PocketBase accepts it and stores accordingly.
+ */
+export function nowLocalForPB(): string {
+  const now = new Date()
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: _tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(now)
+
+  const get = (type: string) => parts.find(p => p.type === type)?.value || '00'
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`
+}
+
+/**
+ * Format a local date string (YYYY-MM-DD) as a PocketBase date field value.
+ * Appends midnight in local representation (not UTC).
+ */
+export function localDateForPB(dateStr: string): string {
+  return `${dateStr} 00:00:00`
+}
+
 /** Human-friendly relative date label in Spanish (Hoy, Ayer, Hace N días, or short date). */
 export function relativeDate(dateStr: string): string {
   const today = todayStr()
