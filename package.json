@@ -23,6 +23,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.20",
     "driver.js": "^1.4.0",
     "html5-qrcode": "^2.3.8",
     "leaflet": "^1.9.4",

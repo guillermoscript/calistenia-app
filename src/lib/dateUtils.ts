@@ -1,9 +1,18 @@
 /**
- * Timezone-aware date utilities.
+ * Timezone-aware date utilities powered by dayjs.
  *
  * All date strings produced here respect the user's configured timezone
  * instead of UTC, so "today" means today in the user's wall-clock time.
  */
+
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+import isoWeek from 'dayjs/plugin/isoWeek'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.extend(isoWeek)
 
 // Module-level timezone — defaults to browser detection, overridden on login.
 let _tz: string = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -18,69 +27,55 @@ export function getTimezone(): string {
   return _tz
 }
 
+/** Get a dayjs instance in the user's timezone. */
+function now() {
+  return dayjs().tz(_tz)
+}
+
 /** Format a Date as YYYY-MM-DD in the user's timezone. */
 export function toLocalDateStr(date: Date = new Date()): string {
-  // sv-SE locale naturally produces ISO-format dates (YYYY-MM-DD)
-  return date.toLocaleDateString('sv-SE', { timeZone: _tz })
+  return dayjs(date).tz(_tz).format('YYYY-MM-DD')
 }
 
 /** Today as YYYY-MM-DD in the user's timezone. */
 export function todayStr(): string {
-  return toLocalDateStr(new Date())
+  return now().format('YYYY-MM-DD')
 }
 
 /** N days ago as YYYY-MM-DD in the user's timezone. */
 export function daysAgoStr(n: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return toLocalDateStr(d)
+  return now().subtract(n, 'day').format('YYYY-MM-DD')
 }
 
 /** Navigate a YYYY-MM-DD date by `offset` days and return YYYY-MM-DD. */
 export function addDays(dateStr: string, offset: number): string {
-  // Parse at noon to avoid DST edge-cases
-  const d = new Date(`${dateStr}T12:00:00`)
-  d.setDate(d.getDate() + offset)
-  return toLocalDateStr(d)
+  return dayjs.tz(dateStr, _tz).add(offset, 'day').format('YYYY-MM-DD')
 }
 
 /** Start of current week (Monday) as YYYY-MM-DD in user's timezone. */
 export function startOfWeekStr(): string {
-  const today = todayStr()
-  const d = new Date(`${today}T12:00:00`)
-  const day = d.getDay()
-  const diff = (day === 0 ? -6 : 1) - day
-  d.setDate(d.getDate() + diff)
-  return toLocalDateStr(d)
+  return now().isoWeekday(1).format('YYYY-MM-DD')
 }
 
 /** Current hour (0-23) in the user's timezone. */
 export function localHour(): number {
-  return parseInt(
-    new Date().toLocaleString('en-US', { timeZone: _tz, hour: 'numeric', hour12: false }),
-    10,
-  )
+  return now().hour()
 }
 
 /** Current day of week (0=Sun, 1=Mon...6=Sat) in the user's timezone. */
 export function localDay(): number {
-  const todayDate = todayStr()
-  return new Date(`${todayDate}T12:00:00`).getDay()
+  return now().day()
 }
 
 /** Current minutes since midnight in user's timezone (for reminder scheduling). */
 export function localMinutesSinceMidnight(): number {
-  const h = localHour()
-  const m = parseInt(
-    new Date().toLocaleString('en-US', { timeZone: _tz, minute: 'numeric' }),
-    10,
-  )
-  return h * 60 + m
+  const n = now()
+  return n.hour() * 60 + n.minute()
 }
 
 /** Convert a UTC timestamp string to YYYY-MM-DD in user's timezone. */
 export function utcToLocalDateStr(utcTimestamp: string): string {
-  return toLocalDateStr(new Date(utcTimestamp))
+  return dayjs.utc(utcTimestamp).tz(_tz).format('YYYY-MM-DD')
 }
 
 /**
@@ -91,68 +86,15 @@ export function utcToLocalDateStr(utcTimestamp: string): string {
  */
 export function localMidnightAsUTC(dateStr?: string): string {
   const target = dateStr || todayStr()
-  // Create a formatter that tells us the UTC offset
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: _tz,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  })
-
-  // Build midnight in UTC, then figure out the offset
-  const utcMidnight = new Date(`${target}T00:00:00Z`)
-
-  // Format that UTC instant in the user's timezone to see what local time it maps to
-  const parts = formatter.formatToParts(utcMidnight)
-  const get = (type: string) => parts.find(p => p.type === type)?.value || '0'
-  const localYear = parseInt(get('year'))
-  const localMonth = parseInt(get('month'))
-  const localDay = parseInt(get('day'))
-  const localHour = parseInt(get('hour'))
-  const localMinute = parseInt(get('minute'))
-
-  // The difference between "midnight local on target" and "what UTC midnight looks like locally"
-  // tells us the offset.
-  // If UTC midnight = 2026-03-24T00:00Z shows as 2026-03-23 19:00 in EST,
-  // that means local is 5 hours behind UTC → midnight local = 05:00 UTC
-  const targetParts = target.split('-').map(Number)
-  const targetMidnightLocal = new Date(targetParts[0], targetParts[1] - 1, targetParts[2], 0, 0, 0)
-  const utcMidnightAsLocal = new Date(localYear, localMonth - 1, localDay, localHour, localMinute, 0)
-
-  const offsetMs = targetMidnightLocal.getTime() - utcMidnightAsLocal.getTime()
-  const result = new Date(utcMidnight.getTime() + offsetMs)
-
-  return result.toISOString().replace('T', ' ').slice(0, 19)
+  return dayjs.tz(target, _tz).utc().format('YYYY-MM-DD HH:mm:ss')
 }
 
 /**
  * Current timestamp formatted for PocketBase datetime fields.
  * Uses the user's local time so that the date portion matches `todayStr()`.
- *
- * PocketBase stores datetime as UTC internally, but when we split the stored
- * value to extract just the date (e.g. for "done_2026-03-26_p1_jue"), it must
- * match the local calendar day. So we format the current instant in the user's
- * timezone and send that as-is. PocketBase accepts it and stores accordingly.
  */
 export function nowLocalForPB(): string {
-  const now = new Date()
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: _tz,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).formatToParts(now)
-
-  const get = (type: string) => parts.find(p => p.type === type)?.value || '00'
-  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`
+  return now().format('YYYY-MM-DD HH:mm:ss')
 }
 
 /**
@@ -166,12 +108,10 @@ export function localDateForPB(dateStr: string): string {
 /** Human-friendly relative date label in Spanish (Hoy, Ayer, Hace N días, or short date). */
 export function relativeDate(dateStr: string): string {
   const today = todayStr()
-  const yesterday = daysAgoStr(1)
   if (dateStr === today) return 'Hoy'
+  const yesterday = daysAgoStr(1)
   if (dateStr === yesterday) return 'Ayer'
-  const diff = Math.floor(
-    (new Date(today + 'T12:00:00').getTime() - new Date(dateStr + 'T12:00:00').getTime()) / 86400000
-  )
+  const diff = dayjs.tz(today, _tz).diff(dayjs.tz(dateStr, _tz), 'day')
   if (diff >= 2 && diff <= 7) return `Hace ${diff} días`
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+  return dayjs.tz(dateStr, _tz).toDate().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
