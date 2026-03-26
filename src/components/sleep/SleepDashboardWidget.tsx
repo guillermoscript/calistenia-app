@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
 
@@ -24,7 +25,7 @@ function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m}min` : `${h}h`
 }
 
-const QUALITY_LABELS = ['', 'Muy mal', 'Mal', 'Regular', 'Bien', 'Excelente']
+const QUALITY_LABEL_KEYS = ['', 'sleep.quality.1', 'sleep.quality.2', 'sleep.quality.3', 'sleep.quality.4', 'sleep.quality.5']
 
 function qualityAccent(q: number): string {
   if (q <= 2) return 'text-red-500'
@@ -41,6 +42,7 @@ function qualityBorder(q: number): string {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SleepDashboardWidget({ lastEntry, onRegister }: SleepDashboardWidgetProps) {
+  const { t } = useTranslation()
   // No entry — show CTA
   if (!lastEntry) {
     return (
@@ -54,9 +56,9 @@ export default function SleepDashboardWidget({ lastEntry, onRegister }: SleepDas
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">Sueno</div>
-                <div className="text-sm text-indigo-400 font-medium">Como dormiste?</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">Toca para registrar</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">{t('sleep.title')}</div>
+                <div className="text-sm text-indigo-400 font-medium">{t('sleep.howDidYouSleep')}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">{t('sleep.tapToRegister')}</div>
               </div>
             </div>
           </CardContent>
@@ -96,11 +98,11 @@ export default function SleepDashboardWidget({ lastEntry, onRegister }: SleepDas
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">Sueno</div>
+              <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">{t('sleep.title')}</div>
               <div className="text-sm">
                 <span className="text-foreground font-medium">{formatDuration(lastEntry.duration_minutes)}</span>
                 <span className="text-muted-foreground"> · </span>
-                <span className={qualityAccent(lastEntry.quality)}>{QUALITY_LABELS[lastEntry.quality]}</span>
+                <span className={qualityAccent(lastEntry.quality)}>{t(QUALITY_LABEL_KEYS[lastEntry.quality])}</span>
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
                 {lastEntry.bedtime} — {lastEntry.wake_time}

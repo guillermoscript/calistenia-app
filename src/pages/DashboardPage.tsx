@@ -76,14 +76,15 @@ interface GoalDef {
   goal: number
   accent: string
   border: string
+  labelKey?: string
 }
 
 const GOALS: GoalDef[] = [
-  { label: 'Pull-ups seguidas',  key: 'pr_pullups',   unit: 'reps', goal: 20, accent: 'text-sky-500',  border: 'border-l-sky-500' },
-  { label: 'Push-ups',           key: 'pr_pushups',   unit: 'reps', goal: 50, accent: 'text-lime',     border: 'border-l-lime' },
-  { label: 'L-sit',              key: 'pr_lsit',      unit: 's',    goal: 30, accent: 'text-amber-400',border: 'border-l-amber-400' },
-  { label: 'Pistol Squat',       key: 'pr_pistol',    unit: 'reps', goal: 1,  accent: 'text-pink-500', border: 'border-l-pink-500' },
-  { label: 'Handstand libre',    key: 'pr_handstand', unit: 's',    goal: 60, accent: 'text-red-500',  border: 'border-l-red-500' },
+  { label: 'Pull-ups seguidas',  key: 'pr_pullups',   unit: 'reps', goal: 20, accent: 'text-sky-500',  border: 'border-l-sky-500', labelKey: 'dashboard.goal.pullups' },
+  { label: 'Push-ups',           key: 'pr_pushups',   unit: 'reps', goal: 50, accent: 'text-lime',     border: 'border-l-lime', labelKey: 'dashboard.goal.pushups' },
+  { label: 'L-sit',              key: 'pr_lsit',      unit: 's',    goal: 30, accent: 'text-amber-400',border: 'border-l-amber-400', labelKey: 'dashboard.goal.lsit' },
+  { label: 'Pistol Squat',       key: 'pr_pistol',    unit: 'reps', goal: 1,  accent: 'text-pink-500', border: 'border-l-pink-500', labelKey: 'dashboard.goal.pistol' },
+  { label: 'Handstand libre',    key: 'pr_handstand', unit: 's',    goal: 60, accent: 'text-red-500',  border: 'border-l-red-500', labelKey: 'dashboard.goal.handstand' },
 ]
 
 interface GoalCardProps {
@@ -93,6 +94,7 @@ interface GoalCardProps {
 }
 
 function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [inputVal, setInputVal] = useState('')
   const pct = Math.min(100, ((current || 0) / goal.goal) * 100)
@@ -108,7 +110,7 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
   return (
     <div className={cn('px-4 py-3.5 bg-card rounded-lg border border-border border-l-[3px]', goal.border, reached && 'border-lime/30')}>
       <div className="flex justify-between items-center mb-2.5">
-        <div className={cn('text-[13px]', reached ? 'text-lime' : 'text-foreground')}>{goal.label}</div>
+        <div className={cn('text-[13px]', reached ? 'text-lime' : 'text-foreground')}>{goal.labelKey ? t(goal.labelKey) : goal.label}</div>
         <div className="text-[11px] text-muted-foreground">
           <span className={cn(reached ? 'text-emerald-500' : goal.accent)}>{current || 0}</span>
           <span className="text-muted-foreground"> / {goal.goal}{goal.unit}</span>
@@ -124,11 +126,11 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
             value={inputVal}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputVal(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') handleSubmit(); if (e.key === 'Escape') setEditing(false) }}
-            placeholder={`Ej: ${current || goal.goal}`}
+            placeholder={t('dashboard.goalExample', { value: current || goal.goal })}
             className="flex-1 h-8 text-xs"
             aria-label={goal.label}
           />
-          <Button size="sm" onClick={handleSubmit} className="h-8 px-3 text-xs">GUARDAR</Button>
+          <Button size="sm" onClick={handleSubmit} className="h-8 px-3 text-xs">{t('common.save').toUpperCase()}</Button>
           <Button size="sm" variant="outline" onClick={() => setEditing(false)} className="h-8 px-2 text-xs">✕</Button>
         </div>
       ) : (
@@ -138,7 +140,7 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
           onClick={() => setEditing(true)}
           className="h-9 sm:h-7 px-3 sm:px-2.5 text-[11px] tracking-wide hover:border-lime hover:text-lime"
         >
-          REGISTRAR PR
+          {t('dashboard.registerPR')}
         </Button>
       )}
     </div>
@@ -148,19 +150,11 @@ function GoalCard({ goal, current, onUpdate }: GoalCardProps) {
 
 // ── Greeting helper ──────────────────────────────────────────────────────────
 
-function getGreeting(): string {
+function getGreetingKey(): string {
   const h = localHour()
-  if (h < 12) return 'Buenos dias'
-  if (h < 19) return 'Buenas tardes'
-  return 'Buenas noches'
-}
-
-function formatToday(): string {
-  return new Date().toLocaleDateString('es-ES', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+  if (h < 12) return 'dashboard.greeting.morning'
+  if (h < 19) return 'dashboard.greeting.afternoon'
+  return 'dashboard.greeting.evening'
 }
 
 
@@ -184,7 +178,7 @@ export default function DashboardPage({
     duplicateProgram,
   } = useWorkoutActions()
   const { userId } = useAuthState()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
   const onGoToNutrition = useCallback(() => navigate('/nutrition'), [navigate])
@@ -233,8 +227,12 @@ export default function DashboardPage({
   const [showConfig, setShowConfig] = useState(false)
 
   // Build display name from userId or fallback
-  const greeting = getGreeting()
-  const todayFormatted = formatToday()
+  const greeting = t(getGreetingKey())
+  const todayFormatted = new Date().toLocaleDateString(i18n.language, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -249,13 +247,13 @@ export default function DashboardPage({
         </h1>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="text-sm text-muted-foreground">
-            Semana <strong className="text-foreground">{Math.min(weekElapsed, totalWeeks)}</strong> de {totalWeeks}
+            {t('common.week')} <strong className="text-foreground">{Math.min(weekElapsed, totalWeeks)}</strong> {t('common.of')} {totalWeeks}
             {activeProgram && (
               <span className="text-lime"> · {activeProgram.name}</span>
             )}
           </div>
           <Badge variant={usePB ? 'outline' : 'secondary'} className={cn('text-[9px]', usePB ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10' : 'text-amber-600 border-amber-500/40 bg-amber-500/10')}>
-            {usePB ? '● Sincronizado' : '● Solo local'}
+            {usePB ? t('dashboard.synced') : t('dashboard.localOnly')}
           </Badge>
         </div>
       </div>
@@ -265,15 +263,15 @@ export default function DashboardPage({
         <div className="mb-6 p-4 md:p-5 bg-amber-500/5 border border-amber-500/30 rounded-xl flex items-center gap-4 flex-wrap">
           <div className="flex-1">
             <div className="text-[10px] text-amber-600 dark:text-amber-400 tracking-widest mb-1 uppercase">
-              Llevas {daysSinceLastSession} dias sin entrenar
+              {t('dashboard.nudge.title', { days: daysSinceLastSession })}
             </div>
-            <div className="text-sm text-muted-foreground">No pierdas el ritmo — incluso 20 minutos hacen la diferencia.</div>
+            <div className="text-sm text-muted-foreground">{t('dashboard.nudge.subtitle')}</div>
           </div>
           <Button
             onClick={onGoToWorkout}
             className="bg-amber-500 hover:bg-amber-400 text-white font-bebas text-lg tracking-wide w-full sm:w-auto"
           >
-            ENTRENAR HOY
+            {t('dashboard.nudge.cta')}
           </Button>
         </div>
       )}
@@ -318,22 +316,22 @@ export default function DashboardPage({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">
-                  {todayDone ? 'Entrenamiento de hoy' : todayIsCardio ? 'Hoy toca cardio' : todayIsRest ? 'Hoy toca descanso' : 'Entrenamiento de hoy'}
+                  {todayDone ? t('dashboard.todayWorkout') : todayIsCardio ? t('dashboard.todayCardio') : todayIsRest ? t('dashboard.todayRest') : t('dashboard.todayWorkout')}
                 </div>
                 <div className="font-bebas text-2xl md:text-3xl leading-none">
                   {todayDone ? (
-                    <span className="text-emerald-500">COMPLETADO</span>
+                    <span className="text-emerald-500">{t('dashboard.completed')}</span>
                   ) : todayIsCardio ? (
                     <span className="text-emerald-400">{todayDay?.focusKey ? t(todayDay.focusKey) : todayDay?.focus || 'CARDIO'}</span>
                   ) : todayIsRest ? (
-                    <span className="text-muted-foreground">DIA DE DESCANSO</span>
+                    <span className="text-muted-foreground">{t('dashboard.restDay')}</span>
                   ) : (
-                    <span className="text-[hsl(var(--lime))]">{todayDay?.focusKey ? t(todayDay.focusKey) : todayDay?.focus || 'ENTRENAR'}</span>
+                    <span className="text-[hsl(var(--lime))]">{todayDay?.focusKey ? t(todayDay.focusKey) : todayDay?.focus || t('dashboard.train')}</span>
                   )}
                 </div>
                 {activeProgram && (
                   <div className="text-xs text-muted-foreground mt-1">
-                    {activeProgram.name} · Fase {settings.phase || 1}
+                    {activeProgram.name} · {t('workout.phaseLabel', { phase: settings.phase || 1 })}
                   </div>
                 )}
               </div>
@@ -364,43 +362,43 @@ export default function DashboardPage({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <QuickAction
             icon={<svg className="size-5 text-lime" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="6" width="3" height="4" rx="0.5" /><rect x="12" y="6" width="3" height="4" rx="0.5" /><line x1="4" y1="8" x2="12" y2="8" /><rect x="2.5" y="5" width="2" height="6" rx="0.5" /><rect x="11.5" y="5" width="2" height="6" rx="0.5" /></svg>}
-            label="Entrenar"
-            description="Seguir tu programa de hoy"
+            label={t('dashboard.quickAction.workout')}
+            description={t('dashboard.quickAction.workoutDesc')}
             accent="text-lime"
             onClick={onGoToWorkout}
           />
           <QuickAction
             icon={<svg className="size-5 text-amber-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 1v4a3 3 0 006 0V1" /><line x1="8" y1="8" x2="8" y2="15" /><line x1="5" y1="1" x2="5" y2="5" /><line x1="8" y1="1" x2="8" y2="4" /><line x1="11" y1="1" x2="11" y2="5" /></svg>}
-            label="Nutricion"
-            description="Registrar comidas y macros"
+            label={t('dashboard.quickAction.nutrition')}
+            description={t('dashboard.quickAction.nutritionDesc')}
             accent="text-amber-400"
             onClick={() => navigate('/nutrition')}
           />
           <QuickAction
             icon={<svg className="size-5 text-sky-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="10" cy="3" r="1.5" /><path d="M5 16l2-5 3 2v5" /><path d="M8 8l-3 3 1.5 1" /><path d="M8 8l2-2 3 1" /></svg>}
-            label="Cardio"
-            description="Correr, caminar o pedalear con GPS"
+            label={t('dashboard.quickAction.cardio')}
+            description={t('dashboard.quickAction.cardioDesc')}
             accent="text-sky-500"
             onClick={() => navigate('/cardio')}
           />
           <QuickAction
             icon={<svg className="size-5 text-pink-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="12" height="12" rx="2" /><line x1="5" y1="6" x2="11" y2="6" /><line x1="5" y1="8.5" x2="11" y2="8.5" /><line x1="5" y1="11" x2="9" y2="11" /><polyline points="10,3 12,5 14,1" strokeWidth="2" /></svg>}
-            label="Sesion Libre"
-            description="Entrena lo que quieras hoy"
+            label={t('dashboard.quickAction.freeSession')}
+            description={t('dashboard.quickAction.freeSessionDesc')}
             accent="text-pink-500"
             onClick={() => navigate('/free-session')}
           />
           <QuickAction
             icon={<svg className="size-5 text-red-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="8" y1="1" x2="8" y2="15" /><rect x="5" y="3" width="6" height="2.5" rx="0.5" /><rect x="5" y="6.75" width="6" height="2.5" rx="0.5" /><rect x="5" y="10.5" width="6" height="2.5" rx="0.5" /></svg>}
-            label="Lumbar"
-            description="Rutina de espalda baja"
+            label={t('dashboard.quickAction.lumbar')}
+            description={t('dashboard.quickAction.lumbarDesc')}
             accent="text-red-500"
             onClick={() => navigate('/lumbar')}
           />
           <QuickAction
             icon={<svg className="size-5 text-purple-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="1,12 5,7 8,9 12,4 15,6" /><line x1="1" y1="14" x2="15" y2="14" /></svg>}
-            label="Progreso"
-            description="Ver tu historial y estadisticas"
+            label={t('dashboard.quickAction.progress')}
+            description={t('dashboard.quickAction.progressDesc')}
             accent="text-purple-500"
             onClick={() => navigate('/progress')}
           />
@@ -412,7 +410,7 @@ export default function DashboardPage({
         {onGoToNutrition && (
           <button onClick={onGoToNutrition} className="text-left p-4 bg-card border border-border rounded-xl hover:border-lime/30 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="relative size-11 shrink-0" role="img" aria-label={`${nutritionGoals ? Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100) : 0}% de calorias diarias`}>
+              <div className="relative size-11 shrink-0" role="img" aria-label={`${nutritionGoals ? Math.round(((nutritionTotals?.calories || 0) / nutritionGoals.dailyCalories) * 100) : 0}% ${t('dashboard.nutritionCaloriesLabel')}`}>
                 <svg width="44" height="44" viewBox="0 0 44 44">
                   <circle cx="22" cy="22" r="17" fill="none" stroke="currentColor" className="text-muted" strokeWidth="4" />
                   <circle
@@ -436,14 +434,14 @@ export default function DashboardPage({
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Nutricion</div>
+                <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{t('dashboard.nutrition')}</div>
                 {nutritionGoals ? (
                   <div className="text-sm">
                     <span className="text-foreground font-medium">{Math.round(nutritionTotals?.calories || 0)}</span>
                     <span className="text-muted-foreground"> / {nutritionGoals.dailyCalories} kcal</span>
                   </div>
                 ) : (
-                  <div className="text-xs text-muted-foreground">Define tu meta diaria</div>
+                  <div className="text-xs text-muted-foreground">{t('dashboard.defineGoal')}</div>
                 )}
               </div>
             </div>
@@ -489,7 +487,7 @@ export default function DashboardPage({
         {activeProgram && (
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase shrink-0">Programa</div>
+              <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase shrink-0">{t('dashboard.program')}</div>
               <span className="font-bebas text-lg text-[hsl(var(--lime))] truncate">{activeProgram.name}</span>
             </div>
             {programs && programs.length > 1 && (
@@ -499,7 +497,7 @@ export default function DashboardPage({
                 onClick={() => setShowProgramModal(true)}
                 className="text-[10px] tracking-widest hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))] h-8 shrink-0"
               >
-                CAMBIAR
+                {t('dashboard.changeProgram')}
               </Button>
             )}
           </div>
@@ -512,20 +510,20 @@ export default function DashboardPage({
         <div id="tour-stats" className="grid grid-cols-3 gap-3 mb-5">
           <div className="text-center">
             <div className="font-bebas text-3xl md:text-4xl text-lime leading-none">{totalSessions}</div>
-            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Total</div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.total')}</div>
           </div>
           <div className="text-center">
             <span className={cn('font-bebas text-3xl md:text-4xl leading-none', streak >= 3 ? 'text-orange-500' : 'text-sky-500')}>{streak}</span>
-            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Mejor racha</div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.bestStreak')}</div>
           </div>
           <div className="text-center">
             <div className="font-bebas text-3xl md:text-4xl text-amber-400 leading-none">{weeklyDone}<span className="text-lg text-muted-foreground">/{settings.weeklyGoal || 5}</span></div>
-            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">Esta semana</div>
+            <div className="text-[10px] text-muted-foreground tracking-wide mt-1">{t('dashboard.stats.thisWeek')}</div>
           </div>
         </div>
 
         {/* Activity heatmap */}
-        <div className="flex gap-1 flex-wrap" role="img" aria-label={`${Object.values(monthActivity).filter(Boolean).length} dias activos este mes`}>
+        <div className="flex gap-1 flex-wrap" role="img" aria-label={t('dashboard.activeDaysLabel', { count: Object.values(monthActivity).filter(Boolean).length })}>
           {calDays.map(([date, active]) => (
             <div
               key={date}
@@ -550,7 +548,7 @@ export default function DashboardPage({
           className="flex items-center justify-between w-full mb-4 group"
         >
           <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase group-hover:text-foreground transition-colors">
-            Configuracion
+            {t('dashboard.config')}
           </div>
           <svg
             className={cn('size-4 text-muted-foreground transition-transform', showConfig && 'rotate-180')}
@@ -566,20 +564,20 @@ export default function DashboardPage({
             {activeProgram && (
               <div id="tour-active-program" className="flex items-center gap-3 flex-wrap">
                 <div className="flex-1">
-                  <div className="text-[9px] text-muted-foreground tracking-widest uppercase">Programa</div>
+                  <div className="text-[9px] text-muted-foreground tracking-widest uppercase">{t('dashboard.program')}</div>
                   <div className="font-bebas text-xl text-lime">{activeProgram.name}</div>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   {programs && programs.length > 1 && (
                     <Button variant="outline" size="sm" onClick={() => setShowProgramModal(true)}
                       className="text-[10px] tracking-widest hover:border-lime hover:text-lime h-10 sm:h-8">
-                      CAMBIAR PROGRAMA
+                      {t('dashboard.changeProgramFull')}
                     </Button>
                   )}
                   {onCreateProgram && (
                     <Button variant="outline" size="sm" onClick={onCreateProgram}
                       className="text-[10px] tracking-widest hover:border-sky-500 hover:text-sky-500 h-10 sm:h-8">
-                      CREAR PROGRAMA
+                      {t('dashboard.createProgram')}
                     </Button>
                   )}
                 </div>
@@ -590,9 +588,9 @@ export default function DashboardPage({
             <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
               <Card className={cn('border-l-[3px]', phaseAccent.border)}>
                 <CardContent className="p-5">
-                  <div className={cn('text-[10px] tracking-widest mb-2 uppercase', phaseAccent.text)}>Fase Actual</div>
-                  <div className="font-bebas text-2xl mb-1">Fase {phase.id}: {phase.nameKey ? t(phase.nameKey) : phase.name}</div>
-                  <div className="text-xs text-muted-foreground mb-3">Semanas {phase.weeks}</div>
+                  <div className={cn('text-[10px] tracking-widest mb-2 uppercase', phaseAccent.text)}>{t('dashboard.currentPhase')}</div>
+                  <div className="font-bebas text-2xl mb-1">{t('dashboard.phaseLabel', { id: phase.id, name: phase.nameKey ? t(phase.nameKey) : phase.name })}</div>
+                  <div className="text-xs text-muted-foreground mb-3">{t('dashboard.phaseWeeks', { weeks: phase.weeks })}</div>
                   <div className="flex gap-2 flex-wrap">
                     {PHASES.map(p => {
                       const pa = PHASE_COLORS[p.id] || PHASE_COLORS[1]
@@ -611,7 +609,7 @@ export default function DashboardPage({
 
               <Card>
                 <CardContent className="p-5">
-                  <div className="text-[10px] text-muted-foreground tracking-widest mb-3 uppercase">Objetivos a 6 meses</div>
+                  <div className="text-[10px] text-muted-foreground tracking-widest mb-3 uppercase">{t('dashboard.goals6m')}</div>
                   <div className="flex flex-col gap-2.5">
                     {GOALS.map(goal => (
                       <GoalCard key={goal.key} goal={goal}

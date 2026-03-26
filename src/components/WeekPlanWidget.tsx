@@ -21,7 +21,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
   return (
     <div className="mb-8">
       <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-3">
-        SEMANA DE ENTRENAMIENTO — F{selectedPhase}
+        {t('weekPlan.title', { phase: selectedPhase })}
       </div>
       {/* Mobile: horizontal scroll — Desktop: 7-col grid */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 md:grid md:grid-cols-7 md:overflow-visible md:pb-0 snap-x snap-mandatory">
@@ -78,7 +78,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
                 isToday        ? 'text-[hsl(var(--lime))]' :
                                  'text-muted-foreground/50',
               )}>
-                {isCardio ? CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.label || 'Cardio' : (day.focusKey ? t(day.focusKey) : day.focus).split(' ')[0]}
+                {isCardio ? t(`cardio.${day.cardioConfig?.activityType || 'running'}`) : (day.focusKey ? t(day.focusKey) : day.focus).split(' ')[0]}
               </div>
             </button>
           )

@@ -81,7 +81,7 @@ export default function WorkoutPage() {
 
       {/* Phase Selector */}
       <div id="tour-phase-selector" className="mb-7">
-        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">Fase</div>
+        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">{t('workout.phase')}</div>
         <div className="relative md:overflow-visible"
           style={{ maskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)' }}
         >
@@ -112,7 +112,7 @@ export default function WorkoutPage() {
 
       {/* Day Selector */}
       <div id="tour-day-selector" className="mb-7">
-        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">Día de Entrenamiento</div>
+        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">{t('workout.trainingDay')}</div>
         {/* Mobile: horizontal scroll strip with fade — Desktop: 7-col grid */}
         <div className="relative md:overflow-visible"
           style={{ maskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)' }}
@@ -127,7 +127,7 @@ export default function WorkoutPage() {
               <button
                 key={day.id}
                 aria-pressed={isSelected}
-                aria-label={`${day.nameKey ? t(day.nameKey) : day.name} - ${day.focusKey ? t(day.focusKey) : day.focus}${done ? ' - completado' : ''}${isToday ? ' - hoy' : ''}`}
+                aria-label={`${day.nameKey ? t(day.nameKey) : day.name} - ${day.focusKey ? t(day.focusKey) : day.focus}${done ? ` - ${t('dashboard.completed').toLowerCase()}` : ''}${isToday ? ` - ${t('common.today').toLowerCase()}` : ''}`}
                 onClick={() => setSelectedDay(day.id === selectedDay ? null : day.id)}
                 className={cn(
                   'relative rounded-md border text-center transition-all duration-200',
@@ -158,7 +158,7 @@ export default function WorkoutPage() {
         </div>
         {!selectedDay && (
           <div className="mt-2.5 text-[12px] text-muted-foreground italic">
-            Selecciona cualquier día para entrenar. No importa el día real — elige el tipo de entrenamiento que quieras. Punto verde = hoy.
+            {t('workout.selectDayHint')}
           </div>
         )}
       </div>
@@ -174,7 +174,7 @@ export default function WorkoutPage() {
             <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center md:flex-wrap">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-[2px] mb-1 uppercase">
-                  Fase {selectedPhase} · {(() => { const d = WEEK_DAYS.find(d => d.id === selectedDay); return d?.nameKey ? t(d.nameKey) : d?.name ?? '' })().toUpperCase()} · {workout.exercises.length} ejercicios{workoutDuration > 0 ? ` · ~${workoutDuration} min` : ''}
+                  {t('workout.phaseLabel', { phase: selectedPhase })} · {(() => { const d = WEEK_DAYS.find(d => d.id === selectedDay); return d?.nameKey ? t(d.nameKey) : d?.name ?? '' })().toUpperCase()} · {t('workout.exerciseCount', { count: workout.exercises.length })}{workoutDuration > 0 ? ` · ~${workoutDuration} ${t('common.minutes')}` : ''}
                 </div>
                 <div className="font-bebas text-[26px] md:text-[32px] leading-none">{workout.title}</div>
               </div>
@@ -185,7 +185,7 @@ export default function WorkoutPage() {
                     onClick={handleStartSession}
                     className="w-full md:w-auto font-bebas text-xl tracking-wide bg-lime text-lime-foreground hover:bg-lime/90"
                   >
-                    ▶ EMPEZAR
+                    {t('workout.startBtn')}
                   </Button>
                 )}
                 {isDone && (
@@ -195,15 +195,15 @@ export default function WorkoutPage() {
                       variant="outline"
                       className="font-bebas text-lg tracking-wide border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
                     >
-                      ▶ REPETIR
+                      {t('workout.repeatBtn')}
                     </Button>
                     <div className="px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-600 dark:text-emerald-400 font-bebas text-lg flex items-center gap-2">
-                      ✓ COMPLETADO HOY
+                      {t('workout.completedToday')}
                       <button
                         onClick={() => workoutKey && unmarkWorkoutDone(workoutKey)}
                         className="text-muted-foreground hover:text-red-400 transition-colors ml-1"
-                        aria-label="Desmarcar completado"
-                        title="Desmarcar completado"
+                        aria-label={t('workout.unmarkDone')}
+                        title={t('workout.unmarkDone')}
                       >
                         <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                       </button>
@@ -232,16 +232,16 @@ export default function WorkoutPage() {
         return (
           <div className="text-center py-12 px-5">
             <div className="text-5xl mb-4">{actInfo?.icon || '🏃'}</div>
-            <div className="font-bebas text-3xl mb-2 text-emerald-400">Dia de Cardio</div>
+            <div className="font-bebas text-3xl mb-2 text-emerald-400">{t('workout.cardioDay')}</div>
             <div className="text-sm text-muted-foreground mb-1">
-              {actInfo?.label || 'Carrera'}
+              {t(`cardio.${actType}`)}
             </div>
             <div className="flex justify-center gap-4 text-sm text-muted-foreground mb-6">
               {cardioConfig?.targetDistanceKm && (
-                <span>Meta: <strong className="text-emerald-400">{cardioConfig.targetDistanceKm} km</strong></span>
+                <span>{t('workout.goal')}: <strong className="text-emerald-400">{cardioConfig.targetDistanceKm} km</strong></span>
               )}
               {cardioConfig?.targetDurationMin && (
-                <span>Duracion: <strong className="text-emerald-400">{cardioConfig.targetDurationMin} min</strong></span>
+                <span>{t('workout.duration')}: <strong className="text-emerald-400">{cardioConfig.targetDurationMin} {t('common.minutes')}</strong></span>
               )}
             </div>
             <Button
@@ -256,26 +256,26 @@ export default function WorkoutPage() {
               }}
               className="font-bebas text-xl tracking-wide bg-emerald-500 hover:bg-emerald-400 text-white px-8 h-12"
             >
-              EMPEZAR CARDIO
+              {t('workout.startCardio')}
             </Button>
           </div>
         )
       })() : selectedDay && selectedDayType === 'rest' ? (
         <div className="text-center py-16 px-5 text-muted-foreground">
           <div className="text-5xl mb-4">🧘</div>
-          <div className="font-bebas text-3xl mb-2">Día de descanso</div>
+          <div className="font-bebas text-3xl mb-2">{t('workout.restDay')}</div>
           <div className="text-sm mb-4">
-            {(() => { const d = WEEK_DAYS.find(d => d.id === selectedDay); return d?.focusKey ? t(d.focusKey) : d?.focus ?? 'Descanso' })()}
+            {(() => { const d = WEEK_DAYS.find(d => d.id === selectedDay); return d?.focusKey ? t(d.focusKey) : d?.focus ?? t('dayType.rest') })()}
           </div>
           <div className="text-xs text-muted-foreground/70">
-            Puedes elegir otro día si quieres entrenar — no importa el día real.
+            {t('workout.restDayHint')}
           </div>
         </div>
       ) : (
         <div className="text-center py-16 px-5 text-muted-foreground">
           <div className="text-5xl mb-4">💪</div>
-          <div className="font-bebas text-3xl mb-2">Elige tu entrenamiento</div>
-          <div className="text-sm">Selecciona un día de la semana para ver los ejercicios</div>
+          <div className="font-bebas text-3xl mb-2">{t('workout.chooseWorkout')}</div>
+          <div className="text-sm">{t('workout.chooseWorkoutHint')}</div>
         </div>
       )}
 

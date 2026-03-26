@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Image, ArrowUp, Info, Pencil, MoreHorizontal } from 'lucide-react'
 import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
 import Timer from './Timer'
@@ -13,7 +14,7 @@ import { cn } from '../lib/utils'
 import { PRIORITY_COLORS } from '../lib/style-tokens'
 import type { Exercise, ExerciseLog, SetData, Priority } from '../types'
 
-const PRIORITY_LABELS: Record<Priority, string> = { high: 'PRIORITARIO', med: 'IMPORTANTE', low: 'COMPLEMENTARIO' }
+const PRIORITY_LABEL_KEYS: Record<Priority, string> = { high: 'exercise.priorityHigh', med: 'exercise.priorityMed', low: 'exercise.priorityLow' }
 
 interface ExerciseCardProps {
   exercise: Exercise
@@ -27,6 +28,7 @@ interface ExerciseCardProps {
 
 export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [], isAdmin, isFirst }: ExerciseCardProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [showTimer, setShowTimer] = useState<boolean>(false)
   const [showYoutube, setShowYoutube] = useState<boolean>(false)
   const [showMedia, setShowMedia] = useState<boolean>(false)
@@ -131,7 +133,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
               <span className="font-mono text-[12px] text-lime">{totalSets} × {exercise.reps}</span>
               <span className="font-mono text-[11px] text-muted-foreground">descanso {exercise.rest}s</span>
               <span className={cn('font-mono text-[10px] tracking-wide', PRIORITY_COLORS[exercise.priority]?.text)}>
-                {PRIORITY_LABELS[exercise.priority]}
+                {t(PRIORITY_LABEL_KEYS[exercise.priority])}
               </span>
             </div>
             <div className="text-[12px] text-muted-foreground">{exercise.muscles}</div>
@@ -145,19 +147,19 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             )}>
               {setsLogged}<span className="text-base text-muted-foreground/40">/{totalSets}</span>
             </div>
-            <div className="text-[9px] text-muted-foreground tracking-wide font-mono uppercase">Series</div>
+            <div className="text-[9px] text-muted-foreground tracking-wide font-mono uppercase">{t('exercise.sets')}</div>
           </div>
         </div>
 
         {/* Progressive overload hint */}
         {lastLog && lastBestReps > 0 && setsLogged === 0 && (
           <div className="text-[11px] text-amber-400/80 bg-amber-400/5 rounded px-3 py-2 mt-2.5 border-l-2 border-amber-400/30">
-            Ultima vez: <strong>{lastBestReps}</strong> reps
+            {t('exercise.lastTime', { reps: lastBestReps })}
             {lastBestWeight > 0 && <> +<strong>{lastBestWeight}</strong>kg</>}
             {' — '}
             {lastBestWeight > 0
-              ? `intenta +${(lastBestWeight + 2.5).toFixed(1)}kg o +1 rep`
-              : `intenta ${lastBestReps + 1} reps`
+              ? t('exercise.tryMoreWeight', { weight: (lastBestWeight + 2.5).toFixed(1) })
+              : t('exercise.tryMoreReps', { reps: lastBestReps + 1 })
             }
           </div>
         )}
@@ -170,9 +172,9 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
           >
             <ArrowUp size={14} className="text-lime flex-shrink-0" />
             <span className="text-lime/90">
-              Listo para avanzar al siguiente nivel.{' '}
+              {t('exercise.readyToAdvance')}{' '}
               {chain.find(p => p.exerciseId === exercise.id)?.nextExerciseId && (
-                <strong className="text-lime">Ver progresion</strong>
+                <strong className="text-lime">{t('exercise.viewProgression')}</strong>
               )}
             </span>
           </button>
@@ -199,11 +201,11 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             )}
           >
             {isComplete ? (
-              <>✓ COMPLETADO</>
+              <>{t('exercise.completed')}</>
             ) : (
               <>
                 <span className="text-base leading-none">+</span>
-                SERIE — {exercise.reps} REPS
+                {t('exercise.setLabel', { reps: exercise.reps })}
               </>
             )}
           </button>
@@ -212,7 +214,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
             <button
               id={isFirst ? 'tour-edit-set' : undefined}
               onClick={() => setShowEditForm(v => !v)}
-              title="Editar reps / añadir nota"
+              title={t('exercise.editReps')}
               className={cn(
                 'py-[13px] px-3.5 rounded-md text-sm leading-none transition-all duration-150 flex-shrink-0 border',
                 showEditForm
@@ -262,7 +264,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                   className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
                 >
                   <span className="text-red-500">▶</span>
-                  <span>Ver tutorial</span>
+                  <span>{t('exercise.viewTutorial')}</span>
                 </button>
 
                 <button
@@ -270,7 +272,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                   className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
                 >
                   <Info size={14} className="text-muted-foreground" />
-                  <span>Ver detalle</span>
+                  <span>{t('exercise.viewDetail')}</span>
                 </button>
 
                 {exercise.demoImages && exercise.demoImages.length > 0 && (
@@ -279,7 +281,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                     className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
                   >
                     <Image size={14} className="text-lime" />
-                    <span>Ver media</span>
+                    <span>{t('exercise.viewMedia')}</span>
                   </button>
                 )}
 
@@ -289,7 +291,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                     className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
                   >
                     <span className="font-mono text-[10px] text-sky-400">H</span>
-                    <span>Historial reciente</span>
+                    <span>{t('exercise.recentHistory')}</span>
                   </button>
                 )}
 
@@ -299,7 +301,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                     className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors"
                   >
                     <ArrowUp size={14} className={advanceSuggested ? 'text-lime' : 'text-muted-foreground'} />
-                    <span>Progresion{advanceSuggested && <span className="text-lime ml-1 text-[10px]">AVANZAR</span>}</span>
+                    <span>{t('exercise.progression')}{advanceSuggested && <span className="text-lime ml-1 text-[10px]">{t('exercise.advance')}</span>}</span>
                   </button>
                 )}
 
@@ -314,7 +316,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                       className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[12px] text-left hover:bg-muted/50 transition-colors text-amber-400"
                     >
                       <Pencil size={14} />
-                      <span>Editar en PocketBase</span>
+                      <span>{t('exercise.editInPB')}</span>
                     </a>
                   </>
                 )}
@@ -326,12 +328,12 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
         {/* EDIT FORM */}
         {showEditForm && (
           <div className="mt-2.5 px-3.5 py-3 bg-lime/4 rounded-lg border border-lime/10">
-            <div className="text-[10px] text-lime tracking-[2px] mb-2.5 uppercase">Registrar serie personalizada</div>
+            <div className="text-[10px] text-lime tracking-[2px] mb-2.5 uppercase">{t('exercise.customSet')}</div>
             <div className="grid grid-cols-[1fr_auto_auto] gap-2">
               <Input
                 value={logReps}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogReps(e.target.value)}
-                placeholder={`Reps (ej: ${exercise.reps})`}
+                placeholder={t('exercise.repsPlaceholder', { reps: exercise.reps })}
                 maxLength={20}
                 className="h-9 text-xs"
               />
@@ -353,8 +355,8 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                 value={logRpe}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogRpe(e.target.value)}
                 placeholder="RPE"
-                title="Esfuerzo percibido (1-10)"
-                aria-label="RPE - Esfuerzo percibido del 1 al 10"
+                title={t('exercise.rpeTitle')}
+                aria-label={t('exercise.rpeAriaLabel')}
                 className="w-[56px] h-9 text-xs"
               />
             </div>
@@ -362,7 +364,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
               <Input
                 value={logNote}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogNote(e.target.value)}
-                placeholder="Nota (opcional)"
+                placeholder={t('exercise.notePlaceholder')}
                 maxLength={200}
                 className="flex-1 h-9 text-xs"
               />
@@ -377,7 +379,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
                     : 'bg-lime/20 text-muted-foreground cursor-not-allowed'
                 )}
               >
-                ✓ GUARDAR
+                {t('exercise.saveSet')}
               </Button>
             </div>
           </div>
@@ -386,13 +388,13 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
         {/* HISTORY */}
         {showHistory && recentLogs.length > 0 && (
           <div className="mt-2.5">
-            <div className="text-[9px] text-muted-foreground tracking-[2px] mb-1.5 uppercase font-mono">Historial reciente</div>
+            <div className="text-[9px] text-muted-foreground tracking-[2px] mb-1.5 uppercase font-mono">{t('exercise.recentHistory')}</div>
             {recentLogs.map((log, i) => (
               <div key={i} className="py-1.5 border-b border-border/50 text-[12px]">
                 <span className="font-mono text-sky-600 dark:text-sky-400 mr-3">{log.date}</span>
                 {log.sets?.map((s: SetData, j: number) => (
                   <span key={j} className="mr-2">
-                    Serie {j + 1}: <strong>{s.reps}</strong>
+                    {t('exercise.setNumber', { n: j + 1 })}: <strong>{s.reps}</strong>
                     {s.weight && <span className="text-amber-400 ml-1">+{s.weight}kg</span>}
                     {s.rpe && <span className="text-pink-500 ml-1">RPE {s.rpe}</span>}
                     {s.note && <em className="text-muted-foreground ml-1">({s.note})</em>}
