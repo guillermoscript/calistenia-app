@@ -4,7 +4,8 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
 import catalogData from '../data/exercise-catalog.json'
-import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabel } from '../lib/equipment'
+import { useTranslation } from 'react-i18next'
+import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '../lib/equipment'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
 import { useWorkout } from '../contexts/WorkoutContext'
@@ -75,10 +76,10 @@ const PRIORITY_DOT: Record<Priority, string> = {
   low:  'bg-sky-500',
 }
 
-const DIFFICULTY_STYLE: Record<DifficultyLevel, { label: string; text: string; bg: string; border: string }> = {
-  beginner:     { label: 'Principiante', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-  intermediate: { label: 'Intermedio',   text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
-  advanced:     { label: 'Avanzado',     text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+const DIFFICULTY_STYLE: Record<DifficultyLevel, { text: string; bg: string; border: string }> = {
+  beginner:     { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  intermediate: { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
+  advanced:     { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
 }
 
 const DEFAULT_MUSCLE_GROUPS = [
@@ -317,6 +318,7 @@ function CategoryIcon({ category }: { category: string }) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ExerciseLibraryPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [exercises, setExercises] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
@@ -536,7 +538,7 @@ export default function ExerciseLibraryPage() {
                   : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground'
               )}
             >
-              {style.label}
+              {t(`difficulty.${level}`)}
             </button>
           )
         })}
@@ -555,7 +557,7 @@ export default function ExerciseLibraryPage() {
         <span>{showMoreFilters ? '▾' : '▸'} Equipo & musculo</span>
         {(activeMuscle || activeEquipment) && (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-lime/10 text-lime border border-lime/20">
-            {[activeEquipment && getEquipmentLabel(activeEquipment), activeMuscle].filter(Boolean).join(' + ')}
+            {[activeEquipment && t(getEquipmentLabelKey(activeEquipment)), activeMuscle].filter(Boolean).join(' + ')}
           </span>
         )}
       </button>
@@ -578,7 +580,7 @@ export default function ExerciseLibraryPage() {
                       : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground'
                   )}
                 >
-                  {eq.icon} {eq.label}
+                  {eq.icon} {t(`equipment.${eq.id}`)}
                 </button>
               )
             })}
@@ -742,7 +744,7 @@ export default function ExerciseLibraryPage() {
                             DIFFICULTY_STYLE[ex.difficulty].border
                           )}
                         >
-                          {DIFFICULTY_STYLE[ex.difficulty].label.toUpperCase()}
+                          {t(`difficulty.${ex.difficulty}`).toUpperCase()}
                         </Badge>
                       )}
                     </div>

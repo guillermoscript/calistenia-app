@@ -5,6 +5,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { AI_API_URL } from '../../lib/ai-api'
+import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
 import { submitMealPlanJob } from '../../lib/ai-jobs-api'
 import { useBackgroundJobs } from '../../hooks/useBackgroundJobs'
@@ -35,6 +36,7 @@ interface DailyMealPlanProps {
 
 
 export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSaveMeal }: DailyMealPlanProps) {
+  const { t } = useTranslation()
   const [plan, setPlan] = useState<PlannedMeal[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -191,7 +193,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className={cn('text-[9px] tracking-widest px-2 py-0.5 rounded border', colors.bg, colors.color)}>
-                      {meal.label || colors.label}
+                      {meal.label || t(`meal.${meal.meal_type}`)}
                     </span>
                     <span className="font-bebas text-lg text-foreground">{meal.calories} kcal</span>
                   </div>

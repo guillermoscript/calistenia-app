@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatDuration, formatPace, formatSpeed } from '../../lib/geo'
+import { useTranslation } from 'react-i18next'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
@@ -16,6 +17,7 @@ interface CardioHistoryProps {
 }
 
 export default function CardioHistory({ sessions, loading, onDelete }: CardioHistoryProps) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
@@ -57,7 +59,7 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                 <span className="text-xl">{activity?.icon || '🏃'}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">
-                    {activity?.label || session.activity_type}
+                    {t(`cardio.${session.activity_type}`)}
                   </div>
                   <div className="text-[10px] text-muted-foreground tabular-nums">
                     {new Date(session.started_at).toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })}

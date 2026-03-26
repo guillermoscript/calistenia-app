@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
-import { inferDifficulty, DIFFICULTY_COLORS, type DifficultyLevel } from '../lib/difficulty'
+import { useTranslation } from 'react-i18next'
+import { inferDifficulty, DIFFICULTY_COLORS } from '../lib/difficulty'
+import type { DifficultyLevel } from '../types'
 import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
 import { WORKOUTS } from '../data/workouts'
 import { Button } from '../components/ui/button'
@@ -51,11 +53,6 @@ const defaultTotalDuration: number = Object.values(WORKOUTS).reduce(
   (sum, w) => sum + calculateWorkoutDuration(w.exercises), 0
 )
 
-const DIFFICULTY_LABELS: Record<string, string> = {
-  beginner: 'PRINCIPIANTE',
-  intermediate: 'INTERMEDIO',
-  advanced: 'AVANZADO',
-}
 
 interface ProgramCardProps {
   program: ProgramMeta
@@ -70,6 +67,7 @@ interface ProgramCardProps {
 }
 
 function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onDelete, onEdit, onView }: ProgramCardProps) {
+  const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -200,7 +198,7 @@ function ProgramCard({ program, isOwn, canEdit, isActive, onSelect, onShare, onD
             diffStyle.text, diffStyle.bg, diffStyle.border
           )}
         >
-          {DIFFICULTY_LABELS[diff] || diff.toUpperCase()}
+          {t(`difficulty.${diff}`).toUpperCase()}
         </Badge>
         {isOwn ? (
           <span className="text-[10px] font-mono tracking-wide text-sky-400/70">

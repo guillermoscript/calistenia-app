@@ -2,13 +2,14 @@ import { useCallback } from 'react'
 import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
 import { formatPace, formatDuration, formatSpeed } from '../../lib/geo'
+import i18n from '../../lib/i18n'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
 import type { CardioSession, KmSplit } from '../../types'
 
 /** Uppercase labels for canvas rendering */
-const ACTIVITY_LABELS: Record<string, string> = Object.fromEntries(
-  Object.entries(CARDIO_ACTIVITY).map(([k, v]) => [k, v.label.toUpperCase()])
-)
+function getActivityLabel(key: string): string {
+  return i18n.t(`cardio.${key}`).toUpperCase()
+}
 
 const ACCENT_COLORS: Record<string, string> = {
   running: '#a3e635',
@@ -80,7 +81,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       // Activity type label
       ctx.fillStyle = accent
       ctx.font = '600 13px system-ui, -apple-system, sans-serif'
-      ctx.fillText(ACTIVITY_LABELS[session.activity_type] || 'CARDIO', pad, 120)
+      ctx.fillText(getActivityLabel(session.activity_type) || 'CARDIO', pad, 120)
 
       // Accent line
       fillRRect(ctx, pad, 130, 40, 3, 1.5, accent)
@@ -200,7 +201,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       await shareImage(
         blob,
         `cardio_${dateStr}.png`,
-        `${ACTIVITY_LABELS[session.activity_type]} — ${session.distance_km.toFixed(2)} km`,
+        `${getActivityLabel(session.activity_type)} — ${session.distance_km.toFixed(2)} km`,
         `${session.distance_km.toFixed(2)} km en ${formatDuration(session.duration_seconds)}`,
       )
     } catch (e) {

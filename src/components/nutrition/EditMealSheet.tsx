@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
+import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
 import { toast } from 'sonner'
 import type { NutritionEntry, FoodItem, MealType } from '../../types'
@@ -14,14 +15,15 @@ interface EditMealSheetProps {
   onSave: (entryId: string, data: Partial<NutritionEntry>) => Promise<void>
 }
 
-const MEAL_TYPES: { id: MealType; label: string }[] = [
-  { id: 'desayuno', label: 'Desayuno' },
-  { id: 'almuerzo', label: 'Almuerzo' },
-  { id: 'cena', label: 'Cena' },
-  { id: 'snack', label: 'Snack' },
+const MEAL_TYPES: { id: MealType }[] = [
+  { id: 'desayuno' },
+  { id: 'almuerzo' },
+  { id: 'cena' },
+  { id: 'snack' },
 ]
 
 export default function EditMealSheet({ entry, open, onOpenChange, onSave }: EditMealSheetProps) {
+  const { t } = useTranslation()
   const [mealType, setMealType] = useState<MealType>('desayuno')
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [saving, setSaving] = useState(false)
@@ -132,7 +134,7 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
                       : 'text-muted-foreground border-transparent hover:text-foreground'
                   )}
                 >
-                  {mt.label.toUpperCase()}
+                  {t(`meal.${mt.id}`).toUpperCase()}
                 </button>
               )
             })}

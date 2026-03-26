@@ -10,6 +10,7 @@
  */
 
 import { localDay, localMinutesSinceMidnight } from './dateUtils'
+import i18n from './i18n'
 
 interface SchedulableReminder {
   id: string
@@ -21,11 +22,8 @@ interface SchedulableReminder {
   label: string
 }
 
-const MEAL_LABELS: Record<string, string> = {
-  desayuno: 'Hora del desayuno',
-  almuerzo: 'Hora del almuerzo',
-  cena: 'Hora de cenar',
-  snack: 'Hora del snack',
+function getMealLabel(mealType: string): string {
+  return i18n.t(`reminder.meal.${mealType}`, { defaultValue: i18n.t('reminder.meal.fallback') })
 }
 
 // Track active timeouts so we can clear them
@@ -50,13 +48,13 @@ function getDelayMs(hour: number, minute: number): number {
 async function fireNotification(reminder: SchedulableReminder): Promise<void> {
   const titles: Record<string, string> = {
     meal: reminder.label,
-    workout: 'Hora de entrenar!',
-    pause: 'Pausa Activa',
+    workout: i18n.t('reminder.workout.title'),
+    pause: i18n.t('reminder.pause.title'),
   }
   const bodies: Record<string, string> = {
-    meal: 'No te saltes esta comida — tu cuerpo lo necesita',
-    workout: 'Tu entrenamiento te espera. No pierdas la racha!',
-    pause: 'Levántate, estira y muévete — tu cuerpo lo agradece',
+    meal: i18n.t('reminder.meal.body'),
+    workout: i18n.t('reminder.workout.body'),
+    pause: i18n.t('reminder.pause.body'),
   }
   const urls: Record<string, string> = {
     meal: '/nutrition',
@@ -222,7 +220,7 @@ export function buildSchedulableReminders(
       minute: r.minute,
       daysOfWeek: r.daysOfWeek,
       enabled: r.enabled,
-      label: MEAL_LABELS[r.mealType] || 'Hora de comer',
+      label: getMealLabel(r.mealType),
     })
   }
 
@@ -235,7 +233,7 @@ export function buildSchedulableReminders(
       minute: r.minute,
       daysOfWeek: r.daysOfWeek,
       enabled: r.enabled,
-      label: isPause ? 'Pausa Activa' : 'Hora de entrenar!',
+      label: isPause ? i18n.t('reminder.pause.title') : i18n.t('reminder.workout.title'),
     })
   }
 

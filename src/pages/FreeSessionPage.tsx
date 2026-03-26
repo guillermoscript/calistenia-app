@@ -4,7 +4,8 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
 import catalogData from '../data/exercise-catalog.json'
-import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabel } from '../lib/equipment'
+import { useTranslation } from 'react-i18next'
+import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '../lib/equipment'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
@@ -207,6 +208,7 @@ function useDebounce<T>(value: T, ms: number): T {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function FreeSessionPage() {
+  const { t } = useTranslation()
   const { isActive: sessionActive, startSession: contextStartSession } = useActiveSession()
   const navigate = useNavigate()
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
@@ -456,7 +458,7 @@ export default function FreeSessionPage() {
                       : 'text-muted-foreground border-transparent hover:text-foreground',
                   )}
                 >
-                  {eq.icon} {eq.label}
+                  {eq.icon} {t(`equipment.${eq.id}`)}
                 </button>
               )
             })}

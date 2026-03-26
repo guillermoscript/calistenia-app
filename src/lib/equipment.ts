@@ -1,22 +1,23 @@
 /**
  * Equipment catalog and detection utility.
+ * Labels come from i18n — use t(getEquipmentLabelKey(id)) in consumers.
  */
 
-export const EQUIPMENT_CATALOG: { id: string; label: string; icon: string }[] = [
-  { id: 'ninguno', label: 'Sin equipo', icon: '🏋️' },
-  { id: 'barra_dominadas', label: 'Barra de dominadas', icon: '🔩' },
-  { id: 'paralelas', label: 'Paralelas', icon: '🪜' },
-  { id: 'anillas', label: 'Anillas', icon: '⭕' },
-  { id: 'banda_elastica', label: 'Banda elástica', icon: '🔗' },
-  { id: 'lastre', label: 'Lastre/Peso', icon: '🎒' },
-  { id: 'fitball', label: 'Fitball', icon: '🟡' },
-  { id: 'rueda_abdominal', label: 'Rueda abdominal', icon: '☸️' },
-  { id: 'trx', label: 'TRX', icon: '🪢' },
-  { id: 'banco', label: 'Banco/Silla', icon: '🪑' },
-  { id: 'kettlebell', label: 'Kettlebell', icon: '🔔' },
-  { id: 'pared', label: 'Pared', icon: '🧱' },
-  { id: 'toalla', label: 'Toalla', icon: '🧻' },
-  { id: 'escalon', label: 'Escalón', icon: '📦' },
+export const EQUIPMENT_CATALOG: { id: string; icon: string }[] = [
+  { id: 'ninguno', icon: '🏋️' },
+  { id: 'barra_dominadas', icon: '🔩' },
+  { id: 'paralelas', icon: '🪜' },
+  { id: 'anillas', icon: '⭕' },
+  { id: 'banda_elastica', icon: '🔗' },
+  { id: 'lastre', icon: '🎒' },
+  { id: 'fitball', icon: '🟡' },
+  { id: 'rueda_abdominal', icon: '☸️' },
+  { id: 'trx', icon: '🪢' },
+  { id: 'banco', icon: '🪑' },
+  { id: 'kettlebell', icon: '🔔' },
+  { id: 'pared', icon: '🧱' },
+  { id: 'toalla', icon: '🧻' },
+  { id: 'escalon', icon: '📦' },
 ]
 
 const EQUIPMENT_KEYWORDS: Record<string, string[]> = {
@@ -50,7 +51,6 @@ export function getExerciseEquipment(exercise: { name: string; note: string; equ
   return detectEquipment(exercise)
 }
 
-export function getEquipmentLabel(id: string): string {
-  const item = EQUIPMENT_CATALOG.find(e => e.id === id)
-  return item ? item.label : id
+export function getEquipmentLabelKey(id: string): string {
+  return `equipment.${id}`
 }

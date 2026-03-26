@@ -5,7 +5,8 @@ import { WORKOUTS } from '../data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
 import catalogData from '../data/exercise-catalog.json'
 import { useProgressions } from '../hooks/useProgressions'
-import { getExerciseEquipment, getEquipmentLabel, EQUIPMENT_CATALOG } from '../lib/equipment'
+import { useTranslation } from 'react-i18next'
+import { getExerciseEquipment, getEquipmentLabelKey, EQUIPMENT_CATALOG } from '../lib/equipment'
 import { calculateWorkoutDuration } from '../lib/duration'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
@@ -329,6 +330,7 @@ function ChevronRightIcon({ className }: { className?: string }) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ExerciseDetailPage() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [exercise, setExercise] = useState<CatalogExercise | null>(null)
@@ -681,7 +683,7 @@ export default function ExerciseDetailPage() {
               {equipment.map((id, i) => {
                 const catalogItem = EQUIPMENT_CATALOG.find(e => e.id === id)
                 const icon = catalogItem?.icon || ''
-                const label = getEquipmentLabel(id)
+                const label = t(getEquipmentLabelKey(id))
                 return (
                   <div
                     key={i}

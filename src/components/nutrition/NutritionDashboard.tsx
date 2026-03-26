@@ -5,6 +5,7 @@ import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 import EditMealSheet from './EditMealSheet'
 import MacroBar from './MacroBar'
+import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
 import type { NutritionEntry } from '../../types'
 
@@ -68,6 +69,7 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
 }
 
 export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry, onDuplicateEntry, selectedDate }: NutritionDashboardProps) {
+  const { t } = useTranslation()
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
@@ -165,7 +167,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                           >
                             <img
                               src={entry.photoUrls[0]}
-                              alt={`Foto de ${mealInfo.label.toLowerCase()}`}
+                              alt={`Foto de ${t(`meal.${entry.mealType}`).toLowerCase()}`}
                               className="w-full h-full object-cover"
                               loading="lazy"
                             />
@@ -188,7 +190,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               'text-[9px] tracking-widest',
                               mealInfo.color,
                             )}>
-                              {mealInfo.label.toUpperCase()}
+                              {t(`meal.${entry.mealType}`).toUpperCase()}
                             </span>
                             <span className="text-[10px] text-muted-foreground/60">{formatTime(entry.loggedAt)}</span>
                             <span className={cn(

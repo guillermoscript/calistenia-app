@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useCardioSessionContext } from '../contexts/CardioSessionContext'
 import { useCardioStats } from '../hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, pointsToGPX } from '../lib/geo'
+import { useTranslation } from 'react-i18next'
 import { CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { todayStr } from '../lib/dateUtils'
 import RouteMap from '../components/cardio/RouteMap'
@@ -15,10 +17,10 @@ import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { cn } from '../lib/utils'
 import type { CardioActivityType, CardioSession } from '../types'
 
-const ACTIVITIES: { id: CardioActivityType; label: string; icon: string }[] = [
-  { id: 'running', label: CARDIO_ACTIVITY.running.label, icon: CARDIO_ACTIVITY.running.icon },
-  { id: 'walking', label: CARDIO_ACTIVITY.walking.label, icon: CARDIO_ACTIVITY.walking.icon },
-  { id: 'cycling', label: CARDIO_ACTIVITY.cycling.label, icon: CARDIO_ACTIVITY.cycling.icon },
+const ACTIVITIES: { id: CardioActivityType; labelKey: string; icon: string }[] = [
+  { id: 'running', labelKey: 'cardio.running', icon: CARDIO_ACTIVITY.running.icon },
+  { id: 'walking', labelKey: 'cardio.walking', icon: CARDIO_ACTIVITY.walking.icon },
+  { id: 'cycling', labelKey: 'cardio.cycling', icon: CARDIO_ACTIVITY.cycling.icon },
 ]
 
 interface CardioSessionPageProps {
@@ -26,15 +28,24 @@ interface CardioSessionPageProps {
 }
 
 export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
+  const { t } = useTranslation()
   const {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
     start, pause, resume, finish, discard, getHistory, deleteSession,
   } = useCardioSessionContext()
 
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlProgram = searchParams.get('program')
+  const urlDayKey = searchParams.get('dayKey')
+  const urlActivity = searchParams.get('activity') as CardioActivityType | null
+  const urlTargetKm = searchParams.get('targetKm')
+  const urlTargetMin = searchParams.get('targetMin')
+  const isFromProgram = !!(urlProgram && urlDayKey)
+
   const { weeklyStats, monthlyStats, records, weeklyTrend, loadStats } = useCardioStats(userId)
 
-  const [selectedActivity, setSelectedActivity] = useState<CardioActivityType>('running')
+  const [selectedActivity, setSelectedActivity] = useState<CardioActivityType>(urlActivity || 'running')
   const [history, setHistory] = useState<CardioSession[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
   const [savedSession, setSavedSession] = useState<CardioSession | null>(null)
@@ -113,6 +124,19 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
       {/* Pre-session view */}
       {state === 'idle' && !savedSession && (
         <div className="space-y-6">
+          {/* Program banner */}
+          {isFromProgram && (
+            <div className="p-3 rounded-lg bg-emerald-400/10 border border-emerald-400/20 text-center">
+              <div className="text-[10px] text-emerald-400 tracking-widest uppercase mb-1">Desde tu programa</div>
+              {urlTargetKm && (
+                <span className="text-sm text-emerald-400 font-medium mr-3">Meta: {urlTargetKm} km</span>
+              )}
+              {urlTargetMin && (
+                <span className="text-sm text-emerald-400 font-medium">Duracion: {urlTargetMin} min</span>
+              )}
+            </div>
+          )}
+
           {/* Activity selector */}
           <div id="tour-cardio-activity" className="flex gap-2 p-1 bg-muted/50 rounded-xl" role="radiogroup" aria-label="Tipo de actividad">
             {ACTIVITIES.map(act => (
@@ -120,7 +144,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 key={act.id}
                 role="radio"
                 aria-checked={selectedActivity === act.id}
-                aria-label={act.label}
+                aria-label={t(act.labelKey)}
                 onClick={() => setSelectedActivity(act.id)}
                 className={cn(
                   'flex-1 flex flex-col items-center gap-1 py-4 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:outline-none',
@@ -130,7 +154,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 )}
               >
                 <span className="text-2xl" aria-hidden="true">{act.icon}</span>
-                <span className="text-[11px] font-mono tracking-widest">{act.label}</span>
+                <span className="text-[11px] font-mono tracking-widest">{t(act.labelKey)}</span>
               </button>
             ))}
           </div>
@@ -138,10 +162,19 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* Start button */}
           <Button
             id="tour-cardio-start"
-            onClick={() => start(selectedActivity)}
-            className="w-full h-14 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-xl tracking-widest shadow-lg shadow-lime/10"
+            onClick={() => {
+              start(selectedActivity, urlProgram || undefined, urlDayKey || undefined)
+              // Clear URL params after starting
+              if (isFromProgram) setSearchParams({}, { replace: true })
+            }}
+            className={cn(
+              'w-full h-14 font-bebas text-xl tracking-widest shadow-lg',
+              isFromProgram
+                ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/10'
+                : 'bg-lime hover:bg-lime/90 text-zinc-900 shadow-lime/10'
+            )}
           >
-            INICIAR {ACTIVITIES.find(a => a.id === selectedActivity)?.label.toUpperCase()}
+            INICIAR {t(ACTIVITIES.find(a => a.id === selectedActivity)?.labelKey || 'cardio.running').toUpperCase()}
           </Button>
 
           {/* History */}
@@ -168,7 +201,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             <div className="flex items-center gap-2">
               <span className="text-xl">{ACTIVITIES.find(a => a.id === activityType)?.icon}</span>
               <span className="font-bebas text-lg tracking-widest uppercase">
-                {ACTIVITIES.find(a => a.id === activityType)?.label}
+                {t(`cardio.${activityType}`)}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -303,7 +336,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             open={showDiscardConfirm}
             onOpenChange={setShowDiscardConfirm}
             title="Descartar sesión"
-            description={`¿Descartar esta sesión de ${ACTIVITIES.find(a => a.id === activityType)?.label.toLowerCase()}? Se perderán todos los datos.`}
+            description={`¿Descartar esta sesión de ${t(`cardio.${activityType}`).toLowerCase()}? Se perderán todos los datos.`}
             confirmLabel="DESCARTAR"
             cancelLabel="SEGUIR"
             variant="destructive"

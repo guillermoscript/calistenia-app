@@ -10,12 +10,13 @@ import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
-import { PRIORITY_COLORS } from '../lib/style-tokens'
-import type { ProgramMeta, Priority } from '../types'
+import { PRIORITY_COLORS, CARDIO_ACTIVITY } from '../lib/style-tokens'
+import type { ProgramMeta, Priority, CardioDayConfig, CardioActivityType } from '../types'
 import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
+import { useTranslation } from 'react-i18next'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -32,8 +33,10 @@ interface ProgramWorkout {
   day: string
   dayName: string
   dayFocus: string
+  dayType?: string
   title: string
   exercises: ProgramExercise[]
+  cardioConfig?: CardioDayConfig
 }
 
 interface ProgramExercise {
@@ -122,6 +125,7 @@ export default function ProgramDetailPage({
   isSharedView = false,
   onLogin,
 }: ProgramDetailPageProps) {
+  const { t } = useTranslation()
   const [program, setProgram] = useState<ProgramMeta | null>(null)
   const [phases, setPhases] = useState<ProgramPhase[]>([])
   const [workouts, setWorkouts] = useState<ProgramWorkout[]>([])
@@ -183,15 +187,44 @@ export default function ProgramDetailPage({
         setSelectedPhase(String(builtPhases[0].id))
       }
 
-      // Fetch exercises
-      const exercisesRes = await pb.collection('program_exercises').getList(1, 2000, {
-        filter: pb.filter('program = {:pid}', { pid: programId }),
-        sort: 'phase_number,sort_order',
-        $autoCancel: false,
-      })
+      // Fetch exercises and day config
+      const [exercisesRes, dayConfigRes] = await Promise.all([
+        pb.collection('program_exercises').getList(1, 2000, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+          sort: 'phase_number,sort_order',
+          $autoCancel: false,
+        }),
+        pb.collection('program_day_config').getList(1, 200, {
+          filter: pb.filter('program = {:pid}', { pid: programId }),
+          sort: 'phase_number,sort_order',
+          $autoCancel: false,
+        }).catch(() => ({ items: [] })),
+      ])
 
       // Build workouts grouped by phase+day
       const workoutMap: Record<string, ProgramWorkout> = {}
+
+      // First, add cardio day entries from day config
+      dayConfigRes.items.forEach((dc: RecordModel) => {
+        if (dc.day_type === 'cardio') {
+          const key = `p${dc.phase_number}_${dc.day_id}`
+          workoutMap[key] = {
+            phase: dc.phase_number,
+            day: dc.day_id,
+            dayName: dc.day_name,
+            dayFocus: dc.day_focus,
+            dayType: 'cardio',
+            title: dc.day_focus,
+            exercises: [],
+            cardioConfig: {
+              activityType: (dc.cardio_activity_type || 'running') as CardioActivityType,
+              targetDistanceKm: dc.cardio_target_distance_km || undefined,
+              targetDurationMin: dc.cardio_target_duration_min || undefined,
+            },
+          }
+        }
+      })
+
       exercisesRes.items.forEach((r: RecordModel) => {
         const key = `p${r.phase_number}_${r.day_id}`
         if (!workoutMap[key]) {
@@ -200,6 +233,7 @@ export default function ProgramDetailPage({
             day: r.day_id,
             dayName: r.day_name,
             dayFocus: r.day_focus,
+            dayType: r.day_type,
             title: r.workout_title,
             exercises: [],
           }
@@ -608,7 +642,10 @@ export default function ProgramDetailPage({
                                   </span>
                                 )}
                                 <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase">
-                                  {workout.exercises.length} ej · ~{workoutDurations[dayKey] || 0} min
+                                  {workout.dayType === 'cardio'
+                                    ? `${CARDIO_ACTIVITY[workout.cardioConfig?.activityType || 'running']?.icon || '🏃'} Cardio`
+                                    : `${workout.exercises.length} ej · ~${workoutDurations[dayKey] || 0} min`
+                                  }
                                 </span>
                               </div>
                               {sessionInfo && (
@@ -624,7 +661,23 @@ export default function ProgramDetailPage({
                           </button>
 
                           {/* Exercise list — collapsible */}
-                          {isExpanded && (
+                          {isExpanded && workout.dayType === 'cardio' && (
+                            <div className="border-t border-border/60 motion-safe:animate-fade-in px-5 py-6 text-center">
+                              <div className="text-3xl mb-2">{CARDIO_ACTIVITY[workout.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
+                              <div className="font-bebas text-lg text-emerald-400 tracking-wide mb-1">
+                                {t(`cardio.${workout.cardioConfig?.activityType || 'running'}`)}
+                              </div>
+                              <div className="flex justify-center gap-4 text-sm text-muted-foreground">
+                                {workout.cardioConfig?.targetDistanceKm && (
+                                  <span>Meta: <strong className="text-emerald-400">{workout.cardioConfig.targetDistanceKm} km</strong></span>
+                                )}
+                                {workout.cardioConfig?.targetDurationMin && (
+                                  <span>Duracion: <strong className="text-emerald-400">{workout.cardioConfig.targetDurationMin} min</strong></span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {isExpanded && workout.dayType !== 'cardio' && (
                             <div className="border-t border-border/60 motion-safe:animate-fade-in">
                               {workout.exercises.map((exercise, idx) => (
                                 <div
