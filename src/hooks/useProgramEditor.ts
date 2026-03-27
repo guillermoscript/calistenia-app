@@ -11,6 +11,8 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS, WORKOUTS } from '../data/workouts'
+import i18n from '../lib/i18n'
+import { localize, toTranslatable } from '../lib/i18n-db'
 
 // ─── Editor types ────────────────────────────────────────────────────────────
 
@@ -312,10 +314,11 @@ export function useProgramEditor() {
         }),
       ])
 
+      const locale = i18n.language
       const loadedPhases: EditorPhase[] = phasesRes.items
         .sort((a, b) => a.sort_order - b.sort_order)
         .map(p => ({
-          name: p.name,
+          name: localize(p.name, locale),
           weeks: p.weeks,
           color: p.color,
           bgColor: p.bg_color,
@@ -336,8 +339,8 @@ export function useProgramEditor() {
         const key = `${phaseIndex}_${dc.day_id}`
         dayConfigKeys.add(key)
         if (days[key]) {
-          days[key].dayName = dc.day_name || days[key].dayName
-          days[key].focus = dc.day_focus || days[key].focus
+          days[key].dayName = localize(dc.day_name, locale) || days[key].dayName
+          days[key].focus = localize(dc.day_focus, locale) || days[key].focus
           days[key].type = dc.day_type || days[key].type
           days[key].color = dc.day_color || days[key].color
           if (dc.day_type === 'cardio') {
@@ -364,20 +367,20 @@ export function useProgramEditor() {
         }
         // Update day metadata from first record only if no day config exists
         if (!dayConfigKeys.has(key)) {
-          days[key].dayName = r.day_name
-          days[key].focus = r.day_focus
+          days[key].dayName = localize(r.day_name, locale)
+          days[key].focus = localize(r.day_focus, locale)
           days[key].type = r.day_type
           days[key].color = r.day_color
         }
 
         days[key].exercises.push({
           exerciseId: r.exercise_id,
-          name: r.exercise_name,
+          name: localize(r.exercise_name, locale),
           sets: r.sets,
           reps: r.reps,
           rest: r.rest_seconds,
-          muscles: r.muscles,
-          note: r.note,
+          muscles: localize(r.muscles, locale),
+          note: localize(r.note, locale),
           youtube: r.youtube,
           priority: r.priority,
           isTimer: r.is_timer || false,
@@ -389,8 +392,8 @@ export function useProgramEditor() {
         programId,
         step: 1,
         info: {
-          name: program.name,
-          description: program.description || '',
+          name: localize(program.name, locale),
+          description: localize(program.description, locale) || '',
           durationWeeks: program.duration_weeks || 26,
           isOfficial: program.is_official || false,
           difficulty: program.difficulty || 'beginner',
@@ -421,10 +424,12 @@ export function useProgramEditor() {
     try {
       let programId = state.programId
 
+      const locale = i18n.language
+
       // Create or update the program record
       const programData: Record<string, unknown> = {
-        name: state.info.name,
-        description: state.info.description,
+        name: toTranslatable(state.info.name, locale),
+        description: toTranslatable(state.info.description, locale),
         duration_weeks: state.info.durationWeeks,
         is_active: true,
       }
@@ -468,7 +473,7 @@ export function useProgramEditor() {
         await pb.collection('program_phases').create({
           program: programId,
           phase_number: pi + 1,
-          name: phase.name,
+          name: toTranslatable(phase.name, locale),
           weeks: phase.weeks,
           color: phase.color,
           bg_color: phase.bgColor,
@@ -500,9 +505,9 @@ export function useProgramEditor() {
             program: programId,
             phase_number: pi + 1,
             day_id: day.dayId,
-            day_name: day.dayName,
+            day_name: toTranslatable(day.dayName, locale),
             day_type: day.type,
-            day_focus: day.focus,
+            day_focus: toTranslatable(day.focus, locale),
             day_color: day.color,
             sort_order: daySortOrder,
           }
@@ -521,17 +526,17 @@ export function useProgramEditor() {
               program: programId,
               phase_number: pi + 1,
               day_id: day.dayId,
-              day_name: day.dayName,
-              day_focus: day.focus,
+              day_name: toTranslatable(day.dayName, locale),
+              day_focus: toTranslatable(day.focus, locale),
               day_type: day.type,
               day_color: day.color,
               exercise_id: ex.exerciseId,
-              exercise_name: ex.name,
+              exercise_name: toTranslatable(ex.name, locale),
               sets: ex.sets,
               reps: ex.reps,
               rest_seconds: ex.rest,
-              muscles: ex.muscles,
-              note: ex.note,
+              muscles: toTranslatable(ex.muscles, locale),
+              note: toTranslatable(ex.note, locale),
               youtube: ex.youtube,
               priority: ex.priority,
               is_timer: ex.isTimer,

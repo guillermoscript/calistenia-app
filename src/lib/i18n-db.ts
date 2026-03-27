@@ -22,3 +22,11 @@ export function localize(
   if (typeof field === 'string') return field
   return field[locale] ?? field['es'] ?? Object.values(field)[0] ?? ''
 }
+
+/**
+ * Wrap a user-entered string in an i18n JSON object keyed by the current locale.
+ * Used when saving user-created content to PocketBase.
+ */
+export function toTranslatable(value: string, locale: string): Record<string, string> {
+  return { [locale]: value }
+}

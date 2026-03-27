@@ -17,6 +17,7 @@ import { ShareButton } from '../components/ShareButton'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 import { useTranslation } from 'react-i18next'
+import { localize } from '../lib/i18n-db'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -125,7 +126,8 @@ export default function ProgramDetailPage({
   isSharedView = false,
   onLogin,
 }: ProgramDetailPageProps) {
-  const { t } = useTranslation()
+  const { t, i18n: i18nInstance } = useTranslation()
+  const locale = i18nInstance.language
   const [program, setProgram] = useState<ProgramMeta | null>(null)
   const [phases, setPhases] = useState<ProgramPhase[]>([])
   const [workouts, setWorkouts] = useState<ProgramWorkout[]>([])
@@ -161,8 +163,8 @@ export default function ProgramDetailPage({
       const progRecord = await pb.collection('programs').getOne(programId, { $autoCancel: false })
       const meta: ProgramMeta = {
         id: progRecord.id,
-        name: progRecord.name,
-        description: progRecord.description,
+        name: localize(progRecord.name, locale),
+        description: localize(progRecord.description, locale),
         duration_weeks: progRecord.duration_weeks,
         created_by: progRecord.created_by || undefined,
       }
@@ -176,7 +178,7 @@ export default function ProgramDetailPage({
       })
       const builtPhases: ProgramPhase[] = phasesRes.items.map(p => ({
         id: p.phase_number,
-        name: p.name,
+        name: localize(p.name, locale),
         weeks: p.weeks,
         color: p.color,
         bg: p.bg_color,
@@ -212,10 +214,10 @@ export default function ProgramDetailPage({
             workoutMap[key] = {
               phase: dc.phase_number,
               day: dc.day_id,
-              dayName: dc.day_name,
-              dayFocus: dc.day_focus,
+              dayName: localize(dc.day_name, locale),
+              dayFocus: localize(dc.day_focus, locale),
               dayType: 'cardio',
-              title: dc.day_focus,
+              title: localize(dc.day_focus, locale),
               exercises: [],
               cardioConfig: {
                 activityType: (dc.cardio_activity_type || 'running') as CardioActivityType,
@@ -233,21 +235,21 @@ export default function ProgramDetailPage({
           workoutMap[key] = {
             phase: r.phase_number,
             day: r.day_id,
-            dayName: r.day_name,
-            dayFocus: r.day_focus,
+            dayName: localize(r.day_name, locale),
+            dayFocus: localize(r.day_focus, locale),
             dayType: r.day_type,
-            title: r.workout_title,
+            title: localize(r.workout_title, locale),
             exercises: [],
           }
         }
         workoutMap[key].exercises.push({
           id: r.exercise_id,
-          name: r.exercise_name,
+          name: localize(r.exercise_name, locale),
           sets: r.sets,
           reps: r.reps,
           rest: r.rest_seconds,
-          muscles: r.muscles,
-          note: r.note,
+          muscles: localize(r.muscles, locale),
+          note: localize(r.note, locale),
           youtube: r.youtube,
           priority: r.priority,
           isTimer: r.is_timer,
@@ -288,8 +290,8 @@ export default function ProgramDetailPage({
         })
         setRelatedPrograms(relatedRes.items.map(p => ({
           id: p.id,
-          name: p.name,
-          description: p.description,
+          name: localize(p.name, locale),
+          description: localize(p.description, locale),
           duration_weeks: p.duration_weeks,
           created_by: p.created_by || undefined,
         })))
@@ -303,7 +305,7 @@ export default function ProgramDetailPage({
     } finally {
       setLoading(false)
     }
-  }, [programId])
+  }, [programId, locale])
 
   useEffect(() => {
     fetchProgram()

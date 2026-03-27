@@ -29,6 +29,8 @@ import {
 } from '../data/workouts'
 import { nowLocalForPB } from '../lib/dateUtils'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
+import i18n from '../lib/i18n'
+import { localize } from '../lib/i18n-db'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -36,11 +38,12 @@ import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId
  * Build PHASES array from program_phases PB records.
  */
 function buildPhases(phaseRecords: RecordModel[]): Phase[] {
+  const locale = i18n.language
   return [...phaseRecords]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(p => ({
       id:    p.phase_number,
-      name:  p.name,
+      name:  localize(p.name, locale),
       weeks: p.weeks,
       color: p.color,
       bg:    p.bg_color,
@@ -53,6 +56,7 @@ function buildPhases(phaseRecords: RecordModel[]): Phase[] {
  */
 function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordModel[] = []): WeekDay[] {
   const ORDER: string[] = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
+  const locale = i18n.language
   const seen: Record<string, WeekDay> = {}
 
   // Primary source: day config records
@@ -60,8 +64,8 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
     if (!seen[dc.day_id]) {
       const day: WeekDay = {
         id:    dc.day_id as DayId,
-        name:  dc.day_name,
-        focus: dc.day_focus,
+        name:  localize(dc.day_name, locale),
+        focus: localize(dc.day_focus, locale),
         type:  dc.day_type,
         color: dc.day_color,
       }
@@ -81,8 +85,8 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
     if (!seen[r.day_id]) {
       seen[r.day_id] = {
         id:    r.day_id as DayId,
-        name:  r.day_name,
-        focus: r.day_focus,
+        name:  localize(r.day_name, locale),
+        focus: localize(r.day_focus, locale),
         type:  r.day_type,
         color: r.day_color,
       }
@@ -122,6 +126,7 @@ function buildCardioDayConfigs(dayConfigRecords: RecordModel[]): Record<string, 
  * Shape: { 'p1_lun': { phase, day, title, exercises: [...] }, ... }
  */
 function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
+  const locale = i18n.language
   const map: WorkoutsMap = {}
   exerciseRecords.forEach(r => {
     const key = `p${r.phase_number}_${r.day_id}`
@@ -129,18 +134,18 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
       map[key] = {
         phase: r.phase_number,
         day:   r.day_id as DayId,
-        title: r.workout_title,
+        title: localize(r.workout_title, locale),
         exercises: [],
       }
     }
     map[key].exercises.push({
       id:           r.exercise_id,
-      name:         r.exercise_name,
+      name:         localize(r.exercise_name, locale),
       sets:         r.sets,
       reps:         r.reps,
       rest:         r.rest_seconds,
-      muscles:      r.muscles,
-      note:         r.note,
+      muscles:      localize(r.muscles, locale),
+      note:         localize(r.note, locale),
       youtube:      r.youtube,
       priority:     r.priority,
       isTimer:      r.is_timer,
@@ -246,10 +251,11 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       expand: 'created_by',
       $autoCancel: false,
     })
+    const locale = i18n.language
     const catalog: ProgramMeta[] = catalogRes.items.map(p => ({
       id:             p.id,
-      name:           p.name,
-      description:    p.description,
+      name:           localize(p.name, locale),
+      description:    localize(p.description, locale),
       duration_weeks: p.duration_weeks,
       created_by:     p.created_by || undefined,
       created_by_name: (p.expand as any)?.created_by?.display_name || undefined,
@@ -473,10 +479,11 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       }
 
       // 6. Update local programs list
+      const locale = i18n.language
       const newMeta: ProgramMeta = {
         id:             newProgram.id,
-        name:           newProgram.name,
-        description:    newProgram.description,
+        name:           localize(newProgram.name, locale),
+        description:    localize(newProgram.description, locale),
         duration_weeks: newProgram.duration_weeks,
       }
       setPrograms(prev => [...prev, newMeta])
