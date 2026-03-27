@@ -2,34 +2,20 @@
 migrate((app) => {
   const collection = app.findCollectionByNameOrId("cardio_sessions")
 
-  collection.fields.add({
-    "cascadeDelete": false,
-    "collectionId": "pbc_2970041692",
-    "hidden": false,
-    "id": "relation_cardio_program",
-    "maxSelect": 1,
-    "minSelect": 0,
-    "name": "program",
-    "presentable": false,
-    "required": false,
-    "system": false,
-    "type": "relation"
-  })
+  collection.fields.add(new Field({
+    name: "program",
+    type: "relation",
+    required: false,
+    collectionId: "pbc_2970041692",
+    cascadeDelete: false,
+    maxSelect: 1,
+  }))
 
-  collection.fields.add({
-    "autogeneratePattern": "",
-    "hidden": false,
-    "id": "text_cardio_program_day_key",
-    "max": 0,
-    "min": 0,
-    "name": "program_day_key",
-    "pattern": "",
-    "presentable": false,
-    "primaryKey": false,
-    "required": false,
-    "system": false,
-    "type": "text"
-  })
+  collection.fields.add(new Field({
+    name: "program_day_key",
+    type: "text",
+    required: false,
+  }))
 
   app.save(collection)
 }, (app) => {
