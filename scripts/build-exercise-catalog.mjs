@@ -351,7 +351,7 @@ async function fetchWgerExercises() {
     const nameField = { es: displayNameEs || enName, ...(enName ? { en: enName } : {}) }
 
     // Category
-    const category = inferCategory(ex.name, muscles, description)
+    const category = inferCategory(ex.name, muscles, str(description))
     const difficulty = inferDifficulty(ex.name)
 
     // Images — store URLs from wger
