@@ -887,6 +887,175 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   );
 
   // ──────────────────────────────────────────────────────────────
+  // SEED PROGRAM FROM JSON
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "cal_seed_program_from_json",
+    {
+      title: "Seed Program from JSON",
+      description:
+        "Import a complete program from a JSON object matching the program export format. " +
+        "Accepts the same structure as intermedio_balance_total.json: { program: {...}, phases: [{...}] }. " +
+        "Creates the program as official. All text is stored with i18n support.",
+      inputSchema: z
+        .object({
+          program: z.object({
+            name: z.string(),
+            description: z.string().optional(),
+            difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+            duration_weeks: z.number().int().optional(),
+          }),
+          phases: z.array(z.object({
+            phase_number: z.number().int(),
+            name: z.string(),
+            weeks: z.string().optional(),
+            color: z.string().optional(),
+            days: z.array(z.object({
+              day_id: z.string(),
+              day_name: z.string(),
+              day_focus: z.string().optional(),
+              workout_title: z.string().optional(),
+              exercises: z.array(z.object({
+                sort_order: z.number().int().optional(),
+                name: z.string(),
+                muscles: z.string().optional(),
+                sets: z.number().int().optional(),
+                reps: z.string().optional(),
+                rest_seconds: z.number().int().optional(),
+                priority: z.string().optional(),
+                is_timer: z.boolean().optional(),
+                timer_seconds: z.number().int().optional(),
+                note: z.string().optional(),
+                youtube: z.string().optional(),
+              })),
+            })),
+          })).min(1),
+          is_official: z.boolean().default(true).describe("Mark as official program"),
+          set_as_current: z.boolean().default(false).describe("Set as user's current program"),
+        })
+        .strict(),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    },
+    async (input) => {
+      try {
+        const dayTypeMap: Record<string, string> = {
+          lun: "push", mar: "pull", mie: "lumbar", jue: "legs",
+          vie: "full", sab: "rest", dom: "rest",
+        };
+        const priorityMap: Record<string, string> = {
+          primary: "high", secondary: "med", accessory: "low",
+        };
+
+        // 1. Create program
+        const program = await pb.collection("programs").create({
+          name: toTranslatable(input.program.name),
+          description: toTranslatable(input.program.description || ""),
+          duration_weeks: input.program.duration_weeks || 0,
+          difficulty: input.program.difficulty || "",
+          is_active: true,
+          is_official: input.is_official,
+          created_by: userId,
+        });
+
+        let totalExercises = 0;
+        const batch = pb.createBatch();
+
+        for (const phase of input.phases) {
+          batch.collection("program_phases").create({
+            program: program.id,
+            phase_number: phase.phase_number,
+            name: toTranslatable(phase.name),
+            weeks: phase.weeks || "",
+            color: phase.color || "#888",
+            sort_order: phase.phase_number,
+          });
+
+          for (const day of phase.days) {
+            for (let ei = 0; ei < day.exercises.length; ei++) {
+              const ex = day.exercises[ei];
+              batch.collection("program_exercises").create({
+                program: program.id,
+                phase_number: phase.phase_number,
+                day_id: day.day_id,
+                day_name: toTranslatable(day.day_name),
+                day_focus: toTranslatable(day.day_focus || ""),
+                day_type: dayTypeMap[day.day_id] || "full",
+                day_color: phase.color || "#888",
+                workout_title: toTranslatable(day.workout_title || day.day_focus || ""),
+                exercise_id: ex.name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/_+$/, ""),
+                exercise_name: toTranslatable(ex.name),
+                sets: ex.sets ?? 3,
+                reps: ex.reps || "8-12",
+                rest_seconds: ex.rest_seconds ?? 60,
+                muscles: toTranslatable(ex.muscles || ""),
+                note: toTranslatable(ex.note || ""),
+                youtube: ex.youtube || "",
+                is_timer: ex.is_timer || false,
+                timer_seconds: ex.timer_seconds || 0,
+                sort_order: ex.sort_order ?? ei + 1,
+                priority: priorityMap[ex.priority || ""] || ex.priority || "med",
+              });
+              totalExercises++;
+            }
+          }
+        }
+
+        await batch.send();
+
+        // Optionally set as current
+        if (input.set_as_current) {
+          const current = await pb.collection("user_programs").getFullList({
+            filter: pb.filter("user = {:userId} && is_current = true", { userId }),
+            fields: "id",
+          });
+          if (current.length > 0) {
+            const deactivateBatch = pb.createBatch();
+            for (const up of current) {
+              deactivateBatch.collection("user_programs").update(up.id, { is_current: false });
+            }
+            await deactivateBatch.send();
+          }
+          await pb.collection("user_programs").create({
+            user: userId,
+            program: program.id,
+            is_current: true,
+            started_at: new Date().toISOString(),
+          });
+        }
+
+        const summary = input.phases.map((p) => {
+          const exCount = p.days.reduce((s, d) => s + d.exercises.length, 0);
+          return `  Phase ${p.phase_number}: ${p.name} — ${p.days.length} days, ${exCount} exercises`;
+        });
+
+        return {
+          content: [{
+            type: "text",
+            text: [
+              `✅ Seeded program **${input.program.name}** (ID: ${program.id})`,
+              `${input.phases.length} phases, ${totalExercises} total exercises`,
+              input.is_official ? "Marked as official." : "",
+              input.set_as_current ? "Set as current program." : "",
+              "",
+              ...summary,
+            ].join("\n"),
+          }],
+          structuredContent: {
+            id: program.id,
+            name: input.program.name,
+            phases: input.phases.length,
+            total_exercises: totalExercises,
+            is_official: input.is_official,
+            is_current: input.set_as_current,
+          },
+        };
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
   // DUPLICATE PROGRAM
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
