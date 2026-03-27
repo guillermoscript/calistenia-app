@@ -263,7 +263,7 @@ const NAV_SECTIONS: { labelKey: string; items: NavItem[] }[] = [
 ]
 
 function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { open, isMobile, setOpenMobile } = useSidebar()
   const navigate = useNavigate()
   const location = useLocation()
@@ -370,6 +370,16 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
             <span className="text-sm font-medium text-foreground truncate block">{t(getBreadcrumbKey(location.pathname))}</span>
           </nav>
           <div className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* Language toggle */}
+            <button
+              onClick={() => i18n.changeLanguage(i18n.language.startsWith('en') ? 'es' : 'en')}
+              className="inline-flex items-center h-7 rounded-md border border-border bg-muted/50 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-border/70 transition-colors overflow-hidden"
+              aria-label={t('profile.language')}
+              title={t('profile.language')}
+            >
+              <span className={cn('px-1.5 py-0.5 transition-colors', i18n.language.startsWith('es') ? 'bg-lime-500/15 text-lime-500' : '')}>ES</span>
+              <span className={cn('px-1.5 py-0.5 transition-colors', i18n.language.startsWith('en') ? 'bg-lime-500/15 text-lime-500' : '')}>EN</span>
+            </button>
             <span className="hidden sm:inline-flex text-[11px] text-muted-foreground border border-border rounded px-2 py-0.5 font-mono">{t('nav.phase')} {settings.phase}</span>
             <Button variant="ghost" size="icon" onClick={() => replayTourForPage(location.pathname)} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={t('nav.pageGuide')} title={t('nav.pageGuide')}>
               <span className="text-sm font-bold">?</span>
@@ -377,6 +387,15 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
             <Button variant="ghost" size="icon" onClick={toggleDark} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={dark ? t('nav.lightMode') : t('nav.darkMode')}>
               {dark ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
             </Button>
+            {/* Profile avatar */}
+            <button
+              onClick={() => handleNav('/profile')}
+              className="size-7 rounded-full bg-accent flex items-center justify-center text-[11px] font-semibold text-foreground shrink-0 hover:ring-2 hover:ring-lime-500/40 transition-all"
+              aria-label={t('nav.profile')}
+              title={t('nav.profile')}
+            >
+              {displayName?.[0]?.toUpperCase() ?? '?'}
+            </button>
           </div>
         </header>
         <main className="flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">{children}</main>
