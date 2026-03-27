@@ -29,7 +29,7 @@ RUN npm run build
 # ─────────────────────────────────────────────
 FROM alpine:3.19 AS pb-downloader
 
-ARG PB_VERSION=0.27.1
+ARG PB_VERSION=0.36.7
 
 RUN apk add --no-cache curl unzip \
     && curl -fsSL \
