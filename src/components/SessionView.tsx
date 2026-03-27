@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Image } from 'lucide-react'
+import i18n from '../lib/i18n'
 import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
 import Timer from './Timer'
@@ -27,31 +29,16 @@ interface Quote {
   a: string
 }
 
-const LOCAL_QUOTES: Quote[] = [
-  { q: "El único mal entrenamiento es el que no hiciste.", a: "Desconocido" },
-  { q: "El éxito es la suma de pequeños esfuerzos repetidos día tras día.", a: "Robert Collier" },
-  { q: "La fuerza no viene del cuerpo. Viene de la voluntad del alma.", a: "Gandhi" },
-  { q: "No tienes que ser grande para empezar, pero tienes que empezar para ser grande.", a: "Zig Ziglar" },
-  { q: "El cuerpo logra lo que la mente cree.", a: "Desconocido" },
-  { q: "Sin dolor no hay ganancia. Cállate y entrena.", a: "Desconocido" },
-  { q: "Empújate a ti mismo porque nadie más lo va a hacer por ti.", a: "Desconocido" },
-  { q: "Cuida tu cuerpo. Es el único lugar donde tienes que vivir.", a: "Jim Rohn" },
-  { q: "Tu cuerpo puede soportar casi todo. Es tu mente la que tienes que convencer.", a: "Desconocido" },
-  { q: "La disciplina es el puente entre las metas y los logros.", a: "Jim Rohn" },
-  { q: "La diferencia entre intentar y triunfar es solo un poco más de esfuerzo.", a: "Marvin Phillips" },
-  { q: "Caer siete veces, levantarse ocho.", a: "Proverbio japonés" },
-  { q: "Nunca se vuelve más fácil, tú te vuelves más fuerte.", a: "Desconocido" },
-  { q: "El secreto de avanzar es empezar.", a: "Mark Twain" },
-  { q: "Somos lo que hacemos repetidamente. La excelencia no es un acto, sino un hábito.", a: "Aristóteles" },
-  { q: "El trabajo duro vence al talento cuando el talento no trabaja duro.", a: "Tim Notke" },
-  { q: "El dolor que sientes hoy será la fuerza que sentirás mañana.", a: "Desconocido" },
-  { q: "Pequeñas mejoras diarias son la clave de resultados extraordinarios.", a: "Desconocido" },
-  { q: "Los campeones no se hacen en los gimnasios. Se hacen de algo profundo en su interior.", a: "Muhammad Ali" },
-  { q: "No se trata de ser el mejor. Se trata de ser mejor que ayer.", a: "Desconocido" },
-]
+function getLocalQuotes(): Quote[] {
+  return Array.from({ length: 20 }, (_, i) => ({
+    q: i18n.t(`motivation.quote${i}`),
+    a: i18n.t(`motivation.author${i}`),
+  }))
+}
 
 function getLocalQuote(): Quote {
-  return LOCAL_QUOTES[Math.floor(Math.random() * LOCAL_QUOTES.length)]
+  const quotes = getLocalQuotes()
+  return quotes[Math.floor(Math.random() * quotes.length)]
 }
 
 interface Step {
@@ -140,6 +127,7 @@ interface RestScreenProps {
 }
 
 function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, savedRest, onAdjust }: RestScreenProps) {
+  const { t } = useTranslation()
   const initialSeconds = savedRest || defaultSeconds
   const [remaining, setRemaining] = useState<number>(initialSeconds)
   const [totalSecs, setTotalSecs] = useState<number>(initialSeconds)
@@ -234,7 +222,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
         }
       `}</style>
 
-      <div className="text-[11px] tracking-[4px] text-muted-foreground uppercase font-mono">Descansando</div>
+      <div className="text-[11px] tracking-[4px] text-muted-foreground uppercase font-mono">{t('session.resting')}</div>
 
       <div
         className="relative rounded-full transition-shadow duration-500"
@@ -302,10 +290,10 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
         onClick={onSkip}
         className="border-lime/25 bg-lime/7 text-lime hover:bg-lime/15 font-mono text-[11px] tracking-[2px] px-8"
       >
-        SALTAR DESCANSO →
+        {t('session.skipRest')}
       </Button>
 
-      <div className="text-[11px] text-muted-foreground/50 font-mono sm:hidden">desliza → para saltar</div>
+      <div className="text-[11px] text-muted-foreground/50 font-mono sm:hidden">{t('session.swipeToSkip')}</div>
     </div>
   )
 }
@@ -319,6 +307,7 @@ interface ExerciseScreenProps {
 }
 
 const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] }: ExerciseScreenProps) {
+  const { t } = useTranslation()
   const [editOpen,   setEditOpen]   = useState<boolean>(false)
   const [customReps, setCustomReps] = useState<string>('')
   const [customNote, setCustomNote] = useState<string>('')
@@ -408,7 +397,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           </div>
           <div className="flex items-baseline gap-3 flex-wrap">
             <span className="font-mono text-[13px] text-lime tracking-wide">{exercise.reps}</span>
-            <span className="font-mono text-[11px] text-muted-foreground">· descanso {exercise.rest}s</span>
+            <span className="font-mono text-[11px] text-muted-foreground">· {t('common.rest')} {exercise.rest}s</span>
             <span className="font-mono text-[10px] tracking-wide text-muted-foreground">
               {exercise.muscles}
             </span>
@@ -516,7 +505,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           <div className="flex gap-2">
             <button
               onClick={() => setEditOpen(v => !v)}
-              aria-label={editOpen ? 'Cerrar editor de serie' : 'Editar serie personalizada'}
+              aria-label={editOpen ? t('session.closeSetEditor') : t('session.editCustomSet')}
               aria-expanded={editOpen}
               className={cn(
                 'flex-1 min-h-[44px] px-2.5 rounded-md cursor-pointer font-mono text-[10px] tracking-wide transition-all duration-150 border focus-visible:ring-2 focus-visible:ring-lime/40',
@@ -525,7 +514,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   : 'border-border text-muted-foreground hover:border-lime/30 hover:text-lime'
               )}
             >
-              ✏ EDITAR
+              {t('session.editBtn')}
             </button>
 
             {exercise.demoImages && exercise.demoImages.length > 0 && (
@@ -566,7 +555,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   max="999"
                   value={customWeight}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomWeight(e.target.value)}
-                  placeholder="Lastre kg"
+                  placeholder={t('session.weightPlaceholder')}
                   aria-label="Lastre en kilogramos"
                   className="w-[88px] h-9 text-xs"
                 />
@@ -578,7 +567,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   value={customRpe}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomRpe(e.target.value)}
                   placeholder="RPE"
-                  title="Esfuerzo percibido (1-10)"
+                  title={t('session.rpeTitle')}
                   aria-label="RPE del 1 al 10"
                   className="w-[56px] h-9 text-xs"
                 />
@@ -587,7 +576,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                 <Input
                   value={customNote}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomNote(e.target.value)}
-                  placeholder="Nota opcional"
+                  placeholder={t('session.optionalNote')}
                   maxLength={200}
                   aria-label="Nota opcional"
                   className="flex-1 min-w-0 h-9 text-xs"
@@ -800,6 +789,7 @@ export default function SessionView({
   userName,
   avatarUrl,
 }: SessionViewProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
 
@@ -1068,11 +1058,11 @@ export default function SessionView({
       <Dialog open={showExit} onOpenChange={setShowExit}>
         <DialogContent className="max-w-[320px] max-sm:max-w-[90vw]">
           <DialogHeader>
-            <DialogTitle className="font-bebas text-[28px] tracking-[2px]">¿Descartar sesión?</DialogTitle>
+            <DialogTitle className="font-bebas text-[28px] tracking-[2px]">{t('session.discardTitle')}</DialogTitle>
             <DialogDescription>
               {setsCount > 0
-                ? `Llevas ${setsCount} serie${setsCount > 1 ? 's' : ''} registrada${setsCount > 1 ? 's' : ''}. Se guardarán pero la sesión quedará marcada como incompleta.`
-                : 'La sesión se descartará sin guardar nada.'}
+                ? t('session.discardWithSets', { count: setsCount })
+                : t('session.discardEmpty')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col gap-2.5 sm:flex-col">
@@ -1081,7 +1071,7 @@ export default function SessionView({
               onClick={handleInterruptConfirm}
               className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 font-bebas text-lg tracking-wide"
             >
-              DESCARTAR SESIÓN
+              {t('session.discardButton')}
             </Button>
             <Button
               variant="outline"

@@ -1,19 +1,31 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { WORKOUTS } from '../../data/workouts'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
 import { toLocalDateStr } from '../../lib/dateUtils'
 import type { ProgressMap } from '../../types'
 
-// Map common muscle keywords to groups
+// Map muscle group keys to keywords for classification
 const MUSCLE_GROUPS: Record<string, string[]> = {
-  'Pecho':   ['pecho'],
-  'Espalda': ['dorsal', 'romboides', 'trapecios', 'erectores'],
-  'Hombros': ['deltoides', 'hombros', 'manguito'],
-  'Brazos':  ['bíceps', 'tríceps'],
-  'Core':    ['core', 'tva', 'oblicuos'],
-  'Piernas': ['cuádriceps', 'glúteos', 'isquio', 'pantorrillas', 'aductor'],
-  'Lumbar':  ['lumbar', 'columna', 'psoas', 'piriforme'],
+  'chest':    ['pecho'],
+  'back':     ['dorsal', 'romboides', 'trapecios', 'erectores'],
+  'shoulders':['deltoides', 'hombros', 'manguito'],
+  'arms':     ['bíceps', 'tríceps'],
+  'core':     ['core', 'tva', 'oblicuos'],
+  'legs':     ['cuádriceps', 'glúteos', 'isquio', 'pantorrillas', 'aductor'],
+  'lumbar':   ['lumbar', 'columna', 'psoas', 'piriforme'],
+}
+
+const GROUP_LABEL_KEYS: Record<string, string> = {
+  'chest':    'progress.muscleVolume.chest',
+  'back':     'progress.muscleVolume.back',
+  'shoulders':'progress.muscleVolume.shoulders',
+  'arms':     'progress.muscleVolume.arms',
+  'core':     'progress.muscleVolume.core',
+  'legs':     'progress.muscleVolume.legs',
+  'lumbar':   'progress.muscleVolume.lumbar',
+  'other':    'progress.muscleVolume.other',
 }
 
 function classifyMuscle(muscleStr: string): string[] {
@@ -22,18 +34,18 @@ function classifyMuscle(muscleStr: string): string[] {
   for (const [group, keywords] of Object.entries(MUSCLE_GROUPS)) {
     if (keywords.some(k => lower.includes(k))) matched.push(group)
   }
-  return matched.length > 0 ? matched : ['Otro']
+  return matched.length > 0 ? matched : ['other']
 }
 
 const GROUP_COLORS: Record<string, string> = {
-  'Pecho':   'bg-red-500',
-  'Espalda': 'bg-sky-500',
-  'Hombros': 'bg-amber-400',
-  'Brazos':  'bg-pink-500',
-  'Core':    'bg-lime',
-  'Piernas': 'bg-purple-500',
-  'Lumbar':  'bg-emerald-500',
-  'Otro':    'bg-zinc-500',
+  'chest':    'bg-red-500',
+  'back':     'bg-sky-500',
+  'shoulders':'bg-amber-400',
+  'arms':     'bg-pink-500',
+  'core':     'bg-lime',
+  'legs':     'bg-purple-500',
+  'lumbar':   'bg-emerald-500',
+  'other':    'bg-zinc-500',
 }
 
 interface MuscleVolumeChartProps {
@@ -41,6 +53,7 @@ interface MuscleVolumeChartProps {
 }
 
 export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) {
+  const { t } = useTranslation()
   const volumeByGroup = useMemo(() => {
     const now = new Date()
     const weekStart = new Date(now)
@@ -76,7 +89,7 @@ export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) 
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Volumen semanal por músculo</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.muscleVolume.title')}</div>
       <Card>
         <CardContent className="p-5">
           <div className="space-y-2.5">
@@ -86,8 +99,8 @@ export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) 
               return (
                 <div key={group}>
                   <div className="flex justify-between mb-1">
-                    <span className="text-[12px] text-foreground">{group}</span>
-                    <span className="text-[11px] text-muted-foreground font-mono">{sets} series</span>
+                    <span className="text-[12px] text-foreground">{t(GROUP_LABEL_KEYS[group] || group)}</span>
+                    <span className="text-[11px] text-muted-foreground font-mono">{sets} {t('progress.muscleVolume.sets')}</span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div

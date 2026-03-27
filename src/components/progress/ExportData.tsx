@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { todayStr } from '../../lib/dateUtils'
 import type { ProgressMap, ExerciseLog, SetData } from '../../types'
@@ -50,6 +51,7 @@ function downloadCSV(content: string, filename: string) {
 }
 
 export default function ExportData({ progress, weights }: ExportDataProps) {
+  const { t } = useTranslation()
   const handleExportSessions = useCallback(() => {
     const csv = progressToCSV(progress)
     const date = todayStr()
@@ -70,7 +72,7 @@ export default function ExportData({ progress, weights }: ExportDataProps) {
         onClick={handleExportSessions}
         className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
       >
-        EXPORTAR SESIONES
+        {t('progress.export.sessions')}
       </Button>
       <Button
         variant="outline"
@@ -78,7 +80,7 @@ export default function ExportData({ progress, weights }: ExportDataProps) {
         onClick={handleExportWeight}
         className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
       >
-        EXPORTAR PESO
+        {t('progress.export.weight')}
       </Button>
     </div>
   )

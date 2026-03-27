@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { cn } from '../lib/utils'
 
@@ -7,6 +8,7 @@ import { cn } from '../lib/utils'
  * Tapping it navigates back to the session page.
  */
 export default function ActiveSessionBubble() {
+  const { t } = useTranslation()
   const { isActive, exerciseCount, workout } = useActiveSession()
   const navigate = useNavigate()
   const location = useLocation()
@@ -14,7 +16,7 @@ export default function ActiveSessionBubble() {
   // Only show when session is active and user is NOT on the session page
   if (!isActive || location.pathname === '/session') return null
 
-  const title = workout?.title || 'Sesion'
+  const title = workout?.title || t('session.session')
 
   return (
     <button
@@ -30,7 +32,7 @@ export default function ActiveSessionBubble() {
         'focus-visible:ring-2 focus-visible:ring-lime/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         'motion-safe:animate-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-300',
       )}
-      aria-label={`${title} activa — ${exerciseCount} ejercicios — toca para volver`}
+      aria-label={t('session.activeBubbleLabel', { title, count: exerciseCount })}
     >
       {/* Pulsing indicator */}
       <div className="relative flex-shrink-0">
@@ -55,7 +57,7 @@ export default function ActiveSessionBubble() {
           {title}
         </span>
         <span className="text-[10px] font-mono tracking-[0.2em] text-muted-foreground mt-0.5">
-          {exerciseCount} EJERCICIO{exerciseCount !== 1 ? 'S' : ''}
+          {exerciseCount} {t('session.exerciseCount', { count: exerciseCount })}
         </span>
       </div>
 

@@ -48,6 +48,7 @@ export type WorkoutsMap = Record<string, Workout>
 export interface Phase {
   id: number
   name: string
+  nameKey?: string
   weeks: string
   color: string
   bg: string
@@ -62,7 +63,9 @@ export interface CardioDayConfig {
 export interface WeekDay {
   id: DayId
   name: string
+  nameKey?: string
   focus: string
+  focusKey?: string
   type: DayType
   color: string
   cardioConfig?: CardioDayConfig
@@ -349,6 +352,8 @@ export interface KmSplit {
 export interface CardioSession {
   id?: string
   user?: string
+  program?: string
+  program_day_key?: string
   activity_type: CardioActivityType
   gps_points: GpsPoint[]
   distance_km: number
@@ -363,8 +368,6 @@ export interface CardioSession {
   avg_speed_kmh?: number
   max_speed_kmh?: number
   splits?: KmSplit[]
-  program?: string
-  program_day_key?: string
 }
 
 // ─── Challenges ──────────────────────────────────────────────────────────────

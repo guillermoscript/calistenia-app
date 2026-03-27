@@ -4,24 +4,28 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
 import catalogData from '../data/exercise-catalog.json'
-import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabel } from '../lib/equipment'
+import { useTranslation } from 'react-i18next'
+import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '../lib/equipment'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import type { Exercise, Workout } from '../types'
+import type { TranslatableField } from '../lib/i18n-db'
+import { localize } from '../lib/i18n-db'
+import { useLocalize } from '../hooks/useLocalize'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface CatalogExercise {
   id: string
-  name: string
-  muscles: string
+  name: TranslatableField
+  muscles: TranslatableField
   category: string
   sets: number | string
   reps: string
   rest: number
-  note: string
+  note: TranslatableField
   youtube: string
   priority: 'high' | 'med' | 'low'
   isTimer?: boolean
@@ -137,15 +141,15 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
     }
   }
 
-  return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name))
+  return Array.from(seen.values()).sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
 }
 
 function mapPBRecord(rec: any): CatalogExercise {
   return {
-    id: rec.id ?? '', name: rec.name ?? 'Sin nombre', muscles: rec.muscles ?? '',
+    id: rec.id ?? '', name: rec.name ?? '', muscles: rec.muscles ?? '',
     category: rec.category || 'full', priority: rec.priority || 'med',
     sets: rec.default_sets ?? 3, reps: rec.default_reps || '8-12',
-    rest: rec.default_rest ?? 90, note: rec.note || rec.description || '',
+    rest: rec.default_rest ?? 90, note: rec.note || (rec.description ?? ''),
     youtube: rec.youtube || '',
     isTimer: rec.is_timer || false, timerSeconds: rec.timer_seconds,
     demoImages: rec.default_images ? (Array.isArray(rec.default_images) ? rec.default_images : [rec.default_images]) : undefined,
@@ -153,10 +157,10 @@ function mapPBRecord(rec: any): CatalogExercise {
   }
 }
 
-function catalogToExercise(cat: CatalogExercise): Exercise {
+function catalogToExercise(cat: CatalogExercise, locale = 'es'): Exercise {
   return {
-    id: cat.id, name: cat.name, sets: cat.sets, reps: cat.reps,
-    rest: cat.rest, muscles: cat.muscles, note: cat.note,
+    id: cat.id, name: localize(cat.name, locale), sets: cat.sets, reps: cat.reps,
+    rest: cat.rest, muscles: localize(cat.muscles, locale), note: localize(cat.note, locale),
     youtube: cat.youtube, priority: cat.priority,
     isTimer: cat.isTimer, timerSeconds: cat.timerSeconds,
     demoImages: cat.demoImages, demoVideo: cat.demoVideo,
@@ -207,6 +211,8 @@ function useDebounce<T>(value: T, ms: number): T {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function FreeSessionPage() {
+  const { t, i18n } = useTranslation()
+  const l = useLocalize()
   const { isActive: sessionActive, startSession: contextStartSession } = useActiveSession()
   const navigate = useNavigate()
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
@@ -264,13 +270,13 @@ export default function FreeSessionPage() {
     if (activeCategory !== 'todos') result = result.filter(ex => ex.category === activeCategory)
     if (activeEquipment) {
       result = result.filter(ex => {
-        const equipmentIds = getExerciseEquipment({ name: ex.name, note: ex.note })
+        const equipmentIds = getExerciseEquipment({ name: l(ex.name), note: l(ex.note) })
         return equipmentIds.includes(activeEquipment)
       })
     }
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase()
-      result = result.filter(ex => ex.name.toLowerCase().includes(q) || ex.muscles.toLowerCase().includes(q))
+      result = result.filter(ex => l(ex.name).toLowerCase().includes(q) || l(ex.muscles).toLowerCase().includes(q))
     }
     return result
   }, [catalog, activeCategory, activeEquipment, debouncedSearch])
@@ -309,14 +315,14 @@ export default function FreeSessionPage() {
     if (selected.length === 0 || startingRef.current) return
     startingRef.current = true
     const workout: Workout = {
-      phase: 0, day: 'lun', title: 'Sesion Libre',
-      exercises: selected.map(catalogToExercise),
+      phase: 0, day: 'lun', title: t('freeSession.freeSessionTitle'),
+      exercises: selected.map(ex => catalogToExercise(ex, i18n.language)),
     }
     contextStartSession(workout, `free_${Date.now()}`, 'free')
     navigate('/session')
     // Reset guard after a tick so re-entry from exit works
     setTimeout(() => { startingRef.current = false }, 100)
-  }, [selected.length, contextStartSession, selected, navigate])
+  }, [selected.length, contextStartSession, selected, navigate, t, i18n.language])
 
   const handleRetryLoad = useCallback(() => {
     setLoading(true)
@@ -368,8 +374,8 @@ export default function FreeSessionPage() {
             </span>
           </div>
           <div className="flex-1 text-left">
-            <div className="text-sm font-medium text-lime">Sesion en curso</div>
-            <div className="text-[10px] text-muted-foreground">Toca para retomar tu sesion</div>
+            <div className="text-sm font-medium text-lime">{t('freeSession.sessionInProgress')}</div>
+            <div className="text-[10px] text-muted-foreground">{t('freeSession.tapToResume')}</div>
           </div>
           <svg className="size-4 text-lime flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
@@ -379,9 +385,9 @@ export default function FreeSessionPage() {
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="mb-7">
-        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-1 uppercase">Modo libre</div>
+        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-1 uppercase">{t('freeSession.freeMode')}</div>
         <h1 className="font-bebas text-[28px] md:text-[32px] tracking-wide leading-none">
-          Arma tu sesion
+          {t('freeSession.buildSession')}
         </h1>
       </div>
 
@@ -398,8 +404,8 @@ export default function FreeSessionPage() {
             </svg>
             <input
               type="text"
-              placeholder="Buscar por nombre o musculo..."
-              aria-label="Buscar ejercicios"
+              placeholder={t('freeSession.searchPlaceholder')}
+              aria-label={t('freeSession.searchExercises')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className={cn(
@@ -410,10 +416,10 @@ export default function FreeSessionPage() {
             {search && (
               <button
                 onClick={() => setSearch('')}
-                aria-label="Borrar busqueda"
+                aria-label={t('freeSession.clearSearch')}
                 className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs px-2.5 py-2 min-h-[44px] flex items-center"
               >
-                borrar
+                {t('freeSession.clearSearch')}
               </button>
             )}
           </div>
@@ -422,7 +428,7 @@ export default function FreeSessionPage() {
           <div id="tour-free-categories" className="relative mb-5 md:mb-4"
             style={{ maskImage: 'linear-gradient(to right, black calc(100% - 24px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 24px), transparent 100%)' }}
           >
-            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none md:flex-wrap md:overflow-visible md:pb-0 md:[mask-image:none]" role="group" aria-label="Filtrar por categoria">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none md:flex-wrap md:overflow-visible md:pb-0 md:[mask-image:none]" role="group" aria-label={t('freeSession.filterByCategory')}>
               {CATEGORIES.map(cat => (
                 <button
                   key={cat.id}
@@ -435,7 +441,7 @@ export default function FreeSessionPage() {
                       : 'text-muted-foreground border-transparent hover:text-foreground',
                   )}
                 >
-                  {cat.label}
+                  {t(`freeSession.category.${cat.id}`)}
                 </button>
               ))}
             </div>
@@ -456,7 +462,7 @@ export default function FreeSessionPage() {
                       : 'text-muted-foreground border-transparent hover:text-foreground',
                   )}
                 >
-                  {eq.icon} {eq.label}
+                  {eq.icon} {t(`equipment.${eq.id}`)}
                 </button>
               )
             })}
@@ -465,34 +471,34 @@ export default function FreeSessionPage() {
                 onClick={() => setActiveEquipment(null)}
                 className="shrink-0 px-2 py-1.5 rounded-md text-[10px] text-muted-foreground/60 hover:text-muted-foreground"
               >
-                limpiar
+                {t('freeSession.clear')}
               </button>
             )}
           </div>
 
           {/* Exercise list */}
           {loading ? (
-            <Loader label="Cargando catálogo..." className="py-16" />
+            <Loader label={t('freeSession.loadingCatalog')} className="py-16" />
           ) : loadError && catalog.length === 0 ? (
             <div className="py-16 text-center space-y-3">
-              <div className="text-muted-foreground text-sm">No se pudo cargar el catalogo</div>
+              <div className="text-muted-foreground text-sm">{t('freeSession.loadError')}</div>
               <Button variant="outline" size="sm" onClick={handleRetryLoad}>
-                Reintentar
+                {t('freeSession.retry')}
               </Button>
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center">
               <div className="text-muted-foreground text-sm">
-                {search ? `Sin resultados para "${search}"` : 'No hay ejercicios en esta categoria'}
+                {search ? t('freeSession.noResultsFor', { search }) : t('freeSession.noExercisesInCategory')}
               </div>
               {search && (
                 <button onClick={() => setSearch('')} className="mt-2 text-xs text-lime hover:text-lime/80">
-                  Borrar busqueda
+                  {t('freeSession.clearSearch')}
                 </button>
               )}
             </div>
           ) : (
-            <div id="tour-free-catalog" className="space-y-1" role="list" aria-label="Catalogo de ejercicios">
+            <div id="tour-free-catalog" className="space-y-1" role="list" aria-label={t('freeSession.exerciseCatalog')}>
               {filtered.map(ex => {
                 const isSelected = selectedIds.has(ex.id)
                 const orderNum = selectedOrder.get(ex.id) ?? 0
@@ -520,9 +526,9 @@ export default function FreeSessionPage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate leading-tight">{ex.name}</div>
+                      <div className="text-sm font-medium truncate leading-tight">{l(ex.name)}</div>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground truncate">{ex.muscles || 'General'}</span>
+                        <span className="text-[10px] text-muted-foreground truncate">{l(ex.muscles) || t('freeSession.general')}</span>
                         <span className="text-[10px] text-muted-foreground/40">·</span>
                         <span className="text-[10px] font-mono text-muted-foreground shrink-0">{ex.sets}×{ex.reps}</span>
                       </div>
@@ -562,7 +568,7 @@ export default function FreeSessionPage() {
           <div className="flex items-center gap-3 px-4 py-2.5">
             <button
               onClick={() => selected.length > 0 && setQueueOpen(!queueOpen)}
-              aria-label={selected.length > 0 ? `Ver ${selected.length} ejercicios seleccionados` : 'Ningun ejercicio seleccionado'}
+              aria-label={selected.length > 0 ? t('freeSession.viewSelectedExercises', { count: selected.length }) : t('freeSession.noExerciseSelected')}
               aria-expanded={queueOpen}
               className="flex-1 flex items-center gap-2.5 min-w-0"
             >
@@ -575,12 +581,12 @@ export default function FreeSessionPage() {
               <div className="text-left min-w-0">
                 <div className="text-xs font-medium truncate">
                   {selected.length === 0
-                    ? 'Ningun ejercicio'
-                    : `${selected.length} ejercicio${selected.length > 1 ? 's' : ''}`}
+                    ? t('freeSession.noExercise')
+                    : t('freeSession.exerciseCount', { count: selected.length })}
                 </div>
                 {selected.length > 0 && (
                   <div className="text-[10px] text-muted-foreground">
-                    {totalSets} series · ~{estMin} min
+                    {t('freeSession.queueSummary', { sets: totalSets, min: estMin })}
                   </div>
                 )}
               </div>
@@ -601,7 +607,7 @@ export default function FreeSessionPage() {
                   : 'bg-muted text-muted-foreground',
               )}
             >
-              Iniciar
+              {t('freeSession.start')}
             </Button>
           </div>
         </div>
@@ -616,17 +622,17 @@ export default function FreeSessionPage() {
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="Tu sesion de ejercicios"
+              aria-label={t('freeSession.yourExerciseSession')}
               className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px)+3.25rem)] left-0 right-0 z-30 max-h-[60vh] overflow-y-auto rounded-t-xl border-t border-border bg-background px-4 py-4 motion-safe:animate-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-200"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Tu sesion</div>
+                <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('freeSession.yourSession')}</div>
                 <button
                   onClick={() => { setSelected([]); setQueueOpen(false) }}
-                  aria-label="Vaciar todos los ejercicios de la sesion"
+                  aria-label={t('freeSession.emptyAllExercises')}
                   className="text-[11px] text-red-400 hover:text-red-300"
                 >
-                  Vaciar
+                  {t('freeSession.empty')}
                 </button>
               </div>
               <QueueList
@@ -658,12 +664,13 @@ function SessionQueue({
   onStart: () => void
   onClear: () => void
 }) {
+  const { t } = useTranslation()
   if (selected.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border p-6 text-center">
-        <div className="font-bebas text-lg tracking-wide text-muted-foreground/60 mb-2">Tu sesion</div>
+        <div className="font-bebas text-lg tracking-wide text-muted-foreground/60 mb-2">{t('freeSession.yourSession')}</div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Selecciona ejercicios del catalogo para armar tu rutina personalizada
+          {t('freeSession.emptyQueueHint')}
         </p>
         <div className="mt-4 flex justify-center gap-1.5">
           {[1, 2, 3].map(i => (
@@ -679,19 +686,19 @@ function SessionQueue({
       {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between mb-1.5">
-          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Tu sesion</div>
+          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('freeSession.yourSession')}</div>
           <button
             onClick={onClear}
-            aria-label="Vaciar todos los ejercicios de la sesion"
+            aria-label={t('freeSession.emptyAllExercises')}
             className="text-[10px] text-red-400/70 hover:text-red-400 transition-colors"
           >
-            Vaciar
+            {t('freeSession.empty')}
           </button>
         </div>
         <div className="flex items-baseline gap-3">
           <span className="font-bebas text-2xl leading-none text-lime">{selected.length}</span>
           <span className="text-[10px] text-muted-foreground">
-            ejercicio{selected.length !== 1 ? 's' : ''} · {totalSets} series · ~{estMin} min
+            {t('freeSession.queueSummaryFull', { count: selected.length, sets: totalSets, min: estMin })}
           </span>
         </div>
       </div>
@@ -712,7 +719,7 @@ function SessionQueue({
           onClick={onStart}
           className="w-full font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] text-[hsl(var(--lime-foreground))] hover:bg-[hsl(var(--lime))]/90"
         >
-          Iniciar sesion
+          {t('freeSession.startSession')}
         </Button>
       </div>
     </div>
@@ -729,8 +736,10 @@ const QueueList = memo(function QueueList({
   onMoveDown: (i: number) => void
   onRemove: (i: number) => void
 }) {
+  const { t } = useTranslation()
+  const l = useLocalize()
   return (
-    <div className="space-y-0.5" role="list" aria-label="Ejercicios en tu sesion">
+    <div className="space-y-0.5" role="list" aria-label={t('freeSession.exercisesInSession')}>
       {selected.map((ex, idx) => (
         <div
           key={ex.id}
@@ -739,14 +748,14 @@ const QueueList = memo(function QueueList({
         >
           <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">{idx + 1}</span>
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-medium truncate leading-tight">{ex.name}</div>
+            <div className="text-[13px] font-medium truncate leading-tight">{l(ex.name)}</div>
             <div className="text-[10px] text-muted-foreground font-mono">{ex.sets}×{ex.reps}</div>
           </div>
           <div className="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp(idx) }}
               disabled={idx === 0}
-              aria-label={`Mover ${ex.name} arriba`}
+              aria-label={t('freeSession.moveUp', { name: l(ex.name) })}
               className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-accent disabled:opacity-20 transition-colors focus-visible:ring-2 focus-visible:ring-lime/40"
             >
               <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="4,10 8,6 12,10" /></svg>
@@ -754,14 +763,14 @@ const QueueList = memo(function QueueList({
             <button
               onClick={(e) => { e.stopPropagation(); onMoveDown(idx) }}
               disabled={idx === selected.length - 1}
-              aria-label={`Mover ${ex.name} abajo`}
+              aria-label={t('freeSession.moveDown', { name: l(ex.name) })}
               className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-accent disabled:opacity-20 transition-colors focus-visible:ring-2 focus-visible:ring-lime/40"
             >
               <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="4,6 8,10 12,6" /></svg>
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onRemove(idx) }}
-              aria-label={`Eliminar ${ex.name}`}
+              aria-label={t('freeSession.removeExercise', { name: l(ex.name) })}
               className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors ml-0.5 focus-visible:ring-2 focus-visible:ring-red-500/40"
             >
               <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="4" x2="12" y2="12" /><line x1="12" y1="4" x2="4" y2="12" /></svg>

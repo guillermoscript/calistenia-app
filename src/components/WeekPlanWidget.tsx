@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { localDay } from '../lib/dateUtils'
-import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '../data/workouts'
 import { CARDIO_ACTIVITY } from '../lib/style-tokens'
+import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '../data/workouts'
 import type { WeekDay } from '../types'
 
 interface WeekPlanWidgetProps {
@@ -13,13 +14,14 @@ interface WeekPlanWidgetProps {
 
 export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays: weekDaysProp }: WeekPlanWidgetProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const WEEK_DAYS = weekDaysProp || FALLBACK_WEEK_DAYS
   const todayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
 
   return (
     <div className="mb-8">
       <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-3">
-        SEMANA DE ENTRENAMIENTO — F{selectedPhase}
+        {t('weekPlan.title', { phase: selectedPhase })}
       </div>
       {/* Mobile: horizontal scroll — Desktop: 7-col grid */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 md:grid md:grid-cols-7 md:overflow-visible md:pb-0 snap-x snap-mandatory">
@@ -53,12 +55,12 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
               )}
               <div className={cn(
                 'font-mono text-[10px] tracking-[2px] mb-1.5',
-                isToday ? 'mt-1.5 text-[hsl(var(--lime))]' : 'text-muted-foreground',
+                isToday ? 'mt-1.5 text-[hsl(var(--lime))]' : isCardio ? 'text-emerald-400' : 'text-muted-foreground',
               )}>
-                {day.name.slice(0, 3).toUpperCase()}
+                {(day.nameKey ? t(day.nameKey) : day.name).slice(0, 3).toUpperCase()}
               </div>
               {isCardio ? (
-                <div className="text-lg">{CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
+                <div className="text-lg text-emerald-400">{CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
               ) : isRest ? (
                 <div className="text-base text-muted-foreground">—</div>
               ) : done ? (
@@ -76,7 +78,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
                 isToday        ? 'text-[hsl(var(--lime))]' :
                                  'text-muted-foreground/50',
               )}>
-                {isCardio ? CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.label || 'Cardio' : day.focus.split(' ')[0]}
+                {isCardio ? t(`cardio.${day.cardioConfig?.activityType || 'running'}`) : (day.focusKey ? t(day.focusKey) : day.focus).split(' ')[0]}
               </div>
             </button>
           )

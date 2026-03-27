@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { todayStr, addDays, nowLocalForPB } from '../lib/dateUtils'
 import { Input } from '../components/ui/input'
@@ -40,6 +41,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   const [phaseChangeBanner, setPhaseChangeBanner] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
   const { addJob, clearJob, canSubmit, pending, pendingLabels } = useBackgroundJobs()
+  const { t } = useTranslation()
 
   const handleSendToBackground = useCallback((imageFiles: File[], mealType: string, description?: string) => {
     if (!addJob('_pending', 'analyze-meal')) return
@@ -47,11 +49,11 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       .then(id => {
         clearJob('_pending')
         addJob(id, 'analyze-meal')
-        toast.info('Analizando en segundo plano', { description: 'Recibiras una notificacion cuando termine', duration: 4000 })
+        toast.info(t('nutrition.logger.analyzingBg'), { description: t('nutrition.logger.bgNotification'), duration: 4000 })
       })
       .catch(() => {
         clearJob('_pending')
-        toast.error('Error al iniciar el analisis', { description: 'Revisa tu conexion e intenta de nuevo' })
+        toast.error(t('nutrition.logger.analyzeError'), { description: t('nutrition.logger.checkConnection') })
       })
   }, [addJob, clearJob])
 
@@ -237,8 +239,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Header */}
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Alimentación</div>
-      <div className="font-bebas text-4xl md:text-5xl mb-6">NUTRICIÓN</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('nutrition.subtitle')}</div>
+      <div className="font-bebas text-4xl md:text-5xl mb-6">{t('nutrition.title')}</div>
 
       {/* Pending background jobs indicator */}
       {pending.length > 0 && (
@@ -248,7 +250,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             {pending.map((j, i) => (
               <span key={j.id}>
                 {i > 0 && ' · '}
-                {pendingLabels[j.type] || 'Procesando'}
+                {pendingLabels[j.type] || t('nutrition.processing')}
               </span>
             ))}
           </div>
@@ -260,7 +262,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         <button
           onClick={() => setSelectedDate(addDays(selectedDate, -1))}
           className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Día anterior"
+          aria-label={t('nutrition.previousDay')}
         >
           ‹
         </button>
@@ -273,7 +275,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         <button
           onClick={() => setSelectedDate(addDays(selectedDate, 1))}
           className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Día siguiente"
+          aria-label={t('nutrition.nextDay')}
         >
           ›
         </button>
@@ -282,7 +284,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             onClick={() => setSelectedDate(todayStr())}
             className="text-[10px] tracking-widest text-lime hover:text-lime/80 uppercase"
           >
-            HOY
+            {t('common.today').toUpperCase()}
           </button>
         )}
       </div>
@@ -311,10 +313,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap">
                 <div>
                   <div className="text-sm font-medium text-lime">
-                    Entraste a Fase {trainingPhase} de entrenamiento
+                    {t('nutrition.phaseChange', { phase: trainingPhase })}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    Tu nivel de actividad puede haber cambiado. ¿Quieres recalcular tus macros?
+                    {t('nutrition.phaseChangeDesc')}
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -324,7 +326,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                     variant="outline"
                     className="text-[10px] tracking-widest h-8"
                   >
-                    Ignorar
+                    {t('nutrition.ignore')}
                   </Button>
                   <Button
                     size="sm"
@@ -335,7 +337,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                     }}
                     className="bg-lime hover:bg-lime/90 text-lime-foreground text-[10px] font-bebas tracking-widest h-8 px-3"
                   >
-                    Recalcular
+                    {t('nutrition.recalculate')}
                   </Button>
                 </div>
               </CardContent>
@@ -347,10 +349,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             <div className="flex gap-3 px-1">
               <div className="w-1 shrink-0 rounded-full bg-amber-400/60" />
               <div>
-                <div className="text-sm font-medium text-amber-400">Llevas días sin alcanzar tu meta</div>
-                <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Tu ingesta estuvo por debajo del 70%. Usa el <strong>Plan del día</strong> o revisa tus metas.
-                </div>
+                <div className="text-sm font-medium text-amber-400">{t('nutrition.missedGoalsTitle')}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed" dangerouslySetInnerHTML={{ __html: t('nutrition.missedGoalsDesc') }} />
               </div>
             </div>
           )}
@@ -361,7 +361,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           {/* Frequent meals quick-tap */}
           {isToday && frequentMeals.length > 0 && (
             <div>
-              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">COMIDAS FRECUENTES</div>
+              <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">{t('nutrition.frequentMeals')}</div>
               <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth">
                 {frequentMeals.map((entry, i) => {
                   const foodNames = entry.foods.map(f => f.name).filter(Boolean)
@@ -384,12 +384,12 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                       }}
                       className="shrink-0 w-40 p-3 bg-card border border-border rounded-lg hover:border-lime/40 transition-colors text-left group"
                     >
-                      <div className="text-xs font-medium text-foreground line-clamp-1 group-hover:text-lime transition-colors">{summary || 'Sin nombre'}</div>
+                      <div className="text-xs font-medium text-foreground line-clamp-1 group-hover:text-lime transition-colors">{summary || t('nutrition.noName')}</div>
                       <div className="text-[10px] text-muted-foreground mt-1">
                         {Math.round(entry.totalCalories)} kcal · {Math.round(entry.totalProtein)}g P
                       </div>
                       <div className="flex items-center gap-1 mt-1.5 text-[9px] text-lime tracking-widest">
-                        <span>+</span> REGISTRAR
+                        <span>+</span> {t('nutrition.register')}
                       </div>
                     </button>
                   )
@@ -417,7 +417,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                   totalFat: entry.totalFat,
                   loggedAt: nowLocalForPB(),
                 })
-                toast.success('Comida duplicada')
+                toast.success(t('nutrition.mealDuplicated'))
               }}
               selectedDate={selectedDate}
             />
@@ -439,7 +439,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               onClick={() => setShowInsights(v => !v)}
               className="w-full flex items-center justify-between py-3 text-[10px] tracking-[0.3em] text-muted-foreground uppercase hover:text-foreground transition-colors"
             >
-              <span>Sugerencias e historial</span>
+              <span>{t('nutrition.suggestionsAndHistory')}</span>
               <svg
                 className={cn('size-4 transition-transform duration-200', showInsights && 'rotate-180')}
                 viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"

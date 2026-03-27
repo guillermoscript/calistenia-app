@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../../lib/i18n'
 import { cn } from '../../lib/utils'
 import { localHour, nowLocalForPB } from '../../lib/dateUtils'
 import { Button } from '../ui/button'
@@ -30,11 +32,11 @@ export interface MealLoggerContentProps {
   initialAnalysis?: { foods: FoodItem[]; meal_description?: string } | null
 }
 
-const MEAL_OPTIONS: { id: MealType; label: string; icon: string }[] = [
-  { id: 'desayuno', label: 'Desayuno', icon: '☀️' },
-  { id: 'almuerzo', label: 'Almuerzo', icon: '🍽️' },
-  { id: 'cena', label: 'Cena', icon: '🌙' },
-  { id: 'snack', label: 'Snack', icon: '🍎' },
+const MEAL_OPTIONS: { id: MealType; labelKey: string; icon: string }[] = [
+  { id: 'desayuno', labelKey: 'meal.desayuno', icon: '☀️' },
+  { id: 'almuerzo', labelKey: 'meal.almuerzo', icon: '🍽️' },
+  { id: 'cena', labelKey: 'meal.cena', icon: '🌙' },
+  { id: 'snack', labelKey: 'meal.snack', icon: '🍎' },
 ]
 
 /** Auto-detect meal type based on current hour */
@@ -87,6 +89,7 @@ export default function MealLoggerContent({
   onAnalyze, onSave, userId, dailyTotals, goals, getRecentEntries, onSaveSuccess,
   onSendToBackground, initialAnalysis,
 }: MealLoggerContentProps) {
+  const { t } = useTranslation()
   const { saveFoodToCatalog, completeWithAI } = useFoodCatalog()
   const { getRecentFoods, getHourSuggestions, trackFood } = useFoodHistory(userId)
   const { getTemplates, saveTemplate, useTemplate, deleteTemplate } = useMealTemplates(userId)
@@ -204,7 +207,7 @@ export default function MealLoggerContent({
         return f
       })
       if (normalized.length === 0) {
-        setError('No se detectaron alimentos. Intenta con otra foto o agrega manualmente.')
+        setError(t('nutrition.logger.noFoodsDetected'))
         setStep('capture')
         return
       }
@@ -213,7 +216,7 @@ export default function MealLoggerContent({
       setStep('review')
     } catch {
       if (cancelledRef.current) return
-      setError('No pudimos analizar la imagen. Verifica que sea una foto de comida e intenta de nuevo.')
+      setError(t('nutrition.logger.analyzeImageError'))
       setStep('capture')
     } finally {
       abortControllerRef.current = null
@@ -305,7 +308,7 @@ export default function MealLoggerContent({
   const handleSave = async () => {
     const validFoods = foods.filter(f => f.name.trim())
     if (validFoods.length === 0) {
-      setError('Agrega al menos un alimento con nombre.')
+      setError(t('nutrition.logger.addAtLeastOneFood'))
       return
     }
     setStep('saving')
@@ -324,7 +327,7 @@ export default function MealLoggerContent({
       foods.filter(f => f.name.trim()).forEach(f => trackFood(f, mealType, hour))
       setStep('success')
     } catch {
-      setError('No se pudo guardar. Revisa tu conexión e intenta de nuevo.')
+      setError(t('nutrition.logger.saveError'))
       setStep('review')
     }
   }
@@ -397,7 +400,7 @@ export default function MealLoggerContent({
     } catch { /* ignore */ }
   }
 
-  const mealLabel = MEAL_OPTIONS.find(o => o.id === mealType)?.label ?? mealType
+  const mealLabel = t(`meal.${mealType}`)
 
   return (
     <div className="space-y-4 motion-safe:animate-fade-in">
@@ -412,7 +415,7 @@ export default function MealLoggerContent({
       {barcodeLoading && (
         <div className="p-4 rounded-xl bg-muted/30 border border-border flex items-center gap-3">
           <div className="size-5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
-          <span className="text-sm text-muted-foreground">Buscando info nutricional...</span>
+          <span className="text-sm text-muted-foreground">{t('nutrition.logger.searchingNutrition')}</span>
         </div>
       )}
 
@@ -445,7 +448,7 @@ export default function MealLoggerContent({
                     )}
                   >
                     <span className="text-base leading-none">{opt.icon}</span>
-                    <span className="text-[10px] font-mono tracking-wide">{opt.label}</span>
+                    <span className="text-[10px] font-mono tracking-wide">{t(opt.labelKey)}</span>
                   </button>
                 ))}
               </div>
@@ -460,8 +463,8 @@ export default function MealLoggerContent({
                   <input
                     value={quickText}
                     onChange={e => setQuickText(e.target.value)}
-                    placeholder="¿Qué comiste? ej: pollo, arroz, ensalada"
-                    aria-label="¿Qué comiste?"
+                    placeholder={t('nutrition.logger.whatDidYouEat')}
+                    aria-label={t('nutrition.logger.whatDidYouEat')}
                     maxLength={500}
                     className="w-full h-12 text-base pl-4 pr-12 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/50 transition-all"
                   />
@@ -469,7 +472,7 @@ export default function MealLoggerContent({
                     <button
                       type="submit"
                       className="absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-lg bg-lime-400 text-zinc-900 flex items-center justify-center hover:bg-lime-300 transition-colors"
-                      aria-label="Registrar"
+                      aria-label={t('nutrition.register')}
                     >
                       <ArrowIcon className="size-4" />
                     </button>
@@ -499,11 +502,11 @@ export default function MealLoggerContent({
                     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
                       {imagePreviews.map((preview, i) => (
                         <div key={i} className="relative shrink-0 w-[calc(50%-4px)] max-w-[180px] aspect-square rounded-xl overflow-hidden">
-                          <img src={preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                          <img src={preview} alt={t('nutrition.photo', { number: i + 1 })} className="w-full h-full object-cover" />
                           <button
                             onClick={() => removePhoto(i)}
                             className="absolute top-1.5 right-1.5 size-6 rounded-full bg-background/80 backdrop-blur-sm text-foreground flex items-center justify-center hover:bg-background transition-colors"
-                            aria-label={`Eliminar foto ${i + 1}`}
+                            aria-label={`${t('common.delete')} ${t('nutrition.photo', { number: i + 1 })}`}
                           >
                             <CloseIcon className="size-3" />
                           </button>
@@ -528,7 +531,7 @@ export default function MealLoggerContent({
                             <button
                               onClick={() => galleryInputRef.current?.click()}
                               className="size-9 rounded-lg flex items-center justify-center hover:bg-lime-400/10 transition-colors"
-                              aria-label="Elegir de galería"
+                              aria-label={t('nutrition.chooseFromGallery')}
                             >
                               <GalleryIcon className="size-4 text-muted-foreground/60" />
                             </button>
@@ -541,7 +544,7 @@ export default function MealLoggerContent({
                       <textarea
                         value={imageDescription}
                         onChange={e => setImageDescription(e.target.value)}
-                        placeholder="Describe tu comida para mejor precision... ej: pollo a la plancha con arroz integral y ensalada, unos 200g de pollo"
+                        placeholder={t('nutrition.logger.describeFood')}
                         maxLength={500}
                         rows={2}
                         className="w-full text-base px-3.5 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/40 transition-all resize-none leading-relaxed"
@@ -556,7 +559,7 @@ export default function MealLoggerContent({
                       onClick={handleAnalyze}
                       className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-base tracking-widest shadow-lg shadow-lime-400/10"
                     >
-                      ANALIZAR CON IA
+                      {t('nutrition.logger.analyzeWithAI')}
                     </Button>
                   </div>
                 ) : (
@@ -566,28 +569,28 @@ export default function MealLoggerContent({
                       className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
                     >
                       <CameraIcon className="size-6 text-muted-foreground" />
-                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">CAMARA</span>
+                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">{t('nutrition.logger.camera')}</span>
                     </button>
                     <button
                       onClick={() => galleryInputRef.current?.click()}
                       className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
                     >
                       <GalleryIcon className="size-6 text-muted-foreground" />
-                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">GALERIA</span>
+                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">{t('nutrition.logger.gallery')}</span>
                     </button>
                     <button
                       onClick={() => { setFoods([createEmptyFood()]); setStep('review') }}
                       className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
                     >
                       <PencilIcon className="size-6 text-muted-foreground" />
-                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">MANUAL</span>
+                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">{t('nutrition.logger.manual')}</span>
                     </button>
                     <button
                       onClick={loadRepeatMeal}
                       className="flex flex-col items-center gap-2 p-4 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
                     >
                       <RepeatIcon className="size-6 text-muted-foreground" />
-                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">REPETIR</span>
+                      <span className="text-[10px] font-mono tracking-wide text-muted-foreground">{t('nutrition.logger.repeat')}</span>
                     </button>
                   </div>
                 )}
@@ -599,7 +602,7 @@ export default function MealLoggerContent({
                   className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl border border-dashed border-border bg-muted/20 hover:border-lime-400/40 hover:bg-lime-400/5 transition-all"
                 >
                   <BarcodeIcon className="size-5 text-muted-foreground" />
-                  <span className="text-[10px] font-mono tracking-wide text-muted-foreground">ESCANEAR CÓDIGO DE BARRAS</span>
+                  <span className="text-[10px] font-mono tracking-wide text-muted-foreground">{t('nutrition.logger.scanBarcode')}</span>
                 </button>
               </div>
 
@@ -609,7 +612,7 @@ export default function MealLoggerContent({
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-mono tracking-widest text-muted-foreground hover:text-lime-400 transition-colors"
               >
                 <TemplateIcon className="size-3.5" />
-                MIS PLANTILLAS
+                {t('nutrition.logger.myTemplates')}
               </button>
 
               {error && (
@@ -626,7 +629,7 @@ export default function MealLoggerContent({
                 <button onClick={() => { setCaptureSubView('main'); setRecentSearch(''); setRecentTypeFilter(''); setRecentPage(1) }} className="size-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
                   <BackIcon className="size-4 text-muted-foreground" />
                 </button>
-                <div className="font-bebas text-lg tracking-wide">COMIDAS RECIENTES</div>
+                <div className="font-bebas text-lg tracking-wide">{t('nutrition.logger.recentMeals')}</div>
               </div>
               {recentEntries.length > 0 && (
                 <>
@@ -636,14 +639,14 @@ export default function MealLoggerContent({
                       type="text"
                       value={recentSearch}
                       onChange={e => { setRecentSearch(e.target.value); setRecentPage(1) }}
-                      placeholder="Buscar plato..."
+                      placeholder={t('nutrition.logger.searchDish')}
                       className="w-full pl-9 pr-8 py-2 text-sm bg-muted/30 border border-border rounded-lg focus:outline-none focus:border-lime-400/80 focus:ring-1 focus:ring-lime-400/30 placeholder:text-muted-foreground/50 transition-colors"
                     />
                     {recentSearch && (
                       <button
                         onClick={() => { setRecentSearch(''); setRecentPage(1) }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label="Limpiar búsqueda"
+                        aria-label={t('nutrition.logger.clearSearch')}
                       >
                         <CloseIcon className="size-3" />
                       </button>
@@ -661,7 +664,7 @@ export default function MealLoggerContent({
                             : 'bg-muted/30 border-border text-muted-foreground hover:border-lime-400/20'
                         )}
                       >
-                        {type ? MEAL_OPTIONS.find(m => m.id === type)!.label : 'Todas'}
+                        {type ? t(MEAL_OPTIONS.find(m => m.id === type)!.labelKey) : t('nutrition.logger.all')}
                       </button>
                     ))}
                   </div>
@@ -671,14 +674,14 @@ export default function MealLoggerContent({
                 <div className="text-center py-10">
                   <div className="text-2xl mb-2">🍽️</div>
                   <div className="text-sm text-muted-foreground">
-                    {recentSearch.trim() || recentTypeFilter ? 'Sin resultados' : 'No hay comidas recientes'}
+                    {recentSearch.trim() || recentTypeFilter ? t('common.noResults') : t('nutrition.logger.noRecentMeals')}
                   </div>
                   {(recentSearch.trim() || recentTypeFilter) && (
                     <button
                       onClick={() => { setRecentSearch(''); setRecentTypeFilter(''); setRecentPage(1) }}
                       className="mt-2 text-xs text-lime-400 hover:underline"
                     >
-                      Limpiar filtros
+                      {t('nutrition.logger.clearFilters')}
                     </button>
                   )}
                 </div>
@@ -695,11 +698,11 @@ export default function MealLoggerContent({
                           {entry.mealType}
                         </span>
                         <span className="text-[10px] text-muted-foreground tabular-nums">
-                          {new Date(entry.loggedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          {new Date(entry.loggedAt).toLocaleDateString(i18n.language, { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
                       <div className="text-sm text-foreground leading-snug truncate">
-                        {entry.foods.map(f => f.name).filter(Boolean).join(', ') || 'Sin nombre'}
+                        {entry.foods.map(f => f.name).filter(Boolean).join(', ') || t('nutrition.noName')}
                       </div>
                       <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
                         <span className="text-xs font-semibold text-foreground/80">{Math.round(entry.totalCalories)} kcal</span>
@@ -714,11 +717,11 @@ export default function MealLoggerContent({
                       onClick={() => setRecentPage(p => p + 1)}
                       className="w-full py-2.5 text-xs text-muted-foreground hover:text-lime-400 border border-dashed border-border rounded-xl hover:border-lime-400/30 transition-colors"
                     >
-                      Ver más ({filteredRecentEntries.length - paginatedRecentEntries.length} restantes)
+                      {t('nutrition.logger.seeMore', { count: filteredRecentEntries.length - paginatedRecentEntries.length })}
                     </button>
                   )}
                   <div className="text-center text-[10px] text-muted-foreground/50 tabular-nums">
-                    {filteredRecentEntries.length} comida{filteredRecentEntries.length !== 1 ? 's' : ''}
+                    {t('nutrition.logger.mealCount', { count: filteredRecentEntries.length })}
                     {recentEntries.length !== filteredRecentEntries.length && ` de ${recentEntries.length}`}
                   </div>
                 </div>
@@ -732,13 +735,13 @@ export default function MealLoggerContent({
                 <button onClick={() => setCaptureSubView('main')} className="size-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
                   <BackIcon className="size-4 text-muted-foreground" />
                 </button>
-                <div className="font-bebas text-lg tracking-wide">MIS PLANTILLAS</div>
+                <div className="font-bebas text-lg tracking-wide">{t('nutrition.logger.myTemplates')}</div>
               </div>
               {templates.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-2xl mb-2">📋</div>
-                  <div className="text-sm text-muted-foreground">No hay plantillas guardadas</div>
-                  <div className="text-xs text-muted-foreground/60 mt-1">Guarda una comida como plantilla para reutilizarla</div>
+                  <div className="text-sm text-muted-foreground">{t('nutrition.logger.noTemplates')}</div>
+                  <div className="text-xs text-muted-foreground/60 mt-1">{t('nutrition.logger.saveTemplateHint')}</div>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -750,7 +753,7 @@ export default function MealLoggerContent({
                       >
                         <div className="text-sm font-medium">{tmpl.name}</div>
                         <div className="text-[10px] text-muted-foreground mt-1">
-                          {tmpl.foods.length} alimento{tmpl.foods.length !== 1 ? 's' : ''} · {Math.round(tmpl.foods.reduce((s, f) => s + (f.calories || 0), 0))} kcal
+                          {t('nutrition.foodCount', { count: tmpl.foods.length })} · {Math.round(tmpl.foods.reduce((s, f) => s + (f.calories || 0), 0))} kcal
                         </div>
                       </button>
                       <button
@@ -759,7 +762,7 @@ export default function MealLoggerContent({
                           setTemplates(prev => prev.filter(t => t.id !== tmpl.id))
                         }}
                         className="size-9 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded-lg shrink-0 transition-colors"
-                        aria-label={`Eliminar plantilla ${tmpl.name}`}
+                        aria-label={`${t('common.delete')} ${tmpl.name}`}
                       >
                         <CloseIcon className="size-3.5" />
                       </button>
@@ -774,27 +777,27 @@ export default function MealLoggerContent({
 
       {/* Step: Analyzing */}
       {step === 'analyzing' && (
-        <div className="space-y-4 py-4 motion-safe:animate-fade-in" role="status" aria-label="Analizando comida">
+        <div className="space-y-4 py-4 motion-safe:animate-fade-in" role="status" aria-label={t('nutrition.logger.analyzing')}>
           {imagePreviews.length > 0 ? (
             <div className="relative overflow-hidden rounded-xl">
-              <img src={imagePreviews[0]} alt="Analizando..." className="w-full rounded-xl opacity-60" />
+              <img src={imagePreviews[0]} alt={t('nutrition.logger.analyzing')} className="w-full rounded-xl opacity-60" />
               {imagePreviews.length > 1 && (
                 <div className="absolute top-2 left-2 text-[10px] font-mono text-white/80 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded">
-                  {imagePreviews.length} fotos
+                  {imagePreviews.length} {t('nutrition.logger.photos')}
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-lime-400/10 to-transparent animate-pulse" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center bg-background/70 backdrop-blur-sm rounded-xl px-6 py-4">
                   <div className="inline-block size-6 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin mb-2" />
-                  <div className="text-sm text-foreground font-medium">Analizando tu comida...</div>
-                  <div className="text-[10px] text-muted-foreground mt-1">Detectando alimentos y macros</div>
+                  <div className="text-sm text-foreground font-medium">{t('nutrition.logger.analyzing')}</div>
+                  <div className="text-[10px] text-muted-foreground mt-1">{t('nutrition.logger.detectingFoods')}</div>
                 </div>
               </div>
             </div>
           ) : (
             <>
-              <div className="text-center text-sm text-muted-foreground mb-4">Analizando tu comida...</div>
+              <div className="text-center text-sm text-muted-foreground mb-4">{t('nutrition.logger.analyzing')}</div>
               {[0, 1, 2].map(i => (
                 <div
                   key={i}
@@ -809,14 +812,14 @@ export default function MealLoggerContent({
               onClick={handleSendToBackground}
               className="w-full text-center text-xs text-lime-400 hover:text-lime-300 font-medium transition-colors py-2 motion-safe:animate-fade-in"
             >
-              No esperar — avisame cuando termine
+              {t('nutrition.logger.dontWait')}
             </button>
           ) : !onSendToBackground ? (
             <button
               onClick={() => { cancelledRef.current = true; abortControllerRef.current?.abort(); abortControllerRef.current = null; setStep('capture') }}
               className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
             >
-              Cancelar
+              {t('nutrition.logger.cancel')}
             </button>
           ) : null}
         </div>
@@ -848,7 +851,7 @@ export default function MealLoggerContent({
                       ? 'bg-lime-400/10 ring-1 ring-lime-400/30'
                       : 'hover:bg-muted text-muted-foreground'
                   )}
-                  title={opt.label}
+                  title={t(opt.labelKey)}
                 >
                   {opt.icon}
                 </button>
@@ -868,7 +871,7 @@ export default function MealLoggerContent({
             <div className="space-y-2">
               {hourSuggestions.length > 0 && (
                 <div>
-                  <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-1.5">Habitual a esta hora</div>
+                  <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-1.5">{t('nutrition.logger.usualAtThisHour')}</div>
                   <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
                     {hourSuggestions.map((food, i) => (
                       <button
@@ -884,7 +887,7 @@ export default function MealLoggerContent({
               )}
               {recentFoods.length > 0 && (
                 <div>
-                  <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-1.5">Recientes</div>
+                  <div className="text-[9px] text-muted-foreground tracking-widest uppercase mb-1.5">{t('nutrition.logger.recents')}</div>
                   <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
                     {recentFoods.map((food, i) => (
                       <button
@@ -921,7 +924,7 @@ export default function MealLoggerContent({
                   <button
                     onClick={() => removeFood(idx)}
                     className="size-9 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded-lg shrink-0 transition-colors -mr-1"
-                    aria-label={`Eliminar ${food.name || 'alimento'}`}
+                    aria-label={`${t('common.delete')} ${food.name || t('nutrition.addFood')}`}
                   >
                     <CloseIcon className="size-3.5" />
                   </button>
@@ -1010,7 +1013,7 @@ export default function MealLoggerContent({
             className="w-full flex items-center justify-center gap-2 min-h-[44px] py-3 rounded-xl border border-dashed border-border text-xs font-mono tracking-widest text-muted-foreground hover:border-lime-400/40 hover:text-lime-400 active:bg-lime-400/5 transition-colors"
           >
             <PlusIcon className="size-3.5" />
-            AGREGAR ALIMENTO
+            {t('nutrition.logger.addFood')}
           </button>
 
           {/* Total summary */}
@@ -1022,15 +1025,15 @@ export default function MealLoggerContent({
             <div className="grid grid-cols-3 gap-3">
               <div className="text-center p-2 bg-background/50 rounded-lg">
                 <div className="font-bebas text-lg text-sky-500 tabular-nums">{Math.round(totals.protein)}g</div>
-                <div className="text-[9px] text-muted-foreground tracking-wide">Proteína</div>
+                <div className="text-[9px] text-muted-foreground tracking-wide">{t('nutrition.protein')}</div>
               </div>
               <div className="text-center p-2 bg-background/50 rounded-lg">
                 <div className="font-bebas text-lg text-amber-400 tabular-nums">{Math.round(totals.carbs)}g</div>
-                <div className="text-[9px] text-muted-foreground tracking-wide">Carbos</div>
+                <div className="text-[9px] text-muted-foreground tracking-wide">{t('nutrition.carbs')}</div>
               </div>
               <div className="text-center p-2 bg-background/50 rounded-lg">
                 <div className="font-bebas text-lg text-pink-500 tabular-nums">{Math.round(totals.fat)}g</div>
-                <div className="text-[9px] text-muted-foreground tracking-wide">Grasa</div>
+                <div className="text-[9px] text-muted-foreground tracking-wide">{t('nutrition.fat')}</div>
               </div>
             </div>
           </div>
@@ -1042,16 +1045,16 @@ export default function MealLoggerContent({
               className="w-full flex items-center justify-center gap-2 min-h-[40px] py-2 text-xs text-muted-foreground tracking-widest hover:text-lime-400 active:text-lime-300 transition-colors"
             >
               <TemplateIcon className="size-3" />
-              GUARDAR COMO PLANTILLA
+              {t('nutrition.logger.saveAsTemplate')}
             </button>
           ) : (
             <div className="flex gap-2 items-center">
               <input
                 value={templateName}
                 onChange={e => setTemplateName(e.target.value)}
-                placeholder="Nombre de la plantilla"
+                placeholder={t('nutrition.logger.templateNamePlaceholder')}
                 maxLength={100}
-                aria-label="Nombre de la plantilla"
+                aria-label={t('nutrition.logger.templateNamePlaceholder')}
                 className="flex-1 h-10 text-base px-3 rounded-lg border border-input bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-lime-400/20"
               />
               <Button
@@ -1065,7 +1068,7 @@ export default function MealLoggerContent({
               <button
                 onClick={() => setShowSaveTemplate(false)}
                 className="size-9 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg shrink-0"
-                aria-label="Cancelar plantilla"
+                aria-label={t('nutrition.logger.cancelTemplate')}
               >
                 <CloseIcon className="size-3" />
               </button>
@@ -1084,7 +1087,7 @@ export default function MealLoggerContent({
             disabled={foods.length === 0}
             className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-widest shadow-lg shadow-lime-400/10"
           >
-            GUARDAR COMIDA
+            {t('nutrition.logger.saveMeal')}
           </Button>
         </div>
       )}
@@ -1093,7 +1096,7 @@ export default function MealLoggerContent({
       {step === 'saving' && (
         <div className="py-12 text-center motion-safe:animate-fade-in" role="status">
           <div className="inline-block size-6 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin mb-3" />
-          <div className="text-sm text-muted-foreground">Guardando comida...</div>
+          <div className="text-sm text-muted-foreground">{t('nutrition.logger.saving')}</div>
         </div>
       )}
 
@@ -1106,7 +1109,7 @@ export default function MealLoggerContent({
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <div className="text-lime-400 font-bebas text-2xl tracking-wide">Comida registrada</div>
+            <div className="text-lime-400 font-bebas text-2xl tracking-wide">{t('nutrition.logger.mealRegistered')}</div>
           </div>
 
           {/* Meal summary */}
@@ -1120,20 +1123,20 @@ export default function MealLoggerContent({
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="p-2 bg-background/50 rounded-lg">
                 <div className="font-bebas text-lg text-sky-500 tabular-nums">{Math.round(totals.protein)}g</div>
-                <div className="text-[9px] text-muted-foreground">Proteína</div>
+                <div className="text-[9px] text-muted-foreground">{t('nutrition.protein')}</div>
               </div>
               <div className="p-2 bg-background/50 rounded-lg">
                 <div className="font-bebas text-lg text-amber-400 tabular-nums">{Math.round(totals.carbs)}g</div>
-                <div className="text-[9px] text-muted-foreground">Carbos</div>
+                <div className="text-[9px] text-muted-foreground">{t('nutrition.carbs')}</div>
               </div>
               <div className="p-2 bg-background/50 rounded-lg">
                 <div className="font-bebas text-lg text-pink-500 tabular-nums">{Math.round(totals.fat)}g</div>
-                <div className="text-[9px] text-muted-foreground">Grasa</div>
+                <div className="text-[9px] text-muted-foreground">{t('nutrition.fat')}</div>
               </div>
             </div>
             {goals && (
               <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
-                Llevas {Math.round(dailyTotals.calories)} de {Math.round(goals.dailyCalories)} kcal hoy
+                {t('nutrition.logger.dailyProgress', { current: Math.round(dailyTotals.calories), goal: Math.round(goals.dailyCalories) })}
               </div>
             )}
           </div>
@@ -1143,14 +1146,14 @@ export default function MealLoggerContent({
               onClick={() => onSaveSuccess?.()}
               className="flex-1 h-11 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-lg tracking-wide"
             >
-              LISTO
+              {t('nutrition.logger.done')}
             </Button>
             <Button
               variant="outline"
               onClick={handleResetForm}
               className="flex-1 h-11 font-bebas text-lg tracking-wide"
             >
-              REGISTRAR OTRA
+              {t('nutrition.logger.registerAnother')}
             </Button>
           </div>
         </div>

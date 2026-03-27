@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { playTimerComplete, playCountdownTick, playWarning, vibrate } from '../lib/sounds'
 import { notifyTimerDone } from '../lib/notifications'
@@ -18,7 +19,9 @@ const R = (SIZE - STROKE_W) / 2
 const CIRC = 2 * Math.PI * R
 const HALF = SIZE / 2
 
-export default function Timer({ initialSeconds = 60, onComplete, autoStart = false, label = "Descanso" }: TimerProps) {
+export default function Timer({ initialSeconds = 60, onComplete, autoStart = false, label }: TimerProps) {
+  const { t } = useTranslation()
+  const effectiveLabel = label ?? t('timer.rest')
   const [seconds, setSeconds] = useState<number>(initialSeconds)
   const [totalSeconds, setTotalSeconds] = useState<number>(initialSeconds)
   const [phase, setPhase] = useState<Phase>(autoStart ? 'countdown' : 'idle')
@@ -69,7 +72,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
           setPhase('done')
           playTimerComplete()
           vibrate([200, 100, 200])
-          notifyTimerDone(label)
+          notifyTimerDone(effectiveLabel)
           onCompleteRef.current?.()
           return 0
         }
@@ -78,7 +81,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
     }, 1000)
 
     return clearTimer
-  }, [phase, clearTimer, label])
+  }, [phase, clearTimer, effectiveLabel])
 
   const handleStart = () => {
     if (phase === 'done') {
@@ -124,7 +127,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
     'transparent'
 
   return (
-    <div className="flex flex-col items-center gap-4" role="timer" aria-label={label}>
+    <div className="flex flex-col items-center gap-4" role="timer" aria-label={effectiveLabel}>
       <style>{`
         @keyframes countPulse {
           0%   { transform: scale(0.5); opacity: 0; }
@@ -224,7 +227,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
                 </div>
               )}
               <div className="font-mono text-[10px] text-muted-foreground/60 tracking-[2px] mt-1">
-                {phase === 'done' ? 'COMPLETADO' : label.toUpperCase()}
+                {phase === 'done' ? t('timer.completed') : effectiveLabel.toUpperCase()}
               </div>
             </div>
           )}
@@ -234,7 +237,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
       {/* "Prepárate" label during countdown */}
       {phase === 'countdown' && (
         <div className="font-mono text-[11px] text-amber-400/70 tracking-[3px] uppercase timer-fade-in">
-          Prepárate
+          {t('timer.getReady')}
         </div>
       )}
 
@@ -265,7 +268,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
             onClick={handlePause}
             className="font-mono text-[11px] tracking-[2px] text-destructive hover:text-destructive hover:bg-destructive/10 h-10 min-w-[44px] px-5"
           >
-            PAUSAR
+            {t('timer.pause')}
           </Button>
         ) : phase !== 'countdown' && (
           <Button
@@ -274,12 +277,12 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
             onClick={handleStart}
             className="font-mono text-[11px] tracking-[2px] text-lime hover:text-lime hover:bg-lime/10 h-10 min-w-[44px] px-5"
           >
-            {phase === 'done' ? 'REPETIR' : phase === 'paused' ? 'REANUDAR' : 'INICIAR'}
+            {phase === 'done' ? t('timer.repeat') : phase === 'paused' ? t('timer.resume') : t('timer.start')}
           </Button>
         )}
         {(phase === 'paused' || phase === 'done') && (
           <Button size="sm" variant="outline" onClick={reset}
-            aria-label="Reiniciar timer"
+            aria-label={t('timer.reset')}
             className="font-mono text-[11px] min-w-[44px] h-10 px-3.5">
             ↺
           </Button>

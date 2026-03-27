@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from './ui/dialog'
 import changelog from '../data/changelog.json'
+import i18n from '../lib/i18n'
 import { cn } from '../lib/utils'
 
 const APP_VERSION = __APP_VERSION__
@@ -42,7 +44,7 @@ const TYPE_STYLES: Record<string, { dot: string; label: string }> = {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', {
+    return new Date(iso + 'T00:00:00').toLocaleDateString(i18n.language, {
       day: 'numeric', month: 'short',
     })
   } catch {
@@ -169,6 +171,7 @@ export function WhatsNewDialog({
   onOpenChange: (open: boolean) => void
   versions?: ChangelogVersion[]
 }) {
+  const { t } = useTranslation()
   const displayVersions = versions || changelog.versions
 
   return (
@@ -182,7 +185,7 @@ export function WhatsNewDialog({
                 Changelog
               </DialogDescription>
               <DialogTitle className="font-['Bebas_Neue',cursive] text-xl tracking-wide text-foreground leading-none">
-                Novedades
+                {t('whatsNew.title')}
               </DialogTitle>
             </div>
             <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
@@ -216,7 +219,7 @@ export function WhatsNewDialog({
               'active:scale-[0.98]',
             )}
           >
-            Continuar
+            {t('whatsNew.continue')}
           </button>
         </div>
       </DialogContent>

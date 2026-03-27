@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useChallengeDetail } from '../hooks/useChallengeDetail'
 import { useFollows } from '../hooks/useFollows'
@@ -17,6 +18,7 @@ interface ChallengeDetailPageProps {
 }
 
 export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps) {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { challenge, leaderboard, loading, participantIds, load, inviteUser } = useChallengeDetail(id || null, userId)
@@ -53,7 +55,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
         <button onClick={() => navigate('/challenges')} className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
           <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="10,3 5,8 10,13" /></svg>
-          Volver
+          {t('common.back')}
         </button>
         <div className="text-center py-16 text-muted-foreground text-sm">Desafío no encontrado</div>
       </div>
@@ -79,7 +81,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       {/* Back */}
       <button onClick={() => navigate('/challenges')} className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
         <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="10,3 5,8 10,13" /></svg>
-        Volver
+        {t('common.back')}
       </button>
 
       {/* Header */}
@@ -125,7 +127,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
             onClick={() => setShowInvite(!showInvite)}
             className="text-[10px] tracking-widest h-9"
           >
-            {showInvite ? 'OCULTAR' : 'INVITAR AMIGO'}
+            {showInvite ? t('challenge.hide') : t('challenge.inviteFriend')}
           </Button>
 
           {showInvite && (
@@ -167,7 +169,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       )}
 
       {leaderboard.length === 0 && !loading && (
-        <div className="text-center py-12 text-sm text-muted-foreground">Sin participantes</div>
+        <div className="text-center py-12 text-sm text-muted-foreground">{t('challenge.noParticipants')}</div>
       )}
     </div>
   )

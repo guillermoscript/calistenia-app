@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '../components/ui/badge'
 import { relativeDate } from '../lib/dateUtils'
 import { isFreeSession, filterProgressByType } from '../lib/progressUtils'
@@ -18,6 +19,7 @@ interface SessionLog {
 }
 
 export default function FreeProgressPage() {
+  const { t } = useTranslation()
   const { progress, settings } = useWorkoutState()
   const navigate = useNavigate()
 
@@ -69,22 +71,22 @@ export default function FreeProgressPage() {
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
       >
         <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="10,3 5,8 10,13" /></svg>
-        Volver
+        {t('common.back')}
       </button>
 
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">Historial</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">{t('freeProgress.history')}</div>
       <div className="flex items-end gap-4 mb-8 flex-wrap">
-        <div className="font-bebas text-3xl md:text-4xl leading-none">SESIONES LIBRES</div>
+        <div className="font-bebas text-3xl md:text-4xl leading-none">{t('freeProgress.title')}</div>
         <Badge variant="outline" className="border-violet-400/25 text-violet-400 bg-violet-400/5 mb-1.5">
-          {freeLogs.length} {freeLogs.length !== 1 ? 'sesiones' : 'sesión'}
+          {t('freeProgress.sessionCount', { count: freeLogs.length })}
         </Badge>
       </div>
 
       {freeLogs.length === 0 ? (
         <div className="text-center py-16 px-5 text-muted-foreground">
           <div className="text-5xl mb-4">🏋️</div>
-          <div className="font-bebas text-3xl mb-2">Sin sesiones libres</div>
-          <div className="text-sm">Cuando completes una sesión libre, aquí verás tu progreso independiente del programa.</div>
+          <div className="font-bebas text-3xl mb-2">{t('freeProgress.noSessions')}</div>
+          <div className="text-sm">{t('freeProgress.noSessionsDesc')}</div>
         </div>
       ) : (
         <div>
@@ -99,7 +101,7 @@ export default function FreeProgressPage() {
             if (visibleExercises.length === 0) return null
             return (
               <div className="mb-8">
-                <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Ejercicios</div>
+                <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('freeProgress.exercises')}</div>
                 <div className="flex flex-col gap-2.5">
                   {visibleExercises.map(([exId, logs]) => {
                     const latest = [...logs].sort((a, b) => b.date.localeCompare(a.date))[0]
@@ -120,7 +122,7 @@ export default function FreeProgressPage() {
 
           {/* Session History */}
           <div className="mb-8">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Historial</div>
+            <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('freeProgress.history')}</div>
             <div className="flex flex-col gap-1.5">
               {freeLogs.map((log, i) => (
                 <button
@@ -134,10 +136,10 @@ export default function FreeProgressPage() {
                       <div className="text-sm font-medium truncate text-violet-400 capitalize">
                         {log.exerciseNames.length > 0
                           ? log.exerciseNames.map(n => n.replace(/_/g, ' ')).join(', ')
-                          : 'Sesión Libre'}
+                          : t('progress.freeSession')}
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        {log.totalSets > 0 ? `${log.totalSets} series` : `${log.exerciseCount} ${log.exerciseCount !== 1 ? 'ejercicios' : 'ejercicio'}`}
+                        {log.totalSets > 0 ? t('common.sets', { count: log.totalSets }) : t('progress.exerciseCount', { count: log.exerciseCount })}
                       </div>
                     </div>
                   </div>

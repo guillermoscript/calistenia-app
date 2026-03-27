@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { WORKOUTS } from '../data/workouts'
 import { Badge } from '../components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
@@ -34,6 +35,7 @@ interface SessionLog {
 }
 
 export default function ProgressPage() {
+  const { t } = useTranslation()
   const { progress, settings, activeProgram } = useWorkoutState()
   const { userId } = useAuthState()
   const navigate = useNavigate()
@@ -56,7 +58,7 @@ export default function ProgressPage() {
           : 0
         return {
           date, workoutKey,
-          title: isFree ? 'Sesión Libre' : (workout?.title || workoutKey),
+          title: isFree ? t('progress.freeSession') : (workout?.title || workoutKey),
           phase: isFree ? undefined : workout?.phase,
           note: (val as { note?: string }).note || '',
           isFree,
@@ -84,7 +86,7 @@ export default function ProgressPage() {
   return (
     <div className="max-w-[860px] mx-auto px-4 py-6 md:px-6 md:py-8">
       <div className="flex items-end gap-4 mb-6 flex-wrap">
-        <div className="font-bebas text-[36px] md:text-[52px] leading-none">PROGRESO</div>
+        <div className="font-bebas text-[36px] md:text-[52px] leading-none">{t('progress.title')}</div>
         {programName && (
           <Badge variant="outline" className="border-lime/25 text-lime bg-lime/5 mb-1.5">
             {programName.toUpperCase()}
@@ -94,17 +96,17 @@ export default function ProgressPage() {
 
       {allLogs.length === 0 ? (
         <div className="text-center py-20 px-5 text-muted-foreground">
-          <div className="font-bebas text-3xl mb-2">Aún no hay datos</div>
+          <div className="font-bebas text-3xl mb-2">{t('progress.noData')}</div>
           <div className="text-sm leading-relaxed max-w-sm mx-auto">
-            Completa tu primer entrenamiento y anota las series para ver tu progreso aquí.
+            {t('progress.noDataDesc')}
           </div>
         </div>
       ) : (
         <Tabs defaultValue="resumen" className="w-full">
           <TabsList className="w-full mb-6">
-            <TabsTrigger value="resumen" className="flex-1 text-xs tracking-[1.5px] uppercase">Resumen</TabsTrigger>
-            <TabsTrigger value="graficas" className="flex-1 text-xs tracking-[1.5px] uppercase">Gráficas</TabsTrigger>
-            <TabsTrigger value="cuerpo" className="flex-1 text-xs tracking-[1.5px] uppercase">Cuerpo</TabsTrigger>
+            <TabsTrigger value="resumen" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.summary')}</TabsTrigger>
+            <TabsTrigger value="graficas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.charts')}</TabsTrigger>
+            <TabsTrigger value="cuerpo" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.body')}</TabsTrigger>
           </TabsList>
 
           {/* ── Tab 1: Resumen ── */}
@@ -121,9 +123,9 @@ export default function ProgressPage() {
                 className="w-full mb-8 px-4 py-3 bg-violet-400/5 border border-violet-400/20 rounded-lg hover:border-violet-400/40 transition-colors flex items-center justify-between"
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-violet-400 text-sm font-medium">Progreso de sesiones libres</span>
+                  <span className="text-violet-400 text-sm font-medium">{t('progress.freeSessionProgress')}</span>
                   <span className="text-[11px] text-muted-foreground">
-                    {freeLogCount} {freeLogCount !== 1 ? 'sesiones' : 'sesión'}
+                    {t('progress.sessionCount', { count: freeLogCount })}
                   </span>
                 </div>
                 <svg className="size-4 text-violet-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
@@ -132,7 +134,7 @@ export default function ProgressPage() {
 
             {/* Recent Sessions */}
             <div className="mb-8">
-              <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">Sesiones recientes</div>
+              <div className="text-[10px] text-muted-foreground tracking-[3px] mb-3 uppercase">{t('progress.recentSessions')}</div>
               <div className="flex flex-col gap-1.5">
                 {allLogs.slice(0, 15).map((log, i) => {
                   const phaseColor = log.phase ? PHASE_COLORS[log.phase] : null
@@ -147,7 +149,7 @@ export default function ProgressPage() {
                         <div className="min-w-0">
                           <div className={cn('text-sm font-medium truncate', log.isFree ? 'text-violet-400' : phaseColor?.text)}>{log.title}</div>
                           {log.isFree && log.exerciseCount > 0 && (
-                            <div className="text-[11px] text-muted-foreground">{log.exerciseCount} {log.exerciseCount !== 1 ? 'ejercicios' : 'ejercicio'}</div>
+                            <div className="text-[11px] text-muted-foreground">{t('progress.exerciseCount', { count: log.exerciseCount })}</div>
                           )}
                         </div>
                       </div>
@@ -170,7 +172,7 @@ export default function ProgressPage() {
             {/* Exercise Charts */}
             {Object.keys(exerciseLogs).length > 0 && (
               <div id="tour-exercise-charts" className="mb-8">
-                <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Gráficas por ejercicio</div>
+                <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.chartsByExercise')}</div>
                 <div className="flex flex-col gap-2.5">
                   {Object.entries(exerciseLogs).map(([exId, logs]) => (
                     <ExerciseChart
@@ -198,13 +200,13 @@ export default function ProgressPage() {
 
             {Object.keys(exerciseLogs).length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
-                <div className="font-bebas text-2xl mb-2">Sin datos todavía</div>
-                <div className="text-sm mb-4">Anota series en tus entrenamientos para ver tus gráficas.</div>
+                <div className="font-bebas text-2xl mb-2">{t('progress.noChartsData')}</div>
+                <div className="text-sm mb-4">{t('progress.noChartsDataDesc')}</div>
                 <button
                   onClick={() => navigate('/')}
                   className="text-sm text-lime hover:underline"
                 >
-                  Ir a entrenar
+                  {t('progress.goTrain')}
                 </button>
               </div>
             )}

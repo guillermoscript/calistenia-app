@@ -1,14 +1,16 @@
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
 import { formatPace, formatDuration, formatSpeed } from '../../lib/geo'
+import i18n from '../../lib/i18n'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
 import type { CardioSession, KmSplit } from '../../types'
 
 /** Uppercase labels for canvas rendering */
-const ACTIVITY_LABELS: Record<string, string> = Object.fromEntries(
-  Object.entries(CARDIO_ACTIVITY).map(([k, v]) => [k, v.label.toUpperCase()])
-)
+function getActivityLabel(key: string): string {
+  return i18n.t(`cardio.${key}`).toUpperCase()
+}
 
 const ACCENT_COLORS: Record<string, string> = {
   running: '#a3e635',
@@ -38,6 +40,7 @@ interface CardioShareCardProps {
 }
 
 export default function CardioShareCard({ session }: CardioShareCardProps) {
+  const { t } = useTranslation()
   const handleShare = useCallback(async () => {
     try {
       const scale = 2
@@ -80,7 +83,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       // Activity type label
       ctx.fillStyle = accent
       ctx.font = '600 13px system-ui, -apple-system, sans-serif'
-      ctx.fillText(ACTIVITY_LABELS[session.activity_type] || 'CARDIO', pad, 120)
+      ctx.fillText(getActivityLabel(session.activity_type) || 'CARDIO', pad, 120)
 
       // Accent line
       fillRRect(ctx, pad, 130, 40, 3, 1.5, accent)
@@ -92,7 +95,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       ctx.fillText(session.distance_km.toFixed(2), w / 2, 220)
       ctx.fillStyle = '#525252'
       ctx.font = '400 16px system-ui, -apple-system, sans-serif'
-      ctx.fillText('KILÓMETROS', w / 2, 248)
+      ctx.fillText(i18n.t('cardio.kilometers'), w / 2, 248)
       ctx.textAlign = 'left'
 
       // Stats grid 2x2
@@ -101,15 +104,15 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       const cardH = 100
 
       const statsData = [
-        { label: 'DURACIÓN', value: formatDuration(session.duration_seconds), color: '#fafafa' },
+        { label: i18n.t('cardio.duration').toUpperCase(), value: formatDuration(session.duration_seconds), color: '#fafafa' },
         {
-          label: isCycling ? 'VELOCIDAD' : 'RITMO',
+          label: isCycling ? i18n.t('cardio.speed').toUpperCase() : i18n.t('cardio.pace').toUpperCase(),
           value: isCycling ? `${formatSpeed(session.avg_speed_kmh || 0)} km/h` : formatPace(session.avg_pace),
           color: accent,
         },
-        { label: 'CALORÍAS', value: String(session.calories_burned || 0), unit: 'kcal', color: '#fb923c' },
+        { label: i18n.t('nutrition.calories').toUpperCase(), value: String(session.calories_burned || 0), unit: 'kcal', color: '#fb923c' },
         {
-          label: isCycling ? 'VEL. MÁX' : 'RITMO MÁX',
+          label: isCycling ? i18n.t('cardio.maxSpeed').toUpperCase() : i18n.t('cardio.maxPace').toUpperCase(),
           value: isCycling ? `${formatSpeed(session.max_speed_kmh || 0)} km/h` : formatPace(session.max_pace || 0),
           color: accent + '80',
         },
@@ -149,7 +152,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
         ctx.fillText(`${session.elevation_gain}m`, w / 2, nextY + 28)
         ctx.fillStyle = '#525252'
         ctx.font = '600 10px system-ui, -apple-system, sans-serif'
-        ctx.fillText('DESNIVEL', w / 2, nextY + 44)
+        ctx.fillText(i18n.t('cardio.elevation').toUpperCase(), w / 2, nextY + 44)
         ctx.textAlign = 'left'
         nextY += 70
       }
@@ -164,7 +167,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
         if (topSplits.length > 0) {
           ctx.fillStyle = '#404040'
           ctx.font = '600 11px system-ui, -apple-system, sans-serif'
-          ctx.fillText('M E J O R E S   S P L I T S', pad, nextY + 10)
+          ctx.fillText(i18n.t('cardio.splits').toUpperCase(), pad, nextY + 10)
           nextY += 25
 
           topSplits.forEach((split, i) => {
@@ -200,7 +203,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       await shareImage(
         blob,
         `cardio_${dateStr}.png`,
-        `${ACTIVITY_LABELS[session.activity_type]} — ${session.distance_km.toFixed(2)} km`,
+        `${getActivityLabel(session.activity_type)} — ${session.distance_km.toFixed(2)} km`,
         `${session.distance_km.toFixed(2)} km en ${formatDuration(session.duration_seconds)}`,
       )
     } catch (e) {
@@ -214,7 +217,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       onClick={handleShare}
       className="h-11 font-bebas text-lg tracking-wide border-border"
     >
-      COMPARTIR
+      {t('cardio.share')}
     </Button>
   )
 }
@@ -222,7 +225,7 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
 function formatDate(isoStr: string): string {
   try {
     const d = new Date(isoStr)
-    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return d.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   } catch {
     return isoStr.split('T')[0]
   }

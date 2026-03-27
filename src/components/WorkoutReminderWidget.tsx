@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -20,6 +21,7 @@ const DAY_LABELS = [
 ]
 
 export default function WorkoutReminderWidget({ userId }: WorkoutReminderWidgetProps) {
+  const { t } = useTranslation()
   const { reminders, saveReminder, toggleReminder, deleteReminder } = useWorkoutReminders(userId ?? null)
   const [showForm, setShowForm] = useState(false)
   const [hour, setHour] = useState('08')
@@ -48,14 +50,14 @@ export default function WorkoutReminderWidget({ userId }: WorkoutReminderWidgetP
     <Card>
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">Recordatorios de entrenamiento</div>
+          <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('reminders.workoutReminders')}</div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowForm(s => !s)}
             className="text-[10px] tracking-widest hover:border-lime hover:text-lime"
           >
-            {showForm ? 'CANCELAR' : '+ NUEVO'}
+            {showForm ? t('common.cancel') : t('reminders.newReminder')}
           </Button>
         </div>
 
@@ -102,7 +104,7 @@ export default function WorkoutReminderWidget({ userId }: WorkoutReminderWidgetP
               size="sm"
               className="h-8 bg-lime text-lime-foreground hover:bg-lime/90 text-[10px] font-bold tracking-widest"
             >
-              GUARDAR
+              {t('common.save')}
             </Button>
           </div>
         )}
@@ -144,7 +146,7 @@ export default function WorkoutReminderWidget({ userId }: WorkoutReminderWidgetP
           </div>
         ) : !showForm && (
           <div className="text-[11px] text-muted-foreground">
-            Sin recordatorios configurados
+            {t('reminders.noReminders')}
           </div>
         )}
       </CardContent>

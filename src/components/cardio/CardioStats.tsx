@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatPace, formatDuration } from '../../lib/geo'
 import type { CardioAggregateStats, PersonalRecords, WeeklyTrendPoint } from '../../hooks/useCardioStats'
 import { cn } from '../../lib/utils'
@@ -11,6 +12,7 @@ interface CardioStatsProps {
 }
 
 export default function CardioStats({ weeklyStats, monthlyStats, records, weeklyTrend }: CardioStatsProps) {
+  const { t } = useTranslation()
   const [period, setPeriod] = useState<'week' | 'month'>('week')
   const stats = period === 'week' ? weeklyStats : monthlyStats
 
@@ -19,7 +21,7 @@ export default function CardioStats({ weeklyStats, monthlyStats, records, weekly
   return (
     <div className="space-y-4">
       {/* Period toggle */}
-      <div className="flex gap-1 p-1 bg-muted/50 rounded-lg" role="tablist" aria-label="Periodo de estadísticas">
+      <div className="flex gap-1 p-1 bg-muted/50 rounded-lg" role="tablist" aria-label={t('cardio.statistics')}>
         <button
           role="tab"
           aria-selected={period === 'week'}
@@ -29,7 +31,7 @@ export default function CardioStats({ weeklyStats, monthlyStats, records, weekly
             period === 'week' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'
           )}
         >
-          ESTA SEMANA
+          {t('cardio.thisWeek')}
         </button>
         <button
           role="tab"
@@ -40,7 +42,7 @@ export default function CardioStats({ weeklyStats, monthlyStats, records, weekly
             period === 'month' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'
           )}
         >
-          ESTE MES
+          {t('cardio.thisMonth')}
         </button>
       </div>
 
@@ -48,19 +50,19 @@ export default function CardioStats({ weeklyStats, monthlyStats, records, weekly
       <div className="grid grid-cols-2 gap-3">
         <div className="text-center p-3 bg-muted/60 rounded-xl">
           <div className="font-bebas text-2xl text-lime tabular-nums">{stats.totalDistance.toFixed(1)}</div>
-          <div className="text-[10px] font-mono tracking-widest text-muted-foreground">KM TOTAL</div>
+          <div className="text-[10px] font-mono tracking-widest text-muted-foreground">{t('cardio.totalKm')}</div>
         </div>
         <div className="text-center p-3 bg-muted/60 rounded-xl">
           <div className="font-bebas text-2xl tabular-nums">{stats.totalSessions}</div>
-          <div className="text-[10px] font-mono tracking-widest text-muted-foreground">SESIONES</div>
+          <div className="text-[10px] font-mono tracking-widest text-muted-foreground">{t('cardio.sessions')}</div>
         </div>
         <div className="text-center p-3 bg-muted/60 rounded-xl">
           <div className="font-bebas text-2xl text-sky-500 tabular-nums">{formatDuration(stats.totalDuration)}</div>
-          <div className="text-[10px] font-mono tracking-widest text-muted-foreground">TIEMPO TOTAL</div>
+          <div className="text-[10px] font-mono tracking-widest text-muted-foreground">{t('cardio.totalTime')}</div>
         </div>
         <div className="text-center p-3 bg-muted/60 rounded-xl">
           <div className="font-bebas text-2xl text-amber-400 tabular-nums">{stats.totalCalories}</div>
-          <div className="text-[10px] font-mono tracking-widest text-muted-foreground">CALORÍAS</div>
+          <div className="text-[10px] font-mono tracking-widest text-muted-foreground">{t('nutrition.calories').toUpperCase()}</div>
         </div>
       </div>
 
@@ -68,7 +70,7 @@ export default function CardioStats({ weeklyStats, monthlyStats, records, weekly
       {weeklyTrend && weeklyTrend.some(w => w.distance > 0) && (
         <div>
           <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">
-            Distancia semanal
+            {t('cardio.weeklyDistance')}
           </div>
           <WeeklyTrendChart data={weeklyTrend} />
         </div>
@@ -78,26 +80,26 @@ export default function CardioStats({ weeklyStats, monthlyStats, records, weekly
       {hasRecords && (
         <div>
           <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">
-            Marcas Personales
+            {t('cardio.personalRecords')}
           </div>
           <div className="space-y-2">
             {records.best1km && (
-              <RecordRow label="Mejor 1 km" value={formatPace(records.best1km)} unit="min/km" accent="text-lime" />
+              <RecordRow label={t('cardio.best1km')} value={formatPace(records.best1km)} unit="min/km" accent="text-lime" />
             )}
             {records.best5km && (
-              <RecordRow label="Mejor 5 km" value={formatPace(records.best5km)} unit="min/km" accent="text-lime" />
+              <RecordRow label={t('cardio.best5km')} value={formatPace(records.best5km)} unit="min/km" accent="text-lime" />
             )}
             {records.best10km && (
-              <RecordRow label="Mejor 10 km" value={formatPace(records.best10km)} unit="min/km" accent="text-lime" />
+              <RecordRow label={t('cardio.best10km')} value={formatPace(records.best10km)} unit="min/km" accent="text-lime" />
             )}
             {records.longestDistance && (
-              <RecordRow label="Mayor distancia" value={records.longestDistance.toFixed(2)} unit="km" accent="text-sky-500" />
+              <RecordRow label={t('cardio.longestDistance')} value={records.longestDistance.toFixed(2)} unit="km" accent="text-sky-500" />
             )}
             {records.highestElevation && (
-              <RecordRow label="Mayor desnivel" value={String(records.highestElevation)} unit="m" accent="text-amber-400" />
+              <RecordRow label={t('cardio.highestElevation')} value={String(records.highestElevation)} unit="m" accent="text-amber-400" />
             )}
             {records.bestPace && (
-              <RecordRow label="Mejor ritmo" value={formatPace(records.bestPace)} unit="min/km" accent="text-pink-500" />
+              <RecordRow label={t('cardio.bestPace')} value={formatPace(records.bestPace)} unit="min/km" accent="text-pink-500" />
             )}
           </div>
         </div>

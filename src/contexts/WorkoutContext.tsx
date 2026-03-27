@@ -16,8 +16,8 @@ interface WorkoutState {
   activeProgram: ProgramMeta | null
   phases: Phase[]
   weekDays: WeekDay[]
-  programsReady: boolean
   cardioDayConfigs: Record<string, CardioDayConfig>
+  programsReady: boolean
 }
 
 interface WorkoutActions {
@@ -76,9 +76,8 @@ interface WorkoutProviderProps {
 
 export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const {
-    programs, activeProgram, phases, weekDays, getWorkout,
+    programs, activeProgram, phases, weekDays, cardioDayConfigs, getWorkout,
     selectProgram, duplicateProgram, deleteProgram, refreshPrograms, programsReady,
-    cardioDayConfigs,
   } = usePrograms(userId)
 
   const {
@@ -97,8 +96,8 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
 
   const state = useMemo<WorkoutState>(() => ({
     progress, settings, usePB, pbReady,
-    programs, activeProgram, phases, weekDays, programsReady, cardioDayConfigs,
-  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, programsReady, cardioDayConfigs])
+    programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady,
+  }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady])
 
   const actions = useMemo<WorkoutActions>(() => ({
     logSet, markWorkoutDone, unmarkWorkoutDone, updateSettings,

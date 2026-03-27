@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
@@ -42,10 +43,11 @@ const PR_DEFS = [
   { key: 'pr_pushups',   label: 'Push-ups',        unit: 'reps', goal: 50, accent: 'text-[hsl(var(--lime))]' },
   { key: 'pr_lsit',      label: 'L-sit',           unit: 's',    goal: 30, accent: 'text-amber-400' },
   { key: 'pr_pistol',    label: 'Pistol Squat',    unit: 'reps', goal: 1,  accent: 'text-pink-500' },
-  { key: 'pr_handstand', label: 'Handstand libre',  unit: 's',    goal: 60, accent: 'text-red-500' },
+  { key: 'pr_handstand', label: 'Freestanding Handstand', unit: 's', goal: 60, accent: 'text-red-500' },
 ]
 
 export default function UserProfilePage() {
+  const { t } = useTranslation()
   const { settings } = useWorkoutState()
   const { getLongestStreak, getTotalSessions } = useWorkoutActions()
   const { userId: currentUserId } = useAuthState()
@@ -178,7 +180,7 @@ export default function UserProfilePage() {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16">
-        <Loader label="Cargando perfil..." />
+        <Loader label={t('profile.loadingProfile')} />
       </div>
     )
   }
@@ -186,7 +188,7 @@ export default function UserProfilePage() {
   if (!profile) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center text-muted-foreground text-sm">
-        No se encontro el perfil.
+        {t('profile.notFound')}
       </div>
     )
   }
@@ -263,8 +265,8 @@ export default function UserProfilePage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatBox label="Sesiones" value={profile.totalSessions} compareValue={comparing ? currentUserSessions : undefined} accent="text-[hsl(var(--lime))]" />
-        <StatBox label="Racha actual" value={profile.currentStreak} compareValue={comparing ? currentUserStreak : undefined} accent="text-sky-500" unit="dias" />
-        <StatBox label="Mejor racha" value={profile.bestStreak} accent="text-amber-400" unit="dias" />
+        <StatBox label={t('profile.currentStreak')} value={profile.currentStreak} compareValue={comparing ? currentUserStreak : undefined} accent="text-sky-500" unit={t('profile.days')} />
+        <StatBox label={t('profile.bestStreak')} value={profile.bestStreak} accent="text-amber-400" unit={t('profile.days')} />
         <StatBox label="Nivel" value={profile.level} accent="text-pink-500" />
       </div>
 
@@ -290,7 +292,7 @@ export default function UserProfilePage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="mb-8 text-xs text-muted-foreground text-center py-4">Sin programa activo</div>
+        <div className="mb-8 text-xs text-muted-foreground text-center py-4">{t('profile.noActiveProgram')}</div>
       )}
 
       {/* PRs */}

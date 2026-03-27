@@ -1,0 +1,177 @@
+- generic [ref=e1]:
+  - generic:
+    - generic:
+      - generic: Sin conexion — los datos se guardan localmente
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Calistenia
+                  - generic: 6M
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Entrenamiento
+                    - list:
+                      - listitem:
+                        - button "Dashboard":
+                          - img
+                          - generic: Dashboard
+                      - listitem:
+                        - button "Entrenar":
+                          - img
+                          - generic: Entrenar
+                      - listitem:
+                        - button "Sesion Libre":
+                          - img
+                          - generic: Sesion Libre
+                      - listitem:
+                        - button "Cardio":
+                          - img
+                          - generic: Cardio
+                      - listitem:
+                        - button "Lumbar":
+                          - img
+                          - generic: Lumbar
+                  - generic:
+                    - generic: Seguimiento
+                    - list:
+                      - listitem:
+                        - button "Progreso":
+                          - img
+                          - generic: Progreso
+                      - listitem:
+                        - button "Nutricion":
+                          - img
+                          - generic: Nutricion
+                      - listitem:
+                        - button "Sueño":
+                          - img
+                          - generic: Sueño
+                      - listitem:
+                        - button "Calendario":
+                          - img
+                          - generic: Calendario
+                      - listitem:
+                        - button "Recordatorios":
+                          - img
+                          - generic: Recordatorios
+                  - generic:
+                    - generic: Explorar
+                    - list:
+                      - listitem:
+                        - button "Programas":
+                          - img
+                          - generic: Programas
+                      - listitem:
+                        - button "Ejercicios":
+                          - img
+                          - generic: Ejercicios
+                  - generic:
+                    - generic: Social
+                    - list:
+                      - listitem:
+                        - button "Amigos":
+                          - img
+                          - generic: Amigos
+                      - listitem:
+                        - button "Desafios":
+                          - img
+                          - generic: Desafios
+                      - listitem:
+                        - button "Ranking":
+                          - img
+                          - generic: Ranking
+                      - listitem:
+                        - button "Referidos":
+                          - img
+                          - generic: Referidos
+              - generic:
+                - generic:
+                  - generic: T
+                  - generic:
+                    - generic: Test User
+                    - generic: Fase 1
+                - list:
+                  - listitem:
+                    - button "Modo claro":
+                      - img
+                      - generic: Modo claro
+                  - listitem:
+                    - button "Cerrar sesion":
+                      - img
+                      - generic: Cerrar sesion
+                - generic:
+                  - link "Privacidad":
+                    - /url: /legal#privacy
+                  - generic: ·
+                  - link "Condiciones":
+                    - /url: /legal#terms
+                  - generic: ·
+                  - button "v1.0.0"
+        - main:
+          - generic:
+            - button "Toggle Sidebar":
+              - img
+              - generic: Toggle Sidebar
+            - navigation "breadcrumb":
+              - generic: Entrenar
+            - generic:
+              - generic: Fase 1
+              - button "Guia de la pagina":
+                - generic: "?"
+              - button "Activar modo claro":
+                - img
+          - main:
+            - generic:
+              - generic [ref=e172]:
+                - generic [ref=e173]: Fase
+                - generic [ref=e175]:
+                  - button "F1 — Base & Activación" [ref=e176]
+                  - button "F2 — Fuerza Fundamental" [ref=e177]
+                  - button "F3 — Intensidad & Skills" [ref=e178]
+                  - button "F4 — Peak & Consolidación" [ref=e179]
+              - generic:
+                - generic: Día de Entrenamiento
+                - generic:
+                  - generic:
+                    - button "Lunes - Empuje + Core":
+                      - generic: LUN
+                      - generic: Empuje + Core
+                    - button "Martes - Tirón + Movilidad":
+                      - generic: MAR
+                      - generic: Tirón + Movilidad
+                    - button "Miércoles - Lumbar + Stretching":
+                      - generic: MIÉ
+                      - generic: Lumbar + Stretching
+                    - button "Jueves - Piernas + Glúteos - hoy":
+                      - generic: JUE
+                      - generic: Piernas + Glúteos
+                    - button "Viernes - Full Body + Core":
+                      - generic: VIE
+                      - generic: Full Body + Core
+                    - button "Sábado - Caminata activa" [pressed]:
+                      - generic: SÁB
+                      - generic: Caminata activa
+                    - button "Domingo - Descanso total":
+                      - generic: DOM
+                      - generic: Descanso total
+              - generic:
+                - generic: 🏃
+                - generic: Dia de Cardio
+                - generic: Carrera
+                - button "EMPEZAR CARDIO"
+    - region "Notifications alt+T"
+  - dialog "Selector de fase" [ref=e211]:
+    - button "Close" [active] [ref=e212] [cursor=pointer]: ×
+    - banner [ref=e214]: Selector de fase
+    - generic [ref=e215]: Elige la fase del programa. Cada fase dura varias semanas y aumenta en dificultad.
+    - contentinfo [ref=e216]:
+      - generic [ref=e217]: 1 de 2
+      - generic [ref=e218]:
+        - button "Anterior" [disabled]
+        - button "Siguiente" [ref=e219] [cursor=pointer]
+  - img

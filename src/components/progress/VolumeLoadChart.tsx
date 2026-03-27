@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
 import { toLocalDateStr } from '../../lib/dateUtils'
@@ -9,6 +10,7 @@ interface VolumeLoadChartProps {
 }
 
 export default function VolumeLoadChart({ progress }: VolumeLoadChartProps) {
+  const { t } = useTranslation()
   const weeklyVolume = useMemo(() => {
     const now = new Date()
     const weeks: { label: string; volume: number; sets: number; startDate: string }[] = []
@@ -60,14 +62,14 @@ export default function VolumeLoadChart({ progress }: VolumeLoadChartProps) {
 
   return (
     <div className="mb-8">
-      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Volumen de carga (4 semanas)</div>
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.volumeLoad.title')}</div>
       <Card>
         <CardContent className="p-5">
           <div className="flex items-baseline gap-3 mb-4">
             <div className="font-bebas text-3xl text-lime">
               {hasWeightData ? `${totalVolume} kg` : `${weeklyVolume[weeklyVolume.length - 1]?.sets || 0} sets`}
             </div>
-            <div className="text-[11px] text-muted-foreground">esta semana</div>
+            <div className="text-[11px] text-muted-foreground">{t('progress.volumeLoad.thisWeek')}</div>
             {volumeDiff !== 0 && (
               <div className={cn('text-[11px]', volumeDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
                 {volumeDiff > 0 ? '+' : ''}{hasWeightData ? `${volumeDiff} kg` : `${volumeDiff} sets`}
@@ -102,7 +104,7 @@ export default function VolumeLoadChart({ progress }: VolumeLoadChartProps) {
 
           {!hasWeightData && (
             <div className="text-[10px] text-muted-foreground mt-3 pt-3 border-t border-border/60">
-              Agrega peso a tus series para ver volumen en kg
+              {t('progress.volumeLoad.addWeightHint')}
             </div>
           )}
         </CardContent>

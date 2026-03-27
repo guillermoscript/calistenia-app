@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareContent, type ShareMethod } from '../../lib/share'
@@ -12,6 +13,7 @@ interface InviteButtonProps {
 }
 
 export function InviteButton({ referralCode, onCreateChallenge, className }: InviteButtonProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -35,8 +37,8 @@ export function InviteButton({ referralCode, onCreateChallenge, className }: Inv
 
   const handleQuickInvite = async (method: ShareMethod) => {
     const ok = await shareContent({
-      title: 'Entrena conmigo en Calistenia App',
-      text: '💪 Te invito a entrenar juntos en Calistenia App!',
+      title: t('share.inviteTitle'),
+      text: t('share.inviteText'),
       url: inviteUrl,
     }, method)
 
@@ -54,23 +56,23 @@ export function InviteButton({ referralCode, onCreateChallenge, className }: Inv
         className="bg-lime text-[hsl(0_0%_5%)] hover:bg-lime/90 font-semibold text-sm h-10 px-5"
       >
         <InviteIcon className="size-4 mr-1.5" />
-        Invitar
+        {t('share.invite')}
       </Button>
 
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] bg-card border border-border rounded-lg shadow-lg py-1 motion-safe:animate-fade-in">
-          <div className="px-3 py-1.5 text-[10px] tracking-widest uppercase text-muted-foreground">Invitar rapido</div>
+          <div className="px-3 py-1.5 text-[10px] tracking-widest uppercase text-muted-foreground">{t('share.quickInvite')}</div>
           {navigator.share && (
-            <DropItem label="Compartir..." onClick={() => handleQuickInvite('native')} />
+            <DropItem label={t('share.shareNative')} onClick={() => handleQuickInvite('native')} />
           )}
           <DropItem label="WhatsApp" onClick={() => handleQuickInvite('whatsapp')} accent="text-emerald-400" />
-          <DropItem label={copied ? 'Copiado!' : 'Copiar link'} onClick={() => handleQuickInvite('copy')} />
+          <DropItem label={copied ? t('share.copied') : t('share.copyLink')} onClick={() => handleQuickInvite('copy')} />
 
           {onCreateChallenge && (
             <>
               <div className="border-t border-border my-1" />
               <DropItem
-                label="Invitar con challenge"
+                label={t('share.inviteWithChallenge')}
                 onClick={() => {
                   setOpen(false)
                   onCreateChallenge()

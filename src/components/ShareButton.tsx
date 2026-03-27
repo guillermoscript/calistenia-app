@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
 import type { ShareMethod } from '../lib/share'
@@ -12,7 +13,9 @@ interface ShareButtonProps {
   label?: string
 }
 
-export function ShareButton({ onShare, onInvite, className, size = 'sm', variant = 'outline', label = 'COMPARTIR' }: ShareButtonProps) {
+export function ShareButton({ onShare, onInvite, className, size = 'sm', variant = 'outline', label }: ShareButtonProps) {
+  const { t } = useTranslation()
+  const displayLabel = label ?? t('share.share').toUpperCase()
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -52,20 +55,20 @@ export function ShareButton({ onShare, onInvite, className, size = 'sm', variant
         )}
       >
         <ShareIcon className="size-3.5" />
-        {label}
+        {displayLabel}
       </Button>
 
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] bg-card border border-border rounded-lg shadow-lg py-1 motion-safe:animate-fade-in">
           {navigator.share && (
-            <DropItem icon={<ShareIcon className="size-3.5" />} label="Compartir..." onClick={() => handle('native')} />
+            <DropItem icon={<ShareIcon className="size-3.5" />} label={t('share.shareNative')} onClick={() => handle('native')} />
           )}
           <DropItem icon={<WhatsAppIcon className="size-3.5" />} label="WhatsApp" onClick={() => handle('whatsapp')} accent="text-emerald-400" />
-          <DropItem icon={copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />} label={copied ? 'Copiado!' : 'Copiar link'} onClick={() => handle('copy')} />
+          <DropItem icon={copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />} label={copied ? t('share.copied') : t('share.copyLink')} onClick={() => handle('copy')} />
           {onInvite && (
             <>
               <div className="my-1 border-t border-border" />
-              <DropItem icon={<InviteIcon className="size-3.5" />} label="Invitar amigo" onClick={() => { onInvite(); setOpen(false) }} accent="text-[hsl(var(--lime))]" />
+              <DropItem icon={<InviteIcon className="size-3.5" />} label={t('share.inviteFriend')} onClick={() => { onInvite(); setOpen(false) }} accent="text-[hsl(var(--lime))]" />
             </>
           )}
         </div>

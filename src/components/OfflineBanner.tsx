@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export default function OfflineBanner() {
+  const { t } = useTranslation()
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export default function OfflineBanner() {
       }`}
     >
       <div className="bg-amber-500/10 border-b border-amber-500 text-amber-400 text-center text-sm py-1.5 px-4">
-        Sin conexion — los datos se guardan localmente
+        {t('offline.message')}
       </div>
     </div>
   )

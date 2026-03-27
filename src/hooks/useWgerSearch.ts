@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import i18n from '../lib/i18n'
 import { pb } from '../lib/pocketbase'
 import { searchWger, getWgerExerciseInfo, downloadWgerImage } from '../lib/wger'
 import { mapWgerToExerciseCatalog } from '../lib/wger-mappings'
@@ -18,10 +19,10 @@ export function useWgerSearch() {
       const results = await searchWger(term, language)
       setWgerResults(results)
       if (results.length === 0) {
-        setWgerError('No se encontraron ejercicios en wger')
+        setWgerError(i18n.t('wger.noResults'))
       }
     } catch {
-      setWgerError('Error al buscar en wger')
+      setWgerError(i18n.t('wger.searchError'))
       setWgerResults([])
     } finally {
       setWgerLoading(false)
@@ -40,7 +41,7 @@ export function useWgerSearch() {
     setImporting(prev => new Set(prev).add(wgerId))
     try {
       const info = await getWgerExerciseInfo(wgerId)
-      if (!info) throw new Error('No se pudo obtener info del ejercicio')
+      if (!info) throw new Error(i18n.t('wger.fetchError'))
 
       const mapped = mapWgerToExerciseCatalog(info, language)
 
@@ -60,10 +61,10 @@ export function useWgerSearch() {
 
       // Build FormData for PocketBase
       const formData = new FormData()
-      formData.append('name', mapped.name)
+      formData.append('name', JSON.stringify(mapped.name))
       formData.append('slug', mapped.slug)
-      formData.append('description', mapped.description)
-      formData.append('muscles', mapped.muscles)
+      formData.append('description', JSON.stringify(mapped.description))
+      formData.append('muscles', JSON.stringify(mapped.muscles))
       formData.append('category', mapped.category)
       formData.append('equipment', JSON.stringify(mapped.equipment))
       formData.append('priority', mapped.priority)

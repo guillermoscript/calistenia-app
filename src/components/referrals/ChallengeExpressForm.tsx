@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
 import { pb } from '../../lib/pocketbase'
 import { shareContent } from '../../lib/share'
-
-const DURATION_OPTIONS = [
-  { value: 7, label: '7 dias' },
-  { value: 14, label: '14 dias' },
-  { value: 30, label: '30 dias' },
-]
+import { localize } from '../../lib/i18n-db'
 
 const BASE_URL = 'https://gym.guille.tech'
 
@@ -27,6 +23,14 @@ interface Exercise {
 }
 
 export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, onClose }: ChallengeExpressFormProps) {
+  const { t } = useTranslation()
+
+  const DURATION_OPTIONS = [
+    { value: 7, label: t('challenge.duration7') },
+    { value: 14, label: t('challenge.duration14') },
+    { value: 30, label: t('challenge.duration30') },
+  ]
+
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [exerciseId, setExerciseId] = useState('')
   const [duration, setDuration] = useState(7)
@@ -43,7 +47,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
           fields: 'id,name',
           $autoCancel: false,
         })
-        setExercises(res.items.map((e: any) => ({ id: e.id, name: e.name })))
+        setExercises(res.items.map((e: any) => ({ id: e.id, name: localize(e.name, 'es') })))
       } catch { /* */ }
     }
     loadExercises()
@@ -66,8 +70,8 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
     if (challengeId && referralCode) {
       const inviteUrl = `${BASE_URL}/invite/${referralCode}/challenge/${challengeId}`
       await shareContent({
-        title: 'Te reto a un challenge!',
-        text: `💪 Te reto a un challenge express en Calistenia App!`,
+        title: t('share.challengeInviteTitle'),
+        text: t('share.challengeInviteText'),
         url: inviteUrl,
       })
     }
@@ -89,10 +93,10 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Exercise selector */}
         <div className="flex flex-col gap-1.5 relative">
-          <Label className="text-xs tracking-widest uppercase text-muted-foreground">Ejercicio</Label>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground">{t('challenge.exercise')}</Label>
           <Input
             type="text"
-            placeholder="Buscar ejercicio..."
+            placeholder={t('challenge.searchExercise')}
             value={selectedExercise ? selectedExercise.name : exerciseSearch}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setExerciseSearch(e.target.value)
@@ -119,7 +123,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
                 </button>
               ))}
               {filtered.length === 0 && (
-                <div className="px-3 py-2 text-sm text-muted-foreground">Sin resultados</div>
+                <div className="px-3 py-2 text-sm text-muted-foreground">{t('common.noResults')}</div>
               )}
             </div>
           )}
@@ -127,7 +131,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
 
         {/* Duration chips */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs tracking-widest uppercase text-muted-foreground">Duracion</Label>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground">{t('challenge.duration')}</Label>
           <div className="flex gap-2">
             {DURATION_OPTIONS.map(opt => (
               <button
@@ -149,11 +153,11 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
 
         {/* Daily target */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs tracking-widest uppercase text-muted-foreground">Meta diaria (reps)</Label>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground">{t('challenge.dailyGoal')}</Label>
           <Input
             type="number"
             min="1"
-            placeholder="Ej: 50"
+            placeholder={t('challenge.dailyGoalPlaceholder')}
             value={dailyTarget}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDailyTarget(e.target.value)}
             required
@@ -166,7 +170,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
           disabled={!exerciseId || !dailyTarget || submitting}
           className="w-full h-10 bg-lime text-[hsl(0_0%_5%)] hover:bg-lime/90 font-semibold text-sm mt-1"
         >
-          {submitting ? 'Creando...' : 'Crear y compartir'}
+          {submitting ? t('challenge.creating') : t('challenge.createAndShare')}
         </Button>
       </form>
     </div>

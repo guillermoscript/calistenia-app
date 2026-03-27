@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { todayStr as todayStrFn, toLocalDateStr } from '../../lib/dateUtils'
 import { isFreeSession } from '../../lib/progressUtils'
@@ -12,6 +13,7 @@ interface ProgressSummaryProps {
 }
 
 export default function ProgressSummary({ progress, settings, filter = 'all' }: ProgressSummaryProps) {
+  const { t } = useTranslation()
   const stats = useMemo(() => {
     const today = new Date()
     const todayStr = todayStrFn()
@@ -114,11 +116,11 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
           {filter !== 'free' && <span className="text-lg text-muted-foreground">/{stats.weeklyGoal}</span>}
         </div>
         <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
-          {filter === 'free' ? 'Libres / semana' : 'Sesiones / semana'}
+          {filter === 'free' ? t('progress.summary.freePerWeek') : t('progress.summary.sessionsPerWeek')}
         </div>
         {weekDiff !== 0 && (
           <div className={cn('text-[11px] mt-1', weekDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
-            {weekDiff > 0 ? '+' : ''}{weekDiff} vs sem. pasada
+            {weekDiff > 0 ? '+' : ''}{weekDiff} {t('progress.summary.vsLastWeek')}
           </div>
         )}
       </div>
@@ -128,11 +130,11 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
           {stats.sessionsThisMonth}
         </div>
         <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
-          {filter === 'free' ? 'Libres / mes' : 'Sesiones / mes'}
+          {filter === 'free' ? t('progress.summary.freePerMonth') : t('progress.summary.sessionsPerMonth')}
         </div>
         {monthDiff !== 0 && (
           <div className={cn('text-[11px] mt-1', monthDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
-            {monthDiff > 0 ? '+' : ''}{monthDiff} vs mes pasado
+            {monthDiff > 0 ? '+' : ''}{monthDiff} {t('progress.summary.vsLastMonth')}
           </div>
         )}
       </div>
@@ -142,7 +144,7 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
           {stats.setsThisWeek}
         </div>
         <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
-          {filter === 'free' ? 'Series libres' : 'Series / semana'}
+          {filter === 'free' ? t('progress.summary.freeSets') : t('progress.summary.setsPerWeek')}
         </div>
       </div>
     </div>

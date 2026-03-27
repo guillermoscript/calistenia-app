@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { LeaderboardEntry } from '../../hooks/useLeaderboard'
 
@@ -9,6 +10,7 @@ interface LeaderboardWidgetProps {
 }
 
 export default function LeaderboardWidget({ entries, onNavigate }: LeaderboardWidgetProps) {
+  const { t } = useTranslation()
   if (entries.length === 0) return null
 
   const top3 = entries.slice(0, 3)
@@ -18,7 +20,7 @@ export default function LeaderboardWidget({ entries, onNavigate }: LeaderboardWi
       onClick={onNavigate}
       className="text-left w-full p-4 bg-card border border-border rounded-xl border-l-[3px] border-l-amber-400 hover:border-amber-400/50 transition-colors"
     >
-      <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">Ranking semanal</div>
+      <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">{t('widgets.weeklyRanking')}</div>
       <div className="flex flex-col gap-2">
         {top3.map((entry, i) => (
           <div
@@ -33,7 +35,7 @@ export default function LeaderboardWidget({ entries, onNavigate }: LeaderboardWi
             </span>
             <span className={cn('text-sm flex-1 min-w-0 truncate', entry.isCurrentUser ? 'font-medium' : 'text-muted-foreground')}>
               {entry.displayName}
-              {entry.isCurrentUser && <span className="text-xs opacity-60 ml-1">(tu)</span>}
+              {entry.isCurrentUser && <span className="text-xs opacity-60 ml-1">{t('leaderboard.you')}</span>}
             </span>
             <span className={cn('font-bebas text-xl', entry.isCurrentUser ? 'text-lime' : 'text-foreground')}>
               {entry.value}

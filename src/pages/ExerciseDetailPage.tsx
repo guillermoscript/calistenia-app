@@ -5,7 +5,8 @@ import { WORKOUTS } from '../data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
 import catalogData from '../data/exercise-catalog.json'
 import { useProgressions } from '../hooks/useProgressions'
-import { getExerciseEquipment, getEquipmentLabel, EQUIPMENT_CATALOG } from '../lib/equipment'
+import { useTranslation } from 'react-i18next'
+import { getExerciseEquipment, getEquipmentLabelKey, EQUIPMENT_CATALOG } from '../lib/equipment'
 import { calculateWorkoutDuration } from '../lib/duration'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
@@ -14,6 +15,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Skeleton } from '../components/ui/skeleton'
 import { ArrowLeftIcon } from '../components/icons/nav-icons'
 import type { Exercise, Priority } from '../types'
+import type { TranslatableField } from '../lib/i18n-db'
+import { localize } from '../lib/i18n-db'
+import { useLocalize } from '../hooks/useLocalize'
 import { pbCatalogEditUrl } from '../lib/pocketbase-admin'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -21,20 +25,20 @@ import { pbCatalogEditUrl } from '../lib/pocketbase-admin'
 interface CatalogExercise {
   id: string
   slug: string
-  name: string
-  muscles: string
+  name: TranslatableField
+  muscles: TranslatableField
   category: string
   priority: Priority
   sets: number | string
   reps: string
   rest: number
-  note: string
+  note: TranslatableField
   youtube: string
   isTimer?: boolean
   timerSeconds?: number
   demoImages?: string[]
   demoVideo?: string
-  description?: string
+  description?: TranslatableField
 }
 
 interface RelatedProgram {
@@ -64,28 +68,11 @@ const PRIORITY_COLORS: Record<Priority, { text: string; bg: string; border: stri
   low:  { text: 'text-sky-400',   bg: 'bg-sky-500/10',   border: 'border-sky-500/20' },
 }
 
-const PRIORITY_LABEL: Record<Priority, string> = {
-  high: 'Prioritario',
-  med:  'Importante',
-  low:  'Complementario',
-}
-
-const CATEGORY_LABEL: Record<string, string> = {
-  push: 'Empuje',
-  pull: 'Tiron',
-  legs: 'Piernas',
-  core: 'Core',
-  lumbar: 'Lumbar',
-  full: 'Full Body',
-  movilidad: 'Movilidad',
-  skill: 'Skill',
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function inferCategory(exercise: Exercise, dayType: string): string {
-  const name = exercise.name.toLowerCase()
-  const muscles = exercise.muscles.toLowerCase()
+  const name = localize(exercise.name, 'en').toLowerCase()
+  const muscles = localize(exercise.muscles, 'en').toLowerCase()
 
   if (name.includes('handstand') || name.includes('l-sit') || name.includes('muscle-up') ||
       name.includes('front lever') || name.includes('back lever') || name.includes('planche') ||
@@ -114,6 +101,32 @@ function inferCategory(exercise: Exercise, dayType: string): string {
 }
 
 function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
+  // Check catalog JSON first (has i18n translations)
+  const cats = (catalogData as any).categories || {}
+  for (const catData of Object.values(cats) as any[]) {
+    const found = (catData.exercises || []).find((ex: any) => ex.id === idOrSlug)
+    if (found) {
+      return {
+        id: found.id,
+        slug: found.id,
+        name: found.name,
+        muscles: found.muscles || '',
+        category: found.category || 'full',
+        priority: found.priority || 'med',
+        sets: found.sets ?? 3,
+        reps: found.reps || '8-12',
+        rest: found.rest ?? 60,
+        note: found.note || '',
+        youtube: found.youtube_query || '',
+        isTimer: found.isTimer || false,
+        timerSeconds: found.timerSeconds,
+        demoImages: found.images?.length ? found.images : undefined,
+        description: found.note || '',
+      }
+    }
+  }
+
+  // Fallback: check WORKOUTS (plain strings, no i18n)
   for (const [_key, workout] of Object.entries(WORKOUTS)) {
     const dayType = workout.day === 'lun' ? 'push'
       : workout.day === 'mar' ? 'pull'
@@ -165,46 +178,17 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
     }
   }
 
-  // Check catalog JSON
-  const cats = (catalogData as any).categories || {}
-  for (const catData of Object.values(cats) as any[]) {
-    const found = (catData.exercises || []).find((ex: any) => ex.id === idOrSlug)
-    if (found) {
-      return {
-        id: found.id,
-        slug: found.id,
-        name: found.name,
-        muscles: found.muscles || '',
-        category: found.category || 'full',
-        priority: found.priority || 'med',
-        sets: found.sets ?? 3,
-        reps: found.reps || '8-12',
-        rest: found.rest ?? 60,
-        note: found.note || '',
-        youtube: found.youtube_query || '',
-        isTimer: found.isTimer || false,
-        timerSeconds: found.timerSeconds,
-        demoImages: found.images?.length ? found.images : undefined,
-        description: found.note || '',
-      }
-    }
-  }
-
   return null
 }
 
-function findRelatedWorkouts(exerciseId: string): (RelatedProgram & { durationMin: number })[] {
+function findRelatedWorkouts(exerciseId: string, t: (key: string, opts?: Record<string, unknown>) => string): (RelatedProgram & { durationMin: number })[] {
   const results: (RelatedProgram & { durationMin: number })[] = []
-  const DAY_NAMES: Record<string, string> = {
-    lun: 'Lunes', mar: 'Martes', mie: 'Miercoles',
-    jue: 'Jueves', vie: 'Viernes', sab: 'Sabado', dom: 'Domingo',
-  }
 
   for (const [key, workout] of Object.entries(WORKOUTS)) {
     if (workout.exercises.some(ex => ex.id === exerciseId)) {
       results.push({
         id: key,
-        name: `Fase ${workout.phase} — ${DAY_NAMES[workout.day] || workout.day}`,
+        name: `${t('nav.phase')} ${workout.phase} — ${t(`day.${workout.day}`)}`,
         phase: workout.phase,
         day: workout.day,
         title: workout.title,
@@ -280,14 +264,14 @@ function mapPBRecord(rec: any): CatalogExercise {
   return {
     id: rec.id,
     slug: rec.slug || rec.id,
-    name: rec.name,
-    muscles: rec.muscles || '',
+    name: rec.name ?? '',
+    muscles: rec.muscles ?? '',
     category: rec.category || 'full',
     priority: rec.priority || 'med',
     sets: rec.default_sets ?? 3,
     reps: rec.default_reps || '8-12',
     rest: rec.default_rest ?? 90,
-    note: rec.note || '',
+    note: rec.note ?? '',
     youtube: rec.youtube || '',
     isTimer: rec.is_timer || false,
     timerSeconds: rec.timer_seconds,
@@ -329,6 +313,8 @@ function ChevronRightIcon({ className }: { className?: string }) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ExerciseDetailPage() {
+  const { t } = useTranslation()
+  const l = useLocalize()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [exercise, setExercise] = useState<CatalogExercise | null>(null)
@@ -389,8 +375,8 @@ export default function ExerciseDetailPage() {
   // Related workouts and similar exercises
   const relatedWorkouts = useMemo(() => {
     if (!exercise) return []
-    return findRelatedWorkouts(exercise.id)
-  }, [exercise])
+    return findRelatedWorkouts(exercise.id, t)
+  }, [exercise, t])
 
   const similarExercises = useMemo(() => {
     if (!exercise) return []
@@ -401,13 +387,13 @@ export default function ExerciseDetailPage() {
   const prioStyle = exercise ? PRIORITY_COLORS[exercise.priority] : null
 
   // Muscle list as array
-  const muscleList = exercise?.muscles.split(',').map(m => m.trim()).filter(Boolean) || []
+  const muscleList = exercise ? l(exercise.muscles).split(',').map(m => m.trim()).filter(Boolean) : []
 
   // Equipment detection
   const equipment = useMemo(() => {
     if (!exercise) return []
-    return getExerciseEquipment({ name: exercise.name, note: exercise.note })
-  }, [exercise])
+    return getExerciseEquipment({ name: l(exercise.name), note: l(exercise.note) })
+  }, [exercise, l])
 
   if (loading) {
     return (
@@ -433,9 +419,9 @@ export default function ExerciseDetailPage() {
             <line x1="9" y1="9" x2="15" y2="15" />
           </svg>
         </div>
-        <p className="text-lg font-bebas tracking-wide text-foreground mb-2 uppercase">Ejercicio no encontrado</p>
+        <p className="text-lg font-bebas tracking-wide text-foreground mb-2 uppercase">{t('exerciseDetail.notFound')}</p>
         <p className="text-sm text-muted-foreground mb-6">
-          No se encontro un ejercicio con el identificador "{id}"
+          {t('exerciseDetail.notFoundDesc', { id })}
         </p>
         <Button
           variant="outline"
@@ -443,7 +429,7 @@ export default function ExerciseDetailPage() {
           className="gap-2 border-border hover:border-lime-400/40 hover:text-lime-400"
         >
           <ArrowLeftIcon className="size-4" />
-          Volver a la biblioteca
+          {t('exerciseDetail.backToLibrary')}
         </Button>
       </div>
     )
@@ -461,7 +447,7 @@ export default function ExerciseDetailPage() {
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
       >
         <ArrowLeftIcon className="size-4" />
-        <span className="font-mono text-[11px] tracking-widest uppercase">Biblioteca</span>
+        <span className="font-mono text-[11px] tracking-widest uppercase">{t('exerciseDetail.library')}</span>
       </button>
 
       {/* ── Hero section ────────────────────────────────────────────────── */}
@@ -477,7 +463,7 @@ export default function ExerciseDetailPage() {
                   catStyle.text, catStyle.bg, catStyle.border
                 )}
               >
-                {(CATEGORY_LABEL[exercise.category] || exercise.category).toUpperCase()}
+                {t(`exerciseDetail.category.${exercise.category}`).toUpperCase()}
               </Badge>
             )}
             {prioStyle && (
@@ -488,7 +474,7 @@ export default function ExerciseDetailPage() {
                   prioStyle.text, prioStyle.bg, prioStyle.border
                 )}
               >
-                {PRIORITY_LABEL[exercise.priority].toUpperCase()}
+                {t(`exercise.priority.${exercise.priority}`).toUpperCase()}
               </Badge>
             )}
             {exercise.isTimer && (
@@ -502,7 +488,7 @@ export default function ExerciseDetailPage() {
           </div>
 
           <h1 className="font-bebas text-4xl md:text-6xl leading-none tracking-wide mb-4 uppercase">
-            {exercise.name}
+            {l(exercise.name)}
           </h1>
 
           {/* Muscles dot-separated */}
@@ -516,7 +502,7 @@ export default function ExerciseDetailPage() {
               variant="outline"
               size="sm"
               className="gap-1.5 text-red-400 border-border hover:border-red-500/30 hover:bg-red-500/5 font-mono text-[11px] tracking-widest"
-              onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.youtube || exercise.name + ' tutorial')}`, '_blank')}
+              onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.youtube || l(exercise.name) + ' tutorial')}`, '_blank')}
             >
               <span className="text-sm">&#9654;</span>
               YOUTUBE
@@ -526,7 +512,7 @@ export default function ExerciseDetailPage() {
               variant="outline"
               size="sm"
               className="gap-1.5 border-border text-muted-foreground hover:text-foreground font-mono text-[11px] tracking-widest"
-              onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(exercise.name + ' ejercicio calistenia tutorial')}`, '_blank')}
+              onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(l(exercise.name) + ' ejercicio calistenia tutorial')}`, '_blank')}
             >
               GOOGLE
               <ExternalLinkIcon className="size-3.5" />
@@ -541,7 +527,7 @@ export default function ExerciseDetailPage() {
                   className="gap-1.5 border-amber-500/20 text-amber-400 hover:border-amber-500/40 hover:bg-amber-500/5 font-mono text-[11px] tracking-widest"
                   onClick={() => window.open(pbCatalogEditUrl(exercise.id), '_blank')}
                 >
-                  EDITAR EN PB
+                  {t('exercise.editInPB')}
                   <ExternalLinkIcon className="size-3.5" />
                 </Button>
               ) : null
@@ -555,7 +541,7 @@ export default function ExerciseDetailPage() {
             <div className="relative rounded-xl overflow-hidden bg-muted">
               <img
                 src={images[imageIndex]}
-                alt={`${exercise.name} - imagen ${imageIndex + 1}`}
+                alt={`${l(exercise.name)} - imagen ${imageIndex + 1}`}
                 className="w-full h-56 md:h-64 object-cover"
               />
               {images.length > 1 && (
@@ -625,20 +611,20 @@ export default function ExerciseDetailPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList className="bg-muted/80 border border-border p-1 gap-1 mb-6">
           <TabsTrigger value="descripcion" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
-            Descripcion
+            {t('exerciseDetail.tab.description')}
           </TabsTrigger>
           <TabsTrigger value="musculos" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
-            Musculos
+            {t('exerciseDetail.tab.muscles')}
           </TabsTrigger>
           <TabsTrigger value="material" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
-            Material
+            {t('exerciseDetail.tab.equipment')}
           </TabsTrigger>
           <TabsTrigger value="config" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
-            Config
+            {t('exerciseDetail.tab.config')}
           </TabsTrigger>
           {!progressionsLoading && chain.length > 0 && (
             <TabsTrigger value="progresion" className="font-mono text-[11px] tracking-widest data-[state=active]:bg-lime-400/10 data-[state=active]:text-lime-400 uppercase px-4 py-2">
-              Progresion
+              {t('exerciseDetail.tab.progression')}
             </TabsTrigger>
           )}
         </TabsList>
@@ -648,12 +634,12 @@ export default function ExerciseDetailPage() {
           {(exercise.description || exercise.note) ? (
             <div className="rounded-xl bg-muted/60 p-6">
               <p className="text-sm text-foreground leading-relaxed">
-                {exercise.description || exercise.note}
+                {l(exercise.description) || l(exercise.note)}
               </p>
             </div>
           ) : (
             <div className="rounded-xl bg-muted/40 p-8 text-center">
-              <p className="text-sm text-muted-foreground">Sin descripcion disponible</p>
+              <p className="text-sm text-muted-foreground">{t('exerciseDetail.noDescription')}</p>
             </div>
           )}
         </TabsContent>
@@ -681,7 +667,7 @@ export default function ExerciseDetailPage() {
               {equipment.map((id, i) => {
                 const catalogItem = EQUIPMENT_CATALOG.find(e => e.id === id)
                 const icon = catalogItem?.icon || ''
-                const label = getEquipmentLabel(id)
+                const label = t(getEquipmentLabelKey(id))
                 return (
                   <div
                     key={i}
@@ -704,15 +690,15 @@ export default function ExerciseDetailPage() {
         <TabsContent value="config">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="rounded-xl bg-muted/60 p-5 text-center">
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">Series</div>
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">{t('exercise.sets')}</div>
               <div className="text-2xl font-bebas text-lime-400">{exercise.sets}</div>
             </div>
             <div className="rounded-xl bg-muted/60 p-5 text-center">
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">Reps</div>
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">{t('common.reps')}</div>
               <div className="text-2xl font-bebas text-lime-400">{exercise.reps}</div>
             </div>
             <div className="rounded-xl bg-muted/60 p-5 text-center">
-              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">Descanso</div>
+              <div className="text-[10px] font-mono tracking-widest text-muted-foreground mb-2 uppercase">{t('common.rest')}</div>
               <div className="text-2xl font-bebas text-lime-400">{exercise.rest}s</div>
             </div>
             {exercise.isTimer && exercise.timerSeconds && (
@@ -760,7 +746,7 @@ export default function ExerciseDetailPage() {
                             {prog.exerciseName}
                           </div>
                           {isCurrent && (
-                            <div className="text-[8px] font-mono text-lime-400 tracking-widest mt-1">ACTUAL</div>
+                            <div className="text-[8px] font-mono text-lime-400 tracking-widest mt-1">{t('exerciseDetail.current')}</div>
                           )}
                         </Link>
                         {i < chain.length - 1 && (
@@ -779,10 +765,7 @@ export default function ExerciseDetailPage() {
 
               {currentChainIdx >= 0 && chain[currentChainIdx] && (
                 <div className="text-[11px] text-muted-foreground bg-muted/50 rounded-lg px-4 py-3 mt-4 border-l-2 border-lime-400/20">
-                  <span className="font-mono text-lime-400">{chain[currentChainIdx].targetRepsToAdvance} reps</span>
-                  {' '}en{' '}
-                  <span className="font-mono text-lime-400">{chain[currentChainIdx].sessionsAtTarget} sesiones</span>
-                  {' '}consecutivas para avanzar
+                  {t('exerciseDetail.advanceRequirement', { reps: chain[currentChainIdx].targetRepsToAdvance, sessions: chain[currentChainIdx].sessionsAtTarget })}
                 </div>
               )}
             </div>
@@ -796,7 +779,7 @@ export default function ExerciseDetailPage() {
       {/* ── Related workouts ────────────────────────────────────────────── */}
       {relatedWorkouts.length > 0 && (
         <div className="mb-10">
-          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">Sesiones</h2>
+          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">{t('exerciseDetail.sessions')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {relatedWorkouts.map(w => (
               <div
@@ -822,11 +805,11 @@ export default function ExerciseDetailPage() {
       {/* ── Similar exercises ───────────────────────────────────────────── */}
       {similarExercises.length > 0 && (
         <div className="mb-8">
-          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">Tambien te puede interesar</h2>
+          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">{t('exerciseDetail.alsoInteresting')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {similarExercises.map(sim => {
               const simCatStyle = CATEGORY_COLORS[sim.category] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }
-              const simMuscles = sim.muscles.split(',').map(m => m.trim()).filter(Boolean)
+              const simMuscles = l(sim.muscles).split(',').map(m => m.trim()).filter(Boolean)
               return (
                 <Link
                   key={sim.id}
@@ -834,7 +817,7 @@ export default function ExerciseDetailPage() {
                   className="group px-4 py-4 rounded-xl bg-muted/60 hover:bg-muted/60 transition-colors"
                 >
                   <div className="font-bebas text-base tracking-wide leading-tight mb-1.5 group-hover:text-lime-400 transition-colors line-clamp-2 uppercase">
-                    {sim.name}
+                    {l(sim.name)}
                   </div>
                   <div className="text-[11px] text-muted-foreground line-clamp-1 mb-2.5">
                     {simMuscles.join(' · ')}

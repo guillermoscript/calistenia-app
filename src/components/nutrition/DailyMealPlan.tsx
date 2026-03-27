@@ -5,6 +5,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { AI_API_URL } from '../../lib/ai-api'
+import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
 import { submitMealPlanJob } from '../../lib/ai-jobs-api'
 import { useBackgroundJobs } from '../../hooks/useBackgroundJobs'
@@ -35,6 +36,7 @@ interface DailyMealPlanProps {
 
 
 export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSaveMeal }: DailyMealPlanProps) {
+  const { t } = useTranslation()
   const [plan, setPlan] = useState<PlannedMeal[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,11 +60,11 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
     }).then(id => {
       if (!addJob(id, 'generate-meal-plan')) return
       setLoading(false)
-      toast.info('Generando plan en segundo plano', { description: 'Recibiras una notificacion cuando termine', duration: 4000 })
+      toast.info(t('nutrition.logger.analyzingBg'), { description: t('nutrition.logger.bgNotification'), duration: 4000 })
     }).catch(() => {
-      toast.error('Error al iniciar la generacion', { description: 'Revisa tu conexion e intenta de nuevo' })
+      toast.error(t('nutrition.logger.analyzeError'), { description: t('nutrition.logger.checkConnection') })
     })
-  }, [remaining, loggedMealTypes, addJob, canSubmit])
+  }, [remaining, loggedMealTypes, addJob, canSubmit, t])
 
   const generate = useCallback(async () => {
     setLoading(true)
@@ -93,13 +95,13 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
       const data = await res.json()
       setPlan(data.meals || [])
     } catch (e: any) {
-      setError(e.message || 'Error al generar el plan. Intenta de nuevo.')
+      setError(e.message || t('nutrition.logger.analyzeError'))
     } finally {
       setLoading(false)
       setShowBgOption(false)
       clearTimeout(bgTimerRef.current)
     }
-  }, [remaining, loggedMealTypes])
+  }, [remaining, loggedMealTypes, t])
 
   const nothingRemaining = remaining.calories <= 50
 
@@ -109,8 +111,8 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
     <div>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase">IA</div>
-          <div className="font-bebas text-2xl mt-0.5">PLAN DEL DÍA</div>
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase">{t('nutrition.dailyPlan.aiLabel')}</div>
+          <div className="font-bebas text-2xl mt-0.5">{t('nutrition.dailyPlan.title')}</div>
         </div>
         <Button
           onClick={generate}
@@ -125,9 +127,9 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                 <span className="size-1.5 rounded-full bg-foreground animate-bounce [animation-delay:150ms]" />
                 <span className="size-1.5 rounded-full bg-foreground animate-bounce [animation-delay:300ms]" />
               </span>
-              GENERANDO
+              {t('nutrition.dailyPlan.generating')}
             </span>
-          ) : plan ? 'REGENERAR' : 'GENERAR PLAN'}
+          ) : plan ? t('nutrition.dailyPlan.regenerate') : t('nutrition.dailyPlan.generatePlan')}
         </Button>
       </div>
 
@@ -141,9 +143,9 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
         <Card className="border-dashed border-lime-400/20">
           <CardContent className="p-5 text-center">
             <div className="text-2xl mb-2">🍽️</div>
-            <div className="text-sm text-foreground font-medium">¿Qué comer el resto del día?</div>
+            <div className="text-sm text-foreground font-medium">{t('nutrition.dailyPlan.whatToEat')}</div>
             <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Te quedan <span className="text-lime-400 font-medium tabular-nums">{Math.round(remaining.calories)} kcal</span>
+              {t('nutrition.dailyPlan.remaining')} <span className="text-lime-400 font-medium tabular-nums">{Math.round(remaining.calories)} kcal</span>
               <span className="hidden sm:inline"> · </span><br className="sm:hidden" />
               <span className="tabular-nums">{Math.round(remaining.protein)}g prot · {Math.round(remaining.carbs)}g carbs · {Math.round(remaining.fat)}g grasa</span>
             </div>
@@ -153,7 +155,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
               size="sm"
               className="mt-3 border-lime-400/30 text-lime-400 hover:bg-lime-400/10 font-bebas tracking-widest"
             >
-              GENERAR PLAN CON IA
+              {t('nutrition.dailyPlan.generateWithAI')}
             </Button>
           </CardContent>
         </Card>
@@ -162,7 +164,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
       {loading && (
         <Card>
           <CardContent className="p-5">
-            <div className="text-xs text-muted-foreground mb-3">Calculando el mejor plan para tus macros restantes...</div>
+            <div className="text-xs text-muted-foreground mb-3">{t('nutrition.dailyPlan.calculating')}</div>
             <div className="space-y-2">
               {[1, 2, 3].map(i => (
                 <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
@@ -173,7 +175,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                 onClick={handleSendToBackground}
                 className="w-full text-center text-xs text-lime-400 hover:text-lime-300 font-medium transition-colors py-2 mt-3"
               >
-                No esperar — avisame cuando termine
+                {t('nutrition.dailyPlan.dontWait')}
               </button>
             )}
           </CardContent>
@@ -191,7 +193,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className={cn('text-[9px] tracking-widest px-2 py-0.5 rounded border', colors.bg, colors.color)}>
-                      {meal.label || colors.label}
+                      {meal.label || t(`meal.${meal.meal_type}`)}
                     </span>
                     <span className="font-bebas text-lg text-foreground">{meal.calories} kcal</span>
                   </div>
@@ -225,7 +227,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                             : 'border-lime-400/30 text-lime-400 hover:bg-lime-400/10',
                         )}
                       >
-                        {isSaving ? '...' : isSaved ? '✓' : 'GUARDAR'}
+                        {isSaving ? '...' : isSaved ? '✓' : t('common.save').toUpperCase()}
                       </Button>
                     )}
                   </div>

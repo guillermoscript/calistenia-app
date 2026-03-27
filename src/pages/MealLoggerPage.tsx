@@ -1,4 +1,5 @@
 import { useMemo, useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import MealLoggerContent from '../components/nutrition/MealLoggerContent'
@@ -13,6 +14,7 @@ interface MealLoggerPageProps {
 }
 
 export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const {
@@ -60,7 +62,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
         clearJob(jobId)
         setSearchParams({}, { replace: true })
       } else if (job.status === 'failed') {
-        toast.error('No se pudo analizar la comida', { description: job.error || 'Intenta de nuevo con otra foto' })
+        toast.error(t('nutrition.analysisError'), { description: job.error || t('nutrition.analysisErrorDesc') })
         setSearchParams({}, { replace: true })
       } else {
         // Still processing — keep showing loading, poll will catch completion
@@ -87,7 +89,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
       setJobLoading(false)
       setSearchParams({}, { replace: true })
     } else if (cached?.status === 'failed') {
-      toast.error('No se pudo analizar la comida', { description: cached.error || 'Intenta de nuevo con otra foto' })
+      toast.error(t('nutrition.analysisError'), { description: cached.error || t('nutrition.analysisErrorDesc') })
       setJobLoading(false)
       setSearchParams({}, { replace: true })
     }
@@ -114,14 +116,14 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
         // Replace the placeholder ID with the real server ID
         clearJob('_pending')
         addJob(id, 'analyze-meal')
-        toast.info('Analizando en segundo plano', {
-          description: 'Recibiras una notificacion cuando termine',
+        toast.info(t('nutrition.analyzingBackground'), {
+          description: t('nutrition.analyzingBackgroundDesc'),
           duration: 4000,
         })
       })
       .catch(() => {
         clearJob('_pending')
-        toast.error('Error al iniciar el analisis', { description: 'Revisa tu conexion e intenta de nuevo' })
+        toast.error(t('nutrition.analysisError'), { description: t('nutrition.analysisErrorDesc') })
       })
   }, [addJob, clearJob])
 
@@ -136,7 +138,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
           onClick={() => navigate('/nutrition')}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          Cancelar
+          {t('common.cancel')}
         </button>
       </div>
 

@@ -4,7 +4,8 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
 import catalogData from '../data/exercise-catalog.json'
-import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabel } from '../lib/equipment'
+import { useTranslation } from 'react-i18next'
+import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '../lib/equipment'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
 import { useWorkout } from '../contexts/WorkoutContext'
@@ -12,6 +13,9 @@ import { useWgerSearch } from '../hooks/useWgerSearch'
 import { useFavorites } from '../hooks/useFavorites'
 import WgerResultCard from '../components/WgerResultCard'
 import type { Exercise, Priority, DifficultyLevel } from '../types'
+import type { TranslatableField } from '../lib/i18n-db'
+import { localize } from '../lib/i18n-db'
+import { useLocalize } from '../hooks/useLocalize'
 import { SearchIcon } from '../components/icons/nav-icons'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -19,14 +23,14 @@ import { SearchIcon } from '../components/icons/nav-icons'
 interface CatalogExercise {
   id: string
   slug: string
-  name: string
-  muscles: string
+  name: TranslatableField
+  muscles: TranslatableField
   category: string
   priority: Priority
   sets: number | string
   reps: string
   rest: number
-  note: string
+  note: TranslatableField
   youtube: string
   isTimer?: boolean
   timerSeconds?: number
@@ -75,10 +79,10 @@ const PRIORITY_DOT: Record<Priority, string> = {
   low:  'bg-sky-500',
 }
 
-const DIFFICULTY_STYLE: Record<DifficultyLevel, { label: string; text: string; bg: string; border: string }> = {
-  beginner:     { label: 'Principiante', text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-  intermediate: { label: 'Intermedio',   text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
-  advanced:     { label: 'Avanzado',     text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+const DIFFICULTY_STYLE: Record<DifficultyLevel, { text: string; bg: string; border: string }> = {
+  beginner:     { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  intermediate: { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
+  advanced:     { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
 }
 
 const DEFAULT_MUSCLE_GROUPS = [
@@ -90,9 +94,9 @@ const DEFAULT_MUSCLE_GROUPS = [
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function inferCategory(exercise: Exercise, dayType: string): string {
-  const name = exercise.name.toLowerCase()
-  const muscles = exercise.muscles.toLowerCase()
-  const note = exercise.note.toLowerCase()
+  const name = localize(exercise.name, 'en').toLowerCase()
+  const muscles = localize(exercise.muscles, 'en').toLowerCase()
+  const note = localize(exercise.note, 'en').toLowerCase()
 
   // Skills
   if (name.includes('handstand') || name.includes('l-sit') || name.includes('muscle-up') ||
@@ -145,7 +149,7 @@ function inferDifficulty(phase: number): DifficultyLevel {
   return 'advanced'
 }
 
-function extractExercisesFromWorkouts(): CatalogExercise[] {
+function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] {
   const seen = new Map<string, CatalogExercise>()
 
   for (const [_key, workout] of Object.entries(WORKOUTS)) {
@@ -231,15 +235,15 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
     }
   }
 
-  return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name))
+  return Array.from(seen.values()).sort((a, b) => localize(a.name, locale).localeCompare(localize(b.name, locale)))
 }
 
 function mapPBRecord(rec: any): CatalogExercise {
   return {
     id: rec.id,
     slug: rec.slug || rec.id,
-    name: rec.name,
-    muscles: rec.muscles || '',
+    name: rec.name ?? '',
+    muscles: rec.muscles ?? '',
     category: rec.category || 'full',
     priority: rec.priority || 'med',
     sets: rec.default_sets ?? 3,
@@ -317,6 +321,8 @@ function CategoryIcon({ category }: { category: string }) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ExerciseLibraryPage() {
+  const { t, i18n } = useTranslation()
+  const l = useLocalize()
   const navigate = useNavigate()
   const [exercises, setExercises] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
@@ -369,7 +375,7 @@ export default function ExerciseLibraryPage() {
       }
 
       if (!cancelled) {
-        setExercises(extractExercisesFromWorkouts())
+        setExercises(extractExercisesFromWorkouts(i18n.language))
         setLoading(false)
       }
     }
@@ -382,7 +388,7 @@ export default function ExerciseLibraryPage() {
     if (exercises.length === 0) return DEFAULT_MUSCLE_GROUPS
     const allMuscles = new Set<string>()
     exercises.forEach(ex => {
-      ex.muscles.split(',').forEach(m => {
+      l(ex.muscles).split(',').forEach(m => {
         const trimmed = m.trim()
         if (trimmed) allMuscles.add(trimmed)
       })
@@ -409,7 +415,7 @@ export default function ExerciseLibraryPage() {
     // Muscle group filter
     if (activeMuscle) {
       const muscle = activeMuscle.toLowerCase()
-      result = result.filter(ex => ex.muscles.toLowerCase().includes(muscle))
+      result = result.filter(ex => l(ex.muscles).toLowerCase().includes(muscle))
     }
 
     // Difficulty filter
@@ -420,7 +426,7 @@ export default function ExerciseLibraryPage() {
     // Equipment filter
     if (activeEquipment) {
       result = result.filter(ex => {
-        const equipmentIds = getExerciseEquipment({ name: ex.name, note: ex.note })
+        const equipmentIds = getExerciseEquipment({ name: l(ex.name), note: l(ex.note) })
         return equipmentIds.includes(activeEquipment)
       })
     }
@@ -429,8 +435,8 @@ export default function ExerciseLibraryPage() {
     if (search.trim()) {
       const q = search.toLowerCase().trim()
       result = result.filter(ex =>
-        ex.name.toLowerCase().includes(q) ||
-        ex.muscles.toLowerCase().includes(q)
+        l(ex.name).toLowerCase().includes(q) ||
+        l(ex.muscles).toLowerCase().includes(q)
       )
     }
 
@@ -447,14 +453,14 @@ export default function ExerciseLibraryPage() {
 
       {/* ── Hero header ──────────────────────────────────────────────────── */}
       <div className="mb-8">
-        <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">EJERCICIOS</h1>
+        <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">{t('exerciseLibrary.title')}</h1>
         <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
           {loading ? (
             <span className="inline-flex items-center gap-2">
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-              Cargando...
+              {t('common.loading')}
             </span>
-          ) : `${filtered.length} ejercicio${filtered.length !== 1 ? 's' : ''}`}
+          ) : t('exerciseLibrary.exerciseCount', { count: filtered.length })}
         </p>
       </div>
 
@@ -465,21 +471,21 @@ export default function ExerciseLibraryPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o musculo..."
+          placeholder={t('exerciseLibrary.searchPlaceholder')}
           className="w-full h-12 pl-11 pr-4 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-lime-400/30 focus:ring-1 focus:ring-lime-400/20 transition-all text-sm"
         />
       </div>
 
       {/* ── Filter bar ───────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[11px] font-mono tracking-widest text-muted-foreground uppercase">Filtros</span>
+        <span className="text-[11px] font-mono tracking-widest text-muted-foreground uppercase">{t('exerciseLibrary.filters')}</span>
         <div className="flex items-center gap-3">
           {hasActiveFilters && (
             <button
               onClick={() => { setShowFavoritesOnly(false); setActiveCategory('todos'); setActiveDifficulty(null); setActiveMuscle(null); setActiveEquipment(null); setSearch('') }}
               className="text-[11px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase"
             >
-              Limpiar todo
+              {t('exerciseLibrary.clearAll')}
             </button>
           )}
         </div>
@@ -514,7 +520,7 @@ export default function ExerciseLibraryPage() {
                   : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground'
               )}
             >
-              {cat.label}
+              {t(`exerciseLibrary.category.${cat.id}`)}
             </button>
           )
         })}
@@ -536,7 +542,7 @@ export default function ExerciseLibraryPage() {
                   : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground'
               )}
             >
-              {style.label}
+              {t(`difficulty.${level}`)}
             </button>
           )
         })}
@@ -552,10 +558,10 @@ export default function ExerciseLibraryPage() {
             : 'text-muted-foreground/60 hover:text-muted-foreground'
         )}
       >
-        <span>{showMoreFilters ? '▾' : '▸'} Equipo & musculo</span>
+        <span>{showMoreFilters ? '▾' : '▸'} {t('exerciseLibrary.equipmentAndMuscle')}</span>
         {(activeMuscle || activeEquipment) && (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-lime/10 text-lime border border-lime/20">
-            {[activeEquipment && getEquipmentLabel(activeEquipment), activeMuscle].filter(Boolean).join(' + ')}
+            {[activeEquipment && t(getEquipmentLabelKey(activeEquipment)), activeMuscle].filter(Boolean).join(' + ')}
           </span>
         )}
       </button>
@@ -578,7 +584,7 @@ export default function ExerciseLibraryPage() {
                       : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground'
                   )}
                 >
-                  {eq.icon} {eq.label}
+                  {eq.icon} {t(`equipment.${eq.id}`)}
                 </button>
               )
             })}
@@ -595,7 +601,7 @@ export default function ExerciseLibraryPage() {
                   : 'text-muted-foreground/60 hover:text-muted-foreground'
               )}
             >
-              TODOS
+              {t('exerciseLibrary.allMuscles')}
             </button>
             {muscleGroups.map(muscle => (
               <button
@@ -638,15 +644,15 @@ export default function ExerciseLibraryPage() {
           <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
             <SearchIcon className="size-7 text-muted-foreground/50" />
           </div>
-          <p className="text-sm text-muted-foreground mb-1">No se encontraron ejercicios</p>
-          <p className="text-xs text-muted-foreground/60 mb-6">Prueba con otro filtro o busqueda</p>
+          <p className="text-sm text-muted-foreground mb-1">{t('exerciseLibrary.noExercisesFound')}</p>
+          <p className="text-xs text-muted-foreground/60 mb-6">{t('exerciseLibrary.tryOtherFilter')}</p>
           {search.length >= 3 && (
             <button
               onClick={() => doWgerSearch(search)}
               disabled={wgerLoading}
               className="px-5 py-2.5 rounded-lg text-sm font-mono tracking-wide bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 transition-all disabled:opacity-50"
             >
-              {wgerLoading ? 'Buscando...' : 'Buscar en wger →'}
+              {wgerLoading ? t('exerciseLibrary.searching') : t('exerciseLibrary.searchWger')}
             </button>
           )}
         </div>
@@ -657,7 +663,7 @@ export default function ExerciseLibraryPage() {
         <div id="tour-exercise-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(ex => {
             const catStyle = getCategoryStyle(ex.category)
-            const muscleList = ex.muscles.split(',').map(m => m.trim()).filter(Boolean)
+            const muscleList = l(ex.muscles).split(',').map(m => m.trim()).filter(Boolean)
             return (
               <button
                 key={ex.id}
@@ -670,7 +676,7 @@ export default function ExerciseLibraryPage() {
                     <div className="h-36 bg-muted overflow-hidden">
                       <img
                         src={ex.demoImages[0]}
-                        alt={ex.name}
+                        alt={l(ex.name)}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                       />
@@ -705,11 +711,11 @@ export default function ExerciseLibraryPage() {
                     <div className={cn('size-2 rounded-full mt-1.5 flex-shrink-0', PRIORITY_DOT[ex.priority])} />
                     <div className="flex-1 min-w-0">
                       <span className="font-bebas text-lg tracking-wide leading-tight line-clamp-2 group-hover:text-lime-400 transition-colors duration-150 uppercase">
-                        {ex.name}
+                        {l(ex.name)}
                       </span>
                       {programExerciseIds.has(ex.id) && (
                         <span className="inline-block ml-1.5 text-[8px] font-mono tracking-widest text-lime-400 bg-lime-500/10 border border-lime-500/20 rounded px-1.5 py-0.5 align-middle uppercase">
-                          EN PROGRAMA
+                          {t('exerciseLibrary.inProgram')}
                         </span>
                       )}
                     </div>
@@ -730,7 +736,7 @@ export default function ExerciseLibraryPage() {
                           catStyle.text, catStyle.bg, catStyle.border
                         )}
                       >
-                        {ex.category.toUpperCase()}
+                        {t(`exerciseLibrary.category.${ex.category}`).toUpperCase()}
                       </Badge>
                       {ex.difficulty && DIFFICULTY_STYLE[ex.difficulty] && (
                         <Badge
@@ -742,7 +748,7 @@ export default function ExerciseLibraryPage() {
                             DIFFICULTY_STYLE[ex.difficulty].border
                           )}
                         >
-                          {DIFFICULTY_STYLE[ex.difficulty].label.toUpperCase()}
+                          {t(`difficulty.${ex.difficulty}`).toUpperCase()}
                         </Badge>
                       )}
                     </div>
@@ -765,7 +771,7 @@ export default function ExerciseLibraryPage() {
             disabled={wgerLoading}
             className="text-xs font-mono tracking-wide text-sky-400/70 hover:text-sky-400 transition-colors disabled:opacity-50"
           >
-            {wgerLoading ? 'Buscando...' : 'Buscar más en wger...'}
+            {wgerLoading ? t('exerciseLibrary.searching') : t('exerciseLibrary.searchMoreWger')}
           </button>
         </div>
       )}
@@ -775,14 +781,14 @@ export default function ExerciseLibraryPage() {
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono tracking-widest text-sky-400 uppercase">Resultados de wger</span>
+              <span className="text-[11px] font-mono tracking-widest text-sky-400 uppercase">{t('exerciseLibrary.wgerResults')}</span>
               <span className="text-[10px] text-muted-foreground">({wgerResults.length})</span>
             </div>
             <button
               onClick={clearResults}
               className="text-[10px] font-mono tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors"
             >
-              CERRAR
+              {t('common.close')}
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -797,7 +803,7 @@ export default function ExerciseLibraryPage() {
                     // Optimistic update: add to local exercises
                     try {
                       const rec = await pb.collection('exercises_catalog').getOne(recordId)
-                      setExercises(prev => [...prev, mapPBRecord(rec)].sort((a, b) => a.name.localeCompare(b.name)))
+                      setExercises(prev => [...prev, mapPBRecord(rec)].sort((a, b) => l(a.name).localeCompare(l(b.name))))
                     } catch { /* Will show on next load */ }
                   } catch (err) {
                     console.error('Import failed:', err)

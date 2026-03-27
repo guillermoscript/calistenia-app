@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { pb } from '../lib/pocketbase'
 import dayjs from 'dayjs'
+import i18n from '../lib/i18n'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import tz from 'dayjs/plugin/timezone'
 import utcPlugin from 'dayjs/plugin/utc'
@@ -173,7 +174,7 @@ export function useCardioStats(userId: string | null) {
           }
         }
         trend.push({
-          weekLabel: wStartDay.toDate().toLocaleDateString('es', { month: 'short', day: 'numeric' }),
+          weekLabel: wStartDay.toDate().toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' }),
           distance: Math.round(dist * 10) / 10,
           sessions: count,
         })

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type L from 'leaflet'
 import { cn } from '../../lib/utils'
 import { snapToRoads } from '../../lib/snapToRoads'
@@ -56,6 +57,7 @@ function injectPulseStyle(color: string) {
 }
 
 export default function RouteMap({ points, height = '300px', className, live = false, activityType }: RouteMapProps) {
+  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layersRef = useRef<L.LayerGroup | null>(null)
@@ -191,7 +193,7 @@ export default function RouteMap({ points, height = '300px', className, live = f
   if (points.length === 0) {
     return (
       <div className={cn('flex items-center justify-center bg-muted/50 rounded-xl', className)} style={{ height }}>
-        <span className="text-sm text-muted-foreground">Sin datos de ruta</span>
+        <span className="text-sm text-muted-foreground">{t('cardio.noRouteData')}</span>
       </div>
     )
   }

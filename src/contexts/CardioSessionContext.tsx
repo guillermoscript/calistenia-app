@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
+import i18n from '../lib/i18n'
 import { pb } from '../lib/pocketbase'
 import {
   haversineDistance, calculateElevationGain,
@@ -187,7 +188,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
-      setError('Geolocalización no disponible')
+      setError(i18n.t('cardioSession.geoNotAvailable'))
       return
     }
 
@@ -352,6 +353,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       avg_speed_kmh: avgSpeedKmh,
       max_speed_kmh: maxSpeedKmh,
       splits,
+      program: programId || undefined,
+      program_day_key: programDayKey || undefined,
     }
     if (programId) {
       session.program = programId
@@ -360,10 +363,13 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
     if (userId) {
       try {
-        const saved = await pb.collection('cardio_sessions').create({
+        const saveData: Record<string, unknown> = {
           user: userId,
           ...session,
-        })
+        }
+        if (programId) saveData.program = programId
+        if (programDayKey) saveData.program_day_key = programDayKey
+        const saved = await pb.collection('cardio_sessions').create(saveData)
         session.id = saved.id
       } catch (e) {
         console.warn('Failed to save cardio session:', e)

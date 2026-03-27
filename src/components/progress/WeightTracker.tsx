@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
@@ -12,6 +13,7 @@ interface WeightTrackerProps {
 }
 
 export default function WeightTracker({ userId }: WeightTrackerProps) {
+  const { t } = useTranslation()
   const { weights, isReady, logWeight, deleteWeight } = useWeight(userId)
   const [weightInput, setWeightInput] = useState('')
   const [dateInput, setDateInput] = useState(() => todayStr())
@@ -57,12 +59,12 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
   return (
     <Card>
       <CardContent className="p-5">
-        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">Peso Corporal</div>
+        <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.weight.title')}</div>
 
         {/* Quick-add form */}
         <div className="flex gap-2 items-end mb-4 flex-wrap">
           <div className="flex-1 min-w-[100px]">
-            <label className="text-[10px] text-muted-foreground mb-1 block">Peso (kg)</label>
+            <label className="text-[10px] text-muted-foreground mb-1 block">{t('progress.weight.weightKg')}</label>
             <Input
               type="number"
               step="0.1"
@@ -75,7 +77,7 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
             />
           </div>
           <div className="min-w-[140px]">
-            <label className="text-[10px] text-muted-foreground mb-1 block">Fecha</label>
+            <label className="text-[10px] text-muted-foreground mb-1 block">{t('progress.weight.date')}</label>
             <Input
               type="date"
               value={dateInput}
@@ -88,7 +90,7 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
             disabled={saving || !weightInput}
             className="h-9 px-4 bg-lime text-zinc-900 hover:bg-lime/90 font-bebas text-sm tracking-wide"
           >
-            {saving ? '...' : 'GUARDAR'}
+            {saving ? '...' : t('progress.weight.save')}
           </Button>
         </div>
 
@@ -96,10 +98,10 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
         {stats && (
           <div className="grid grid-cols-4 gap-3 mb-4">
             {[
-              { label: 'Actual', value: `${stats.current}`, accent: 'text-lime' },
-              { label: 'Min', value: `${stats.min}`, accent: 'text-sky-500' },
-              { label: 'Max', value: `${stats.max}`, accent: 'text-amber-400' },
-              { label: 'Tendencia', value: `${stats.trend > 0 ? '+' : ''}${stats.trend.toFixed(1)}`, accent: stats.trend > 0 ? 'text-red-400' : 'text-emerald-500' },
+              { label: t('progress.weight.current'), value: `${stats.current}`, accent: 'text-lime' },
+              { label: t('progress.weight.min'), value: `${stats.min}`, accent: 'text-sky-500' },
+              { label: t('progress.weight.max'), value: `${stats.max}`, accent: 'text-amber-400' },
+              { label: t('progress.weight.trend'), value: `${stats.trend > 0 ? '+' : ''}${stats.trend.toFixed(1)}`, accent: stats.trend > 0 ? 'text-red-400' : 'text-emerald-500' },
             ].map(s => (
               <div key={s.label} className="text-center">
                 <div className={cn('font-bebas text-2xl leading-none', s.accent)}>{s.value}</div>
@@ -132,8 +134,8 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
                   fontSize: '12px',
                   color: '#fff',
                 }}
-                labelFormatter={(v: string) => `Fecha: ${v}`}
-                formatter={(value: number) => [`${value} kg`, 'Peso']}
+                labelFormatter={(v: string) => `${t('progress.weight.date')}: ${v}`}
+                formatter={(value: number) => [`${value} kg`, t('progress.weight.weightLabel')]}
               />
               <Line
                 type="monotone"
@@ -149,7 +151,7 @@ export default function WeightTracker({ userId }: WeightTrackerProps) {
 
         {weights.length === 0 && (
           <div className="text-center text-muted-foreground text-sm py-6">
-            Registra tu peso para ver la tendencia
+            {t('progress.weight.emptyState')}
           </div>
         )}
       </CardContent>

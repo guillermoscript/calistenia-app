@@ -32,16 +32,16 @@ export const PRIORITY_COLORS: Record<Priority, { stripe: string; border: string;
 }
 
 // ── Cardio activity types ─────────────────────────────────────────────────
-export const CARDIO_ACTIVITY: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  running: { label: 'Carrera',  icon: '🏃', color: 'text-lime',      bg: 'bg-lime/10 border-lime/30' },
-  walking: { label: 'Caminata', icon: '🚶', color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
-  cycling: { label: 'Ciclismo', icon: '🚴', color: 'text-sky-500',   bg: 'bg-sky-500/10 border-sky-500/30' },
+export const CARDIO_ACTIVITY: Record<string, { icon: string; color: string; bg: string }> = {
+  running: { icon: '🏃', color: 'text-lime',      bg: 'bg-lime/10 border-lime/30' },
+  walking: { icon: '🚶', color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
+  cycling: { icon: '🚴', color: 'text-sky-500',   bg: 'bg-sky-500/10 border-sky-500/30' },
 }
 
 // ── Meal type colors ────────────────────────────────────────────────────────
-export const MEAL_TYPE_COLORS: Record<string, { label: string; color: string; bg: string }> = {
-  desayuno: { label: 'Desayuno', color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
-  almuerzo: { label: 'Almuerzo', color: 'text-sky-500',   bg: 'bg-sky-500/10 border-sky-500/30' },
-  cena:     { label: 'Cena',     color: 'text-pink-500',  bg: 'bg-pink-500/10 border-pink-500/30' },
-  snack:    { label: 'Snack',    color: 'text-lime',      bg: 'bg-lime/10 border-lime/30' },
+export const MEAL_TYPE_COLORS: Record<string, { color: string; bg: string }> = {
+  desayuno: { color: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/30' },
+  almuerzo: { color: 'text-sky-500',   bg: 'bg-sky-500/10 border-sky-500/30' },
+  cena:     { color: 'text-pink-500',  bg: 'bg-pink-500/10 border-pink-500/30' },
+  snack:    { color: 'text-lime',      bg: 'bg-lime/10 border-lime/30' },
 }

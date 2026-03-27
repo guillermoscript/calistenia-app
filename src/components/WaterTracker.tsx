@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -18,6 +19,7 @@ const DEFAULT_GOAL = 2500
 const QUICK_AMOUNTS = [200, 350, 500]
 
 export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compact, adding }: WaterTrackerProps) {
+  const { t } = useTranslation()
   const [custom, setCustom] = useState('')
   const [showCustom, setShowCustom] = useState(false)
   const [editingGoal, setEditingGoal] = useState(false)
@@ -55,7 +57,7 @@ export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compa
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">Agua Hoy</div>
+              <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">{t('water.today')}</div>
               <div className="text-sm tabular-nums">
                 <span className="text-foreground font-medium">{todayTotal}</span>
                 <span className="text-muted-foreground"> / {safeGoal} ml</span>
@@ -85,7 +87,7 @@ export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compa
 
   return (
     <div>
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Hidratacion</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">{t('water.hydration')}</div>
       <Card>
         <CardContent className="p-5">
           <div className="flex items-baseline justify-between mb-3">
@@ -96,7 +98,7 @@ export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compa
               <span className="text-sm text-muted-foreground ml-1">/ {safeGoal} ml</span>
             </div>
             {reached && (
-              <span className="text-[10px] text-emerald-500 font-bebas tracking-widest">META ALCANZADA</span>
+              <span className="text-[10px] text-emerald-500 font-bebas tracking-widest">{t('water.goalReached')}</span>
             )}
           </div>
 
@@ -126,7 +128,7 @@ export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compa
                     showCustom ? 'border-sky-500/30 text-sky-500' : 'hover:border-sky-500 hover:text-sky-500'
                   )}
                 >
-                  Otro
+                  {t('water.other')}
                 </Button>
               </div>
 
@@ -156,7 +158,7 @@ export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compa
           ) : (
             <div className="flex gap-3 mt-1">
               <div className="w-0.5 shrink-0 rounded-full bg-sky-500/40" />
-              <span className="text-[10px] text-muted-foreground leading-relaxed">Solo lectura — navega a hoy para registrar agua</span>
+              <span className="text-[10px] text-muted-foreground leading-relaxed">{t('water.readOnly')}</span>
             </div>
           )}
 
@@ -165,7 +167,7 @@ export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compa
             <div className="mt-3 pt-3 border-t border-border/60">
               {editingGoal ? (
                 <div className="flex gap-2 items-center motion-safe:animate-fade-in">
-                  <span className="text-[10px] text-muted-foreground tracking-wide">Meta diaria:</span>
+                  <span className="text-[10px] text-muted-foreground tracking-wide">{t('water.dailyGoal')}</span>
                   <Input
                     type="number"
                     inputMode="numeric"
@@ -202,7 +204,7 @@ export default function WaterTracker({ todayTotal, goal, onAdd, onSetGoal, compa
                   onClick={() => { setGoalInput(String(safeGoal)); setEditingGoal(true) }}
                   className="text-[10px] text-muted-foreground hover:text-sky-500 transition-colors"
                 >
-                  Meta: {safeGoal} ml · click para cambiar
+                  {t('water.goalLabel', { goal: safeGoal })}
                 </button>
               )}
             </div>

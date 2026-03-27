@@ -4,6 +4,7 @@ import { AuthManager } from "../auth.js";
 import { errorResult, PaginationSchema, ResponseFormat } from "../utils.js";
 import { searchWger, getWgerExerciseInfo, downloadWgerImage } from "../lib/wger.js";
 import { mapWgerToExerciseCatalog } from "../lib/wger-mappings.js";
+import { localize, toTranslatable } from "../lib/i18n.js";
 
 function slugify(name: string): string {
   return name
@@ -101,9 +102,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         // Check deduplication
         try {
           const existing = await pb.collection("exercises_catalog").getFirstListItem(pb.filter('wger_id = {:wger_id}', { wger_id }));
+          const existingName = localize(existing.name);
           return {
-            content: [{ type: "text", text: `Exercise already exists: **${existing.name}** (ID: ${existing.id})` }],
-            structuredContent: { id: existing.id, name: existing.name, already_existed: true },
+            content: [{ type: "text", text: `Exercise already exists: **${existingName}** (ID: ${existing.id})` }],
+            structuredContent: { id: existing.id, name: existingName, already_existed: true },
           };
         } catch {
           // Not found — proceed
@@ -123,10 +125,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
           .slice(0, 2);
 
         const formData = new FormData();
-        formData.append("name", mapped.name);
+        formData.append("name", JSON.stringify(mapped.name_i18n));
         formData.append("slug", mapped.slug);
-        formData.append("description", mapped.description);
-        formData.append("muscles", mapped.muscles);
+        formData.append("description", JSON.stringify(mapped.description_i18n));
+        formData.append("muscles", JSON.stringify(mapped.muscles_i18n));
         formData.append("category", mapped.category);
         formData.append("equipment", JSON.stringify(mapped.equipment));
         formData.append("priority", mapped.priority);
@@ -198,7 +200,7 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         let exactMatch: { id: string; name: string; slug: string; status: string } | null = null;
         try {
           const existing = await pb.collection("exercises_catalog").getFirstListItem(pb.filter('slug = {:slug}', { slug }));
-          exactMatch = { id: existing.id, name: existing.name, slug: existing.slug, status: existing.status };
+          exactMatch = { id: existing.id, name: localize(existing.name), slug: existing.slug, status: existing.status };
         } catch {
           // Not found
         }
@@ -224,7 +226,7 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
 
           fuzzyMatches = result.items
             .filter((r) => !exactMatch || r.id !== exactMatch.id)
-            .map((r) => ({ id: r.id, name: r.name, slug: r.slug, status: r.status }));
+            .map((r) => ({ id: r.id, name: localize(r.name), slug: r.slug, status: r.status }));
         }
 
         const output = { slug, exact_match: exactMatch, fuzzy_matches: fuzzyMatches };
@@ -334,10 +336,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
 
         const exercises = result.items.map((r) => ({
           id: r.id,
-          name: r.name,
+          name: localize(r.name),
           slug: r.slug,
           category: r.category,
-          muscles: r.muscles,
+          muscles: localize(r.muscles),
           equipment: r.equipment,
           priority: r.priority,
           default_sets: r.default_sets,
@@ -427,16 +429,18 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
           const existing = await pb.collection("exercises_catalog").getFirstListItem(pb.filter('slug = {:slug}', { slug }));
           // Block if found in official/promoted
           if (existing.status === "official" || existing.status === "promoted") {
+            const eName = localize(existing.name);
             return {
-              content: [{ type: "text", text: `This exercise already exists in the catalog: **${existing.name}** (ID: ${existing.id}, status: ${existing.status})` }],
-              structuredContent: { id: existing.id, name: existing.name, already_existed: true, blocked: true },
+              content: [{ type: "text", text: `This exercise already exists in the catalog: **${eName}** (ID: ${existing.id}, status: ${existing.status})` }],
+              structuredContent: { id: existing.id, name: eName, already_existed: true, blocked: true },
             };
           }
           // Block if same user's private exercise
           if (existing.status === "private" && input.created_by && existing.created_by === input.created_by) {
+            const eName = localize(existing.name);
             return {
-              content: [{ type: "text", text: `You already have this exercise: **${existing.name}** (ID: ${existing.id})` }],
-              structuredContent: { id: existing.id, name: existing.name, already_existed: true, blocked: true },
+              content: [{ type: "text", text: `You already have this exercise: **${eName}** (ID: ${existing.id})` }],
+              structuredContent: { id: existing.id, name: eName, already_existed: true, blocked: true },
             };
           }
         } catch {
@@ -458,14 +462,14 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
           );
 
           const result = await pb.collection("exercises_catalog").getList(1, 5, { filter, sort: "name" });
-          fuzzyMatches = result.items.map((r) => ({ id: r.id, name: r.name, slug: r.slug }));
+          fuzzyMatches = result.items.map((r) => ({ id: r.id, name: localize(r.name), slug: r.slug }));
         }
 
         const record = await pb.collection("exercises_catalog").create({
-          name: input.name,
+          name: toTranslatable(input.name),
           slug,
-          description: input.description || "",
-          muscles: input.muscles || "",
+          description: toTranslatable(input.description || ""),
+          muscles: toTranslatable(input.muscles || ""),
           category: input.category,
           equipment: input.equipment || [],
           priority: input.priority,
@@ -475,7 +479,7 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
           youtube: input.youtube || "",
           is_timer: input.is_timer,
           default_timer_seconds: input.default_timer_seconds || 0,
-          note: input.note || "",
+          note: toTranslatable(input.note || ""),
           source: "manual",
           status,
           created_by: input.created_by || null,
@@ -542,21 +546,21 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         const exercise = await pb.collection("exercises_catalog").getOne(exercise_id);
 
         if (exercise.status !== "private") {
-          return errorResult(`Exercise "${exercise.name}" has status "${exercise.status}" — only private exercises can be promoted.`);
+          return errorResult(`Exercise "${localize(exercise.name)}" has status "${exercise.status}" — only private exercises can be promoted.`);
         }
 
         const updateData: Record<string, unknown> = { status: "promoted" };
 
         if (overrides.name !== undefined) {
-          updateData.name = overrides.name;
+          updateData.name = toTranslatable(overrides.name);
           // Regenerate slug if name changed and no explicit slug override
           if (overrides.slug === undefined) {
             updateData.slug = slugify(overrides.name);
           }
         }
         if (overrides.slug !== undefined) updateData.slug = overrides.slug;
-        if (overrides.description !== undefined) updateData.description = overrides.description;
-        if (overrides.muscles !== undefined) updateData.muscles = overrides.muscles;
+        if (overrides.description !== undefined) updateData.description = toTranslatable(overrides.description);
+        if (overrides.muscles !== undefined) updateData.muscles = toTranslatable(overrides.muscles);
         if (overrides.category !== undefined) updateData.category = overrides.category;
         if (overrides.youtube !== undefined) updateData.youtube = overrides.youtube;
         if (overrides.variant_of !== undefined) updateData.variant_of = overrides.variant_of;
@@ -567,10 +571,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
           content: [
             {
               type: "text",
-              text: `Promoted **${updated.name}** (ID: ${updated.id}) to community status.\n- Created by: ${updated.created_by}\n- Category: ${updated.category}\n- Overrides applied: ${Object.keys(updateData).filter((k) => k !== "status").join(", ") || "none"}`,
+              text: `Promoted **${localize(updated.name)}** (ID: ${updated.id}) to community status.\n- Created by: ${updated.created_by}\n- Category: ${updated.category}\n- Overrides applied: ${Object.keys(updateData).filter((k) => k !== "status").join(", ") || "none"}`,
             },
           ],
-          structuredContent: { id: updated.id, name: updated.name, status: "promoted", created_by: updated.created_by },
+          structuredContent: { id: updated.id, name: localize(updated.name), status: "promoted", created_by: updated.created_by },
         };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
@@ -599,7 +603,7 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         const exercise = await pb.collection("exercises_catalog").getOne(exercise_id);
 
         if (exercise.status !== "promoted") {
-          return errorResult(`Exercise "${exercise.name}" has status "${exercise.status}" — only promoted exercises can be demoted.`);
+          return errorResult(`Exercise "${localize(exercise.name)}" has status "${exercise.status}" — only promoted exercises can be demoted.`);
         }
 
         const updated = await pb.collection("exercises_catalog").update(exercise_id, { status: "private" });
@@ -608,10 +612,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
           content: [
             {
               type: "text",
-              text: `Demoted **${updated.name}** (ID: ${updated.id}) back to private status.\n- Owner: ${updated.created_by}`,
+              text: `Demoted **${localize(updated.name)}** (ID: ${updated.id}) back to private status.\n- Owner: ${updated.created_by}`,
             },
           ],
-          structuredContent: { id: updated.id, name: updated.name, status: "private", created_by: updated.created_by },
+          structuredContent: { id: updated.id, name: localize(updated.name), status: "private", created_by: updated.created_by },
         };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));

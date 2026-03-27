@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
@@ -17,6 +18,7 @@ interface ExerciseChartProps {
 }
 
 export default function ExerciseChart({ exerciseName, logs, showSessionType, lastSets, accentColor = 'lime' }: ExerciseChartProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
   const chartData = useMemo(() => {
@@ -52,7 +54,7 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
           <div className="font-medium text-sm capitalize">{exerciseName.replace(/_/g, ' ')}</div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground font-mono">
-              {chartData.length} {chartData.length === 1 ? 'sesión' : 'sesiones'}
+              {t('progress.exerciseChart.sessionCount', { count: chartData.length })}
             </span>
             {canShowChart && (
               <svg
@@ -84,8 +86,8 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
           <div className="px-4 pb-4">
             {showSessionType && chartData.some(d => d.isFree) && (
               <div className="flex gap-3 mb-2 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-lime" />Programa</span>
-                <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-violet-400" />Libre</span>
+                <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-lime" />{t('progress.exerciseChart.program')}</span>
+                <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-violet-400" />{t('progress.exerciseChart.free')}</span>
               </div>
             )}
             <ResponsiveContainer width="100%" height={200}>
@@ -109,8 +111,8 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
                     fontSize: '12px',
                     color: '#fff',
                   }}
-                  labelFormatter={(v: string) => `Fecha: ${v}`}
-                  formatter={(value: number) => [`${value} reps`, 'Max Reps']}
+                  labelFormatter={(v: string) => `${t('progress.exerciseChart.date')}: ${v}`}
+                  formatter={(value: number) => [`${value} reps`, t('progress.exerciseChart.maxReps')]}
                 />
                 <Line
                   type="monotone"

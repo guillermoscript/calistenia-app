@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { cn } from '../lib/utils'
+import { useTranslation } from 'react-i18next'
+import { CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { useProgramEditor, type EditorExercise, type EditorPhase } from '../hooks/useProgramEditor'
+import type { CardioActivityType } from '../types'
 import ExerciseCatalogPicker from '../components/ExerciseCatalogPicker'
 import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { Button } from '../components/ui/button'
@@ -10,15 +13,12 @@ import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { CARDIO_ACTIVITY } from '../lib/style-tokens'
-import type { CardioActivityType } from '../types'
-
 interface ProgramEditorPageProps {
   userId: string
   userRole?: import('../types').UserRole
 }
 
-const STEP_LABELS = ['Info', 'Fases', 'Días', 'Ejercicios']
+const STEP_LABEL_KEYS = ['programEditor.stepInfo', 'programEditor.stepPhases', 'programEditor.stepDays', 'programEditor.stepExercises']
 
 const COLOR_SWATCHES = [
   { name: 'lime',    color: '#c8f542', bg: 'rgba(200,245,66,0.08)' },
@@ -30,31 +30,32 @@ const COLOR_SWATCHES = [
 ]
 
 const DAY_TYPE_OPTIONS = [
-  { value: 'push',   label: 'Push' },
-  { value: 'pull',   label: 'Pull' },
-  { value: 'legs',   label: 'Legs' },
-  { value: 'core',   label: 'Core' },
-  { value: 'lumbar', label: 'Lumbar' },
-  { value: 'full',   label: 'Full' },
-  { value: 'cardio', label: 'Cardio' },
-  { value: 'rest',   label: 'Descanso' },
+  { value: 'push',   labelKey: 'dayType.push' },
+  { value: 'pull',   labelKey: 'dayType.pull' },
+  { value: 'legs',   labelKey: 'dayType.legs' },
+  { value: 'core',   labelKey: 'dayType.core' },
+  { value: 'lumbar', labelKey: 'dayType.lumbar' },
+  { value: 'full',   labelKey: 'dayType.full' },
+  { value: 'cardio', labelKey: 'dayType.cardio' },
+  { value: 'rest',   labelKey: 'dayType.rest' },
 ]
 
-const CARDIO_TYPE_OPTIONS: { value: CardioActivityType; label: string; icon: string }[] = [
-  { value: 'running', label: CARDIO_ACTIVITY.running.label, icon: CARDIO_ACTIVITY.running.icon },
-  { value: 'walking', label: CARDIO_ACTIVITY.walking.label, icon: CARDIO_ACTIVITY.walking.icon },
-  { value: 'cycling', label: CARDIO_ACTIVITY.cycling.label, icon: CARDIO_ACTIVITY.cycling.icon },
+const CARDIO_TYPE_OPTIONS: { value: CardioActivityType; labelKey: string; icon: string }[] = [
+  { value: 'running', labelKey: 'cardio.running', icon: CARDIO_ACTIVITY.running.icon },
+  { value: 'walking', labelKey: 'cardio.walking', icon: CARDIO_ACTIVITY.walking.icon },
+  { value: 'cycling', labelKey: 'cardio.cycling', icon: CARDIO_ACTIVITY.cycling.icon },
 ]
 
-const PRIORITY_OPTIONS: { value: 'high' | 'med' | 'low'; label: string; color: string }[] = [
-  { value: 'high', label: 'Alta',  color: 'text-red-400' },
-  { value: 'med',  label: 'Media', color: 'text-amber-400' },
-  { value: 'low',  label: 'Baja',  color: 'text-emerald-400' },
+const PRIORITY_OPTIONS: { value: 'high' | 'med' | 'low'; i18nKey: string; color: string }[] = [
+  { value: 'high', i18nKey: 'priority.high',  color: 'text-red-400' },
+  { value: 'med',  i18nKey: 'priority.med', color: 'text-amber-400' },
+  { value: 'low',  i18nKey: 'priority.low',  color: 'text-emerald-400' },
 ]
 
 const DAY_IDS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
 
 export default function ProgramEditorPage({ userId, userRole = 'user' }: ProgramEditorPageProps) {
+  const { t } = useTranslation()
   const canPublishOfficial = userRole === 'editor' || userRole === 'admin'
   const navigate = useNavigate()
   const { id: programId } = useParams<{ id: string }>()
@@ -109,10 +110,10 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
     const savedId = await saveProgram(userId)
     if (savedId) {
       await refreshPrograms()
-      toast.success('Programa guardado correctamente')
+      toast.success(t('programEditor.saved'))
       navigate('/programs')
     } else {
-      toast.error(state.error || 'No se pudo guardar el programa. Verifica tu conexión.')
+      toast.error(state.error || t('programEditor.saveError'))
     }
   }
 
@@ -153,13 +154,13 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
               </svg>
             </Button>
             <div>
-              <div className="font-mono text-[9px] text-muted-foreground tracking-[3px]">EDITOR DE PROGRAMA</div>
-              <div className="font-bebas text-xl leading-none">{state.info.name || 'NUEVO PROGRAMA'}</div>
+              <div className="font-mono text-[9px] text-muted-foreground tracking-[3px]">{t('programEditor.editorTitle')}</div>
+              <div className="font-bebas text-xl leading-none">{state.info.name || t('programEditor.newProgram')}</div>
             </div>
           </div>
           {state.isDirty && (
             <Badge variant="outline" className="text-[9px] text-amber-400 border-amber-400/30">
-              SIN GUARDAR
+              {t('programEditor.unsaved')}
             </Badge>
           )}
         </div>
@@ -168,7 +169,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
       {/* Step indicator */}
       <div className="shrink-0 px-4 py-3 border-b border-border">
         <div className="max-w-4xl mx-auto flex items-center gap-2 justify-center">
-          {STEP_LABELS.map((label, i) => {
+          {STEP_LABEL_KEYS.map((labelKey, i) => {
             const stepNum = i + 1
             const isActive = state.step === stepNum
             const isDone = state.step > stepNum
@@ -205,7 +206,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                 )}
               >
                 <span className="font-mono text-[10px]">{isDone ? '✓' : stepNum}</span>
-                <span className="hidden sm:inline">{label}</span>
+                <span className="hidden sm:inline">{t(labelKey)}</span>
               </button>
             )
           })}
@@ -228,31 +229,31 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
             <div className="space-y-6">
               <Card>
                 <CardContent className="p-5 md:p-6 space-y-4">
-                  <div className="font-bebas text-2xl tracking-wide">INFORMACIÓN DEL PROGRAMA</div>
+                  <div className="font-bebas text-2xl tracking-wide">{t('programEditor.programInfo')}</div>
 
                   <div>
-                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Nombre *</label>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.nameLabel')}</label>
                     <Input
                       value={state.info.name}
                       onChange={e => updateInfo({ name: e.target.value })}
-                      placeholder="Ej: Calistenia 6 Meses"
+                      placeholder={t('programEditor.namePlaceholder')}
                       className="text-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Descripción</label>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.descLabel')}</label>
                     <Textarea
                       value={state.info.description}
                       onChange={e => updateInfo({ description: e.target.value })}
-                      placeholder="Descripción del programa..."
+                      placeholder={t('programEditor.descPlaceholder')}
                       rows={3}
                       className="text-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Duración (semanas)</label>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.durationLabel')}</label>
                     <Input
                       type="number"
                       min={1}
@@ -265,7 +266,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">Dificultad</label>
+                    <label className="text-[11px] text-muted-foreground tracking-widest uppercase block mb-1.5">{t('programEditor.difficultyLabel')}</label>
                     <div className="flex gap-2">
                       {(['beginner', 'intermediate', 'advanced'] as const).map(d => (
                         <button
@@ -280,7 +281,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                               : 'border-border text-muted-foreground hover:text-foreground'
                           )}
                         >
-                          {d === 'beginner' ? 'Principiante' : d === 'intermediate' ? 'Intermedio' : 'Avanzado'}
+                          {t(`difficulty.${d}`)}
                         </button>
                       ))}
                     </div>
@@ -296,9 +297,9 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                           className="size-4 rounded accent-[hsl(var(--lime))]"
                         />
                         <div>
-                          <div className="text-sm font-medium">Publicar como programa oficial</div>
+                          <div className="text-sm font-medium">{t('programEditor.publishOfficial')}</div>
                           <div className="text-[11px] text-muted-foreground">
-                            Los programas oficiales aparecen en la sección principal y en el onboarding.
+                            {t('programEditor.publishDesc')}
                           </div>
                         </div>
                       </label>
@@ -344,20 +345,20 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] text-muted-foreground tracking-widest uppercase block mb-1">Nombre</label>
+                        <label className="text-[10px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.phaseName')}</label>
                         <Input
                           value={phase.name}
                           onChange={e => updatePhase(pi, { name: e.target.value })}
-                          placeholder="Ej: Base & Activación"
+                          placeholder={t('programEditor.phaseNamePlaceholder')}
                           className="text-sm"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-muted-foreground tracking-widest uppercase block mb-1">Semanas</label>
+                        <label className="text-[10px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.weeks')}</label>
                         <Input
                           value={phase.weeks}
                           onChange={e => updatePhase(pi, { weeks: e.target.value })}
-                          placeholder="Ej: 1-6"
+                          placeholder={t('programEditor.weeksPlaceholder')}
                           className="text-sm"
                         />
                       </div>
@@ -388,7 +389,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
           {/* Step 3: Days */}
           {state.step === 3 && (
             <div className="space-y-4">
-              <div className="font-bebas text-2xl tracking-wide mb-2">DÍAS POR FASE</div>
+              <div className="font-bebas text-2xl tracking-wide mb-2">{t('programEditor.daysPerPhase')}</div>
 
               {/* Phase tabs */}
               <div className="flex gap-1.5 flex-wrap mb-4">
@@ -428,69 +429,73 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                         </div>
 
                         <div>
-                          <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">Enfoque</label>
+                          <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.focus')}</label>
                           <Input
                             value={day.focus}
                             onChange={e => updateDay(dayKey, { focus: e.target.value })}
-                            placeholder="Ej: Empuje + Core"
+                            placeholder={t('programEditor.focusPlaceholder')}
                             className="text-sm h-8"
                           />
                         </div>
 
                         <div>
-                          <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">Tipo</label>
+                          <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.type')}</label>
                           <select
                             value={day.type}
                             onChange={e => updateDay(dayKey, { type: e.target.value })}
                             className="w-full h-8 rounded-md border border-input bg-background px-3 text-sm"
                           >
                             {DAY_TYPE_OPTIONS.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
                             ))}
                           </select>
                         </div>
 
-                        {/* Cardio config */}
                         {day.type === 'cardio' && (
-                          <div className="space-y-2 pt-1 border-t border-border">
-                            <label className="text-[9px] text-emerald-400 tracking-widest uppercase block mb-1">Actividad Cardio</label>
-                            <div className="flex gap-1.5">
-                              {CARDIO_TYPE_OPTIONS.map(opt => (
-                                <button
-                                  key={opt.value}
-                                  onClick={() => updateDay(dayKey, { cardioActivityType: opt.value } as any)}
-                                  className={cn(
-                                    'flex-1 py-1.5 rounded-md text-[10px] border transition-all text-center',
-                                    (day as any).cardioActivityType === opt.value
-                                      ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400'
-                                      : 'border-border text-muted-foreground hover:text-foreground'
-                                  )}
-                                >
-                                  {opt.icon} {opt.label}
-                                </button>
-                              ))}
+                          <div className="space-y-2 p-3 bg-emerald-400/5 border border-emerald-400/20 rounded-lg">
+                            <div className="text-[9px] text-emerald-400 tracking-widest uppercase mb-1">{t('programEditor.cardioConfig')}</div>
+                            <div>
+                              <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.activity')}</label>
+                              <div className="flex gap-1.5">
+                                {CARDIO_TYPE_OPTIONS.map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => updateDay(dayKey, { cardioActivityType: opt.value } as any)}
+                                    className={cn(
+                                      'flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] border transition-all',
+                                      (day as any).cardioActivityType === opt.value
+                                        ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400'
+                                        : 'border-border text-muted-foreground hover:text-foreground'
+                                    )}
+                                  >
+                                    <span>{opt.icon}</span>
+                                    <span>{t(opt.labelKey)}</span>
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">Distancia (km)</label>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.distanceKm')}</label>
                                 <Input
                                   type="number"
                                   min={0}
                                   step={0.5}
                                   value={(day as any).cardioTargetDistanceKm || ''}
                                   onChange={e => updateDay(dayKey, { cardioTargetDistanceKm: parseFloat(e.target.value) || undefined } as any)}
-                                  placeholder="Ej: 5"
+                                  placeholder={t('programEditor.distancePlaceholder')}
                                   className="text-sm h-8"
                                 />
                               </div>
                               <div>
-                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">Duracion (min)</label>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.durationMin')}</label>
                                 <Input
                                   type="number"
                                   min={0}
                                   value={(day as any).cardioTargetDurationMin || ''}
                                   onChange={e => updateDay(dayKey, { cardioTargetDurationMin: parseInt(e.target.value) || undefined } as any)}
-                                  placeholder="Ej: 30"
+                                  placeholder={t('programEditor.durationPlaceholder')}
                                   className="text-sm h-8"
                                 />
                               </div>
@@ -572,19 +577,25 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
               {currentDay?.type === 'cardio' && (
                 <Card className="border-emerald-400/30 bg-emerald-400/5">
                   <CardContent className="p-5 text-center">
-                    <div className="text-3xl mb-2">
-                      {CARDIO_ACTIVITY[(currentDay as any).cardioActivityType || 'running']?.icon || '🏃'}
+                    <div className="text-3xl mb-2">{CARDIO_ACTIVITY[(currentDay as any).cardioActivityType || 'running']?.icon || '🏃'}</div>
+                    <div className="font-bebas text-xl text-emerald-400 tracking-wide mb-1">{t('programEditor.cardioDay')}</div>
+                    <div className="text-sm text-muted-foreground mb-3">
+                      {t(`cardio.${(currentDay as any).cardioActivityType || 'running'}`)}
                     </div>
-                    <div className="font-bebas text-xl text-emerald-400 tracking-wide">
-                      DIA DE CARDIO
+                    <div className="flex justify-center gap-4 text-[11px]">
+                      {(currentDay as any).cardioTargetDistanceKm && (
+                        <div className="text-emerald-400">
+                          <span className="font-bold">{(currentDay as any).cardioTargetDistanceKm}</span> km
+                        </div>
+                      )}
+                      {(currentDay as any).cardioTargetDurationMin && (
+                        <div className="text-emerald-400">
+                          <span className="font-bold">{(currentDay as any).cardioTargetDurationMin}</span> min
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {CARDIO_ACTIVITY[(currentDay as any).cardioActivityType || 'running']?.label || 'Carrera'}
-                      {(currentDay as any).cardioTargetDistanceKm && ` · ${(currentDay as any).cardioTargetDistanceKm} km`}
-                      {(currentDay as any).cardioTargetDurationMin && ` · ${(currentDay as any).cardioTargetDurationMin} min`}
-                    </div>
-                    <div className="text-xs text-muted-foreground/60 mt-2">
-                      Los ejercicios no aplican para dias de cardio. Configura la actividad en el Paso 3.
+                    <div className="text-[10px] text-muted-foreground mt-3">
+                      {t('programEditor.cardioConfigHint')}
                     </div>
                   </CardContent>
                 </Card>
@@ -604,7 +615,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                             <button
                               onClick={() => moveExercise(currentDayKey, ei, 'up')}
                               disabled={ei === 0}
-                              aria-label={`Mover ${ex.name || 'ejercicio'} arriba`}
+                              aria-label={t('programEditor.moveUp', { name: ex.name || t('programEditor.exercise') })}
                               className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
                             >
                               ▲
@@ -612,7 +623,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                             <button
                               onClick={() => moveExercise(currentDayKey, ei, 'down')}
                               disabled={ei === currentDay.exercises.length - 1}
-                              aria-label={`Mover ${ex.name || 'ejercicio'} abajo`}
+                              aria-label={t('programEditor.moveDown', { name: ex.name || t('programEditor.exercise') })}
                               className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
                             >
                               ▼
@@ -624,7 +635,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                             <Input
                               value={ex.name}
                               onChange={e => updateExercise(currentDayKey, ei, { name: e.target.value })}
-                              placeholder="Nombre del ejercicio"
+                              placeholder={t('programEditor.exerciseName')}
                               className="text-sm h-7 border-none bg-transparent px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
                             />
                           </div>
@@ -665,7 +676,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                             className="h-7 rounded border border-input bg-background px-1 text-[10px]"
                           >
                             {PRIORITY_OPTIONS.map(p => (
-                              <option key={p.value} value={p.value}>{p.label}</option>
+                              <option key={p.value} value={p.value}>{t(p.i18nKey)}</option>
                             ))}
                           </select>
 
@@ -678,7 +689,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                           </button>
                           <button
                             onClick={() => removeExercise(currentDayKey, ei)}
-                            aria-label={`Eliminar ${ex.name || 'ejercicio'}`}
+                            aria-label={t('programEditor.removeExercise', { name: ex.name || t('programEditor.exercise') })}
                             className="text-muted-foreground hover:text-red-400 text-xs px-1"
                           >
                             ✕
@@ -690,11 +701,11 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                           <div className="px-3 pb-3 pt-1 border-t border-border space-y-2.5 bg-muted/30">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                               <div>
-                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">Músculos</label>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.muscles')}</label>
                                 <Input
                                   value={ex.muscles}
                                   onChange={e => updateExercise(currentDayKey, ei, { muscles: e.target.value })}
-                                  placeholder="Ej: Pecho, hombros, tríceps"
+                                  placeholder={t('programEditor.musclesPlaceholder')}
                                   className="text-sm h-8"
                                 />
                               </div>
@@ -703,17 +714,17 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                                 <Input
                                   value={ex.youtube}
                                   onChange={e => updateExercise(currentDayKey, ei, { youtube: e.target.value })}
-                                  placeholder="URL o búsqueda"
+                                  placeholder={t('programEditor.youtubePlaceholder')}
                                   className="text-sm h-8"
                                 />
                               </div>
                             </div>
                             <div>
-                              <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">Nota</label>
+                              <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.note')}</label>
                               <Textarea
                                 value={ex.note}
                                 onChange={e => updateExercise(currentDayKey, ei, { note: e.target.value })}
-                                placeholder="Instrucciones, tips..."
+                                placeholder={t('programEditor.notePlaceholder')}
                                 rows={2}
                                 className="text-sm"
                               />
@@ -726,11 +737,11 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                                   onChange={e => updateExercise(currentDayKey, ei, { isTimer: e.target.checked })}
                                   className="rounded"
                                 />
-                                <span className="text-[11px] text-muted-foreground">Es timer</span>
+                                <span className="text-[11px] text-muted-foreground">{t('programEditor.isTimer')}</span>
                               </label>
                               {ex.isTimer && (
                                 <div className="flex items-center gap-1.5">
-                                  <label className="text-[9px] text-muted-foreground">Segundos:</label>
+                                  <label className="text-[9px] text-muted-foreground">{t('programEditor.timerSeconds')}:</label>
                                   <Input
                                     type="number"
                                     min={1}
@@ -751,7 +762,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                 {/* Empty state */}
                 {(!currentDay || currentDay.exercises.length === 0) && (
                   <div className="py-8 text-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
-                    No hay ejercicios para este día. Agrega del catálogo o crea uno custom.
+                    {t('programEditor.noExercises')}
                   </div>
                 )}
               </div>}
@@ -764,7 +775,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                   size="sm"
                   className="h-8 text-[10px] tracking-wide bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90"
                 >
-                  + AGREGAR DEL CATÁLOGO
+                  + {t('programEditor.addFromCatalog')}
                 </Button>
                 <Button
                   onClick={handleAddCustom}
@@ -772,7 +783,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                   size="sm"
                   className="h-8 text-[10px] tracking-wide"
                 >
-                  + EJERCICIO CUSTOM
+                  + {t('programEditor.customExercise')}
                 </Button>
               </div>
               )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { pb } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -29,6 +30,7 @@ interface AdminStats {
 }
 
 export default function AdminPage() {
+  const { t } = useTranslation()
   const { programs } = useWorkoutState()
   const [tab, setTab] = useState<Tab>('overview')
   const [users, setUsers] = useState<UserRecord[]>([])
@@ -113,16 +115,16 @@ export default function AdminPage() {
   const officialPrograms = programs.filter(p => p.is_official)
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'overview', label: 'Resumen' },
-    { id: 'users', label: 'Usuarios' },
-    { id: 'programs', label: 'Programas' },
+    { id: 'overview', label: t('admin.overview') },
+    { id: 'users', label: t('admin.users') },
+    { id: 'programs', label: t('admin.programs') },
   ]
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Administracion</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('admin.section')}</div>
       <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="font-bebas text-5xl">PANEL ADMIN</h1>
+        <h1 className="font-bebas text-5xl">{t('admin.title')}</h1>
         <a
           href={PB_ADMIN_URL}
           target="_blank"
@@ -137,10 +139,10 @@ export default function AdminPage() {
       {/* Quick links to PB collections */}
       <div className="flex gap-2 flex-wrap mb-6">
         {([
-          { label: 'Ejercicios (programa)', collection: 'program_exercises' as const },
-          { label: 'Catalogo ejercicios', collection: 'exercises_catalog' as const },
-          { label: 'Programas', collection: 'programs' as const },
-          { label: 'Usuarios', collection: 'users' as const },
+          { label: t('admin.exercisesProgram'), collection: 'program_exercises' as const },
+          { label: t('admin.exercisesCatalog'), collection: 'exercises_catalog' as const },
+          { label: t('admin.programs'), collection: 'programs' as const },
+          { label: t('admin.users'), collection: 'users' as const },
         ]).map(link => (
           <a
             key={link.collection}
@@ -156,18 +158,18 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-8">
-        {TABS.map(t => (
+        {TABS.map(tb => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={tb.id}
+            onClick={() => setTab(tb.id)}
             className={cn(
               'px-5 py-2.5 rounded-full text-[12px] font-mono tracking-widest transition-all border uppercase',
-              tab === t.id
+              tab === tb.id
                 ? 'bg-[hsl(var(--lime))]/10 border-[hsl(var(--lime))]/30 text-[hsl(var(--lime))]'
                 : 'bg-transparent border-border text-muted-foreground hover:text-foreground',
             )}
           >
-            {t.label}
+            {tb.label}
           </button>
         ))}
       </div>
@@ -178,25 +180,25 @@ export default function AdminPage() {
           <Card>
             <CardContent className="p-5">
               <div className="font-bebas text-4xl text-[hsl(var(--lime))]">{stats.totalUsers}</div>
-              <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Usuarios</div>
+              <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{t('admin.totalUsers')}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-5">
               <div className="font-bebas text-4xl text-sky-500">{officialPrograms.length}</div>
-              <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Programas oficiales</div>
+              <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{t('admin.officialPrograms')}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-5">
               <div className="font-bebas text-4xl text-amber-400">{programs.filter(p => p.is_featured).length}</div>
-              <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Destacados</div>
+              <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{t('admin.featured')}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-5">
               <div className="font-bebas text-4xl text-pink-500">{programs.length}</div>
-              <div className="text-[10px] text-muted-foreground tracking-widest uppercase">Total programas</div>
+              <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{t('admin.totalPrograms')}</div>
             </CardContent>
           </Card>
         </div>
@@ -211,17 +213,17 @@ export default function AdminPage() {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && searchUsers()}
-              placeholder="Buscar por email o nombre..."
+              placeholder={t('admin.searchPlaceholder')}
               className="flex-1 h-11 px-4 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-[hsl(var(--lime))]/30 text-sm"
             />
             <Button onClick={searchUsers} disabled={loading} className="h-11 px-6 font-mono text-xs tracking-widest bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background">
-              {loading ? 'BUSCANDO...' : 'BUSCAR'}
+              {loading ? t('admin.searching') : t('admin.searchBtn')}
             </Button>
           </div>
 
           {users.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground text-sm">
-              Busca un usuario por email o nombre para gestionar su rol.
+              {t('admin.searchHint')}
             </div>
           ) : (
             <div className="space-y-3">
@@ -254,7 +256,7 @@ export default function AdminPage() {
                           onClick={() => setRoleConfirm({ userId: u.id, newRole: 'editor' })}
                           className="text-[10px] tracking-widest hover:border-amber-400 hover:text-amber-400"
                         >
-                          HACER EDITOR
+                          {t('admin.makeEditor')}
                         </Button>
                       )}
                       {u.role === 'editor' && (
@@ -264,7 +266,7 @@ export default function AdminPage() {
                           onClick={() => setRoleConfirm({ userId: u.id, newRole: 'user' })}
                           className="text-[10px] tracking-widest hover:border-muted-foreground"
                         >
-                          QUITAR EDITOR
+                          {t('admin.removeEditor')}
                         </Button>
                       )}
                     </div>
@@ -281,7 +283,7 @@ export default function AdminPage() {
         <div className="space-y-3">
           {officialPrograms.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground text-sm">
-              No hay programas oficiales todavia.
+              {t('admin.noOfficialPrograms')}
             </div>
           ) : (
             officialPrograms.map(p => (
@@ -292,7 +294,7 @@ export default function AdminPage() {
                       <span className="text-sm font-medium">{p.name}</span>
                       {p.is_featured && (
                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-amber-400 border-amber-400/30">
-                          DESTACADO
+                          {t('admin.featured')}
                         </Badge>
                       )}
                       <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-muted-foreground border-border">
@@ -300,7 +302,7 @@ export default function AdminPage() {
                       </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {p.duration_weeks} semanas
+                      {p.duration_weeks} {t('admin.weeks')}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -315,7 +317,7 @@ export default function AdminPage() {
                           : 'hover:border-amber-400 hover:text-amber-400'
                       )}
                     >
-                      {p.is_featured ? 'QUITAR DESTACADO' : 'DESTACAR'}
+                      {p.is_featured ? t('admin.removeFeatured') : t('admin.toggleFeatured')}
                     </Button>
                     <Button
                       variant="outline"
@@ -323,7 +325,7 @@ export default function AdminPage() {
                       onClick={() => setUnpublishConfirm(p.id)}
                       className="text-[10px] tracking-widest hover:border-red-400 hover:text-red-400"
                     >
-                      DESPUBLICAR
+                      {t('admin.unpublish')}
                     </Button>
                   </div>
                 </CardContent>
@@ -337,10 +339,10 @@ export default function AdminPage() {
       <ConfirmDialog
         open={roleConfirm !== null}
         onOpenChange={(open) => { if (!open) setRoleConfirm(null) }}
-        title="Cambiar rol"
-        description={roleConfirm ? `¿Cambiar el rol de este usuario a "${roleConfirm.newRole}"?` : ''}
-        confirmLabel="CAMBIAR ROL"
-        cancelLabel="CANCELAR"
+        title={t('admin.changeRole')}
+        description={roleConfirm ? t('admin.changeRoleConfirm', { role: roleConfirm.newRole }) : ''}
+        confirmLabel={t('admin.changeRoleBtn')}
+        cancelLabel={t('common.cancel')}
         onConfirm={() => {
           if (roleConfirm) changeRole(roleConfirm.userId, roleConfirm.newRole)
         }}
@@ -350,10 +352,10 @@ export default function AdminPage() {
       <ConfirmDialog
         open={unpublishConfirm !== null}
         onOpenChange={(open) => { if (!open) setUnpublishConfirm(null) }}
-        title="Despublicar programa"
-        description="Esto quitara el programa de la seccion oficial. ¿Continuar?"
-        confirmLabel="DESPUBLICAR"
-        cancelLabel="CANCELAR"
+        title={t('admin.unpublishProgram')}
+        description={t('admin.unpublishConfirm')}
+        confirmLabel={t('admin.unpublish')}
+        cancelLabel={t('common.cancel')}
         variant="destructive"
         onConfirm={() => {
           if (unpublishConfirm) unpublishProgram(unpublishConfirm)

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { Button } from '../components/ui/button'
@@ -34,6 +35,7 @@ interface ChallengePreview {
 }
 
 export default function InviteLandingPage() {
+  const { t } = useTranslation()
   const { code, challengeId } = useParams<{ code: string; challengeId?: string }>()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -117,7 +119,8 @@ export default function InviteLandingPage() {
                 const ex = await pb.collection('exercises_catalog').getOne(ch.exercise_id, {
                   $autoCancel: false,
                 })
-                exerciseName = (ex as any).name || ''
+                const rawName = (ex as any).name
+                exerciseName = (typeof rawName === 'object' && rawName !== null) ? (rawName.es ?? rawName.en ?? '') : (rawName || '')
               } catch { /* */ }
             }
 
@@ -166,7 +169,7 @@ export default function InviteLandingPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader label="Cargando..." />
+        <Loader label={t('common.loading')} />
       </div>
     )
   }

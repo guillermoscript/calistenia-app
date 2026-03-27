@@ -41,6 +41,7 @@ self.addEventListener('push', (event) => {
   if (!event.data) return
 
   const data = event.data.json()
+  // Fallback title — push data should include a translated title from the server
   const title = data.title || 'Calistenia App'
   const options: NotificationOptions & { vibrate?: number[] } = {
     body: data.body || '',
@@ -107,15 +108,17 @@ function isTodayIncludedSW(daysOfWeek: number[]): boolean {
 }
 
 function fireSWNotification(reminder: SWReminder): void {
+  // Fallback strings — the page sends translated reminders via postMessage.
+  // These are only used if the SW fires a timer directly (OS froze the page).
   const titles: Record<string, string> = {
     meal: reminder.label,
-    workout: 'Hora de entrenar!',
-    pause: 'Pausa Activa',
+    workout: 'Time to work out! / Hora de entrenar!',
+    pause: 'Active Break / Pausa Activa',
   }
   const bodies: Record<string, string> = {
-    meal: 'No te saltes esta comida — tu cuerpo lo necesita',
-    workout: 'Tu entrenamiento te espera. No pierdas la racha!',
-    pause: 'Levántate, estira y muévete — tu cuerpo lo agradece',
+    meal: "Don't skip this meal / No te saltes esta comida",
+    workout: "Your workout is waiting / Tu entrenamiento te espera",
+    pause: "Stand up, stretch and move / Levántate, estira y muévete",
   }
   const urls: Record<string, string> = {
     meal: '/nutrition',
@@ -123,7 +126,7 @@ function fireSWNotification(reminder: SWReminder): void {
     pause: '/workout',
   }
 
-  self.registration.showNotification(titles[reminder.type] || 'Recordatorio', {
+  self.registration.showNotification(titles[reminder.type] || 'Reminder', {
     body: bodies[reminder.type] || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',

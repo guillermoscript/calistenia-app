@@ -1,4 +1,6 @@
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../../lib/i18n'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
@@ -56,6 +58,7 @@ function drawGauge(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius
 }
 
 export default function DailySummaryCard({ date, totals, goals, waterMl, waterGoal }: DailySummaryCardProps) {
+  const { t } = useTranslation()
   const handleShare = useCallback(async () => {
     try {
       const scale = 2
@@ -98,7 +101,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
       // ── Section label ──
       ctx.fillStyle = '#404040'
       ctx.font = '600 11px system-ui, -apple-system, sans-serif'
-      ctx.fillText('N U T R I C I O N   D E L   D I A', pad, 120)
+      ctx.fillText(t('nutrition.summary.sectionLabel'), pad, 120)
 
       // ── Calorie gauge ──
       const calVal = Math.round(totals.calories)
@@ -143,9 +146,9 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
 
       // ── Macro cards ──
       const macros = [
-        { label: 'Proteina', val: Math.round(totals.protein), goal: goals?.dailyProtein, unit: 'g', color: '#38bdf8', emoji: '' },
-        { label: 'Carbos', val: Math.round(totals.carbs), goal: goals?.dailyCarbs, unit: 'g', color: '#fbbf24', emoji: '' },
-        { label: 'Grasa', val: Math.round(totals.fat), goal: goals?.dailyFat, unit: 'g', color: '#f472b6', emoji: '' },
+        { label: t('nutrition.protein'), val: Math.round(totals.protein), goal: goals?.dailyProtein, unit: 'g', color: '#38bdf8', emoji: '' },
+        { label: t('nutrition.carbs'), val: Math.round(totals.carbs), goal: goals?.dailyCarbs, unit: 'g', color: '#fbbf24', emoji: '' },
+        { label: t('nutrition.fat'), val: Math.round(totals.fat), goal: goals?.dailyFat, unit: 'g', color: '#f472b6', emoji: '' },
       ]
 
       const cardStartY = gaugeCy + gaugeR + 90
@@ -192,7 +195,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
 
       ctx.fillStyle = '#737373'
       ctx.font = '400 13px system-ui, -apple-system, sans-serif'
-      ctx.fillText(`Agua / ${waterGoal}ml`, pad + 20, waterY + 56)
+      ctx.fillText(`${t('nutrition.summary.water')} / ${waterGoal}ml`, pad + 20, waterY + 56)
 
       const wpbX = pad + 20
       const wpbY = waterY + 66
@@ -221,7 +224,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
     } catch (e) {
       console.warn('Share error:', e)
     }
-  }, [date, totals, goals, waterMl, waterGoal])
+  }, [date, totals, goals, waterMl, waterGoal, t])
 
   const calPct = goals ? Math.round((totals.calories / goals.dailyCalories) * 100) : 0
   const waterPct = Math.round((waterMl / waterGoal) * 100)
@@ -231,7 +234,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
       <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex items-baseline justify-between mb-3">
           <div>
-            <div className="text-[9px] text-muted-foreground tracking-widest uppercase">Resumen del dia</div>
+            <div className="text-[9px] text-muted-foreground tracking-widest uppercase">{t('nutrition.summary.title')}</div>
             <div className="text-[11px] text-muted-foreground font-mono">{date}</div>
           </div>
           <div className="text-right">
@@ -246,19 +249,19 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
         <div className="grid grid-cols-4 gap-3 text-center">
           <div>
             <div className="text-[13px] font-mono text-sky-400">{Math.round(totals.protein)}g</div>
-            <div className="text-[9px] text-muted-foreground">Prot</div>
+            <div className="text-[9px] text-muted-foreground">{t('nutrition.protein')}</div>
           </div>
           <div>
             <div className="text-[13px] font-mono text-amber-400">{Math.round(totals.carbs)}g</div>
-            <div className="text-[9px] text-muted-foreground">Carbs</div>
+            <div className="text-[9px] text-muted-foreground">{t('nutrition.carbs')}</div>
           </div>
           <div>
             <div className="text-[13px] font-mono text-pink-400">{Math.round(totals.fat)}g</div>
-            <div className="text-[9px] text-muted-foreground">Grasa</div>
+            <div className="text-[9px] text-muted-foreground">{t('nutrition.fat')}</div>
           </div>
           <div>
             <div className={cn('text-[13px] font-mono', waterPct >= 100 ? 'text-sky-400' : 'text-sky-600')}>{waterMl}ml</div>
-            <div className="text-[9px] text-muted-foreground">Agua</div>
+            <div className="text-[9px] text-muted-foreground">{t('nutrition.summary.water')}</div>
           </div>
         </div>
       </div>
@@ -268,7 +271,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
         onClick={handleShare}
         className="mt-2 text-[10px] tracking-widest hover:border-lime hover:text-lime w-full"
       >
-        COMPARTIR RESUMEN
+        {t('nutrition.summary.share')}
       </Button>
     </div>
   )
@@ -277,7 +280,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
 function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr + 'T12:00:00')
-    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return d.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   } catch {
     return dateStr
   }

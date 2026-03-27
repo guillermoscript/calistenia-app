@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import i18n from '../lib/i18n'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
 import { todayStr } from '../lib/dateUtils'
@@ -403,7 +404,7 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
 function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr + 'T12:00:00')
-    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return d.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   } catch {
     return dateStr
   }

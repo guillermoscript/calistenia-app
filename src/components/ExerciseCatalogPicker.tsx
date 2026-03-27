@@ -13,9 +13,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog'
+import { useTranslation } from 'react-i18next'
 import { useWgerSearch } from '../hooks/useWgerSearch'
 import WgerResultCard from './WgerResultCard'
 import type { EditorExercise } from '../hooks/useProgramEditor'
+import type { TranslatableField } from '../lib/i18n-db'
+import { localize } from '../lib/i18n-db'
+import { useLocalize } from '../hooks/useLocalize'
 
 interface ExerciseCatalogPickerProps {
   onAdd: (exercise: EditorExercise) => void
@@ -24,12 +28,12 @@ interface ExerciseCatalogPickerProps {
 
 interface CatalogExercise {
   exerciseId: string
-  name: string
+  name: TranslatableField
   sets: number | string
   reps: string
   rest: number
-  muscles: string
-  note: string
+  muscles: TranslatableField
+  note: TranslatableField
   youtube: string
   priority: 'high' | 'med' | 'low'
   isTimer: boolean
@@ -98,10 +102,12 @@ function extractFallbackCatalog(): CatalogExercise[] {
     })
   })
 
-  return catalog.sort((a, b) => a.name.localeCompare(b.name))
+  return catalog.sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
 }
 
 export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalogPickerProps) {
+  const { t } = useTranslation()
+  const l = useLocalize()
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -129,7 +135,7 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
               priority: r.priority ?? 'med',
               isTimer: r.is_timer ?? false,
               timerSeconds: r.timer_seconds ?? 0,
-              category: r.category || inferCategory(r.muscles || '', r.name),
+              category: r.category || inferCategory(localize(r.muscles, 'es') || '', localize(r.name, 'es')),
             })))
             setLoading(false)
             return
@@ -150,8 +156,8 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
     if (search.trim()) {
       const q = search.toLowerCase()
       items = items.filter(ex =>
-        ex.name.toLowerCase().includes(q) ||
-        ex.muscles.toLowerCase().includes(q)
+        l(ex.name).toLowerCase().includes(q) ||
+        l(ex.muscles).toLowerCase().includes(q)
       )
     }
     return items
@@ -160,12 +166,12 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
   const handleAdd = (ex: CatalogExercise) => {
     onAdd({
       exerciseId: ex.exerciseId,
-      name: ex.name,
+      name: l(ex.name),
       sets: ex.sets,
       reps: ex.reps,
       rest: ex.rest,
-      muscles: ex.muscles,
-      note: ex.note,
+      muscles: l(ex.muscles),
+      note: l(ex.note),
       youtube: ex.youtube,
       priority: ex.priority,
       isTimer: ex.isTimer,
@@ -177,16 +183,16 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
       <DialogContent className="max-w-[600px] max-sm:max-w-[95vw] max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">CATÁLOGO</div>
-          <DialogTitle className="font-bebas text-[28px] leading-none">AGREGAR EJERCICIO</DialogTitle>
+          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">{t('exercisePicker.catalogLabel')}</div>
+          <DialogTitle className="font-bebas text-[28px] leading-none">{t('exercisePicker.addExercise')}</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Busca y selecciona ejercicios del catálogo
+            {t('exercisePicker.description')}
           </DialogDescription>
         </DialogHeader>
 
         {/* Search */}
         <Input
-          placeholder="Buscar por nombre o músculo..."
+          placeholder={t('exercisePicker.searchPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="text-sm"
@@ -213,17 +219,17 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
         {/* Exercise list */}
         <div className="flex-1 overflow-y-auto min-h-0 -mx-6 px-6 space-y-1.5">
           {loading ? (
-            <Loader label="Cargando catálogo..." className="py-12" />
+            <Loader label={t('exercisePicker.loading')} className="py-12" />
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground mb-4">No se encontraron ejercicios</p>
+              <p className="text-sm text-muted-foreground mb-4">{t('exercisePicker.noResults')}</p>
               {search.length >= 3 && wgerResults.length === 0 && (
                 <button
                   onClick={() => doWgerSearch(search)}
                   disabled={wgerLoading}
                   className="px-4 py-2 rounded-lg text-xs font-mono tracking-wide bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 transition-all disabled:opacity-50"
                 >
-                  {wgerLoading ? 'Buscando...' : 'Buscar en wger →'}
+                  {wgerLoading ? t('exercisePicker.searching') : t('exercisePicker.searchWger')}
                 </button>
               )}
               {wgerError && wgerResults.length === 0 && !wgerLoading && (
@@ -238,13 +244,13 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-medium text-foreground truncate">{ex.name}</span>
+                    <span className="text-sm font-medium text-foreground truncate">{l(ex.name)}</span>
                     <Badge variant="outline" className={cn('text-[9px] shrink-0', PRIORITY_COLORS[ex.priority])}>
                       {ex.priority.toUpperCase()}
                     </Badge>
                   </div>
                   <div className="text-[11px] text-muted-foreground truncate">
-                    {ex.muscles} · {ex.sets}×{ex.reps} · {ex.rest}s
+                    {l(ex.muscles)} · {ex.sets}×{ex.reps} · {ex.rest}s
                   </div>
                 </div>
                 <Button
@@ -280,12 +286,12 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
                     const rec = await pb.collection('exercises_catalog').getOne(recordId)
                     onAdd({
                       exerciseId: rec.exercise_id || rec.id,
-                      name: rec.name,
+                      name: l(rec.name),
                       sets: rec.default_sets ?? 3,
                       reps: rec.default_reps ?? '8-12',
                       rest: rec.default_rest_seconds ?? 60,
-                      muscles: rec.muscles ?? '',
-                      note: rec.note ?? rec.description ?? '',
+                      muscles: l(rec.muscles),
+                      note: l(rec.note) || l(rec.description) || '',
                       youtube: rec.youtube ?? '',
                       priority: rec.priority ?? 'med',
                       isTimer: rec.is_timer ?? false,

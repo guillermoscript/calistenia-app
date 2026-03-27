@@ -1,4 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../lib/i18n'
 import type { DriveStep } from 'driver.js'
 
 const TOUR_KEY_PREFIX = 'calistenia_tour'
@@ -26,497 +28,535 @@ export function resetAllTours(userId?: string): void {
 }
 
 // ── Tour definitions per page ─────────────────────────────────────────────────
+// Each returns a fresh array so i18n.t() resolves with the current language.
 
-const DASHBOARD_STEPS: DriveStep[] = [
-  {
-    element: '#tour-sidebar-nav',
-    popover: {
-      title: 'Navegacion',
-      description: 'Desde aqui accedes a todas las secciones: entrenamientos, progreso, nutricion, programas y mas.',
-      side: 'right',
-      align: 'start',
+function getDashboardSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-sidebar-nav',
+      popover: {
+        title: i18n.t('tour.dashboard.sidebar.title'),
+        description: i18n.t('tour.dashboard.sidebar.desc'),
+        side: 'right',
+        align: 'start',
+      },
     },
-  },
-  {
-    element: '#tour-active-program',
-    popover: {
-      title: 'Tu programa activo',
-      description: 'El programa que sigues actualmente. Puedes cambiarlo o crear uno en Programas.',
-      side: 'bottom',
+    {
+      element: '#tour-active-program',
+      popover: {
+        title: i18n.t('tour.dashboard.activeProgram.title'),
+        description: i18n.t('tour.dashboard.activeProgram.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-progress',
-    popover: {
-      title: 'Progreso del programa',
-      description: 'Tu fase actual y cuanto llevas del programa. Avanza semana a semana.',
-      side: 'bottom',
+    {
+      element: '#tour-progress',
+      popover: {
+        title: i18n.t('tour.dashboard.progress.title'),
+        description: i18n.t('tour.dashboard.progress.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-stats',
-    popover: {
-      title: 'Tus estadisticas',
-      description: 'Sesiones, racha de dias, meta semanal y porcentaje completado.',
-      side: 'bottom',
+    {
+      element: '#tour-stats',
+      popover: {
+        title: i18n.t('tour.dashboard.stats.title'),
+        description: i18n.t('tour.dashboard.stats.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-nutrition',
-    popover: {
-      title: 'Nutricion con IA',
-      description: 'Saca foto de tu comida y la IA calcula calorias y macros.',
-      side: 'top',
+    {
+      element: '#tour-nutrition',
+      popover: {
+        title: i18n.t('tour.dashboard.nutrition.title'),
+        description: i18n.t('tour.dashboard.nutrition.desc'),
+        side: 'top',
+      },
     },
-  },
-  {
-    element: '#tour-weekly-plan',
-    popover: {
-      title: 'Plan semanal',
-      description: 'Tu semana: cada dia tiene un enfoque (empuje, tiron, piernas...). Los completados se marcan.',
-      side: 'top',
+    {
+      element: '#tour-weekly-plan',
+      popover: {
+        title: i18n.t('tour.dashboard.weeklyPlan.title'),
+        description: i18n.t('tour.dashboard.weeklyPlan.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
-const WORKOUT_STEPS: DriveStep[] = [
-  {
-    element: '#tour-phase-selector',
-    popover: {
-      title: 'Selector de fase',
-      description: 'Elige la fase del programa. Cada fase dura varias semanas y aumenta en dificultad.',
-      side: 'bottom',
+function getWorkoutSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-phase-selector',
+      popover: {
+        title: i18n.t('tour.workout.phaseSelector.title'),
+        description: i18n.t('tour.workout.phaseSelector.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-day-selector',
-    popover: {
-      title: 'Dia de entrenamiento',
-      description: 'Cada dia tiene un enfoque diferente (empuje, tiron, piernas...). Puedes hacer cualquier entrenamiento en cualquier dia real — no estas limitado al calendario. Punto verde = hoy.',
-      side: 'bottom',
+    {
+      element: '#tour-day-selector',
+      popover: {
+        title: i18n.t('tour.workout.daySelector.title'),
+        description: i18n.t('tour.workout.daySelector.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-workout-header',
-    popover: {
-      title: 'Resumen del entrenamiento',
-      description: 'Titulo, numero de ejercicios y duracion estimada del entrenamiento de hoy.',
-      side: 'bottom',
+    {
+      element: '#tour-workout-header',
+      popover: {
+        title: i18n.t('tour.workout.header.title'),
+        description: i18n.t('tour.workout.header.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-first-exercise',
-    popover: {
-      title: 'Tarjeta de ejercicio',
-      description: 'Cada ejercicio muestra series x repeticiones, descanso, prioridad y musculos. La barra de color indica la prioridad.',
-      side: 'bottom',
+    {
+      element: '#tour-first-exercise',
+      popover: {
+        title: i18n.t('tour.workout.exerciseCard.title'),
+        description: i18n.t('tour.workout.exerciseCard.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-exercise-list',
-    popover: {
-      title: 'Registro rapido',
-      description: 'Toca "+ SERIE" para registrar cada serie. El contador sube automaticamente. Al completar todas las series, se inicia el descanso.',
-      side: 'top',
+    {
+      element: '#tour-exercise-list',
+      popover: {
+        title: i18n.t('tour.workout.quickLog.title'),
+        description: i18n.t('tour.workout.quickLog.desc'),
+        side: 'top',
+      },
     },
-  },
-  {
-    element: '#tour-edit-set',
-    popover: {
-      title: 'Lastre y detalles',
-      description: 'Toca el icono ✏ para abrir el formulario detallado. Ahi puedes registrar reps personalizadas, lastre en kg (ej: chaleco, mancuerna, banda), RPE (esfuerzo del 1-10) y una nota. El lastre se guarda en tu historial para trackear progresion.',
-      side: 'bottom',
+    {
+      element: '#tour-edit-set',
+      popover: {
+        title: i18n.t('tour.workout.editSet.title'),
+        description: i18n.t('tour.workout.editSet.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-start-session',
-    popover: {
-      title: 'Sesion guiada',
-      description: 'Inicia el entrenamiento paso a paso. La app te guia ejercicio por ejercicio con temporizadores de descanso, sonidos y notificaciones.',
-      side: 'top',
+    {
+      element: '#tour-start-session',
+      popover: {
+        title: i18n.t('tour.workout.guidedSession.title'),
+        description: i18n.t('tour.workout.guidedSession.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
-const PROGRAMS_STEPS: DriveStep[] = [
-  {
-    element: '#tour-programs-filters',
-    popover: {
-      title: 'Filtrar programas',
-      description: 'Oficiales son los curados por coaches. Comunidad son los creados por usuarios. Mis Programas son los tuyos.',
-      side: 'bottom',
+function getProgramsSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-programs-filters',
+      popover: {
+        title: i18n.t('tour.programs.filters.title'),
+        description: i18n.t('tour.programs.filters.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-programs-search',
-    popover: {
-      title: 'Buscar',
-      description: 'Busca programas por nombre o descripcion.',
-      side: 'bottom',
+    {
+      element: '#tour-programs-search',
+      popover: {
+        title: i18n.t('tour.programs.search.title'),
+        description: i18n.t('tour.programs.search.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-create-program',
-    popover: {
-      title: 'Crear programa',
-      description: 'Crea tu propio programa con fases, dias y ejercicios personalizados.',
-      side: 'left',
+    {
+      element: '#tour-create-program',
+      popover: {
+        title: i18n.t('tour.programs.create.title'),
+        description: i18n.t('tour.programs.create.desc'),
+        side: 'left',
+      },
     },
-  },
-]
+  ]
+}
 
-const NUTRITION_STEPS: DriveStep[] = [
-  {
-    element: '#tour-nutrition-date',
-    popover: {
-      title: 'Fecha',
-      description: 'Navega entre dias para ver o registrar comidas de cualquier fecha.',
-      side: 'bottom',
+function getNutritionSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-nutrition-date',
+      popover: {
+        title: i18n.t('tour.nutrition.date.title'),
+        description: i18n.t('tour.nutrition.date.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-nutrition-dashboard',
-    popover: {
-      title: 'Resumen nutricional',
-      description: 'Tus macros del dia: calorias, proteina, carbohidratos y grasa vs tus objetivos.',
-      side: 'bottom',
+    {
+      element: '#tour-nutrition-dashboard',
+      popover: {
+        title: i18n.t('tour.nutrition.dashboard.title'),
+        description: i18n.t('tour.nutrition.dashboard.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-meal-logger',
-    popover: {
-      title: 'Registrar comida',
-      description: 'Saca una foto de tu comida y la IA analiza los nutrientes automaticamente.',
-      side: 'top',
+    {
+      element: '#tour-meal-logger',
+      popover: {
+        title: i18n.t('tour.nutrition.mealLogger.title'),
+        description: i18n.t('tour.nutrition.mealLogger.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
-const PROGRESS_STEPS: DriveStep[] = [
-  {
-    element: '#tour-progress-summary',
-    popover: {
-      title: 'Resumen de progreso',
-      description: 'Vision general: sesiones, rachas, semanas activas y mas.',
-      side: 'bottom',
+function getProgressSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-progress-summary',
+      popover: {
+        title: i18n.t('tour.progress.summary.title'),
+        description: i18n.t('tour.progress.summary.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-exercise-charts',
-    popover: {
-      title: 'Graficas por ejercicio',
-      description: 'Ve como evolucionan tus repeticiones y volumen en cada ejercicio a lo largo del tiempo.',
-      side: 'bottom',
+    {
+      element: '#tour-exercise-charts',
+      popover: {
+        title: i18n.t('tour.progress.charts.title'),
+        description: i18n.t('tour.progress.charts.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-session-history',
-    popover: {
-      title: 'Historial de sesiones',
-      description: 'Todas tus sesiones completadas con fecha, fase y detalles.',
-      side: 'top',
+    {
+      element: '#tour-session-history',
+      popover: {
+        title: i18n.t('tour.progress.history.title'),
+        description: i18n.t('tour.progress.history.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
-const EXERCISES_STEPS: DriveStep[] = [
-  {
-    element: '#tour-exercises-search',
-    popover: {
-      title: 'Buscar ejercicios',
-      description: 'Busca por nombre entre todos los ejercicios disponibles.',
-      side: 'bottom',
+function getExercisesSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-exercises-search',
+      popover: {
+        title: i18n.t('tour.exercises.search.title'),
+        description: i18n.t('tour.exercises.search.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-category-filters',
-    popover: {
-      title: 'Filtrar por categoria',
-      description: 'Filtra por tipo: empuje, tiron, piernas, core, movilidad y mas.',
-      side: 'bottom',
+    {
+      element: '#tour-category-filters',
+      popover: {
+        title: i18n.t('tour.exercises.categoryFilters.title'),
+        description: i18n.t('tour.exercises.categoryFilters.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-exercise-grid',
-    popover: {
-      title: 'Catalogo de ejercicios',
-      description: 'Toca un ejercicio para ver videos, descripcion y como se ejecuta.',
-      side: 'top',
+    {
+      element: '#tour-exercise-grid',
+      popover: {
+        title: i18n.t('tour.exercises.catalog.title'),
+        description: i18n.t('tour.exercises.catalog.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
-const PROFILE_STEPS: DriveStep[] = [
-  {
-    element: '#tour-personal-info',
-    popover: {
-      title: 'Informacion personal',
-      description: 'Tu nombre, peso y altura. Estos datos se usan para calculos de nutricion y objetivos.',
-      side: 'bottom',
+function getProfileSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-personal-info',
+      popover: {
+        title: i18n.t('tour.profile.personalInfo.title'),
+        description: i18n.t('tour.profile.personalInfo.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-level-selector',
-    popover: {
-      title: 'Nivel de experiencia',
-      description: 'Indica tu nivel para que las recomendaciones se ajusten a tu experiencia.',
-      side: 'bottom',
+    {
+      element: '#tour-level-selector',
+      popover: {
+        title: i18n.t('tour.profile.level.title'),
+        description: i18n.t('tour.profile.level.desc'),
+        side: 'bottom',
+      },
     },
-  },
-]
+  ]
+}
 
-// ── New feature tours ──────────────────────────────────────────────────────
+function getFeedSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-feed-list',
+      popover: {
+        title: i18n.t('tour.feed.list.title'),
+        description: i18n.t('tour.feed.list.desc'),
+        side: 'bottom',
+      },
+    },
+    {
+      element: '#tour-feed-reaction',
+      popover: {
+        title: i18n.t('tour.feed.reaction.title'),
+        description: i18n.t('tour.feed.reaction.desc'),
+        side: 'top',
+      },
+    },
+  ]
+}
 
-const FEED_STEPS: DriveStep[] = [
-  {
-    element: '#tour-feed-list',
-    popover: {
-      title: 'Feed de actividad',
-      description: 'Aqui ves los entrenamientos recientes de tus amigos. Cada tarjeta muestra quien entreno, que hizo y cuando.',
-      side: 'bottom',
+function getFriendsSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-friends-tabs',
+      popover: {
+        title: i18n.t('tour.friends.tabs.title'),
+        description: i18n.t('tour.friends.tabs.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-feed-reaction',
-    popover: {
-      title: 'Reacciones',
-      description: 'Toca el 🔥 para animar a tus amigos. Las reacciones se acumulan y ellos las ven.',
-      side: 'top',
+    {
+      element: '#tour-friends-search',
+      popover: {
+        title: i18n.t('tour.friends.search.title'),
+        description: i18n.t('tour.friends.search.desc'),
+        side: 'bottom',
+      },
     },
-  },
-]
+  ]
+}
 
-const FRIENDS_STEPS: DriveStep[] = [
-  {
-    element: '#tour-friends-tabs',
-    popover: {
-      title: 'Pestañas',
-      description: '"Siguiendo" muestra a quienes sigues, "Seguidores" quienes te siguen, y "Buscar" para encontrar nuevos amigos.',
-      side: 'bottom',
+function getLeaderboardSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-leaderboard-categories',
+      popover: {
+        title: i18n.t('tour.leaderboard.categories.title'),
+        description: i18n.t('tour.leaderboard.categories.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-friends-search',
-    popover: {
-      title: 'Buscar amigos',
-      description: 'Escribe el nombre de un amigo para encontrarlo. Toca SEGUIR para ver su actividad en tu feed.',
-      side: 'bottom',
+    {
+      element: '#tour-leaderboard-list',
+      popover: {
+        title: i18n.t('tour.leaderboard.ranking.title'),
+        description: i18n.t('tour.leaderboard.ranking.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
-const LEADERBOARD_STEPS: DriveStep[] = [
-  {
-    element: '#tour-leaderboard-categories',
-    popover: {
-      title: 'Categorias del ranking',
-      description: 'Compara sesiones, rachas, pull-ups, push-ups, L-sit y handstand con tus amigos. Toca una categoria para ver el ranking.',
-      side: 'bottom',
+function getChallengesSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-challenges-create',
+      popover: {
+        title: i18n.t('tour.challenges.create.title'),
+        description: i18n.t('tour.challenges.create.desc'),
+        side: 'left',
+      },
     },
-  },
-  {
-    element: '#tour-leaderboard-list',
-    popover: {
-      title: 'Ranking',
-      description: 'Tu posicion aparece resaltada en verde. Los tres primeros tienen medalla. Toca un nombre para ver su perfil.',
-      side: 'top',
+    {
+      element: '#tour-challenges-filters',
+      popover: {
+        title: i18n.t('tour.challenges.filters.title'),
+        description: i18n.t('tour.challenges.filters.desc'),
+        side: 'bottom',
+      },
     },
-  },
-]
+    {
+      element: '#tour-challenges-list',
+      popover: {
+        title: i18n.t('tour.challenges.list.title'),
+        description: i18n.t('tour.challenges.list.desc'),
+        side: 'top',
+      },
+    },
+  ]
+}
 
-const CHALLENGES_STEPS: DriveStep[] = [
-  {
-    element: '#tour-challenges-create',
-    popover: {
-      title: 'Crear desafio',
-      description: 'Crea un desafio con tus amigos: elige una metrica (sesiones, pull-ups, racha...), duracion y participantes.',
-      side: 'left',
+function getCardioSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-cardio-activity',
+      popover: {
+        title: i18n.t('tour.cardio.activity.title'),
+        description: i18n.t('tour.cardio.activity.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-challenges-filters',
-    popover: {
-      title: 'Filtros',
-      description: 'Alterna entre desafios activos y finalizados para ver resultados pasados.',
-      side: 'bottom',
+    {
+      element: '#tour-cardio-start',
+      popover: {
+        title: i18n.t('tour.cardio.start.title'),
+        description: i18n.t('tour.cardio.start.desc'),
+        side: 'top',
+      },
     },
-  },
-  {
-    element: '#tour-challenges-list',
-    popover: {
-      title: 'Tus desafios',
-      description: 'Cada tarjeta muestra la metrica, dias restantes y participantes. Toca para ver detalles y ranking del desafio.',
-      side: 'top',
+    {
+      element: '#tour-cardio-history',
+      popover: {
+        title: i18n.t('tour.cardio.history.title'),
+        description: i18n.t('tour.cardio.history.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+    {
+      element: '#tour-cardio-stats',
+      popover: {
+        title: i18n.t('tour.cardio.stats.title'),
+        description: i18n.t('tour.cardio.stats.desc'),
+        side: 'top',
+      },
+    },
+  ]
+}
 
-const CARDIO_STEPS: DriveStep[] = [
-  {
-    element: '#tour-cardio-activity',
-    popover: {
-      title: 'Tipo de actividad',
-      description: 'Elige entre correr, caminar o bicicleta. Cada tipo calcula ritmo o velocidad de forma diferente.',
-      side: 'bottom',
+function getFreeSessionSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-free-search',
+      popover: {
+        title: i18n.t('tour.freeSession.search.title'),
+        description: i18n.t('tour.freeSession.search.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-cardio-start',
-    popover: {
-      title: 'Iniciar sesion',
-      description: 'Toca para empezar. La app rastrea tu ruta con GPS, calcula distancia, ritmo, splits por kilometro y calorias quemadas.',
-      side: 'top',
+    {
+      element: '#tour-free-categories',
+      popover: {
+        title: i18n.t('tour.freeSession.categories.title'),
+        description: i18n.t('tour.freeSession.categories.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-cardio-history',
-    popover: {
-      title: 'Historial',
-      description: 'Tus sesiones de cardio anteriores con distancia, duracion y ritmo.',
-      side: 'top',
+    {
+      element: '#tour-free-catalog',
+      popover: {
+        title: i18n.t('tour.freeSession.catalog.title'),
+        description: i18n.t('tour.freeSession.catalog.desc'),
+        side: 'top',
+      },
     },
-  },
-  {
-    element: '#tour-cardio-stats',
-    popover: {
-      title: 'Estadisticas',
-      description: 'Resumen semanal, mensual y records personales de tus sesiones de cardio.',
-      side: 'top',
+    {
+      element: '#tour-free-bar',
+      popover: {
+        title: i18n.t('tour.freeSession.bar.title'),
+        description: i18n.t('tour.freeSession.bar.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
-const FREE_SESSION_STEPS: DriveStep[] = [
-  {
-    element: '#tour-free-search',
-    popover: {
-      title: 'Buscar ejercicios',
-      description: 'Busca por nombre o musculo en el catalogo completo de ejercicios.',
-      side: 'bottom',
+function getCalendarSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-calendar-nav',
+      popover: {
+        title: i18n.t('tour.calendar.nav.title'),
+        description: i18n.t('tour.calendar.nav.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-free-categories',
-    popover: {
-      title: 'Filtrar por categoria',
-      description: 'Push, pull, piernas, core, movilidad... filtra para encontrar ejercicios del grupo muscular que quieras.',
-      side: 'bottom',
+    {
+      element: '#tour-calendar-grid',
+      popover: {
+        title: i18n.t('tour.calendar.grid.title'),
+        description: i18n.t('tour.calendar.grid.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-free-catalog',
-    popover: {
-      title: 'Seleccionar ejercicios',
-      description: 'Toca un ejercicio para agregarlo a tu sesion. El numero verde indica el orden. Toca de nuevo para quitarlo.',
-      side: 'top',
+    {
+      element: '#tour-calendar-detail',
+      popover: {
+        title: i18n.t('tour.calendar.detail.title'),
+        description: i18n.t('tour.calendar.detail.desc'),
+        side: 'top',
+      },
     },
-  },
-  {
-    element: '#tour-free-bar',
-    popover: {
-      title: 'Tu sesion',
-      description: 'Aqui ves cuantos ejercicios llevas, series y tiempo estimado. Toca para reordenar. Cuando estes listo, toca "Iniciar".',
-      side: 'top',
-    },
-  },
-]
+  ]
+}
 
-const CALENDAR_STEPS: DriveStep[] = [
-  {
-    element: '#tour-calendar-nav',
-    popover: {
-      title: 'Navegacion',
-      description: 'Navega entre meses y vuelve al dia de hoy. Ves cuantos dias activos y sesiones tiene cada mes.',
-      side: 'bottom',
+function getMealLoggerSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-meallog-type',
+      popover: {
+        title: i18n.t('tour.mealLogger.type.title'),
+        description: i18n.t('tour.mealLogger.type.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-calendar-grid',
-    popover: {
-      title: 'Calendario',
-      description: 'Los dias con sesiones aparecen en verde con puntos. Toca un dia para ver detalles o entrenar.',
-      side: 'bottom',
+    {
+      element: '#tour-meallog-input',
+      popover: {
+        title: i18n.t('tour.mealLogger.input.title'),
+        description: i18n.t('tour.mealLogger.input.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-calendar-detail',
-    popover: {
-      title: 'Detalle del dia',
-      description: 'Aqui ves las sesiones de ese dia o el entrenamiento planificado. Toca una sesion para ver los detalles completos.',
-      side: 'top',
+    {
+      element: '#tour-meallog-barcode',
+      popover: {
+        title: i18n.t('tour.mealLogger.barcode.title'),
+        description: i18n.t('tour.mealLogger.barcode.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
-const MEAL_LOGGER_STEPS: DriveStep[] = [
-  {
-    element: '#tour-meallog-type',
-    popover: {
-      title: 'Tipo de comida',
-      description: 'Selecciona si es desayuno, almuerzo, cena o snack. La app detecta automaticamente segun la hora.',
-      side: 'bottom',
+function getRemindersSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-reminders-add',
+      popover: {
+        title: i18n.t('tour.reminders.add.title'),
+        description: i18n.t('tour.reminders.add.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-meallog-input',
-    popover: {
-      title: 'Registrar comida',
-      description: 'Escribe lo que comiste, saca una foto para que la IA analice los nutrientes, registra manualmente, o repite una comida anterior.',
-      side: 'bottom',
+    {
+      element: '#tour-reminders-timeline',
+      popover: {
+        title: i18n.t('tour.reminders.timeline.title'),
+        description: i18n.t('tour.reminders.timeline.desc'),
+        side: 'top',
+      },
     },
-  },
-  {
-    element: '#tour-meallog-barcode',
-    popover: {
-      title: 'Escanear codigo de barras',
-      description: 'Escanea el codigo de barras de un producto empaquetado para obtener sus nutrientes directamente de Open Food Facts.',
-      side: 'top',
-    },
-  },
-]
-
-const REMINDERS_STEPS: DriveStep[] = [
-  {
-    element: '#tour-reminders-add',
-    popover: {
-      title: 'Crear recordatorio',
-      description: 'Toca Comida, Ejercicio o Pausas para programar alertas. Elige hora, dias de la semana y guarda.',
-      side: 'bottom',
-    },
-  },
-  {
-    element: '#tour-reminders-timeline',
-    popover: {
-      title: 'Linea de tiempo',
-      description: 'Tus recordatorios ordenados por hora. Activa o desactiva cada uno con el switch. Desliza para eliminar.',
-      side: 'top',
-    },
-  },
-]
+  ]
+}
 
 // Map page paths to their tour steps
-const PAGE_TOURS: Record<string, { page: string; steps: DriveStep[] }> = {
-  '/': { page: 'dashboard', steps: DASHBOARD_STEPS },
-  '/workout': { page: 'workout', steps: WORKOUT_STEPS },
-  '/programs': { page: 'programs', steps: PROGRAMS_STEPS },
-  '/nutrition': { page: 'nutrition', steps: NUTRITION_STEPS },
-  '/progress': { page: 'progress', steps: PROGRESS_STEPS },
-  '/exercises': { page: 'exercises', steps: EXERCISES_STEPS },
-  '/profile': { page: 'profile', steps: PROFILE_STEPS },
-  '/feed': { page: 'feed', steps: FEED_STEPS },
-  '/friends': { page: 'friends', steps: FRIENDS_STEPS },
-  '/leaderboard': { page: 'leaderboard', steps: LEADERBOARD_STEPS },
-  '/challenges': { page: 'challenges', steps: CHALLENGES_STEPS },
-  '/cardio': { page: 'cardio', steps: CARDIO_STEPS },
-  '/free-session': { page: 'free-session', steps: FREE_SESSION_STEPS },
-  '/calendar': { page: 'calendar', steps: CALENDAR_STEPS },
-  '/nutrition/log': { page: 'meal-logger', steps: MEAL_LOGGER_STEPS },
-  '/reminders': { page: 'reminders', steps: REMINDERS_STEPS },
+const PAGE_TOURS: Record<string, { page: string; getSteps: () => DriveStep[] }> = {
+  '/': { page: 'dashboard', getSteps: getDashboardSteps },
+  '/workout': { page: 'workout', getSteps: getWorkoutSteps },
+  '/programs': { page: 'programs', getSteps: getProgramsSteps },
+  '/nutrition': { page: 'nutrition', getSteps: getNutritionSteps },
+  '/progress': { page: 'progress', getSteps: getProgressSteps },
+  '/exercises': { page: 'exercises', getSteps: getExercisesSteps },
+  '/profile': { page: 'profile', getSteps: getProfileSteps },
+  '/feed': { page: 'feed', getSteps: getFeedSteps },
+  '/friends': { page: 'friends', getSteps: getFriendsSteps },
+  '/leaderboard': { page: 'leaderboard', getSteps: getLeaderboardSteps },
+  '/challenges': { page: 'challenges', getSteps: getChallengesSteps },
+  '/cardio': { page: 'cardio', getSteps: getCardioSteps },
+  '/free-session': { page: 'free-session', getSteps: getFreeSessionSteps },
+  '/calendar': { page: 'calendar', getSteps: getCalendarSteps },
+  '/nutrition/log': { page: 'meal-logger', getSteps: getMealLoggerSteps },
+  '/reminders': { page: 'reminders', getSteps: getRemindersSteps },
 }
 
 // ── Driver.js runner ──────────────────────────────────────────────────────────
 
-async function runTour(steps: DriveStep[], onDone?: () => void) {
+interface TourLabels {
+  next: string
+  prev: string
+  done: string
+  progress: string
+}
+
+async function runTour(steps: DriveStep[], onDone?: () => void, labels?: TourLabels) {
   const available = steps.filter(
     s => !s.element || document.querySelector(s.element as string)
   )
@@ -534,10 +574,10 @@ async function runTour(steps: DriveStep[], onDone?: () => void) {
     stagePadding: 8,
     stageRadius: 12,
     popoverClass: 'calistenia-tour-popover',
-    nextBtnText: 'Siguiente',
-    prevBtnText: 'Anterior',
-    doneBtnText: 'Listo',
-    progressText: '{{current}} de {{total}}',
+    nextBtnText: labels?.next || 'Next',
+    prevBtnText: labels?.prev || 'Previous',
+    doneBtnText: labels?.done || 'Done',
+    progressText: labels?.progress || '{{current}} of {{total}}',
     steps: available,
     onDestroyed: onDone,
   })
@@ -554,7 +594,15 @@ interface AppTourProps {
 }
 
 export default function AppTour({ pathname, userId, autoStart = false }: AppTourProps) {
+  const { t } = useTranslation()
   const hasRun = useRef(false)
+
+  const tourLabels: TourLabels = {
+    next: t('tour.next'),
+    prev: t('tour.prev'),
+    done: t('tour.done'),
+    progress: t('tour.progress', { current: '{{current}}', total: '{{total}}' }),
+  }
 
   useEffect(() => {
     hasRun.current = false
@@ -569,11 +617,11 @@ export default function AppTour({ pathname, userId, autoStart = false }: AppTour
 
     hasRun.current = true
     const timer = setTimeout(() => {
-      runTour(tourDef.steps, () => markPageTourDone(tourDef.page, userId))
+      runTour(tourDef.getSteps(), () => markPageTourDone(tourDef.page, userId), tourLabels)
     }, 800)
 
     return () => clearTimeout(timer)
-  }, [pathname, userId, autoStart])
+  }, [pathname, userId, autoStart]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return null
 }
@@ -582,45 +630,47 @@ export default function AppTour({ pathname, userId, autoStart = false }: AppTour
 export function replayTourForPage(pathname: string) {
   const tourDef = PAGE_TOURS[pathname]
   if (!tourDef) return
-  runTour(tourDef.steps)
+  runTour(tourDef.getSteps())
 }
 
 // ── Workout detail tour (triggered from WorkoutPage when content loads) ───────
 
-const WORKOUT_DETAIL_STEPS: DriveStep[] = [
-  {
-    element: '#tour-workout-header',
-    popover: {
-      title: 'Tu entrenamiento',
-      description: 'Aqui ves la fase, dia, numero de ejercicios y duracion estimada.',
-      side: 'bottom',
+function getWorkoutDetailSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-workout-header',
+      popover: {
+        title: i18n.t('tour.workoutDetail.header.title'),
+        description: i18n.t('tour.workoutDetail.header.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-first-exercise',
-    popover: {
-      title: 'Tarjeta de ejercicio',
-      description: 'Series x repeticiones, descanso entre series, prioridad (color) y musculos trabajados.',
-      side: 'bottom',
+    {
+      element: '#tour-first-exercise',
+      popover: {
+        title: i18n.t('tour.workoutDetail.exerciseCard.title'),
+        description: i18n.t('tour.workoutDetail.exerciseCard.desc'),
+        side: 'bottom',
+      },
     },
-  },
-  {
-    element: '#tour-exercise-list',
-    popover: {
-      title: 'Registro rapido',
-      description: 'Toca "+ SERIE" para registrar cada serie. El contador sube automaticamente y al completar se inicia el temporizador de descanso.',
-      side: 'top',
+    {
+      element: '#tour-exercise-list',
+      popover: {
+        title: i18n.t('tour.workoutDetail.quickLog.title'),
+        description: i18n.t('tour.workoutDetail.quickLog.desc'),
+        side: 'top',
+      },
     },
-  },
-  {
-    element: '#tour-start-session',
-    popover: {
-      title: 'Sesion guiada',
-      description: 'O inicia la sesion guiada: la app te lleva ejercicio por ejercicio con descansos, sonidos y notificaciones.',
-      side: 'top',
+    {
+      element: '#tour-start-session',
+      popover: {
+        title: i18n.t('tour.workoutDetail.guidedSession.title'),
+        description: i18n.t('tour.workoutDetail.guidedSession.desc'),
+        side: 'top',
+      },
     },
-  },
-]
+  ]
+}
 
 /**
  * Trigger the workout detail tour (when a day is selected for the first time).
@@ -629,6 +679,6 @@ const WORKOUT_DETAIL_STEPS: DriveStep[] = [
 export function triggerWorkoutDetailTour(userId?: string) {
   if (isPageTourDone('workout-detail', userId)) return
   setTimeout(() => {
-    runTour(WORKOUT_DETAIL_STEPS, () => markPageTourDone('workout-detail', userId))
+    runTour(getWorkoutDetailSteps(), () => markPageTourDone('workout-detail', userId))
   }, 500)
 }

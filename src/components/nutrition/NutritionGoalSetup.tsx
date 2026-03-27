@@ -1,4 +1,5 @@
 import { useState, useId } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
@@ -20,22 +21,23 @@ interface NutritionGoalSetupProps {
   initialSex?: Sex
 }
 
-const ACTIVITY_LEVELS: { id: ActivityLevel; label: string; desc: string }[] = [
-  { id: 'sedentary', label: 'Sedentario', desc: 'Trabajo de oficina, poco movimiento' },
-  { id: 'light', label: 'Ligero', desc: '1-2 entrenamientos/semana' },
-  { id: 'moderate', label: 'Moderado', desc: '3-4 entrenamientos/semana' },
-  { id: 'active', label: 'Activo', desc: '5-6 entrenamientos/semana' },
-  { id: 'very_active', label: 'Muy activo', desc: 'Entrenamientos diarios intensos' },
+const ACTIVITY_LEVELS: { id: ActivityLevel; labelKey: string; descKey: string }[] = [
+  { id: 'sedentary', labelKey: 'nutrition.activity.sedentary', descKey: 'nutrition.activity.sedentaryDesc' },
+  { id: 'light', labelKey: 'nutrition.activity.light', descKey: 'nutrition.activity.lightDesc' },
+  { id: 'moderate', labelKey: 'nutrition.activity.moderate', descKey: 'nutrition.activity.moderateDesc' },
+  { id: 'active', labelKey: 'nutrition.activity.active', descKey: 'nutrition.activity.activeDesc' },
+  { id: 'very_active', labelKey: 'nutrition.activity.veryActive', descKey: 'nutrition.activity.veryActiveDesc' },
 ]
 
-const GOALS: { id: NutritionGoalType; label: string; icon: string; desc: string }[] = [
-  { id: 'muscle_gain', label: 'Ganar Músculo', icon: '💪', desc: 'Superávit calórico' },
-  { id: 'fat_loss', label: 'Perder Grasa', icon: '🔥', desc: 'Déficit calórico' },
-  { id: 'recomp', label: 'Recomposición', icon: '⚖️', desc: 'Ganar músculo y perder grasa' },
-  { id: 'maintain', label: 'Mantener', icon: '✅', desc: 'Mantener peso actual' },
+const GOALS: { id: NutritionGoalType; labelKey: string; icon: string; descKey: string }[] = [
+  { id: 'muscle_gain', labelKey: 'nutrition.goal.muscleGain', icon: '💪', descKey: 'nutrition.goal.muscleGainDesc' },
+  { id: 'fat_loss', labelKey: 'nutrition.goal.fatLoss', icon: '🔥', descKey: 'nutrition.goal.fatLossDesc' },
+  { id: 'recomp', labelKey: 'nutrition.goal.recomp', icon: '⚖️', descKey: 'nutrition.goal.recompDesc' },
+  { id: 'maintain', labelKey: 'nutrition.goal.maintain', icon: '✅', descKey: 'nutrition.goal.maintainDesc' },
 ]
 
 export default function NutritionGoalSetup({ onSave, calculateMacros, initialWeight, initialHeight, initialAge, initialSex }: NutritionGoalSetupProps) {
+  const { t } = useTranslation()
   const formId = useId()
   const [step, setStep] = useState(0)
 
@@ -82,11 +84,11 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Configuración</div>
-      <div className="font-bebas text-4xl mb-6">OBJETIVOS NUTRICIONALES</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('nutrition.setup.subtitle')}</div>
+      <div className="font-bebas text-4xl mb-6">{t('nutrition.setup.title')}</div>
 
       {/* Step indicator */}
-      <div className="flex gap-1.5 mb-6" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={6} aria-label={`Paso ${step + 1} de 6`}>
+      <div className="flex gap-1.5 mb-6" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={6} aria-label={t('nutrition.setup.step', { current: step + 1, total: 6 })}>
         {[0, 1, 2, 3, 4, 5].map(i => (
           <div
             key={i}
@@ -102,9 +104,9 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
       {step === 0 && (
         <Card>
           <CardContent className="p-5 space-y-4">
-            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">Datos Corporales</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">{t('nutrition.setup.bodyData')}</div>
             <div>
-              <label htmlFor={`${formId}-weight`} className="text-xs text-muted-foreground mb-1 block">Peso (kg)</label>
+              <label htmlFor={`${formId}-weight`} className="text-xs text-muted-foreground mb-1 block">{t('nutrition.setup.weight')}</label>
               <Input
                 id={`${formId}-weight`}
                 type="number"
@@ -114,7 +116,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
               />
             </div>
             <div>
-              <label htmlFor={`${formId}-height`} className="text-xs text-muted-foreground mb-1 block">Altura (cm)</label>
+              <label htmlFor={`${formId}-height`} className="text-xs text-muted-foreground mb-1 block">{t('nutrition.setup.height')}</label>
               <Input
                 id={`${formId}-height`}
                 type="number"
@@ -124,7 +126,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
               />
             </div>
             <div>
-              <label htmlFor={`${formId}-age`} className="text-xs text-muted-foreground mb-1 block">Edad</label>
+              <label htmlFor={`${formId}-age`} className="text-xs text-muted-foreground mb-1 block">{t('nutrition.setup.age')}</label>
               <Input
                 id={`${formId}-age`}
                 type="number"
@@ -141,7 +143,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
       {step === 1 && (
         <Card>
           <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-4">Sexo</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-4">{t('nutrition.setup.sex')}</div>
             <div className="grid grid-cols-2 gap-3">
               {(['male', 'female'] as Sex[]).map(s => (
                 <button
@@ -155,7 +157,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
                   )}
                 >
                   <div className="text-2xl mb-1">{s === 'male' ? '♂' : '♀'}</div>
-                  <div className="text-sm font-medium">{s === 'male' ? 'Masculino' : 'Femenino'}</div>
+                  <div className="text-sm font-medium">{s === 'male' ? t('nutrition.setup.male') : t('nutrition.setup.female')}</div>
                 </button>
               ))}
             </div>
@@ -167,7 +169,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
       {step === 2 && (
         <Card>
           <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-4">Nivel de Actividad</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-4">{t('nutrition.setup.activityLevel')}</div>
             <div className="space-y-2">
               {ACTIVITY_LEVELS.map(level => (
                 <button
@@ -181,9 +183,9 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
                   )}
                 >
                   <div className={cn('text-sm font-medium', activityLevel === level.id && 'text-lime')}>
-                    {level.label}
+                    {t(level.labelKey)}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{level.desc}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{t(level.descKey)}</div>
                 </button>
               ))}
             </div>
@@ -195,7 +197,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
       {step === 3 && (
         <Card>
           <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-4">Objetivo</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-4">{t('nutrition.setup.objective')}</div>
             <div className="grid grid-cols-2 gap-3">
               {GOALS.map(g => (
                 <button
@@ -209,8 +211,8 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
                   )}
                 >
                   <div className="text-2xl mb-1">{g.icon}</div>
-                  <div className={cn('text-sm font-medium', goal === g.id && 'text-lime')}>{g.label}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{g.desc}</div>
+                  <div className={cn('text-sm font-medium', goal === g.id && 'text-lime')}>{t(g.labelKey)}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{t(g.descKey)}</div>
                 </button>
               ))}
             </div>
@@ -222,22 +224,22 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
       {step === 4 && (
         <Card>
           <CardContent className="p-5">
-            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-4">Resumen de Datos</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-4">{t('nutrition.setup.dataSummary')}</div>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Peso</span><span>{weight} kg</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Altura</span><span>{height} cm</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Edad</span><span>{age} años</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Sexo</span><span>{sex === 'male' ? 'Masculino' : 'Femenino'}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t('nutrition.setup.weight')}</span><span>{weight} kg</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t('nutrition.setup.height')}</span><span>{height} cm</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t('nutrition.setup.age')}</span><span>{age} {t('nutrition.setup.years')}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t('nutrition.setup.sex')}</span><span>{sex === 'male' ? t('nutrition.setup.male') : t('nutrition.setup.female')}</span></div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Actividad</span>
-                <span>{ACTIVITY_LEVELS.find(l => l.id === activityLevel)?.label}</span>
+                <span className="text-muted-foreground">{t('nutrition.setup.activity')}</span>
+                <span>{t(ACTIVITY_LEVELS.find(l => l.id === activityLevel)?.labelKey || '')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Objetivo</span>
-                <span>{GOALS.find(g => g.id === goal)?.label}</span>
+                <span className="text-muted-foreground">{t('nutrition.setup.objective')}</span>
+                <span>{t(GOALS.find(g => g.id === goal)?.labelKey || '')}</span>
               </div>
             </div>
-            <div className="mt-4 text-xs text-muted-foreground">Presiona "Siguiente" para calcular tus macros</div>
+            <div className="mt-4 text-xs text-muted-foreground">{t('nutrition.setup.pressNext')}</div>
           </CardContent>
         </Card>
       )}
@@ -246,10 +248,10 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
       {step === 5 && (
         <Card>
           <CardContent className="p-5 space-y-4">
-            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">Macros Calculados</div>
-            <div className="text-xs text-muted-foreground mb-3">Puedes ajustar los valores manualmente</div>
+            <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">{t('nutrition.setup.calculatedMacros')}</div>
+            <div className="text-xs text-muted-foreground mb-3">{t('nutrition.setup.adjustHint')}</div>
             <div>
-              <label htmlFor={`${formId}-dailyCalories`} className="text-xs text-muted-foreground mb-1 block">Calorías diarias (kcal)</label>
+              <label htmlFor={`${formId}-dailyCalories`} className="text-xs text-muted-foreground mb-1 block">{t('nutrition.setup.dailyCalories')}</label>
               <Input
                 id={`${formId}-dailyCalories`}
                 type="number"
@@ -258,7 +260,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
               />
             </div>
             <div>
-              <label htmlFor={`${formId}-dailyProtein`} className="text-xs text-muted-foreground mb-1 block">Proteína (g)</label>
+              <label htmlFor={`${formId}-dailyProtein`} className="text-xs text-muted-foreground mb-1 block">{t('nutrition.setup.proteinG')}</label>
               <Input
                 id={`${formId}-dailyProtein`}
                 type="number"
@@ -267,7 +269,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
               />
             </div>
             <div>
-              <label htmlFor={`${formId}-dailyCarbs`} className="text-xs text-muted-foreground mb-1 block">Carbohidratos (g)</label>
+              <label htmlFor={`${formId}-dailyCarbs`} className="text-xs text-muted-foreground mb-1 block">{t('nutrition.setup.carbsG')}</label>
               <Input
                 id={`${formId}-dailyCarbs`}
                 type="number"
@@ -276,7 +278,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
               />
             </div>
             <div>
-              <label htmlFor={`${formId}-dailyFat`} className="text-xs text-muted-foreground mb-1 block">Grasa (g)</label>
+              <label htmlFor={`${formId}-dailyFat`} className="text-xs text-muted-foreground mb-1 block">{t('nutrition.setup.fatG')}</label>
               <Input
                 id={`${formId}-dailyFat`}
                 type="number"
@@ -287,7 +289,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
 
             {/* Summary card */}
             <div className="mt-4 p-3 bg-lime/5 border border-lime/20 rounded-lg">
-              <div className="text-xs text-lime tracking-widest uppercase mb-2">Distribución Diaria</div>
+              <div className="text-xs text-lime tracking-widest uppercase mb-2">{t('nutrition.setup.dailyDistribution')}</div>
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div>
                   <div className="font-bebas text-2xl text-lime">{macros.dailyCalories}</div>
@@ -303,7 +305,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
                 </div>
                 <div>
                   <div className="font-bebas text-2xl text-pink-500">{macros.dailyFat}</div>
-                  <div className="text-[9px] text-muted-foreground uppercase">grasa</div>
+                  <div className="text-[9px] text-muted-foreground uppercase">{t('nutrition.fat').toLowerCase()}</div>
                 </div>
               </div>
             </div>
@@ -319,7 +321,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
             onClick={() => setStep(s => s - 1)}
             className="flex-1 text-[10px] tracking-widest"
           >
-            ANTERIOR
+            {t('nutrition.setup.previous')}
           </Button>
         )}
         {step < 5 ? (
@@ -328,14 +330,14 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
             disabled={!canProceed()}
             className="flex-1 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-wide"
           >
-            SIGUIENTE
+            {t('nutrition.setup.next')}
           </Button>
         ) : (
           <Button
             onClick={handleSave}
             className="flex-1 bg-lime hover:bg-lime/90 text-zinc-900 font-bebas text-lg tracking-wide"
           >
-            GUARDAR OBJETIVOS
+            {t('nutrition.setup.save')}
           </Button>
         )}
       </div>

@@ -1,22 +1,31 @@
 {
-  "generated_at": "2026-03-25T22:57:08.330Z",
-  "total_count": 156,
-  "local_count": 116,
-  "wger_count": 40,
-  "with_images": 7,
-  "with_video_links": 156,
+  "generated_at": "2026-03-27T00:28:21.066Z",
+  "total_count": 157,
+  "local_count": 113,
+  "wger_count": 44,
+  "with_images": 8,
+  "with_video_links": 157,
   "categories": {
     "core": {
-      "count": 14,
+      "count": 16,
       "exercises": [
         {
           "id": "ab_wheel_rollout",
-          "name": "Ab Wheel Rollout",
-          "muscles": "Core profundo, hombros",
+          "name": {
+            "es": "Ab Wheel Rollout",
+            "en": "Ab Wheel Rollout"
+          },
+          "muscles": {
+            "es": "Core profundo, hombros",
+            "en": "Deep core, shoulders"
+          },
           "sets": 3,
           "reps": "8-10",
           "rest": 90,
-          "note": "Desde rodillas. Extiende lo más lejos posible sin colapsar la espalda.",
+          "note": {
+            "es": "Desde rodillas. Extiende lo más lejos posible sin colapsar la espalda.",
+            "en": "From knees. Extend as far as possible without collapsing your back."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "core",
@@ -31,13 +40,23 @@
         },
         {
           "id": "incline_plank_with_alternate_floor_touch",
-          "name": "Ball crunches",
-          "name_en": "Incline Plank With Alternate Floor Touch",
-          "muscles": "Core, Oblicuos",
+          "name": {
+            "es": "Ball crunches",
+            "en": "Ball crunches"
+          },
+          "muscles": {
+            "es": "Core, Oblicuos",
+            "en": "Core, Oblicuos"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "Realizar el crunch sobre una bola aumenta el rango de movimiento, permitiendo un mayor estiramiento y contracción del abdomen, además de activar los músculos estabilizadores del core para mantener el equilibrio.Instrucciones:Apoya la parte baja y media de tu espalda sobre la bola, con los pies firme",
+          "note": {
+            "es": "Realizar el crunch sobre una bola aumenta el rango de movimiento, permitiendo un mayor estiramiento y contracción del abdomen, además de activar los músculos estabilizadores del core para mantener el equilibrio.Instrucciones:Apoya la parte baja y media de tu espalda sobre la bola, con los pies firme"
+          },
+          "description": {
+            "es": "Realizar el crunch sobre una bola aumenta el rango de movimiento, permitiendo un mayor estiramiento y contracción del abdomen, además de activar los músculos estabilizadores del core para mantener el equilibrio.Instrucciones:Apoya la parte baja y media de tu espalda sobre la bola, con los pies firmes en el suelo y las rodillas flexionadas a 90 grados. Coloca las manos a los lados de la cabeza (sin jalar el cuello) o cruzadas sobre el pecho.Contrae el abdomen para elevar tus hombros y la parte alta de la espalda. Haz una pausa en la cima y baja de forma controlada. La clave es mantener la bola lo más estable posible durante todo el movimiento."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "core",
@@ -54,13 +73,25 @@
         },
         {
           "id": "sit_ups",
-          "name": "Biceps Curl With Cable",
-          "name_en": "Sit-ups",
-          "muscles": "Core, Oblicuos",
+          "name": {
+            "es": "Biceps Curl With Cable",
+            "en": "Biceps Curl With Cable"
+          },
+          "muscles": {
+            "es": "Core, Oblicuos",
+            "en": "Core, Oblicuos"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "Párate a uno o dos pasos de una polea en su posición más baja y sujeta la barra o el agarre con las palmas hacia arriba (agarre supino).Manteniendo los codos fijos a los costados de tu cuerpo, sube el peso con un movimiento relativamente rápido y potente, contrayendo el bíceps en la parte alta. La c",
+          "note": {
+            "es": "Párate a uno o dos pasos de una polea en su posición más baja y sujeta la barra o el agarre con las palmas hacia arriba (agarre supino).Manteniendo los codos fijos a los costados de tu cuerpo, sube el peso con un movimiento relativamente rápido y potente, contrayendo el bíceps en la parte alta. La c",
+            "en": "Stand around 30 - 40cm away from the cable, the feet are firmly on the floor. Take the bar and lift the weight with a fast movements. Lower the weight as with the dumbbell curls slowly and controlled."
+          },
+          "description": {
+            "es": "Párate a uno o dos pasos de una polea en su posición más baja y sujeta la barra o el agarre con las palmas hacia arriba (agarre supino).Manteniendo los codos fijos a los costados de tu cuerpo, sube el peso con un movimiento relativamente rápido y potente, contrayendo el bíceps en la parte alta. La clave del ejercicio está en la bajada: regresa a la posición inicial de forma lenta y controlada, resistiendo la tensión constante del cable.",
+            "en": "Stand around 30 - 40cm away from the cable, the feet are firmly on the floor. Take the bar and lift the weight with a fast movements. Lower the weight as with the dumbbell curls slowly and controlled."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "core",
@@ -81,13 +112,60 @@
           ]
         },
         {
+          "id": "leg_curls_laying",
+          "name": {
+            "es": "Chin-ups",
+            "en": "Chin-ups"
+          },
+          "muscles": {
+            "es": "Core",
+            "en": "Core"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Ejercicio en barra de dominadas para fortalecer la musculatura relacionada con el tirón: dorsales. En menor medida se trabajan los bíceps",
+            "en": "The chin-up (also known as a chin or chinup) is a strength training exercise. People frequently do this exercise with the intention of strengthening muscles such as the latissimus dorsi and biceps, which extend the shoulder and flex the elbow, respectively. In this maneuver, the palms are faced towa"
+          },
+          "description": {
+            "es": "Ejercicio en barra de dominadas para fortalecer la musculatura relacionada con el tirón: dorsales. En menor medida se trabajan los bíceps",
+            "en": "The chin-up (also known as a chin or chinup) is a strength training exercise. People frequently do this exercise with the intention of strengthening muscles such as the latissimus dorsi and biceps, which extend the shoulder and flex the elbow, respectively. In this maneuver, the palms are faced towards the body. It is a form of pull-up in which the range of motion is established in relation to a person's chin."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "core",
+          "difficulty": "intermediate",
+          "equipment": [
+            "barra_dominadas"
+          ],
+          "source": "wger",
+          "wger_id": 154,
+          "youtube_search": "https://www.youtube.com/results?search_query=Leg%20Curls%20(laying)%20exercise%20tutorial",
+          "youtube_query": "Leg Curls (laying) exercise tutorial",
+          "images": [
+            "https://wger.de/media/exercise-images/181/Chin-ups-2.png",
+            "https://wger.de/media/exercise-images/181/Chin-ups-1.png"
+          ],
+          "videos": []
+        },
+        {
           "id": "dragon_flag",
-          "name": "Dragon Flag",
-          "muscles": "Core total, dorsal",
+          "name": {
+            "es": "Dragon Flag",
+            "en": "Dragon Flag"
+          },
+          "muscles": {
+            "es": "Core total, dorsal",
+            "en": "Full core, lats"
+          },
           "sets": 3,
           "reps": "5-8",
           "rest": 120,
-          "note": "Agárrate a un banco. Baja el cuerpo recto como tabla.",
+          "note": {
+            "es": "Agárrate a un banco. Baja el cuerpo recto como tabla.",
+            "en": "Grab onto a bench. Lower your body straight like a plank."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "core",
@@ -101,13 +179,57 @@
           "images": []
         },
         {
+          "id": "medicine_ball_booklet_crunch",
+          "name": {
+            "es": "Dynamic Planche",
+            "en": "Dynamic Planche"
+          },
+          "muscles": {
+            "es": "Core, Cuadriceps",
+            "en": "Core, Cuadriceps"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs",
+            "en": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs"
+          },
+          "description": {
+            "es": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs soon as your feet touch the ground, push off forcefully to jump again and return to the starting plank position.Continue repeating this jumping motion, maintaining control and core stability throughout the exercise.Make sure to keep your breathing steady while jumping, breathing deeply and controlling your breathing.Keep your gaze fixed on the ground to maintain proper spinal alignment.Repeat the jumps for the desired length of time or the number of repetitions recommended for your workout program.To finish the exercise, rest by releasing the plank position, then stretch if necessary to loosen your muscles.",
+            "en": "Start in a plank position, with your hands directly under your shoulders and your feet hip-width apart.Engage your core to keep your body in a straight line from head to toe.From this position, bend your knees slightly and jump with both feet inward, bringing them as close to your core as possibleAs soon as your feet touch the ground, push off forcefully to jump again and return to the starting plank position.Continue repeating this jumping motion, maintaining control and core stability throughout the exercise.Make sure to keep your breathing steady while jumping, breathing deeply and controlling your breathing.Keep your gaze fixed on the ground to maintain proper spinal alignment.Repeat the jumps for the desired length of time or the number of repetitions recommended for your workout program.To finish the exercise, rest by releasing the plank position, then stretch if necessary to loosen your muscles."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "core",
+          "difficulty": "beginner",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 1286,
+          "youtube_search": "https://www.youtube.com/results?search_query=Medicine%20ball%20booklet%20crunch%20exercise%20tutorial",
+          "youtube_query": "Medicine ball booklet crunch exercise tutorial",
+          "images": [],
+          "videos": []
+        },
+        {
           "id": "hanging_knee_raise",
-          "name": "Hanging Knee Raise",
-          "muscles": "Core inferior, agarre",
+          "name": {
+            "es": "Hanging Knee Raise",
+            "en": "Hanging Knee Raise"
+          },
+          "muscles": {
+            "es": "Core inferior, agarre",
+            "en": "Lower core, grip"
+          },
           "sets": 3,
           "reps": "12-15",
           "rest": 60,
-          "note": "Regresión del hanging leg raise. Rodillas al pecho.",
+          "note": {
+            "es": "Regresión del hanging leg raise. Rodillas al pecho.",
+            "en": "Regression of the hanging leg raise. Knees to chest."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "core",
@@ -122,12 +244,21 @@
         },
         {
           "id": "hanging_leg_raise",
-          "name": "Hanging Leg Raise",
-          "muscles": "Core inferior, flexores cadera",
+          "name": {
+            "es": "Hanging Leg Raise",
+            "en": "Hanging Leg Raise"
+          },
+          "muscles": {
+            "es": "Core inferior, flexores cadera",
+            "en": "Lower core, hip flexors"
+          },
           "sets": 3,
           "reps": "10-12",
           "rest": 90,
-          "note": "Piernas rectas hasta la barra. Sin balanceo.",
+          "note": {
+            "es": "Piernas rectas hasta la barra. Sin balanceo.",
+            "en": "Straight legs up to the bar. No swinging."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "core",
@@ -142,12 +273,21 @@
         },
         {
           "id": "hollow_rock",
-          "name": "Hollow Body Rock",
-          "muscles": "Core profundo",
+          "name": {
+            "es": "Hollow Body Rock",
+            "en": "Hollow Body Rock"
+          },
+          "muscles": {
+            "es": "Core profundo",
+            "en": "Deep core"
+          },
           "sets": 3,
           "reps": "15-20",
           "rest": 60,
-          "note": "Evolución del Hollow Hold estático. Balanceo controlado.",
+          "note": {
+            "es": "Evolución del Hollow Hold estático. Balanceo controlado.",
+            "en": "Evolution of the static Hollow Hold. Controlled rocking."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "core",
@@ -162,12 +302,21 @@
         },
         {
           "id": "hollow_arch",
-          "name": "Hollow-to-Arch Swing",
-          "muscles": "Core total, dorsal, glúteos",
+          "name": {
+            "es": "Hollow-to-Arch Swing",
+            "en": "Hollow-to-Arch Swing"
+          },
+          "muscles": {
+            "es": "Core total, dorsal, glúteos",
+            "en": "Full core, lats, glutes"
+          },
           "sets": 3,
           "reps": "10",
           "rest": 60,
-          "note": "En barra, oscila entre posición hollow y arch de forma controlada.",
+          "note": {
+            "es": "En barra, oscila entre posición hollow y arch de forma controlada.",
+            "en": "On the bar, swing between hollow and arch position in a controlled manner."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "core",
@@ -182,12 +331,21 @@
         },
         {
           "id": "mountain_climbers",
-          "name": "Mountain Climbers",
-          "muscles": "Core, hombros, cardio",
+          "name": {
+            "es": "Mountain Climbers",
+            "en": "Mountain Climbers"
+          },
+          "muscles": {
+            "es": "Core, hombros, cardio",
+            "en": "Core, shoulders, cardio"
+          },
           "sets": 3,
           "reps": "20/lado",
           "rest": 45,
-          "note": "Posición de push-up, alterna rodillas al pecho rápido.",
+          "note": {
+            "es": "Posición de push-up, alterna rodillas al pecho rápido.",
+            "en": "Push-up position, alternate knees to chest quickly."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "core",
@@ -202,12 +360,21 @@
         },
         {
           "id": "plank",
-          "name": "Plank",
-          "muscles": "Core total",
+          "name": {
+            "es": "Plank",
+            "en": "Plank"
+          },
+          "muscles": {
+            "es": "Core total",
+            "en": "Full core"
+          },
           "sets": 3,
           "reps": "30-45s",
           "rest": 60,
-          "note": "No dejes caer las caderas. Glúteos apretados.",
+          "note": {
+            "es": "No dejes caer las caderas. Glúteos apretados.",
+            "en": "Don't let your hips drop. Squeeze your glutes."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 40,
@@ -223,12 +390,21 @@
         },
         {
           "id": "plank_shoulder",
-          "name": "Plank Toque de Hombros",
-          "muscles": "Core antirotación",
+          "name": {
+            "es": "Plank Toque de Hombros",
+            "en": "Plank Shoulder Taps"
+          },
+          "muscles": {
+            "es": "Core antirotación",
+            "en": "Anti-rotation core"
+          },
           "sets": 3,
           "reps": "12/lado",
           "rest": 60,
-          "note": "No muevas las caderas al tocar el hombro opuesto.",
+          "note": {
+            "es": "No muevas las caderas al tocar el hombro opuesto.",
+            "en": "Don't move your hips when tapping the opposite shoulder."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "core",
@@ -243,12 +419,21 @@
         },
         {
           "id": "side_plank",
-          "name": "Side Plank",
-          "muscles": "Oblicuos, cuadrado lumbar",
+          "name": {
+            "es": "Side Plank",
+            "en": "Side Plank"
+          },
+          "muscles": {
+            "es": "Oblicuos, cuadrado lumbar",
+            "en": "Obliques, quadratus lumborum"
+          },
           "sets": 3,
           "reps": "30s/lado",
           "rest": 60,
-          "note": "Cuerpo recto como tabla.",
+          "note": {
+            "es": "Cuerpo recto como tabla.",
+            "en": "Body straight like a plank."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 30,
@@ -264,12 +449,21 @@
         },
         {
           "id": "v_ups",
-          "name": "V-ups",
-          "muscles": "Core superior e inferior",
+          "name": {
+            "es": "V-ups",
+            "en": "V-ups"
+          },
+          "muscles": {
+            "es": "Core superior e inferior",
+            "en": "Upper and lower core"
+          },
           "sets": 3,
           "reps": "12-15",
           "rest": 60,
-          "note": "Manos y pies se tocan arriba en V. Controlado.",
+          "note": {
+            "es": "Manos y pies se tocan arriba en V. Controlado.",
+            "en": "Hands and feet meet at the top in a V. Controlled."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "core",
@@ -284,12 +478,21 @@
         },
         {
           "id": "windshield_wipers",
-          "name": "Windshield Wipers",
-          "muscles": "Oblicuos, core rotacional",
+          "name": {
+            "es": "Windshield Wipers",
+            "en": "Windshield Wipers"
+          },
+          "muscles": {
+            "es": "Oblicuos, core rotacional",
+            "en": "Obliques, rotational core"
+          },
           "sets": 3,
           "reps": "8/lado",
           "rest": 90,
-          "note": "Colgado de la barra, piernas rectas de lado a lado.",
+          "note": {
+            "es": "Colgado de la barra, piernas rectas de lado a lado.",
+            "en": "Hanging from the bar, straight legs side to side."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "core",
@@ -305,16 +508,25 @@
       ]
     },
     "full": {
-      "count": 5,
+      "count": 14,
       "exercises": [
         {
           "id": "bear_crawl",
-          "name": "Bear Crawl",
-          "muscles": "Hombros, core, cuádriceps",
+          "name": {
+            "es": "Bear Crawl",
+            "en": "Bear Crawl"
+          },
+          "muscles": {
+            "es": "Hombros, core, cuádriceps",
+            "en": "Shoulders, core, quads"
+          },
           "sets": 3,
           "reps": "10m ida/vuelta",
           "rest": 60,
-          "note": "Rodillas a 5cm del suelo. Coordinación y resistencia.",
+          "note": {
+            "es": "Rodillas a 5cm del suelo. Coordinación y resistencia.",
+            "en": "Knees 5cm off the ground. Coordination and endurance."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "full",
@@ -328,13 +540,57 @@
           "images": []
         },
         {
+          "id": "butterfly_reverse",
+          "name": {
+            "es": "Braced Squat",
+            "en": "Braced Squat"
+          },
+          "muscles": {
+            "es": "Dorsal, Gluteos",
+            "en": "Dorsal, Gluteos"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Esta variante de la sentadilla utiliza un disco sostenido al frente como contrapeso, lo que facilita mantener el torso erguido y alcanzar una mayor profundidad, siendo excelente para aprender la técnica correcta.Instrucciones:De pie, con los pies un poco más anchos que tus hombros, sostén un disco (",
+            "en": "Stand with feet slightly wider than shoulder-width apart, while standing as tall as you can.\nGrab a weight plate and hold it out in front of your body with arms straight out. Keep your core tight and stand with a natural arch in your back.\nNow, push hips back and bend knees down into a squat as far "
+          },
+          "description": {
+            "es": "Esta variante de la sentadilla utiliza un disco sostenido al frente como contrapeso, lo que facilita mantener el torso erguido y alcanzar una mayor profundidad, siendo excelente para aprender la técnica correcta.Instrucciones:De pie, con los pies un poco más anchos que tus hombros, sostén un disco (placa) con los brazos completamente extendidos frente a tu pecho.Manteniendo el core activado y la espalda recta, empuja la cadera hacia atrás y baja a una sentadilla tan profunda como te sea posible. Haz una breve pausa en el fondo y luego sube de forma controlada a la posición inicial.",
+            "en": "Stand with feet slightly wider than shoulder-width apart, while standing as tall as you can.\nGrab a weight plate and hold it out in front of your body with arms straight out. Keep your core tight and stand with a natural arch in your back.\nNow, push hips back and bend knees down into a squat as far as you can. Hold for a few moments and bring yourself back up to the starting position."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 124,
+          "youtube_search": "https://www.youtube.com/results?search_query=Butterfly%20Reverse%20exercise%20tutorial",
+          "youtube_query": "Butterfly Reverse exercise tutorial",
+          "images": [],
+          "videos": []
+        },
+        {
           "id": "burpees",
-          "name": "Burpees",
-          "muscles": "Full body, cardio",
+          "name": {
+            "es": "Burpees",
+            "en": "Burpees"
+          },
+          "muscles": {
+            "es": "Full body, cardio",
+            "en": "Full body, cardio"
+          },
           "sets": 3,
           "reps": "8-10",
           "rest": 90,
-          "note": "Controlados. Sustituir por mountain climbers si hay dolor.",
+          "note": {
+            "es": "Controlados. Sustituir por mountain climbers si hay dolor.",
+            "en": "Controlled. Substitute with mountain climbers if there's pain."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "full",
@@ -348,14 +604,26 @@
           "images": []
         },
         {
-          "id": "4_count_burpees",
-          "name": "Front Raise (Cable)",
-          "name_en": "4-count burpees",
-          "muscles": "Deltoides",
+          "id": "lateral_raises",
+          "name": {
+            "es": "Calf Raises on Hackenschmitt Machine",
+            "en": "Calf Raises on Hackenschmitt Machine"
+          },
+          "muscles": {
+            "es": "Pantorrillas, Isquios",
+            "en": "Pantorrillas, Isquios"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "&nbsp;Raise the handle in a slight arc with controlled movement.&nbsp;&nbsp;&nbsp;Don’t swing your torso to start the rep.",
+          "note": {
+            "es": "Este ejercicio permite aislar las pantorrillas (gemelos) con la estabilidad de la máquina Hack, facilitando el uso de cargas pesadas y un rango de movimiento completo.Instrucciones:Apoya la espalda firmemente en el respaldo de la máquina. Coloca las puntas de los pies en el borde inferior de la plat",
+            "en": "Place yourself on the machine with your back firmly against the backrest, the feet are on the platform for calf raises. Check that the feet are half free and that you can completely stretch the calf muscles down.\nWith straight knees pull up your weight as much as you can. Go with a fluid movement do"
+          },
+          "description": {
+            "es": "Este ejercicio permite aislar las pantorrillas (gemelos) con la estabilidad de la máquina Hack, facilitando el uso de cargas pesadas y un rango de movimiento completo.Instrucciones:Apoya la espalda firmemente en el respaldo de la máquina. Coloca las puntas de los pies en el borde inferior de la plataforma, de manera que los talones queden en el aire y puedan bajar completamente.Manteniendo las rodillas rectas (pero sin bloquearlas), empuja con la parte delantera de los pies para elevar los talones lo más alto posible, apretando la pantorrilla en la cima. Luego, baja de forma controlada hasta sentir un estiramiento profundo.",
+            "en": "Place yourself on the machine with your back firmly against the backrest, the feet are on the platform for calf raises. Check that the feet are half free and that you can completely stretch the calf muscles down.\nWith straight knees pull up your weight as much as you can. Go with a fluid movement down till the calves are completely stretched. Repeat."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "full",
@@ -364,20 +632,98 @@
             "ninguno"
           ],
           "source": "wger",
-          "wger_id": 1731,
-          "youtube_search": "https://www.youtube.com/results?search_query=4-count%20burpees%20exercise%20tutorial",
-          "youtube_query": "4-count burpees exercise tutorial",
+          "wger_id": 148,
+          "youtube_search": "https://www.youtube.com/results?search_query=Lateral%20Raises%20exercise%20tutorial",
+          "youtube_query": "Lateral Raises exercise tutorial",
           "images": [],
           "videos": []
         },
         {
+          "id": "reverse_bar_curl",
+          "name": {
+            "es": "Dumbbells on Scott Machine",
+            "en": "Dumbbells on Scott Machine"
+          },
+          "muscles": {
+            "es": "Biceps",
+            "en": "Biceps"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Este ejercicio utiliza el banco Scott (o banco predicador) para aislar completamente el bíceps, eliminando cualquier impulso o ayuda de los hombros y la espalda. Usar mancuernas permite un movimiento más natural para la muñeca y un trabajo unilateral.\n\nInstruccionesPosición: Siéntate en el banco Sco"
+          },
+          "description": {
+            "es": "Este ejercicio utiliza el banco Scott (o banco predicador) para aislar completamente el bíceps, eliminando cualquier impulso o ayuda de los hombros y la espalda. Usar mancuernas permite un movimiento más natural para la muñeca y un trabajo unilateral.\n\nInstruccionesPosición: Siéntate en el banco Scott y ajusta la altura para que la parte posterior de tu brazo (desde el codo hasta la axila) quede completamente apoyada sobre la almohadilla.Movimiento: Sostén una mancuerna con agarre supino (palma hacia arriba). Baja el peso de forma controlada hasta que tu brazo esté casi completamente extendido, sintiendo el estiramiento en el bíceps.Contracción: Sube la mancuerna en un arco, contrayendo el bíceps con fuerza en la parte alta del movimiento. Concéntrate en que la parte superior de tu brazo no se despegue de la almohadilla en ningún momento."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 208,
+          "youtube_search": "https://www.youtube.com/results?search_query=Reverse%20Bar%20Curl%20exercise%20tutorial",
+          "youtube_query": "Reverse Bar Curl exercise tutorial",
+          "images": [],
+          "videos": []
+        },
+        {
+          "id": "rear_delt_raises",
+          "name": {
+            "es": "Fly With Cable",
+            "en": "Fly With Cable"
+          },
+          "muscles": {
+            "es": "Trapecio",
+            "en": "Trapecio"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Este ejercicio de aislamiento es excelente para lograr una fuerte contracción y estiramiento en los músculos pectorales, enfocándose en la parte interna del pecho.\n\nInstruccionesPosición: En una estación de poleas, ajusta ambas poleas a una posición alta. Toma un agarre en cada mano, da un paso al f"
+          },
+          "description": {
+            "es": "Este ejercicio de aislamiento es excelente para lograr una fuerte contracción y estiramiento en los músculos pectorales, enfocándose en la parte interna del pecho.\n\nInstruccionesPosición: En una estación de poleas, ajusta ambas poleas a una posición alta. Toma un agarre en cada mano, da un paso al frente para generar tensión y mantén el torso ligeramente inclinado hacia adelante.Movimiento: Con una ligera pero constante flexión en los codos, junta las manos al frente y abajo de tu cuerpo en un movimiento de arco amplio, como si estuvieras abrazando un árbol.Contracción: Aprieta el pecho con fuerza en el punto de máxima contracción. Regresa de forma lenta y controlada a la posición inicial, sintiendo cómo se estira el pectoral."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 237,
+          "youtube_search": "https://www.youtube.com/results?search_query=Rear%20Delt%20Raises%20exercise%20tutorial",
+          "youtube_query": "Rear Delt Raises exercise tutorial",
+          "images": [
+            "https://wger.de/media/exercise-images/122/Incline-cable-flyes-1.png",
+            "https://wger.de/media/exercise-images/122/Incline-cable-flyes-2.png"
+          ],
+          "videos": []
+        },
+        {
           "id": "high_knees",
-          "name": "High Knees",
-          "muscles": "Core, flexores cadera, cardio",
+          "name": {
+            "es": "High Knees",
+            "en": "High Knees"
+          },
+          "muscles": {
+            "es": "Core, flexores cadera, cardio",
+            "en": "Core, hip flexors, cardio"
+          },
           "sets": 3,
           "reps": "20/lado",
           "rest": 30,
-          "note": "Rodillas al pecho alternando. Mantén el torso recto.",
+          "note": {
+            "es": "Rodillas al pecho alternando. Mantén el torso recto.",
+            "en": "Knees to chest alternating. Keep your torso upright."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "full",
@@ -391,13 +737,57 @@
           "images": []
         },
         {
+          "id": "axe_hold",
+          "name": {
+            "es": "High Pull",
+            "en": "High Pull"
+          },
+          "muscles": {
+            "es": "Deltoides, Gluteos",
+            "en": "Deltoides, Gluteos"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Use a light barbell, perform explosive lift up starting from underneath knee cap level. Lift/raise explosively using hips, at shoulder level. Tempo: 2111",
+            "en": "Use a light barbell, perform explosive lift up starting from underneath knee cap level. Lift/raise explosively using hips, at shoulder level. Tempo: 2111"
+          },
+          "description": {
+            "es": "Use a light barbell, perform explosive lift up starting from underneath knee cap level. Lift/raise explosively using hips, at shoulder level. Tempo: 2111",
+            "en": "Use a light barbell, perform explosive lift up starting from underneath knee cap level. Lift/raise explosively using hips, at shoulder level. Tempo: 2111"
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 289,
+          "youtube_search": "https://www.youtube.com/results?search_query=Axe%20Hold%20exercise%20tutorial",
+          "youtube_query": "Axe Hold exercise tutorial",
+          "images": [],
+          "videos": []
+        },
+        {
           "id": "jumping_jacks",
-          "name": "Jumping Jacks",
-          "muscles": "Full body, cardio",
+          "name": {
+            "es": "Jumping Jacks",
+            "en": "Jumping Jacks"
+          },
+          "muscles": {
+            "es": "Full body, cardio",
+            "en": "Full body, cardio"
+          },
           "sets": 3,
           "reps": "30",
           "rest": 30,
-          "note": "Clásico calentamiento. Ritmo constante.",
+          "note": {
+            "es": "Clásico calentamiento. Ritmo constante.",
+            "en": "Classic warm-up. Steady pace."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "full",
@@ -409,20 +799,206 @@
           "youtube_search": "https://www.youtube.com/results?search_query=Jumping%20Jacks%20exercise%20tutorial",
           "youtube_query": "jumping jacks proper form tutorial",
           "images": []
+        },
+        {
+          "id": "hip_raise_lying",
+          "name": {
+            "es": "Leg Raise",
+            "en": "Leg Raise"
+          },
+          "muscles": {
+            "es": "Cuadriceps, Core",
+            "en": "Cuadriceps, Core"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Posición inicial:Túmbate de espaldas, con los pies juntos y los brazos a los lados.Pasos:Dobla las rodillas y luego enderézalas para que apunten hacia arriba.Manteniendo las piernas rectas, bájalas juntas sin tocar el suelo. Cuanto más bajes, más intenso será el ejercicio.Sube las dos piernas juntas",
+            "en": "The leg raise is a strength training exercise which targets the iliopsoas (the anterior hip flexors). Because the abdominal muscles are used isometrically to stabilize the body during the motion, leg raises are also often used to strengthen the rectus abdominis muscle and the internal and external o"
+          },
+          "description": {
+            "es": "Posición inicial:Túmbate de espaldas, con los pies juntos y los brazos a los lados.Pasos:Dobla las rodillas y luego enderézalas para que apunten hacia arriba.Manteniendo las piernas rectas, bájalas juntas sin tocar el suelo. Cuanto más bajes, más intenso será el ejercicio.Sube las dos piernas juntas hasta que vuelvan a apuntar hacia arriba.Repite desde el paso 2.",
+            "en": "The leg raise is a strength training exercise which targets the iliopsoas (the anterior hip flexors). Because the abdominal muscles are used isometrically to stabilize the body during the motion, leg raises are also often used to strengthen the rectus abdominis muscle and the internal and external oblique muscles."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 376,
+          "youtube_search": "https://www.youtube.com/results?search_query=Hip%20Raise%2C%20Lying%20exercise%20tutorial",
+          "youtube_query": "Hip Raise, Lying exercise tutorial",
+          "images": [],
+          "videos": []
+        },
+        {
+          "id": "jogging",
+          "name": {
+            "es": "Muscle up",
+            "en": "Muscle up"
+          },
+          "muscles": {
+            "es": "Biceps",
+            "en": "Biceps"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the",
+            "en": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the"
+          },
+          "description": {
+            "es": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the triceps. The routine is considered complete when the bar is at the level of the waist and the arms are fully straight.\nTo dismount, the arms are bent at the elbow, and the body is lowered to the floor, and the exercise can be repeated.\nAs a relatively advanced exercise, muscle-ups are typically first learned with an assistive kip. The legs swing (kip) up and provide momentum to assist in the explosive upward force needed to ascend above the bar. More advanced athletes can perform a strict variation of the muscle-up which is done slowly, without any kip. This variation begins with a still dead hang and uses isometric muscle contraction to ascend above the bar in a slow, controlled fashion.",
+            "en": "The body is then explosively pulled up by the arms in a radial pull-up, with greater speed than a regular pull-up. When the bar approaches the upper chest, the wrists are swiftly flexed to bring the forearms above the bar. The body is leaned forward, and the elbows are straightened by activating the triceps. The routine is considered complete when the bar is at the level of the waist and the arms are fully straight.\nTo dismount, the arms are bent at the elbow, and the body is lowered to the floor, and the exercise can be repeated.\nAs a relatively advanced exercise, muscle-ups are typically first learned with an assistive kip. The legs swing (kip) up and provide momentum to assist in the explosive upward force needed to ascend above the bar. More advanced athletes can perform a strict variation of the muscle-up which is done slowly, without any kip. This variation begins with a still dead hang and uses isometric muscle contraction to ascend above the bar in a slow, controlled fashion."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "barra_dominadas"
+          ],
+          "source": "wger",
+          "wger_id": 423,
+          "youtube_search": "https://www.youtube.com/results?search_query=Jogging%20exercise%20tutorial",
+          "youtube_query": "Jogging exercise tutorial",
+          "images": [],
+          "videos": []
+        },
+        {
+          "id": "front_plate_raise",
+          "name": {
+            "es": "Plate twist",
+            "en": "Plate twist"
+          },
+          "muscles": {
+            "es": "Cuadriceps, Core",
+            "en": "Cuadriceps, Core"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Step 1: Sit on an exercise mat with your legs extended in front of you. \nStep 2: Grasp a plate in both hands as if holding a steering wheel, arms slightly bent, and hold it in front of your abdominals. \nStep 3: With knees slightly bent, cross your ankles and slowly lift them a few inches off the flo",
+            "en": "Step 1: Sit on an exercise mat with your legs extended in front of you. \nStep 2: Grasp a plate in both hands as if holding a steering wheel, arms slightly bent, and hold it in front of your abdominals. \nStep 3: With knees slightly bent, cross your ankles and slowly lift them a few inches off the flo"
+          },
+          "description": {
+            "es": "Step 1: Sit on an exercise mat with your legs extended in front of you. \nStep 2: Grasp a plate in both hands as if holding a steering wheel, arms slightly bent, and hold it in front of your abdominals. \nStep 3: With knees slightly bent, cross your ankles and slowly lift them a few inches off the floor. \nStep 4: Keep your back straight but lean backward slightly to help maintain balance. \nStep 5: Exhaling, rotate your torso (twist) to the right side and touch the end of the plate to the floor. \nStep 6: Inhale and return to the forward facing start position. \nStep 7: Exhaling, rotate your torso (twist) to the left side and touch the end of the plate to the floor. \nStep 8: Inhale and return to the forward facing start position. \nStep 9: Repeat for a full set.",
+            "en": "Step 1: Sit on an exercise mat with your legs extended in front of you. \nStep 2: Grasp a plate in both hands as if holding a steering wheel, arms slightly bent, and hold it in front of your abdominals. \nStep 3: With knees slightly bent, cross your ankles and slowly lift them a few inches off the floor. \nStep 4: Keep your back straight but lean backward slightly to help maintain balance. \nStep 5: Exhaling, rotate your torso (twist) to the right side and touch the end of the plate to the floor. \nStep 6: Inhale and return to the forward facing start position. \nStep 7: Exhaling, rotate your torso (twist) to the left side and touch the end of the plate to the floor. \nStep 8: Inhale and return to the forward facing start position. \nStep 9: Repeat for a full set."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 1079,
+          "youtube_search": "https://www.youtube.com/results?search_query=Front%20Plate%20Raise%20exercise%20tutorial",
+          "youtube_query": "Front Plate Raise exercise tutorial",
+          "images": [
+            "https://wger.de/media/exercise-images/1079/bdacc8ed-8fb0-4684-a28d-0348ec098bdf.jpg"
+          ],
+          "videos": []
+        },
+        {
+          "id": "preacher_curls",
+          "name": {
+            "es": "Press Diagonal para Hombros",
+            "en": "Diagonal Shoulder Press"
+          },
+          "muscles": {
+            "es": "Full body",
+            "en": "Full body"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Este ejercicio se realiza en una máquina convergente específica que permite un movimiento de empuje en un ángulo diagonal, situándose a medio camino entre un press de banca y un press militar. Es ideal para trabajar los hombros, especialmente la cabeza anterior del deltoides, minimizando la implicac",
+            "en": "You sit at the bench press device, back slightly tilted to the back. The bar should be about 20 cm in front of you. Then you push the bar and take it back again, as you would with a bench press.\nIn this position you strain your chest muscles a lot less, which is nice if you want to train, but your c"
+          },
+          "description": {
+            "es": "Este ejercicio se realiza en una máquina convergente específica que permite un movimiento de empuje en un ángulo diagonal, situándose a medio camino entre un press de banca y un press militar. Es ideal para trabajar los hombros, especialmente la cabeza anterior del deltoides, minimizando la implicación del pectoral.Instrucciones:Siéntate en la máquina con la espalda firmemente apoyada en el respaldo, que debe tener una ligera inclinación hacia atrás.Sujeta los agarres y empújalos hacia adelante y hacia arriba en la trayectoria diagonal que marca la máquina, hasta que tus brazos estén casi completamente extendidos. Haz una pausa contrayendo los hombros y regresa de forma lenta y controlada a la posición inicial.",
+            "en": "You sit at the bench press device, back slightly tilted to the back. The bar should be about 20 cm in front of you. Then you push the bar and take it back again, as you would with a bench press.\nIn this position you strain your chest muscles a lot less, which is nice if you want to train, but your chest hasn't recovered yet.\nHere's a link to a girl on a machine specialized for this exercise, to give a better description than my failing words above.\nhttp://www.schnell-online.de/db_imgs/products/img/t-80400.jpg"
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "banco"
+          ],
+          "source": "wger",
+          "wger_id": 193,
+          "youtube_search": "https://www.youtube.com/results?search_query=Preacher%20Curls%20exercise%20tutorial",
+          "youtube_query": "Preacher Curls exercise tutorial",
+          "images": [],
+          "videos": []
+        },
+        {
+          "id": "shoulder_shrug",
+          "name": {
+            "es": "Tricep Pushdown on Cable",
+            "en": "Tricep Pushdown on Cable"
+          },
+          "muscles": {
+            "es": "Pecho",
+            "en": "Pecho"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "El empuje hacia abajo de la cuerda del cable es un ejercicio popular dirigido a los músculos tríceps. Es fácil de aprender y realizar, lo que lo convierte en el favorito de todos, desde principiantes hasta levantadores avanzados. Por lo general, se realiza para repeticiones de moderadas a altas, com",
+            "en": "The cable rope push-down is a popular exercise targeting the triceps muscles. It's easy to learn and perform, making it a favorite for everyone from beginners to advanced lifters. It is usually performed for moderate to high reps, such as 8-12 reps or more per set, as part of an upper-body or arm-fo"
+          },
+          "description": {
+            "es": "El empuje hacia abajo de la cuerda del cable es un ejercicio popular dirigido a los músculos tríceps. Es fácil de aprender y realizar, lo que lo convierte en el favorito de todos, desde principiantes hasta levantadores avanzados. Por lo general, se realiza para repeticiones de moderadas a altas, como 8-12 repeticiones o más por serie, como parte de un entrenamiento centrado en la parte superior del cuerpo o en los brazos.",
+            "en": "The cable rope push-down is a popular exercise targeting the triceps muscles. It's easy to learn and perform, making it a favorite for everyone from beginners to advanced lifters. It is usually performed for moderate to high reps, such as 8-12 reps or more per set, as part of an upper-body or arm-focused workout."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "full",
+          "difficulty": "intermediate",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 805,
+          "youtube_search": "https://www.youtube.com/results?search_query=Shoulder%20Shrug%20exercise%20tutorial",
+          "youtube_query": "Shoulder Shrug exercise tutorial",
+          "images": [],
+          "videos": []
         }
       ]
     },
     "legs": {
-      "count": 26,
+      "count": 23,
       "exercises": [
         {
           "id": "box_jump",
-          "name": "Box Jump (silla sólida)",
-          "muscles": "Explosividad total",
+          "name": {
+            "es": "Box Jump (silla sólida)",
+            "en": "Box Jump (sturdy chair)"
+          },
+          "muscles": {
+            "es": "Explosividad total",
+            "en": "Total explosiveness"
+          },
           "sets": 4,
           "reps": "8",
           "rest": 90,
-          "note": "Salta sobre una silla sólida o escalón. Aterriza suave.",
+          "note": {
+            "es": "Salta sobre una silla sólida o escalón. Aterriza suave.",
+            "en": "Jump onto a sturdy chair or step. Land softly."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -437,12 +1013,21 @@
         },
         {
           "id": "bulgarian_adv",
-          "name": "Bulgarian Split + Salto",
-          "muscles": "Explosividad piernas",
+          "name": {
+            "es": "Bulgarian Split + Salto",
+            "en": "Bulgarian Split + Jump"
+          },
+          "muscles": {
+            "es": "Explosividad piernas",
+            "en": "Leg explosiveness"
+          },
           "sets": 3,
           "reps": "8/lado",
           "rest": 120,
-          "note": "Salta al cambiar de pierna. Alta intensidad.",
+          "note": {
+            "es": "Salta al cambiar de pierna. Alta intensidad.",
+            "en": "Jump when switching legs. High intensity."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -457,12 +1042,21 @@
         },
         {
           "id": "bulgarian",
-          "name": "Bulgarian Split Squat",
-          "muscles": "Cuádriceps, glúteo, isquios",
+          "name": {
+            "es": "Bulgarian Split Squat",
+            "en": "Bulgarian Split Squat"
+          },
+          "muscles": {
+            "es": "Cuádriceps, glúteo, isquios",
+            "en": "Quads, glutes, hamstrings"
+          },
           "sets": 4,
           "reps": "10/lado",
           "rest": 120,
-          "note": "Pie trasero en banco/silla. El ejercicio de pierna más efectivo en calistenia.",
+          "note": {
+            "es": "Pie trasero en banco/silla. El ejercicio de pierna más efectivo en calistenia.",
+            "en": "Back foot on bench/chair. The most effective leg exercise in calisthenics."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "legs",
@@ -477,12 +1071,21 @@
         },
         {
           "id": "calf_uni",
-          "name": "Calf Raise Unilateral",
-          "muscles": "Gastrocnemio, soleo",
+          "name": {
+            "es": "Calf Raise Unilateral",
+            "en": "Unilateral Calf Raise"
+          },
+          "muscles": {
+            "es": "Gastrocnemio, soleo",
+            "en": "Gastrocnemius, soleus"
+          },
           "sets": 3,
           "reps": "15/lado",
           "rest": 45,
-          "note": "Rango completo, sin rebote.",
+          "note": {
+            "es": "Rango completo, sin rebote.",
+            "en": "Full range, no bouncing."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "legs",
@@ -497,12 +1100,21 @@
         },
         {
           "id": "calf_raise",
-          "name": "Calf Raises",
-          "muscles": "Pantorrillas, soleo",
+          "name": {
+            "es": "Calf Raises",
+            "en": "Calf Raises"
+          },
+          "muscles": {
+            "es": "Pantorrillas, soleo",
+            "en": "Calves, soleus"
+          },
           "sets": 3,
           "reps": "20",
           "rest": 45,
-          "note": "Lento y con rango completo.",
+          "note": {
+            "es": "Lento y con rango completo.",
+            "en": "Slow with full range of motion."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "legs",
@@ -517,12 +1129,21 @@
         },
         {
           "id": "good_morning",
-          "name": "Good Morning (sin peso)",
-          "muscles": "Isquios, lumbar, glúteos",
+          "name": {
+            "es": "Good Morning (sin peso)",
+            "en": "Good Morning (no weight)"
+          },
+          "muscles": {
+            "es": "Isquios, lumbar, glúteos",
+            "en": "Hamstrings, lower back, glutes"
+          },
           "sets": 3,
           "reps": "12",
           "rest": 60,
-          "note": "Pies al ancho de hombros, inclina el torso con espalda recta.",
+          "note": {
+            "es": "Pies al ancho de hombros, inclina el torso con espalda recta.",
+            "en": "Feet shoulder-width apart, hinge torso forward with straight back."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -537,12 +1158,21 @@
         },
         {
           "id": "jump_squat",
-          "name": "Jump Squat",
-          "muscles": "Piernas, explosividad",
+          "name": {
+            "es": "Jump Squat",
+            "en": "Jump Squat"
+          },
+          "muscles": {
+            "es": "Piernas, explosividad",
+            "en": "Legs, explosiveness"
+          },
           "sets": 3,
           "reps": "10",
           "rest": 60,
-          "note": "Aterriza suave con rodillas dobladas. Solo si no hay dolor.",
+          "note": {
+            "es": "Aterriza suave con rodillas dobladas. Solo si no hay dolor.",
+            "en": "Land softly with knees bent. Only if there's no pain."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -556,36 +1186,22 @@
           "images": []
         },
         {
-          "id": "overhead_squat",
-          "name": "Lat Pull Down (Straight Back)",
-          "name_en": "Overhead Squat",
-          "muscles": "Cuadriceps, Gluteos, Isquios",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "Pull bar down to strenum and keep straight back.",
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 355,
-          "youtube_search": "https://www.youtube.com/results?search_query=Overhead%20Squat%20exercise%20tutorial",
-          "youtube_query": "Overhead Squat exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "nordic_curl",
-          "name": "Nordic Curl (Regresión)",
-          "muscles": "Isquiotibiales",
+          "name": {
+            "es": "Nordic Curl (Regresión)",
+            "en": "Nordic Curl (Regression)"
+          },
+          "muscles": {
+            "es": "Isquiotibiales",
+            "en": "Hamstrings"
+          },
           "sets": 3,
           "reps": "6-8",
           "rest": 120,
-          "note": "Ancla los pies bajo el sofá. Previene lesiones y fortalece cadena posterior.",
+          "note": {
+            "es": "Ancla los pies bajo el sofá. Previene lesiones y fortalece cadena posterior.",
+            "en": "Anchor your feet under the couch. Prevents injuries and strengthens posterior chain."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "legs",
@@ -600,12 +1216,21 @@
         },
         {
           "id": "nordic_adv",
-          "name": "Nordic Curl Completo",
-          "muscles": "Isquiotibiales",
+          "name": {
+            "es": "Nordic Curl Completo",
+            "en": "Full Nordic Curl"
+          },
+          "muscles": {
+            "es": "Isquiotibiales",
+            "en": "Hamstrings"
+          },
           "sets": 3,
           "reps": "5-8",
           "rest": 120,
-          "note": "Rango completo al suelo. Usa las manos al final si necesario.",
+          "note": {
+            "es": "Rango completo al suelo. Usa las manos al final si necesario.",
+            "en": "Full range to the floor. Use hands at the end if needed."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "legs",
@@ -620,12 +1245,21 @@
         },
         {
           "id": "nordic_full",
-          "name": "Nordic Curl Full",
-          "muscles": "Isquiotibiales",
+          "name": {
+            "es": "Nordic Curl Full",
+            "en": "Nordic Curl Full"
+          },
+          "muscles": {
+            "es": "Isquiotibiales",
+            "en": "Hamstrings"
+          },
           "sets": 4,
           "reps": "8-10",
           "rest": 120,
-          "note": "Sin usar las manos al final. Fuerza excéntrica máxima.",
+          "note": {
+            "es": "Sin usar las manos al final. Fuerza excéntrica máxima.",
+            "en": "Without using hands at the end. Maximum eccentric strength."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "legs",
@@ -640,12 +1274,21 @@
         },
         {
           "id": "pistol_free",
-          "name": "Pistol Squat Libre",
-          "muscles": "Cuádriceps, glúteo, equilibrio",
+          "name": {
+            "es": "Pistol Squat Libre",
+            "en": "Free Pistol Squat"
+          },
+          "muscles": {
+            "es": "Cuádriceps, glúteo, equilibrio",
+            "en": "Quads, glutes, balance"
+          },
           "sets": 4,
           "reps": "5/lado",
           "rest": 120,
-          "note": "Sin apoyo. Necesita fuerza, movilidad de tobillo y equilibrio.",
+          "note": {
+            "es": "Sin apoyo. Necesita fuerza, movilidad de tobillo y equilibrio.",
+            "en": "No support. Requires strength, ankle mobility and balance."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "legs",
@@ -660,12 +1303,21 @@
         },
         {
           "id": "pistol_prog",
-          "name": "Pistol Squat Progresión",
-          "muscles": "Cuádriceps, glúteo, equilibrio",
+          "name": {
+            "es": "Pistol Squat Progresión",
+            "en": "Pistol Squat Progression"
+          },
+          "muscles": {
+            "es": "Cuádriceps, glúteo, equilibrio",
+            "en": "Quads, glutes, balance"
+          },
           "sets": 3,
           "reps": "8/lado",
           "rest": 90,
-          "note": "Empieza sentándote en silla con una pierna levantada.",
+          "note": {
+            "es": "Empieza sentándote en silla con una pierna levantada.",
+            "en": "Start by sitting on a chair with one leg raised."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -680,12 +1332,21 @@
         },
         {
           "id": "pistol_vol",
-          "name": "Pistol Squat Volumen",
-          "muscles": "Cuádriceps, glúteo",
+          "name": {
+            "es": "Pistol Squat Volumen",
+            "en": "Pistol Squat Volume"
+          },
+          "muscles": {
+            "es": "Cuádriceps, glúteo",
+            "en": "Quads, glutes"
+          },
           "sets": 5,
           "reps": "8/lado",
           "rest": 90,
-          "note": "5 series de 8. Máximo volumen de pierna en calistenia.",
+          "note": {
+            "es": "5 series de 8. Máximo volumen de pierna en calistenia.",
+            "en": "5 sets of 8. Maximum leg volume in calisthenics."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "legs",
@@ -700,12 +1361,21 @@
         },
         {
           "id": "reverse_lunge",
-          "name": "Reverse Lunge",
-          "muscles": "Cuádriceps, glúteos, isquios",
+          "name": {
+            "es": "Reverse Lunge",
+            "en": "Reverse Lunge"
+          },
+          "muscles": {
+            "es": "Cuádriceps, glúteos, isquios",
+            "en": "Quads, glutes, hamstrings"
+          },
           "sets": 3,
           "reps": "10/lado",
           "rest": 90,
-          "note": "Paso atrás. Más seguro para rodillas que el lunge frontal.",
+          "note": {
+            "es": "Paso atrás. Más seguro para rodillas que el lunge frontal.",
+            "en": "Step back. Safer for knees than front lunge."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -719,36 +1389,22 @@
           "images": []
         },
         {
-          "id": "side_split_squats_left",
-          "name": "Schwimmen",
-          "name_en": "Side split squats left",
-          "muscles": "Cuadriceps, Gluteos, Isquios",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "800m Schwimmen in 20 Minuten",
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1574,
-          "youtube_search": "https://www.youtube.com/results?search_query=Side%20split%20squats%20left%20exercise%20tutorial",
-          "youtube_query": "Side split squats left exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "goblet_squat",
-          "name": "Sentadilla Goblet",
-          "muscles": "Cuádriceps, glúteos, core",
+          "name": {
+            "es": "Sentadilla Goblet",
+            "en": "Goblet Squat"
+          },
+          "muscles": {
+            "es": "Cuádriceps, glúteos, core",
+            "en": "Quads, glutes, core"
+          },
           "sets": 4,
           "reps": "12-15",
           "rest": 90,
-          "note": "Espalda recta, rodillas sobre puntas de pies, 90°.",
+          "note": {
+            "es": "Espalda recta, rodillas sobre puntas de pies, 90°.",
+            "en": "Straight back, knees over toes, 90°."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "legs",
@@ -762,38 +1418,22 @@
           "images": []
         },
         {
-          "id": "sumo_squats",
-          "name": "Shoulder Shrug",
-          "name_en": "Sumo Squats",
-          "muscles": "Cuadriceps, Gluteos, Isquios",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "The shoulder shrug (usually called simply the shrug) is an exercise in weight training used to develop the upper trapezius muscle. The lifter stands erect, hands about shoulder width apart, and raises the shoulders as high as possible, and then lowers them, while not bending the elbows, or moving th",
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 570,
-          "youtube_search": "https://www.youtube.com/results?search_query=Sumo%20Squats%20exercise%20tutorial",
-          "youtube_query": "Sumo Squats exercise tutorial",
-          "images": [],
-          "videos": [
-            "https://wger.de/media/exercise-video/570/bd1f14a3-9d2b-4ec0-b6b9-e82d739f7e60.MOV"
-          ]
-        },
-        {
           "id": "shrimp_full",
-          "name": "Shrimp Squat Completo",
-          "muscles": "Cuádriceps, tobillo, equilibrio",
+          "name": {
+            "es": "Shrimp Squat Completo",
+            "en": "Full Shrimp Squat"
+          },
+          "muscles": {
+            "es": "Cuádriceps, tobillo, equilibrio",
+            "en": "Quads, ankles, balance"
+          },
           "sets": 3,
           "reps": "8/lado",
           "rest": 90,
-          "note": "Rodilla trasera toca el suelo suavemente.",
+          "note": {
+            "es": "Rodilla trasera toca el suelo suavemente.",
+            "en": "Back knee touches the ground softly."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -808,12 +1448,21 @@
         },
         {
           "id": "shrimp_squat",
-          "name": "Shrimp Squat Progresión",
-          "muscles": "Cuádriceps, equilibrio",
+          "name": {
+            "es": "Shrimp Squat Progresión",
+            "en": "Shrimp Squat Progression"
+          },
+          "muscles": {
+            "es": "Cuádriceps, equilibrio",
+            "en": "Quads, balance"
+          },
           "sets": 3,
           "reps": "6/lado",
           "rest": 90,
-          "note": "Pie trasero en la mano detrás. Más difícil que el pistol.",
+          "note": {
+            "es": "Pie trasero en la mano detrás. Más difícil que el pistol.",
+            "en": "Back foot in hand behind you. Harder than the pistol."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -827,36 +1476,22 @@
           "images": []
         },
         {
-          "id": "reverse_lunges",
-          "name": "Side lateral raise - Back (Cable)",
-          "name_en": "Reverse lunges",
-          "muscles": "Cuadriceps, Gluteos, Isquios",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "on a cable rack do a side lateral raise with the cable behind you. focus on tension in the front of the shoulder.",
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1753,
-          "youtube_search": "https://www.youtube.com/results?search_query=Reverse%20lunges%20exercise%20tutorial",
-          "youtube_query": "Reverse lunges exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "single_rdl",
-          "name": "Single Leg RDL",
-          "muscles": "Isquios, glúteo, lumbar",
+          "name": {
+            "es": "Single Leg RDL",
+            "en": "Single Leg RDL"
+          },
+          "muscles": {
+            "es": "Isquios, glúteo, lumbar",
+            "en": "Hamstrings, glutes, lower back"
+          },
           "sets": 3,
           "reps": "10/lado",
           "rest": 60,
-          "note": "Bisagra de cadera perfecta. Espalda neutral todo el tiempo.",
+          "note": {
+            "es": "Bisagra de cadera perfecta. Espalda neutral todo el tiempo.",
+            "en": "Perfect hip hinge. Neutral spine at all times."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "legs",
@@ -871,12 +1506,21 @@
         },
         {
           "id": "skaters",
-          "name": "Skater Jumps",
-          "muscles": "Glúteo medio, equilibrio, cardio",
+          "name": {
+            "es": "Skater Jumps",
+            "en": "Skater Jumps"
+          },
+          "muscles": {
+            "es": "Glúteo medio, equilibrio, cardio",
+            "en": "Gluteus medius, balance, cardio"
+          },
           "sets": 3,
           "reps": "12/lado",
           "rest": 45,
-          "note": "Salta lateralmente de un pie al otro. Aterrizaje suave.",
+          "note": {
+            "es": "Salta lateralmente de un pie al otro. Aterrizaje suave.",
+            "en": "Jump laterally from one foot to the other. Soft landing."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -891,12 +1535,21 @@
         },
         {
           "id": "squat_pause",
-          "name": "Squat con Pausa (3s)",
-          "muscles": "Cuádriceps, glúteos",
+          "name": {
+            "es": "Squat con Pausa (3s)",
+            "en": "Pause Squat (3s)"
+          },
+          "muscles": {
+            "es": "Cuádriceps, glúteos",
+            "en": "Quads, glutes"
+          },
           "sets": 4,
           "reps": "10",
           "rest": 90,
-          "note": "La pausa elimina el rebote y aumenta fuerza real.",
+          "note": {
+            "es": "La pausa elimina el rebote y aumenta fuerza real.",
+            "en": "The pause eliminates the bounce and increases real strength."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -911,12 +1564,21 @@
         },
         {
           "id": "step_up",
-          "name": "Step-up Explosivo",
-          "muscles": "Glúteo, cuádriceps",
+          "name": {
+            "es": "Step-up Explosivo",
+            "en": "Explosive Step-up"
+          },
+          "muscles": {
+            "es": "Glúteo, cuádriceps",
+            "en": "Glutes, quads"
+          },
           "sets": 3,
           "reps": "10/lado",
           "rest": 90,
-          "note": "Sube fuerte, baja controlado. Usa escalón o silla sólida.",
+          "note": {
+            "es": "Sube fuerte, baja controlado. Usa escalón o silla sólida.",
+            "en": "Push up strong, come down controlled. Use a step or sturdy chair."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -930,13 +1592,57 @@
           "images": []
         },
         {
+          "id": "wger_1529",
+          "name": {
+            "es": "Toes to bar",
+            "en": "Toes to bar"
+          },
+          "muscles": {
+            "es": "Cuadriceps, Gluteos, Isquios",
+            "en": "Cuadriceps, Gluteos, Isquios"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "The name \"Toes to Bar\" says it all: This exercise, in which you hang from a pull-up bar, involves bringing your toes toward the bar, pointing toward your face. This really works your abdominal muscles. \"Toes to Bar\" is popular in functional fitness programs like Freeletics and CrossFit, and is an ef",
+            "en": "The name \"Toes to Bar\" says it all: This exercise, in which you hang from a pull-up bar, involves bringing your toes toward the bar, pointing toward your face. This really works your abdominal muscles. \"Toes to Bar\" is popular in functional fitness programs like Freeletics and CrossFit, and is an ef"
+          },
+          "description": {
+            "es": "The name \"Toes to Bar\" says it all: This exercise, in which you hang from a pull-up bar, involves bringing your toes toward the bar, pointing toward your face. This really works your abdominal muscles. \"Toes to Bar\" is popular in functional fitness programs like Freeletics and CrossFit, and is an effective exercise for six-pack training.",
+            "en": "The name \"Toes to Bar\" says it all: This exercise, in which you hang from a pull-up bar, involves bringing your toes toward the bar, pointing toward your face. This really works your abdominal muscles. \"Toes to Bar\" is popular in functional fitness programs like Freeletics and CrossFit, and is an effective exercise for six-pack training."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "legs",
+          "difficulty": "beginner",
+          "equipment": [
+            "barra_dominadas"
+          ],
+          "source": "wger",
+          "wger_id": 1529,
+          "youtube_search": "https://www.youtube.com/results?search_query=High%20knees%20exercise%20tutorial",
+          "youtube_query": "High knees exercise tutorial",
+          "images": [],
+          "videos": []
+        },
+        {
           "id": "tuck_jumps",
-          "name": "Tuck Jumps",
-          "muscles": "Cuádriceps, glúteos, explosividad",
+          "name": {
+            "es": "Tuck Jumps",
+            "en": "Tuck Jumps"
+          },
+          "muscles": {
+            "es": "Cuádriceps, glúteos, explosividad",
+            "en": "Quads, glutes, explosiveness"
+          },
           "sets": 3,
           "reps": "10",
           "rest": 60,
-          "note": "Salta y lleva las rodillas al pecho. Aterriza suave.",
+          "note": {
+            "es": "Salta y lleva las rodillas al pecho. Aterriza suave.",
+            "en": "Jump and bring knees to chest. Land softly."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "legs",
@@ -956,12 +1662,21 @@
       "exercises": [
         {
           "id": "bird_dog",
-          "name": "Bird-Dog",
-          "muscles": "Lumbar, core, glúteos",
+          "name": {
+            "es": "Bird-Dog",
+            "en": "Bird-Dog"
+          },
+          "muscles": {
+            "es": "Lumbar, core, glúteos",
+            "en": "Lower back, core, glutes"
+          },
           "sets": 3,
           "reps": "12/lado",
           "rest": 60,
-          "note": "Espalda neutral, mantén 2s arriba. PRIORIDAD ALTA.",
+          "note": {
+            "es": "Espalda neutral, mantén 2s arriba. PRIORIDAD ALTA.",
+            "en": "Neutral spine, hold 2s at top. HIGH PRIORITY."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "lumbar",
@@ -976,12 +1691,21 @@
         },
         {
           "id": "dead_bug",
-          "name": "Dead Bug",
-          "muscles": "Core profundo, TvA",
+          "name": {
+            "es": "Dead Bug",
+            "en": "Dead Bug"
+          },
+          "muscles": {
+            "es": "Core profundo, TvA",
+            "en": "Deep core, TVA"
+          },
           "sets": 3,
           "reps": "10/lado",
           "rest": 60,
-          "note": "Lumbar PEGADA al suelo todo el tiempo. Lento y controlado.",
+          "note": {
+            "es": "Lumbar PEGADA al suelo todo el tiempo. Lento y controlado.",
+            "en": "Lower back PRESSED to the floor the entire time. Slow and controlled."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "lumbar",
@@ -996,12 +1720,21 @@
         },
         {
           "id": "dead_bug_adv",
-          "name": "Dead Bug Avanzado",
-          "muscles": "Core, TvA",
+          "name": {
+            "es": "Dead Bug Avanzado",
+            "en": "Advanced Dead Bug"
+          },
+          "muscles": {
+            "es": "Core, TvA",
+            "en": "Core, TVA"
+          },
           "sets": 3,
           "reps": "12/lado",
           "rest": 60,
-          "note": "Piernas completamente extendidas. Más difícil mantener lumbar pegada.",
+          "note": {
+            "es": "Piernas completamente extendidas. Más difícil mantener lumbar pegada.",
+            "en": "Legs fully extended. Harder to keep lower back pressed."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "lumbar",
@@ -1016,12 +1749,21 @@
         },
         {
           "id": "glute_activation_peak",
-          "name": "Glute Activation Peak",
-          "muscles": "Glúteos, isquios",
+          "name": {
+            "es": "Glute Activation Peak",
+            "en": "Glute Activation Peak"
+          },
+          "muscles": {
+            "es": "Glúteos, isquios",
+            "en": "Glutes, hamstrings"
+          },
           "sets": 4,
           "reps": "20",
           "rest": 45,
-          "note": "X-band walk, clam shell, frog pump. Activación completa.",
+          "note": {
+            "es": "X-band walk, clam shell, frog pump. Activación completa.",
+            "en": "X-band walk, clam shell, frog pump. Complete activation."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "lumbar",
@@ -1036,12 +1778,21 @@
         },
         {
           "id": "glute_bridge",
-          "name": "Glute Bridge",
-          "muscles": "Glúteos, isquios, lumbar",
+          "name": {
+            "es": "Glute Bridge",
+            "en": "Glute Bridge"
+          },
+          "muscles": {
+            "es": "Glúteos, isquios, lumbar",
+            "en": "Glutes, hamstrings, lower back"
+          },
           "sets": 4,
           "reps": "15",
           "rest": 60,
-          "note": "Glúteos débiles sobrecargan la lumbar. Aprieta fuerte arriba, 1s pausa.",
+          "note": {
+            "es": "Glúteos débiles sobrecargan la lumbar. Aprieta fuerte arriba, 1s pausa.",
+            "en": "Weak glutes overload the lower back. Squeeze hard at top, 1s pause."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "lumbar",
@@ -1056,12 +1807,21 @@
         },
         {
           "id": "glute_bridge_pause",
-          "name": "Glute Bridge con Pausa (3s)",
-          "muscles": "Glúteos, isquios",
+          "name": {
+            "es": "Glute Bridge con Pausa (3s)",
+            "en": "Glute Bridge with Pause (3s)"
+          },
+          "muscles": {
+            "es": "Glúteos, isquios",
+            "en": "Glutes, hamstrings"
+          },
           "sets": 4,
           "reps": "15",
           "rest": 60,
-          "note": "Pausa isométrica 3s arriba. Si es fácil: unilateral.",
+          "note": {
+            "es": "Pausa isométrica 3s arriba. Si es fácil: unilateral.",
+            "en": "Isometric pause 3s at top. If easy: unilateral."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "lumbar",
@@ -1076,12 +1836,21 @@
         },
         {
           "id": "glute_bridge_march",
-          "name": "Glute Bridge March",
-          "muscles": "Glúteos, core estabilizador",
+          "name": {
+            "es": "Glute Bridge March",
+            "en": "Glute Bridge March"
+          },
+          "muscles": {
+            "es": "Glúteos, core estabilizador",
+            "en": "Glutes, stabilizer core"
+          },
           "sets": 3,
           "reps": "12/lado",
           "rest": 60,
-          "note": "Desde bridge, levanta alternando rodillas al pecho.",
+          "note": {
+            "es": "Desde bridge, levanta alternando rodillas al pecho.",
+            "en": "From bridge position, alternate lifting knees to chest."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "lumbar",
@@ -1096,12 +1865,21 @@
         },
         {
           "id": "glute_bridge_uni",
-          "name": "Glute Bridge Unilateral",
-          "muscles": "Glúteo, isquios",
+          "name": {
+            "es": "Glute Bridge Unilateral",
+            "en": "Unilateral Glute Bridge"
+          },
+          "muscles": {
+            "es": "Glúteo, isquios",
+            "en": "Glutes, hamstrings"
+          },
           "sets": 3,
           "reps": "12/lado",
           "rest": 60,
-          "note": "Corrige desequilibrios L/D que causan dolor lumbar.",
+          "note": {
+            "es": "Corrige desequilibrios L/D que causan dolor lumbar.",
+            "en": "Corrects L/R imbalances that cause lower back pain."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "lumbar",
@@ -1116,12 +1894,21 @@
         },
         {
           "id": "hollow_hold",
-          "name": "Hollow Body Hold",
-          "muscles": "Core profundo, TvA",
+          "name": {
+            "es": "Hollow Body Hold",
+            "en": "Hollow Body Hold"
+          },
+          "muscles": {
+            "es": "Core profundo, TvA",
+            "en": "Deep core, TVA"
+          },
           "sets": 3,
           "reps": "20-30s",
           "rest": 60,
-          "note": "Lumbar PEGADA al suelo. Piernas lo más lejos posible.",
+          "note": {
+            "es": "Lumbar PEGADA al suelo. Piernas lo más lejos posible.",
+            "en": "Lower back PRESSED to the floor. Legs as far as possible."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 25,
@@ -1137,12 +1924,21 @@
         },
         {
           "id": "superman",
-          "name": "Superman Hold",
-          "muscles": "Erectores, glúteos, lumbar",
+          "name": {
+            "es": "Superman Hold",
+            "en": "Superman Hold"
+          },
+          "muscles": {
+            "es": "Erectores, glúteos, lumbar",
+            "en": "Erectors, glutes, lower back"
+          },
           "sets": 3,
           "reps": "10 (3s arriba)",
           "rest": 60,
-          "note": "Fortalece cadena posterior. Esencial para tu lumbar.",
+          "note": {
+            "es": "Fortalece cadena posterior. Esencial para tu lumbar.",
+            "en": "Strengthens posterior chain. Essential for your lower back."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "lumbar",
@@ -1158,16 +1954,25 @@
       ]
     },
     "movilidad": {
-      "count": 29,
+      "count": 26,
       "exercises": [
         {
           "id": "ankle_mobility",
-          "name": "Ankle Mobility Drill",
-          "muscles": "Tobillo, soleo",
+          "name": {
+            "es": "Ankle Mobility Drill",
+            "en": "Ankle Mobility Drill"
+          },
+          "muscles": {
+            "es": "Tobillo, soleo",
+            "en": "Ankle, soleus"
+          },
           "sets": 2,
           "reps": "15/lado",
           "rest": 15,
-          "note": "Necesario para pistol squat y squat profunda.",
+          "note": {
+            "es": "Necesario para pistol squat y squat profunda.",
+            "en": "Necessary for pistol squat and deep squat."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1182,12 +1987,21 @@
         },
         {
           "id": "arm_circles",
-          "name": "Arm Circles",
-          "muscles": "Hombros, manguito rotador",
+          "name": {
+            "es": "Arm Circles",
+            "en": "Arm Circles"
+          },
+          "muscles": {
+            "es": "Hombros, manguito rotador",
+            "en": "Shoulders, rotator cuff"
+          },
           "sets": 2,
           "reps": "15 cada dirección",
           "rest": 15,
-          "note": "Calentamiento básico. Pequeños a grandes.",
+          "note": {
+            "es": "Calentamiento básico. Pequeños a grandes.",
+            "en": "Basic warm-up. Small to large."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "movilidad",
@@ -1202,13 +2016,25 @@
         },
         {
           "id": "right_levator_scapulae_stretch",
-          "name": "Cat Plank",
-          "name_en": "Right levator scapulae stretch",
-          "muscles": "Dorsal, Core, Deltoides",
+          "name": {
+            "es": "Cat Plank",
+            "en": "Cat Plank"
+          },
+          "muscles": {
+            "es": "Dorsal, Core, Deltoides",
+            "en": "Dorsal, Core, Deltoides"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "On your fours and raise the knees of the floor ever so slightly.&nbsp;\nCurl your back out and push back from your shoulders as to resemble a cat making itself look large.",
+          "note": {
+            "es": "On your fours and raise the knees of the floor ever so slightly.&nbsp;\nCurl your back out and push back from your shoulders as to resemble a cat making itself look large.",
+            "en": "On your fours and raise the knees of the floor ever so slightly.&nbsp;\nCurl your back out and push back from your shoulders as to resemble a cat making itself look large."
+          },
+          "description": {
+            "es": "On your fours and raise the knees of the floor ever so slightly.&nbsp;\nCurl your back out and push back from your shoulders as to resemble a cat making itself look large.",
+            "en": "On your fours and raise the knees of the floor ever so slightly.&nbsp;\nCurl your back out and push back from your shoulders as to resemble a cat making itself look large."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1225,12 +2051,21 @@
         },
         {
           "id": "cat_cow",
-          "name": "Cat-Cow",
-          "muscles": "Columna, lumbar",
+          "name": {
+            "es": "Cat-Cow",
+            "en": "Cat-Cow"
+          },
+          "muscles": {
+            "es": "Columna, lumbar",
+            "en": "Spine, lower back"
+          },
           "sets": 2,
           "reps": "12 lentos",
           "rest": 30,
-          "note": "Lento y controlado. Siente cada vértebra.",
+          "note": {
+            "es": "Lento y controlado. Siente cada vértebra.",
+            "en": "Slow and controlled. Feel each vertebra."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "movilidad",
@@ -1245,12 +2080,21 @@
         },
         {
           "id": "childs_pose",
-          "name": "Child's Pose con Tracción",
-          "muscles": "Lumbar, dorsal, caderas",
+          "name": {
+            "es": "Child's Pose con Tracción",
+            "en": "Child's Pose with Traction"
+          },
+          "muscles": {
+            "es": "Lumbar, dorsal, caderas",
+            "en": "Lower back, lats, hips"
+          },
           "sets": 3,
           "reps": "60s",
           "rest": 30,
-          "note": "Brazos extendidos al frente. Deja que la gravedad descomprima la columna.",
+          "note": {
+            "es": "Brazos extendidos al frente. Deja que la gravedad descomprima la columna.",
+            "en": "Arms extended forward. Let gravity decompress the spine."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 60,
@@ -1266,12 +2110,21 @@
         },
         {
           "id": "cossack_squat",
-          "name": "Cossack Squat",
-          "muscles": "Aductores, cadera, movilidad",
+          "name": {
+            "es": "Cossack Squat",
+            "en": "Cossack Squat"
+          },
+          "muscles": {
+            "es": "Aductores, cadera, movilidad",
+            "en": "Adductors, hips, mobility"
+          },
           "sets": 3,
           "reps": "8/lado",
           "rest": 60,
-          "note": "Sentadilla lateral profunda. Trabaja movilidad de cadera y lumbar.",
+          "note": {
+            "es": "Sentadilla lateral profunda. Trabaja movilidad de cadera y lumbar.",
+            "en": "Deep lateral squat. Works hip and lower back mobility."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1285,38 +2138,22 @@
           "images": []
         },
         {
-          "id": "left_neck_stretch",
-          "name": "Foam Roller Aductores",
-          "name_en": "Left neck stretch",
-          "muscles": "Movilidad, Flexibilidad",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "Deslizate sobre el Foam Roller sobre tus Aductores. Es castellano por favor",
-          "priority": "med",
-          "isTimer": false,
-          "category": "movilidad",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1860,
-          "youtube_search": "https://www.youtube.com/results?search_query=Left%20neck%20stretch%20exercise%20tutorial",
-          "youtube_query": "Left neck stretch exercise tutorial",
-          "images": [
-            "https://wger.de/media/exercise-images/1860/f0410e66-28d5-455f-90f3-d078e0988460.avif"
-          ],
-          "videos": []
-        },
-        {
           "id": "hip_flexor_deep",
-          "name": "Hip Flexor 90/90",
-          "muscles": "Psoas, cápsula de cadera",
+          "name": {
+            "es": "Hip Flexor 90/90",
+            "en": "Hip Flexor 90/90"
+          },
+          "muscles": {
+            "es": "Psoas, cápsula de cadera",
+            "en": "Psoas, hip capsule"
+          },
           "sets": 3,
           "reps": "90s/lado",
           "rest": 30,
-          "note": "Posición 90/90 en el suelo. Más profundo que el básico.",
+          "note": {
+            "es": "Posición 90/90 en el suelo. Más profundo que el básico.",
+            "en": "90/90 position on the floor. Deeper than the basic version."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 90,
@@ -1332,12 +2169,21 @@
         },
         {
           "id": "hip_flexor",
-          "name": "Hip Flexor Stretch (Psoas)",
-          "muscles": "Psoas, ilíaco",
+          "name": {
+            "es": "Hip Flexor Stretch (Psoas)",
+            "en": "Hip Flexor Stretch (Psoas)"
+          },
+          "muscles": {
+            "es": "Psoas, ilíaco",
+            "en": "Psoas, iliacus"
+          },
           "sets": 3,
           "reps": "60s/lado",
           "rest": 30,
-          "note": "El psoas apretado ES la causa de tu dolor. 60s mínimo cada lado.",
+          "note": {
+            "es": "El psoas apretado ES la causa de tu dolor. 60s mínimo cada lado.",
+            "en": "Tight psoas IS the cause of your pain. 60s minimum each side."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 60,
@@ -1353,12 +2199,21 @@
         },
         {
           "id": "deep_hip_mobility",
-          "name": "Hip Mobility Full Routine",
-          "muscles": "Cadera completa, lumbar",
+          "name": {
+            "es": "Hip Mobility Full Routine",
+            "en": "Hip Mobility Full Routine"
+          },
+          "muscles": {
+            "es": "Cadera completa, lumbar",
+            "en": "Full hip, lower back"
+          },
           "sets": 1,
           "reps": "10 min",
           "rest": 60,
-          "note": "Rutina completa de movilidad de cadera. Sigue un video.",
+          "note": {
+            "es": "Rutina completa de movilidad de cadera. Sigue un video.",
+            "en": "Complete hip mobility routine. Follow a video."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "movilidad",
@@ -1373,12 +2228,21 @@
         },
         {
           "id": "inchworm",
-          "name": "Inchworm",
-          "muscles": "Isquios, core, hombros",
+          "name": {
+            "es": "Inchworm",
+            "en": "Inchworm"
+          },
+          "muscles": {
+            "es": "Isquios, core, hombros",
+            "en": "Hamstrings, core, shoulders"
+          },
           "sets": 2,
           "reps": "8",
           "rest": 30,
-          "note": "Camina con manos al suelo hasta push-up, camina pies hacia manos.",
+          "note": {
+            "es": "Camina con manos al suelo hasta push-up, camina pies hacia manos.",
+            "en": "Walk hands to floor to push-up position, walk feet toward hands."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "movilidad",
@@ -1393,12 +2257,21 @@
         },
         {
           "id": "jefferson_curl",
-          "name": "Jefferson Curl (muy lento)",
-          "muscles": "Columna, isquios, lumbar",
+          "name": {
+            "es": "Jefferson Curl (muy lento)",
+            "en": "Jefferson Curl (very slow)"
+          },
+          "muscles": {
+            "es": "Columna, isquios, lumbar",
+            "en": "Spine, hamstrings, lower back"
+          },
           "sets": 3,
           "reps": "8",
           "rest": 60,
-          "note": "Enrolla la columna vertebra por vertebra. MUY lento.",
+          "note": {
+            "es": "Enrolla la columna vertebra por vertebra. MUY lento.",
+            "en": "Roll the spine vertebra by vertebra. VERY slow."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1413,12 +2286,21 @@
         },
         {
           "id": "jefferson_adv",
-          "name": "Jefferson Curl + Peso",
-          "muscles": "Columna, isquios",
+          "name": {
+            "es": "Jefferson Curl + Peso",
+            "en": "Jefferson Curl + Weight"
+          },
+          "muscles": {
+            "es": "Columna, isquios",
+            "en": "Spine, hamstrings"
+          },
           "sets": 3,
           "reps": "8 (con 2-5kg)",
           "rest": 60,
-          "note": "Ahora con ligero peso. Máxima movilidad espinal.",
+          "note": {
+            "es": "Ahora con ligero peso. Máxima movilidad espinal.",
+            "en": "Now with light weight. Maximum spinal mobility."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1433,12 +2315,21 @@
         },
         {
           "id": "leg_swings",
-          "name": "Leg Swings",
-          "muscles": "Cadera, isquios, aductores",
+          "name": {
+            "es": "Leg Swings",
+            "en": "Leg Swings"
+          },
+          "muscles": {
+            "es": "Cadera, isquios, aductores",
+            "en": "Hips, hamstrings, adductors"
+          },
           "sets": 2,
           "reps": "15/lado",
           "rest": 15,
-          "note": "Frontal y lateral. Rango progresivo.",
+          "note": {
+            "es": "Frontal y lateral. Rango progresivo.",
+            "en": "Front and lateral. Progressive range."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "movilidad",
@@ -1452,36 +2343,22 @@
           "images": []
         },
         {
-          "id": "left_levator_scapulae_stretch",
-          "name": "Leg Wheel",
-          "name_en": "Left levator scapulae stretch",
-          "muscles": "Core",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "Lay on the back and lift legs in perpendicular fashion, keeping the knees together.Start making small circles in one direction with both of your knees with very small range of motion, focusing on abs and keeping your back in contact with the floor.",
-          "priority": "med",
-          "isTimer": false,
-          "category": "movilidad",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1909,
-          "youtube_search": "https://www.youtube.com/results?search_query=Left%20levator%20scapulae%20stretch%20exercise%20tutorial",
-          "youtube_query": "Left levator scapulae stretch exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "pancake_stretch",
-          "name": "Pancake Stretch",
-          "muscles": "Aductores, isquios, lumbar",
+          "name": {
+            "es": "Pancake Stretch",
+            "en": "Pancake Stretch"
+          },
+          "muscles": {
+            "es": "Aductores, isquios, lumbar",
+            "en": "Adductors, hamstrings, lower back"
+          },
           "sets": 3,
           "reps": "60s",
           "rest": 30,
-          "note": "Sentado, piernas abiertas, inclínate al centro. Paciencia.",
+          "note": {
+            "es": "Sentado, piernas abiertas, inclínate al centro. Paciencia.",
+            "en": "Seated, legs apart, lean toward the center. Patience."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 60,
@@ -1497,12 +2374,21 @@
         },
         {
           "id": "pigeon",
-          "name": "Pigeon Pose",
-          "muscles": "Glúteo, piriforme",
+          "name": {
+            "es": "Pigeon Pose",
+            "en": "Pigeon Pose"
+          },
+          "muscles": {
+            "es": "Glúteo, piriforme",
+            "en": "Glutes, piriformis"
+          },
           "sets": 2,
           "reps": "90s/lado",
           "rest": 30,
-          "note": "Piriforme apretado comprime nervio ciático → dolor lumbar.",
+          "note": {
+            "es": "Piriforme apretado comprime nervio ciático → dolor lumbar.",
+            "en": "Tight piriformis compresses the sciatic nerve → lower back pain."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 90,
@@ -1518,13 +2404,25 @@
         },
         {
           "id": "right_neck_stretch",
-          "name": "Pigeon Stretch",
-          "name_en": "Right neck stretch",
-          "muscles": "Movilidad, Flexibilidad",
+          "name": {
+            "es": "Pigeon Stretch",
+            "en": "Pigeon Stretch"
+          },
+          "muscles": {
+            "es": "Movilidad, Flexibilidad",
+            "en": "Movilidad, Flexibilidad"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "View the video to undestand the exercise",
+          "note": {
+            "es": "View the video to undestand the exercise",
+            "en": "View the video to undestand the exercise"
+          },
+          "description": {
+            "es": "View the video to undestand the exercise",
+            "en": "View the video to undestand the exercise"
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1543,12 +2441,21 @@
         },
         {
           "id": "pike_stretch",
-          "name": "Pike Stretch",
-          "muscles": "Isquios, pantorrillas",
+          "name": {
+            "es": "Pike Stretch",
+            "en": "Pike Stretch"
+          },
+          "muscles": {
+            "es": "Isquios, pantorrillas",
+            "en": "Hamstrings, calves"
+          },
           "sets": 3,
           "reps": "60s",
           "rest": 30,
-          "note": "Sentado, piernas juntas y rectas. Toca los pies.",
+          "note": {
+            "es": "Sentado, piernas juntas y rectas. Toca los pies.",
+            "en": "Seated, legs together and straight. Touch your feet."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 60,
@@ -1564,12 +2471,21 @@
         },
         {
           "id": "forward_fold",
-          "name": "Seated Forward Fold",
-          "muscles": "Isquiotibiales, lumbar",
+          "name": {
+            "es": "Seated Forward Fold",
+            "en": "Seated Forward Fold"
+          },
+          "muscles": {
+            "es": "Isquiotibiales, lumbar",
+            "en": "Hamstrings, lower back"
+          },
           "sets": 3,
           "reps": "60s",
           "rest": 30,
-          "note": "Isquios acortados = postura cifótica = dolor lumbar.",
+          "note": {
+            "es": "Isquios acortados = postura cifótica = dolor lumbar.",
+            "en": "Shortened hamstrings = kyphotic posture = lower back pain."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 60,
@@ -1584,36 +2500,22 @@
           "images": []
         },
         {
-          "id": "back_neck_stretch",
-          "name": "Shinbox IR Stretch",
-          "name_en": "Back neck stretch",
-          "muscles": "Gluteos, Cuadriceps",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "Starting Position: Sit on the floor with both hips and knees bent at 90-degree angles.Leg Placement:\n Place one leg in front of you (external rotation) and the other leg out\n to the side/behind you (internal rotation). The shins and knees should \nremain flat on the ground.The Movement:\n Keeping your",
-          "priority": "med",
-          "isTimer": false,
-          "category": "movilidad",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1884,
-          "youtube_search": "https://www.youtube.com/results?search_query=Back%20neck%20stretch%20exercise%20tutorial",
-          "youtube_query": "Back neck stretch exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "shoulder_dislocates",
-          "name": "Shoulder Dislocates",
-          "muscles": "Hombros, movilidad",
+          "name": {
+            "es": "Shoulder Dislocates",
+            "en": "Shoulder Dislocates"
+          },
+          "muscles": {
+            "es": "Hombros, movilidad",
+            "en": "Shoulders, mobility"
+          },
           "sets": 2,
           "reps": "12",
           "rest": 30,
-          "note": "Con toalla o banda. Pasa por encima de la cabeza hacia atrás.",
+          "note": {
+            "es": "Con toalla o banda. Pasa por encima de la cabeza hacia atrás.",
+            "en": "With towel or band. Pass over the head to behind."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1628,12 +2530,21 @@
         },
         {
           "id": "hip_flexor2",
-          "name": "Stretching Psoas",
-          "muscles": "Psoas, ilíaco",
+          "name": {
+            "es": "Stretching Psoas",
+            "en": "Psoas Stretching"
+          },
+          "muscles": {
+            "es": "Psoas, ilíaco",
+            "en": "Psoas, iliacus"
+          },
           "sets": 2,
           "reps": "90s/lado",
           "rest": 30,
-          "note": "Siempre presente. Nunca saltar este.",
+          "note": {
+            "es": "Siempre presente. Nunca saltar este.",
+            "en": "Always present. Never skip this."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 90,
@@ -1649,12 +2560,21 @@
         },
         {
           "id": "thoracic_ext",
-          "name": "Thoracic Extension (toalla)",
-          "muscles": "Columna torácica",
+          "name": {
+            "es": "Thoracic Extension (toalla)",
+            "en": "Thoracic Extension (towel)"
+          },
+          "muscles": {
+            "es": "Columna torácica",
+            "en": "Thoracic spine"
+          },
           "sets": 3,
           "reps": "60s",
           "rest": 30,
-          "note": "Toalla enrollada a altura torácica. Abre el pecho hacia el techo.",
+          "note": {
+            "es": "Toalla enrollada a altura torácica. Abre el pecho hacia el techo.",
+            "en": "Rolled towel at thoracic height. Open chest toward the ceiling."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 60,
@@ -1670,12 +2590,21 @@
         },
         {
           "id": "thoracic_mobility",
-          "name": "Thoracic Mobility Full",
-          "muscles": "Columna torácica completa",
+          "name": {
+            "es": "Thoracic Mobility Full",
+            "en": "Thoracic Mobility Full"
+          },
+          "muscles": {
+            "es": "Columna torácica completa",
+            "en": "Full thoracic spine"
+          },
           "sets": 2,
           "reps": "10 min total",
           "rest": 60,
-          "note": "Rotaciones, extensiones, foam roller. Rutina completa.",
+          "note": {
+            "es": "Rotaciones, extensiones, foam roller. Rutina completa.",
+            "en": "Rotations, extensions, foam roller. Complete routine."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "movilidad",
@@ -1690,12 +2619,21 @@
         },
         {
           "id": "thoracic_rot",
-          "name": "Thoracic Rotation",
-          "muscles": "Columna torácica, oblicuos",
+          "name": {
+            "es": "Thoracic Rotation",
+            "en": "Thoracic Rotation"
+          },
+          "muscles": {
+            "es": "Columna torácica, oblicuos",
+            "en": "Thoracic spine, obliques"
+          },
           "sets": 3,
           "reps": "10/lado",
           "rest": 30,
-          "note": "Tumbado de lado, rodillas dobladas, rota solo el torso. Libera presión lumbar.",
+          "note": {
+            "es": "Tumbado de lado, rodillas dobladas, rota solo el torso. Libera presión lumbar.",
+            "en": "Lying on side, knees bent, rotate only the torso. Releases lower back pressure."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1710,12 +2648,21 @@
         },
         {
           "id": "worlds_stretch",
-          "name": "World's Greatest Stretch",
-          "muscles": "Full body, cadena posterior",
+          "name": {
+            "es": "World's Greatest Stretch",
+            "en": "World's Greatest Stretch"
+          },
+          "muscles": {
+            "es": "Full body, cadena posterior",
+            "en": "Full body, posterior chain"
+          },
           "sets": 3,
           "reps": "6/lado",
           "rest": 30,
-          "note": "El estiramiento más completo que existe.",
+          "note": {
+            "es": "El estiramiento más completo que existe.",
+            "en": "The most complete stretch that exists."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "movilidad",
@@ -1730,12 +2677,21 @@
         },
         {
           "id": "wrist_mobility",
-          "name": "Wrist Mobility Routine",
-          "muscles": "Muñecas, antebrazos",
+          "name": {
+            "es": "Wrist Mobility Routine",
+            "en": "Wrist Mobility Routine"
+          },
+          "muscles": {
+            "es": "Muñecas, antebrazos",
+            "en": "Wrists, forearms"
+          },
           "sets": 1,
           "reps": "3 min",
           "rest": 60,
-          "note": "Esencial antes de handstands, planche y push-ups.",
+          "note": {
+            "es": "Esencial antes de handstands, planche y push-ups.",
+            "en": "Essential before handstands, planche and push-ups."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "movilidad",
@@ -1750,12 +2706,21 @@
         },
         {
           "id": "yoga_flow_lumbar",
-          "name": "Yoga Flow Lumbar (15 min)",
-          "muscles": "Columna completa, caderas",
+          "name": {
+            "es": "Yoga Flow Lumbar (15 min)",
+            "en": "Lumbar Yoga Flow (15 min)"
+          },
+          "muscles": {
+            "es": "Columna completa, caderas",
+            "en": "Full spine, hips"
+          },
           "sets": 1,
           "reps": "15 min",
           "rest": 60,
-          "note": "Rutina de yoga específica para lumbar. Sigue un video completo.",
+          "note": {
+            "es": "Rutina de yoga específica para lumbar. Sigue un video completo.",
+            "en": "Yoga routine specific for lower back. Follow a complete video."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "movilidad",
@@ -1771,16 +2736,25 @@
       ]
     },
     "pull": {
-      "count": 24,
+      "count": 23,
       "exercises": [
         {
           "id": "australian_pullup",
-          "name": "Australian Pull-up",
-          "muscles": "Dorsal, bíceps, romboides",
+          "name": {
+            "es": "Australian Pull-up",
+            "en": "Australian Pull-up"
+          },
+          "muscles": {
+            "es": "Dorsal, bíceps, romboides",
+            "en": "Lats, biceps, rhomboids"
+          },
           "sets": 4,
           "reps": "8-12",
           "rest": 90,
-          "note": "Cuerpo rígido, tira el pecho a la barra. Mesa/silla si no tienes barra baja.",
+          "note": {
+            "es": "Cuerpo rígido, tira el pecho a la barra. Mesa/silla si no tienes barra baja.",
+            "en": "Rigid body, pull chest to bar. Use table/chair if you don't have a low bar."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -1795,12 +2769,21 @@
         },
         {
           "id": "chinup",
-          "name": "Chin-up (agarre supino)",
-          "muscles": "Bíceps, dorsal",
+          "name": {
+            "es": "Chin-up (agarre supino)",
+            "en": "Chin-up (supine grip)"
+          },
+          "muscles": {
+            "es": "Bíceps, dorsal",
+            "en": "Biceps, lats"
+          },
           "sets": 4,
           "reps": "máx",
           "rest": 120,
-          "note": "Más fácil que pull-up. Úsalo para acumular volumen.",
+          "note": {
+            "es": "Más fácil que pull-up. Úsalo para acumular volumen.",
+            "en": "Easier than pull-up. Use it to accumulate volume."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -1815,12 +2798,21 @@
         },
         {
           "id": "close_grip_pullup",
-          "name": "Close Grip Pull-up",
-          "muscles": "Bíceps, dorsal bajo",
+          "name": {
+            "es": "Close Grip Pull-up",
+            "en": "Close Grip Pull-up"
+          },
+          "muscles": {
+            "es": "Bíceps, dorsal bajo",
+            "en": "Biceps, lower lats"
+          },
           "sets": 3,
           "reps": "8-10",
           "rest": 90,
-          "note": "Manos juntas en la barra. Más énfasis en bíceps.",
+          "note": {
+            "es": "Manos juntas en la barra. Más énfasis en bíceps.",
+            "en": "Hands close together on the bar. More emphasis on biceps."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "pull",
@@ -1835,12 +2827,21 @@
         },
         {
           "id": "commando_pullup",
-          "name": "Commando Pull-up",
-          "muscles": "Dorsal, bíceps, oblicuos",
+          "name": {
+            "es": "Commando Pull-up",
+            "en": "Commando Pull-up"
+          },
+          "muscles": {
+            "es": "Dorsal, bíceps, oblicuos",
+            "en": "Lats, biceps, obliques"
+          },
           "sets": 3,
           "reps": "6/lado",
           "rest": 120,
-          "note": "Agarre lateral en la barra. Alterna el lado de subida.",
+          "note": {
+            "es": "Agarre lateral en la barra. Alterna el lado de subida.",
+            "en": "Lateral grip on the bar. Alternate the side you pull to."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -1855,12 +2856,21 @@
         },
         {
           "id": "neg_pullup",
-          "name": "Dominadas Negativas",
-          "muscles": "Dorsal, bíceps",
+          "name": {
+            "es": "Dominadas Negativas",
+            "en": "Negative Pull-ups"
+          },
+          "muscles": {
+            "es": "Dorsal, bíceps",
+            "en": "Lats, biceps"
+          },
           "sets": 3,
           "reps": "5 (5s bajada)",
           "rest": 120,
-          "note": "Sube con silla, baja MUY lento 5 segundos. Base para dominadas.",
+          "note": {
+            "es": "Sube con silla, baja MUY lento 5 segundos. Base para dominadas.",
+            "en": "Get up with a chair, lower VERY slowly 5 seconds. Foundation for pull-ups."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -1875,12 +2885,21 @@
         },
         {
           "id": "face_pull",
-          "name": "Face Pull (banda/toalla)",
-          "muscles": "Deltoides posterior, manguito",
+          "name": {
+            "es": "Face Pull (banda/toalla)",
+            "en": "Face Pull (band/towel)"
+          },
+          "muscles": {
+            "es": "Deltoides posterior, manguito",
+            "en": "Rear deltoids, rotator cuff"
+          },
           "sets": 3,
           "reps": "12-15",
           "rest": 60,
-          "note": "Jala hacia la cara separando codos. Clave anti-lordosis.",
+          "note": {
+            "es": "Jala hacia la cara separando codos. Clave anti-lordosis.",
+            "en": "Pull toward face separating elbows. Key for anti-lordosis."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -1896,13 +2915,23 @@
         },
         {
           "id": "bent_high_pulls",
-          "name": "Good Mornings",
-          "name_en": "Bent High Pulls",
-          "muscles": "Biceps",
+          "name": {
+            "es": "Good Mornings",
+            "en": "Good Mornings"
+          },
+          "muscles": {
+            "es": "Biceps",
+            "en": "Biceps"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "",
+          "note": {
+            "es": ""
+          },
+          "description": {
+            "es": ""
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -1922,12 +2951,21 @@
         },
         {
           "id": "inverted_row_pause",
-          "name": "Inverted Row con Pausa",
-          "muscles": "Romboides, trapecio medio",
+          "name": {
+            "es": "Inverted Row con Pausa",
+            "en": "Inverted Row with Pause"
+          },
+          "muscles": {
+            "es": "Romboides, trapecio medio",
+            "en": "Rhomboids, mid traps"
+          },
           "sets": 4,
           "reps": "10-12",
           "rest": 90,
-          "note": "2s de pausa arriba. Clave para postura de programador.",
+          "note": {
+            "es": "2s de pausa arriba. Clave para postura de programador.",
+            "en": "2s pause at top. Key for programmer posture."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -1941,13 +2979,59 @@
           "images": []
         },
         {
+          "id": "t_bar_row",
+          "name": {
+            "es": "Inverted Rows",
+            "en": "Inverted Rows"
+          },
+          "muscles": {
+            "es": "Biceps, Core, Trapecio, Dorsal",
+            "en": "Biceps, Core, Trapecio, Dorsal"
+          },
+          "sets": 3,
+          "reps": "8-12",
+          "rest": 60,
+          "note": {
+            "es": "Maintain a straight body, retract your shoulder blades, and pull your \nchest to the bar for an effective back and upper body workout.",
+            "en": "Maintain a straight body, retract your shoulder blades, and pull your \nchest to the bar for an effective back and upper body workout."
+          },
+          "description": {
+            "es": "Maintain a straight body, retract your shoulder blades, and pull your \nchest to the bar for an effective back and upper body workout.",
+            "en": "Maintain a straight body, retract your shoulder blades, and pull your \nchest to the bar for an effective back and upper body workout."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "pull",
+          "difficulty": "intermediate",
+          "equipment": [
+            "ninguno"
+          ],
+          "source": "wger",
+          "wger_id": 1198,
+          "youtube_search": "https://www.youtube.com/results?search_query=T-Bar%20row%20exercise%20tutorial",
+          "youtube_query": "T-Bar row exercise tutorial",
+          "images": [
+            "https://wger.de/media/exercise-images/1198/864906ac-4ac7-4e52-a886-c6bb97950a9f.jpg"
+          ],
+          "videos": []
+        },
+        {
           "id": "lsit_pullup",
-          "name": "L-sit Pull-up",
-          "muscles": "Dorsal, core, flexores cadera",
+          "name": {
+            "es": "L-sit Pull-up",
+            "en": "L-sit Pull-up"
+          },
+          "muscles": {
+            "es": "Dorsal, core, flexores cadera",
+            "en": "Lats, core, hip flexors"
+          },
           "sets": 3,
           "reps": "5-8",
           "rest": 120,
-          "note": "Mantén las piernas en L durante todo el pull-up.",
+          "note": {
+            "es": "Mantén las piernas en L durante todo el pull-up.",
+            "en": "Keep legs in L position throughout the entire pull-up."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -1962,13 +3046,25 @@
         },
         {
           "id": "facepull",
-          "name": "Long-Pulley (low Row)",
-          "name_en": "Facepull",
-          "muscles": "Core, Biceps, Pantorrillas",
+          "name": {
+            "es": "Long-Pulley (low Row)",
+            "en": "Long-Pulley (low Row)"
+          },
+          "muscles": {
+            "es": "Core, Biceps, Pantorrillas",
+            "en": "Core, Biceps, Pantorrillas"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "Siéntate, apoya los pies en los puntos de apoyo y agarra la barra con un agarre amplio. Tire de la pesa con un movimiento rápido hacia el ombligo, no hacia arriba. Durante el movimiento, mantén los brazos y los codos pegados al cuerpo. Junta los hombros. Deja que el peso baje lentamente hasta que tu",
+          "note": {
+            "es": "Siéntate, apoya los pies en los puntos de apoyo y agarra la barra con un agarre amplio. Tire de la pesa con un movimiento rápido hacia el ombligo, no hacia arriba. Durante el movimiento, mantén los brazos y los codos pegados al cuerpo. Junta los hombros. Deja que el peso baje lentamente hasta que tu",
+            "en": "Sit down, put your feet on the supporting points and grab the bar with a wide grip. Pull the weight with a rapid movement towards your belly button, not upper. Keep your arms and elbows during the movement close to your body. Your shoulders are pulled together. Let the weight slowly down till your a"
+          },
+          "description": {
+            "es": "Siéntate, apoya los pies en los puntos de apoyo y agarra la barra con un agarre amplio. Tire de la pesa con un movimiento rápido hacia el ombligo, no hacia arriba. Durante el movimiento, mantén los brazos y los codos pegados al cuerpo. Junta los hombros. Deja que el peso baje lentamente hasta que tus brazos estén completamente estirados.",
+            "en": "Sit down, put your feet on the supporting points and grab the bar with a wide grip. Pull the weight with a rapid movement towards your belly button, not upper. Keep your arms and elbows during the movement close to your body. Your shoulders are pulled together. Let the weight slowly down till your arms are completely stretched."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -1987,39 +3083,24 @@
           "videos": []
         },
         {
-          "id": "commando_pull_ups",
-          "name": "Low-Cable Cross-Over - NB",
-          "name_en": "commando pull-ups",
-          "muscles": "Trapecio, Deltoides",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "The low-cable cross-over is an isolation movement that uses a cable stack to target the upper portion of the pectoral muscles. It is common in upper-body and chest-focused muscle-building workouts, often in combination with presses or flyes from other angles to target all portions of the chest.",
-          "priority": "med",
-          "isTimer": false,
-          "category": "pull",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1296,
-          "youtube_search": "https://www.youtube.com/results?search_query=commando%20pull-ups%20exercise%20tutorial",
-          "youtube_query": "commando pull-ups exercise tutorial",
-          "images": [
-            "https://wger.de/media/exercise-images/1296/c42782fe-337a-44f4-9079-7f6dedab4885.png"
-          ],
-          "videos": []
-        },
-        {
           "id": "chin_up",
-          "name": "One Arm Triceps Extensions on Cable",
-          "name_en": "Chin Up",
-          "muscles": "Dorsal, Biceps, Trapecio",
+          "name": {
+            "es": "One Arm Triceps Extensions on Cable",
+            "en": "One Arm Triceps Extensions on Cable"
+          },
+          "muscles": {
+            "es": "Dorsal, Biceps, Trapecio",
+            "en": "Dorsal, Biceps, Trapecio"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "Este ejercicio es ideal para aislar y concentrarse en cada cabeza del tríceps de forma individual.Descripción:Coloca la polea en una posición alta y utiliza un agarre individual (maneral). De pie, mantén tu codo pegado al costado del cuerpo; este debe actuar como una bisagra y permanecer fijo durant",
+          "note": {
+            "es": "Este ejercicio es ideal para aislar y concentrarse en cada cabeza del tríceps de forma individual.Descripción:Coloca la polea en una posición alta y utiliza un agarre individual (maneral). De pie, mantén tu codo pegado al costado del cuerpo; este debe actuar como una bisagra y permanecer fijo durant"
+          },
+          "description": {
+            "es": "Este ejercicio es ideal para aislar y concentrarse en cada cabeza del tríceps de forma individual.Descripción:Coloca la polea en una posición alta y utiliza un agarre individual (maneral). De pie, mantén tu codo pegado al costado del cuerpo; este debe actuar como una bisagra y permanecer fijo durante todo el movimiento.\nExtiende el brazo completamente hacia abajo hasta sentir una fuerte contracción en el tríceps. Haz una breve pausa y regresa de forma lenta y controlada a la posición inicial."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -2038,13 +3119,25 @@
         },
         {
           "id": "leg_raises_pull_up_bar",
-          "name": "One armed push-ups",
-          "name_en": "Leg raises pull up bar",
-          "muscles": "Trapecio, Pecho, Deltoides, Core",
+          "name": {
+            "es": "One armed push-ups",
+            "en": "One armed push-ups"
+          },
+          "muscles": {
+            "es": "Trapecio, Pecho, Deltoides, Core",
+            "en": "Trapecio, Pecho, Deltoides, Core"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 60,
-          "note": "Perform push-ups with one hand, alternating the sides",
+          "note": {
+            "es": "Perform push-ups with one hand, alternating the sides",
+            "en": "Perform push-ups with one hand, alternating the sides"
+          },
+          "description": {
+            "es": "Perform push-ups with one hand, alternating the sides",
+            "en": "Perform push-ups with one hand, alternating the sides"
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -2061,12 +3154,21 @@
         },
         {
           "id": "one_arm_pullup_prog",
-          "name": "One-Arm Pull-up Progresión",
-          "muscles": "Dorsal unilateral",
+          "name": {
+            "es": "One-Arm Pull-up Progresión",
+            "en": "One-Arm Pull-up Progression"
+          },
+          "muscles": {
+            "es": "Dorsal unilateral",
+            "en": "Unilateral lats"
+          },
           "sets": 4,
           "reps": "3-5/lado",
           "rest": 180,
-          "note": "Con banda o desde medio agarre. Largo camino, pero empieza aquí.",
+          "note": {
+            "es": "Con banda o desde medio agarre. Largo camino, pero empieza aquí.",
+            "en": "With band or from half grip. Long journey, but start here."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -2081,12 +3183,21 @@
         },
         {
           "id": "pullup_neg2",
-          "name": "Pull-up Asistida o Negativas",
-          "muscles": "Dorsal, bíceps",
+          "name": {
+            "es": "Pull-up Asistida o Negativas",
+            "en": "Assisted Pull-up or Negatives"
+          },
+          "muscles": {
+            "es": "Dorsal, bíceps",
+            "en": "Lats, biceps"
+          },
           "sets": 4,
           "reps": "5-8",
           "rest": 120,
-          "note": "Usa banda elástica si no puedes hacer pull-up completa.",
+          "note": {
+            "es": "Usa banda elástica si no puedes hacer pull-up completa.",
+            "en": "Use a resistance band if you can't do a full pull-up."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -2102,12 +3213,21 @@
         },
         {
           "id": "weighted_pullup",
-          "name": "Pull-up con Mochila",
-          "muscles": "Dorsal, bíceps",
+          "name": {
+            "es": "Pull-up con Mochila",
+            "en": "Weighted Pull-up (backpack)"
+          },
+          "muscles": {
+            "es": "Dorsal, bíceps",
+            "en": "Lats, biceps"
+          },
           "sets": 5,
           "reps": "6-8",
           "rest": 180,
-          "note": "Mochila con 5-10kg. Si tienes dominadas sólidas.",
+          "note": {
+            "es": "Mochila con 5-10kg. Si tienes dominadas sólidas.",
+            "en": "Backpack with 5-10kg. If you have solid pull-ups."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -2123,12 +3243,21 @@
         },
         {
           "id": "pullup_strict",
-          "name": "Pull-up Estricto",
-          "muscles": "Dorsal ancho, bíceps",
+          "name": {
+            "es": "Pull-up Estricto",
+            "en": "Strict Pull-up"
+          },
+          "muscles": {
+            "es": "Dorsal ancho, bíceps",
+            "en": "Lats, biceps"
+          },
           "sets": 5,
           "reps": "máx (obj 8-12)",
           "rest": 120,
-          "note": "Sin kipping. Pausa 1s arriba.",
+          "note": {
+            "es": "Sin kipping. Pausa 1s arriba.",
+            "en": "No kipping. 1s pause at top."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -2143,12 +3272,21 @@
         },
         {
           "id": "renegade_row",
-          "name": "Renegade Row",
-          "muscles": "Dorsal, core antirotación",
+          "name": {
+            "es": "Renegade Row",
+            "en": "Renegade Row"
+          },
+          "muscles": {
+            "es": "Dorsal, core antirotación",
+            "en": "Lats, anti-rotation core"
+          },
           "sets": 3,
           "reps": "10/lado",
           "rest": 90,
-          "note": "Desde posición de push-up, jala alternando cada lado.",
+          "note": {
+            "es": "Desde posición de push-up, jala alternando cada lado.",
+            "en": "From push-up position, pull alternating each side."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -2163,12 +3301,21 @@
         },
         {
           "id": "scap_retract",
-          "name": "Retracción Escapular",
-          "muscles": "Romboides, trapecios",
+          "name": {
+            "es": "Retracción Escapular",
+            "en": "Scapular Retraction"
+          },
+          "muscles": {
+            "es": "Romboides, trapecios",
+            "en": "Rhomboids, traps"
+          },
           "sets": 3,
           "reps": "10-12",
           "rest": 60,
-          "note": "Brazos rectos, solo sube con omóplatos. Clave para postura.",
+          "note": {
+            "es": "Brazos rectos, solo sube con omóplatos. Clave para postura.",
+            "en": "Straight arms, only pull up with shoulder blades. Key for posture."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "pull",
@@ -2182,38 +3329,22 @@
           "images": []
         },
         {
-          "id": "trx_rows",
-          "name": "Standing Calf Stretch",
-          "name_en": "TRX Rows",
-          "muscles": "Pantorrillas",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "This stretch targets the gastrocnemius (the chief muscle of the calf of the leg, which flexes the knee and foot). It is easy to perform anywhere. All you need is a wall or a chair.",
-          "priority": "med",
-          "isTimer": false,
-          "category": "pull",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1239,
-          "youtube_search": "https://www.youtube.com/results?search_query=TRX%20Rows%20exercise%20tutorial",
-          "youtube_query": "TRX Rows exercise tutorial",
-          "images": [
-            "https://wger.de/media/exercise-images/1239/5026373a-a7b4-4e26-a0aa-c46634205196.jpg"
-          ],
-          "videos": []
-        },
-        {
           "id": "pull_apart",
-          "name": "Towel Pull Apart",
-          "muscles": "Deltoides posterior",
+          "name": {
+            "es": "Towel Pull Apart",
+            "en": "Towel Pull Apart"
+          },
+          "muscles": {
+            "es": "Deltoides posterior",
+            "en": "Rear deltoids"
+          },
           "sets": 3,
           "reps": "15",
           "rest": 60,
-          "note": "Brazos a la altura de los hombros, separa completamente.",
+          "note": {
+            "es": "Brazos a la altura de los hombros, separa completamente.",
+            "en": "Arms at shoulder height, pull apart completely."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -2228,12 +3359,21 @@
         },
         {
           "id": "towel_pullup",
-          "name": "Towel Pull-up",
-          "muscles": "Dorsal, agarre, bíceps",
+          "name": {
+            "es": "Towel Pull-up",
+            "en": "Towel Pull-up"
+          },
+          "muscles": {
+            "es": "Dorsal, agarre, bíceps",
+            "en": "Lats, grip, biceps"
+          },
           "sets": 3,
           "reps": "5-8",
           "rest": 120,
-          "note": "Toalla sobre la barra. Trabaja agarre de forma brutal.",
+          "note": {
+            "es": "Toalla sobre la barra. Trabaja agarre de forma brutal.",
+            "en": "Towel over the bar. Works grip brutally."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -2249,12 +3389,21 @@
         },
         {
           "id": "typewriter_pullup",
-          "name": "Typewriter Pull-up",
-          "muscles": "Dorsal unilateral",
+          "name": {
+            "es": "Typewriter Pull-up",
+            "en": "Typewriter Pull-up"
+          },
+          "muscles": {
+            "es": "Dorsal unilateral",
+            "en": "Unilateral lats"
+          },
           "sets": 3,
           "reps": "6 totales",
           "rest": 120,
-          "note": "Sube al centro, desliza a un lado, al otro, baja.",
+          "note": {
+            "es": "Sube al centro, desliza a un lado, al otro, baja.",
+            "en": "Pull to center, slide to one side, to the other, lower."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -2269,12 +3418,21 @@
         },
         {
           "id": "wide_pullup",
-          "name": "Wide Grip Pull-up",
-          "muscles": "Dorsal ancho, redondo mayor",
+          "name": {
+            "es": "Wide Grip Pull-up",
+            "en": "Wide Grip Pull-up"
+          },
+          "muscles": {
+            "es": "Dorsal ancho, redondo mayor",
+            "en": "Lats, teres major"
+          },
           "sets": 4,
           "reps": "6-10",
           "rest": 120,
-          "note": "Agarre más ancho que hombros. Enfatiza dorsal ancho.",
+          "note": {
+            "es": "Agarre más ancho que hombros. Enfatiza dorsal ancho.",
+            "en": "Grip wider than shoulders. Emphasizes lats."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "pull",
@@ -2290,16 +3448,25 @@
       ]
     },
     "push": {
-      "count": 21,
+      "count": 18,
       "exercises": [
         {
           "id": "archer2",
-          "name": "Archer Push-up",
-          "muscles": "Pecho unilateral",
+          "name": {
+            "es": "Archer Push-up",
+            "en": "Archer Push-up"
+          },
+          "muscles": {
+            "es": "Pecho unilateral",
+            "en": "Unilateral chest"
+          },
           "sets": 4,
           "reps": "8/lado",
           "rest": 90,
-          "note": "Brazo guía más extendido cada semana. Progresión hacia one-arm.",
+          "note": {
+            "es": "Brazo guía más extendido cada semana. Progresión hacia one-arm.",
+            "en": "Guide arm more extended each week. Progression toward one-arm."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "push",
@@ -2314,12 +3481,21 @@
         },
         {
           "id": "archer_pushup",
-          "name": "Archer Push-up (Regresión)",
-          "muscles": "Pecho unilateral",
+          "name": {
+            "es": "Archer Push-up (Regresión)",
+            "en": "Archer Push-up (Regression)"
+          },
+          "muscles": {
+            "es": "Pecho unilateral",
+            "en": "Unilateral chest"
+          },
           "sets": 3,
           "reps": "6/lado",
           "rest": 90,
-          "note": "Brazo guía extendido, carga en el otro. Progresión hacia one-arm.",
+          "note": {
+            "es": "Brazo guía extendido, carga en el otro. Progresión hacia one-arm.",
+            "en": "Guide arm extended, load on the other. Progression toward one-arm."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "push",
@@ -2333,60 +3509,22 @@
           "images": []
         },
         {
-          "id": "no_push_up_burpees",
-          "name": "Back Lever",
-          "name_en": "No push-up burpees",
-          "muscles": "Pecho, Deltoides, Triceps",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "Hanging from a pull-up bar facing downwards with your arms extended",
-          "priority": "med",
-          "isTimer": false,
-          "category": "push",
-          "difficulty": "intermediate",
-          "equipment": [
-            "barra_dominadas",
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1742,
-          "youtube_search": "https://www.youtube.com/results?search_query=No%20push-up%20burpees%20exercise%20tutorial",
-          "youtube_query": "No push-up burpees exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
-          "id": "floor_dips",
-          "name": "bicep curl",
-          "name_en": "Floor dips",
-          "muscles": "Pecho, Deltoides, Triceps",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "Não se encontra uma descrição disponível",
-          "priority": "med",
-          "isTimer": false,
-          "category": "push",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 1767,
-          "youtube_search": "https://www.youtube.com/results?search_query=Floor%20dips%20exercise%20tutorial",
-          "youtube_query": "Floor dips exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "clapping_pushup",
-          "name": "Clapping Push-up",
-          "muscles": "Pecho, tríceps, explosividad",
+          "name": {
+            "es": "Clapping Push-up",
+            "en": "Clapping Push-up"
+          },
+          "muscles": {
+            "es": "Pecho, tríceps, explosividad",
+            "en": "Chest, triceps, explosiveness"
+          },
           "sets": 3,
           "reps": "8-10",
           "rest": 90,
-          "note": "Empuja con fuerza para aplaudir en el aire. Aterriza suave.",
+          "note": {
+            "es": "Empuja con fuerza para aplaudir en el aire. Aterriza suave.",
+            "en": "Push hard to clap in the air. Land softly."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2401,12 +3539,21 @@
         },
         {
           "id": "decline_pushup",
-          "name": "Decline Push-up",
-          "muscles": "Pecho superior, hombros",
+          "name": {
+            "es": "Decline Push-up",
+            "en": "Decline Push-up"
+          },
+          "muscles": {
+            "es": "Pecho superior, hombros",
+            "en": "Upper chest, shoulders"
+          },
           "sets": 3,
           "reps": "10-15",
           "rest": 90,
-          "note": "Pies elevados en banco/silla. Más carga en hombros.",
+          "note": {
+            "es": "Pies elevados en banco/silla. Más carga en hombros.",
+            "en": "Feet elevated on bench/chair. More load on shoulders."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2421,12 +3568,21 @@
         },
         {
           "id": "diamond_pushup",
-          "name": "Diamond Push-up",
-          "muscles": "Tríceps, pecho interno",
+          "name": {
+            "es": "Diamond Push-up",
+            "en": "Diamond Push-up"
+          },
+          "muscles": {
+            "es": "Tríceps, pecho interno",
+            "en": "Triceps, inner chest"
+          },
           "sets": 4,
           "reps": "8-12",
           "rest": 90,
-          "note": "Manos en diamante bajo el esternón. Codos juntos al bajar.",
+          "note": {
+            "es": "Manos en diamante bajo el esternón. Codos juntos al bajar.",
+            "en": "Hands in diamond shape under sternum. Elbows close when lowering."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "push",
@@ -2441,12 +3597,21 @@
         },
         {
           "id": "dips_chair",
-          "name": "Dips en Silla",
-          "muscles": "Tríceps, hombros",
+          "name": {
+            "es": "Dips en Silla",
+            "en": "Chair Dips"
+          },
+          "muscles": {
+            "es": "Tríceps, hombros",
+            "en": "Triceps, shoulders"
+          },
           "sets": 3,
           "reps": "8-12",
           "rest": 90,
-          "note": "Espalda pegada al banco, no más de 90° codos.",
+          "note": {
+            "es": "Espalda pegada al banco, no más de 90° codos.",
+            "en": "Back against the bench, no more than 90° elbows."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "push",
@@ -2461,12 +3626,21 @@
         },
         {
           "id": "dips_parallel",
-          "name": "Dips Paralelas (2 sillas)",
-          "muscles": "Tríceps, pecho bajo",
+          "name": {
+            "es": "Dips Paralelas (2 sillas)",
+            "en": "Parallel Dips (2 chairs)"
+          },
+          "muscles": {
+            "es": "Tríceps, pecho bajo",
+            "en": "Triceps, lower chest"
+          },
           "sets": 4,
           "reps": "8-12",
           "rest": 90,
-          "note": "Rango completo. No dejes hombros subir.",
+          "note": {
+            "es": "Rango completo. No dejes hombros subir.",
+            "en": "Full range. Don't let shoulders rise."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "push",
@@ -2480,36 +3654,22 @@
           "images": []
         },
         {
-          "id": "decline_pushups",
-          "name": "Full Sit Outs",
-          "name_en": "Decline Pushups",
-          "muscles": "Pecho, Deltoides, Triceps",
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 60,
-          "note": "(A) Get in high plank position on your hands and toes.(B) Shift your weight to your left hand as you turn your body to the right; bend your right leg behind you and extend your right arm up. Return to the center and repeat on the opposite side. Continue, alternating sides.Make it easier: Don’t raise",
-          "priority": "med",
-          "isTimer": false,
-          "category": "push",
-          "difficulty": "intermediate",
-          "equipment": [
-            "ninguno"
-          ],
-          "source": "wger",
-          "wger_id": 260,
-          "youtube_search": "https://www.youtube.com/results?search_query=Decline%20Pushups%20exercise%20tutorial",
-          "youtube_query": "Decline Pushups exercise tutorial",
-          "images": [],
-          "videos": []
-        },
-        {
           "id": "hindu_pushup",
-          "name": "Hindu Push-up",
-          "muscles": "Hombros, pecho, flexibilidad",
+          "name": {
+            "es": "Hindu Push-up",
+            "en": "Hindu Push-up"
+          },
+          "muscles": {
+            "es": "Hombros, pecho, flexibilidad",
+            "en": "Shoulders, chest, flexibility"
+          },
           "sets": 3,
           "reps": "10-12",
           "rest": 60,
-          "note": "Movimiento de ola: de pike a cobra. Movilidad + fuerza.",
+          "note": {
+            "es": "Movimiento de ola: de pike a cobra. Movilidad + fuerza.",
+            "en": "Wave motion: from pike to cobra. Mobility + strength."
+          },
           "priority": "low",
           "isTimer": false,
           "category": "push",
@@ -2524,12 +3684,21 @@
         },
         {
           "id": "one_arm_actual",
-          "name": "One-Arm Push-up",
-          "muscles": "Pecho unilateral total",
+          "name": {
+            "es": "One-Arm Push-up",
+            "en": "One-Arm Push-up"
+          },
+          "muscles": {
+            "es": "Pecho unilateral total",
+            "en": "Full unilateral chest"
+          },
           "sets": 4,
           "reps": "5/lado",
           "rest": 120,
-          "note": "Si no llegas: archer push-up máximo inclinado.",
+          "note": {
+            "es": "Si no llegas: archer push-up máximo inclinado.",
+            "en": "If you can't: max incline archer push-up."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "push",
@@ -2544,12 +3713,21 @@
         },
         {
           "id": "one_arm_prog",
-          "name": "One-Arm Push-up Progresión",
-          "muscles": "Pecho unilateral total",
+          "name": {
+            "es": "One-Arm Push-up Progresión",
+            "en": "One-Arm Push-up Progression"
+          },
+          "muscles": {
+            "es": "Pecho unilateral total",
+            "en": "Full unilateral chest"
+          },
           "sets": 4,
           "reps": "5/lado",
           "rest": 120,
-          "note": "Desde rodillas o con mano elevada en pelota.",
+          "note": {
+            "es": "Desde rodillas o con mano elevada en pelota.",
+            "en": "From knees or with hand elevated on a ball."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "push",
@@ -2564,12 +3742,21 @@
         },
         {
           "id": "pike_hspu",
-          "name": "Pike HSPU",
-          "muscles": "Deltoides, tríceps",
+          "name": {
+            "es": "Pike HSPU",
+            "en": "Pike HSPU"
+          },
+          "muscles": {
+            "es": "Deltoides, tríceps",
+            "en": "Deltoids, triceps"
+          },
           "sets": 4,
           "reps": "6-10",
           "rest": 120,
-          "note": "Pies en silla alta. Objetivo: handstand push-up completo.",
+          "note": {
+            "es": "Pies en silla alta. Objetivo: handstand push-up completo.",
+            "en": "Feet on high chair. Goal: full handstand push-up."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "push",
@@ -2584,12 +3771,21 @@
         },
         {
           "id": "pike_pushup",
-          "name": "Pike Push-up",
-          "muscles": "Deltoides, tríceps",
+          "name": {
+            "es": "Pike Push-up",
+            "en": "Pike Push-up"
+          },
+          "muscles": {
+            "es": "Deltoides, tríceps",
+            "en": "Deltoids, triceps"
+          },
           "sets": 3,
           "reps": "8-10",
           "rest": 90,
-          "note": "Caderas arriba en V. Cabeza entre brazos al bajar.",
+          "note": {
+            "es": "Caderas arriba en V. Cabeza entre brazos al bajar.",
+            "en": "Hips up in V. Head between arms when lowering."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2604,12 +3800,21 @@
         },
         {
           "id": "pike_elevated",
-          "name": "Pike Push-up Elevado",
-          "muscles": "Deltoides, tríceps",
+          "name": {
+            "es": "Pike Push-up Elevado",
+            "en": "Elevated Pike Push-up"
+          },
+          "muscles": {
+            "es": "Deltoides, tríceps",
+            "en": "Deltoids, triceps"
+          },
           "sets": 4,
           "reps": "8-10",
           "rest": 90,
-          "note": "Pies en silla. Más carga en hombros. Evolución hacia HSPU.",
+          "note": {
+            "es": "Pies en silla. Más carga en hombros. Evolución hacia HSPU.",
+            "en": "Feet on chair. More load on shoulders. Evolution toward HSPU."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2624,12 +3829,21 @@
         },
         {
           "id": "pushup_std",
-          "name": "Push-up Estándar",
-          "muscles": "Pecho, hombros, tríceps",
+          "name": {
+            "es": "Push-up Estándar",
+            "en": "Standard Push-up"
+          },
+          "muscles": {
+            "es": "Pecho, hombros, tríceps",
+            "en": "Chest, shoulders, triceps"
+          },
           "sets": 4,
           "reps": "8-12",
           "rest": 90,
-          "note": "Cuerpo rígido como tabla, codos a 45°, pecho toca el suelo.",
+          "note": {
+            "es": "Cuerpo rígido como tabla, codos a 45°, pecho toca el suelo.",
+            "en": "Body rigid like a plank, elbows at 45°, chest touches the floor."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2644,12 +3858,21 @@
         },
         {
           "id": "ring_dip_prog",
-          "name": "Ring Dips (o Dips con peso)",
-          "muscles": "Tríceps, pecho, estabilizadores",
+          "name": {
+            "es": "Ring Dips (o Dips con peso)",
+            "en": "Ring Dips (or Weighted Dips)"
+          },
+          "muscles": {
+            "es": "Tríceps, pecho, estabilizadores",
+            "en": "Triceps, chest, stabilizers"
+          },
           "sets": 4,
           "reps": "8-10",
           "rest": 120,
-          "note": "Anillas o mochila. Nivel avanzado.",
+          "note": {
+            "es": "Anillas o mochila. Nivel avanzado.",
+            "en": "Rings or backpack. Advanced level."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2664,12 +3887,21 @@
         },
         {
           "id": "sphinx_pushup",
-          "name": "Sphinx Push-up",
-          "muscles": "Tríceps, core",
+          "name": {
+            "es": "Sphinx Push-up",
+            "en": "Sphinx Push-up"
+          },
+          "muscles": {
+            "es": "Tríceps, core",
+            "en": "Triceps, core"
+          },
           "sets": 3,
           "reps": "8-10",
           "rest": 90,
-          "note": "Desde posición de plank en antebrazos, extiende los codos.",
+          "note": {
+            "es": "Desde posición de plank en antebrazos, extiende los codos.",
+            "en": "From forearm plank position, extend the elbows."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2684,12 +3916,21 @@
         },
         {
           "id": "tiger_bend_pushup",
-          "name": "Tiger Bend Push-up",
-          "muscles": "Tríceps, hombros, pecho",
+          "name": {
+            "es": "Tiger Bend Push-up",
+            "en": "Tiger Bend Push-up"
+          },
+          "muscles": {
+            "es": "Tríceps, hombros, pecho",
+            "en": "Triceps, shoulders, chest"
+          },
           "sets": 3,
           "reps": "5-8",
           "rest": 120,
-          "note": "Bajar a antebrazos y volver a subir. Muy exigente.",
+          "note": {
+            "es": "Bajar a antebrazos y volver a subir. Muy exigente.",
+            "en": "Lower to forearms and push back up. Very demanding."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2704,12 +3945,21 @@
         },
         {
           "id": "wide_pushup",
-          "name": "Wide Push-up",
-          "muscles": "Pecho externo, deltoides",
+          "name": {
+            "es": "Wide Push-up",
+            "en": "Wide Push-up"
+          },
+          "muscles": {
+            "es": "Pecho externo, deltoides",
+            "en": "Outer chest, deltoids"
+          },
           "sets": 3,
           "reps": "10-15",
           "rest": 90,
-          "note": "Manos más anchas que hombros.",
+          "note": {
+            "es": "Manos más anchas que hombros.",
+            "en": "Hands wider than shoulders."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "push",
@@ -2729,12 +3979,21 @@
       "exercises": [
         {
           "id": "back_lever",
-          "name": "Back Lever Progresión",
-          "muscles": "Hombros, pecho, core",
+          "name": {
+            "es": "Back Lever Progresión",
+            "en": "Back Lever Progression"
+          },
+          "muscles": {
+            "es": "Hombros, pecho, core",
+            "en": "Shoulders, chest, core"
+          },
           "sets": 3,
           "reps": "5-15s",
           "rest": 120,
-          "note": "Empieza con tucked back lever.",
+          "note": {
+            "es": "Empieza con tucked back lever.",
+            "en": "Start with tucked back lever."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 10,
@@ -2750,12 +4009,21 @@
         },
         {
           "id": "crow_pose",
-          "name": "Crow Pose / Frog Stand",
-          "muscles": "Hombros, core, equilibrio",
+          "name": {
+            "es": "Crow Pose / Frog Stand",
+            "en": "Crow Pose / Frog Stand"
+          },
+          "muscles": {
+            "es": "Hombros, core, equilibrio",
+            "en": "Shoulders, core, balance"
+          },
           "sets": 5,
           "reps": "15-30s",
           "rest": 90,
-          "note": "Rodillas en los codos, inclínate hacia adelante. Base de skills.",
+          "note": {
+            "es": "Rodillas en los codos, inclínate hacia adelante. Base de skills.",
+            "en": "Knees on elbows, lean forward. Foundation for skills."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 20,
@@ -2771,12 +4039,21 @@
         },
         {
           "id": "elbow_lever",
-          "name": "Elbow Lever",
-          "muscles": "Core, hombros, equilibrio",
+          "name": {
+            "es": "Elbow Lever",
+            "en": "Elbow Lever"
+          },
+          "muscles": {
+            "es": "Core, hombros, equilibrio",
+            "en": "Core, shoulders, balance"
+          },
           "sets": 4,
           "reps": "10-20s",
           "rest": 90,
-          "note": "Codo en la cadera, cuerpo horizontal. Más fácil de lo que parece.",
+          "note": {
+            "es": "Codo en la cadera, cuerpo horizontal. Más fácil de lo que parece.",
+            "en": "Elbow on hip, body horizontal. Easier than it looks."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 15,
@@ -2792,12 +4069,21 @@
         },
         {
           "id": "front_lever_full",
-          "name": "Front Lever Completo",
-          "muscles": "Dorsal, core, escápulas",
+          "name": {
+            "es": "Front Lever Completo",
+            "en": "Full Front Lever"
+          },
+          "muscles": {
+            "es": "Dorsal, core, escápulas",
+            "en": "Lats, core, scapulae"
+          },
           "sets": 4,
           "reps": "5-10s",
           "rest": 180,
-          "note": "Cuerpo completamente horizontal. El skill de tirón más impresionante.",
+          "note": {
+            "es": "Cuerpo completamente horizontal. El skill de tirón más impresionante.",
+            "en": "Body completely horizontal. The most impressive pulling skill."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 8,
@@ -2813,12 +4099,21 @@
         },
         {
           "id": "front_lever_single",
-          "name": "Front Lever Single Leg",
-          "muscles": "Dorsal, core",
+          "name": {
+            "es": "Front Lever Single Leg",
+            "en": "Front Lever Single Leg"
+          },
+          "muscles": {
+            "es": "Dorsal, core",
+            "en": "Lats, core"
+          },
           "sets": 3,
           "reps": "10-15s",
           "rest": 120,
-          "note": "Una pierna extendida. Progresión al front lever completo.",
+          "note": {
+            "es": "Una pierna extendida. Progresión al front lever completo.",
+            "en": "One leg extended. Progression to full front lever."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 12,
@@ -2834,12 +4129,21 @@
         },
         {
           "id": "front_lever_tuck",
-          "name": "Front Lever Tucked",
-          "muscles": "Dorsal, core, escápulas",
+          "name": {
+            "es": "Front Lever Tucked",
+            "en": "Front Lever Tucked"
+          },
+          "muscles": {
+            "es": "Dorsal, core, escápulas",
+            "en": "Lats, core, scapulae"
+          },
           "sets": 4,
           "reps": "10-20s",
           "rest": 120,
-          "note": "Rodillas al pecho. Cuerpo horizontal. Muy exigente.",
+          "note": {
+            "es": "Rodillas al pecho. Cuerpo horizontal. Muy exigente.",
+            "en": "Knees to chest. Body horizontal. Very demanding."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 15,
@@ -2855,12 +4159,21 @@
         },
         {
           "id": "handstand_60",
-          "name": "Handstand 60s Libre",
-          "muscles": "Equilibrio total",
+          "name": {
+            "es": "Handstand 60s Libre",
+            "en": "Freestanding Handstand 60s"
+          },
+          "muscles": {
+            "es": "Equilibrio total",
+            "en": "Total balance"
+          },
           "sets": 3,
           "reps": "obj 60s libre",
           "rest": 60,
-          "note": "Objetivo: 60s de handstand libre al terminar los 6 meses.",
+          "note": {
+            "es": "Objetivo: 60s de handstand libre al terminar los 6 meses.",
+            "en": "Goal: 60s freestanding handstand by end of 6 months."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -2875,12 +4188,21 @@
         },
         {
           "id": "handstand_wall",
-          "name": "Handstand contra Pared",
-          "muscles": "Hombros, core, equilibrio",
+          "name": {
+            "es": "Handstand contra Pared",
+            "en": "Wall Handstand"
+          },
+          "muscles": {
+            "es": "Hombros, core, equilibrio",
+            "en": "Shoulders, core, balance"
+          },
           "sets": 3,
           "reps": "30-60s",
           "rest": 120,
-          "note": "Manos a 10-15cm de la pared. Cuerpo recto, no arquear la espalda.",
+          "note": {
+            "es": "Manos a 10-15cm de la pared. Cuerpo recto, no arquear la espalda.",
+            "en": "Hands 10-15cm from wall. Straight body, don't arch your back."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 45,
@@ -2896,12 +4218,21 @@
         },
         {
           "id": "handstand_free",
-          "name": "Handstand Libre (intentos)",
-          "muscles": "Equilibrio, hombros, core",
+          "name": {
+            "es": "Handstand Libre (intentos)",
+            "en": "Freestanding Handstand (attempts)"
+          },
+          "muscles": {
+            "es": "Equilibrio, hombros, core",
+            "en": "Balance, shoulders, core"
+          },
           "sets": 3,
           "reps": "intentos 5-15s",
           "rest": 60,
-          "note": "Practica el balance libre. Múltiples intentos con descanso.",
+          "note": {
+            "es": "Practica el balance libre. Múltiples intentos con descanso.",
+            "en": "Practice free balance. Multiple attempts with rest."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -2916,12 +4247,21 @@
         },
         {
           "id": "hspu_wall",
-          "name": "Handstand Push-up (pared)",
-          "muscles": "Deltoides, tríceps, core",
+          "name": {
+            "es": "Handstand Push-up (pared)",
+            "en": "Handstand Push-up (wall)"
+          },
+          "muscles": {
+            "es": "Deltoides, tríceps, core",
+            "en": "Deltoids, triceps, core"
+          },
           "sets": 5,
           "reps": "5-8",
           "rest": 180,
-          "note": "Handstand contra la pared, baja la cabeza al suelo. Elite.",
+          "note": {
+            "es": "Handstand contra la pared, baja la cabeza al suelo. Elite.",
+            "en": "Handstand against the wall, lower head to floor. Elite."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -2936,12 +4276,21 @@
         },
         {
           "id": "human_flag_prog",
-          "name": "Human Flag Progresión",
-          "muscles": "Oblicuos, hombros, dorsal",
+          "name": {
+            "es": "Human Flag Progresión",
+            "en": "Human Flag Progression"
+          },
+          "muscles": {
+            "es": "Oblicuos, hombros, dorsal",
+            "en": "Obliques, shoulders, lats"
+          },
           "sets": 3,
           "reps": "5-10s",
           "rest": 120,
-          "note": "Empieza con tucked. Uno de los skills más impresionantes.",
+          "note": {
+            "es": "Empieza con tucked. Uno de los skills más impresionantes.",
+            "en": "Start with tucked. One of the most impressive skills."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 8,
@@ -2957,12 +4306,21 @@
         },
         {
           "id": "lsit_30s",
-          "name": "L-sit 30s",
-          "muscles": "Core, flexores, hombros",
+          "name": {
+            "es": "L-sit 30s",
+            "en": "L-sit 30s"
+          },
+          "muscles": {
+            "es": "Core, flexores, hombros",
+            "en": "Core, flexors, shoulders"
+          },
           "sets": 5,
           "reps": "30s",
           "rest": 120,
-          "note": "Objetivo de la fase: 30s continuos con piernas rectas.",
+          "note": {
+            "es": "Objetivo de la fase: 30s continuos con piernas rectas.",
+            "en": "Phase goal: 30s continuous with straight legs."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 30,
@@ -2978,12 +4336,21 @@
         },
         {
           "id": "lsit_45",
-          "name": "L-sit 45s Objetivo",
-          "muscles": "Core, flexores, hombros",
+          "name": {
+            "es": "L-sit 45s Objetivo",
+            "en": "L-sit 45s Goal"
+          },
+          "muscles": {
+            "es": "Core, flexores, hombros",
+            "en": "Core, flexors, shoulders"
+          },
           "sets": 4,
           "reps": "máx (obj 45s)",
           "rest": 120,
-          "note": "Objetivo final del programa. 45 segundos continuos.",
+          "note": {
+            "es": "Objetivo final del programa. 45 segundos continuos.",
+            "en": "Final program goal. 45 seconds continuous."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 45,
@@ -2999,12 +4366,21 @@
         },
         {
           "id": "lsit_full",
-          "name": "L-sit Paralelas/Sillas",
-          "muscles": "Core, flexores cadera, hombros",
+          "name": {
+            "es": "L-sit Paralelas/Sillas",
+            "en": "L-sit on Parallettes/Chairs"
+          },
+          "muscles": {
+            "es": "Core, flexores cadera, hombros",
+            "en": "Core, hip flexors, shoulders"
+          },
           "sets": 4,
           "reps": "15-25s",
           "rest": 90,
-          "note": "Piernas rectas si puedes. Si no, rodillas dobladas.",
+          "note": {
+            "es": "Piernas rectas si puedes. Si no, rodillas dobladas.",
+            "en": "Straight legs if you can. If not, knees bent."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 20,
@@ -3020,12 +4396,21 @@
         },
         {
           "id": "lsit_prog",
-          "name": "L-sit Progresión",
-          "muscles": "Core, flexores de cadera",
+          "name": {
+            "es": "L-sit Progresión",
+            "en": "L-sit Progression"
+          },
+          "muscles": {
+            "es": "Core, flexores de cadera",
+            "en": "Core, hip flexors"
+          },
           "sets": 3,
           "reps": "15-20s",
           "rest": 90,
-          "note": "Empieza apoyando talones en suelo, luego levanta una pierna.",
+          "note": {
+            "es": "Empieza apoyando talones en suelo, luego levanta una pierna.",
+            "en": "Start with heels on floor, then lift one leg."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 20,
@@ -3041,12 +4426,21 @@
         },
         {
           "id": "muscleup_real",
-          "name": "Muscle-up",
-          "muscles": "Pull + Push completo",
+          "name": {
+            "es": "Muscle-up",
+            "en": "Muscle-up"
+          },
+          "muscles": {
+            "es": "Pull + Push completo",
+            "en": "Full pull + push"
+          },
           "sets": 3,
           "reps": "3-5 (o negativas)",
           "rest": 180,
-          "note": "Si aún no llegas: 5 negativas muy lentas.",
+          "note": {
+            "es": "Si aún no llegas: 5 negativas muy lentas.",
+            "en": "If you can't yet: 5 very slow negatives."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -3061,12 +4455,21 @@
         },
         {
           "id": "muscleup_neg",
-          "name": "Muscle-up Negativo",
-          "muscles": "Full tirón + empuje",
+          "name": {
+            "es": "Muscle-up Negativo",
+            "en": "Negative Muscle-up"
+          },
+          "muscles": {
+            "es": "Full tirón + empuje",
+            "en": "Full pull + push"
+          },
           "sets": 3,
           "reps": "5 (5s)",
           "rest": 120,
-          "note": "Súbete con silla, baja muy lento pasando la transición.",
+          "note": {
+            "es": "Súbete con silla, baja muy lento pasando la transición.",
+            "en": "Get up with a chair, lower very slowly through the transition."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -3081,12 +4484,21 @@
         },
         {
           "id": "muscleup_flow",
-          "name": "Muscle-up x5 Flow",
-          "muscles": "Full tirón + empuje",
+          "name": {
+            "es": "Muscle-up x5 Flow",
+            "en": "Muscle-up x5 Flow"
+          },
+          "muscles": {
+            "es": "Full tirón + empuje",
+            "en": "Full pull + push"
+          },
           "sets": 4,
           "reps": "5 seguidos",
           "rest": 180,
-          "note": "5 seguidos sin soltar la barra. Peak de tirón.",
+          "note": {
+            "es": "5 seguidos sin soltar la barra. Peak de tirón.",
+            "en": "5 in a row without releasing the bar. Peak pulling."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -3101,12 +4513,21 @@
         },
         {
           "id": "planche_lean",
-          "name": "Planche Lean",
-          "muscles": "Hombros, wrist, core",
+          "name": {
+            "es": "Planche Lean",
+            "en": "Planche Lean"
+          },
+          "muscles": {
+            "es": "Hombros, wrist, core",
+            "en": "Shoulders, wrists, core"
+          },
           "sets": 4,
           "reps": "20-30s",
           "rest": 90,
-          "note": "Inclínate hacia adelante sobre manos. Prepara la planche.",
+          "note": {
+            "es": "Inclínate hacia adelante sobre manos. Prepara la planche.",
+            "en": "Lean forward over hands. Prepares for planche."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 25,
@@ -3122,12 +4543,21 @@
         },
         {
           "id": "pseudo_planche",
-          "name": "Pseudo Planche Push-up",
-          "muscles": "Hombros anteriores, pecho",
+          "name": {
+            "es": "Pseudo Planche Push-up",
+            "en": "Pseudo Planche Push-up"
+          },
+          "muscles": {
+            "es": "Hombros anteriores, pecho",
+            "en": "Front deltoids, chest"
+          },
           "sets": 3,
           "reps": "6-8",
           "rest": 120,
-          "note": "Dedos hacia los pies, cuerpo ligeramente hacia adelante.",
+          "note": {
+            "es": "Dedos hacia los pies, cuerpo ligeramente hacia adelante.",
+            "en": "Fingers toward feet, body slightly forward."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "skill",
@@ -3142,12 +4572,21 @@
         },
         {
           "id": "ring_support",
-          "name": "Ring Support Hold",
-          "muscles": "Hombros, core, estabilizadores",
+          "name": {
+            "es": "Ring Support Hold",
+            "en": "Ring Support Hold"
+          },
+          "muscles": {
+            "es": "Hombros, core, estabilizadores",
+            "en": "Shoulders, core, stabilizers"
+          },
           "sets": 4,
           "reps": "20-30s",
           "rest": 90,
-          "note": "Mantén posición de soporte en anillas. Brazos rectos.",
+          "note": {
+            "es": "Mantén posición de soporte en anillas. Brazos rectos.",
+            "en": "Hold support position on rings. Straight arms."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 25,
@@ -3163,12 +4602,21 @@
         },
         {
           "id": "skill_complex",
-          "name": "Skill Complex (elige 3 skills)",
-          "muscles": "Variable",
+          "name": {
+            "es": "Skill Complex (elige 3 skills)",
+            "en": "Skill Complex (choose 3 skills)"
+          },
+          "muscles": {
+            "es": "Variable",
+            "en": "Variable"
+          },
           "sets": 3,
           "reps": "según skill",
           "rest": 180,
-          "note": "Escoge tus 3 skills favoritos y practica. Handstand, L-sit, muscle-up, front lever.",
+          "note": {
+            "es": "Escoge tus 3 skills favoritos y practica. Handstand, L-sit, muscle-up, front lever.",
+            "en": "Pick your 3 favorite skills and practice. Handstand, L-sit, muscle-up, front lever."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -3183,12 +4631,21 @@
         },
         {
           "id": "skin_the_cat",
-          "name": "Skin the Cat",
-          "muscles": "Hombros, dorsal, movilidad",
+          "name": {
+            "es": "Skin the Cat",
+            "en": "Skin the Cat"
+          },
+          "muscles": {
+            "es": "Hombros, dorsal, movilidad",
+            "en": "Shoulders, lats, mobility"
+          },
           "sets": 3,
           "reps": "5-8",
           "rest": 120,
-          "note": "Colgado, lleva los pies por detrás sobre la barra. Movilidad de hombros.",
+          "note": {
+            "es": "Colgado, lleva los pies por detrás sobre la barra. Movilidad de hombros.",
+            "en": "Hanging, bring feet behind over the bar. Shoulder mobility."
+          },
           "priority": "med",
           "isTimer": false,
           "category": "skill",
@@ -3203,12 +4660,21 @@
         },
         {
           "id": "strength_test",
-          "name": "Test de Fuerza Mensual",
-          "muscles": "Full body",
+          "name": {
+            "es": "Test de Fuerza Mensual",
+            "en": "Monthly Strength Test"
+          },
+          "muscles": {
+            "es": "Full body",
+            "en": "Full body"
+          },
           "sets": 1,
           "reps": "máx en todo",
           "rest": 300,
-          "note": "Último viernes del mes: pull-up máx, push-up máx, L-sit tiempo, pistol squat máx. Anota y compara.",
+          "note": {
+            "es": "Último viernes del mes: pull-up máx, push-up máx, L-sit tiempo, pistol squat máx. Anota y compara.",
+            "en": "Last Friday of the month: max pull-ups, max push-ups, L-sit time, max pistol squats. Record and compare."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -3223,12 +4689,21 @@
         },
         {
           "id": "planche_tuck",
-          "name": "Tuck Planche",
-          "muscles": "Hombros anteriores, core",
+          "name": {
+            "es": "Tuck Planche",
+            "en": "Tuck Planche"
+          },
+          "muscles": {
+            "es": "Hombros anteriores, core",
+            "en": "Front deltoids, core"
+          },
           "sets": 4,
           "reps": "5-15s",
           "rest": 120,
-          "note": "Rodillas al pecho, cuerpo horizontal. Extremadamente difícil.",
+          "note": {
+            "es": "Rodillas al pecho, cuerpo horizontal. Extremadamente difícil.",
+            "en": "Knees to chest, body horizontal. Extremely difficult."
+          },
           "priority": "high",
           "isTimer": true,
           "timerSeconds": 10,
@@ -3244,12 +4719,21 @@
         },
         {
           "id": "tuck_planche_pushup",
-          "name": "Tuck Planche Push-up",
-          "muscles": "Hombros, pecho, core",
+          "name": {
+            "es": "Tuck Planche Push-up",
+            "en": "Tuck Planche Push-up"
+          },
+          "muscles": {
+            "es": "Hombros, pecho, core",
+            "en": "Shoulders, chest, core"
+          },
           "sets": 3,
           "reps": "5-8",
           "rest": 120,
-          "note": "Push-up desde tuck planche. Extremadamente difícil.",
+          "note": {
+            "es": "Push-up desde tuck planche. Extremadamente difícil.",
+            "en": "Push-up from tuck planche. Extremely difficult."
+          },
           "priority": "high",
           "isTimer": false,
           "category": "skill",
@@ -3264,12 +4748,21 @@
         },
         {
           "id": "wall_sit",
-          "name": "Wall Sit",
-          "muscles": "Cuádriceps, core",
+          "name": {
+            "es": "Wall Sit",
+            "en": "Wall Sit"
+          },
+          "muscles": {
+            "es": "Cuádriceps, core",
+            "en": "Quads, core"
+          },
           "sets": 3,
           "reps": "45s",
           "rest": 60,
-          "note": "Espalda plana contra la pared, 90° rodillas.",
+          "note": {
+            "es": "Espalda plana contra la pared, 90° rodillas.",
+            "en": "Flat back against the wall, 90° knees."
+          },
           "priority": "med",
           "isTimer": true,
           "timerSeconds": 45,

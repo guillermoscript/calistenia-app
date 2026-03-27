@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+import i18n from '../../lib/i18n'
 import { Card, CardContent } from '../ui/card'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
 import type { CardioAggregateStats } from '../../hooks/useCardioStats'
@@ -10,6 +12,7 @@ interface CardioWidgetProps {
 }
 
 export default function CardioWidget({ weeklyStats, lastSession, onNavigate }: CardioWidgetProps) {
+  const { t } = useTranslation()
   const hasActivity = weeklyStats.totalSessions > 0
 
   return (
@@ -36,20 +39,20 @@ export default function CardioWidget({ weeklyStats, lastSession, onNavigate }: C
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">Cardio</div>
+              <div className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1">{t('cardio.widget.title')}</div>
               {hasActivity ? (
                 <div className="text-sm">
                   <span className="text-foreground font-medium">{weeklyStats.totalDistance.toFixed(1)} km</span>
-                  <span className="text-muted-foreground"> · {weeklyStats.totalSessions} sesiones</span>
+                  <span className="text-muted-foreground"> · {weeklyStats.totalSessions} {t('cardio.widget.sessions')}</span>
                 </div>
               ) : (
-                <div className="text-xs text-muted-foreground">Empieza tu primera sesión</div>
+                <div className="text-xs text-muted-foreground">{t('cardio.widget.startFirst')}</div>
               )}
               {lastSession && (
                 <div className="text-[10px] text-muted-foreground mt-0.5">
                   {CARDIO_ACTIVITY[lastSession.activity_type]?.icon || '🏃'}{' '}
                   {lastSession.distance_km.toFixed(1)} km ·{' '}
-                  {new Date(lastSession.started_at).toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+                  {new Date(lastSession.started_at).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}
                 </div>
               )}
             </div>

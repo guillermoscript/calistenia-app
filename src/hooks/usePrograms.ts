@@ -29,6 +29,8 @@ import {
 } from '../data/workouts'
 import { nowLocalForPB } from '../lib/dateUtils'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
+import i18n from '../lib/i18n'
+import { localize } from '../lib/i18n-db'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -36,11 +38,12 @@ import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId
  * Build PHASES array from program_phases PB records.
  */
 function buildPhases(phaseRecords: RecordModel[]): Phase[] {
+  const locale = i18n.language
   return [...phaseRecords]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(p => ({
       id:    p.phase_number,
-      name:  p.name,
+      name:  localize(p.name, locale),
       weeks: p.weeks,
       color: p.color,
       bg:    p.bg_color,
@@ -49,40 +52,41 @@ function buildPhases(phaseRecords: RecordModel[]): Phase[] {
 
 /**
  * Build WEEK_DAYS array from program_exercises PB records.
- * Uses the first exercise record per day_id for metadata.
+ * Uses day config records as primary source when available, falls back to exercise records.
  */
 function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordModel[] = []): WeekDay[] {
   const ORDER: string[] = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
+  const locale = i18n.language
   const seen: Record<string, WeekDay> = {}
 
-  if (dayConfigRecords.length > 0) {
-    dayConfigRecords.forEach(dc => {
-      if (!seen[dc.day_id]) {
-        const day: WeekDay = {
-          id:    dc.day_id as DayId,
-          name:  dc.day_name,
-          focus: dc.day_focus,
-          type:  dc.day_type,
-          color: dc.day_color,
-        }
-        if (dc.day_type === 'cardio' && dc.cardio_activity_type) {
-          day.cardioConfig = {
-            activityType: dc.cardio_activity_type as CardioActivityType,
-            targetDistanceKm: dc.cardio_target_distance_km || undefined,
-            targetDurationMin: dc.cardio_target_duration_min || undefined,
-          }
-        }
-        seen[dc.day_id] = day
+  // Primary source: day config records
+  dayConfigRecords.forEach(dc => {
+    if (!seen[dc.day_id]) {
+      const day: WeekDay = {
+        id:    dc.day_id as DayId,
+        name:  localize(dc.day_name, locale),
+        focus: localize(dc.day_focus, locale),
+        type:  dc.day_type,
+        color: dc.day_color,
       }
-    })
-  }
+      if (dc.day_type === 'cardio' && dc.cardio_activity_type) {
+        day.cardioConfig = {
+          activityType: dc.cardio_activity_type as CardioActivityType,
+          targetDistanceKm: dc.cardio_target_distance_km || undefined,
+          targetDurationMin: dc.cardio_target_duration_min || undefined,
+        }
+      }
+      seen[dc.day_id] = day
+    }
+  })
 
+  // Fallback: exercise records for days not covered by day config
   exerciseRecords.forEach(r => {
     if (!seen[r.day_id]) {
       seen[r.day_id] = {
         id:    r.day_id as DayId,
-        name:  r.day_name,
-        focus: r.day_focus,
+        name:  localize(r.day_name, locale),
+        focus: localize(r.day_focus, locale),
         type:  r.day_type,
         color: r.day_color,
       }
@@ -90,8 +94,8 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
   })
 
   const defaults: Record<string, WeekDay> = {
-    sab: { id: 'sab', name: 'Sábado',  focus: 'Caminata activa', type: 'rest', color: '#888899' },
-    dom: { id: 'dom', name: 'Domingo', focus: 'Descanso total',  type: 'rest', color: '#888899' },
+    sab: { id: 'sab', name: i18n.t('day.saturday'),  focus: i18n.t('day.activeWalk'), type: 'rest', color: '#888899' },
+    dom: { id: 'dom', name: i18n.t('day.sunday'), focus: i18n.t('day.totalRest'),  type: 'rest', color: '#888899' },
   }
   for (const id of ['sab', 'dom']) {
     if (!seen[id]) seen[id] = defaults[id]
@@ -99,19 +103,22 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
   return ORDER.map(id => seen[id]).filter(Boolean)
 }
 
+/**
+ * Build cardio day configs keyed by "p{phase}_{dayId}".
+ */
 function buildCardioDayConfigs(dayConfigRecords: RecordModel[]): Record<string, CardioDayConfig> {
-  const map: Record<string, CardioDayConfig> = {}
+  const configs: Record<string, CardioDayConfig> = {}
   dayConfigRecords.forEach(dc => {
     if (dc.day_type === 'cardio' && dc.cardio_activity_type) {
       const key = `p${dc.phase_number}_${dc.day_id}`
-      map[key] = {
+      configs[key] = {
         activityType: dc.cardio_activity_type as CardioActivityType,
         targetDistanceKm: dc.cardio_target_distance_km || undefined,
         targetDurationMin: dc.cardio_target_duration_min || undefined,
       }
     }
   })
-  return map
+  return configs
 }
 
 /**
@@ -119,6 +126,7 @@ function buildCardioDayConfigs(dayConfigRecords: RecordModel[]): Record<string, 
  * Shape: { 'p1_lun': { phase, day, title, exercises: [...] }, ... }
  */
 function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
+  const locale = i18n.language
   const map: WorkoutsMap = {}
   exerciseRecords.forEach(r => {
     const key = `p${r.phase_number}_${r.day_id}`
@@ -126,18 +134,18 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
       map[key] = {
         phase: r.phase_number,
         day:   r.day_id as DayId,
-        title: r.workout_title,
+        title: localize(r.workout_title, locale),
         exercises: [],
       }
     }
     map[key].exercises.push({
       id:           r.exercise_id,
-      name:         r.exercise_name,
+      name:         localize(r.exercise_name, locale),
       sets:         r.sets,
       reps:         r.reps,
       rest:         r.rest_seconds,
-      muscles:      r.muscles,
-      note:         r.note,
+      muscles:      localize(r.muscles, locale),
+      note:         localize(r.note, locale),
       youtube:      r.youtube,
       priority:     r.priority,
       isTimer:      r.is_timer,
@@ -165,13 +173,13 @@ interface UseProgramsReturn {
   activeProgram: ProgramMeta | null
   phases: Phase[]
   weekDays: WeekDay[]
+  cardioDayConfigs: Record<string, CardioDayConfig>
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<void>
   duplicateProgram: (programId: string) => Promise<string | null>
   deleteProgram: (programId: string) => Promise<boolean>
   refreshPrograms: () => Promise<void>
   programsReady: boolean
-  cardioDayConfigs: Record<string, CardioDayConfig>
 }
 
 // ─── hook ────────────────────────────────────────────────────────────────────
@@ -182,9 +190,9 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   const [phases, setPhases]               = useState<Phase[]>(FALLBACK_PHASES)
   const [weekDays, setWeekDays]           = useState<WeekDay[]>(FALLBACK_WEEK_DAYS)
   const [workoutsMap, setWorkoutsMap]     = useState<WorkoutsMap>({})
+  const [cardioDayConfigs, setCardioDayConfigs] = useState<Record<string, CardioDayConfig>>({})
   const [programsReady, setProgramsReady] = useState(false)
   const [usePB, setUsePB]                 = useState(false)
-  const [cardioDayConfigs, setCardioDayConfigs] = useState<Record<string, CardioDayConfig>>({})
 
   const initialized = useRef(false)
   const lastUserId  = useRef<string | null>(null)
@@ -199,6 +207,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       setPhases(FALLBACK_PHASES)
       setWeekDays(FALLBACK_WEEK_DAYS)
       setWorkoutsMap({})
+      setCardioDayConfigs({})
       setProgramsReady(false)
     }
 
@@ -242,10 +251,11 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       expand: 'created_by',
       $autoCancel: false,
     })
+    const locale = i18n.language
     const catalog: ProgramMeta[] = catalogRes.items.map(p => ({
       id:             p.id,
-      name:           p.name,
-      description:    p.description,
+      name:           localize(p.name, locale),
+      description:    localize(p.description, locale),
       duration_weeks: p.duration_weeks,
       created_by:     p.created_by || undefined,
       created_by_name: (p.expand as any)?.created_by?.display_name || undefined,
@@ -289,20 +299,21 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   // ── loadProgramData ──────────────────────────────────────────────────────
   const loadProgramData = async (programId: string): Promise<void> => {
+    const filter = pb.filter('program = {:pid}', { pid: programId })
     const [phasesRes, exercisesRes, dayConfigRes] = await Promise.all([
       pb.collection('program_phases').getList(1, 20, {
-        filter: pb.filter('program = {:pid}', { pid: programId }),
+        filter,
         sort:   'sort_order',
         $autoCancel: false,
       }),
       pb.collection('program_exercises').getList(1, 2000, {
-        filter: pb.filter('program = {:pid}', { pid: programId }),
+        filter,
         sort:   'phase_number,sort_order',
         $autoCancel: false,
       }),
       pb.collection('program_day_config').getList(1, 200, {
-        filter: pb.filter('program = {:pid}', { pid: programId }),
-        sort: 'phase_number,sort_order',
+        filter,
+        sort:   'phase_number,sort_order',
         $autoCancel: false,
       }).catch((e: any) => {
         if (e?.status !== 404) console.warn('usePrograms: day config fetch failed', e)
@@ -467,11 +478,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         })
       }
 
-      // 5. Update local programs list
+      // 6. Update local programs list
+      const locale = i18n.language
       const newMeta: ProgramMeta = {
         id:             newProgram.id,
-        name:           newProgram.name,
-        description:    newProgram.description,
+        name:           localize(newProgram.name, locale),
+        description:    localize(newProgram.description, locale),
         duration_weeks: newProgram.duration_weeks,
       }
       setPrograms(prev => [...prev, newMeta])
@@ -559,12 +571,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     activeProgram,
     phases,
     weekDays,
+    cardioDayConfigs,
     getWorkout,
     selectProgram,
     duplicateProgram,
     deleteProgram,
     refreshPrograms,
     programsReady,
-    cardioDayConfigs,
   }
 }

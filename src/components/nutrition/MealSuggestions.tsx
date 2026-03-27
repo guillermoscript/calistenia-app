@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
 import { pb } from '../../lib/pocketbase'
@@ -48,6 +49,7 @@ function formatCatalogFoods(foods: CatalogFood[], macro: 'protein' | 'carbs' | '
 }
 
 export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
+  const { t } = useTranslation()
   const [proteinFoods, setProteinFoods] = useState<CatalogFood[]>([])
   const [carbFoods, setCarbFoods] = useState<CatalogFood[]>([])
   const [fatFoods, setFatFoods] = useState<CatalogFood[]>([])
@@ -69,14 +71,14 @@ export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
   // Over-consumption warnings
   const overItems: string[] = []
   if (remaining.calories < 0) overItems.push(`${Math.abs(Math.round(remaining.calories))} kcal`)
-  if (remaining.protein < 0) overItems.push(`${Math.abs(Math.round(remaining.protein))}g proteína`)
-  if (remaining.carbs < 0) overItems.push(`${Math.abs(Math.round(remaining.carbs))}g carbos`)
-  if (remaining.fat < 0) overItems.push(`${Math.abs(Math.round(remaining.fat))}g grasa`)
+  if (remaining.protein < 0) overItems.push(`${Math.abs(Math.round(remaining.protein))}g ${t('nutrition.suggestions.overProtein')}`)
+  if (remaining.carbs < 0) overItems.push(`${Math.abs(Math.round(remaining.carbs))}g ${t('nutrition.suggestions.overCarbs')}`)
+  if (remaining.fat < 0) overItems.push(`${Math.abs(Math.round(remaining.fat))}g ${t('nutrition.suggestions.overFat')}`)
   if (overItems.length) {
     suggestions.push({
       icon: '⚠️',
-      title: 'Exceso detectado',
-      description: `Te pasaste en: ${overItems.join(', ')}. Ajusta tu próxima comida para compensar.`,
+      title: t('nutrition.suggestions.excess'),
+      description: t('nutrition.suggestions.excessDesc', { items: overItems.join(', ') }),
       accent: 'text-amber-400',
       border: 'border-l-amber-400',
     })
@@ -86,8 +88,8 @@ export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
   if (remaining.calories < 200 && remaining.calories >= 0) {
     suggestions.push({
       icon: '🎯',
-      title: 'Casi completas tu objetivo',
-      description: `Solo te faltan ${Math.round(remaining.calories)} kcal. Un snack ligero como una fruta o yogur sería ideal.`,
+      title: t('nutrition.suggestions.almostDone'),
+      description: t('nutrition.suggestions.almostDoneDesc', { calories: Math.round(remaining.calories) }),
       accent: 'text-emerald-500',
       border: 'border-l-emerald-500',
     })
@@ -96,11 +98,11 @@ export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
   // Protein
   if (needsProtein) {
     const desc = proteinFoods.length
-      ? `Opciones del catálogo: ${formatCatalogFoods(proteinFoods, 'protein')}.`
-      : `Opciones: ${FALLBACK.proteinas}.`
+      ? t('nutrition.suggestions.catalogOptions', { foods: formatCatalogFoods(proteinFoods, 'protein') })
+      : t('nutrition.suggestions.options', { foods: FALLBACK.proteinas })
     suggestions.push({
       icon: '🥩',
-      title: `Te faltan ${Math.round(remaining.protein)}g de proteína`,
+      title: t('nutrition.suggestions.proteinNeeded', { amount: Math.round(remaining.protein) }),
       description: desc,
       accent: 'text-sky-500',
       border: 'border-l-sky-500',
@@ -110,11 +112,11 @@ export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
   // Carbs
   if (needsCarbs) {
     const desc = carbFoods.length
-      ? `Opciones del catálogo: ${formatCatalogFoods(carbFoods, 'carbs')}.`
-      : `Opciones: ${FALLBACK.carbohidratos}.`
+      ? t('nutrition.suggestions.catalogOptions', { foods: formatCatalogFoods(carbFoods, 'carbs') })
+      : t('nutrition.suggestions.options', { foods: FALLBACK.carbohidratos })
     suggestions.push({
       icon: '🍚',
-      title: `Te faltan ${Math.round(remaining.carbs)}g de carbohidratos`,
+      title: t('nutrition.suggestions.carbsNeeded', { amount: Math.round(remaining.carbs) }),
       description: desc,
       accent: 'text-amber-400',
       border: 'border-l-amber-400',
@@ -124,11 +126,11 @@ export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
   // Fat
   if (needsFat) {
     const desc = fatFoods.length
-      ? `Opciones del catálogo: ${formatCatalogFoods(fatFoods, 'fat')}.`
-      : `Opciones: ${FALLBACK.grasas}.`
+      ? t('nutrition.suggestions.catalogOptions', { foods: formatCatalogFoods(fatFoods, 'fat') })
+      : t('nutrition.suggestions.options', { foods: FALLBACK.grasas })
     suggestions.push({
       icon: '🥑',
-      title: `Te faltan ${Math.round(remaining.fat)}g de grasa`,
+      title: t('nutrition.suggestions.fatNeeded', { amount: Math.round(remaining.fat) }),
       description: desc,
       accent: 'text-pink-500',
       border: 'border-l-pink-500',
@@ -139,7 +141,7 @@ export default function MealSuggestions({ remaining }: MealSuggestionsProps) {
 
   return (
     <div>
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">Sugerencias</div>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">{t('nutrition.suggestions')}</div>
       <div className="space-y-3">
         {suggestions.map((s, i) => (
           <Card key={i} className={cn('border-l-[3px]', s.border)}>

@@ -7,6 +7,7 @@ import {
   DialogFooter,
 } from './dialog'
 import { Button } from './button'
+import { useTranslation } from 'react-i18next'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -25,12 +26,15 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = 'Confirmar',
-  cancelLabel = 'Cancelar',
+  confirmLabel,
+  cancelLabel,
   variant = 'default',
   onConfirm,
   loading = false,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation()
+  const resolvedConfirmLabel = confirmLabel ?? t('common.confirm')
+  const resolvedCancelLabel = cancelLabel ?? t('common.cancel')
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[380px] max-sm:max-w-[90vw]" hideClose>
@@ -51,14 +55,14 @@ export function ConfirmDialog({
             }
             variant="outline"
           >
-            {loading ? 'Procesando...' : confirmLabel}
+            {loading ? t('common.processing') : resolvedConfirmLabel}
           </Button>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             className="font-mono text-[11px] tracking-wide"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

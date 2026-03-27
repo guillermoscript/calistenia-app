@@ -3,7 +3,7 @@
  * Infers program difficulty from exercise names.
  */
 
-export type DifficultyLevel = 'Principiante' | 'Intermedio' | 'Avanzado'
+import type { DifficultyLevel } from '../types'
 
 const ADVANCED_KEYWORDS = [
   'one-arm', 'one arm', 'muscle-up', 'muscle up', 'planche', 'front lever',
@@ -29,18 +29,18 @@ export function inferDifficulty(exercises: ExerciseLike[]): DifficultyLevel {
     .join(' ')
 
   if (ADVANCED_KEYWORDS.some(kw => allText.includes(kw))) {
-    return 'Avanzado'
+    return 'advanced'
   }
 
   if (INTERMEDIATE_KEYWORDS.some(kw => allText.includes(kw))) {
-    return 'Intermedio'
+    return 'intermediate'
   }
 
-  return 'Principiante'
+  return 'beginner'
 }
 
 export const DIFFICULTY_COLORS: Record<DifficultyLevel, { text: string; bg: string; border: string }> = {
-  Principiante: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-  Intermedio:   { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
-  Avanzado:     { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+  beginner:     { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  intermediate: { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
+  advanced:     { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
 }
