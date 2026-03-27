@@ -94,9 +94,9 @@ const DEFAULT_MUSCLE_GROUPS = [
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function inferCategory(exercise: Exercise, dayType: string): string {
-  const name = exercise.name.toLowerCase()
-  const muscles = exercise.muscles.toLowerCase()
-  const note = exercise.note.toLowerCase()
+  const name = localize(exercise.name, 'en').toLowerCase()
+  const muscles = localize(exercise.muscles, 'en').toLowerCase()
+  const note = localize(exercise.note, 'en').toLowerCase()
 
   // Skills
   if (name.includes('handstand') || name.includes('l-sit') || name.includes('muscle-up') ||
@@ -149,7 +149,7 @@ function inferDifficulty(phase: number): DifficultyLevel {
   return 'advanced'
 }
 
-function extractExercisesFromWorkouts(): CatalogExercise[] {
+function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] {
   const seen = new Map<string, CatalogExercise>()
 
   for (const [_key, workout] of Object.entries(WORKOUTS)) {
@@ -235,7 +235,7 @@ function extractExercisesFromWorkouts(): CatalogExercise[] {
     }
   }
 
-  return Array.from(seen.values()).sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
+  return Array.from(seen.values()).sort((a, b) => localize(a.name, locale).localeCompare(localize(b.name, locale)))
 }
 
 function mapPBRecord(rec: any): CatalogExercise {
@@ -321,7 +321,7 @@ function CategoryIcon({ category }: { category: string }) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ExerciseLibraryPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const l = useLocalize()
   const navigate = useNavigate()
   const [exercises, setExercises] = useState<CatalogExercise[]>([])
@@ -375,7 +375,7 @@ export default function ExerciseLibraryPage() {
       }
 
       if (!cancelled) {
-        setExercises(extractExercisesFromWorkouts())
+        setExercises(extractExercisesFromWorkouts(i18n.language))
         setLoading(false)
       }
     }
@@ -736,7 +736,7 @@ export default function ExerciseLibraryPage() {
                           catStyle.text, catStyle.bg, catStyle.border
                         )}
                       >
-                        {ex.category.toUpperCase()}
+                        {t(`exerciseLibrary.category.${ex.category}`).toUpperCase()}
                       </Badge>
                       {ex.difficulty && DIFFICULTY_STYLE[ex.difficulty] && (
                         <Badge

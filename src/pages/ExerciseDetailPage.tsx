@@ -68,28 +68,11 @@ const PRIORITY_COLORS: Record<Priority, { text: string; bg: string; border: stri
   low:  { text: 'text-sky-400',   bg: 'bg-sky-500/10',   border: 'border-sky-500/20' },
 }
 
-const PRIORITY_LABEL: Record<Priority, string> = {
-  high: 'Prioritario',
-  med:  'Importante',
-  low:  'Complementario',
-}
-
-const CATEGORY_LABEL: Record<string, string> = {
-  push: 'Empuje',
-  pull: 'Tiron',
-  legs: 'Piernas',
-  core: 'Core',
-  lumbar: 'Lumbar',
-  full: 'Full Body',
-  movilidad: 'Movilidad',
-  skill: 'Skill',
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function inferCategory(exercise: Exercise, dayType: string): string {
-  const name = exercise.name.toLowerCase()
-  const muscles = exercise.muscles.toLowerCase()
+  const name = localize(exercise.name, 'en').toLowerCase()
+  const muscles = localize(exercise.muscles, 'en').toLowerCase()
 
   if (name.includes('handstand') || name.includes('l-sit') || name.includes('muscle-up') ||
       name.includes('front lever') || name.includes('back lever') || name.includes('planche') ||
@@ -197,18 +180,14 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
   return null
 }
 
-function findRelatedWorkouts(exerciseId: string): (RelatedProgram & { durationMin: number })[] {
+function findRelatedWorkouts(exerciseId: string, t: (key: string, opts?: Record<string, unknown>) => string): (RelatedProgram & { durationMin: number })[] {
   const results: (RelatedProgram & { durationMin: number })[] = []
-  const DAY_NAMES: Record<string, string> = {
-    lun: 'Lunes', mar: 'Martes', mie: 'Miercoles',
-    jue: 'Jueves', vie: 'Viernes', sab: 'Sabado', dom: 'Domingo',
-  }
 
   for (const [key, workout] of Object.entries(WORKOUTS)) {
     if (workout.exercises.some(ex => ex.id === exerciseId)) {
       results.push({
         id: key,
-        name: `Fase ${workout.phase} — ${DAY_NAMES[workout.day] || workout.day}`,
+        name: `${t('nav.phase')} ${workout.phase} — ${t(`day.${workout.day}`)}`,
         phase: workout.phase,
         day: workout.day,
         title: workout.title,
@@ -395,8 +374,8 @@ export default function ExerciseDetailPage() {
   // Related workouts and similar exercises
   const relatedWorkouts = useMemo(() => {
     if (!exercise) return []
-    return findRelatedWorkouts(exercise.id)
-  }, [exercise])
+    return findRelatedWorkouts(exercise.id, t)
+  }, [exercise, t])
 
   const similarExercises = useMemo(() => {
     if (!exercise) return []
