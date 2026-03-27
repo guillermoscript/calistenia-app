@@ -223,7 +223,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     if (!granted) {
       const support = getNotificationSupport()
       if (support.permission === 'default') {
-        setWarning('Necesitas permitir notificaciones para recibir recordatorios.')
+        setWarning(t('reminders.permissionNeeded'))
       }
       return
     }
@@ -232,7 +232,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       const ok = await subscribeToPush(userId)
       setPushEnabled(ok)
       if (!ok) {
-        setWarning('Las notificaciones funcionaran mientras la app este abierta. Para alertas con la app cerrada, instala la app desde el menu del navegador.')
+        setWarning(t('reminders.pushNotAvailable'))
       }
     }
   }
@@ -271,7 +271,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       setEditingItem(null)
     } catch (e: any) {
       console.error('Update reminder error:', e)
-      setError(e?.message || 'No se pudo actualizar. Intenta de nuevo.')
+      setError(e?.message || t('reminders.updateError'))
     } finally {
       setSaving(false)
     }
@@ -297,7 +297,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         const startH = Math.min(23, Math.max(0, parseInt(pauseHourStart) || 9))
         const endH = Math.min(23, Math.max(0, parseInt(pauseHourEnd) || 18))
         if (startH >= endH) {
-          setError('La hora de inicio debe ser menor que la hora de fin.')
+          setError(t('reminders.startBeforeEnd'))
           return
         }
         for (let hr = startH; hr < endH; hr++) {
@@ -315,7 +315,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       // handles this, causing newly created reminders to miss scheduling.
       queueMicrotask(reschedule)
     } catch {
-      setError('No se pudo guardar. Intenta de nuevo.')
+      setError(t('reminders.saveError'))
     } finally {
       setSaving(false)
     }

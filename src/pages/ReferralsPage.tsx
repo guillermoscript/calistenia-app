@@ -115,6 +115,7 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
 }
 
 function ReferralLinkCard({ referralCode }: { referralCode: string }) {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const inviteUrl = `https://gym.guille.tech/invite/${referralCode}`
 
@@ -140,8 +141,8 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Entrena conmigo en Calistenia App',
-          text: 'Te invito a entrenar juntos. Usa mi link para registrarte:',
+          title: t('referrals.shareTitle'),
+          text: t('referrals.shareText'),
           url: inviteUrl,
         })
       } catch { /* user cancelled */ }
@@ -165,7 +166,7 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
               ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
               : 'border-border bg-muted text-muted-foreground hover:text-foreground hover:border-border/70'
           )}
-          title="Copiar link"
+          title={t('referrals.copyLink')}
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
         </button>

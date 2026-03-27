@@ -150,6 +150,16 @@
   "reminder.pause.body": "Stand up, stretch and move — your body will thank you",
   "reminder.meal.body": "Don't skip this meal — your body needs it",
 
+  "reminders.permissionNeeded": "You need to allow notifications to receive reminders.",
+  "reminders.pushNotAvailable": "Notifications will work while the app is open. For alerts when the app is closed, install the app from the browser menu.",
+  "reminders.updateError": "Could not update. Please try again.",
+  "reminders.startBeforeEnd": "Start time must be before end time.",
+  "reminders.saveError": "Could not save. Please try again.",
+
+  "referrals.shareTitle": "Train with me on Calistenia App",
+  "referrals.shareText": "I invite you to train together. Use my link to sign up:",
+  "referrals.copyLink": "Copy link",
+
   "toast.newVersion": "New version available",
   "toast.newVersionDesc": "Update to get the latest improvements.",
   "toast.update": "Update",

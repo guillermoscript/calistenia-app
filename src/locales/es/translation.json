@@ -148,6 +148,16 @@
   "reminder.workout.body": "Tu entrenamiento te espera. No pierdas la racha!",
   "reminder.pause.title": "Pausa Activa",
   "reminder.pause.body": "Levántate, estira y muévete — tu cuerpo lo agradece",
+
+  "reminders.permissionNeeded": "Necesitas permitir notificaciones para recibir recordatorios.",
+  "reminders.pushNotAvailable": "Las notificaciones funcionarán mientras la app esté abierta. Para alertas con la app cerrada, instala la app desde el menú del navegador.",
+  "reminders.updateError": "No se pudo actualizar. Intenta de nuevo.",
+  "reminders.startBeforeEnd": "La hora de inicio debe ser menor que la hora de fin.",
+  "reminders.saveError": "No se pudo guardar. Intenta de nuevo.",
+
+  "referrals.shareTitle": "Entrena conmigo en Calistenia App",
+  "referrals.shareText": "Te invito a entrenar juntos. Usa mi link para registrarte:",
+  "referrals.copyLink": "Copiar link",
   "reminder.meal.body": "No te saltes esta comida — tu cuerpo lo necesita",
 
   "toast.newVersion": "Nueva versión disponible",
