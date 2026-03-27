@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { Input } from '../ui/input'
 import { useFoodCatalog } from '../../hooks/useFoodCatalog'
@@ -19,6 +20,7 @@ type OptionItem =
   | { type: 'ai' }
 
 export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoods = [], className }: FoodNameInputProps) {
+  const { t } = useTranslation()
   const [catalogResults, setCatalogResults] = useState<FoodItem[]>([])
   const [recentResults, setRecentResults] = useState<FoodItem[]>([])
   const [offResults, setOffResults] = useState<(FoodItem & { imageUrl?: string })[]>([])
@@ -216,14 +218,14 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
   if (recentResults.length > 0) {
     sections.push({
       key: 'recientes',
-      label: 'RECIENTES',
+      label: t('nutrition.recent'),
       items: recentResults.map(f => ({ section: 'recientes' as const, food: f })),
     })
   }
   if (dedupedCatalog.length > 0) {
     sections.push({
       key: 'catalogo',
-      label: 'GUARDADOS',
+      label: t('nutrition.saved'),
       items: dedupedCatalog.map(f => ({ section: 'catalogo' as const, food: f })),
     })
   }
@@ -236,7 +238,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
         value={value}
         onChange={e => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Nombre del alimento"
+        placeholder={t('nutrition.foodNamePlaceholder')}
         className={cn('h-8 text-base', className)}
         onFocus={() => { if (hasAnyResults || value.trim().length >= 2) setOpen(true) }}
         maxLength={200}
@@ -245,7 +247,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
         aria-controls={listboxId}
         aria-activedescendant={activeOptionId}
         aria-autocomplete="list"
-        aria-label="Buscar alimento"
+        aria-label={t('nutrition.searchFood')}
       />
 
       {/* Dropdown */}
@@ -259,7 +261,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
         >
           {searching && sections.length === 0 && (
             <div className="px-3 py-3 text-xs text-muted-foreground" role="status">
-              Buscando...
+              {t('common.searching')}
             </div>
           )}
 

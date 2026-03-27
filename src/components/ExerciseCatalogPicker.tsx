@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog'
+import { useTranslation } from 'react-i18next'
 import { useWgerSearch } from '../hooks/useWgerSearch'
 import WgerResultCard from './WgerResultCard'
 import type { EditorExercise } from '../hooks/useProgramEditor'
@@ -105,6 +106,7 @@ function extractFallbackCatalog(): CatalogExercise[] {
 }
 
 export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalogPickerProps) {
+  const { t } = useTranslation()
   const l = useLocalize()
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
@@ -181,16 +183,16 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
       <DialogContent className="max-w-[600px] max-sm:max-w-[95vw] max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">CATÁLOGO</div>
-          <DialogTitle className="font-bebas text-[28px] leading-none">AGREGAR EJERCICIO</DialogTitle>
+          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">{t('exercisePicker.catalogLabel')}</div>
+          <DialogTitle className="font-bebas text-[28px] leading-none">{t('exercisePicker.addExercise')}</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Busca y selecciona ejercicios del catálogo
+            {t('exercisePicker.description')}
           </DialogDescription>
         </DialogHeader>
 
         {/* Search */}
         <Input
-          placeholder="Buscar por nombre o músculo..."
+          placeholder={t('exercisePicker.searchPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="text-sm"
@@ -217,17 +219,17 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
         {/* Exercise list */}
         <div className="flex-1 overflow-y-auto min-h-0 -mx-6 px-6 space-y-1.5">
           {loading ? (
-            <Loader label="Cargando catálogo..." className="py-12" />
+            <Loader label={t('exercisePicker.loading')} className="py-12" />
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground mb-4">No se encontraron ejercicios</p>
+              <p className="text-sm text-muted-foreground mb-4">{t('exercisePicker.noResults')}</p>
               {search.length >= 3 && wgerResults.length === 0 && (
                 <button
                   onClick={() => doWgerSearch(search)}
                   disabled={wgerLoading}
                   className="px-4 py-2 rounded-lg text-xs font-mono tracking-wide bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 transition-all disabled:opacity-50"
                 >
-                  {wgerLoading ? 'Buscando...' : 'Buscar en wger →'}
+                  {wgerLoading ? t('exercisePicker.searching') : t('exercisePicker.searchWger')}
                 </button>
               )}
               {wgerError && wgerResults.length === 0 && !wgerLoading && (

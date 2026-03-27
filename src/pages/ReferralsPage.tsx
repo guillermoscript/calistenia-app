@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useReferrals } from '../hooks/useReferrals'
 import { useReferralPoints, type PointTransaction } from '../hooks/useReferralPoints'
 import { useChallengeExpress } from '../hooks/useChallengeExpress'
@@ -17,6 +18,7 @@ interface ReferralsPageProps {
 }
 
 export default function ReferralsPage({ userId }: ReferralsPageProps) {
+  const { t } = useTranslation()
   const { referrals, stats, loading: refLoading, getReferrals, getReferralStats } = useReferrals(userId)
   const { transactions, loading: ptsLoading, getTransactions } = useReferralPoints(userId)
   const { createExpress } = useChallengeExpress(userId)
@@ -43,7 +45,7 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
   if (loading && referrals.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16">
-        <Loader label="Cargando referidos..." />
+        <Loader label={t('referrals.loading')} />
       </div>
     )
   }
@@ -86,18 +88,18 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
 
       {/* Tabs */}
       <div className="flex border-b border-border mb-4">
-        {(['referrals', 'history'] as const).map(t => (
+        {(['referrals', 'history'] as const).map(tabKey => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={cn(
               'flex-1 py-3 text-xs tracking-[0.2em] font-medium transition-colors uppercase border-b-2 -mb-px',
-              tab === t
+              tab === tabKey
                 ? 'text-foreground border-[hsl(var(--lime))]'
                 : 'text-muted-foreground border-transparent hover:text-foreground/70'
             )}
           >
-            {t === 'referrals' ? 'Referidos' : 'Historial'}
+            {tabKey === 'referrals' ? 'Referidos' : 'Historial'}
           </button>
         ))}
       </div>
@@ -181,10 +183,11 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
 }
 
 function TransactionHistory({ transactions }: { transactions: PointTransaction[] }) {
+  const { t } = useTranslation()
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12 text-sm text-muted-foreground">
-        Sin transacciones aun
+        {t('referrals.noTransactions')}
       </div>
     )
   }

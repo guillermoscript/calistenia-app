@@ -240,7 +240,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               <button
                                 onClick={() => onDuplicateEntry(entry)}
                                 className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-lime hover:bg-lime/10 transition-colors"
-                                aria-label="Duplicar"
+                                aria-label={t('common.duplicate')}
                               >
                                 <CopyIcon className="size-3.5" />
                               </button>
@@ -249,7 +249,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               <button
                                 onClick={() => setEditingEntry(entry)}
                                 className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
-                                aria-label="Editar"
+                                aria-label={t('common.edit')}
                               >
                                 <EditIcon className="size-3.5" />
                               </button>
@@ -258,7 +258,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               <button
                                 onClick={() => setDeleteConfirmId(entry.id!)}
                                 className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                                aria-label="Eliminar"
+                                aria-label={t('common.delete')}
                               >
                                 <TrashIcon className="size-3.5" />
                               </button>
