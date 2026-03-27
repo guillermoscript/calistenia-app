@@ -101,6 +101,32 @@ function inferCategory(exercise: Exercise, dayType: string): string {
 }
 
 function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
+  // Check catalog JSON first (has i18n translations)
+  const cats = (catalogData as any).categories || {}
+  for (const catData of Object.values(cats) as any[]) {
+    const found = (catData.exercises || []).find((ex: any) => ex.id === idOrSlug)
+    if (found) {
+      return {
+        id: found.id,
+        slug: found.id,
+        name: found.name,
+        muscles: found.muscles || '',
+        category: found.category || 'full',
+        priority: found.priority || 'med',
+        sets: found.sets ?? 3,
+        reps: found.reps || '8-12',
+        rest: found.rest ?? 60,
+        note: found.note || '',
+        youtube: found.youtube_query || '',
+        isTimer: found.isTimer || false,
+        timerSeconds: found.timerSeconds,
+        demoImages: found.images?.length ? found.images : undefined,
+        description: found.note || '',
+      }
+    }
+  }
+
+  // Fallback: check WORKOUTS (plain strings, no i18n)
   for (const [_key, workout] of Object.entries(WORKOUTS)) {
     const dayType = workout.day === 'lun' ? 'push'
       : workout.day === 'mar' ? 'pull'
@@ -149,31 +175,6 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
       isTimer: supp.isTimer,
       timerSeconds: supp.timerSeconds,
       description: supp.note,
-    }
-  }
-
-  // Check catalog JSON
-  const cats = (catalogData as any).categories || {}
-  for (const catData of Object.values(cats) as any[]) {
-    const found = (catData.exercises || []).find((ex: any) => ex.id === idOrSlug)
-    if (found) {
-      return {
-        id: found.id,
-        slug: found.id,
-        name: found.name,
-        muscles: found.muscles || '',
-        category: found.category || 'full',
-        priority: found.priority || 'med',
-        sets: found.sets ?? 3,
-        reps: found.reps || '8-12',
-        rest: found.rest ?? 60,
-        note: found.note || '',
-        youtube: found.youtube_query || '',
-        isTimer: found.isTimer || false,
-        timerSeconds: found.timerSeconds,
-        demoImages: found.images?.length ? found.images : undefined,
-        description: found.note || '',
-      }
     }
   }
 
