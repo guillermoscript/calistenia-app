@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import i18n from '../lib/i18n'
 import { pb } from '../lib/pocketbase'
 import { searchWger, getWgerExerciseInfo, downloadWgerImage } from '../lib/wger'
 import { mapWgerToExerciseCatalog } from '../lib/wger-mappings'
@@ -18,10 +19,10 @@ export function useWgerSearch() {
       const results = await searchWger(term, language)
       setWgerResults(results)
       if (results.length === 0) {
-        setWgerError('No se encontraron ejercicios en wger')
+        setWgerError(i18n.t('wger.noResults'))
       }
     } catch {
-      setWgerError('Error al buscar en wger')
+      setWgerError(i18n.t('wger.searchError'))
       setWgerResults([])
     } finally {
       setWgerLoading(false)

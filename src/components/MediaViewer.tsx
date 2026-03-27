@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ interface MediaViewerProps {
 }
 
 export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
+  const { t } = useTranslation()
   const [imgIdx, setImgIdx] = useState<number>(0)
 
   const images = exercise.demoImages || []
@@ -55,7 +57,7 @@ export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
             <div className="p-5 flex flex-col gap-4">
               {!hasMedia ? (
                 <div className="flex items-center justify-center py-12 text-muted-foreground font-mono text-sm tracking-wide">
-                  Sin media disponible
+                  {t('media.noMedia')}
                 </div>
               ) : (
                 <>
@@ -119,7 +121,7 @@ export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
                   <polygon points="13,6 13,16 22,11" fill="white"/>
                 </svg>
                 <div>
-                  <div className="font-semibold text-sm mb-0.5">Buscar en YouTube</div>
+                  <div className="font-semibold text-sm mb-0.5">{t('media.searchYouTube')}</div>
                   <div className="text-[12px] text-muted-foreground">Resultados para: &quot;{exercise.youtube}&quot;</div>
                 </div>
                 <div className="ml-auto text-muted-foreground text-lg">&nearr;</div>
@@ -137,7 +139,7 @@ export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
                   </svg>
                 </div>
                 <div>
-                  <div className="font-medium text-sm mb-0.5">Buscar en Google</div>
+                  <div className="font-medium text-sm mb-0.5">{t('media.searchGoogle')}</div>
                   <div className="text-[12px] text-muted-foreground">Resultados generales + videos</div>
                 </div>
                 <div className="ml-auto text-muted-foreground text-lg">&nearr;</div>
@@ -153,7 +155,7 @@ export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
                   </svg>
                 </div>
                 <div>
-                  <div className="font-medium text-sm mb-0.5">Copiar al portapapeles</div>
+                  <div className="font-medium text-sm mb-0.5">{t('media.copyToClipboard')}</div>
                   <div className="text-[12px] text-muted-foreground font-mono">{exercise.youtube}</div>
                 </div>
               </button>

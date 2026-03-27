@@ -8,6 +8,38 @@ const LS_SETTINGS = 'calistenia_settings'
 
 const DEFAULT_SETTINGS: Settings = { phase: 1, startDate: null, weeklyGoal: 5 }
 
+// ─── PR pattern matching (module-level) ─────────────────────────────────────
+const PR_PATTERNS: Array<{ test: (id: string) => boolean; key: keyof Settings }> = [
+  { test: (id) => id.includes('pullup') || id.includes('chinup') || id === 'chin_up', key: 'pr_pullups' },
+  { test: (id) => id.includes('pushup'), key: 'pr_pushups' },
+  { test: (id) => id.startsWith('lsit') || id === 'l_sit', key: 'pr_lsit' },
+  { test: (id) => id.startsWith('pistol'), key: 'pr_pistol' },
+  { test: (id) => id.startsWith('handstand'), key: 'pr_handstand' },
+]
+
+/** Scan all logged sets and return PR updates that exceed current values */
+const computePRBackfill = (sets: any[], currentSettings: Settings): Partial<Settings> | null => {
+  const maxPRs: Partial<Record<keyof Settings, number>> = {}
+  for (const s of sets) {
+    const repsNum = parseInt(s.reps)
+    if (isNaN(repsNum) || repsNum <= 0) continue
+    const match = PR_PATTERNS.find(p => p.test(s.exercise_id))
+    if (!match) continue
+    const cur = (maxPRs[match.key] as number) || 0
+    if (repsNum > cur) maxPRs[match.key] = repsNum
+  }
+  const updates: Partial<Settings> = {}
+  let hasUpdates = false
+  for (const [key, val] of Object.entries(maxPRs)) {
+    const stored = (currentSettings as unknown as Record<string, number>)[key] || 0
+    if ((val as number) > stored) {
+      ;(updates as any)[key] = val
+      hasUpdates = true
+    }
+  }
+  return hasUpdates ? updates : null
+}
+
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const lsGet = (): ProgressMap => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} } }
 const lsSet = (d: ProgressMap): void => { localStorage.setItem(LS_KEY, JSON.stringify(d)) }
@@ -162,6 +194,12 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
             pr_pistol:    settingsRec.pr_pistol     || 0,
             pr_handstand: settingsRec.pr_handstand  || 0,
           }
+          // Backfill PRs from logged sets
+          const prUpdates = computePRBackfill(setsRes.items, s)
+          if (prUpdates) {
+            Object.assign(s, prUpdates)
+            pb.collection('settings').update(settingsRec.id, prUpdates).catch(() => {})
+          }
           setSettingsState(s)
           lsSetSettings(s)
         } else {
@@ -176,6 +214,12 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
               phase: s.phase,
               start_date: s.startDate,
               weekly_goal: s.weeklyGoal,
+            }).then((rec: any) => {
+              const prUpdates = computePRBackfill(setsRes.items, s)
+              if (prUpdates) {
+                pb.collection('settings').update(rec.id, prUpdates).catch(() => {})
+                setSettingsState(prev => ({ ...prev, ...prUpdates }))
+              }
             }).catch(() => {}) // No bloquear si falla
           }
         }
@@ -382,18 +426,12 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
   }, [settings, usePB, userId])
 
   // ─── Auto-detect PRs ─────────────────────────────────────────────────────
-  const PR_MAP: Record<string, keyof Settings> = {
-    'pullup': 'pr_pullups', 'neg_pullup': 'pr_pullups', 'chinup': 'pr_pullups',
-    'pushup_std': 'pr_pushups', 'pushup': 'pr_pushups', 'diamond_pushup': 'pr_pushups',
-    'lsit': 'pr_lsit', 'l_sit': 'pr_lsit',
-    'pistol': 'pr_pistol', 'pistol_squat': 'pr_pistol',
-    'handstand': 'pr_handstand', 'handstand_hold': 'pr_handstand',
-  }
   const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string) => {
     const repsNum = parseInt(reps)
     if (isNaN(repsNum) || repsNum <= 0) return
-    const prKey = PR_MAP[exerciseId]
-    if (!prKey) return
+    const match = PR_PATTERNS.find(p => p.test(exerciseId))
+    if (!match) return
+    const prKey = match.key
     const current = (settings as unknown as Record<string, number>)[prKey] || 0
     if (repsNum > current) {
       await updateSettings({ [prKey]: repsNum } as Partial<Settings>)

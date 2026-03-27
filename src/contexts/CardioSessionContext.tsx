@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
+import i18n from '../lib/i18n'
 import { pb } from '../lib/pocketbase'
 import {
   haversineDistance, calculateElevationGain,
@@ -187,7 +188,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
-      setError('Geolocalización no disponible')
+      setError(i18n.t('cardioSession.geoNotAvailable'))
       return
     }
 

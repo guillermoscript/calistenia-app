@@ -3,6 +3,7 @@
  */
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { pb } from '../lib/pocketbase'
 import { cn } from '../lib/utils'
 import { todayStr, daysAgoStr, nowLocalForPB } from '../lib/dateUtils'
@@ -31,7 +32,7 @@ function lsSaveCheck(check: LumbarCheck): void {
   localStorage.setItem(LS_KEY, JSON.stringify(checks))
 }
 
-const PAIN_LABELS: Record<PainLevel, string> = { 1: 'Sin dolor', 2: 'Leve', 3: 'Moderado', 4: 'Fuerte', 5: 'Intenso' }
+const PAIN_LABEL_KEYS: Record<PainLevel, string> = { 1: 'lumbarCheck.pain0', 2: 'lumbarCheck.pain1', 3: 'lumbarCheck.pain2', 4: 'lumbarCheck.pain3', 5: 'lumbarCheck.pain4' }
 
 // Semantic Tailwind classes per pain level
 const PAIN_BORDER: Record<PainLevel, string> = {
@@ -56,6 +57,7 @@ interface LumbarCheckModalProps {
 }
 
 export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckModalProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [step, setStep]             = useState<number>(0)
   const [lumbarScore, setLumbarScore] = useState<PainLevel | null>(null)
@@ -103,9 +105,9 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
         hideClose
       >
         <DialogHeader className="mb-2">
-          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1.5">CHEQUEO MATUTINO</div>
-          <DialogTitle className="font-bebas text-[32px] leading-none">¿Cómo estás hoy?</DialogTitle>
-          <DialogDescription className="text-[13px]">30 segundos · Solo una vez al día</DialogDescription>
+          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1.5">{t('lumbarCheck.label')}</div>
+          <DialogTitle className="font-bebas text-[32px] leading-none">{t('lumbarCheck.title')}</DialogTitle>
+          <DialogDescription className="text-[13px]">{t('lumbarCheck.subtitle')}</DialogDescription>
         </DialogHeader>
 
         {/* Step indicator — now 3 steps: lumbar, sleep status, sitting */}
@@ -123,7 +125,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
         {/* Step 0: Lumbar pain */}
         {step === 0 && (
           <div>
-            <div className="text-base font-semibold mb-5">¿Cómo está tu lumbar hoy?</div>
+            <div className="text-base font-semibold mb-5">{t('lumbarCheck.lumbarQuestion')}</div>
             <div className="flex gap-2.5 mb-5">
               {([1, 2, 3, 4, 5] as PainLevel[]).map(n => (
                 <button
@@ -142,7 +144,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
             </div>
             {lumbarScore && (
               <div className={cn('font-mono text-[12px] mb-5 text-center', PAIN_TEXT[lumbarScore])}>
-                {PAIN_LABELS[lumbarScore]}
+                {t(PAIN_LABEL_KEYS[lumbarScore])}
               </div>
             )}
             <Button
@@ -150,7 +152,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
               onClick={() => setStep(1)}
               disabled={!lumbarScore}
             >
-              SIGUIENTE →
+              {t('lumbarCheck.next')}
             </Button>
           </div>
         )}
@@ -158,7 +160,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
         {/* Step 1: Sleep status (read-only from sleep tracking) */}
         {step === 1 && (
           <div>
-            <div className="text-base font-semibold mb-5">¿Cómo dormiste anoche?</div>
+            <div className="text-base font-semibold mb-5">{t('lumbarCheck.sleepQuestion')}</div>
 
             {sleepWellStatus !== null ? (
               // Sleep entry exists — show read-only badge
@@ -180,10 +182,10 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
                           : 'border-destructive/40 text-destructive bg-destructive/10',
                       )}
                     >
-                      {sleepWellStatus ? 'Dormiste bien' : 'Dormiste mal'}
+                      {sleepWellStatus ? t('lumbarCheck.sleptWell') : t('lumbarCheck.sleptBadly')}
                     </Badge>
                     <div className="text-[11px] text-muted-foreground mt-1">
-                      Dato del registro de sueño
+                      {t('lumbarCheck.sleepDataNote')}
                     </div>
                   </div>
                 </div>
@@ -194,7 +196,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
                 <div className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card">
                   <div className="text-2xl">🌙</div>
                   <div className="flex-1">
-                    <div className="text-sm text-muted-foreground mb-1">No hay registro de sueño</div>
+                    <div className="text-sm text-muted-foreground mb-1">{t('lumbarCheck.noSleepRecord')}</div>
                     <button
                       onClick={() => {
                         onSkip()
@@ -202,7 +204,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
                       }}
                       className="text-sm text-indigo-400 hover:text-indigo-300 font-medium underline underline-offset-2 transition-colors"
                     >
-                      Registrar sueño primero
+                      {t('lumbarCheck.recordSleepFirst')}
                     </button>
                   </div>
                 </div>
@@ -213,7 +215,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
               className="w-full font-bebas text-lg"
               onClick={() => setStep(2)}
             >
-              SIGUIENTE →
+              {t('lumbarCheck.next')}
             </Button>
           </div>
         )}
@@ -221,8 +223,8 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
         {/* Step 2: Sitting hours */}
         {step === 2 && (
           <div>
-            <div className="text-base font-semibold mb-2">¿Cuántas horas sentado ayer?</div>
-            <div className="text-[13px] text-muted-foreground mb-5">Incluye trabajo + comidas + pantallas.</div>
+            <div className="text-base font-semibold mb-2">{t('lumbarCheck.seatedQuestion')}</div>
+            <div className="text-[13px] text-muted-foreground mb-5">{t('lumbarCheck.seatedHint')}</div>
             <div className="flex gap-2 mb-6 flex-wrap">
               {['2', '4', '6', '8', '10', '12+'].map(h => {
                 const val = h === '12+' ? '12' : h
@@ -248,7 +250,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
               onClick={handleSave}
               disabled={!sittingHours || saving}
             >
-              {saving ? 'GUARDANDO...' : 'GUARDAR ✓'}
+              {saving ? t('lumbarCheck.saving') : t('lumbarCheck.save')}
             </Button>
           </div>
         )}
@@ -259,7 +261,7 @@ export default function LumbarCheckModal({ user, onDone, onSkip }: LumbarCheckMo
           onClick={onSkip}
           className="mt-2 w-full font-mono text-[11px] tracking-wide text-muted-foreground"
         >
-          SALTAR POR HOY
+          {t('lumbarCheck.skipToday')}
         </Button>
       </DialogContent>
     </Dialog>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import {
   Dialog,
@@ -12,6 +13,7 @@ interface YoutubeModalProps {
 }
 
 export default function YoutubeModal({ query, onClose }: YoutubeModalProps) {
+  const { t } = useTranslation()
   const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
   const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(query + ' tutorial video')}`
 
@@ -35,7 +37,7 @@ export default function YoutubeModal({ query, onClose }: YoutubeModalProps) {
               <polygon points="13,6 13,16 22,11" fill="white"/>
             </svg>
             <div>
-              <div className="font-semibold text-sm mb-0.5">Buscar en YouTube</div>
+              <div className="font-semibold text-sm mb-0.5">{t('media.searchYouTube')}</div>
               <div className="text-[12px] text-muted-foreground">Resultados para: "{query}"</div>
             </div>
             <div className="ml-auto text-muted-foreground text-lg">↗</div>
@@ -49,7 +51,7 @@ export default function YoutubeModal({ query, onClose }: YoutubeModalProps) {
           >
             <div className="size-8 rounded-md bg-sky-500/10 flex items-center justify-center text-base shrink-0">🔍</div>
             <div>
-              <div className="font-medium text-sm mb-0.5">Buscar en Google</div>
+              <div className="font-medium text-sm mb-0.5">{t('media.searchGoogle')}</div>
               <div className="text-[12px] text-muted-foreground">Resultados generales + videos</div>
             </div>
             <div className="ml-auto text-muted-foreground text-lg">↗</div>
@@ -61,7 +63,7 @@ export default function YoutubeModal({ query, onClose }: YoutubeModalProps) {
           >
             <div className="size-8 rounded-md bg-[hsl(var(--lime))]/8 flex items-center justify-center text-base shrink-0">📋</div>
             <div>
-              <div className="font-medium text-sm mb-0.5">Copiar búsqueda al portapapeles</div>
+              <div className="font-medium text-sm mb-0.5">{t('media.copySearchToClipboard')}</div>
               <div className="text-[12px] text-muted-foreground font-mono">{query}</div>
             </div>
           </button>

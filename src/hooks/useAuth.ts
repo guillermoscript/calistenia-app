@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
+import i18n from '../lib/i18n'
 import type { UserRole, UserTier } from '../types'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
@@ -145,7 +146,7 @@ export const useAuth = (): UseAuthReturn => {
       }
     } catch (err: any) {
       if (err?.isAbort) return // user closed popup
-      setAuthError(err?.message || 'Error al iniciar sesión con Google')
+      setAuthError(err?.message || i18n.t('auth.googleError'))
     } finally {
       setIsLoading(false)
     }
@@ -158,7 +159,7 @@ export const useAuth = (): UseAuthReturn => {
     try {
       await pb.collection('users').authWithPassword(email, password)
     } catch (err: any) {
-      setAuthError(err?.message || 'Error al iniciar sesión')
+      setAuthError(err?.message || i18n.t('auth.loginError'))
     } finally {
       setIsLoading(false)
     }
@@ -181,7 +182,7 @@ export const useAuth = (): UseAuthReturn => {
         justRegistered.current = true
       }
     } catch (err: any) {
-      setAuthError(err?.message || 'Error al crear cuenta')
+      setAuthError(err?.message || i18n.t('auth.signupError'))
     } finally {
       setIsLoading(false)
     }

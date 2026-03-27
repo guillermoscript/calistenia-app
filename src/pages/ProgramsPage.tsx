@@ -13,6 +13,7 @@ import { Badge } from '../components/ui/badge'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import type { ProgramMeta, UserRole } from '../types'
 import { ShareIcon, PlusIcon, EditIcon, SearchIcon } from '../components/icons/nav-icons'
+import i18n from '../lib/i18n'
 
 // ── Share helper ───────────────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ async function shareProgram(programId: string, programName: string) {
   const url = `${window.location.origin}/shared/${programId}`
   const shareData = {
     title: programName,
-    text: `Mira este programa de calistenia: ${programName}`,
+    text: i18n.t('programs.shareText', { name: programName }),
     url,
   }
 
@@ -36,10 +37,10 @@ async function shareProgram(programId: string, programName: string) {
   // Fallback: copy to clipboard
   try {
     await navigator.clipboard.writeText(url)
-    alert('Enlace copiado al portapapeles')
+    alert(i18n.t('programs.linkCopied'))
   } catch {
     // Last resort
-    prompt('Copia este enlace:', url)
+    prompt(i18n.t('programs.copyThisLink'), url)
   }
 }
 
