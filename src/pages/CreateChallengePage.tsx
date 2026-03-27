@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useChallenges } from '../hooks/useChallenges'
 import { useFollows } from '../hooks/useFollows'
@@ -9,22 +10,17 @@ import { Input } from '../components/ui/input'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import type { ChallengeMetric } from '../types'
 
-const METRICS: { id: ChallengeMetric; label: string; icon: string; desc: string }[] = [
-  { id: 'most_sessions', label: 'Sesiones', icon: '💪', desc: 'Quién entrena más días' },
-  { id: 'most_pullups', label: 'Pull-ups', icon: '🏋️', desc: 'Máximo de pull-ups' },
-  { id: 'most_pushups', label: 'Push-ups', icon: '🫸', desc: 'Máximo de push-ups' },
-  { id: 'longest_streak', label: 'Racha', icon: '🔥', desc: 'Mayor racha consecutiva' },
-  { id: 'most_lsit', label: 'L-sit', icon: '🧘', desc: 'Mayor tiempo en L-sit' },
-  { id: 'most_handstand', label: 'Handstand', icon: '🤸', desc: 'Mayor tiempo en handstand' },
-  { id: 'custom', label: 'Personalizado', icon: '✏️', desc: 'Define tu propia métrica' },
+const METRIC_IDS: { id: ChallengeMetric; icon: string }[] = [
+  { id: 'most_sessions', icon: '💪' },
+  { id: 'most_pullups', icon: '🏋️' },
+  { id: 'most_pushups', icon: '🫸' },
+  { id: 'longest_streak', icon: '🔥' },
+  { id: 'most_lsit', icon: '🧘' },
+  { id: 'most_handstand', icon: '🤸' },
+  { id: 'custom', icon: '✏️' },
 ]
 
-const DURATION_PRESETS = [
-  { label: '1 semana', days: 7 },
-  { label: '2 semanas', days: 14 },
-  { label: '1 mes', days: 30 },
-  { label: 'Personalizado', days: 0 },
-]
+const DURATION_DAYS = [7, 14, 30, 0]
 
 function addDays(date: string, days: number): string {
   const d = new Date(date)
@@ -37,6 +33,7 @@ interface CreateChallengePageProps {
 }
 
 export default function CreateChallengePage({ userId }: CreateChallengePageProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { createChallenge } = useChallenges(userId)
   const { following } = useFollows(userId)
@@ -129,7 +126,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
           id="challenge-title"
           value={title}
           onChange={e => setTitle(e.target.value)}
-          placeholder="Ej: Semana de pull-ups, Reto de 100 flexiones..."
+          placeholder={t('challenge.titlePlaceholder')}
           maxLength={60}
         />
       </div>
@@ -152,9 +149,9 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
 
       {/* Metric */}
       <fieldset className="mb-5">
-        <legend className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">Qué se compite</legend>
+        <legend className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">{t('challenge.whatToCompete')}</legend>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {METRICS.map(m => (
+          {METRIC_IDS.map(m => (
             <button
               key={m.id}
               onClick={() => setMetric(m.id)}
@@ -168,9 +165,9 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
             >
               <div className="text-[11px] font-medium">
                 <span className="mr-1.5">{m.icon}</span>
-                {m.label}
+                {t(`challenge.metric.${m.id}`)}
               </div>
-              <div className="text-[9px] opacity-60 mt-0.5">{m.desc}</div>
+              <div className="text-[9px] opacity-60 mt-0.5">{t(`challenge.metricDesc.${m.id}`)}</div>
             </button>
           ))}
         </div>
@@ -183,7 +180,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
               id="challenge-custom-metric"
               value={customMetric}
               onChange={e => setCustomMetric(e.target.value)}
-              placeholder="Ej: Km corridos, minutos de plancha, vasos de agua..."
+              placeholder={t('challenge.customMetricPlaceholder')}
               maxLength={40}
             />
           </div>
@@ -193,7 +190,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
       {/* Goal */}
       <div className="mb-5">
         <label htmlFor="challenge-goal" className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2 block">
-          Meta <span className="opacity-50">(opcional)</span>
+          {t('challenge.goal')} <span className="opacity-50">({t('challenge.optional')})</span>
         </label>
         <div className="flex items-center gap-3">
           <Input
@@ -201,33 +198,33 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
             type="number"
             value={goal}
             onChange={e => setGoal(e.target.value)}
-            placeholder="Ej: 100"
+            placeholder={t('challenge.goalPlaceholder')}
             min="1"
             className="w-32"
           />
           <span className="text-xs text-muted-foreground">
-            {isCustomMetric ? (customMetric || 'unidades') : METRICS.find(m => m.id === metric)?.label.toLowerCase() || ''}
+            {isCustomMetric ? (customMetric || t('challenge.units')) : t(`challenge.metric.${metric}`).toLowerCase()}
           </span>
         </div>
       </div>
 
       {/* Duration presets */}
       <fieldset className="mb-5">
-        <legend className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">Duración</legend>
+        <legend className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">{t('challenge.duration.label')}</legend>
         <div className="flex flex-wrap gap-2 mb-3">
-          {DURATION_PRESETS.map(p => (
+          {DURATION_DAYS.map(days => (
             <button
-              key={p.days}
-              onClick={() => handleDurationPreset(p.days)}
-              aria-pressed={durationPreset === p.days}
+              key={days}
+              onClick={() => handleDurationPreset(days)}
+              aria-pressed={durationPreset === days}
               className={cn(
                 'px-3 py-2.5 min-h-[44px] rounded-md text-[11px] font-medium transition-all duration-150 border active:scale-95',
-                durationPreset === p.days
+                durationPreset === days
                   ? 'text-lime border-lime/40 bg-lime/10'
                   : 'text-muted-foreground border-border hover:text-foreground',
               )}
             >
-              {p.label}
+              {days === 7 ? t('challenge.duration.1week') : days === 14 ? t('challenge.duration.2weeks') : days === 30 ? t('challenge.duration.1month') : t('challenge.duration.custom')}
             </button>
           ))}
         </div>
@@ -256,14 +253,14 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] text-muted-foreground tracking-widest uppercase">
-            Invitar amigos {selectedFriends.size > 0 && `(${selectedFriends.size})`}
+            {t('challenge.inviteFriends')} {selectedFriends.size > 0 && `(${selectedFriends.size})`}
           </span>
           {following.length > 1 && (
             <button
               onClick={selectAllFriends}
               className="text-[10px] text-lime hover:text-lime/80 transition-colors"
             >
-              {selectedFriends.size === following.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+              {selectedFriends.size === following.length ? t('challenge.deselectAll') : t('challenge.selectAll')}
             </button>
           )}
         </div>
@@ -335,7 +332,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
         disabled={!canSubmit || creating}
         className="w-full bg-lime text-lime-foreground hover:bg-lime/90 font-bebas text-lg tracking-wide h-12"
       >
-        {creating ? 'Creando...' : 'CREAR DESAFIO'}
+        {creating ? t('challenge.creating') : t('challenge.createButton')}
       </Button>
     </div>
   )

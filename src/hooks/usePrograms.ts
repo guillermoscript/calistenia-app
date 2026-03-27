@@ -94,8 +94,8 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
   })
 
   const defaults: Record<string, WeekDay> = {
-    sab: { id: 'sab', name: 'Sábado',  focus: 'Caminata activa', type: 'rest', color: '#888899' },
-    dom: { id: 'dom', name: 'Domingo', focus: 'Descanso total',  type: 'rest', color: '#888899' },
+    sab: { id: 'sab', name: i18n.t('day.saturday'),  focus: i18n.t('day.activeWalk'), type: 'rest', color: '#888899' },
+    dom: { id: 'dom', name: i18n.t('day.sunday'), focus: i18n.t('day.totalRest'),  type: 'rest', color: '#888899' },
   }
   for (const id of ['sab', 'dom']) {
     if (!seen[id]) seen[id] = defaults[id]

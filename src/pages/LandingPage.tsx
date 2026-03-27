@@ -61,9 +61,9 @@ function MockWorkoutCard() {
         <span className="text-xs text-lime font-medium">Fase 2</span>
       </div>
       {[
-        { name: 'Flexiones diamante', sets: '4×12', done: true },
-        { name: 'Dips en paralelas', sets: '3×10', done: true },
-        { name: 'Pike push-ups', sets: '3×8', done: false },
+        { name: 'Diamond Push-ups', sets: '4×12', done: true },
+        { name: 'Parallel Bar Dips', sets: '3×10', done: true },
+        { name: 'Pike Push-ups', sets: '3×8', done: false },
       ].map((ex, i) => (
         <div key={i} className="flex items-center gap-3 py-2.5 border-b border-[hsl(0_0%_10%)] last:border-0">
           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${

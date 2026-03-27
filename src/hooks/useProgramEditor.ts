@@ -91,8 +91,8 @@ const DAY_DEFAULTS: { dayId: string; dayName: string; focus: string; type: strin
   { dayId: 'mie', dayName: 'Miércoles', focus: 'Lumbar + Stretching', type: 'lumbar', color: '#f54242' },
   { dayId: 'jue', dayName: 'Jueves',    focus: 'Piernas + Glúteos',   type: 'legs',   color: '#f542c8' },
   { dayId: 'vie', dayName: 'Viernes',   focus: 'Full Body + Core',    type: 'full',   color: '#f5c842' },
-  { dayId: 'sab', dayName: 'Sábado',    focus: 'Caminata activa',     type: 'rest',   color: '#888899' },
-  { dayId: 'dom', dayName: 'Domingo',   focus: 'Descanso total',      type: 'rest',   color: '#888899' },
+  { dayId: 'sab', dayName: i18n.t('day.saturday'),    focus: i18n.t('day.activeWalk'),     type: 'rest',   color: '#888899' },
+  { dayId: 'dom', dayName: i18n.t('day.sunday'),   focus: i18n.t('day.totalRest'),      type: 'rest',   color: '#888899' },
 ]
 
 function buildDefaultDays(phaseCount: number): Record<string, EditorDay> {
@@ -273,13 +273,13 @@ export function useProgramEditor() {
   // ── Validation ──────────────────────────────────────────────────────────────
   const validate = useCallback((step: number): string | null => {
     if (step === 1) {
-      if (!state.info.name.trim()) return 'El nombre del programa es obligatorio'
-      if (state.info.durationWeeks < 1) return 'La duración debe ser al menos 1 semana'
+      if (!state.info.name.trim()) return i18n.t('programEditor.nameRequired')
+      if (state.info.durationWeeks < 1) return i18n.t('programEditor.minOneWeek')
     }
     if (step === 2) {
       for (let i = 0; i < state.phases.length; i++) {
-        if (!state.phases[i].name.trim()) return `La fase ${i + 1} necesita un nombre`
-        if (!state.phases[i].weeks.trim()) return `La fase ${i + 1} necesita las semanas`
+        if (!state.phases[i].name.trim()) return i18n.t('programEditor.phaseNeedsName', { n: i + 1 })
+        if (!state.phases[i].weeks.trim()) return i18n.t('programEditor.phaseNeedsWeeks', { n: i + 1 })
       }
     }
     return null
@@ -407,7 +407,7 @@ export function useProgramEditor() {
     } catch (e: any) {
       if (e?.code === 0) return // auto-cancelled, ignore
       console.error('useProgramEditor: loadProgram error', e)
-      setState(s => ({ ...s, error: 'Error al cargar el programa' }))
+      setState(s => ({ ...s, error: i18n.t('programEditor.loadError') }))
     }
   }, [])
 
@@ -552,7 +552,7 @@ export function useProgramEditor() {
       return programId
     } catch (e) {
       console.error('useProgramEditor: saveProgram error', e)
-      setState(s => ({ ...s, isSaving: false, error: 'Error al guardar el programa' }))
+      setState(s => ({ ...s, isSaving: false, error: i18n.t('programEditor.saveError') }))
       return null
     }
   }, [state.programId, state.info, state.phases, state.days])

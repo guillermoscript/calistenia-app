@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+import i18n from '../lib/i18n'
 import { getProductByBarcode, mapOFFToFoodItem, isIncompleteFood } from '../lib/openfoodfacts'
 import type { FoodItem } from '../types'
 
@@ -36,13 +37,13 @@ export function useBarcodeScanner(options?: BarcodeScannerOptions) {
       if (controller.signal.aborted) return null
 
       if (!offProduct) {
-        setError('No encontramos ese código de barras. Prueba escribiendo el nombre del producto.')
+        setError(i18n.t('barcode.notFound'))
         setLoading(false)
         return null
       }
       let food = mapOFFToFoodItem(offProduct)
       if (!food) {
-        setError('No encontramos ese código de barras. Prueba escribiendo el nombre del producto.')
+        setError(i18n.t('barcode.notFound'))
         setLoading(false)
         return null
       }
@@ -63,7 +64,7 @@ export function useBarcodeScanner(options?: BarcodeScannerOptions) {
       return food
     } catch (err) {
       if (controller.signal.aborted) return null
-      setError('No se pudo conectar. Revisa tu conexión e intenta de nuevo.')
+      setError(i18n.t('barcode.connectionError'))
       setLoading(false)
       return null
     }

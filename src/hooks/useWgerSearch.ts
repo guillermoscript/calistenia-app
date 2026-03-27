@@ -41,7 +41,7 @@ export function useWgerSearch() {
     setImporting(prev => new Set(prev).add(wgerId))
     try {
       const info = await getWgerExerciseInfo(wgerId)
-      if (!info) throw new Error('No se pudo obtener info del ejercicio')
+      if (!info) throw new Error(i18n.t('wger.fetchError'))
 
       const mapped = mapWgerToExerciseCatalog(info, language)
 

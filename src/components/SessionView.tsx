@@ -555,7 +555,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   max="999"
                   value={customWeight}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomWeight(e.target.value)}
-                  placeholder="Lastre kg"
+                  placeholder={t('session.weightPlaceholder')}
                   aria-label="Lastre en kilogramos"
                   className="w-[88px] h-9 text-xs"
                 />
@@ -567,7 +567,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                   value={customRpe}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomRpe(e.target.value)}
                   placeholder="RPE"
-                  title="Esfuerzo percibido (1-10)"
+                  title={t('session.rpeTitle')}
                   aria-label="RPE del 1 al 10"
                   className="w-[56px] h-9 text-xs"
                 />
@@ -576,7 +576,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                 <Input
                   value={customNote}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomNote(e.target.value)}
-                  placeholder="Nota opcional"
+                  placeholder={t('session.optionalNote')}
                   maxLength={200}
                   aria-label="Nota opcional"
                   className="flex-1 min-w-0 h-9 text-xs"
@@ -789,6 +789,7 @@ export default function SessionView({
   userName,
   avatarUrl,
 }: SessionViewProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const steps = useRef<Step[]>(buildSteps(workout.exercises)).current
 
@@ -1057,11 +1058,11 @@ export default function SessionView({
       <Dialog open={showExit} onOpenChange={setShowExit}>
         <DialogContent className="max-w-[320px] max-sm:max-w-[90vw]">
           <DialogHeader>
-            <DialogTitle className="font-bebas text-[28px] tracking-[2px]">¿Descartar sesión?</DialogTitle>
+            <DialogTitle className="font-bebas text-[28px] tracking-[2px]">{t('session.discardTitle')}</DialogTitle>
             <DialogDescription>
               {setsCount > 0
-                ? `Llevas ${setsCount} serie${setsCount > 1 ? 's' : ''} registrada${setsCount > 1 ? 's' : ''}. Se guardarán pero la sesión quedará marcada como incompleta.`
-                : 'La sesión se descartará sin guardar nada.'}
+                ? t('session.discardWithSets', { count: setsCount })
+                : t('session.discardEmpty')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col gap-2.5 sm:flex-col">
@@ -1070,7 +1071,7 @@ export default function SessionView({
               onClick={handleInterruptConfirm}
               className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 font-bebas text-lg tracking-wide"
             >
-              DESCARTAR SESIÓN
+              {t('session.discardButton')}
             </Button>
             <Button
               variant="outline"

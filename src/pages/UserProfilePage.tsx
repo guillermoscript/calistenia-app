@@ -43,7 +43,7 @@ const PR_DEFS = [
   { key: 'pr_pushups',   label: 'Push-ups',        unit: 'reps', goal: 50, accent: 'text-[hsl(var(--lime))]' },
   { key: 'pr_lsit',      label: 'L-sit',           unit: 's',    goal: 30, accent: 'text-amber-400' },
   { key: 'pr_pistol',    label: 'Pistol Squat',    unit: 'reps', goal: 1,  accent: 'text-pink-500' },
-  { key: 'pr_handstand', label: 'Handstand libre',  unit: 's',    goal: 60, accent: 'text-red-500' },
+  { key: 'pr_handstand', label: 'Freestanding Handstand', unit: 's', goal: 60, accent: 'text-red-500' },
 ]
 
 export default function UserProfilePage() {
@@ -265,8 +265,8 @@ export default function UserProfilePage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatBox label="Sesiones" value={profile.totalSessions} compareValue={comparing ? currentUserSessions : undefined} accent="text-[hsl(var(--lime))]" />
-        <StatBox label="Racha actual" value={profile.currentStreak} compareValue={comparing ? currentUserStreak : undefined} accent="text-sky-500" unit="dias" />
-        <StatBox label="Mejor racha" value={profile.bestStreak} accent="text-amber-400" unit="dias" />
+        <StatBox label={t('profile.currentStreak')} value={profile.currentStreak} compareValue={comparing ? currentUserStreak : undefined} accent="text-sky-500" unit={t('profile.days')} />
+        <StatBox label={t('profile.bestStreak')} value={profile.bestStreak} accent="text-amber-400" unit={t('profile.days')} />
         <StatBox label="Nivel" value={profile.level} accent="text-pink-500" />
       </div>
 
