@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
 import { errorResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
+import { localize } from "../lib/i18n.js";
 
 export function registerSmartTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
@@ -251,12 +252,12 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
             if (exercises.length > 0) {
               scheduledWorkout = {
                 workout_key: `p${currentPhase}_${todayDayId}`,
-                day_name: exercises[0].day_name,
-                day_focus: exercises[0].day_focus,
-                workout_title: exercises[0].workout_title,
+                day_name: localize(exercises[0].day_name),
+                day_focus: localize(exercises[0].day_focus),
+                workout_title: localize(exercises[0].workout_title),
                 exercise_count: exercises.length,
                 exercises: exercises.slice(0, 5).map((e) => ({
-                  name: e.exercise_name,
+                  name: localize(e.exercise_name),
                   sets: e.sets,
                   reps: e.reps,
                 })),

@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
 import { errorResult, ResponseFormat, PaginationSchema } from "../utils.js";
+import { localize, toTranslatable } from "../lib/i18n.js";
 
 export function registerProgramTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
@@ -44,8 +45,8 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           count: programs.length,
           programs: programs.map((p) => ({
             id: p.id,
-            name: p.name,
-            description: p.description,
+            name: localize(p.name),
+            description: localize(p.description),
             duration_weeks: p.duration_weeks,
             is_current: activeIds.has(p.id),
             is_selected: selectedIds.has(p.id),
@@ -147,28 +148,28 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         const output = {
           program: {
             id: program.id,
-            name: program.name,
-            description: program.description,
+            name: localize(program.name as string),
+            description: localize(program.description as string),
             duration_weeks: program.duration_weeks,
           },
           started_at: userProgram.started_at,
           phases: phases.map((ph) => ({
             phase_number: ph.phase_number,
-            name: ph.name,
+            name: localize(ph.name),
             weeks: ph.weeks,
             days: Object.entries(exercisesByPhaseDay[String(ph.phase_number)] ?? {}).map(
               ([day_id, exs]) => ({
                 day_id,
-                day_name: (exs[0] as Record<string, unknown>).day_name,
-                day_focus: (exs[0] as Record<string, unknown>).day_focus,
-                workout_title: (exs[0] as Record<string, unknown>).workout_title,
+                day_name: localize((exs[0] as Record<string, unknown>).day_name as string),
+                day_focus: localize((exs[0] as Record<string, unknown>).day_focus as string),
+                workout_title: localize((exs[0] as Record<string, unknown>).workout_title as string),
                 exercises: exs.map((e) => ({
                   exercise_id: e.exercise_id,
-                  name: e.exercise_name,
+                  name: localize(e.exercise_name),
                   sets: e.sets,
                   reps: e.reps,
                   rest_seconds: e.rest_seconds,
-                  muscles: e.muscles,
+                  muscles: localize(e.muscles),
                   is_timer: e.is_timer,
                   youtube: e.youtube || null,
                 })),
@@ -266,10 +267,10 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           content: [
             {
               type: "text",
-              text: `Program set to **${program.name}**. Use \`cal_get_current_program\` to see your full workout schedule.`,
+              text: `Program set to **${localize(program.name)}**. Use \`cal_get_current_program\` to see your full workout schedule.`,
             },
           ],
-          structuredContent: { program_id, name: program.name, started_at: new Date().toISOString() },
+          structuredContent: { program_id, name: localize(program.name), started_at: new Date().toISOString() },
         };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
@@ -330,7 +331,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           count: progressions.length,
           progressions: progressions.map((p) => ({
             exercise_id: p.exercise_id,
-            name: p.exercise_name,
+            name: localize(p.exercise_name),
             category: p.category,
             difficulty_order: p.difficulty_order,
             next_exercise_id: p.next_exercise_id || null,
@@ -395,8 +396,8 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     async (input) => {
       try {
         const record = await pb.collection("programs").create({
-          name: input.name,
-          description: input.description || "",
+          name: toTranslatable(input.name),
+          description: toTranslatable(input.description || ""),
           duration_weeks: input.duration_weeks || 0,
           difficulty: input.difficulty || "",
           is_active: true,
@@ -436,16 +437,16 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     async ({ program_id, ...updates }) => {
       try {
         const data: Record<string, unknown> = {};
-        if (updates.name !== undefined) data.name = updates.name;
-        if (updates.description !== undefined) data.description = updates.description;
+        if (updates.name !== undefined) data.name = toTranslatable(updates.name);
+        if (updates.description !== undefined) data.description = toTranslatable(updates.description);
         if (updates.duration_weeks !== undefined) data.duration_weeks = updates.duration_weeks;
         if (updates.difficulty !== undefined) data.difficulty = updates.difficulty;
         if (updates.is_active !== undefined) data.is_active = updates.is_active;
 
         const record = await pb.collection("programs").update(program_id, data);
         return {
-          content: [{ type: "text", text: `Updated program **${record.name}**` }],
-          structuredContent: { id: record.id, name: record.name },
+          content: [{ type: "text", text: `Updated program **${localize(record.name)}**` }],
+          structuredContent: { id: record.id, name: localize(record.name) },
         };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
@@ -470,7 +471,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         const program = await pb.collection("programs").getOne(program_id);
         await pb.collection("programs").delete(program_id);
         return {
-          content: [{ type: "text", text: `Deleted program **${program.name}**` }],
+          content: [{ type: "text", text: `Deleted program **${localize(program.name)}**` }],
         };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
@@ -503,7 +504,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         const record = await pb.collection("program_phases").create({
           program: input.program_id,
           phase_number: input.phase_number,
-          name: input.name,
+          name: toTranslatable(input.name),
           weeks: input.weeks || "",
           color: input.color || "",
           bg_color: input.bg_color || "",
@@ -543,14 +544,14 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     async ({ phase_id, ...updates }) => {
       try {
         const data: Record<string, unknown> = {};
-        if (updates.name !== undefined) data.name = updates.name;
+        if (updates.name !== undefined) data.name = toTranslatable(updates.name);
         if (updates.weeks !== undefined) data.weeks = updates.weeks;
         if (updates.color !== undefined) data.color = updates.color;
         if (updates.bg_color !== undefined) data.bg_color = updates.bg_color;
 
         const record = await pb.collection("program_phases").update(phase_id, data);
         return {
-          content: [{ type: "text", text: `Updated phase **${record.name}**` }],
+          content: [{ type: "text", text: `Updated phase **${localize(record.name)}**` }],
         };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
@@ -620,18 +621,18 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           program: input.program_id,
           phase_number: input.phase_number,
           day_id: input.day_id,
-          day_name: input.day_name || input.day_id,
-          day_focus: input.day_focus || "",
+          day_name: toTranslatable(input.day_name || input.day_id),
+          day_focus: toTranslatable(input.day_focus || ""),
           day_type: input.day_type || "",
           day_color: input.day_color || "",
-          workout_title: input.workout_title || "",
+          workout_title: toTranslatable(input.workout_title || ""),
           exercise_id: input.exercise_id || input.exercise_name.toLowerCase().replace(/\s+/g, "-"),
-          exercise_name: input.exercise_name,
+          exercise_name: toTranslatable(input.exercise_name),
           sets: input.sets,
           reps: input.reps,
           rest_seconds: input.rest_seconds,
-          muscles: input.muscles || "",
-          note: input.note || "",
+          muscles: toTranslatable(input.muscles || ""),
+          note: toTranslatable(input.note || ""),
           youtube: input.youtube || "",
           is_timer: input.is_timer,
           timer_seconds: input.timer_seconds || 0,
@@ -682,14 +683,17 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     },
     async ({ exercise_record_id, ...updates }) => {
       try {
+        const translatableKeys = new Set(['exercise_name', 'muscles', 'note']);
         const data: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(updates)) {
-          if (v !== undefined) data[k] = v;
+          if (v !== undefined) {
+            data[k] = translatableKeys.has(k) ? toTranslatable(v as string) : v;
+          }
         }
 
         const record = await pb.collection("program_exercises").update(exercise_record_id, data);
         return {
-          content: [{ type: "text", text: `Updated exercise **${record.exercise_name}**` }],
+          content: [{ type: "text", text: `Updated exercise **${localize(record.exercise_name)}**` }],
         };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
@@ -712,7 +716,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
       try {
         const record = await pb.collection("program_exercises").getOne(exercise_record_id);
         await pb.collection("program_exercises").delete(exercise_record_id);
-        return { content: [{ type: "text", text: `Removed **${record.exercise_name}** from program` }] };
+        return { content: [{ type: "text", text: `Removed **${localize(record.exercise_name)}** from program` }] };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -773,8 +777,8 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
       try {
         // 1. Create program
         const program = await pb.collection("programs").create({
-          name: input.name,
-          description: input.description || "",
+          name: toTranslatable(input.name),
+          description: toTranslatable(input.description || ""),
           duration_weeks: input.duration_weeks || 0,
           difficulty: input.difficulty || "",
           is_active: true,
@@ -793,7 +797,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           batch.collection("program_phases").create({
             program: program.id,
             phase_number: phaseNumber,
-            name: phase.name,
+            name: toTranslatable(phase.name),
             weeks: phase.weeks || "",
             sort_order: phaseNumber,
           });
@@ -806,16 +810,16 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
                 program: program.id,
                 phase_number: phaseNumber,
                 day_id: day.day_id,
-                day_name: day.day_name,
-                day_focus: day.day_focus || "",
-                workout_title: day.workout_title || "",
+                day_name: toTranslatable(day.day_name),
+                day_focus: toTranslatable(day.day_focus || ""),
+                workout_title: toTranslatable(day.workout_title || ""),
                 exercise_id: ex.exercise_id || ex.name.toLowerCase().replace(/\s+/g, "-"),
-                exercise_name: ex.name,
+                exercise_name: toTranslatable(ex.name),
                 sets: ex.sets,
                 reps: ex.reps,
                 rest_seconds: ex.rest_seconds,
-                muscles: ex.muscles || "",
-                note: ex.note || "",
+                muscles: toTranslatable(ex.muscles || ""),
+                note: toTranslatable(ex.note || ""),
                 youtube: ex.youtube || "",
                 is_timer: ex.is_timer,
                 timer_seconds: ex.timer_seconds || 0,
@@ -905,7 +909,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
 
         // Create new program
         const newProgram = await pb.collection("programs").create({
-          name: new_name || `${original.name} (copy)`,
+          name: new_name ? toTranslatable(new_name) : toTranslatable(`${localize(original.name)} (copy)`),
           description: original.description,
           duration_weeks: original.duration_weeks,
           difficulty: original.difficulty || "",
@@ -972,10 +976,10 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           content: [
             {
               type: "text",
-              text: `Duplicated **${original.name}** → **${newProgram.name}** (ID: ${newProgram.id})\nCopied ${phases.length} phases, ${exercises.length} exercises`,
+              text: `Duplicated **${localize(original.name)}** → **${localize(newProgram.name)}** (ID: ${newProgram.id})\nCopied ${phases.length} phases, ${exercises.length} exercises`,
             },
           ],
-          structuredContent: { id: newProgram.id, name: newProgram.name, phases: phases.length, exercises: exercises.length },
+          structuredContent: { id: newProgram.id, name: localize(newProgram.name), phases: phases.length, exercises: exercises.length },
         };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));

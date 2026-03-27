@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
 import { errorResult, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
+import { localize } from "../lib/i18n.js";
 import {
   ACHIEVEMENTS,
   XP_PER_SESSION,
@@ -222,7 +223,7 @@ async function checkAchievements(
         });
         hasBatchOps = true;
         if (isUnlocked && !existingUA.unlocked) {
-          newlyUnlocked.push(ach.name as string);
+          newlyUnlocked.push(localize(ach.name));
         }
       }
     } else {
@@ -487,8 +488,8 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
           const ua = progressMap.get(a.id);
           return {
             key: a.key as string,
-            name: a.name as string,
-            description: a.description as string,
+            name: localize(a.name),
+            description: localize(a.description),
             category: a.category as string,
             icon: a.icon as string,
             tier: a.tier as string,

@@ -88,6 +88,12 @@ export interface MappedExercise {
   source: 'wger'
   wger_id: number
   wger_language: string
+  /** i18n name object for PocketBase storage */
+  name_i18n: Record<string, string>
+  /** i18n description object for PocketBase storage */
+  description_i18n: Record<string, string>
+  /** i18n muscles object for PocketBase storage */
+  muscles_i18n: Record<string, string>
 }
 
 export function mapWgerToExerciseCatalog(
@@ -126,11 +132,32 @@ export function mapWgerToExerciseCatalog(
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
 
+  // Build i18n objects from available translations
+  const nameI18n: Record<string, string> = { [language]: name }
+  const descI18n: Record<string, string> = { [language]: description }
+
+  // Add English translation if available and different from target language
+  if (language !== 'en' && enTranslation?.name) {
+    nameI18n.en = enTranslation.name
+    descI18n.en = (enTranslation.description || '').replace(/<[^>]*>/g, '').trim()
+  }
+  // Add Spanish translation if available and different from target language
+  if (language !== 'es' && targetTranslation?.name) {
+    // targetTranslation is already the requested language; try to find Spanish
+    const esTranslation = info.translations?.find(t => t.language === WGER_LANGUAGE_IDS.es)
+    if (esTranslation?.name) {
+      nameI18n.es = esTranslation.name
+      descI18n.es = (esTranslation.description || '').replace(/<[^>]*>/g, '').trim()
+    }
+  }
+
+  const musclesStr = muscleNames.join(', ')
+
   return {
     name,
     slug,
     description,
-    muscles: muscleNames.join(', '),
+    muscles: musclesStr,
     category: mapCategory(info),
     equipment: equipmentIds,
     priority: 'med',
@@ -140,5 +167,8 @@ export function mapWgerToExerciseCatalog(
     source: 'wger',
     wger_id: info.id,
     wger_language: language,
+    name_i18n: nameI18n,
+    description_i18n: descI18n,
+    muscles_i18n: { [language]: musclesStr },
   }
 }
