@@ -1,3 +1,5 @@
+import i18n from './i18n'
+
 const BASE_URL = 'https://gym.guille.tech'
 
 export type ShareMethod = 'native' | 'whatsapp' | 'copy'
@@ -43,16 +45,16 @@ export async function shareContent(opts: ShareContentOptions, method: ShareMetho
 
 export function shareProfile(displayName: string, userId: string, method?: ShareMethod) {
   return shareContent({
-    title: `${displayName} en Calistenia App`,
-    text: `💪 Mira el perfil de ${displayName} en Calistenia App — sus records, rachas y progreso`,
+    title: i18n.t('share.profileTitle', { name: displayName }),
+    text: i18n.t('share.profileText', { name: displayName }),
     url: `${BASE_URL}/u/${userId}`,
   }, method)
 }
 
 export function shareRoutine(userName: string, programName: string, userId: string, method?: ShareMethod) {
   return shareContent({
-    title: `Rutina de ${userName}: ${programName}`,
-    text: `🏋️ Mira la rutina "${programName}" de ${userName} en Calistenia App`,
+    title: i18n.t('share.routineTitle', { user: userName, program: programName }),
+    text: i18n.t('share.routineText', { user: userName, program: programName }),
     url: `${BASE_URL}/u/${userId}/routine`,
   }, method)
 }
@@ -60,7 +62,7 @@ export function shareRoutine(userName: string, programName: string, userId: stri
 export function shareProgram(programName: string, programId: string, method?: ShareMethod) {
   return shareContent({
     title: programName,
-    text: `💪 Mira este programa de calistenia: ${programName}`,
+    text: i18n.t('share.programText', { name: programName }),
     url: `${BASE_URL}/shared/${programId}`,
   }, method)
 }
@@ -68,23 +70,23 @@ export function shareProgram(programName: string, programId: string, method?: Sh
 export function shareChallenge(challengeTitle: string, challengeId: string, method?: ShareMethod) {
   return shareContent({
     title: challengeTitle,
-    text: `🎯 Unete a mi desafio "${challengeTitle}" en Calistenia App!`,
+    text: i18n.t('share.challengeText', { title: challengeTitle }),
     url: `${BASE_URL}/challenges/${challengeId}`,
   }, method)
 }
 
 export function shareWorkoutSession(userName: string, workoutTitle: string, date: string, workoutKey: string, method?: ShareMethod) {
   return shareContent({
-    title: `${userName} completo ${workoutTitle}`,
-    text: `🔥 ${userName} acaba de completar "${workoutTitle}" en Calistenia App`,
+    title: i18n.t('share.sessionTitle', { user: userName, workout: workoutTitle }),
+    text: i18n.t('share.sessionText', { user: userName, workout: workoutTitle }),
     url: `${BASE_URL}/session/${date}/${workoutKey}`,
   }, method)
 }
 
 export function shareReferralInvite(displayName: string, referralCode: string, method?: ShareMethod) {
   return shareContent({
-    title: `${displayName} te invita a entrenar`,
-    text: `💪 ${displayName} te invitó a entrenar juntos en Calistenia App. Únete y gana puntos!`,
+    title: i18n.t('share.referralTitle', { name: displayName }),
+    text: i18n.t('share.referralText', { name: displayName }),
     url: `${BASE_URL}/invite/${referralCode}`,
   }, method)
 }
@@ -92,7 +94,7 @@ export function shareReferralInvite(displayName: string, referralCode: string, m
 export function shareApp(method?: ShareMethod) {
   return shareContent({
     title: 'Calistenia App',
-    text: '💪 Entrena calistenia con rutinas personalizadas, seguimiento de progreso y nutricion. Pruebala gratis!',
+    text: i18n.t('share.appText'),
     url: BASE_URL,
   }, method)
 }

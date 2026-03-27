@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { getUserAvatarUrl, pb } from '../../lib/pocketbase'
 import { utcToLocalDateStr } from '../../lib/dateUtils'
 import type { Referral } from '../../hooks/useReferrals'
@@ -7,10 +8,12 @@ interface ReferralListProps {
 }
 
 export function ReferralList({ referrals }: ReferralListProps) {
+  const { t } = useTranslation()
+
   if (referrals.length === 0) {
     return (
       <div className="text-center py-12 text-sm text-muted-foreground">
-        Aun no tienes referidos. Invita amigos para ganar puntos!
+        {t('referrals.noReferrals')}
       </div>
     )
   }
@@ -41,7 +44,7 @@ export function ReferralList({ referrals }: ReferralListProps) {
             </div>
             <div className="shrink-0">
               <span className="text-[10px] tracking-widest uppercase px-2 py-1 rounded bg-muted text-muted-foreground">
-                {ref.source === 'challenge' ? 'Challenge' : 'Invitacion'}
+                {ref.source === 'challenge' ? t('referrals.sourceChallenge') : t('referrals.sourceInvite')}
               </span>
             </div>
           </div>

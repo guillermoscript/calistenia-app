@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import i18n from '../lib/i18n'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
 import { todayStr, toLocalDateStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
@@ -523,7 +524,8 @@ export function useNutrition(userId: string | null) {
     carbs: number
     fat: number
   }> => {
-    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+    const dayKeys = ['day.shortSun', 'day.shortMon', 'day.shortTue', 'day.shortWed', 'day.shortThu', 'day.shortFri', 'day.shortSat']
+    const days = dayKeys.map(k => i18n.t(k))
     const result = []
     for (let i = 6; i >= 0; i--) {
       const dateStr = daysAgoStr(i)

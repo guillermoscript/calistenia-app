@@ -256,7 +256,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
           ref={listboxRef}
           id={listboxId}
           role="listbox"
-          aria-label="Resultados de búsqueda"
+          aria-label={t('nutrition.searchResults')}
           className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-border bg-popover shadow-xl overflow-hidden max-h-80 overflow-y-auto overscroll-contain motion-safe:animate-slide-down"
         >
           {searching && sections.length === 0 && (
@@ -370,9 +370,9 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
                       {isCompleting ? (
-                        <span className="text-lime-400/70">Calculando macros...</span>
+                        <span className="text-lime-400/70">{t('nutrition.calculatingMacros')}</span>
                       ) : incomplete ? (
-                        <span className="text-amber-400/70">Macros estimados por IA al seleccionar</span>
+                        <span className="text-amber-400/70">{t('nutrition.macrosEstimatedByAI')}</span>
                       ) : (
                         <>
                           {item.portionAmount}{item.portionUnit} · <span className="text-foreground/70">{Math.round(item.calories)} kcal</span>
@@ -389,13 +389,13 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
           {/* AI error message */}
           {aiError && !aiLoading && (
             <div className="px-3 py-2.5 border-t border-border/40 text-xs text-red-400 flex items-center justify-between gap-2" role="alert">
-              <span>No se pudo buscar con IA</span>
+              <span>{t('nutrition.aiSearchFailed')}</span>
               <button
                 type="button"
                 onClick={() => doAILookup(value)}
                 className="shrink-0 px-3 py-1.5 rounded-lg bg-red-400/10 text-red-400 text-xs active:bg-red-400/20 transition-colors"
               >
-                Reintentar
+                {t('nutrition.retry')}
               </button>
             </div>
           )}
@@ -417,7 +417,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
                 )}
               >
                 <span className="text-[11px]" aria-hidden="true">&#9733;</span>
-                Buscar con IA
+                {t('nutrition.searchWithAI')}
               </div>
             )
           })()}
@@ -430,7 +430,7 @@ export default function FoodNameInput({ value, onChange, onFoodSelect, recentFoo
                 <div className="size-1.5 rounded-full bg-lime-400 motion-safe:animate-dot-pulse [animation-delay:400ms]" />
               </div>
               <span className="text-xs text-muted-foreground truncate">
-                Calculando macros de &ldquo;{value}&rdquo;...
+                {t('nutrition.calculatingMacrosFor', { name: value })}
               </span>
             </div>
           )}

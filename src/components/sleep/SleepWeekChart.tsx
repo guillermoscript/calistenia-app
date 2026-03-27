@@ -2,6 +2,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { todayStr, toLocalDateStr } from '../../lib/dateUtils'
 
@@ -22,11 +23,11 @@ interface SleepWeekChartProps {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab']
+const DAY_NAME_KEYS = ['day.shortSun', 'day.shortMon', 'day.shortTue', 'day.shortWed', 'day.shortThu', 'day.shortFri', 'day.shortSat']
 
-function getDayLabel(dateStr: string): string {
+function getDayLabel(dateStr: string, t: (key: string) => string): string {
   const d = new Date(dateStr + 'T12:00:00')
-  return DAY_NAMES[d.getDay()]
+  return t(DAY_NAME_KEYS[d.getDay()])
 }
 
 function qualityColor(q: number): string {
@@ -51,7 +52,7 @@ interface ChartDataPoint {
   awakenings: number
 }
 
-function buildChartData(entries: SleepEntry[]): ChartDataPoint[] {
+function buildChartData(entries: SleepEntry[], t: (key: string) => string): ChartDataPoint[] {
   // Build a map for the last 7 days
   const today = new Date()
   const data: ChartDataPoint[] = []
@@ -61,7 +62,7 @@ function buildChartData(entries: SleepEntry[]): ChartDataPoint[] {
     const dateStr = toLocalDateStr(d)
     const entry = entries.find(e => e.date === dateStr)
     data.push({
-      dayLabel: getDayLabel(dateStr),
+      dayLabel: getDayLabel(dateStr, t),
       date: dateStr,
       hours: entry ? +(entry.duration_minutes / 60).toFixed(1) : 0,
       quality: entry?.quality ?? 0,
@@ -75,35 +76,36 @@ function buildChartData(entries: SleepEntry[]): ChartDataPoint[] {
 
 // ── Tooltip ──────────────────────────────────────────────────────────────────
 
-const QUALITY_LABELS = ['', 'Muy mal', 'Mal', 'Regular', 'Bien', 'Excelente']
-
 function CustomTooltip({ active, payload, label }: any) {
+  const { t } = useTranslation()
+  const QUALITY_LABELS = ['', t('sleep.qualityVeryBad'), t('sleep.qualityBad'), t('sleep.qualityFair'), t('sleep.qualityGood'), t('sleep.qualityExcellent')]
+
   if (!active || !payload?.length) return null
   const d = payload[0]?.payload as ChartDataPoint
   if (!d.hours) return (
     <div className="bg-popover border border-border rounded-lg px-3 py-2 text-[11px]">
       <div className="font-medium text-muted-foreground">{label}</div>
-      <div className="text-muted-foreground/60 mt-1">Sin registro</div>
+      <div className="text-muted-foreground/60 mt-1">{t('sleep.noRecord')}</div>
     </div>
   )
   return (
     <div className="bg-popover border border-border rounded-lg px-3 py-2 text-[11px] space-y-1 min-w-[130px]">
       <div className="font-medium text-foreground mb-1.5">{label}</div>
       <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">Duracion</span>
+        <span className="text-muted-foreground">{t('sleep.duration')}</span>
         <span className="text-foreground font-medium">{d.hours}h</span>
       </div>
       <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">Calidad</span>
+        <span className="text-muted-foreground">{t('sleep.quality')}</span>
         <span style={{ color: qualityColor(d.quality) }}>{QUALITY_LABELS[d.quality]}</span>
       </div>
       <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">Horario</span>
+        <span className="text-muted-foreground">{t('sleep.schedule')}</span>
         <span className="text-foreground">{d.bedtime} — {d.wake_time}</span>
       </div>
       {d.awakenings > 0 && (
         <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground">Despertares</span>
+          <span className="text-muted-foreground">{t('sleep.awakenings')}</span>
           <span className="text-foreground">{d.awakenings}</span>
         </div>
       )}
@@ -114,7 +116,8 @@ function CustomTooltip({ active, payload, label }: any) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SleepWeekChart({ entries }: SleepWeekChartProps) {
-  const data = buildChartData(entries)
+  const { t } = useTranslation()
+  const data = buildChartData(entries, t)
   const today = todayStr()
   const daysWithData = data.filter(d => d.hours > 0).length
   const avgHours = daysWithData > 0
@@ -125,13 +128,13 @@ export default function SleepWeekChart({ entries }: SleepWeekChartProps) {
     <div>
       <div className="flex items-end justify-between mb-4">
         <div>
-          <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase">Semana</div>
-          <div className="font-bebas text-2xl mt-0.5">SUENO SEMANAL</div>
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase">{t('common.week')}</div>
+          <div className="font-bebas text-2xl mt-0.5">{t('sleep.weeklySleep')}</div>
         </div>
         {avgHours && (
           <div className="text-right">
             <div className="font-bebas text-3xl text-indigo-400">{avgHours}<span className="text-muted-foreground text-lg">h</span></div>
-            <div className="text-[10px] text-muted-foreground tracking-wide">promedio</div>
+            <div className="text-[10px] text-muted-foreground tracking-wide">{t('sleep.average')}</div>
           </div>
         )}
       </div>
@@ -180,21 +183,21 @@ export default function SleepWeekChart({ entries }: SleepWeekChartProps) {
           <div className="flex items-center gap-4 mt-2 justify-center">
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-sm" style={{ background: qualityColor(5) }} />
-              <span className="text-[10px] text-muted-foreground">Buena (4-5)</span>
+              <span className="text-[10px] text-muted-foreground">{t('sleep.legendGood')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-sm" style={{ background: qualityColor(3) }} />
-              <span className="text-[10px] text-muted-foreground">Regular (3)</span>
+              <span className="text-[10px] text-muted-foreground">{t('sleep.legendFair')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-sm" style={{ background: qualityColor(1) }} />
-              <span className="text-[10px] text-muted-foreground">Mala (1-2)</span>
+              <span className="text-[10px] text-muted-foreground">{t('sleep.legendBad')}</span>
             </div>
           </div>
 
           {daysWithData === 0 && (
             <div className="text-center text-xs text-muted-foreground/60 mt-2">
-              Registra tu sueno para ver el historial
+              {t('sleep.recordToSeeHistory')}
             </div>
           )}
         </CardContent>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { pb } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
@@ -55,6 +56,7 @@ interface PhaseGroup {
 }
 
 export default function RoutineViewPage() {
+  const { t } = useTranslation()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -152,7 +154,7 @@ export default function RoutineViewPage() {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16">
-        <Loader label="Cargando rutina..." />
+        <Loader label={t('routine.loading')} />
       </div>
     )
   }

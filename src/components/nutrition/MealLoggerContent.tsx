@@ -531,7 +531,7 @@ export default function MealLoggerContent({
                             <button
                               onClick={() => galleryInputRef.current?.click()}
                               className="size-9 rounded-lg flex items-center justify-center hover:bg-lime-400/10 transition-colors"
-                              aria-label="Elegir de galería"
+                              aria-label={t('nutrition.chooseFromGallery')}
                             >
                               <GalleryIcon className="size-4 text-muted-foreground/60" />
                             </button>

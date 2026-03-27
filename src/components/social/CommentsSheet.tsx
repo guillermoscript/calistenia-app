@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import i18n from '../../lib/i18n'
 import { cn } from '../../lib/utils'
 import { Loader } from '../ui/loader'
@@ -39,6 +40,7 @@ export function CommentsSheet({
   onDeleteComment,
   currentUserId,
 }: CommentsSheetProps) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [text, setText] = useState('')
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null)
@@ -107,7 +109,7 @@ export function CommentsSheet({
       <div className="relative w-full max-w-lg bg-card rounded-t-2xl flex flex-col max-h-[80vh] motion-safe:animate-slide-up">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <h2 className="text-sm font-semibold">Comentarios</h2>
+          <h2 className="text-sm font-semibold">{t('social.comments')}</h2>
           <button
             onClick={onClose}
             className="size-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"
@@ -122,14 +124,14 @@ export function CommentsSheet({
         {/* Comments list */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
           {loading && (
-            <Loader label="Cargando comentarios..." className="py-8" />
+            <Loader label={t('social.loadingComments')} className="py-8" />
           )}
 
           {!loading && comments.length === 0 && (
             <div className="text-center py-12">
               <div className="text-2xl mb-2">💬</div>
-              <div className="text-sm text-muted-foreground">Sin comentarios aun</div>
-              <div className="text-xs text-muted-foreground mt-1">Se el primero en comentar</div>
+              <div className="text-sm text-muted-foreground">{t('social.noComments')}</div>
+              <div className="text-xs text-muted-foreground mt-1">{t('social.beFirstToComment')}</div>
             </div>
           )}
 
@@ -171,7 +173,7 @@ export function CommentsSheet({
           {replyTo && (
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs text-muted-foreground">
-                Respondiendo a <span className="font-medium text-foreground">{replyTo.name}</span>
+                {t('social.replyingTo')} <span className="font-medium text-foreground">{replyTo.name}</span>
               </span>
               <button
                 onClick={() => setReplyTo(null)}
@@ -191,7 +193,7 @@ export function CommentsSheet({
               value={text}
               onChange={(e) => setText(e.target.value.slice(0, 500))}
               onKeyDown={handleKeyDown}
-              placeholder="Escribe un comentario..."
+              placeholder={t('social.commentPlaceholder')}
               className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-lime/50"
               maxLength={500}
               disabled={sending}
@@ -228,6 +230,7 @@ interface CommentBubbleProps {
 }
 
 function CommentBubble({ comment, currentUserId, onReply, onDelete, isReply }: CommentBubbleProps) {
+  const { t } = useTranslation()
   const isOwn = comment.authorId === currentUserId
 
   return (
@@ -261,7 +264,7 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, isReply }: C
             onClick={onReply}
             className="text-[11px] text-muted-foreground hover:text-lime transition-colors"
           >
-            Responder
+            {t('social.reply')}
           </button>
           {isOwn && (
             <button

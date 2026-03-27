@@ -70,8 +70,8 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
     if (challengeId && referralCode) {
       const inviteUrl = `${BASE_URL}/invite/${referralCode}/challenge/${challengeId}`
       await shareContent({
-        title: 'Te reto a un challenge!',
-        text: `💪 Te reto a un challenge express en Calistenia App!`,
+        title: t('share.challengeInviteTitle'),
+        text: t('share.challengeInviteText'),
         url: inviteUrl,
       })
     }
@@ -93,7 +93,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Exercise selector */}
         <div className="flex flex-col gap-1.5 relative">
-          <Label className="text-xs tracking-widest uppercase text-muted-foreground">Ejercicio</Label>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground">{t('challenge.exercise')}</Label>
           <Input
             type="text"
             placeholder={t('challenge.searchExercise')}
@@ -157,7 +157,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
           <Input
             type="number"
             min="1"
-            placeholder="Ej: 50"
+            placeholder={t('challenge.dailyGoalPlaceholder')}
             value={dailyTarget}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDailyTarget(e.target.value)}
             required

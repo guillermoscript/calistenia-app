@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
 import { cn } from '../lib/utils'
 import type { ExerciseProgression } from '../types'
@@ -9,16 +10,17 @@ interface ProgressionChainProps {
   onClose: () => void
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  push: 'Empuje',
-  pull: 'Tirón',
-  legs: 'Piernas',
-  core: 'Core',
-  skills: 'Skills',
-  lumbar: 'Lumbar',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  push: 'dayType.push',
+  pull: 'dayType.pull',
+  legs: 'dayType.legs',
+  core: 'dayType.core',
+  skills: 'progression.skills',
+  lumbar: 'dayType.lumbar',
 }
 
 export default function ProgressionChain({ chain, currentExerciseId, shouldAdvance, onClose }: ProgressionChainProps) {
+  const { t } = useTranslation()
   const currentIdx = chain.findIndex(p => p.exerciseId === currentExerciseId)
   const category = chain[0]?.category || ''
 
@@ -27,10 +29,10 @@ export default function ProgressionChain({ chain, currentExerciseId, shouldAdvan
       <DialogContent className="max-w-[95vw] sm:max-w-lg p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-sm font-mono tracking-wide">
-            PROGRESIÓN — {CATEGORY_LABELS[category] || category.toUpperCase()}
+            {t('progression.title')} — {CATEGORY_LABEL_KEYS[category] ? t(CATEGORY_LABEL_KEYS[category]) : category.toUpperCase()}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Cadena de ejercicios de menor a mayor dificultad
+            {t('progression.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -74,19 +76,19 @@ export default function ProgressionChain({ chain, currentExerciseId, shouldAdvan
 
                     {/* Current indicator */}
                     {isCurrent && (
-                      <div className="text-[9px] font-mono text-lime tracking-widest mt-1">ACTUAL</div>
+                      <div className="text-[9px] font-mono text-lime tracking-widest mt-1">{t('progression.current')}</div>
                     )}
 
                     {/* Completed check */}
                     {isCompleted && (
-                      <div className="text-[9px] font-mono text-emerald-500/60 tracking-widest mt-1">HECHO</div>
+                      <div className="text-[9px] font-mono text-emerald-500/60 tracking-widest mt-1">{t('progression.done')}</div>
                     )}
 
                     {/* Advance badge */}
                     {isNext && shouldAdvance && (
                       <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
                         <span className="text-[9px] font-mono font-bold text-lime bg-lime/15 border border-lime/30 rounded-full px-2 py-0.5 animate-pulse">
-                          Listo para avanzar
+                          {t('progression.readyToAdvance')}
                         </span>
                       </div>
                     )}
@@ -111,9 +113,9 @@ export default function ProgressionChain({ chain, currentExerciseId, shouldAdvan
         {currentIdx >= 0 && chain[currentIdx] && (
           <div className="text-[11px] text-muted-foreground bg-muted/30 rounded px-3 py-2 border-l-2 border-lime/20">
             <span className="font-mono text-lime">{chain[currentIdx].targetRepsToAdvance} reps</span>
-            {' '}en{' '}
-            <span className="font-mono text-lime">{chain[currentIdx].sessionsAtTarget} sesiones</span>
-            {' '}consecutivas para avanzar
+            {' '}{t('progression.in')}{' '}
+            <span className="font-mono text-lime">{chain[currentIdx].sessionsAtTarget} {t('progression.sessions')}</span>
+            {' '}{t('progression.consecutiveToAdvance')}
           </div>
         )}
       </DialogContent>

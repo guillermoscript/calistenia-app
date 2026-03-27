@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import i18n from '../lib/i18n'
 import type { Pause, PauseType, WorkDay } from '../types'
 import { todayStr } from '../lib/dateUtils'
 
@@ -97,12 +98,12 @@ function sendNotif(title: string, body: string): void {
 
 // ─── Alert messages ───────────────────────────────────────────────────────────
 const ALERT_25 = {
-  title: 'Pausa Activa — 2 min',
-  body: 'Levántate · Hip Flexor · Rotación torácica',
+  get title() { return i18n.t('workday.pause2min') },
+  get body() { return i18n.t('workday.pause2minBody') },
 }
 const ALERT_60 = {
-  title: 'Pausa Activa — 5 min',
-  body: 'Glute Bridge · Cat-Cow · Thoracic Rotation',
+  get title() { return i18n.t('workday.pause5min') },
+  get body() { return i18n.t('workday.pause5minBody') },
 }
 
 // ─── Return type ─────────────────────────────────────────────────────────────

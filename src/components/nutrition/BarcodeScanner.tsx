@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void
@@ -7,6 +8,7 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeScannerProps) {
+  const { t } = useTranslation()
   const scannerRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const onScanRef = useRef(onScan)
@@ -63,11 +65,11 @@ export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeSca
         if (cancelled) return
         const msg = err instanceof Error ? err.message : String(err)
         if (msg.includes('Permission') || msg.includes('NotAllowed')) {
-          setCameraError('Permiso de cámara denegado. Actívalo en los ajustes del navegador.')
+          setCameraError(t('barcode.permissionDenied'))
         } else if (msg.includes('NotFound') || msg.includes('DevicesNotFound') || msg.includes('Requested device not found')) {
-          setCameraError('No se encontró ninguna cámara en este dispositivo.')
+          setCameraError(t('barcode.noCameraFound'))
         } else {
-          setCameraError('No se pudo iniciar la cámara. Intenta cerrar otras apps que la usen.')
+          setCameraError(t('barcode.cameraStartError'))
         }
       }
     })()
@@ -92,7 +94,7 @@ export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeSca
       <button
         onClick={onClose}
         className="absolute top-4 right-4 z-10 size-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-        aria-label="Cerrar escáner"
+        aria-label={t('barcode.closeScanner')}
       >
         <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
           <line x1="18" y1="6" x2="6" y2="18" />
@@ -102,7 +104,7 @@ export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeSca
 
       {/* Scanner label */}
       <div className="text-white/70 text-sm font-mono tracking-widest mb-4 uppercase">
-        Apunta al código de barras
+        {t('barcode.aimAtBarcode')}
       </div>
 
       {/* Scanner viewport */}
@@ -120,7 +122,7 @@ export default function BarcodeScanner({ onScan, onClose, scanning }: BarcodeSca
               onClick={onClose}
               className="mt-1 px-4 py-2 rounded-lg bg-white/10 text-sm text-white hover:bg-white/20 transition-colors"
             >
-              Cerrar
+              {t('common.close')}
             </button>
           </div>
         )}

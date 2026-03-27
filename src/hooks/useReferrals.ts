@@ -129,7 +129,7 @@ export function useReferrals(userId: string | null) {
         amount: 100,
         type: 'referral_signup',
         reference_id: userId,
-        description: 'Referido se registró',
+        description: 'referral_signup',
       })
 
       return true

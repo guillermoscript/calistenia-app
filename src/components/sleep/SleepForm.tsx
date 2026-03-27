@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -44,7 +45,7 @@ function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m}min` : `${h}h`
 }
 
-const QUALITY_LABELS = ['', 'Muy mal', 'Mal', 'Regular', 'Bien', 'Excelente']
+const QUALITY_LABEL_KEYS = ['', 'sleep.qualityVeryBad', 'sleep.qualityBad', 'sleep.qualityFair', 'sleep.qualityGood', 'sleep.qualityExcellent']
 const QUALITY_COLORS = [
   '',
   'text-red-500 border-red-500 bg-red-500/10',
@@ -54,11 +55,12 @@ const QUALITY_COLORS = [
   'text-emerald-500 border-emerald-500 bg-emerald-500/10',
 ]
 
-const STRESS_LABELS = ['', 'Muy bajo', 'Bajo', 'Medio', 'Alto', 'Muy alto']
+const STRESS_LABEL_KEYS = ['', 'sleep.stressVeryLow', 'sleep.stressLow', 'sleep.stressMedium', 'sleep.stressHigh', 'sleep.stressVeryHigh']
 
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFormProps) {
+  const { t } = useTranslation()
   const [bedtime, setBedtime] = useState(initialValues?.bedtime ?? '')
   const [wakeTime, setWakeTime] = useState(initialValues?.wake_time ?? '')
   const [awakenings, setAwakenings] = useState(initialValues?.awakenings ?? 0)
@@ -101,7 +103,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
 
       {/* ── Duration display ──────────────────────────────────────────── */}
       <div className="text-center py-3">
-        <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase mb-1">Duracion</div>
+        <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase mb-1">{t('sleep.duration')}</div>
         <div className={cn(
           'font-bebas text-4xl leading-none transition-colors',
           duration > 0 ? (duration >= 420 ? 'text-lime' : duration >= 360 ? 'text-amber-400' : 'text-red-500') : 'text-muted-foreground',
@@ -114,7 +116,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label className="text-[11px] text-muted-foreground tracking-wide uppercase mb-1.5 block">
-            Hora de dormir
+            {t('sleep.bedtime')}
           </Label>
           <Input
             type="time"
@@ -126,7 +128,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
         </div>
         <div>
           <Label className="text-[11px] text-muted-foreground tracking-wide uppercase mb-1.5 block">
-            Hora de despertar
+            {t('sleep.wakeTime')}
           </Label>
           <Input
             type="time"
@@ -141,7 +143,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
       {/* ── Awakenings stepper ────────────────────────────────────────── */}
       <div>
         <Label className="text-[11px] text-muted-foreground tracking-wide uppercase mb-1.5 block">
-          Despertares nocturnos
+          {t('sleep.awakenings')}
         </Label>
         <div className="flex items-center gap-3">
           <Button
@@ -165,7 +167,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
             +
           </Button>
           <span className="text-[11px] text-muted-foreground ml-1">
-            {awakenings === 0 ? 'Ninguno' : awakenings === 1 ? 'vez' : 'veces'}
+            {awakenings === 0 ? t('sleep.none') : t('sleep.times', { count: awakenings })}
           </span>
         </div>
       </div>
@@ -173,7 +175,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
       {/* ── Quality selector ──────────────────────────────────────────── */}
       <div>
         <Label className="text-[11px] text-muted-foreground tracking-wide uppercase mb-2 block">
-          Calidad del sueno
+          {t('sleep.quality')}
         </Label>
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((q) => (
@@ -195,7 +197,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
                   </svg>
                 ))}
               </div>
-              <span className="text-[9px] leading-none">{QUALITY_LABELS[q]}</span>
+              <span className="text-[9px] leading-none">{t(QUALITY_LABEL_KEYS[q])}</span>
             </button>
           ))}
         </div>
@@ -212,7 +214,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
             <line x1="8" y1="3" x2="8" y2="13" />
             <line x1="3" y1="8" x2="13" y2="8" />
           </svg>
-          MAS DETALLE
+          {t('sleep.moreDetail')}
         </button>
       )}
 
@@ -227,14 +229,14 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
             <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="3" y1="8" x2="13" y2="8" />
             </svg>
-            MENOS DETALLE
+            {t('sleep.lessDetail')}
           </button>
 
           {/* Caffeine toggle */}
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[13px] text-foreground">Cafeina despues de las 14:00</div>
-              <div className="text-[10px] text-muted-foreground">Cafe, te, bebidas energeticas</div>
+              <div className="text-[13px] text-foreground">{t('sleep.caffeineAfter14')}</div>
+              <div className="text-[10px] text-muted-foreground">{t('sleep.caffeineExamples')}</div>
             </div>
             <button
               type="button"
@@ -256,8 +258,8 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
           {/* Screen before bed toggle */}
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[13px] text-foreground">Pantalla antes de dormir</div>
-              <div className="text-[10px] text-muted-foreground">Uso de pantalla en la ultima hora</div>
+              <div className="text-[13px] text-foreground">{t('sleep.screenBeforeBed')}</div>
+              <div className="text-[10px] text-muted-foreground">{t('sleep.screenLastHour')}</div>
             </div>
             <button
               type="button"
@@ -279,7 +281,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
           {/* Stress level */}
           <div>
             <Label className="text-[11px] text-muted-foreground tracking-wide uppercase mb-2 block">
-              Nivel de estres
+              {t('sleep.stressLevel')}
             </Label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((s) => (
@@ -298,7 +300,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
                       : 'border-border text-muted-foreground hover:border-muted-foreground/40',
                   )}
                 >
-                  {STRESS_LABELS[s]}
+                  {t(STRESS_LABEL_KEYS[s])}
                 </button>
               ))}
             </div>
@@ -307,12 +309,12 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
           {/* Note */}
           <div>
             <Label className="text-[11px] text-muted-foreground tracking-wide uppercase mb-1.5 block">
-              Nota (opcional)
+              {t('sleep.noteOptional')}
             </Label>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Algo que quieras recordar sobre esta noche..."
+              placeholder={t('sleep.notePlaceholder')}
               className="resize-none h-20 text-sm"
               maxLength={500}
             />
@@ -324,7 +326,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
       <div className="flex gap-3 pt-2">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 tracking-wide">
-            CANCELAR
+            {t('common.cancel').toUpperCase()}
           </Button>
         )}
         <Button
@@ -335,7 +337,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
             'bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40',
           )}
         >
-          GUARDAR
+          {t('common.save').toUpperCase()}
         </Button>
       </div>
     </form>

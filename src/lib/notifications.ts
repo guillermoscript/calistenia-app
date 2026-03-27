@@ -4,6 +4,8 @@
  * that work even when the browser tab is in the background.
  */
 
+import i18n from './i18n'
+
 let _permissionGranted: boolean | null = null
 
 async function ensurePermission(): Promise<boolean> {
@@ -71,8 +73,8 @@ export function notifyRestStart(seconds: number, nextExercise?: string): void {
   const secs = seconds % 60
   const time = mins > 0 ? `${mins}:${String(secs).padStart(2, '0')}` : `${seconds}s`
   send({
-    title: `Descanso — ${time}`,
-    body: nextExercise ? `Siguiente: ${nextExercise}` : 'Descansa y prepárate',
+    title: i18n.t('notify.restStart', { time }),
+    body: nextExercise ? i18n.t('notify.nextExercise', { name: nextExercise }) : i18n.t('notify.restAndPrepare'),
     tag: 'rest-start',
   })
 }
@@ -80,8 +82,8 @@ export function notifyRestStart(seconds: number, nextExercise?: string): void {
 /** Rest is about to end — this one is urgent, always show */
 export function notifyRestEnding(secondsLeft: number): void {
   send({
-    title: `¡${secondsLeft} segundos!`,
-    body: 'Prepárate para el siguiente ejercicio',
+    title: i18n.t('notify.secondsLeft', { count: secondsLeft }),
+    body: i18n.t('notify.prepareForNext'),
     tag: 'rest-warning',
     urgent: true,
     vibrate: [200, 100, 200],
@@ -91,8 +93,8 @@ export function notifyRestEnding(secondsLeft: number): void {
 /** Rest ended — urgent, must interrupt */
 export function notifyRestDone(exerciseName: string, setNumber: number, totalSets: number): void {
   send({
-    title: '¡A entrenar!',
-    body: `${exerciseName} — Serie ${setNumber}/${totalSets}`,
+    title: i18n.t('notify.letsGo'),
+    body: `${exerciseName} — ${i18n.t('notify.setOf', { set: setNumber, total: totalSets })}`,
     tag: 'rest-done',
     urgent: true,
     requireInteraction: true,
@@ -104,8 +106,8 @@ export function notifyRestDone(exerciseName: string, setNumber: number, totalSet
 export function notifySetComplete(exerciseName: string, setNumber: number, totalSets: number, setsRemaining: number): void {
   if (setsRemaining > 0) {
     send({
-      title: `Serie ${setNumber}/${totalSets} ✓`,
-      body: `${exerciseName} — Quedan ${setsRemaining} series`,
+      title: i18n.t('notify.setComplete', { set: setNumber, total: totalSets }),
+      body: `${exerciseName} — ${i18n.t('notify.setsRemaining', { count: setsRemaining })}`,
       tag: 'set-complete',
     })
   }
@@ -114,8 +116,8 @@ export function notifySetComplete(exerciseName: string, setNumber: number, total
 /** Session completed — urgent, celebrate */
 export function notifySessionComplete(workoutTitle: string, totalSets: number): void {
   send({
-    title: '¡Sesión completada! 💪',
-    body: `${workoutTitle} — ${totalSets} series registradas`,
+    title: i18n.t('notify.sessionComplete'),
+    body: i18n.t('notify.sessionCompleteBody', { title: workoutTitle, sets: totalSets }),
     tag: 'session-complete',
     urgent: true,
     requireInteraction: true,
@@ -126,7 +128,7 @@ export function notifySessionComplete(workoutTitle: string, totalSets: number): 
 /** Timed exercise finished — urgent, must interrupt */
 export function notifyTimerDone(exerciseName: string): void {
   send({
-    title: 'Tiempo cumplido ✓',
+    title: i18n.t('notify.timerDone'),
     body: exerciseName,
     tag: 'timer-done',
     urgent: true,
@@ -141,7 +143,7 @@ export function notifyTimerDone(exerciseName: string): void {
 export function notifyReaction(reactorName: string, workoutTitle: string): void {
   send({
     title: `🔥 ${reactorName}`,
-    body: `Le gusta tu sesion: ${workoutTitle}`,
+    body: i18n.t('notify.reactionBody', { title: workoutTitle }),
     tag: `reaction-${reactorName}`,
     urgent: true,
   })
@@ -150,7 +152,7 @@ export function notifyReaction(reactorName: string, workoutTitle: string): void 
 /** A friend completed a workout */
 export function notifyFriendWorkout(friendName: string, workoutTitle: string): void {
   send({
-    title: `💪 ${friendName} entreno`,
+    title: i18n.t('notify.friendWorkout', { name: friendName }),
     body: workoutTitle,
     tag: `friend-workout-${friendName}`,
   })
@@ -159,8 +161,8 @@ export function notifyFriendWorkout(friendName: string, workoutTitle: string): v
 /** Someone beat your PR */
 export function notifyPRBeaten(friendName: string, prLabel: string, newValue: number, yourValue: number): void {
   send({
-    title: `🏆 ${friendName} te supero`,
-    body: `${prLabel}: ${newValue} (tu: ${yourValue})`,
+    title: i18n.t('notify.prBeaten', { name: friendName }),
+    body: `${prLabel}: ${newValue} (${i18n.t('notify.yours')}: ${yourValue})`,
     tag: `pr-beaten-${prLabel}`,
     urgent: true,
     vibrate: [200, 100, 200],

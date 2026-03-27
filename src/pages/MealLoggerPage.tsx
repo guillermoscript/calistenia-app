@@ -1,4 +1,5 @@
 import { useMemo, useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import MealLoggerContent from '../components/nutrition/MealLoggerContent'
@@ -13,6 +14,7 @@ interface MealLoggerPageProps {
 }
 
 export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const {
@@ -121,7 +123,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
       })
       .catch(() => {
         clearJob('_pending')
-        toast.error('Error al iniciar el analisis', { description: 'Revisa tu conexion e intenta de nuevo' })
+        toast.error(t('nutrition.analysisError'), { description: t('nutrition.analysisErrorDesc') })
       })
   }, [addJob, clearJob])
 
@@ -136,7 +138,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
           onClick={() => navigate('/nutrition')}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          Cancelar
+          {t('common.cancel')}
         </button>
       </div>
 

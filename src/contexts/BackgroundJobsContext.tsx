@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { fetchJobStatus, type AIJob } from '../lib/ai-jobs-api'
 
 const LS_KEY = 'ai_background_jobs'
@@ -35,16 +36,16 @@ function savePending(jobs: PendingJob[]) {
   localStorage.setItem(LS_KEY, JSON.stringify(jobs))
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  'analyze-meal': 'Comida analizada',
-  'lookup-food': 'Alimento encontrado',
-  'generate-meal-plan': 'Plan listo',
+const TYPE_LABEL_KEYS: Record<string, string> = {
+  'analyze-meal': 'bgJobs.analyzeMealDone',
+  'lookup-food': 'bgJobs.lookupFoodDone',
+  'generate-meal-plan': 'bgJobs.mealPlanDone',
 }
 
-const TYPE_LABELS_PENDING: Record<string, string> = {
-  'analyze-meal': 'Analizando comida',
-  'lookup-food': 'Buscando alimento',
-  'generate-meal-plan': 'Generando plan',
+const TYPE_LABEL_PENDING_KEYS: Record<string, string> = {
+  'analyze-meal': 'bgJobs.analyzingMeal',
+  'lookup-food': 'bgJobs.lookingUpFood',
+  'generate-meal-plan': 'bgJobs.generatingPlan',
 }
 
 interface BackgroundJobsContextValue {
@@ -60,6 +61,7 @@ interface BackgroundJobsContextValue {
 const BackgroundJobsContext = createContext<BackgroundJobsContextValue | null>(null)
 
 export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
   const [pending, setPending] = useState<PendingJob[]>(loadPending)
   const [completedJobs, setCompletedJobs] = useState<Map<string, AIJob>>(new Map())
   const pendingRef = useRef(pending)
@@ -73,8 +75,8 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
 
   const addJob = useCallback((id: string, type: AIJob['type']): boolean => {
     if (pendingRef.current.length >= MAX_PENDING) {
-      toast.warning('Limite alcanzado', {
-        description: `Solo puedes tener ${MAX_PENDING} analisis en proceso a la vez. Espera a que termine uno.`,
+      toast.warning(t('bgJobs.limitReached'), {
+        description: t('bgJobs.limitReachedDesc', { max: MAX_PENDING }),
         duration: 5000,
       })
       return false
@@ -100,17 +102,19 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
     setPending(prev => prev.filter(j => j.id !== job.id))
     setCompletedJobs(prev => new Map(prev).set(job.id, job))
 
-    const label = TYPE_LABELS[job.type] || 'Procesando'
+    const labelKey = TYPE_LABEL_KEYS[job.type] || 'bgJobs.processing'
+    const label = t(labelKey)
 
     if (job.status === 'completed') {
+      const descKey = job.type === 'analyze-meal'
+        ? 'bgJobs.tapToReviewFoods'
+        : job.type === 'lookup-food'
+          ? 'bgJobs.tapToViewNutrition'
+          : 'bgJobs.tapToViewMeals'
       toast.success(label, {
-        description: job.type === 'analyze-meal'
-          ? 'Toca para revisar los alimentos detectados'
-          : job.type === 'lookup-food'
-            ? 'Toca para ver los datos nutricionales'
-            : 'Toca para ver las comidas sugeridas',
+        description: t(descKey),
         action: {
-          label: 'Ver resultado',
+          label: t('bgJobs.viewResult'),
           onClick: () => {
             const url = job.type === 'generate-meal-plan'
               ? '/nutrition'
@@ -121,12 +125,12 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
         duration: 10000,
       })
     } else if (job.status === 'failed') {
-      toast.error('No se pudo completar el analisis', {
-        description: job.error || 'Intenta de nuevo con otra foto',
+      toast.error(t('bgJobs.analysisFailed'), {
+        description: job.error || t('bgJobs.tryAgainWithPhoto'),
         duration: 8000,
       })
     }
-  }, [])
+  }, [t])
 
   // Single polling interval for all consumers
   useEffect(() => {
@@ -174,6 +178,11 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
     return () => navigator.serviceWorker?.removeEventListener('message', handler)
   }, [handleCompletion])
 
+  const pendingLabels: Record<string, string> = {}
+  for (const [key, tKey] of Object.entries(TYPE_LABEL_PENDING_KEYS)) {
+    pendingLabels[key] = t(tKey)
+  }
+
   const value: BackgroundJobsContextValue = {
     addJob,
     getJob,
@@ -181,7 +190,7 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
     canSubmit,
     pendingCount: pending.length,
     pending,
-    pendingLabels: TYPE_LABELS_PENDING,
+    pendingLabels,
   }
 
   return (
