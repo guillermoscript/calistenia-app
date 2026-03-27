@@ -9,119 +9,100 @@
  *   food_categories:   name
  *   food_tags:         name
  *
+ * Approach: For each field, first convert data in-place (text → JSON string),
+ * then remove the text field and add a json field with the same name.
+ * This is the correct PB migration pattern — mutating field.type is not supported.
+ *
  * Existing string data is wrapped: "Push-up" → {"es": "Push-up"}
  */
 migrate(
   (app) => {
+    // Helper: convert a text field to json on a collection
+    function textToJson(collection, fieldName) {
+      // 1. Convert data first (while still text type — stores JSON string in text field)
+      app.db().newQuery(`
+        UPDATE ${collection.name}
+        SET ${fieldName} = CASE
+          WHEN ${fieldName} IS NULL OR ${fieldName} = '' THEN '{"es":""}'
+          WHEN json_valid(${fieldName}) = 1 THEN ${fieldName}
+          ELSE json_object('es', ${fieldName})
+        END
+      `).execute()
+
+      // 2. Remove old text field, add new json field
+      collection.fields.removeByName(fieldName)
+      collection.fields.add(new Field({
+        name: fieldName,
+        type: "json",
+        required: false,
+      }))
+    }
+
     // ── exercises_catalog ──────────────────────────────────────────
     const ec = app.findCollectionByNameOrId("exercises_catalog")
     for (const fieldName of ["name", "muscles", "note", "description"]) {
-      const f = ec.fields.getByName(fieldName)
-      if (f) f.type = "json"
+      textToJson(ec, fieldName)
     }
     app.save(ec)
-
-    app.db().newQuery(`
-      UPDATE exercises_catalog
-      SET name        = json_object('es', name),
-          muscles     = json_object('es', muscles),
-          note        = json_object('es', note),
-          description = json_object('es', description)
-      WHERE json_valid(name) = 0
-    `).execute()
 
     // ── achievements ──────────────────────────────────────────────
     const ach = app.findCollectionByNameOrId("achievements")
     for (const fieldName of ["name", "description"]) {
-      const f = ach.fields.getByName(fieldName)
-      if (f) f.type = "json"
+      textToJson(ach, fieldName)
     }
     app.save(ach)
-
-    app.db().newQuery(`
-      UPDATE achievements
-      SET name        = json_object('es', name),
-          description = json_object('es', description)
-      WHERE json_valid(name) = 0
-    `).execute()
 
     // ── food_categories ───────────────────────────────────────────
     const fc = app.findCollectionByNameOrId("food_categories")
-    const fcName = fc.fields.getByName("name")
-    if (fcName) fcName.type = "json"
+    textToJson(fc, "name")
     app.save(fc)
-
-    app.db().newQuery(`
-      UPDATE food_categories
-      SET name = json_object('es', name)
-      WHERE json_valid(name) = 0
-    `).execute()
 
     // ── food_tags ─────────────────────────────────────────────────
     const ft = app.findCollectionByNameOrId("food_tags")
-    const ftName = ft.fields.getByName("name")
-    if (ftName) ftName.type = "json"
+    textToJson(ft, "name")
     app.save(ft)
-
-    app.db().newQuery(`
-      UPDATE food_tags
-      SET name = json_object('es', name)
-      WHERE json_valid(name) = 0
-    `).execute()
   },
   (app) => {
+    // Helper: convert json field back to text
+    function jsonToText(collection, fieldName) {
+      // 1. Unwrap JSON to plain string first
+      app.db().newQuery(`
+        UPDATE ${collection.name}
+        SET ${fieldName} = CASE
+          WHEN json_valid(${fieldName}) = 1 THEN COALESCE(json_extract(${fieldName}, '$.es'), '')
+          ELSE COALESCE(${fieldName}, '')
+        END
+      `).execute()
+
+      // 2. Remove json field, add text field back
+      collection.fields.removeByName(fieldName)
+      collection.fields.add(new Field({
+        name: fieldName,
+        type: "text",
+        required: false,
+      }))
+    }
+
     // ── Rollback: JSON → text, unwrap {"es": "..."} → plain string ──
 
-    // exercises_catalog
     const ec = app.findCollectionByNameOrId("exercises_catalog")
-    app.db().newQuery(`
-      UPDATE exercises_catalog
-      SET name        = COALESCE(json_extract(name, '$.es'), name),
-          muscles     = COALESCE(json_extract(muscles, '$.es'), muscles),
-          note        = COALESCE(json_extract(note, '$.es'), note),
-          description = COALESCE(json_extract(description, '$.es'), description)
-      WHERE json_valid(name) = 1
-    `).execute()
     for (const fieldName of ["name", "muscles", "note", "description"]) {
-      const f = ec.fields.getByName(fieldName)
-      if (f) f.type = "text"
+      jsonToText(ec, fieldName)
     }
     app.save(ec)
 
-    // achievements
     const ach = app.findCollectionByNameOrId("achievements")
-    app.db().newQuery(`
-      UPDATE achievements
-      SET name        = COALESCE(json_extract(name, '$.es'), name),
-          description = COALESCE(json_extract(description, '$.es'), description)
-      WHERE json_valid(name) = 1
-    `).execute()
     for (const fieldName of ["name", "description"]) {
-      const f = ach.fields.getByName(fieldName)
-      if (f) f.type = "text"
+      jsonToText(ach, fieldName)
     }
     app.save(ach)
 
-    // food_categories
     const fc = app.findCollectionByNameOrId("food_categories")
-    app.db().newQuery(`
-      UPDATE food_categories
-      SET name = COALESCE(json_extract(name, '$.es'), name)
-      WHERE json_valid(name) = 1
-    `).execute()
-    const fcName = fc.fields.getByName("name")
-    if (fcName) fcName.type = "text"
+    jsonToText(fc, "name")
     app.save(fc)
 
-    // food_tags
     const ft = app.findCollectionByNameOrId("food_tags")
-    app.db().newQuery(`
-      UPDATE food_tags
-      SET name = COALESCE(json_extract(name, '$.es'), name)
-      WHERE json_valid(name) = 1
-    `).execute()
-    const ftName = ft.fields.getByName("name")
-    if (ftName) ftName.type = "text"
+    jsonToText(ft, "name")
     app.save(ft)
   }
 )
