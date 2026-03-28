@@ -64,7 +64,7 @@ Free tier must be **genuinely useful** — not a crippled demo. Users should be 
 | Feature | Details |
 |---------|---------|
 | Workout tracking | Log sets, reps, weight, notes |
-| Exercise library | All 150+ exercises with videos |
+| Exercise library | All 157 exercises with videos |
 | 1 starter program | The beginner program with full phases |
 | Basic progress | Session history, current streak |
 | Calendar view | Activity heatmap |
@@ -76,6 +76,10 @@ Free tier must be **genuinely useful** — not a crippled demo. Users should be 
 | Referrals | Invite friends, earn points |
 | Reminders | Set workout/meal reminders |
 | Offline mode | Full offline functionality |
+| Sleep tracking | Log sleep, weekly charts, dashboard widget |
+| Lumbar health | Dedicated exercises for lower back care |
+| Bilingual (ES/EN) | Full app experience in Spanish and English |
+| Guided app tours | Interactive walkthroughs for new users |
 
 ### Premium Tier
 
@@ -91,7 +95,6 @@ Free tier must be **genuinely useful** — not a crippled demo. Users should be 
 | Advanced analytics | Muscle volume charts, 1RM calculator |
 | Photo progress comparator | Side-by-side before/after |
 | Data export | Power user feature |
-| Sleep tracking | Additional tracking vertical |
 | Create challenges | Free users join, premium users create |
 | Priority support | Direct line to you |
 

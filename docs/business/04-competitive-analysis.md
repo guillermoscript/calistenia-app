@@ -21,7 +21,7 @@ The fitness app market is massive (~$15B globally) but calisthenics is a specifi
 | **Funding** | $45M+ raised |
 | **Strengths** | AI coach, massive content library, brand recognition, available in Spanish |
 | **Weaknesses** | Generic (not calisthenics-specific), expensive, workouts feel robotic, no social features, no nutrition tracking built-in |
-| **Your advantage** | You're cheaper, more calisthenics-focused, have nutrition + cardio + social built in, and work offline |
+| **Your advantage** | You're cheaper, more calisthenics-focused, have nutrition + cardio + social + sleep tracking built in, work offline, and are fully bilingual (ES/EN) |
 
 ### Thenx (Chris Heria)
 
@@ -30,8 +30,8 @@ The fitness app market is massive (~$15B globally) but calisthenics is a specifi
 | **Price** | $9.99/mo or $49.99/year |
 | **Users** | 1M+ downloads |
 | **Strengths** | Strong brand (Chris Heria has 8M YouTube subscribers), structured skill-based programs, video quality |
-| **Weaknesses** | English-first (poor Spanish), no nutrition tracking, no social features, no progress analytics, no GPS cardio |
-| **Your advantage** | Native Spanish, complete ecosystem (not just workouts), social/community features, free tier is generous |
+| **Weaknesses** | English-first (poor Spanish), no nutrition tracking, no social features, no progress analytics, no GPS cardio, no sleep tracking |
+| **Your advantage** | Bilingual (ES/EN), complete ecosystem (not just workouts), social/community features, sleep tracking, lumbar health, free tier is generous |
 
 ### Calisteniapp / Madbarz
 
@@ -40,8 +40,8 @@ The fitness app market is massive (~$15B globally) but calisthenics is a specifi
 | **Price** | Freemium, ~$6-10/mo for premium |
 | **Users** | 500K-1M downloads |
 | **Strengths** | Calisthenics-focused, workout builder, some community features |
-| **Weaknesses** | Dated UI, limited analytics, no AI features, no nutrition, no cardio GPS |
-| **Your advantage** | Modern UI, AI nutrition, GPS cardio, photo progress, deeper analytics, better social features |
+| **Weaknesses** | Dated UI, limited analytics, no AI features, no nutrition, no cardio GPS, no sleep tracking |
+| **Your advantage** | Modern UI, AI nutrition, GPS cardio, photo progress, deeper analytics, better social features, sleep tracking, lumbar health, guided onboarding tours |
 
 ### Hybrid Calisthenics (Hampton)
 
@@ -106,7 +106,7 @@ Popular gym tracking apps that some calisthenics people use.
                         │
           Madbarz       │    ★ Calistenia App
           (dated,       │    (complete ecosystem,
-           basic)       │     Spanish, AI+GPS+social)
+           basic)       │     bilingual, AI+GPS+sleep+social)
                         │
                     LOW PRICE / FREE
 ```
@@ -117,15 +117,17 @@ Popular gym tracking apps that some calisthenics people use.
 
 ## Your Moat (What's Hard to Copy)
 
-1. **Native Spanish with cultural context** — Not just translated UI. Food database works with Latin American products. Exercise names in proper Spanish. WhatsApp sharing (not iMessage/SMS).
+1. **Natively bilingual (ES/EN) with cultural context** — Not just translated UI. Food database works with Latin American products. Exercise names in proper Spanish. WhatsApp sharing (not iMessage/SMS). Full English support opens the app to a global audience without losing its Spanish-first identity.
 
-2. **Complete ecosystem** — Competitors do 1-2 things well. You do workouts + nutrition + cardio + sleep + social + progress + programs. Switching cost is high once someone has 3 months of data.
+2. **Complete ecosystem** — Competitors do 1-2 things well. You do workouts + nutrition + cardio + sleep + social + progress + programs + lumbar health. Switching cost is high once someone has 3 months of data.
 
 3. **Offline-first PWA** — Works in areas with bad internet. Critical for LATAM market. Most competitors require constant connection.
 
 4. **AI nutrition in Spanish** — Meal analysis and planning that understands "arepa", "empanada", "tortilla espanola". Not just translated English food databases.
 
 5. **Community features** — Friends, challenges, leaderboards, feed. Network effects mean the app gets more valuable as more people join. Competitors (Thenx, Freeletics) are solo experiences.
+
+6. **Guided onboarding** — Interactive app tours (Driver.js) walk new users through each page. This reduces the "I don't know what to do" drop-off that plagues feature-rich apps. No competitor in this niche offers guided onboarding.
 
 ---
 
@@ -140,19 +142,24 @@ Popular gym tracking apps that some calisthenics people use.
 | Most apps require internet | You work offline |
 | Expensive subscriptions ($10-13/mo) | You're at $6.99/mo |
 | No photo progress in competitors | You have before/after timeline |
+| No sleep tracking in calisthenics apps | You have sleep logging, weekly charts, and dashboard integration |
+| No rehab/prehab content | You have a dedicated lumbar health page with specialized exercises |
+| Most calisthenics apps are English-only or translated | You're natively bilingual (ES/EN) with culturally adapted content |
+| No guided onboarding in competitors | You have interactive app tours that reduce first-session drop-off |
 
 ---
 
 ## Positioning Statement
 
-**For Spanish-speaking calisthenics athletes who want a complete training system (not just a workout timer), Calistenia App is the only app that combines structured programs, AI nutrition, GPS cardio, and social challenges — in their language, at a price that makes sense, and that works without internet.**
+**For calisthenics athletes who want a complete training system (not just a workout timer), Calistenia App is the only app that combines structured programs, AI nutrition, GPS cardio, sleep tracking, and social challenges — in Spanish and English, at a price that makes sense, and that works without internet.**
 
 ### One-liner versions (for different contexts):
 
-- **For social media bio**: "La app completa de calistenia en espanol"
+- **For social media bio (ES)**: "La app completa de calistenia en espanol"
+- **For social media bio (EN)**: "The complete calisthenics app — bilingual, free to start"
 - **For ad headline**: "Tu entrenador de calistenia con IA"
 - **For app store**: "Calistenia: entrenos, nutricion, progreso y comunidad"
-- **For pitch**: "Freeletics for calisthenics, but Spanish-native, cheaper, and with nutrition + social built in"
+- **For pitch**: "Freeletics for calisthenics, but bilingual, cheaper, and with nutrition + sleep + social built in"
 
 ---
 

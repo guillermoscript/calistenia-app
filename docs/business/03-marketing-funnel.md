@@ -109,11 +109,14 @@ This is NOT your main landing page. This is a separate, focused page that ad tra
 - Step 3: "Registra tus entrenos y ve tu progreso"
 
 **6. Feature grid (quick scan)**
-- 150+ ejercicios con video
+- 157 ejercicios con video
 - GPS para cardio
 - Escaneo de codigo de barras
 - Funciona sin internet
 - Retos con amigos
+- Seguimiento de sueno
+- Salud lumbar (ejercicios especializados)
+- Disponible en espanol e ingles
 
 **7. Final CTA**
 - "Empieza gratis — tu primer entrenamiento te espera"
@@ -165,6 +168,16 @@ Realistically: Month 5-6.
 - Naturally mention: "Esto es parte del programa que sigo en [App Name]"
 - Softest sell, best for cold audiences
 
+**5. Sleep + Recovery Angle**
+- "Duermes mal? Tu entrenamiento lo nota"
+- Show sleep tracking → correlate with workout performance
+- Targets the health-conscious audience beyond just strength
+
+**6. Lumbar Health / Rehab Hook**
+- "5 ejercicios para el dolor de espalda baja"
+- High-demand topic that targets an older demographic (30-50)
+- Positions the app as health + strength, not just aesthetics
+
 ### Targeting
 
 | Audience | Details |
@@ -173,7 +186,9 @@ Realistically: Month 5-6.
 | **Broad fitness** | Males 18-35, interests: home workout, gym, fitness, no equipment workout |
 | **Lookalike** | 1% lookalike of your registered users (once you have 100+) |
 | **Retargeting** | Visited landing page but didn't sign up (install Meta Pixel) |
-| **Countries** | Spain, Mexico, Colombia, Argentina, Chile, Peru |
+| **Countries (Spanish)** | Spain, Mexico, Colombia, Argentina, Chile, Peru |
+| **Countries (English)** | US, UK, Canada, Australia — the app is now fully bilingual |
+| **English audiences** | r/bodyweightfitness, r/calisthenics, English calisthenics YouTube communities |
 
 ### Budget Progression
 

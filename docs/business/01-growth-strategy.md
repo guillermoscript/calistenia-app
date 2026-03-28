@@ -13,11 +13,12 @@ Calisthenics is one of the most visual fitness disciplines. People doing muscle-
 **What to post (3-5x per week):**
 
 1. **Exercise tutorials** (your biggest asset)
-   - You have 150+ exercises with video content already
+   - You have 157 exercises with video content already
    - Reformat into 15-30 second clips with text overlay
    - "3 progresiones para tu primera dominada"
    - "Errores comunes en las flexiones"
    - "Rutina push de 20 minutos"
+   - The app is bilingual (Spanish + English) — create content in both languages to reach a wider audience
 
 2. **App walkthroughs** (show the product)
    - Screen record the app doing something useful
@@ -67,13 +68,15 @@ Your referral system is your secret weapon for the LATAM market. WhatsApp is how
    - After a user completes their 3rd workout (they're engaged): show a referral prompt
    - "Conoces a alguien que entrene calistenia? Invitalo"
    - One tap to send WhatsApp invite with their personal code
+   - The built-in **app tour system** (guided walkthroughs) helps referred users get activated quickly — they understand the app without needing hand-holding
 
 ### Channel #3: Facebook/Reddit Groups
 
 **Where your people already are:**
 - Facebook: "Calistenia y Street Workout" groups (many with 50K-200K members)
 - Facebook: Country-specific groups ("Calistenia Mexico", "Calistenia Argentina")
-- Reddit: r/bodyweightfitness (English but some Spanish speakers)
+- Reddit: r/bodyweightfitness — now a **primary** target since the app supports English natively
+- Reddit: r/calisthenics, r/overcominggravity (English communities you can reach directly)
 - Telegram: Calisthenics channels
 
 **How to participate without being spammy:**
@@ -166,12 +169,20 @@ If no: more ads just means more people churning. Fix retention first.
 
 ### Challenges as viral loops
 
-Your challenge system is built for growth:
+Your challenge system is fully built and functional:
 - Create a public monthly challenge ("Reto 30 dias: 100 dominadas")
 - Make it shareable via invite link (already works)
 - Participants invite friends to compete
 - Show leaderboard publicly
 - Post results on social media
+
+### Lumbar health as a content niche
+
+The app includes a dedicated **lumbar health page** with specialized exercises — a feature no competitor offers. This opens a unique content angle:
+- "Cuida tu espalda baja con calistenia" (video series)
+- "5 ejercicios para el dolor lumbar" — high-demand search topic
+- Targets an older demographic (30-50) that overlaps with "home workout" audiences
+- Positions the app as more than just strength/aesthetics — it's also about health and longevity
 
 ---
 
