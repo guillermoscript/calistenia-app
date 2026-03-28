@@ -5,7 +5,7 @@ import { PHASES as FALLBACK_PHASES } from '../data/workouts'
 import WeekPlanWidget from '../components/WeekPlanWidget'
 import ProgramSelectorModal from '../components/ProgramSelectorModal'
 import { cn } from '../lib/utils'
-import { todayStr, localHour, localDay } from '../lib/dateUtils'
+import { todayStr, localHour, localDay, diffDays } from '../lib/dateUtils'
 import { PHASE_COLORS, CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -13,12 +13,14 @@ import { Progress } from '../components/ui/progress'
 import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
 import WaterTracker from '../components/WaterTracker'
+import StreakMilestone, { getActiveMilestone, markMilestoneShown } from '../components/StreakMilestone'
 import WorkoutReminderWidget from '../components/WorkoutReminderWidget'
 import CardioWidget from '../components/cardio/CardioWidget'
 import SleepDashboardWidget from '../components/sleep/SleepDashboardWidget'
 import type { SleepLastEntry } from '../components/sleep/SleepDashboardWidget'
 import LeaderboardWidget from '../components/friends/LeaderboardWidget'
 import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
+import PhasePhotoBanner from '../components/progress/PhasePhotoBanner'
 import { useWater } from '../hooks/useWater'
 import { useSleep } from '../hooks/useSleep'
 import { useLeaderboard } from '../hooks/useLeaderboard'
@@ -177,7 +179,8 @@ export default function DashboardPage({
     updateSettings, isWorkoutDone, getLastSessionDate, selectProgram: onSelectProgram,
     duplicateProgram,
   } = useWorkoutActions()
-  const { userId } = useAuthState()
+  const { userId, user } = useAuthState()
+  const displayName = (user as any)?.display_name || (user as any)?.name || ''
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const onGoToWorkout = useCallback(() => navigate('/workout'), [navigate])
@@ -198,29 +201,33 @@ export default function DashboardPage({
   const sleepLastEntry: SleepLastEntry | null = useMemo(() => {
     if (sleepEntries.length === 0) return null
     const e = sleepEntries[0] // already sorted by date desc
-    return { date: e.date, duration_minutes: e.duration_minutes, quality: e.quality, bedtime: e.bedtime, wake_time: e.wake_time }
+    return { date: e.date, duration_minutes: e.duration_minutes, quality: e.quality, bedtime: e.bedtime, wake_time: e.wake_time, awake_minutes: e.awake_minutes }
   }, [sleepEntries])
   useEffect(() => { if (userId) { loadLeaderboard(); loadFeed() } }, [userId, loadLeaderboard, loadFeed])
   const weeklyLeaderboard = leaderboardEntries.sessions_week
   const totalSessions = getTotalSessions()
   const streak = getLongestStreak()
+  const [dismissedMilestone, setDismissedMilestone] = useState(false)
+  const activeMilestone = useMemo(() => {
+    if (!userId || dismissedMilestone) return null
+    return getActiveMilestone(streak, userId)
+  }, [streak, userId, dismissedMilestone])
   const weeklyDone = getWeeklyDoneCount()
   const monthActivity = getMonthActivity()
   const phase = PHASES.find(p => p.id === settings.phase) || PHASES[0]
   const phaseAccent = PHASE_COLORS[phase.id] || PHASE_COLORS[1]
-  const startDate = settings.startDate ? new Date(settings.startDate) : new Date()
-  const daysElapsed = Math.floor((new Date().getTime() - startDate.getTime()) / 86400000)
+  const today_str = todayStr()
+  const daysElapsed = settings.startDate ? diffDays(today_str, settings.startDate) : 0
   const weekElapsed = Math.floor(daysElapsed / 7) + 1
   const totalWeeks = activeProgram?.duration_weeks || 26
   const progress = Math.min(100, (daysElapsed / (totalWeeks * 7)) * 100)
   const calDays = Object.entries(monthActivity)
-  const today_str = todayStr()
 
   const daysSinceLastSession = useMemo(() => {
     const last = getLastSessionDate ? getLastSessionDate() : null
     if (!last) return null
-    return Math.floor((new Date().getTime() - new Date(last).getTime()) / 86400000)
-  }, [getLastSessionDate])
+    return diffDays(today_str, last)
+  }, [getLastSessionDate, today_str])
 
   const showNudge = daysSinceLastSession !== null && daysSinceLastSession >= 3
 
@@ -285,6 +292,13 @@ export default function DashboardPage({
         <Progress value={progress} className="h-1.5" />
       </div>
 
+      {/* Phase Photo Nudge Banner */}
+      <PhasePhotoBanner
+        currentPhase={phase.id}
+        userId={userId || null}
+        hasCompletedWorkoutInPhase={totalSessions > 0}
+      />
+
       {/* ═══ TODAY'S WORKOUT HERO ══════════════════════════════════════════ */}
       {(() => {
         const todayDayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
@@ -292,7 +306,7 @@ export default function DashboardPage({
         const todayIsRest = todayDay?.type === 'rest'
         const todayIsCardio = todayDay?.type === 'cardio'
         const todayWorkoutKey = `p${settings.phase || 1}_${todayDayId}`
-        const todayDone = isWorkoutDone(todayWorkoutKey)
+        const todayDone = isWorkoutDone(todayWorkoutKey, today_str)
 
         return (
           <div
@@ -540,6 +554,16 @@ export default function DashboardPage({
           ))}
         </div>
       </div>
+
+      {/* ═══ STREAK MILESTONE ═══════════════════════════════════════════════ */}
+      {activeMilestone && userId && (
+        <StreakMilestone
+          streak={activeMilestone}
+          userId={userId}
+          userName={displayName}
+          onDismiss={() => setDismissedMilestone(true)}
+        />
+      )}
 
       {/* ═══ CONFIGURATION (collapsed) ═══════════════════════════════════════ */}
       <div className="pt-4">

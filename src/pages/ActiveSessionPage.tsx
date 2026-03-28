@@ -8,11 +8,13 @@ import SessionView from '../components/SessionView'
 
 export default function ActiveSessionPage() {
   const { isActive, workout, workoutKey, endSession, getRestForExercise, setRestForExercise, progress, setProgress, startedAt } = useActiveSession()
-  const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
+  const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
   const { user } = useAuthState()
   const navigate = useNavigate()
 
   const userName = user?.display_name || user?.name || undefined
+  const userId = user?.id || undefined
+  const referralCode = user?.referral_code || null
   const avatarUrl = useMemo(() => user ? getUserAvatarUrl(user) : null, [user])
 
   // Redirect to dashboard if no active session
@@ -56,6 +58,9 @@ export default function ActiveSessionPage() {
       startedAt={startedAt}
       userName={userName}
       avatarUrl={avatarUrl}
+      userId={userId}
+      referralCode={referralCode}
+      getTotalSessions={getTotalSessions}
     />
   )
 }

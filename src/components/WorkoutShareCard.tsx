@@ -3,6 +3,7 @@ import i18n from '../lib/i18n'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
 import { todayStr } from '../lib/dateUtils'
+import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage } from '../lib/canvas-helpers'
 import type { Exercise } from '../types'
 
 interface Quote { q: string; a: string }
@@ -16,78 +17,6 @@ interface WorkoutShareCardProps {
   quote?: Quote | null
   userName?: string
   avatarUrl?: string | null
-}
-
-/** Draw a filled rounded rect */
-function fillRRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, color: string) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.lineTo(x + w - r, y)
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
-  ctx.lineTo(x + w, y + h - r)
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
-  ctx.lineTo(x + r, y + h)
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
-  ctx.lineTo(x, y + r)
-  ctx.quadraticCurveTo(x, y, x + r, y)
-  ctx.closePath()
-  ctx.fillStyle = color
-  ctx.fill()
-}
-
-/** Draw a stroked rounded rect */
-function strokeRRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, color: string, lineWidth: number) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.lineTo(x + w - r, y)
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
-  ctx.lineTo(x + w, y + h - r)
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
-  ctx.lineTo(x + r, y + h)
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
-  ctx.lineTo(x, y + r)
-  ctx.quadraticCurveTo(x, y, x + r, y)
-  ctx.closePath()
-  ctx.strokeStyle = color
-  ctx.lineWidth = lineWidth
-  ctx.stroke()
-}
-
-/** Draw circle-clipped image */
-function drawCircleImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cx: number, cy: number, r: number) {
-  ctx.save()
-  ctx.beginPath()
-  ctx.arc(cx, cy, r, 0, Math.PI * 2)
-  ctx.closePath()
-  ctx.clip()
-  ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2)
-  ctx.restore()
-}
-
-/** Draw text initial avatar */
-function drawInitialAvatar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, initial: string, bgColor: string, textColor: string) {
-  ctx.beginPath()
-  ctx.arc(cx, cy, r, 0, Math.PI * 2)
-  ctx.fillStyle = bgColor
-  ctx.fill()
-  ctx.fillStyle = textColor
-  ctx.font = `700 ${r}px "DM Sans", system-ui, sans-serif`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(initial.toUpperCase(), cx, cy + 1)
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'alphabetic'
-}
-
-/** Load image from URL */
-function loadImage(src: string): Promise<HTMLImageElement | null> {
-  return new Promise(resolve => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => resolve(img)
-    img.onerror = () => resolve(null)
-    img.src = src
-  })
 }
 
 export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin, date, exercises, quote, userName, avatarUrl }: WorkoutShareCardProps) {

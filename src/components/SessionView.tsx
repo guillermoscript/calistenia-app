@@ -19,6 +19,9 @@ import {
 } from './ui/dialog'
 import { cn } from '../lib/utils'
 import WorkoutShareCard from './WorkoutShareCard'
+import PRCelebration from './PRCelebration'
+import ReferralPrompt, { isReferralPromptShown } from './ReferralPrompt'
+import type { PREvent } from '../hooks/useProgress'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
 import { PRIORITY_COLORS } from '../lib/style-tokens'
@@ -667,10 +670,20 @@ interface CelebrateScreenProps {
   onDone: () => void
   userName?: string
   avatarUrl?: string | null
+  userId?: string
+  referralCode?: string | null
+  totalSessions?: number
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl }: CelebrateScreenProps) {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl, userId, referralCode, totalSessions }: CelebrateScreenProps) {
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
+  const [showReferral, setShowReferral] = useState(false)
+
+  useEffect(() => {
+    if (userId && referralCode && (totalSessions ?? 0) >= 3 && !isReferralPromptShown(userId)) {
+      setShowReferral(true)
+    }
+  }, [userId, referralCode, totalSessions])
 
   useEffect(() => {
     const ctrl = new AbortController()
@@ -737,6 +750,16 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} exercises={exercises} quote={quote} userName={userName} avatarUrl={avatarUrl} />
         </div>
         <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
+
+        {/* Referral prompt after 3rd workout */}
+        {showReferral && referralCode && userId && (
+          <ReferralPrompt
+            userId={userId}
+            displayName={userName || ''}
+            referralCode={referralCode}
+            onDismiss={() => setShowReferral(false)}
+          />
+        )}
       </div>
     </div>
   )
@@ -755,7 +778,7 @@ interface SessionProgress {
 interface SessionViewProps {
   workout: Workout
   workoutKey: string
-  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number; rpe?: number }) => void
+  onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number; rpe?: number }) => Promise<PREvent | null>
   onMarkDone: (workoutKey: string, note: string) => void
   onGoToDashboard: () => void
   onExitSession: () => void
@@ -771,6 +794,10 @@ interface SessionViewProps {
   /** User profile for share card */
   userName?: string
   avatarUrl?: string | null
+  /** For referral prompt */
+  userId?: string
+  referralCode?: string | null
+  getTotalSessions?: () => number
 }
 
 export default function SessionView({
@@ -788,6 +815,9 @@ export default function SessionView({
   startedAt,
   userName,
   avatarUrl,
+  userId,
+  referralCode,
+  getTotalSessions,
 }: SessionViewProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -797,6 +827,7 @@ export default function SessionView({
   const [phase,     setPhase]     = useState<SessionPhase>(initialProgress?.phase ?? 'exercise')
   const [setsCount, setSetsCount] = useState<number>(initialProgress?.setsCount ?? 0)
   const [showExit,  setShowExit]  = useState<boolean>(false)
+  const [prEvent,   setPREvent]   = useState<PREvent | null>(null)
 
   // Sync progress to context so it survives navigation away and back
   useEffect(() => {
@@ -865,8 +896,9 @@ export default function SessionView({
   // Request notification permission when session starts
   useEffect(() => { notif.requestPermission() }, [])
 
-  const handleLogged = useCallback(({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
-    onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
+  const handleLogged = useCallback(async ({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
+    const pr = await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
+    if (pr) setPREvent(pr)
     const newCount = setsCount + 1
     setSetsCount(newCount)
     sounds.playSetComplete()
@@ -894,6 +926,7 @@ export default function SessionView({
   const handleRestDone = useCallback(() => {
     setStepIdx(i => i + 1)
     setPhase('exercise')
+    setPREvent(null)
   }, [])
 
   const handleNoteSaved = useCallback((note: string) => {
@@ -998,6 +1031,15 @@ export default function SessionView({
 
       {phase === 'rest' && (
         <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* PR celebration banner */}
+          {prEvent && (
+            <PRCelebration
+              prEvent={prEvent}
+              userName={userName}
+              avatarUrl={avatarUrl}
+              onDismiss={() => setPREvent(null)}
+            />
+          )}
           {/* Navigation arrows during rest */}
           {(hasPrevExercise || hasNextExercise) && (
             <div className="flex absolute top-1/2 -translate-y-1/2 left-0 right-0 justify-between pointer-events-none z-10 px-1 sm:px-2">
@@ -1051,6 +1093,9 @@ export default function SessionView({
           onDone={onGoToDashboard}
           userName={userName}
           avatarUrl={avatarUrl}
+          userId={userId}
+          referralCode={referralCode}
+          totalSessions={getTotalSessions?.() ?? 0}
         />
       )}
 

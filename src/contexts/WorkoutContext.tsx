@@ -1,5 +1,5 @@
 import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react'
-import { useProgress } from '../hooks/useProgress'
+import { useProgress, type PREvent } from '../hooks/useProgress'
 import { usePrograms } from '../hooks/usePrograms'
 import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig } from '../types'
 
@@ -22,7 +22,7 @@ interface WorkoutState {
 
 interface WorkoutActions {
   // Progress actions
-  logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<void>
+  logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<PREvent | null>
   markWorkoutDone: (workoutKey: string, note?: string) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
@@ -34,7 +34,7 @@ interface WorkoutActions {
   getLongestStreak: () => number
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
-  checkAndUpdatePR: (exerciseId: string, reps: string) => void
+  checkAndUpdatePR: (exerciseId: string, reps: string) => Promise<PREvent | null>
   // Program actions
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<void>
@@ -89,9 +89,10 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   } = useProgress(userId, activeProgram?.id ?? null)
 
   // Wrap logSet to auto-detect PRs
-  const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => {
+  const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>): Promise<PREvent | null> => {
     await rawLogSet(exerciseId, workoutKey, setData)
-    if (setData.reps) checkAndUpdatePR(exerciseId, setData.reps as string)
+    if (setData.reps) return checkAndUpdatePR(exerciseId, setData.reps as string)
+    return null
   }, [rawLogSet, checkAndUpdatePR])
 
   const state = useMemo<WorkoutState>(() => ({

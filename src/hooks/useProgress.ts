@@ -1,12 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { todayStr, toLocalDateStr, nowLocalForPB, localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
+import { todayStr, toLocalDateStr, nowLocalForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
 import type { Settings, ProgressMap, SetData, ExerciseLog } from '../types'
 
 const LS_KEY = 'calistenia_progress'
 const LS_SETTINGS = 'calistenia_settings'
 
 const DEFAULT_SETTINGS: Settings = { phase: 1, startDate: null, weeklyGoal: 5 }
+
+export interface PREvent {
+  exerciseId: string
+  prKey: string
+  oldValue: number
+  newValue: number
+}
 
 // ─── PR pattern matching (module-level) ─────────────────────────────────────
 const PR_PATTERNS: Array<{ test: (id: string) => boolean; key: keyof Settings }> = [
@@ -65,7 +72,7 @@ interface UseProgressReturn {
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
-  checkAndUpdatePR: (exerciseId: string, reps: string) => Promise<void>
+  checkAndUpdatePR: (exerciseId: string, reps: string) => Promise<PREvent | null>
 }
 
 /**
@@ -336,12 +343,9 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
   [progress])
 
   const getWeeklyDoneCount = useCallback((): number => {
-    const today = new Date()
+    const monday = startOfWeekStr()
     const dates: string[] = []
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(today); d.setDate(today.getDate() - today.getDay() + 1 + i)
-      dates.push(toLocalDateStr(d))
-    }
+    for (let i = 0; i < 7; i++) dates.push(addDays(monday, i))
     return Object.keys(progress).filter(k => k.startsWith('done_') && dates.some(d => k.includes(d))).length
   }, [progress])
 
@@ -356,18 +360,19 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
     if (doneDates.length === 0) return 0
     let max = 1, streak = 1
     for (let i = 1; i < doneDates.length; i++) {
-      const diff = (new Date(doneDates[i]).getTime() - new Date(doneDates[i-1]).getTime()) / 86400000
-      if (diff === 1) { streak++; max = Math.max(max, streak) } else streak = 1
+      if (diffDays(doneDates[i], doneDates[i-1]) === 1) { streak++; max = Math.max(max, streak) } else streak = 1
     }
     return max
   }, [progress])
 
   const getMonthActivity = useCallback((): Record<string, boolean> => {
-    const t = new Date()
-    const days = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate()
+    const today = todayStr()
+    const year = today.slice(0, 4)
+    const month = today.slice(5, 7)
+    const daysInMonth = new Date(Number(year), Number(month), 0).getDate()
     const activity: Record<string, boolean> = {}
-    for (let d = 1; d <= days; d++) {
-      const ds = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = `${year}-${month}-${String(d).padStart(2, '0')}`
       activity[ds] = Object.keys(progress).some(k => k.startsWith('done_') && k.includes(ds))
     }
     return activity
@@ -426,16 +431,18 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
   }, [settings, usePB, userId])
 
   // ─── Auto-detect PRs ─────────────────────────────────────────────────────
-  const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string) => {
+  const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string): Promise<PREvent | null> => {
     const repsNum = parseInt(reps)
-    if (isNaN(repsNum) || repsNum <= 0) return
+    if (isNaN(repsNum) || repsNum <= 0) return null
     const match = PR_PATTERNS.find(p => p.test(exerciseId))
-    if (!match) return
+    if (!match) return null
     const prKey = match.key
     const current = (settings as unknown as Record<string, number>)[prKey] || 0
     if (repsNum > current) {
       await updateSettings({ [prKey]: repsNum } as Partial<Settings>)
+      return { exerciseId, prKey: String(prKey), oldValue: current, newValue: repsNum }
     }
+    return null
   }, [settings, updateSettings])
 
   return {
