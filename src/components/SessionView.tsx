@@ -747,7 +747,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           >
             IR AL DASHBOARD
           </Button>
-          <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} exercises={exercises} quote={quote} userName={userName} avatarUrl={avatarUrl} />
+          <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} exercises={exercises} quote={quote} userName={userName} avatarUrl={avatarUrl} referralCode={referralCode} />
         </div>
         <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
 
@@ -1037,6 +1037,7 @@ export default function SessionView({
               prEvent={prEvent}
               userName={userName}
               avatarUrl={avatarUrl}
+              referralCode={referralCode}
               onDismiss={() => setPREvent(null)}
             />
           )}

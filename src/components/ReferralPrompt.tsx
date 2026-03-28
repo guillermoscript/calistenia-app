@@ -5,12 +5,19 @@ import { shareReferralInvite } from '../lib/share'
 
 const REFERRAL_PROMPT_KEY = 'calistenia_referral_prompt_shown'
 
+const REFERRAL_COOLDOWN_DAYS = 14
+
 export function isReferralPromptShown(userId: string): boolean {
-  return localStorage.getItem(`${REFERRAL_PROMPT_KEY}_${userId}`) === 'true'
+  const stored = localStorage.getItem(`${REFERRAL_PROMPT_KEY}_${userId}`)
+  if (!stored || stored === 'true') return false // no date or legacy boolean → allow showing
+  const lastShown = new Date(stored)
+  if (isNaN(lastShown.getTime())) return false // invalid date → allow showing
+  const daysSince = (Date.now() - lastShown.getTime()) / (1000 * 60 * 60 * 24)
+  return daysSince < REFERRAL_COOLDOWN_DAYS
 }
 
 export function markReferralPromptShown(userId: string): void {
-  localStorage.setItem(`${REFERRAL_PROMPT_KEY}_${userId}`, 'true')
+  localStorage.setItem(`${REFERRAL_PROMPT_KEY}_${userId}`, new Date().toISOString())
 }
 
 interface ReferralPromptProps {

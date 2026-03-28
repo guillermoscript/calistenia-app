@@ -15,9 +15,10 @@ interface CardioHistoryProps {
   sessions: CardioSession[]
   loading?: boolean
   onDelete?: (id: string) => Promise<void>
+  referralCode?: string | null
 }
 
-export default function CardioHistory({ sessions, loading, onDelete }: CardioHistoryProps) {
+export default function CardioHistory({ sessions, loading, onDelete, referralCode }: CardioHistoryProps) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -209,7 +210,7 @@ export default function CardioHistory({ sessions, loading, onDelete }: CardioHis
                     </Button>
                   )}
                   <div className="ml-auto">
-                    <CardioShareCard session={session} />
+                    <CardioShareCard session={session} referralCode={referralCode} />
                   </div>
                 </div>
               </div>

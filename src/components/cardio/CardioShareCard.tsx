@@ -37,9 +37,10 @@ function fillRRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 
 interface CardioShareCardProps {
   session: CardioSession
+  referralCode?: string | null
 }
 
-export default function CardioShareCard({ session }: CardioShareCardProps) {
+export default function CardioShareCard({ session, referralCode }: CardioShareCardProps) {
   const { t } = useTranslation()
   const handleShare = useCallback(async () => {
     try {
@@ -200,16 +201,19 @@ export default function CardioShareCard({ session }: CardioShareCardProps) {
       const blob = await canvasToBlob(canvas)
       if (!blob) return
       const dateStr = session.started_at.split('T')[0]
+      const shareText = referralCode
+        ? `${session.distance_km.toFixed(2)} km en ${formatDuration(session.duration_seconds)}\ngym.guille.tech/invite/${referralCode}`
+        : `${session.distance_km.toFixed(2)} km en ${formatDuration(session.duration_seconds)}`
       await shareImage(
         blob,
         `cardio_${dateStr}.png`,
         `${getActivityLabel(session.activity_type)} — ${session.distance_km.toFixed(2)} km`,
-        `${session.distance_km.toFixed(2)} km en ${formatDuration(session.duration_seconds)}`,
+        shareText,
       )
     } catch (e) {
       console.warn('Share error:', e)
     }
-  }, [session])
+  }, [session, referralCode])
 
   return (
     <Button

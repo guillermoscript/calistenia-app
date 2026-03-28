@@ -7,6 +7,7 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { cn } from '../lib/utils'
 import { pb } from '../lib/pocketbase'
+import { op } from '../lib/analytics'
 import type { ProgramMeta } from '../types'
 
 const ONBOARDING_KEY_PREFIX = 'calistenia_onboarding_done'
@@ -146,6 +147,7 @@ export default function OnboardingFlow({
 
   const handleFinish = () => {
     markOnboardingDone(userId)
+    op.track('onboarding_completed', { level: level || 'unknown', has_program: !!selectedProgramId })
     onComplete()
   }
 

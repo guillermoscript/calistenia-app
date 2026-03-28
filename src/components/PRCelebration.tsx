@@ -16,10 +16,11 @@ interface PRCelebrationProps {
   prEvent: PREvent
   userName?: string
   avatarUrl?: string | null
+  referralCode?: string | null
   onDismiss: () => void
 }
 
-export default function PRCelebration({ prEvent, userName, avatarUrl, onDismiss }: PRCelebrationProps) {
+export default function PRCelebration({ prEvent, userName, avatarUrl, referralCode, onDismiss }: PRCelebrationProps) {
   const { t } = useTranslation()
   const [showShareCard, setShowShareCard] = useState(false)
 
@@ -87,6 +88,7 @@ export default function PRCelebration({ prEvent, userName, avatarUrl, onDismiss 
               exerciseName={exerciseName}
               userName={userName}
               avatarUrl={avatarUrl}
+              referralCode={referralCode}
             />
           ) : (
             <Button

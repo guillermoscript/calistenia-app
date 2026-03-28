@@ -17,9 +17,10 @@ interface WorkoutShareCardProps {
   quote?: Quote | null
   userName?: string
   avatarUrl?: string | null
+  referralCode?: string | null
 }
 
-export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin, date, exercises, quote, userName, avatarUrl }: WorkoutShareCardProps) {
+export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin, date, exercises, quote, userName, avatarUrl, referralCode }: WorkoutShareCardProps) {
   const dateStr = date || todayStr()
 
   const handleShare = useCallback(async () => {
@@ -308,16 +309,19 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
 
       const blob = await canvasToBlob(canvas)
       if (!blob) return
+      const shareText = referralCode
+        ? `${workoutTitle} — ${totalSets} series en ${durationMin} min 💪\ngym.guille.tech/invite/${referralCode}`
+        : `${workoutTitle} — ${totalSets} series en ${durationMin} min 💪`
       await shareImage(
         blob,
         `workout_${dateStr}.png`,
         `${workoutTitle} - ${formatDate(dateStr)}`,
-        `${workoutTitle} — ${totalSets} series en ${durationMin} min 💪`,
+        shareText,
       )
     } catch (e) {
       console.warn('Share error:', e)
     }
-  }, [workoutTitle, totalSets, durationMin, dateStr, exercises, quote, userName, avatarUrl])
+  }, [workoutTitle, totalSets, durationMin, dateStr, exercises, quote, userName, avatarUrl, referralCode])
 
   return (
     <Button

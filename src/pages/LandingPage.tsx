@@ -1,6 +1,7 @@
 import { useState, useEffect, useId, useRef, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { op } from '../lib/analytics'
 
 interface LandingPageProps {
   onGetStarted: () => void
@@ -271,6 +272,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const { t } = useTranslation()
   const vis = useStagger(4, 120)
 
+  const handleCTA = (location: string) => {
+    op.track('cta_clicked', { location })
+    onGetStarted()
+  }
+
   return (
     <div className="min-h-screen bg-[hsl(0_0%_2%)] text-[hsl(0_0%_92%)] selection:bg-lime/20 overflow-x-hidden">
       {/* ── Nav ─────────────────────────────────── */}
@@ -280,7 +286,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <span className="font-bebas text-2xl tracking-[0.15em] text-[hsl(0_0%_95%)]">CALISTENIA</span>
         </div>
         <button
-          onClick={onGetStarted}
+          onClick={() => handleCTA('nav')}
           className="text-sm text-[hsl(0_0%_55%)] hover:text-[hsl(0_0%_90%)] transition-colors duration-200 px-3 py-2 -mr-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
         >
           {t('landing.enter')}
@@ -336,7 +342,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             }}
           >
             <button
-              onClick={onGetStarted}
+              onClick={() => handleCTA('hero')}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-lime text-[hsl(0_0%_5%)] font-semibold text-sm px-7 py-3.5 rounded-lg hover:brightness-110 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
             >
               {t('landing.startFree')}
@@ -355,7 +361,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="max-w-6xl mx-auto px-6 md:px-10 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8">
             <Stat value="150+" label={t('landing.statsExercises')} />
             <Stat value="4" label={t('landing.statsPhases')} />
-            <Stat value="PWA" label={t('landing.statsPWA')} />
+            <Stat value="100%" label={t('landing.statsPWA')} />
             <Stat value="0" label={t('landing.statsCost')} />
           </div>
         </div>
@@ -641,7 +647,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-4">
                 <button
-                  onClick={onGetStarted}
+                  onClick={() => handleCTA('bottom')}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-lime text-[hsl(0_0%_5%)] font-semibold text-sm px-8 py-4 rounded-lg hover:brightness-110 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
                 >
                   {t('landing.createFreeAccount')}

@@ -12,6 +12,7 @@ interface PRShareCardProps {
   exerciseName: string
   userName?: string
   avatarUrl?: string | null
+  referralCode?: string | null
 }
 
 function formatDate(dateStr: string): string {
@@ -23,7 +24,7 @@ function formatDate(dateStr: string): string {
   }
 }
 
-export default function PRShareCard({ prEvent, exerciseName, userName, avatarUrl }: PRShareCardProps) {
+export default function PRShareCard({ prEvent, exerciseName, userName, avatarUrl, referralCode }: PRShareCardProps) {
   const { t } = useTranslation()
   const dateStr = todayStr()
 
@@ -193,16 +194,19 @@ export default function PRShareCard({ prEvent, exerciseName, userName, avatarUrl
 
       const blob = await canvasToBlob(canvas)
       if (!blob) return
+      const shareText = referralCode
+        ? `${exerciseName}: ${prEvent.oldValue || 0} → ${prEvent.newValue} reps 🏆\ngym.guille.tech/invite/${referralCode}`
+        : `${exerciseName}: ${prEvent.oldValue || 0} → ${prEvent.newValue} reps 🏆`
       await shareImage(
         blob,
         `pr_${prEvent.prKey}_${dateStr}.png`,
         `${t('pr.newRecord')} — ${exerciseName}`,
-        `${exerciseName}: ${prEvent.oldValue || 0} → ${prEvent.newValue} reps 🏆`,
+        shareText,
       )
     } catch (e) {
       console.warn('PR share error:', e)
     }
-  }, [prEvent, exerciseName, userName, avatarUrl, dateStr, t])
+  }, [prEvent, exerciseName, userName, avatarUrl, dateStr, t, referralCode])
 
   return (
     <Button

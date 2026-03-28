@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/prerender-blog.mjs",
+    "build:blog": "node scripts/prerender-blog.mjs",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "pb:serve": "./pocketbase serve",
@@ -14,6 +15,7 @@
     "release": "node scripts/release.mjs"
   },
   "dependencies": {
+    "@openpanel/web": "^1.3.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-progress": "^1.1.8",
@@ -21,6 +23,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@tailwindcss/typography": "^0.5.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.20",
@@ -30,6 +33,7 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
+    "marked": "^17.0.5",
     "pocketbase": "^0.26.8",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

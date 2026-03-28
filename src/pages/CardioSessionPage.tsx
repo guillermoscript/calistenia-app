@@ -15,6 +15,7 @@ import ElevationProfile from '../components/cardio/ElevationProfile'
 import { Button } from '../components/ui/button'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { cn } from '../lib/utils'
+import { useAuthState } from '../contexts/AuthContext'
 import type { CardioActivityType, CardioSession } from '../types'
 
 const ACTIVITIES: { id: CardioActivityType; labelKey: string; icon: string }[] = [
@@ -29,6 +30,8 @@ interface CardioSessionPageProps {
 
 export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const { t } = useTranslation()
+  const { user } = useAuthState()
+  const referralCode = (user as any)?.referral_code || null
   const {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
@@ -180,7 +183,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {/* History */}
           <div id="tour-cardio-history">
             <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.history')}</div>
-            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} />
+            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} referralCode={referralCode} />
           </div>
 
           {/* Stats section */}
@@ -451,7 +454,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 GPX
               </Button>
             )}
-            {displaySession && <CardioShareCard session={displaySession} />}
+            {displaySession && <CardioShareCard session={displaySession} referralCode={referralCode} />}
           </div>
         </div>
       )}

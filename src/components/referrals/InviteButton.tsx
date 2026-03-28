@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareContent, type ShareMethod } from '../../lib/share'
+import { op } from '../../lib/analytics'
 
 const BASE_URL = 'https://gym.guille.tech'
 
@@ -41,6 +42,8 @@ export function InviteButton({ referralCode, onCreateChallenge, className }: Inv
       text: t('share.inviteText'),
       url: inviteUrl,
     }, method)
+
+    if (ok) op.track('invite_sent', { method })
 
     if (method === 'copy' && ok) {
       setCopied(true)

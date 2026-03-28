@@ -132,6 +132,15 @@ export function useReferrals(userId: string | null) {
         description: 'referral_signup',
       })
 
+      // Award 50 welcome bonus to the new user
+      await pb.collection('point_transactions').create({
+        user: userId,
+        amount: 50,
+        type: 'referral_bonus',
+        reference_id: referrer.id,
+        description: 'Bonus por registrarte con invitación',
+      })
+
       return true
     } catch (e: any) {
       console.warn('Track referral error:', e)

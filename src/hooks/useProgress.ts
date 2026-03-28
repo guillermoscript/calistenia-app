@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
+import { op } from '../lib/analytics'
 import type { Settings, ProgressMap, SetData, ExerciseLog } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -300,6 +301,8 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
         await pb.collection('sessions').create(sessionData)
       } catch (e) { console.warn('PB sessions error:', e) }
     }
+
+    op.track('workout_completed', { workout_key: workoutKey, is_free_session: workoutKey.startsWith('free_') })
   }, [usePB, userId, activeProgramId])
 
   // ─── unmarkWorkoutDone ───────────────────────────────────────────────────

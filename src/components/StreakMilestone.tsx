@@ -29,10 +29,11 @@ interface StreakMilestoneProps {
   streak: number
   userId: string
   userName: string
+  referralCode?: string | null
   onDismiss: () => void
 }
 
-export default function StreakMilestone({ streak, userId, userName, onDismiss }: StreakMilestoneProps) {
+export default function StreakMilestone({ streak, userId, userName, referralCode, onDismiss }: StreakMilestoneProps) {
   const { t } = useTranslation()
 
   const subtitleKey = `streak.milestone.subtitle${streak}` as const
@@ -41,9 +42,9 @@ export default function StreakMilestone({ streak, userId, userName, onDismiss }:
     await shareContent({
       title: t('streak.milestone.title', { days: streak }),
       text: t('streak.milestone.shareText', { days: streak }),
-      url: window.location.origin,
+      url: referralCode ? `https://gym.guille.tech/invite/${referralCode}` : window.location.origin,
     })
-  }, [streak, t])
+  }, [streak, t, referralCode])
 
   const handleDismiss = useCallback(() => {
     markMilestoneShown(streak, userId)

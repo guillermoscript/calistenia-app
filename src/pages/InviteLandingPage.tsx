@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { ShareButton } from '../components/ShareButton'
 import { shareContent, type ShareMethod } from '../lib/share'
+import { op } from '../lib/analytics'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
 const BASE_URL = 'https://gym.guille.tech'
@@ -51,6 +52,7 @@ export default function InviteLandingPage() {
     if (!code) return
     // Save referral code to localStorage immediately
     localStorage.setItem(REFERRAL_CODE_KEY, code)
+    op.track('invite_landing_viewed', { code, has_challenge: !!challengeId })
 
     const load = async () => {
       setLoading(true)
@@ -200,7 +202,7 @@ export default function InviteLandingPage() {
           <div className="bg-card border border-border rounded-xl p-6">
             <div className="text-xs tracking-widest uppercase text-muted-foreground mb-3">TU LINK DE INVITACION</div>
             <p className="text-sm text-muted-foreground mb-6">
-              Comparte este link con tus amigos para ganar puntos
+              Comparte este link con tus amigos. Tu ganas 100 pts y ellos 50 pts al registrarse.
             </p>
 
             <div className="bg-muted border border-border rounded-lg px-3 py-2.5 text-sm text-muted-foreground mb-6 truncate select-all">
@@ -334,7 +336,10 @@ export default function InviteLandingPage() {
                 >
                   Unirme
                 </Button>
-                <p className="text-center mt-4 text-sm text-muted-foreground">
+                <p className="text-center mt-3 text-xs text-muted-foreground">
+                  {inviter.displayName} gana 100 pts y tu ganas 50 pts al registrarte
+                </p>
+                <p className="text-center mt-3 text-sm text-muted-foreground">
                   Ya tienes cuenta?{' '}
                   <button
                     onClick={handleLogin}

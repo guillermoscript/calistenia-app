@@ -3,7 +3,7 @@
 /**
  * Server-side side effects when a referral record is created:
  * 1. Create mutual follows (referrer ↔ referred)
- * 2. Award 100 points to referrer
+ * 2. Award 100 points to referrer + 50 points to referred (double-sided reward)
  * 3. Notify referrer
  *
  * Runs with admin-level access ($app), bypassing API rules.
@@ -38,7 +38,7 @@ onRecordAfterCreateSuccess((e) => {
     console.log("Referral auto-follow (referred→referrer) skipped:", err)
   }
 
-  // 2. Award referral points to referrer
+  // 2. Award referral points to referrer (100 pts)
   try {
     const pointsCollection = $app.findCollectionByNameOrId("point_transactions")
     const pt = new Record(pointsCollection)
@@ -50,6 +50,20 @@ onRecordAfterCreateSuccess((e) => {
     $app.save(pt)
   } catch (err) {
     console.log("Referral points creation failed:", err)
+  }
+
+  // 2b. Award welcome bonus to the new user (50 pts)
+  try {
+    const pointsCollection = $app.findCollectionByNameOrId("point_transactions")
+    const pt2 = new Record(pointsCollection)
+    pt2.set("user", referredId)
+    pt2.set("amount", 50)
+    pt2.set("type", "referral_bonus")
+    pt2.set("reference_id", referrerId)
+    pt2.set("description", "Bonus por registrarte con invitación")
+    $app.save(pt2)
+  } catch (err) {
+    console.log("Referred user bonus points creation failed:", err)
   }
 
   // 3. Notify referrer

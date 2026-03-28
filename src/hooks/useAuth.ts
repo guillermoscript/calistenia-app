@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
+import { op } from '../lib/analytics'
 import i18n from '../lib/i18n'
 import type { UserRole, UserTier } from '../types'
 
@@ -61,6 +62,9 @@ export const useAuth = (): UseAuthReturn => {
         const u = getCurrentUser()
         if (u?.timezone) setTimezone(u.timezone)
         else setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+        if (u) {
+          op.identify({ profileId: u.id, firstName: u.display_name || u.name || '', email: u.email, properties: { tier: u.tier || 'free', role: u.role || 'user' } })
+        }
         setUser(u)
         setAuthReady(true)
       }
@@ -88,6 +92,9 @@ export const useAuth = (): UseAuthReturn => {
     justRegistered.current = false
 
     const postRegister = async () => {
+      op.identify({ profileId: user.id, firstName: user.display_name || user.name || '', email: user.email, properties: { tier: 'free', role: 'user' } })
+      op.track('signup_completed', { method: user.email ? 'email' : 'google' })
+
       // Generate referral code for the new user
       const displayName = user.display_name || user.name || user.email?.split('@')[0] || 'USER'
       try {
@@ -128,6 +135,7 @@ export const useAuth = (): UseAuthReturn => {
           referred: user.id,
           source: 'quick_invite',
         })
+        op.track('referral_converted', { referrer_id: referrer.id })
       } catch { /* non-critical */ }
     }
 
@@ -190,6 +198,7 @@ export const useAuth = (): UseAuthReturn => {
 
   // ── signOut ──────────────────────────────────────────────────────────────
   const signOut = useCallback(() => {
+    op.clear()
     logout()
     // onChange listener limpia `user` automáticamente
   }, [])

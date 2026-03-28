@@ -561,6 +561,7 @@ export default function DashboardPage({
           streak={activeMilestone}
           userId={userId}
           userName={displayName}
+          referralCode={(user as any)?.referral_code}
           onDismiss={() => setDismissedMilestone(true)}
         />
       )}
