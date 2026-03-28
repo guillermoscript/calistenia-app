@@ -10,6 +10,7 @@ export interface SleepLastEntry {
   quality: number
   bedtime: string
   wake_time: string
+  awake_minutes?: number
 }
 
 interface SleepDashboardWidgetProps {

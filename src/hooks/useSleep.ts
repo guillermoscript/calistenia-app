@@ -40,19 +40,26 @@ export interface SleepStats {
   avgDuration: number
   avgQuality: number
   avgAwakenings: number
+  avgAwakeMinutes: number
   scheduleRegularity: number // std deviation of bedtime in minutes
   entryCount: number
 }
 
 const computeStats = (entries: SleepEntry[]): SleepStats => {
   if (entries.length === 0) {
-    return { avgDuration: 0, avgQuality: 0, avgAwakenings: 0, scheduleRegularity: 0, entryCount: 0 }
+    return { avgDuration: 0, avgQuality: 0, avgAwakenings: 0, avgAwakeMinutes: 0, scheduleRegularity: 0, entryCount: 0 }
   }
 
   const n = entries.length
   const avgDuration = entries.reduce((s, e) => s + e.duration_minutes, 0) / n
   const avgQuality = entries.reduce((s, e) => s + e.quality, 0) / n
   const avgAwakenings = entries.reduce((s, e) => s + e.awakenings, 0) / n
+
+  // Avg awake minutes — only over entries that have the field
+  const awakeEntries = entries.filter(e => e.awake_minutes && e.awake_minutes > 0)
+  const avgAwakeMinutes = awakeEntries.length > 0
+    ? awakeEntries.reduce((s, e) => s + (e.awake_minutes ?? 0), 0) / awakeEntries.length
+    : 0
 
   // Schedule regularity: std deviation of bedtime (in minutes from midnight)
   const bedtimeMinutes = entries.map(e => {
@@ -68,6 +75,7 @@ const computeStats = (entries: SleepEntry[]): SleepStats => {
     avgDuration: Math.round(avgDuration * 10) / 10,
     avgQuality: Math.round(avgQuality * 10) / 10,
     avgAwakenings: Math.round(avgAwakenings * 10) / 10,
+    avgAwakeMinutes: Math.round(avgAwakeMinutes * 10) / 10,
     scheduleRegularity: Math.round(scheduleRegularity * 10) / 10,
     entryCount: n,
   }
@@ -114,6 +122,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
             awakenings: r.awakenings,
             quality: r.quality,
             duration_minutes: r.duration_minutes,
+            awake_minutes: r.awake_minutes || undefined,
             caffeine: r.caffeine ?? undefined,
             screen_before_bed: r.screen_before_bed ?? undefined,
             stress_level: r.stress_level || undefined,
@@ -143,7 +152,8 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
   }, [entries])
 
   const saveSleepEntry = useCallback(async (input: SleepEntryInput) => {
-    const duration_minutes = calculateDurationMinutes(input.bedtime, input.wake_time)
+    const totalInBed = calculateDurationMinutes(input.bedtime, input.wake_time)
+    const duration_minutes = Math.max(0, totalInBed - (input.awake_minutes ?? 0))
     const now = nowLocalForPB()
     const entry: SleepEntry = {
       ...input,
@@ -164,6 +174,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
           awakenings: input.awakenings,
           quality: input.quality,
           duration_minutes,
+          awake_minutes: input.awake_minutes ?? 0,
           caffeine: input.caffeine ?? null,
           screen_before_bed: input.screen_before_bed ?? null,
           stress_level: input.stress_level ?? null,
@@ -188,13 +199,13 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
     if (usePB && userId && !id.startsWith('local_')) {
       try {
         const data: Record<string, any> = { ...input }
-        if (input.bedtime || input.wake_time) {
-          // Need to find the existing entry to compute new duration
+        if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
           const existing = entries.find(e => e.id === id)
           if (existing) {
             const bedtime = input.bedtime ?? existing.bedtime
             const wake_time = input.wake_time ?? existing.wake_time
-            data.duration_minutes = calculateDurationMinutes(bedtime, wake_time)
+            const awakeMin = input.awake_minutes ?? existing.awake_minutes ?? 0
+            data.duration_minutes = Math.max(0, calculateDurationMinutes(bedtime, wake_time) - awakeMin)
           }
         }
         if (input.date) {
@@ -210,9 +221,9 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
       const updated = prev.map(entry => {
         if (entry.id !== id) return entry
         const merged = { ...entry, ...input, updated: nowLocalForPB() }
-        // Recalculate duration if bedtime or wake_time changed
-        if (input.bedtime || input.wake_time) {
-          merged.duration_minutes = calculateDurationMinutes(merged.bedtime, merged.wake_time)
+        if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
+          const totalInBed = calculateDurationMinutes(merged.bedtime, merged.wake_time)
+          merged.duration_minutes = Math.max(0, totalInBed - (merged.awake_minutes ?? 0))
         }
         return merged
       }).sort((a, b) => b.date.localeCompare(a.date))

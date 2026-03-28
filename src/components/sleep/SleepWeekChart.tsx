@@ -15,6 +15,7 @@ export interface SleepEntry {
   duration_minutes: number
   quality: number
   awakenings: number
+  awake_minutes?: number
 }
 
 interface SleepWeekChartProps {
@@ -45,7 +46,8 @@ function qualityColorFaded(q: number): string {
 interface ChartDataPoint {
   dayLabel: string
   date: string
-  hours: number
+  sleepHours: number
+  awakeHours: number
   quality: number
   bedtime: string
   wake_time: string
@@ -64,7 +66,8 @@ function buildChartData(entries: SleepEntry[], t: (key: string) => string): Char
     data.push({
       dayLabel: getDayLabel(dateStr, t),
       date: dateStr,
-      hours: entry ? +(entry.duration_minutes / 60).toFixed(1) : 0,
+      sleepHours: entry ? +(entry.duration_minutes / 60).toFixed(1) : 0,
+      awakeHours: entry?.awake_minutes ? +((entry.awake_minutes) / 60).toFixed(1) : 0,
       quality: entry?.quality ?? 0,
       bedtime: entry?.bedtime ?? '',
       wake_time: entry?.wake_time ?? '',
@@ -82,7 +85,7 @@ function CustomTooltip({ active, payload, label }: any) {
 
   if (!active || !payload?.length) return null
   const d = payload[0]?.payload as ChartDataPoint
-  if (!d.hours) return (
+  if (!d.sleepHours) return (
     <div className="bg-popover border border-border rounded-lg px-3 py-2 text-[11px]">
       <div className="font-medium text-muted-foreground">{label}</div>
       <div className="text-muted-foreground/60 mt-1">{t('sleep.noRecord')}</div>
@@ -93,8 +96,14 @@ function CustomTooltip({ active, payload, label }: any) {
       <div className="font-medium text-foreground mb-1.5">{label}</div>
       <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">{t('sleep.duration')}</span>
-        <span className="text-foreground font-medium">{d.hours}h</span>
+        <span className="text-foreground font-medium">{d.sleepHours}h</span>
       </div>
+      {d.awakeHours > 0 && (
+        <div className="flex justify-between gap-4">
+          <span className="text-muted-foreground">{t('sleep.awakeFor')}</span>
+          <span className="text-foreground">{Math.round(d.awakeHours * 60)}min</span>
+        </div>
+      )}
       <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">{t('sleep.quality')}</span>
         <span style={{ color: qualityColor(d.quality) }}>{QUALITY_LABELS[d.quality]}</span>
@@ -119,9 +128,9 @@ export default function SleepWeekChart({ entries }: SleepWeekChartProps) {
   const { t } = useTranslation()
   const data = buildChartData(entries, t)
   const today = todayStr()
-  const daysWithData = data.filter(d => d.hours > 0).length
+  const daysWithData = data.filter(d => d.sleepHours > 0).length
   const avgHours = daysWithData > 0
-    ? (data.reduce((sum, d) => sum + d.hours, 0) / daysWithData).toFixed(1)
+    ? (data.reduce((sum, d) => sum + d.sleepHours, 0) / daysWithData).toFixed(1)
     : null
 
   return (
@@ -162,17 +171,25 @@ export default function SleepWeekChart({ entries }: SleepWeekChartProps) {
                 strokeOpacity={0.3}
                 label={{ value: '8h', position: 'right', fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
               />
-              <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="sleepHours" stackId="sleep" radius={[4, 4, 0, 0]}>
                 {data.map((entry) => (
                   <Cell
                     key={entry.date}
                     fill={
-                      entry.hours === 0
+                      entry.sleepHours === 0
                         ? 'hsl(var(--muted))'
                         : entry.date === today
                           ? qualityColor(entry.quality)
                           : qualityColorFaded(entry.quality)
                     }
+                  />
+                ))}
+              </Bar>
+              <Bar dataKey="awakeHours" stackId="sleep" radius={[4, 4, 0, 0]}>
+                {data.map((entry) => (
+                  <Cell
+                    key={entry.date}
+                    fill={entry.awakeHours > 0 ? 'hsl(var(--muted-foreground) / 0.25)' : 'transparent'}
                   />
                 ))}
               </Bar>
@@ -192,6 +209,10 @@ export default function SleepWeekChart({ entries }: SleepWeekChartProps) {
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-sm" style={{ background: qualityColor(1) }} />
               <span className="text-[10px] text-muted-foreground">{t('sleep.legendBad')}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/25" />
+              <span className="text-[10px] text-muted-foreground">{t('sleep.awakeFor')}</span>
             </div>
           </div>
 

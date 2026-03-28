@@ -19,6 +19,7 @@ import MuscleVolumeChart from '../components/progress/MuscleVolumeChart'
 import VolumeLoadChart from '../components/progress/VolumeLoadChart'
 import OneRepMaxCalculator from '../components/progress/OneRepMaxCalculator'
 import PhotoComparator from '../components/progress/PhotoComparator'
+import PhasePhotoTimeline from '../components/progress/PhasePhotoTimeline'
 import BodyMeasurementsTracker from '../components/progress/BodyMeasurementsTracker'
 import ExportData from '../components/progress/ExportData'
 import { useWeight } from '../hooks/useWeight'
@@ -40,7 +41,8 @@ export default function ProgressPage() {
   const { userId } = useAuthState()
   const navigate = useNavigate()
   const { weights } = useWeight(userId || null)
-  const { photos } = useBodyPhotos(userId || null)
+  const { photos, getPhotosByPhase, uploadPhotos } = useBodyPhotos(userId || null)
+  const currentPhase = settings.phase || 1
 
   const allLogs = useMemo<SessionLog[]>(() => {
     return Object.entries(progress)
@@ -214,6 +216,16 @@ export default function ProgressPage() {
 
           {/* ── Tab 3: Cuerpo ── */}
           <TabsContent value="cuerpo">
+            {/* Phase Photo Timeline */}
+            {userId && (
+              <PhasePhotoTimeline
+                currentPhase={currentPhase}
+                photos={photos}
+                getPhotosByPhase={getPhotosByPhase}
+                uploadPhotos={uploadPhotos}
+              />
+            )}
+
             {/* Weight Tracker */}
             <div className="mb-8">
               <WeightTracker userId={userId || null} />

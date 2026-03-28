@@ -26,6 +26,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
           quality: z.number().int().min(1).max(5).describe("Sleep quality 1-5 (1=terrible, 5=excellent)"),
           duration_minutes: z.number().min(0).describe("Total sleep duration in minutes"),
           awakenings: z.number().int().min(0).default(0).describe("Number of times woken up"),
+          awake_minutes: z.number().int().min(0).default(0).describe("Total minutes awake during the night"),
           caffeine: z.boolean().optional().describe("Had caffeine before bed?"),
           screen_before_bed: z.boolean().optional().describe("Screen time before bed?"),
           stress_level: z.number().int().min(1).max(5).optional().describe("Stress level 1-5"),
@@ -44,6 +45,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
           quality: input.quality,
           duration_minutes: input.duration_minutes,
           awakenings: input.awakenings,
+          awake_minutes: input.awake_minutes,
           caffeine: input.caffeine ?? false,
           screen_before_bed: input.screen_before_bed ?? false,
           stress_level: input.stress_level ?? 0,
@@ -57,7 +59,7 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
           content: [
             {
               type: "text",
-              text: `Logged sleep for ${input.date}: ${hours}h${mins}m, quality ${input.quality}/5, ${input.awakenings} awakenings`,
+              text: `Logged sleep for ${input.date}: ${hours}h${mins}m, quality ${input.quality}/5, ${input.awakenings} awakenings${input.awake_minutes > 0 ? `, ${input.awake_minutes}min awake` : ''}`,
             },
           ],
           structuredContent: { id: record.id },
@@ -101,15 +103,21 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
           duration_minutes: e.duration_minutes,
           quality: e.quality,
           awakenings: e.awakenings,
+          awake_minutes: e.awake_minutes ?? 0,
         }));
 
         const avgQuality = items.reduce((s, e) => s + (e.quality as number), 0) / items.length;
         const avgDuration = items.reduce((s, e) => s + (e.duration_minutes as number), 0) / items.length;
+        const awakeItems = items.filter(e => (e.awake_minutes as number) > 0);
+        const avgAwakeMinutes = awakeItems.length > 0
+          ? Math.round(awakeItems.reduce((s, e) => s + (e.awake_minutes as number), 0) / awakeItems.length)
+          : 0;
 
         const output = {
           count: items.length,
           avg_quality: Math.round(avgQuality * 10) / 10,
           avg_duration_hours: Math.round((avgDuration / 60) * 10) / 10,
+          avg_awake_minutes: avgAwakeMinutes,
           entries: items,
         };
 
@@ -119,12 +127,13 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
         } else {
           const lines = [
             `# Sleep — Last ${days} days`,
-            `Avg quality: **${output.avg_quality}/5** · Avg duration: **${output.avg_duration_hours}h**\n`,
+            `Avg quality: **${output.avg_quality}/5** · Avg duration: **${output.avg_duration_hours}h**${avgAwakeMinutes > 0 ? ` · Avg awake: **${avgAwakeMinutes}min**` : ''}\n`,
           ];
           for (const e of items) {
             const h = Math.floor(e.duration_minutes as number / 60);
             const m = (e.duration_minutes as number) % 60;
-            lines.push(`- **${e.date}**: ${h}h${m}m · quality ${e.quality}/5 · ${e.awakenings} wake-ups`);
+            const awakeStr = (e.awake_minutes as number) > 0 ? ` · ${e.awake_minutes}min awake` : '';
+            lines.push(`- **${e.date}**: ${h}h${m}m · quality ${e.quality}/5 · ${e.awakenings} wake-ups${awakeStr}`);
           }
           text = lines.join("\n");
         }

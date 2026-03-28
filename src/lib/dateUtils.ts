@@ -114,6 +114,11 @@ export function localDateForPB(dateStr: string): string {
   return `${dateStr} 00:00:00`
 }
 
+/** Number of days between two YYYY-MM-DD date strings (a - b), timezone-aware. */
+export function diffDays(a: string, b: string): number {
+  return dayjs.tz(a, _tz).diff(dayjs.tz(b, _tz), 'day')
+}
+
 /** Human-friendly relative date label (Today, Yesterday, N days ago, or short date). */
 export function relativeDate(dateStr: string): string {
   const today = todayStr()

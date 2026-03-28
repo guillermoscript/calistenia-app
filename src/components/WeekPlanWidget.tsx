@@ -1,14 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
-import { localDay } from '../lib/dateUtils'
+import { localDay, todayStr, addDays } from '../lib/dateUtils'
 import { CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '../data/workouts'
 import type { WeekDay } from '../types'
 
 interface WeekPlanWidgetProps {
   selectedPhase: number
-  isWorkoutDone: (workoutKey: string) => boolean
+  isWorkoutDone: (workoutKey: string, date?: string) => boolean
   weekDays?: WeekDay[]
 }
 
@@ -17,6 +17,11 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
   const { t } = useTranslation()
   const WEEK_DAYS = weekDaysProp || FALLBACK_WEEK_DAYS
   const todayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
+
+  // Map day ids to their Monday-based offset (lun=0 … dom=6)
+  const dayOffset: Record<string, number> = { lun: 0, mar: 1, mie: 2, jue: 3, vie: 4, sab: 5, dom: 6 }
+  const todayMondayOffset = (localDay() + 6) % 7 // convert Sun=0→6, Mon=1→0, etc.
+  const today = todayStr()
 
   return (
     <div className="mb-8">
@@ -27,7 +32,8 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
       <div className="flex gap-1.5 overflow-x-auto pb-1 md:grid md:grid-cols-7 md:overflow-visible md:pb-0 snap-x snap-mandatory">
         {WEEK_DAYS.map(day => {
           const workoutKey = `p${selectedPhase}_${day.id}`
-          const done    = day.type !== 'rest' && day.type !== 'cardio' && isWorkoutDone(workoutKey)
+          const dateForDay = addDays(today, (dayOffset[day.id] ?? 0) - todayMondayOffset)
+          const done    = day.type !== 'rest' && day.type !== 'cardio' && isWorkoutDone(workoutKey, dateForDay)
           const isToday = day.id === todayId
           const isRest  = day.type === 'rest'
           const isCardio = day.type === 'cardio'

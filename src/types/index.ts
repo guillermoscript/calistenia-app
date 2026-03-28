@@ -432,6 +432,7 @@ export interface SleepEntry {
   awakenings: number
   quality: number
   duration_minutes: number
+  awake_minutes?: number
   caffeine?: boolean
   screen_before_bed?: boolean
   stress_level?: number

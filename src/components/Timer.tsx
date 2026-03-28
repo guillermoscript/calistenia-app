@@ -206,7 +206,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
               {countdownNum}
             </span>
           ) : (
-            <div>
+            <div className="flex flex-col items-center">
               {phase === 'done' ? (
                 <div className="text-emerald-400" style={{ animation: 'doneCheck 0.4s cubic-bezier(0.22, 1, 0.36, 1) both' }}>
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

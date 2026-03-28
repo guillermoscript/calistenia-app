@@ -14,6 +14,7 @@ export interface SleepFormData {
   awakenings: number
   quality: number
   duration_minutes: number
+  awake_minutes?: number
   caffeine?: boolean
   screen_before_bed?: boolean
   stress_level?: number
@@ -64,6 +65,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
   const [bedtime, setBedtime] = useState(initialValues?.bedtime ?? '')
   const [wakeTime, setWakeTime] = useState(initialValues?.wake_time ?? '')
   const [awakenings, setAwakenings] = useState(initialValues?.awakenings ?? 0)
+  const [awakeMinutes, setAwakeMinutes] = useState(initialValues?.awake_minutes ?? 0)
   const [quality, setQuality] = useState(initialValues?.quality ?? 0)
 
   // Expanded fields
@@ -75,7 +77,8 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
   const [stressLevel, setStressLevel] = useState(initialValues?.stress_level ?? 0)
   const [note, setNote] = useState(initialValues?.note ?? '')
 
-  const duration = useMemo(() => calcDuration(bedtime, wakeTime), [bedtime, wakeTime])
+  const totalInBed = useMemo(() => calcDuration(bedtime, wakeTime), [bedtime, wakeTime])
+  const duration = Math.max(0, totalInBed - awakeMinutes)
 
   const isValid = bedtime !== '' && wakeTime !== '' && quality >= 1 && quality <= 5
 
@@ -88,6 +91,7 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
       awakenings,
       quality,
       duration_minutes: duration,
+      awake_minutes: awakeMinutes > 0 ? awakeMinutes : undefined,
     }
     if (expanded) {
       data.caffeine = caffeine
@@ -110,6 +114,11 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
         )}>
           {formatDuration(duration)}
         </div>
+        {awakeMinutes > 0 && totalInBed > 0 && (
+          <div className="text-[10px] text-muted-foreground mt-1">
+            {t('sleep.inBed')}: {formatDuration(totalInBed)} · {t('sleep.awakeFor')}: {formatDuration(awakeMinutes)}
+          </div>
+        )}
       </div>
 
       {/* ── Time inputs ───────────────────────────────────────────────── */}
@@ -150,7 +159,11 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setAwakenings(Math.max(0, awakenings - 1))}
+            onClick={() => {
+              const next = Math.max(0, awakenings - 1)
+              setAwakenings(next)
+              if (next === 0) setAwakeMinutes(0)
+            }}
             className="size-10 p-0 text-lg hover:border-indigo-400 hover:text-indigo-400"
             disabled={awakenings <= 0}
           >
@@ -171,6 +184,62 @@ export default function SleepForm({ onSubmit, onCancel, initialValues }: SleepFo
           </span>
         </div>
       </div>
+
+      {/* ── Awake time (visible when awakenings > 0) ────────────────── */}
+      {awakenings > 0 && (
+        <div className="motion-safe:animate-fade-in">
+          <Label className="text-[11px] text-muted-foreground tracking-wide uppercase mb-1.5 block">
+            {t('sleep.awakeTime')}
+          </Label>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setAwakeMinutes(Math.max(0, awakeMinutes - 15))}
+                className="size-10 p-0 text-lg hover:border-indigo-400 hover:text-indigo-400"
+                disabled={awakeMinutes <= 0}
+              >
+                -
+              </Button>
+              <div className="font-bebas text-2xl w-16 text-center tabular-nums">
+                {awakeMinutes >= 60
+                  ? `${Math.floor(awakeMinutes / 60)}h${awakeMinutes % 60 > 0 ? `${awakeMinutes % 60}` : ''}`
+                  : `${awakeMinutes}m`}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setAwakeMinutes(awakeMinutes + 15)}
+                className="size-10 p-0 text-lg hover:border-indigo-400 hover:text-indigo-400"
+              >
+                +
+              </Button>
+            </div>
+            <span className="text-[11px] text-muted-foreground ml-1">
+              {t('sleep.awakeTimeHint')}
+            </span>
+          </div>
+          {/* Quick presets */}
+          <div className="flex gap-1.5 mt-2">
+            {[5, 10, 15, 30, 60].map(m => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setAwakeMinutes(awakeMinutes + m)}
+                className={cn(
+                  'h-7 px-2.5 rounded-md border text-[10px] font-mono transition-colors',
+                  'border-border text-muted-foreground hover:border-indigo-400 hover:text-indigo-400',
+                )}
+              >
+                +{m >= 60 ? `${m / 60}h` : `${m}m`}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Quality selector ──────────────────────────────────────────── */}
       <div>

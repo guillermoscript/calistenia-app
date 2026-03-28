@@ -97,7 +97,9 @@ function SleepEntryRow({ entry, onEdit, onDelete }: SleepEntryRowProps) {
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-foreground capitalize">{dateLabel}</div>
         <div className="text-[11px] text-muted-foreground">
-          {entry.bedtime} - {entry.wake_time} · {formatDuration(entry.duration_minutes)} · {entry.awakenings} {t('sleep.awakenings')}
+          {entry.bedtime} - {entry.wake_time} · {formatDuration(entry.duration_minutes)}
+          {entry.awake_minutes ? ` (${formatDuration(entry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()})` : ''}
+          {' · '}{entry.awakenings} {t('sleep.awakenings')}
         </div>
       </div>
 
@@ -191,6 +193,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
       wake_time: formData.wake_time,
       awakenings: formData.awakenings,
       quality: formData.quality,
+      awake_minutes: formData.awake_minutes,
       caffeine: formData.caffeine,
       screen_before_bed: formData.screen_before_bed,
       stress_level: formData.stress_level,
@@ -243,6 +246,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {todayEntry.bedtime} - {todayEntry.wake_time}
+                  {todayEntry.awake_minutes ? ` · ${formatDuration(todayEntry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()}` : ''}
                   {todayEntry.awakenings > 0 && ` · ${todayEntry.awakenings} ${t('sleep.awakenings')}`}
                 </div>
               </div>
@@ -317,6 +321,13 @@ export default function SleepPage({ userId }: SleepPageProps) {
               value={`±${Math.round(weeklyStats.scheduleRegularity)} min`}
               accent={weeklyStats.scheduleRegularity <= 30 ? 'text-emerald-400' : 'text-amber-400'}
             />
+            {weeklyStats.avgAwakeMinutes > 0 && (
+              <StatCard
+                label={t('sleep.avgAwakeTime')}
+                value={`${Math.round(weeklyStats.avgAwakeMinutes)} min`}
+                accent={weeklyStats.avgAwakeMinutes <= 15 ? 'text-emerald-400' : 'text-amber-400'}
+              />
+            )}
           </div>
         </div>
       )}
@@ -376,6 +387,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
               awakenings: editingEntry.awakenings,
               quality: editingEntry.quality,
               duration_minutes: editingEntry.duration_minutes,
+              awake_minutes: editingEntry.awake_minutes,
               caffeine: editingEntry.caffeine,
               screen_before_bed: editingEntry.screen_before_bed,
               stress_level: editingEntry.stress_level,

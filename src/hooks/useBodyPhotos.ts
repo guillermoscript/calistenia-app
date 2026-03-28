@@ -7,13 +7,16 @@ export interface BodyPhoto {
   date: string
   category: string
   note: string
+  phase?: number
 }
 
 interface UseBodyPhotosReturn {
   photos: BodyPhoto[]
   isReady: boolean
-  uploadPhoto: (file: File, date: string, category: string, note?: string) => Promise<void>
+  uploadPhoto: (file: File, date: string, category: string, note?: string, phase?: number) => Promise<void>
+  uploadPhotos: (files: { file: File; category: string }[], phase: number, date?: string) => Promise<BodyPhoto[]>
   getPhotos: (limit?: number) => BodyPhoto[]
+  getPhotosByPhase: (phase: number) => BodyPhoto[]
   deletePhoto: (id: string) => Promise<void>
 }
 
@@ -43,6 +46,7 @@ export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn
             date: r.date?.split(' ')[0] || r.date,
             category: r.category || '',
             note: r.note || '',
+            phase: r.phase || undefined,
           }))
           setPhotos(entries)
         } catch (e) {
@@ -54,7 +58,7 @@ export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn
     init()
   }, [userId])
 
-  const uploadPhoto = useCallback(async (file: File, date: string, category: string, note?: string) => {
+  const uploadPhoto = useCallback(async (file: File, date: string, category: string, note?: string, phase?: number) => {
     if (!usePB || !userId) {
       console.warn('Body photos require PocketBase')
       return
@@ -67,6 +71,7 @@ export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn
       formData.append('date', date + ' 00:00:00')
       formData.append('category', category)
       formData.append('note', note || '')
+      if (phase) formData.append('phase', String(phase))
 
       const rec = await pb.collection('body_photos').create(formData)
       const entry: BodyPhoto = {
@@ -75,12 +80,48 @@ export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn
         date,
         category,
         note: note || '',
+        phase: phase || undefined,
       }
 
       setPhotos(prev => [entry, ...prev].sort((a, b) => b.date.localeCompare(a.date)))
     } catch (e) {
       console.warn('PB body photo upload error:', e)
     }
+  }, [usePB, userId])
+
+  const uploadPhotos = useCallback(async (files: { file: File; category: string }[], phase: number, date?: string): Promise<BodyPhoto[]> => {
+    if (!usePB || !userId) {
+      console.warn('Body photos require PocketBase')
+      return []
+    }
+    const d = date || new Date().toISOString().split('T')[0]
+    const uploaded: BodyPhoto[] = []
+    for (const { file, category } of files) {
+      try {
+        const formData = new FormData()
+        formData.append('user', userId)
+        formData.append('photo', file)
+        formData.append('date', d + ' 00:00:00')
+        formData.append('category', category)
+        formData.append('note', '')
+        formData.append('phase', String(phase))
+        const rec = await pb.collection('body_photos').create(formData)
+        uploaded.push({
+          id: rec.id,
+          url: pb.files.getURL(rec, (rec as any).photo),
+          date: d,
+          category,
+          note: '',
+          phase,
+        })
+      } catch (e) {
+        console.warn('PB body photo batch upload error:', e)
+      }
+    }
+    if (uploaded.length > 0) {
+      setPhotos(prev => [...uploaded, ...prev].sort((a, b) => b.date.localeCompare(a.date)))
+    }
+    return uploaded
   }, [usePB, userId])
 
   const deletePhoto = useCallback(async (id: string) => {
@@ -98,5 +139,9 @@ export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn
     return photos.slice(0, limit)
   }, [photos])
 
-  return { photos, isReady, uploadPhoto, getPhotos, deletePhoto }
+  const getPhotosByPhase = useCallback((phase: number): BodyPhoto[] => {
+    return photos.filter(p => p.phase === phase)
+  }, [photos])
+
+  return { photos, isReady, uploadPhoto, uploadPhotos, getPhotos, getPhotosByPhase, deletePhoto }
 }

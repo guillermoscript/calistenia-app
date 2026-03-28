@@ -46,6 +46,10 @@ const LegalPage = lazy(() => import('./pages/LegalPage'))
 const SleepPage = lazy(() => import('./pages/SleepPage'))
 const InviteLandingPage = lazy(() => import('./pages/InviteLandingPage'))
 const ReferralsPage = lazy(() => import('./pages/ReferralsPage'))
+const BlogPage = lazy(() => import('./pages/BlogPage'))
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
+const BlogEditorPage = lazy(() => import('./pages/BlogEditorPage'))
+const BlogLayout = lazy(() => import('./components/blog/BlogLayout'))
 import OfflineBanner from './components/OfflineBanner'
 import ActiveCardioBar from './components/cardio/ActiveCardioBar'
 import ActiveSessionBubble from './components/ActiveFreeSessionBubble'
@@ -554,6 +558,7 @@ function AuthenticatedApp({
             <Route path="/referrals" element={<ReferralsPage userId={userId!} />} />
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}
+            {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor/blog" element={<BlogEditorPage />} /> : null}
             <Route path="/u/:userId" element={<UserProfilePage />} />
             <Route path="/shared/:shareCode" element={<SharedProgramPageRoute userId={userId} />} />
             <Route path="/legal" element={<LegalPage />} />
@@ -623,6 +628,11 @@ function AppInner() {
   const goToAuth = useCallback(() => navigate('/auth'), [navigate])
 
   if (!authReady) return <AppLoader />
+
+  // Public blog — accessible both logged-in and logged-out
+  if (location.pathname.startsWith('/blog')) {
+    return <Suspense fallback={<Loader />}><BlogLayout><Routes><Route path="/blog" element={<BlogPage />} /><Route path="/blog/:slug" element={<BlogPostPage />} /></Routes></BlogLayout></Suspense>
+  }
 
   // Public invite landing — accessible both logged-in and logged-out
   if (location.pathname.startsWith('/invite/')) {
