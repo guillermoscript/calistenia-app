@@ -69,6 +69,14 @@ export default defineConfig({
         target: 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
+      '/api/jobs': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+      },
+      '/api/weekly-plan': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+      },
       '/mcp': {
         target: 'http://127.0.0.1:3001',
         changeOrigin: true,
