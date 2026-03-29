@@ -177,6 +177,7 @@ export function useWeeklyMealPlan(userId: string | null) {
       total_carbs: meal.carbs,
       total_fat: meal.fat,
       ai_model: 'weekly-plan',
+      source: 'ai_weekly_plan',
       logged_at: new Date().toISOString(),
     }
 

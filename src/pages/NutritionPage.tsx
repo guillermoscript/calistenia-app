@@ -247,6 +247,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       totalCarbs: meal.carbs,
       totalFat: meal.fat,
       aiModel: 'meal-plan',
+      source: 'ai_daily_plan',
       loggedAt: nowLocalForPB(),
     })
   }, [saveEntry, userId])
