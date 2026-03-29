@@ -277,6 +277,8 @@ export interface MealReminder {
   daysOfWeek: number[]
 }
 
+export type NutritionSource = 'manual' | 'ai_weekly_plan' | 'ai_daily_plan'
+
 export interface NutritionEntry {
   id?: string
   user?: string
@@ -288,6 +290,7 @@ export interface NutritionEntry {
   totalCarbs: number
   totalFat: number
   aiModel?: string
+  source?: NutritionSource
   loggedAt: string
 }
 

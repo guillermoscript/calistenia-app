@@ -193,6 +193,11 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             )}>
                               {t(`meal.${entry.mealType}`).toUpperCase()}
                             </span>
+                            {entry.source?.startsWith('ai_') && (
+                              <span className="text-[8px] font-mono tracking-wider bg-violet-500/15 text-violet-400 border border-violet-500/20 px-1.5 py-px rounded">
+                                {t('nutrition.aiBadge')}
+                              </span>
+                            )}
                             <span className="text-[10px] text-muted-foreground/60">{formatTime(entry.loggedAt)}</span>
                             <span className={cn(
                               'ml-auto tabular-nums',

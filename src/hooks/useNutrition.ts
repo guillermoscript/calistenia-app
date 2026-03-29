@@ -5,6 +5,7 @@ import { AI_API_URL } from '../lib/ai-api'
 import { todayStr, toLocalDateStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
 import type {
   NutritionEntry,
+  NutritionSource,
   NutritionGoal,
   NutritionGoalType,
   ActivityLevel,
@@ -125,6 +126,7 @@ export function useNutrition(userId: string | null) {
         totalCarbs: Number(r.total_carbs) || 0,
         totalFat: Number(r.total_fat) || 0,
         aiModel: r.ai_model || undefined,
+        source: (r.source as NutritionSource) || undefined,
         loggedAt: r.logged_at,
       }))
 
@@ -205,6 +207,7 @@ export function useNutrition(userId: string | null) {
         totalCarbs: Number(r.total_carbs) || 0,
         totalFat: Number(r.total_fat) || 0,
         aiModel: r.ai_model || undefined,
+        source: (r.source as NutritionSource) || undefined,
         loggedAt: r.logged_at,
       }))
 
@@ -283,6 +286,7 @@ export function useNutrition(userId: string | null) {
           formData.append('total_carbs', String(entry.totalCarbs || 0))
           formData.append('total_fat', String(entry.totalFat || 0))
           if (entry.aiModel) formData.append('ai_model', entry.aiModel)
+          if (entry.source) formData.append('source', entry.source)
           for (const file of photoFiles) {
             formData.append('photos', file)
           }
@@ -298,6 +302,7 @@ export function useNutrition(userId: string | null) {
             total_carbs: entry.totalCarbs || 0,
             total_fat: entry.totalFat || 0,
             ...(entry.aiModel ? { ai_model: entry.aiModel } : {}),
+            ...(entry.source ? { source: entry.source } : {}),
           }
         }
 
@@ -315,6 +320,7 @@ export function useNutrition(userId: string | null) {
           totalCarbs: rec.total_carbs,
           totalFat: rec.total_fat,
           aiModel: rec.ai_model || undefined,
+          source: (rec.source as NutritionSource) || undefined,
           loggedAt: rec.logged_at,
         }
       } catch (e) {
@@ -359,6 +365,7 @@ export function useNutrition(userId: string | null) {
       if (data.totalCarbs !== undefined) pbData.total_carbs = data.totalCarbs
       if (data.totalFat !== undefined) pbData.total_fat = data.totalFat
       if (data.aiModel !== undefined) pbData.ai_model = data.aiModel
+      if (data.source !== undefined) pbData.source = data.source
       await pb.collection('nutrition_entries').update(entryId, pbData)
     }
 
@@ -562,6 +569,7 @@ export function useNutrition(userId: string | null) {
           totalCarbs: Number(r.total_carbs) || 0,
           totalFat: Number(r.total_fat) || 0,
           aiModel: r.ai_model || undefined,
+          source: (r.source as NutritionSource) || undefined,
           loggedAt: r.logged_at,
         }))
       } catch {
