@@ -1898,5 +1898,39 @@
   "blog.editor.coverImage": "Cover image",
   "blog.editor.authorAvatar": "Author avatar",
   "blog.editor.saveDraft": "Save draft",
-  "blog.editor.publish": "Publish"
+  "blog.editor.publish": "Publish",
+
+  "nutrition.tabs.daily": "DAY",
+  "nutrition.tabs.weekly": "WEEKLY PLAN",
+
+  "nutrition.weeklyPlan.title": "WEEKLY PLAN",
+  "nutrition.weeklyPlan.aiLabel": "AI",
+  "nutrition.weeklyPlan.generate": "GENERATE WEEKLY PLAN",
+  "nutrition.weeklyPlan.regenerate": "NEW PLAN",
+  "nutrition.weeklyPlan.generating": "Generating weekly plan...",
+  "nutrition.weeklyPlan.generatingDesc": "We'll notify you when your 7-day plan is ready.",
+  "nutrition.weeklyPlan.generateError": "Error generating weekly plan",
+  "nutrition.weeklyPlan.regenerating": "REGENERATING",
+  "nutrition.weeklyPlan.regenerateDay": "REGENERATE THIS DAY",
+  "nutrition.weeklyPlan.noActivePlan": "Plan your week",
+  "nutrition.weeklyPlan.noActivePlanDesc": "Generate an AI-powered meal plan for the entire week.",
+  "nutrition.weeklyPlan.noDayData": "No data for this day",
+  "nutrition.weeklyPlan.setGoalsFirst": "Set your nutrition goals first",
+  "nutrition.weeklyPlan.planned": "Planned",
+  "nutrition.weeklyPlan.actual": "Logged",
+  "nutrition.weeklyPlan.pending": "Remaining",
+  "nutrition.weeklyPlan.iAteThis": "I ATE THIS",
+  "nutrition.weeklyPlan.deleteMeal": "Delete",
+
+  "weekday.short.mon": "Mon",
+  "weekday.short.tue": "Tue",
+  "weekday.short.wed": "Wed",
+  "weekday.short.thu": "Thu",
+  "weekday.short.fri": "Fri",
+  "weekday.short.sat": "Sat",
+  "weekday.short.sun": "Sun",
+
+  "bgJobs.weeklyPlanDone": "Weekly plan ready",
+  "bgJobs.generatingWeeklyPlan": "Generating weekly plan",
+  "bgJobs.tapToViewWeeklyPlan": "Tap to view your weekly plan"
 }

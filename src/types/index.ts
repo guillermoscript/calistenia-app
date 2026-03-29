@@ -440,4 +440,38 @@ export interface SleepEntry {
   created: string
   updated: string
 }
-// test marker
+// ─── Weekly Meal Plan ───────────────────────────────────────────────────────
+
+export interface WeeklyMealPlan {
+  id: string
+  user: string
+  week_start: string
+  status: 'active' | 'archived'
+  goal_snapshot: DailyTotals
+  ai_model: string
+  created: string
+  updated: string
+}
+
+export interface WeeklyPlannedMeal {
+  id: string
+  meal_type: MealType
+  label: string
+  description: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  logged: boolean
+  logged_entry_id?: string
+}
+
+export interface WeeklyPlanDay {
+  id: string
+  plan: string
+  user: string
+  date: string
+  day_index: number
+  meals: WeeklyPlannedMeal[]
+  notes: string
+}

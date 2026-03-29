@@ -7,7 +7,7 @@
 
 import { analyzeMealImage } from "./meal-analyzer.js";
 import { lookupFoodByName } from "./food-lookup.js";
-import { generateDailyMealPlan } from "./meal-plan-generator.js";
+import { generateDailyMealPlan, generateWeeklyMealPlan } from "./meal-plan-generator.js";
 import { sendPushToUser } from "./push-sender.js";
 import { getAdminPB } from "./admin-pb.js";
 import type { Tier } from "./model-resolver.js";
@@ -84,6 +84,79 @@ export async function processJob(jobId: string): Promise<void> {
         break;
       }
 
+      case "generate-weekly-meal-plan": {
+        const weeklyResult = await generateWeeklyMealPlan({
+          dailyCalories: Number(input.daily_calories ?? 0),
+          dailyProtein: Number(input.daily_protein ?? 0),
+          dailyCarbs: Number(input.daily_carbs ?? 0),
+          dailyFat: Number(input.daily_fat ?? 0),
+          goal: input.goal ?? "maintain",
+          tier,
+        });
+
+        // Archive any existing active plan for this user
+        try {
+          const activePlans = await pb.collection("weekly_meal_plans").getFullList({
+            filter: pb.filter("user = {:uid} && status = 'active'", { uid: job.user }),
+          });
+          for (const p of activePlans) {
+            await pb.collection("weekly_meal_plans").update(p.id, { status: "archived" });
+          }
+        } catch { /* no active plans, that's fine */ }
+
+        // Compute week_start (Monday of current or specified week)
+        let weekStart: Date;
+        if (input.week_start) {
+          weekStart = new Date(input.week_start);
+        } else {
+          weekStart = new Date();
+          const dow = weekStart.getDay(); // 0=Sun
+          const diff = dow === 0 ? -6 : 1 - dow;
+          weekStart.setDate(weekStart.getDate() + diff);
+        }
+        weekStart.setHours(0, 0, 0, 0);
+
+        // Create the plan record
+        const planRecord = await pb.collection("weekly_meal_plans").create({
+          user: job.user,
+          week_start: weekStart.toISOString(),
+          status: "active",
+          goal_snapshot: {
+            calories: Number(input.daily_calories),
+            protein: Number(input.daily_protein),
+            carbs: Number(input.daily_carbs),
+            fat: Number(input.daily_fat),
+          },
+          ai_model: weeklyResult.model_used,
+        });
+
+        // Create 7 day records
+        for (const day of weeklyResult.days) {
+          const dayDate = new Date(weekStart);
+          dayDate.setDate(dayDate.getDate() + day.day_index);
+
+          const meals = day.meals.map((m: any, i: number) => ({
+            ...m,
+            id: `${planRecord.id}_d${day.day_index}_${i}`,
+            logged: false,
+          }));
+
+          await pb.collection("weekly_plan_days").create({
+            plan: planRecord.id,
+            user: job.user,
+            date: dayDate.toISOString(),
+            day_index: day.day_index,
+            meals,
+            notes: day.notes,
+          });
+        }
+
+        result = { plan_id: planRecord.id, ...weeklyResult };
+        notifTitle = "Plan semanal listo";
+        notifBody = "Toca para ver tu plan de comidas de la semana.";
+        break;
+      }
+
       default:
         throw new Error(`Tipo de trabajo desconocido: ${job.type}`);
     }
@@ -93,10 +166,14 @@ export async function processJob(jobId: string): Promise<void> {
       result,
     });
 
+    const notifUrl = job.type === "generate-weekly-meal-plan"
+      ? "/nutrition?tab=weekly"
+      : `/nutrition/log?job=${jobId}`;
+
     await sendPushToUser(job.user, {
       title: notifTitle,
       body: notifBody,
-      url: `/nutrition/log?job=${jobId}`,
+      url: notifUrl,
     }).catch((err) => console.error("[push-error]", err));
   } catch (err: any) {
     const errorMessage = err.message ?? "Error desconocido";

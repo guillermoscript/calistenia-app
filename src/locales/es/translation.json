@@ -1898,5 +1898,39 @@
   "blog.editor.coverImage": "Imagen de portada",
   "blog.editor.authorAvatar": "Avatar del autor",
   "blog.editor.saveDraft": "Guardar borrador",
-  "blog.editor.publish": "Publicar"
+  "blog.editor.publish": "Publicar",
+
+  "nutrition.tabs.daily": "DÍA",
+  "nutrition.tabs.weekly": "PLAN SEMANAL",
+
+  "nutrition.weeklyPlan.title": "PLAN SEMANAL",
+  "nutrition.weeklyPlan.aiLabel": "IA",
+  "nutrition.weeklyPlan.generate": "GENERAR PLAN SEMANAL",
+  "nutrition.weeklyPlan.regenerate": "NUEVO PLAN",
+  "nutrition.weeklyPlan.generating": "Generando plan semanal...",
+  "nutrition.weeklyPlan.generatingDesc": "Te avisaremos cuando tu plan de 7 días esté listo.",
+  "nutrition.weeklyPlan.generateError": "Error al generar el plan semanal",
+  "nutrition.weeklyPlan.regenerating": "REGENERANDO",
+  "nutrition.weeklyPlan.regenerateDay": "REGENERAR ESTE DÍA",
+  "nutrition.weeklyPlan.noActivePlan": "Planifica tu semana",
+  "nutrition.weeklyPlan.noActivePlanDesc": "Genera un plan de comidas para los 7 días de la semana con IA.",
+  "nutrition.weeklyPlan.noDayData": "No hay datos para este día",
+  "nutrition.weeklyPlan.setGoalsFirst": "Configura tus objetivos nutricionales primero",
+  "nutrition.weeklyPlan.planned": "Planificado",
+  "nutrition.weeklyPlan.actual": "Registrado",
+  "nutrition.weeklyPlan.pending": "Pendiente",
+  "nutrition.weeklyPlan.iAteThis": "COMÍ ESTO",
+  "nutrition.weeklyPlan.deleteMeal": "Eliminar",
+
+  "weekday.short.mon": "Lun",
+  "weekday.short.tue": "Mar",
+  "weekday.short.wed": "Mie",
+  "weekday.short.thu": "Jue",
+  "weekday.short.fri": "Vie",
+  "weekday.short.sat": "Sáb",
+  "weekday.short.sun": "Dom",
+
+  "bgJobs.weeklyPlanDone": "Plan semanal listo",
+  "bgJobs.generatingWeeklyPlan": "Generando plan semanal",
+  "bgJobs.tapToViewWeeklyPlan": "Toca para ver tu plan de la semana"
 }

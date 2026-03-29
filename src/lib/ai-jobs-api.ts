@@ -72,9 +72,43 @@ export async function submitMealPlanJob(macros: {
   return data.job_id
 }
 
+export async function submitWeeklyMealPlanJob(macros: {
+  daily_calories: number
+  daily_protein: number
+  daily_carbs: number
+  daily_fat: number
+  goal: string
+  week_start?: string
+}): Promise<string> {
+  const res = await fetch(`${AI_API_URL}/api/jobs/generate-weekly-meal-plan`, {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(macros),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Error ${res.status}`)
+  }
+  const data = await res.json()
+  return data.job_id
+}
+
+export async function regeneratePlanDay(planDayId: string): Promise<any> {
+  const res = await fetch(`${AI_API_URL}/api/weekly-plan/regenerate-day`, {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan_day_id: planDayId }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Error ${res.status}`)
+  }
+  return res.json()
+}
+
 export interface AIJob {
   id: string
-  type: 'analyze-meal' | 'lookup-food' | 'generate-meal-plan'
+  type: 'analyze-meal' | 'lookup-food' | 'generate-meal-plan' | 'generate-weekly-meal-plan'
   status: 'pending' | 'processing' | 'completed' | 'failed'
   result: any
   error: string | null

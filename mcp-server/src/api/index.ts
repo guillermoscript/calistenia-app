@@ -429,6 +429,123 @@ export function createApiRouter(): Router {
     }
   );
 
+  // Async weekly meal plan generation — returns job ID immediately
+  router.post(
+    "/jobs/generate-weekly-meal-plan",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        const {
+          daily_calories,
+          daily_protein,
+          daily_carbs,
+          daily_fat,
+          goal = "maintain",
+          week_start,
+        } = req.body ?? {};
+
+        if (daily_calories == null) {
+          return res.status(400).json({ error: "Se requieren los macros diarios objetivo" });
+        }
+        const tier: Tier =
+          req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+
+        if (!(await checkJobLimit(req.user.id, res))) return;
+
+        const pb = await getAdminPB();
+        const record = await pb.collection("ai_jobs").create({
+          user: req.user.id,
+          type: "generate-weekly-meal-plan",
+          status: "pending",
+          input: {
+            daily_calories,
+            daily_protein,
+            daily_carbs,
+            daily_fat,
+            goal,
+            week_start: week_start || null,
+            tier,
+          },
+        });
+
+        processJob(record.id).catch((err) =>
+          console.error("[job-processor-error]", record.id, err)
+        );
+
+        return res.status(202).json({ job_id: record.id });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Synchronous single-day regeneration for weekly plan
+  router.post(
+    "/weekly-plan/regenerate-day",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        const { plan_day_id } = req.body ?? {};
+        if (!plan_day_id) {
+          return res.status(400).json({ error: "Se requiere plan_day_id" });
+        }
+
+        const pb = await getAdminPB();
+
+        // Fetch the day record
+        const dayRecord = await pb.collection("weekly_plan_days").getOne(plan_day_id);
+        if (dayRecord.user !== req.user.id) {
+          return res.status(404).json({ error: "Día no encontrado" });
+        }
+
+        // Fetch parent plan for goal snapshot
+        const plan = await pb.collection("weekly_meal_plans").getOne(dayRecord.plan);
+        const snapshot = typeof plan.goal_snapshot === "string"
+          ? JSON.parse(plan.goal_snapshot)
+          : plan.goal_snapshot;
+
+        const tier: Tier =
+          req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+
+        // Reuse daily generator with full macros (planning, not remaining)
+        const result = await generateDailyMealPlan({
+          remainingCalories: Number(snapshot.calories),
+          remainingProtein: Number(snapshot.protein),
+          remainingCarbs: Number(snapshot.carbs),
+          remainingFat: Number(snapshot.fat),
+          loggedMealTypes: [],
+          tier,
+        });
+
+        // Add IDs to meals and reset logged state
+        const meals = result.meals.map((m: any, i: number) => ({
+          ...m,
+          id: `${plan_day_id}_${i}_${Date.now()}`,
+          logged: false,
+        }));
+
+        await pb.collection("weekly_plan_days").update(plan_day_id, {
+          meals,
+          notes: result.notes,
+        });
+
+        return res.json({
+          id: plan_day_id,
+          meals,
+          notes: result.notes,
+          model_used: result.model_used,
+        });
+      } catch (err: any) {
+        if (err.status === 404) {
+          return res.status(404).json({ error: "Día no encontrado" });
+        }
+        next(err);
+      }
+    }
+  );
+
   // Get job status and result
   router.get(
     "/jobs/:id",

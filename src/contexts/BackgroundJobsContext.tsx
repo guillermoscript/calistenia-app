@@ -40,12 +40,14 @@ const TYPE_LABEL_KEYS: Record<string, string> = {
   'analyze-meal': 'bgJobs.analyzeMealDone',
   'lookup-food': 'bgJobs.lookupFoodDone',
   'generate-meal-plan': 'bgJobs.mealPlanDone',
+  'generate-weekly-meal-plan': 'bgJobs.weeklyPlanDone',
 }
 
 const TYPE_LABEL_PENDING_KEYS: Record<string, string> = {
   'analyze-meal': 'bgJobs.analyzingMeal',
   'lookup-food': 'bgJobs.lookingUpFood',
   'generate-meal-plan': 'bgJobs.generatingPlan',
+  'generate-weekly-meal-plan': 'bgJobs.generatingWeeklyPlan',
 }
 
 interface BackgroundJobsContextValue {
@@ -110,15 +112,19 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
         ? 'bgJobs.tapToReviewFoods'
         : job.type === 'lookup-food'
           ? 'bgJobs.tapToViewNutrition'
-          : 'bgJobs.tapToViewMeals'
+          : job.type === 'generate-weekly-meal-plan'
+            ? 'bgJobs.tapToViewWeeklyPlan'
+            : 'bgJobs.tapToViewMeals'
       toast.success(label, {
         description: t(descKey),
         action: {
           label: t('bgJobs.viewResult'),
           onClick: () => {
-            const url = job.type === 'generate-meal-plan'
-              ? '/nutrition'
-              : `/nutrition/log?job=${job.id}`
+            const url = job.type === 'generate-weekly-meal-plan'
+              ? '/nutrition?tab=weekly'
+              : job.type === 'generate-meal-plan'
+                ? '/nutrition'
+                : `/nutrition/log?job=${job.id}`
             window.dispatchEvent(new CustomEvent('app:navigate', { detail: url }))
           },
         },

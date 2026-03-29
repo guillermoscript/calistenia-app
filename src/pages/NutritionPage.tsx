@@ -10,7 +10,9 @@ import MealSuggestions from '../components/nutrition/MealSuggestions'
 import WeeklyNutritionChart from '../components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan, { type PlannedMeal } from '../components/nutrition/DailyMealPlan'
 import DailySummaryCard from '../components/nutrition/DailySummaryCard'
+import WeeklyMealPlan from '../components/nutrition/WeeklyMealPlan'
 import { useNutrition } from '../hooks/useNutrition'
+import { useWeeklyMealPlan } from '../hooks/useWeeklyMealPlan'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
 import { submitAnalyzeMealJob } from '../lib/ai-jobs-api'
 import { toast } from 'sonner'
@@ -88,6 +90,21 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedDate, setSelectedDate] = useState(() => searchParams.get('date') || todayStr())
+  const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>(() =>
+    searchParams.get('tab') === 'weekly' ? 'weekly' : 'daily'
+  )
+
+  const {
+    activePlan: weeklyPlan,
+    planDays: weeklyPlanDays,
+    isLoading: weeklyLoading,
+    generatePlan: generateWeeklyPlan,
+    regenerateDay: regenerateWeeklyDay,
+    logMeal: logWeeklyMeal,
+    deleteMeal: deleteWeeklyMeal,
+    archivePlan: archiveWeeklyPlan,
+    refresh: refreshWeeklyPlan,
+  } = useWeeklyMealPlan(userId)
   const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
 
   const {
@@ -289,6 +306,34 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         )}
       </div>
 
+      {/* Tab toggle: daily vs weekly */}
+      {isReady && goals && (
+        <div className="flex gap-1 mb-6 bg-card border border-border rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab('daily')}
+            className={cn(
+              'flex-1 py-1.5 rounded-md text-xs font-bebas tracking-widest transition-colors',
+              activeTab === 'daily'
+                ? 'bg-lime-400/15 text-lime-400 border border-lime-400/30'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {t('nutrition.tabs.daily')}
+          </button>
+          <button
+            onClick={() => setActiveTab('weekly')}
+            className={cn(
+              'flex-1 py-1.5 rounded-md text-xs font-bebas tracking-widest transition-colors',
+              activeTab === 'weekly'
+                ? 'bg-lime-400/15 text-lime-400 border border-lime-400/30'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {t('nutrition.tabs.weekly')}
+          </button>
+        </div>
+      )}
+
       {!isReady ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
@@ -423,15 +468,29 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             />
           </div>
 
-          {/* US-10: AI Daily meal plan */}
-          {isToday && (
+          {/* AI Meal plans — daily or weekly */}
+          {activeTab === 'weekly' ? (
+            <WeeklyMealPlan
+              activePlan={weeklyPlan}
+              planDays={weeklyPlanDays}
+              isLoading={weeklyLoading}
+              goals={goals}
+              getDailyTotals={getDailyTotals}
+              onGenerate={generateWeeklyPlan}
+              onRegenerateDay={regenerateWeeklyDay}
+              onLogMeal={logWeeklyMeal}
+              onDeleteMeal={deleteWeeklyMeal}
+              onArchive={archiveWeeklyPlan}
+              onRefresh={refreshWeeklyPlan}
+            />
+          ) : isToday ? (
             <DailyMealPlan
               remaining={remaining}
               goals={{ calories: goals.dailyCalories, protein: goals.dailyProtein, carbs: goals.dailyCarbs, fat: goals.dailyFat }}
               loggedMealTypes={loggedMealTypes}
               onSaveMeal={handleSavePlannedMeal}
             />
-          )}
+          ) : null}
 
           {/* Secondary zone — collapsed by default */}
           <div>
