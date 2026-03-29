@@ -1,6 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
-  const collection = app.findCollectionByNameOrId("weekly_plan_days");
+  let collection
+  try { collection = app.findCollectionByNameOrId("weekly_plan_days") } catch (_) { return }
 
   // day_index: remove required so 0 is accepted (PB treats 0 as blank for required numbers)
   const dayIndexField = collection.fields.getByName("day_index");

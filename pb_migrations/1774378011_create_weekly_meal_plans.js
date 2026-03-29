@@ -1,5 +1,8 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
+  // Idempotent: skip if collection already exists (from a prior partial migration)
+  try { app.findCollectionByNameOrId("pbc_wmp0000001"); return } catch (_) {}
+
   const collection = new Collection({
     "createRule": "@request.auth.id != \"\"",
     "deleteRule": "user = @request.auth.id",

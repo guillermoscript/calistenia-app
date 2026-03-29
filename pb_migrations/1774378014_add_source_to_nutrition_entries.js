@@ -2,6 +2,9 @@
 migrate((app) => {
   const collection = app.findCollectionByNameOrId("pbc_4000000004")
 
+  // Idempotent: skip if field already exists
+  if (collection.fields.getByName("source")) return
+
   collection.fields.add(new Field({
     autogeneratePattern: "",
     hidden: false,
