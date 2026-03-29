@@ -4,6 +4,7 @@ import { useWorkDay } from '../hooks/useWorkDay'
 import Timer from '../components/Timer'
 import YoutubeModal from '../components/YoutubeModal'
 import LumbarCheckModal from '../components/LumbarCheckModal'
+import SleepLumbarSection from '../components/lumbar/SleepLumbarSection'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
@@ -236,6 +237,8 @@ export default function LumbarPage({ user }: LumbarPageProps) {
       </p>
 
       <WorkDayClock />
+
+      <SleepLumbarSection userId={user?.id ?? null} />
 
       {/* Root Causes */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mb-8">
