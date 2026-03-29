@@ -12,6 +12,7 @@ import { Progress } from '../components/ui/progress'
 import { cn } from '../lib/utils'
 import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
 import { useFollows } from '../hooks/useFollows'
+import { useProfileCompare } from '../hooks/useProfileCompare'
 import { ShareButton } from '../components/ShareButton'
 import { shareProfile, shareReferralInvite } from '../lib/share'
 import { useReferrals } from '../hooks/useReferrals'
@@ -64,6 +65,9 @@ export default function UserProfilePage() {
   const [followLoading, setFollowLoading] = useState(false)
   const { stats: referralStats, getReferralStats } = useReferrals(currentUserId || null)
   const [referralCode, setReferralCode] = useState<string | null>(null)
+  // Compare: fetch extended stats for both the viewed user and the current user
+  const { stats: otherCompareStats, loading: otherCompareLoading, load: loadOtherCompare } = useProfileCompare()
+  const { stats: myCompareStats, loading: myCompareLoading, load: loadMyCompare } = useProfileCompare()
 
   useEffect(() => {
     if (!userId) return
@@ -160,6 +164,15 @@ export default function UserProfilePage() {
     load()
   }, [userId])
 
+  // Load extended compare stats when user toggles compare mode
+  useEffect(() => {
+    if (!comparing || !userId || !currentUserId) return
+    loadOtherCompare(userId)
+    loadMyCompare(currentUserId)
+  }, [comparing, userId, currentUserId, loadOtherCompare, loadMyCompare])
+
+  const compareLoading = otherCompareLoading || myCompareLoading
+
   // Load referral stats and code for own profile
   useEffect(() => {
     if (!isOwnProfile || !currentUserId) return
@@ -235,7 +248,7 @@ export default function UserProfilePage() {
                     : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
                 )}
               >
-                {followLoading ? '...' : isFollowing(userId) ? 'SIGUIENDO' : 'SEGUIR'}
+                {followLoading ? '...' : isFollowing(userId) ? t('friends.followingBtn') : t('friends.followBtn')}
               </Button>
               <Button
                 variant={comparing ? 'default' : 'outline'}
@@ -248,7 +261,7 @@ export default function UserProfilePage() {
                     : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
                 )}
               >
-                {comparing ? 'OCULTAR' : 'COMPARAR'}
+                {comparing ? t('friends.compare.hide') : t('friends.compare.show')}
               </Button>
             </>
           )}
@@ -269,6 +282,53 @@ export default function UserProfilePage() {
         <StatBox label={t('profile.bestStreak')} value={profile.bestStreak} accent="text-amber-400" unit={t('profile.days')} />
         <StatBox label="Nivel" value={profile.level} accent="text-pink-500" />
       </div>
+
+      {/* Extended compare metrics */}
+      {comparing && !compareLoading && (
+        <Card className="mb-8">
+          <CardContent className="p-5 md:p-6">
+            <div className="text-[10px] text-muted-foreground tracking-widest mb-4 uppercase">{t('friends.compare.extendedTitle')}</div>
+            <div className="grid grid-cols-2 gap-4">
+              <CompareRow
+                label={t('friends.compare.sessionsWeek')}
+                otherValue={otherCompareStats.sessionsThisWeek}
+                myValue={myCompareStats.sessionsThisWeek}
+              />
+              <CompareRow
+                label={t('friends.compare.sessionsMonth')}
+                otherValue={otherCompareStats.sessionsThisMonth}
+                myValue={myCompareStats.sessionsThisMonth}
+              />
+              <CompareRow
+                label={t('friends.compare.phase')}
+                otherValue={otherCompareStats.phase}
+                myValue={myCompareStats.phase}
+              />
+              {otherCompareStats.sleepAvgQuality !== null && (
+                <CompareRow
+                  label={t('friends.compare.sleepQuality')}
+                  otherValue={otherCompareStats.sleepAvgQuality}
+                  myValue={myCompareStats.sleepAvgQuality ?? 0}
+                  unit="/5"
+                />
+              )}
+              {otherCompareStats.nutritionAdherence !== null && (
+                <CompareRow
+                  label={t('friends.compare.nutritionAdherence')}
+                  otherValue={otherCompareStats.nutritionAdherence}
+                  myValue={myCompareStats.nutritionAdherence ?? 0}
+                  unit="%"
+                />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {comparing && compareLoading && (
+        <div className="mb-8 flex justify-center py-4">
+          <Loader label={t('friends.compare.loading')} />
+        </div>
+      )}
 
       {/* Programa actual */}
       {profile.activeProgram ? (
@@ -393,6 +453,29 @@ export default function UserProfilePage() {
   )
 }
 
+function CompareRow({ label, otherValue, myValue, unit }: {
+  label: string
+  otherValue: number
+  myValue: number
+  unit?: string
+}) {
+  const { t } = useTranslation()
+  const diff = otherValue - myValue
+  const ahead = diff > 0
+  const behind = diff < 0
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{label}</div>
+      <div className="flex items-baseline gap-2">
+        <span className="font-bebas text-xl leading-none text-foreground">{otherValue}{unit}</span>
+        <span className={cn('text-[10px]', ahead ? 'text-emerald-400' : behind ? 'text-red-400' : 'text-muted-foreground')}>
+          {diff !== 0 && (ahead ? '+' : '')}{diff !== 0 ? diff : '='} {t('friends.compare.vsYou')}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function StatBox({ label, value, compareValue, accent, unit }: {
   label: string
   value: number
@@ -400,6 +483,7 @@ function StatBox({ label, value, compareValue, accent, unit }: {
   accent: string
   unit?: string
 }) {
+  const { t } = useTranslation()
   const ahead = compareValue !== undefined && value > compareValue
   const behind = compareValue !== undefined && value < compareValue
   return (
@@ -411,7 +495,7 @@ function StatBox({ label, value, compareValue, accent, unit }: {
         <div className="text-[10px] text-muted-foreground tracking-widest uppercase">{label}</div>
         {compareValue !== undefined && (
           <div className={cn('text-[10px] mt-1', ahead ? 'text-emerald-400' : behind ? 'text-red-400' : 'text-muted-foreground')}>
-            {ahead ? '+' : ''}{value - compareValue} vs tu
+            {ahead ? '+' : ''}{value - compareValue} {t('friends.compare.vsYou')}
           </div>
         )}
       </CardContent>
