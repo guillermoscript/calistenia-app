@@ -1,5 +1,8 @@
+import "./instrument";              // Sentry — MUST be first import
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { reactErrorHandler } from "@sentry/react"
 import { BrowserRouter } from 'react-router-dom'
 import { I18nextProvider } from 'react-i18next'
 import { registerSW } from 'virtual:pwa-register'
@@ -37,7 +40,11 @@ const updateSW = registerSW({
   },
 })
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById('root')!, {
+  onUncaughtError: reactErrorHandler(),
+  onCaughtError: reactErrorHandler(),
+  onRecoverableError: reactErrorHandler(),
+}).render(
   <React.StrictMode>
     <I18nextProvider i18n={i18n}>
       <BrowserRouter>

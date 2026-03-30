@@ -58,3 +58,5 @@ secret.json
 *.pfx
 credentials.json
 service-account*.json
+# Sentry Config File
+.env.sentry-build-plugin
