@@ -28,7 +28,7 @@ interface UseProgressionsReturn {
   shouldSuggestProgression: (exerciseId: string, logs: ExerciseLog[]) => boolean
 }
 
-export const useProgressions = (): UseProgressionsReturn => {
+export function useProgressions(): UseProgressionsReturn {
   const [allProgressions, setAllProgressions] = useState<ExerciseProgression[]>([])
   const [chains, setChains] = useState<ProgressionChains>({})
   const [loading, setLoading] = useState(true)

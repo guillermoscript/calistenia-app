@@ -37,7 +37,7 @@ interface WorkoutActions {
   checkAndUpdatePR: (exerciseId: string, reps: string) => Promise<PREvent | null>
   // Program actions
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
-  selectProgram: (programId: string) => Promise<void>
+  selectProgram: (programId: string) => Promise<boolean>
   duplicateProgram: (programId: string) => Promise<string | null>
   deleteProgram: (programId: string) => Promise<boolean>
   refreshPrograms: () => Promise<void>
@@ -50,7 +50,8 @@ interface WorkoutContextValue {
 
 const WorkoutContext = createContext<WorkoutContextValue | null>(null)
 
-// ── Hook ────────────────────────────────────────────────────────────────────
+// ── Hooks (exported separately so React Fast Refresh doesn't confuse
+//    them with the WorkoutProvider component in this same module) ───────────
 
 export function useWorkout() {
   const ctx = useContext(WorkoutContext)
@@ -58,7 +59,6 @@ export function useWorkout() {
   return ctx
 }
 
-// Convenience hooks for common access patterns
 export function useWorkoutState() {
   return useWorkout().state
 }

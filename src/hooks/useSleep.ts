@@ -93,11 +93,13 @@ interface UseSleepReturn {
   didSleepWell: (date: string) => boolean | null
 }
 
-export const useSleep = (userId: string | null = null): UseSleepReturn => {
+export function useSleep(userId: string | null = null): UseSleepReturn {
   const [entries, setEntries] = useState<SleepEntry[]>([])
   const [isReady, setIsReady] = useState(false)
   const [usePB, setUsePB] = useState(false)
   const initialized = useRef(false)
+  const entriesRef = useRef(entries)
+  entriesRef.current = entries
 
   useEffect(() => {
     if (initialized.current) return
@@ -200,7 +202,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
       try {
         const data: Record<string, any> = { ...input }
         if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
-          const existing = entries.find(e => e.id === id)
+          const existing = entriesRef.current.find(e => e.id === id)
           if (existing) {
             const bedtime = input.bedtime ?? existing.bedtime
             const wake_time = input.wake_time ?? existing.wake_time
@@ -230,7 +232,7 @@ export const useSleep = (userId: string | null = null): UseSleepReturn => {
       lsSet(updated)
       return updated
     })
-  }, [usePB, userId, entries])
+  }, [usePB, userId])
 
   const deleteSleepEntry = useCallback(async (id: string) => {
     if (usePB && !id.startsWith('local_')) {

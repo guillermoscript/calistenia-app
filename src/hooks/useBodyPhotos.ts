@@ -20,7 +20,7 @@ interface UseBodyPhotosReturn {
   deletePhoto: (id: string) => Promise<void>
 }
 
-export const useBodyPhotos = (userId: string | null = null): UseBodyPhotosReturn => {
+export function useBodyPhotos(userId: string | null = null): UseBodyPhotosReturn {
   const [photos, setPhotos] = useState<BodyPhoto[]>([])
   const [isReady, setIsReady] = useState(false)
   const [usePB, setUsePB] = useState(false)

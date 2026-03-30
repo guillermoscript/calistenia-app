@@ -26,7 +26,7 @@ interface UseWeightReturn {
   deleteWeight: (id: string) => Promise<void>
 }
 
-export const useWeight = (userId: string | null = null): UseWeightReturn => {
+export function useWeight(userId: string | null = null): UseWeightReturn {
   const [weights, setWeights] = useState<WeightEntry[]>([])
   const [isReady, setIsReady] = useState(false)
   const [usePB, setUsePB] = useState(false)

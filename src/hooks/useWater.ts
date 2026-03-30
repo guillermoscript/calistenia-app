@@ -40,7 +40,7 @@ const lsGetGoal = (): number => {
   try { return Number(localStorage.getItem('calistenia_water_goal')) || DEFAULT_GOAL } catch { return DEFAULT_GOAL }
 }
 
-export const useWater = (userId: string | null = null, selectedDate?: string): UseWaterReturn => {
+export function useWater(userId: string | null = null, selectedDate?: string): UseWaterReturn {
   const [data, setData] = useState<Record<string, DayWater>>({})
   const [goal, setGoalState] = useState(lsGetGoal)
   const [usePB, setUsePB] = useState(false)

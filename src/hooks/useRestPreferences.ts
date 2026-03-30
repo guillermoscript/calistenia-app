@@ -15,12 +15,14 @@ interface UseRestPreferencesReturn {
   isReady: boolean
 }
 
-export const useRestPreferences = (userId: string | null = null): UseRestPreferencesReturn => {
+export function useRestPreferences(userId: string | null = null): UseRestPreferencesReturn {
   const [prefs, setPrefs] = useState<Record<string, number>>({})
   const [pbIds, setPbIds] = useState<Record<string, string>>({}) // exerciseId → PB record id
   const [usePB, setUsePB] = useState(false)
   const [isReady, setIsReady] = useState(false)
   const initialized = useRef(false)
+  const pbIdsRef = useRef(pbIds)
+  pbIdsRef.current = pbIds
 
   useEffect(() => {
     if (initialized.current) return
@@ -70,7 +72,7 @@ export const useRestPreferences = (userId: string | null = null): UseRestPrefere
     // Persist to PocketBase
     if (usePB && userId) {
       try {
-        const existingId = pbIds[exerciseId]
+        const existingId = pbIdsRef.current[exerciseId]
         if (existingId) {
           await pb.collection('rest_preferences').update(existingId, { rest_seconds: seconds })
         } else {
@@ -83,7 +85,7 @@ export const useRestPreferences = (userId: string | null = null): UseRestPrefere
         }
       } catch (e) { console.warn('PB rest_preferences error:', e) }
     }
-  }, [usePB, userId, pbIds])
+  }, [usePB, userId])
 
   return { getRestForExercise, setRestForExercise, isReady }
 }

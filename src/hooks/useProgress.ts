@@ -84,13 +84,15 @@ interface UseProgressReturn {
  * persistencia va a PB filtrada por ese userId (y programId cuando aplica).
  * En cualquier otro caso cae al fallback de localStorage.
  */
-export const useProgress = (userId: string | null = null, activeProgramId: string | null = null): UseProgressReturn => {
+export function useProgress(userId: string | null = null, activeProgramId: string | null = null): UseProgressReturn {
   const [progress, setProgress] = useState<ProgressMap>({})
   const [settings, setSettingsState] = useState<Settings>({ ...DEFAULT_SETTINGS })
   const [usePB, setUsePB] = useState(false)
   const [pbReady, setPbReady] = useState(false)
   const initialized = useRef(false)
   const lastUserId = useRef<string | null>(null)
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
 
   // ─── Init / re-init cuando cambia el userId o el programa activo ─────────
   useEffect(() => {
@@ -391,9 +393,12 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
   }, [progress])
 
   const updateSettings = useCallback(async (newSettings: Partial<Settings>) => {
-    const updated: Settings = { ...settings, ...newSettings }
-    lsSetSettings(updated)
-    setSettingsState(updated)
+    let updated!: Settings
+    setSettingsState(prev => {
+      updated = { ...prev, ...newSettings }
+      lsSetSettings(updated)
+      return updated
+    })
 
     if (usePB && userId) {
       try {
@@ -417,7 +422,6 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
           await pb.collection('settings').create({ user: userId, ...data })
         }
       } catch {
-        // Fallback: try creating
         pb.collection('settings').create({
           user: userId,
           phase: updated.phase,
@@ -431,7 +435,7 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
         }).catch((e: any) => console.warn('PB settings create error:', e))
       }
     }
-  }, [settings, usePB, userId])
+  }, [usePB, userId])
 
   // ─── Auto-detect PRs ─────────────────────────────────────────────────────
   const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string): Promise<PREvent | null> => {
@@ -440,13 +444,13 @@ export const useProgress = (userId: string | null = null, activeProgramId: strin
     const match = PR_PATTERNS.find(p => p.test(exerciseId))
     if (!match) return null
     const prKey = match.key
-    const current = (settings as unknown as Record<string, number>)[prKey] || 0
+    const current = (settingsRef.current as unknown as Record<string, number>)[prKey] || 0
     if (repsNum > current) {
       await updateSettings({ [prKey]: repsNum } as Partial<Settings>)
       return { exerciseId, prKey: String(prKey), oldValue: current, newValue: repsNum }
     }
     return null
-  }, [settings, updateSettings])
+  }, [updateSettings])
 
   return {
     progress, settings, usePB, pbReady,

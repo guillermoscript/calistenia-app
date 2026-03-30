@@ -47,7 +47,7 @@ interface UseAuthReturn {
  *   signUp(email, password, displayName)
  *   signOut()
  */
-export const useAuth = (): UseAuthReturn => {
+export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<RecordModel | null>(getCurrentUser)
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)

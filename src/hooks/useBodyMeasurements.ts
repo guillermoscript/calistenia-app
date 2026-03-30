@@ -28,7 +28,7 @@ interface UseBodyMeasurementsReturn {
   deleteMeasurement: (id: string) => Promise<void>
 }
 
-export const useBodyMeasurements = (userId: string | null = null): UseBodyMeasurementsReturn => {
+export function useBodyMeasurements(userId: string | null = null): UseBodyMeasurementsReturn {
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([])
   const [isReady, setIsReady] = useState(false)
   const [usePB, setUsePB] = useState(false)
