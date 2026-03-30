@@ -481,7 +481,8 @@ export function useProgramEditor() {
         })
       }
 
-      // Delete existing day config
+      // Delete existing day config (optional collection — may not exist in older deployments)
+      let hasDayConfig = true
       try {
         const existingDayConfig = await pb.collection('program_day_config').getList(1, 200, {
           filter: pb.filter('program = {:pid}', { pid: programId }),
@@ -489,7 +490,7 @@ export function useProgramEditor() {
         for (const dc of existingDayConfig.items) {
           await pb.collection('program_day_config').delete(dc.id)
         }
-      } catch { /* no existing day config */ }
+      } catch { hasDayConfig = false }
 
       // Create day config for ALL days and exercises for non-cardio days
       let sortOrder = 0
@@ -501,22 +502,26 @@ export function useProgramEditor() {
           if (!day) continue
 
           daySortOrder++
-          const dayConfigData: Record<string, unknown> = {
-            program: programId,
-            phase_number: pi + 1,
-            day_id: day.dayId,
-            day_name: toTranslatable(day.dayName, locale),
-            day_type: day.type,
-            day_focus: toTranslatable(day.focus, locale),
-            day_color: day.color,
-            sort_order: daySortOrder,
+          if (hasDayConfig) {
+            try {
+              const dayConfigData: Record<string, unknown> = {
+                program: programId,
+                phase_number: pi + 1,
+                day_id: day.dayId,
+                day_name: toTranslatable(day.dayName, locale),
+                day_type: day.type,
+                day_focus: toTranslatable(day.focus, locale),
+                day_color: day.color,
+                sort_order: daySortOrder,
+              }
+              if (day.type === 'cardio') {
+                dayConfigData.cardio_activity_type = day.cardioActivityType || 'running'
+                if (day.cardioTargetDistanceKm) dayConfigData.cardio_target_distance_km = day.cardioTargetDistanceKm
+                if (day.cardioTargetDurationMin) dayConfigData.cardio_target_duration_min = day.cardioTargetDurationMin
+              }
+              await pb.collection('program_day_config').create(dayConfigData)
+            } catch { /* day config save failed — non-critical */ }
           }
-          if (day.type === 'cardio') {
-            dayConfigData.cardio_activity_type = day.cardioActivityType || 'running'
-            if (day.cardioTargetDistanceKm) dayConfigData.cardio_target_distance_km = day.cardioTargetDistanceKm
-            if (day.cardioTargetDurationMin) dayConfigData.cardio_target_duration_min = day.cardioTargetDurationMin
-          }
-          await pb.collection('program_day_config').create(dayConfigData)
 
           if (day.type === 'cardio' || day.exercises.length === 0) continue
 
@@ -550,9 +555,13 @@ export function useProgramEditor() {
 
       setState(s => ({ ...s, programId, isSaving: false, isDirty: false }))
       return programId
-    } catch (e) {
+    } catch (e: any) {
       console.error('useProgramEditor: saveProgram error', e)
-      setState(s => ({ ...s, isSaving: false, error: i18n.t('programEditor.saveError') }))
+      const detail = e?.response?.data || e?.data || e?.message || ''
+      const msg = detail ? `${i18n.t('programEditor.saveError')} (${JSON.stringify(detail)})` : i18n.t('programEditor.saveError')
+      setState(s => ({ ...s, isSaving: false, error: msg }))
+      // Report to Sentry so we can see save failures
+      try { import('@sentry/react').then(Sentry => Sentry.captureException(e)) } catch {}
       return null
     }
   }, [state.programId, state.info, state.phases, state.days])
