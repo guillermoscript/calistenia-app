@@ -171,7 +171,7 @@ const AppLoader: React.FC = () => (
 const MOBILE_TABS: { path: string; labelKey: string; icon: React.FC<IconProps> }[] = [
   { path: '/',          labelKey: 'nav.home',       icon: LayoutIcon },
   { path: '/workout',   labelKey: 'nav.workout',    icon: DumbbellIcon },
-  { path: '/nutrition', labelKey: 'nav.nutrition',   icon: NutritionIcon },
+  { path: '/feed',      labelKey: 'nav.activity',   icon: ActivityIcon },
   { path: '/progress',  labelKey: 'nav.progress',    icon: ChartIcon },
   { path: '/profile',   labelKey: 'nav.profile',     icon: ProfileIcon },
 ]

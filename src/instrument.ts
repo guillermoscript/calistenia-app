@@ -16,6 +16,7 @@ Sentry.init({
     Sentry.feedbackIntegration({
       colorScheme: "system",
       enableScreenshot: true,
+      triggerLabel: "Bug",
     }),
   ],
 

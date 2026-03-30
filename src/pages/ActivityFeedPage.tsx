@@ -84,7 +84,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
               >
                 <FeedCard
                   item={item}
-                  onTap={() => navigate(`/session/${item.date}/${item.workoutKey}`)}
+                  onTap={() => navigate(`/u/${item.userId}`)}
                   onTapUser={() => navigate(`/u/${item.userId}`)}
                   reactions={reactions}
                   onReact={(emoji) => toggleReaction(item.id, emoji)}
@@ -127,16 +127,20 @@ interface FeedCardProps {
 }
 
 function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, onComment }: FeedCardProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const phaseColor = PHASE_COLORS[item.phase]
+
+  const formattedDate = new Date(item.completedAt.replace(' ', 'T')).toLocaleDateString(i18n.language, {
+    weekday: 'short', day: 'numeric', month: 'short',
+  })
 
   return (
     <div className="px-4 py-3.5 bg-card border border-border rounded-lg hover:border-lime/20 transition-colors">
       {/* User + time */}
-      <div className="flex items-center gap-2.5 mb-2">
+      <div className="flex items-center gap-2.5 mb-2.5">
         <button
           onClick={(e) => { e.stopPropagation(); onTapUser() }}
-          className="size-8 rounded-full bg-accent flex items-center justify-center text-xs font-medium text-foreground shrink-0 hover:ring-2 hover:ring-lime/30 transition-all overflow-hidden"
+          className="size-9 rounded-full bg-accent flex items-center justify-center text-xs font-medium text-foreground shrink-0 hover:ring-2 hover:ring-lime/30 transition-all overflow-hidden"
         >
           {item.avatarUrl ? (
             <img src={item.avatarUrl} alt={item.displayName} className="size-full object-cover" />
@@ -147,33 +151,43 @@ function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, on
         <div className="flex-1 min-w-0">
           <button
             onClick={(e) => { e.stopPropagation(); onTapUser() }}
-            className="text-sm font-medium truncate hover:text-lime transition-colors"
+            className="text-sm font-medium truncate hover:text-lime transition-colors block"
           >
             {item.displayName}
           </button>
+          <span className="text-[10px] text-muted-foreground">{formattedDate} · {relativeTime(item.completedAt, t)}</span>
         </div>
-        <span className="text-[10px] text-muted-foreground shrink-0">{relativeTime(item.completedAt, t)}</span>
       </div>
+
+      {/* Action line */}
+      <p className="text-xs text-muted-foreground mb-2">
+        {t('feed.completedWorkout')}
+      </p>
 
       {/* Workout */}
       <button
         onClick={onTap}
         className={cn(
-          'w-full text-left px-3 py-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors flex items-center justify-between gap-2',
+          'w-full text-left px-3 py-2.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors',
           phaseColor?.border ? `border-l-[3px] ${phaseColor.border}` : 'border-l-[3px] border-l-lime',
         )}
       >
-        <div className="min-w-0">
-          <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{item.workoutTitle}</div>
-          {item.note && (
-            <div className="text-[11px] text-muted-foreground truncate mt-0.5 italic">{item.note}</div>
-          )}
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{item.workoutTitle}</div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">{t('feed.phase')} {item.phase}</span>
+            </div>
+          </div>
+          <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
         </div>
-        <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+        {item.note && (
+          <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{item.note}"</div>
+        )}
       </button>
 
       {/* Reactions + Comment */}
-      <div id="tour-feed-reaction" className="mt-2 flex items-center gap-2">
+      <div id="tour-feed-reaction" className="mt-2.5 flex items-center gap-2">
         <EmojiPicker reactions={reactions} onToggle={onReact} />
         <button
           onClick={(e) => { e.stopPropagation(); onComment() }}

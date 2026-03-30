@@ -49,37 +49,35 @@ export function useActivityFeed(userId: string | null) {
         return
       }
 
-      // 2. Fetch recent sessions for each followed user in parallel
-      const userSessionsPromises = followedIds.map(uid =>
-        pb.collection('sessions').getList(1, 20, {
-          filter: pb.filter('user = {:uid}', { uid }),
+      // 2. Fetch recent sessions for all followed users in a single query
+      // PocketBase supports filter OR chains — batch to avoid N+1 calls
+      const uidFilter = followedIds
+        .map(uid => pb.filter('user = {:uid}', { uid }))
+        .join(' || ')
+
+      const [sessionsRes, usersRes] = await Promise.all([
+        pb.collection('sessions').getList(1, 50, {
+          filter: uidFilter,
           sort: '-completed_at',
           $autoCancel: false,
-        }).catch(() => ({ items: [] as any[] }))
-      )
-
-      // 3. Fetch user display names in parallel
-      const userDataPromises = followedIds.map(uid =>
-        pb.collection('users').getOne(uid, { $autoCancel: false }).catch(() => null)
-      )
-
-      const [sessionResults, userData] = await Promise.all([
-        Promise.all(userSessionsPromises),
-        Promise.all(userDataPromises),
+        }).catch(() => ({ items: [] as any[] })),
+        pb.collection('users').getList(1, followedIds.length, {
+          filter: followedIds.map(uid => pb.filter('id = {:uid}', { uid })).join(' || '),
+          $autoCancel: false,
+        }).catch(() => ({ items: [] as any[] })),
       ])
 
       // Build user lookup
       const userMap = new Map<string, { name: string; avatarUrl: string | null }>()
-      userData.forEach((u: any) => {
+      ;(usersRes as any).items.forEach((u: any) => {
         if (u) userMap.set(u.id, {
           name: u.display_name || u.email?.split('@')[0] || '?',
           avatarUrl: getUserAvatarUrl(u, '100x100'),
         })
       })
 
-      // 4. Flatten, enrich, and sort
-      const allSessions = sessionResults
-        .flatMap(res => (res as any).items || [])
+      // 3. Enrich and sort
+      const allSessions = ((sessionsRes as any).items || [])
         .sort((a: any, b: any) =>
           new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
         )

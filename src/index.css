@@ -220,3 +220,10 @@
 .driver-popover.calistenia-tour-popover .driver-popover-close-btn:hover {
   color: hsl(var(--foreground));
 }
+
+/* Sentry feedback widget — left side, above mobile tab bar */
+#sentry-feedback {
+  --inset: auto auto 0 0;
+  --page-margin: 16px 16px calc(4rem + env(safe-area-inset-bottom, 0px)) 16px;
+  --z-index: 40;
+}
