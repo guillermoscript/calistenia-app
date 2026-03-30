@@ -1,5 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
+  try {
+    app.findCollectionByNameOrId("challenge_participants");
+    return; // already exists
+  } catch {}
+
   const challengesCollection = app.findCollectionByNameOrId("challenges")
 
   const collection = new Collection({

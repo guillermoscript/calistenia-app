@@ -1,5 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
+  try {
+    app.findCollectionByNameOrId("cardio_sessions");
+    return; // already exists
+  } catch {}
+
   const collection = new Collection({
     name: "cardio_sessions",
     type: "base",

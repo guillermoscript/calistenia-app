@@ -1,5 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
+  try {
+    app.findCollectionByNameOrId("comments");
+    return; // already exists
+  } catch {}
+
   // Step 1: Create collection without self-referencing field
   const collection = new Collection({
     name: "comments",

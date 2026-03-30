@@ -1,5 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
+  try {
+    app.findCollectionByNameOrId("view_leaderboard");
+    return; // already exists
+  } catch {}
+
   const collection = new Collection({
     "createRule": null,
     "deleteRule": null,

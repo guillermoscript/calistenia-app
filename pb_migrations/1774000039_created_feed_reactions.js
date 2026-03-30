@@ -1,5 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
+  try {
+    app.findCollectionByNameOrId("feed_reactions");
+    return; // already exists
+  } catch {}
+
   const collection = new Collection({
     name: "feed_reactions",
     type: "base",

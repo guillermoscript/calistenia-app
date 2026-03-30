@@ -10,6 +10,11 @@
  * - update/delete: locked (immutable ledger)
  */
 migrate((app) => {
+  try {
+    app.findCollectionByNameOrId("point_transactions");
+    return; // already exists
+  } catch {}
+
   const collection = new Collection({
     name: "point_transactions",
     type: "base",

@@ -9,6 +9,11 @@
  * - update/delete: locked (immutable ledger)
  */
 migrate((app) => {
+  try {
+    app.findCollectionByNameOrId("referrals");
+    return; // already exists
+  } catch {}
+
   const challengesCollection = app.findCollectionByNameOrId("challenges")
 
   const collection = new Collection({
