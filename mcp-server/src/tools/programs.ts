@@ -172,6 +172,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
                   muscles: localize(e.muscles),
                   is_timer: e.is_timer,
                   youtube: e.youtube || null,
+                  section: e.section || "main",
                 })),
               })
             ),
@@ -611,6 +612,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           timer_seconds: z.number().int().optional().describe("Timer duration"),
           sort_order: z.number().int().optional().describe("Display order within the day"),
           priority: z.enum(["primary", "secondary", "accessory"]).default("primary").describe("Exercise priority"),
+          section: z.enum(["warmup", "main", "cooldown"]).default("main").optional().describe("Exercise section: warmup, main, or cooldown"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
@@ -638,6 +640,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           timer_seconds: input.timer_seconds || 0,
           sort_order: input.sort_order ?? 0,
           priority: input.priority,
+          section: input.section ?? "main",
         });
 
         return {
@@ -677,6 +680,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           timer_seconds: z.number().int().optional(),
           sort_order: z.number().int().optional(),
           priority: z.enum(["primary", "secondary", "accessory"]).optional(),
+          section: z.enum(["warmup", "main", "cooldown"]).optional().describe("Exercise section: warmup, main, or cooldown"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
@@ -738,6 +742,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     is_timer: z.boolean().default(false),
     timer_seconds: z.number().int().optional(),
     priority: z.enum(["primary", "secondary", "accessory"]).default("primary"),
+    section: z.enum(["warmup", "main", "cooldown"]).default("main").optional().describe("Exercise section: warmup, main, or cooldown"),
   });
 
   const DayInput = z.object({
@@ -825,6 +830,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
                 timer_seconds: ex.timer_seconds || 0,
                 sort_order: ei + 1,
                 priority: ex.priority,
+                section: ex.section ?? "main",
               });
               totalExercises++;
             }
@@ -927,6 +933,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
                 timer_seconds: z.number().int().optional(),
                 note: z.string().optional(),
                 youtube: z.string().optional(),
+                section: z.enum(["warmup", "main", "cooldown"]).optional(),
               })),
             })),
           })).min(1),
@@ -994,6 +1001,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
                 timer_seconds: ex.timer_seconds || 0,
                 sort_order: ex.sort_order ?? ei + 1,
                 priority: priorityMap[ex.priority || ""] || ex.priority || "med",
+                section: ex.section ?? "main",
               });
               totalExercises++;
             }
@@ -1136,6 +1144,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
             timer_seconds: ex.timer_seconds || 0,
             sort_order: ex.sort_order,
             priority: ex.priority,
+            section: ex.section || "main",
           });
         }
 

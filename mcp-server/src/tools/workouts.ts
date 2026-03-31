@@ -124,13 +124,19 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
             .optional()
             .describe("Completion datetime (ISO 8601). Defaults to now."),
           note: z.string().optional().describe("Optional note about the session"),
+          warmup_completed: z.boolean().optional().describe("Whether warmup was completed"),
+          warmup_skipped: z.boolean().optional().describe("Whether warmup was skipped"),
+          warmup_duration_seconds: z.number().optional().describe("Warmup duration in seconds"),
+          cooldown_completed: z.boolean().optional().describe("Whether cooldown was completed"),
+          cooldown_skipped: z.boolean().optional().describe("Whether cooldown was skipped"),
+          cooldown_duration_seconds: z.number().optional().describe("Cooldown duration in seconds"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async ({ workout_key, phase, day, completed_at, note }) => {
+    async ({ workout_key, phase, day, completed_at, note, warmup_completed, warmup_skipped, warmup_duration_seconds, cooldown_completed, cooldown_skipped, cooldown_duration_seconds }) => {
       try {
-        const data = {
+        const data: Record<string, unknown> = {
           user: userId,
           workout_key,
           phase,
@@ -138,6 +144,12 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
           completed_at: completed_at ?? new Date().toISOString(),
           note: note ?? "",
         };
+        if (warmup_completed !== undefined) data.warmup_completed = warmup_completed;
+        if (warmup_skipped !== undefined) data.warmup_skipped = warmup_skipped;
+        if (warmup_duration_seconds !== undefined) data.warmup_duration_seconds = warmup_duration_seconds;
+        if (cooldown_completed !== undefined) data.cooldown_completed = cooldown_completed;
+        if (cooldown_skipped !== undefined) data.cooldown_skipped = cooldown_skipped;
+        if (cooldown_duration_seconds !== undefined) data.cooldown_duration_seconds = cooldown_duration_seconds;
 
         const record = await pb.collection("sessions").create(data);
 
