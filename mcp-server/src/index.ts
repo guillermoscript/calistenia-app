@@ -28,7 +28,7 @@ import {
   mcpAuthRouter,
   getOAuthProtectedResourceMetadataUrl,
 } from "@modelcontextprotocol/sdk/server/auth/router.js";
-import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
+// requireBearerAuth not used — we verify tokens directly in mcpAuth to support dual-auth fallback
 import { AuthManager, validateBearerToken } from "./auth.js";
 import { PocketBaseOAuthProvider, createLoginRouter } from "./oauth.js";
 import { registerWorkoutTools } from "./tools/workouts.js";
@@ -99,43 +99,60 @@ app.use(createLoginRouter(PB_URL, SERVER_URL));
 
 // ── MCP endpoint (OAuth-protected) ───────────────────────────────────────────
 
-const bearerAuth = requireBearerAuth({
-  verifier: oauthProvider,
-  requiredScopes: [],
-  resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(mcpUrl),
-});
+const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(mcpUrl);
 
 /**
  * Dual-auth middleware: tries OAuth token first, then falls back to
  * direct PocketBase JWT for backward compatibility.
+ *
+ * We verify tokens directly instead of wrapping the SDK's bearerAuth
+ * middleware, because bearerAuth sends 401 responses on failure without
+ * calling next(), which prevents the PB token fallback from ever running.
  */
 async function mcpAuth(req: any, res: any, next: any) {
-  // Try OAuth token first
-  bearerAuth(req, res, (err?: any) => {
-    if (!err && req.auth) {
-      // OAuth token validated — attach user context
-      const { userId, pbToken, email, timezone } = req.auth.extra as {
-        userId: string;
-        pbToken: string;
-        email: string;
-        timezone?: string;
-      };
-      req.mcpAuth = new AuthManager(PB_URL, { userId, token: pbToken, email, timezone: timezone || "UTC" });
-      return next();
-    }
+  const authHeader: string | undefined = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    res.set(
+      "WWW-Authenticate",
+      `Bearer resource_metadata="${resourceMetadataUrl}"`
+    );
+    res.status(401).json({ error: "invalid_token", error_description: "Missing Authorization header" });
+    return;
+  }
 
-    // OAuth failed — try direct PocketBase token
-    validateBearerToken(PB_URL, req.headers.authorization)
-      .then((userCtx) => {
-        req.mcpAuth = new AuthManager(PB_URL, userCtx);
-        next();
-      })
-      .catch(() => {
-        // Both failed — return the OAuth 401 (with WWW-Authenticate header)
-        // Re-invoke bearerAuth to send proper 401 response
-        bearerAuth(req, res, () => {});
-      });
-  });
+  const token = authHeader.slice(7);
+
+  // 1) Try OAuth token
+  try {
+    const authInfo = await oauthProvider.verifyAccessToken(token);
+    const { userId, pbToken, email, timezone } = authInfo.extra as {
+      userId: string;
+      pbToken: string;
+      email: string;
+      timezone?: string;
+    };
+    req.auth = authInfo;
+    req.mcpAuth = new AuthManager(PB_URL, { userId, token: pbToken, email, timezone: timezone || "UTC" });
+    return next();
+  } catch {
+    // OAuth token invalid — fall through to PB token
+  }
+
+  // 2) Try direct PocketBase JWT
+  try {
+    const userCtx = await validateBearerToken(PB_URL, authHeader);
+    req.mcpAuth = new AuthManager(PB_URL, userCtx);
+    return next();
+  } catch {
+    // PB token also invalid
+  }
+
+  // Both failed — return 401 with OAuth discovery hint
+  res.set(
+    "WWW-Authenticate",
+    `Bearer error="invalid_token", error_description="Invalid or expired token", resource_metadata="${resourceMetadataUrl}"`
+  );
+  res.status(401).json({ error: "invalid_token", error_description: "Invalid or expired token" });
 }
 
 app.post("/mcp", mcpAuth, async (req: any, res: any) => {
