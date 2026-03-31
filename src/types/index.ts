@@ -33,6 +33,8 @@ export interface Exercise {
   variant_of?: string
   promoted_from?: string
   difficulty?: DifficultyLevel
+  section?: 'warmup' | 'main' | 'cooldown'
+  stretchType?: 'dynamic' | 'static'
 }
 
 export interface Workout {
@@ -94,6 +96,12 @@ export interface SessionDone {
   workoutKey: string
   completedAt?: number
   note: string
+  warmupCompleted?: boolean
+  warmupSkipped?: boolean
+  warmupDurationSeconds?: number
+  cooldownCompleted?: boolean
+  cooldownSkipped?: boolean
+  cooldownDurationSeconds?: number
 }
 
 /** The progress map stores both exercise logs and session-done markers */
@@ -344,6 +352,8 @@ export interface GpsPoint {
   timestamp: number
   speed?: number
   accuracy?: number
+  /** True when this point is the re-entry after a background gap (>30s without GPS) */
+  gap?: boolean
 }
 
 export interface KmSplit {

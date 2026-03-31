@@ -13,6 +13,8 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS, WORKOUTS } from '../data/workouts'
 import i18n from '../lib/i18n'
 import { localize, toTranslatable } from '../lib/i18n-db'
+import { stretchTemplates } from '../data/stretch-templates'
+import type { DayType, Exercise } from '../types'
 
 // ─── Editor types ────────────────────────────────────────────────────────────
 
@@ -47,6 +49,7 @@ export interface EditorExercise {
   priority: 'high' | 'med' | 'low'
   isTimer: boolean
   timerSeconds: number
+  section?: 'warmup' | 'main' | 'cooldown'
 }
 
 export interface ProgramEditorState {
@@ -220,7 +223,38 @@ export function useProgramEditor() {
     setState(s => {
       const day = s.days[key]
       if (!day) return s
-      return { ...s, days: { ...s.days, [key]: { ...day, ...data } }, isDirty: true }
+      const updatedDay = { ...day, ...data }
+
+      // Auto-populate warmup/cooldown when day type changes to a non-rest type
+      if (data.type && data.type !== day.type && data.type !== 'rest') {
+        const hasWarmup = updatedDay.exercises.some(e => e.section === 'warmup')
+        const hasCooldown = updatedDay.exercises.some(e => e.section === 'cooldown')
+        if (!hasWarmup && !hasCooldown) {
+          const template = stretchTemplates[data.type as DayType]
+          if (template) {
+            const toEditor = (ex: Exercise, section: 'warmup' | 'cooldown'): EditorExercise => ({
+              exerciseId: ex.id,
+              name: ex.name,
+              sets: ex.sets,
+              reps: ex.reps,
+              rest: ex.rest,
+              muscles: ex.muscles || '',
+              note: ex.note || '',
+              youtube: ex.youtube || '',
+              priority: ex.priority || 'med',
+              isTimer: ex.isTimer || false,
+              timerSeconds: ex.timerSeconds || 0,
+              section,
+            })
+            const warmupExs = template.warmup.map(e => toEditor(e, 'warmup'))
+            const cooldownExs = template.cooldown.map(e => toEditor(e, 'cooldown'))
+            const mainExs = updatedDay.exercises.filter(e => !e.section || e.section === 'main')
+            updatedDay.exercises = [...warmupExs, ...mainExs, ...cooldownExs]
+          }
+        }
+      }
+
+      return { ...s, days: { ...s.days, [key]: updatedDay }, isDirty: true }
     })
   }, [])
 
@@ -385,6 +419,7 @@ export function useProgramEditor() {
           priority: r.priority,
           isTimer: r.is_timer || false,
           timerSeconds: r.timer_seconds || 0,
+          section: (r.section || 'main') as EditorExercise['section'],
         })
       }
 
@@ -525,7 +560,13 @@ export function useProgramEditor() {
 
           if (day.type === 'cardio' || day.exercises.length === 0) continue
 
-          for (const ex of day.exercises) {
+          // Sort exercises by section: warmup → main → cooldown
+          const sectionOrder: Record<string, number> = { warmup: 0, main: 1, cooldown: 2 }
+          const sortedExercises = [...day.exercises].sort((a, b) =>
+            (sectionOrder[a.section || 'main'] || 1) - (sectionOrder[b.section || 'main'] || 1)
+          )
+
+          for (const ex of sortedExercises) {
             sortOrder++
             await pb.collection('program_exercises').create({
               program: programId,
@@ -548,6 +589,7 @@ export function useProgramEditor() {
               timer_seconds: ex.timerSeconds,
               workout_title: `${day.focus}`,
               sort_order: sortOrder,
+              section: ex.section || 'main',
             })
           }
         }

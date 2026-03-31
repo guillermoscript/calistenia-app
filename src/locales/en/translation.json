@@ -371,8 +371,8 @@
   "exercise.priorityMed": "IMPORTANT",
   "exercise.priorityLow": "SUPPLEMENTARY",
   "exercise.sets": "Sets",
-  "exercise.lastTime": "Last time: <strong>{{reps}}</strong> reps",
-  "exercise.lastTimeWeight": "Last time: <strong>{{reps}}</strong> reps +<strong>{{weight}}</strong>kg",
+  "exercise.lastTime": "Last time:",
+  "exercise.lastTimeWeight": "Last time:",
   "exercise.tryMoreWeight": "try +{{weight}}kg or +1 rep",
   "exercise.tryMoreReps": "try {{reps}} reps",
   "exercise.readyToAdvance": "Ready to advance to the next level.",
@@ -930,6 +930,8 @@
   "programs.copyLink": "Copy this link:",
   "programs.shareText": "Check out this calisthenics program: {{name}}",
   "programs.moreOptions": "More options",
+  "programs.switchSuccess": "Program switched successfully",
+  "programs.switchError": "Failed to switch program. Please try again.",
 
   "programEditor.editorTitle": "PROGRAM EDITOR",
   "programEditor.newProgram": "NEW PROGRAM",
@@ -2017,5 +2019,27 @@
   "social.replyingTo": "Replying to {{name}}",
 
   "widgets.recentActivity": "Recent activity",
-  "widgets.completed": "completed"
+  "widgets.completed": "completed",
+
+  "warmupCooldown.sections.warmup": "Warm-up",
+  "warmupCooldown.sections.main": "Main Block",
+  "warmupCooldown.sections.cooldown": "Cool-down",
+  "warmupCooldown.transitions.warmupComplete": "Warm-up complete. Ready to train!",
+  "warmupCooldown.transitions.mainComplete": "Main block complete. Time to cool down.",
+  "warmupCooldown.transitions.start": "Start",
+  "warmupCooldown.transitions.continue": "Continue",
+  "warmupCooldown.skip.warmup": "Skip warm-up",
+  "warmupCooldown.skip.cooldown": "Skip cool-down",
+  "warmupCooldown.skip.remaining": "Skip remaining",
+  "warmupCooldown.nudge.warmupSkipped": "Remember: warming up reduces injury risk",
+  "warmupCooldown.nudge.cooldownSkipped": "Cooling down helps your recovery",
+  "warmupCooldown.freeSession.prompt": "Want to add warm-up and cool-down?",
+  "warmupCooldown.freeSession.warmupToggle": "Warm-up",
+  "warmupCooldown.freeSession.cooldownToggle": "Cool-down",
+  "warmupCooldown.history.completed": "Completed",
+  "warmupCooldown.history.skipped": "Skipped",
+  "warmupCooldown.history.duration": "Duration: {{minutes}} min",
+  "warmupCooldown.editor.addWarmup": "Add warm-up exercise",
+  "warmupCooldown.editor.addCooldown": "Add cool-down exercise",
+  "warmupCooldown.editor.useTemplate": "Use recommended template"
 }

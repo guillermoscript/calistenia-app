@@ -7,7 +7,7 @@ import { getUserAvatarUrl } from '../lib/pocketbase'
 import SessionView from '../components/SessionView'
 
 export default function ActiveSessionPage() {
-  const { isActive, workout, workoutKey, endSession, getRestForExercise, setRestForExercise, progress, setProgress, startedAt } = useActiveSession()
+  const { isActive, workout, workoutKey, endSession, getRestForExercise, setRestForExercise, progress, setProgress, startedAt, sectionStartTime, setSectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown, skipRemainingCooldown } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
   const { user } = useAuthState()
   const navigate = useNavigate()
@@ -35,8 +35,14 @@ export default function ActiveSessionPage() {
   }, [endSession, navigate])
 
   const handleMarkDone = useCallback((key: string, note: string) => {
-    onMarkDone(key, note)
-  }, [onMarkDone])
+    const wcData = getWarmupCooldownData()
+    onMarkDone(key, note, {
+      warmupSkipped: wcData.warmupSkipped,
+      warmupDurationSeconds: wcData.warmupDurationSeconds,
+      cooldownSkipped: wcData.cooldownSkipped,
+      cooldownDurationSeconds: wcData.cooldownDurationSeconds,
+    })
+  }, [onMarkDone, getWarmupCooldownData])
 
   if (!isActive || !workout) {
     return null
@@ -61,6 +67,11 @@ export default function ActiveSessionPage() {
       userId={userId}
       referralCode={referralCode}
       getTotalSessions={getTotalSessions}
+      onSkipWarmup={skipWarmup}
+      onSkipCooldown={skipCooldown}
+      onSkipRemainingCooldown={skipRemainingCooldown}
+      sectionStartTime={sectionStartTime}
+      onSectionStartTimeChange={setSectionStartTime}
     />
   )
 }

@@ -1,15 +1,22 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
-import type { Workout } from '../types'
+import type { Exercise, Workout } from '../types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type SessionSource = 'program' | 'free'
-type SessionPhase = 'exercise' | 'rest' | 'note' | 'celebrate'
+type SessionPhase = 'exercise' | 'rest' | 'note' | 'celebrate' | 'section-transition'
 
 interface SessionProgress {
   stepIdx: number
   phase: SessionPhase
   setsCount: number
+}
+
+export interface WarmupCooldownData {
+  warmupSkipped: boolean
+  warmupDurationSeconds: number
+  cooldownSkipped: boolean
+  cooldownDurationSeconds: number
 }
 
 interface PersistedStrengthSession {
@@ -18,6 +25,7 @@ interface PersistedStrengthSession {
   source: SessionSource
   progress: SessionProgress
   startedAt: number
+  sectionStartTime: number | null
 }
 
 interface ActiveSessionContextValue {
@@ -41,9 +49,28 @@ interface ActiveSessionContextValue {
   endSession: () => void
   /** Timestamp when the session was started */
   startedAt: number
+  /** Timestamp when the current section started */
+  sectionStartTime: number | null
+  /** Set the section start time */
+  setSectionStartTime: (time: number | null) => void
+  /** Get warmup/cooldown tracking data */
+  getWarmupCooldownData: () => WarmupCooldownData
+  /** Skip warmup — jump to first main exercise */
+  skipWarmup: () => void
+  /** Skip cooldown — jump to celebrate */
+  skipCooldown: () => void
+  /** Skip remaining cooldown exercises */
+  skipRemainingCooldown: () => void
   /** Optional rest preference hooks passed from the caller */
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
   setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+export function getCurrentSection(exercises: Exercise[], stepIdx: number): 'warmup' | 'main' | 'cooldown' {
+  if (!exercises[stepIdx]) return 'main'
+  return exercises[stepIdx].section || 'main'
 }
 
 const ActiveSessionContext = createContext<ActiveSessionContextValue | null>(null)
@@ -104,8 +131,15 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   const [workout, setWorkout] = useState<Workout | null>(restored?.workout ?? null)
   const [source, setSource] = useState<SessionSource>(restored?.source ?? 'program')
   const [progress, setProgressState] = useState<SessionProgress>(restored?.progress ?? INITIAL_PROGRESS)
+  const [sectionStartTime, setSectionStartTime] = useState<number | null>(restored?.sectionStartTime ?? null)
   const workoutKeyRef = useRef(restored?.workoutKey ?? '')
   const startedAtRef = useRef(restored?.startedAt ?? 0)
+
+  // Warmup/cooldown tracking refs (survive re-renders, persisted via getWarmupCooldownData)
+  const warmupSkippedRef = useRef(false)
+  const warmupDurationRef = useRef(0)
+  const cooldownSkippedRef = useRef(false)
+  const cooldownDurationRef = useRef(0)
 
   const setProgress = useCallback((update: Partial<SessionProgress>) => {
     setProgressState(prev => ({ ...prev, ...update }))
@@ -120,9 +154,10 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
         source,
         progress,
         startedAt: startedAtRef.current,
+        sectionStartTime,
       })
     }
-  }, [isActive, workout, source, progress])
+  }, [isActive, workout, source, progress, sectionStartTime])
 
   // Persist on visibility change (user switches apps / locks phone)
   useEffect(() => {
@@ -134,12 +169,13 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
           source,
           progress,
           startedAt: startedAtRef.current,
+          sectionStartTime,
         })
       }
     }
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
-  }, [isActive, workout, source, progress])
+  }, [isActive, workout, source, progress, sectionStartTime])
 
   const startSession = useCallback((w: Workout, key: string, src: SessionSource) => {
     const now = Date.now()
@@ -148,16 +184,65 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     setWorkout(w)
     setSource(src)
     setProgressState(INITIAL_PROGRESS)
+    setSectionStartTime(now)
+    warmupSkippedRef.current = false
+    warmupDurationRef.current = 0
+    cooldownSkippedRef.current = false
+    cooldownDurationRef.current = 0
     setIsActive(true)
     // Persist immediately
-    saveToStorage({ workout: w, workoutKey: key, source: src, progress: INITIAL_PROGRESS, startedAt: now })
+    saveToStorage({ workout: w, workoutKey: key, source: src, progress: INITIAL_PROGRESS, startedAt: now, sectionStartTime: now })
   }, [])
+
+  const getWarmupCooldownData = useCallback((): WarmupCooldownData => ({
+    warmupSkipped: warmupSkippedRef.current,
+    warmupDurationSeconds: warmupDurationRef.current,
+    cooldownSkipped: cooldownSkippedRef.current,
+    cooldownDurationSeconds: cooldownDurationRef.current,
+  }), [])
+
+  // Build a flat step list matching SessionView's buildSteps logic
+  const buildFlatSteps = useCallback((exercises: Exercise[]) => {
+    const steps: { exercise: Exercise }[] = []
+    exercises.forEach(ex => {
+      const total = ex.sets === 'múltiples' ? 3 : (parseInt(String(ex.sets)) || 1)
+      for (let s = 1; s <= total; s++) steps.push({ exercise: ex })
+    })
+    return steps
+  }, [])
+
+  const skipWarmup = useCallback(() => {
+    if (!workout) return
+    warmupSkippedRef.current = true
+    if (sectionStartTime) {
+      warmupDurationRef.current = Math.round((Date.now() - sectionStartTime) / 1000)
+    }
+    const steps = buildFlatSteps(workout.exercises)
+    const firstMainIdx = steps.findIndex(s => (s.exercise.section || 'main') !== 'warmup')
+    const targetIdx = firstMainIdx >= 0 ? firstMainIdx : 0
+    setSectionStartTime(Date.now())
+    setProgressState(prev => ({ ...prev, stepIdx: targetIdx, phase: 'exercise' }))
+  }, [workout, sectionStartTime, buildFlatSteps])
+
+  const skipCooldown = useCallback(() => {
+    if (!workout) return
+    cooldownSkippedRef.current = true
+    if (sectionStartTime) {
+      cooldownDurationRef.current = Math.round((Date.now() - sectionStartTime) / 1000)
+    }
+    setProgressState(prev => ({ ...prev, phase: 'note' }))
+  }, [workout, sectionStartTime])
+
+  const skipRemainingCooldown = useCallback(() => {
+    skipCooldown()
+  }, [skipCooldown])
 
   const endSession = useCallback(() => {
     setIsActive(false)
     setWorkout(null)
     workoutKeyRef.current = ''
     startedAtRef.current = 0
+    setSectionStartTime(null)
     setProgressState(INITIAL_PROGRESS)
     clearStorage()
     // Clear free session queue if it was a free session
@@ -175,6 +260,12 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     startSession,
     endSession,
     startedAt: startedAtRef.current,
+    sectionStartTime,
+    setSectionStartTime,
+    getWarmupCooldownData,
+    skipWarmup,
+    skipCooldown,
+    skipRemainingCooldown,
     getRestForExercise,
     setRestForExercise,
   }

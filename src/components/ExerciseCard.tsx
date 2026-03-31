@@ -154,7 +154,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
         {/* Progressive overload hint */}
         {lastLog && lastBestReps > 0 && setsLogged === 0 && (
           <div className="text-[11px] text-amber-400/80 bg-amber-400/5 rounded px-3 py-2 mt-2.5 border-l-2 border-amber-400/30">
-            {t('exercise.lastTime', { reps: lastBestReps })}
+            {t('exercise.lastTime')} <strong>{lastBestReps}</strong> reps
             {lastBestWeight > 0 && <> +<strong>{lastBestWeight}</strong>kg</>}
             {' — '}
             {lastBestWeight > 0

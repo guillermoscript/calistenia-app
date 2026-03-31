@@ -23,7 +23,7 @@ interface WorkoutState {
 interface WorkoutActions {
   // Progress actions
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<PREvent | null>
-  markWorkoutDone: (workoutKey: string, note?: string) => Promise<void>
+  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   // Progress queries

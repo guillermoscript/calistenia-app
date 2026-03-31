@@ -371,8 +371,8 @@
   "exercise.priorityMed": "IMPORTANTE",
   "exercise.priorityLow": "COMPLEMENTARIO",
   "exercise.sets": "Series",
-  "exercise.lastTime": "Ultima vez: <strong>{{reps}}</strong> reps",
-  "exercise.lastTimeWeight": "Ultima vez: <strong>{{reps}}</strong> reps +<strong>{{weight}}</strong>kg",
+  "exercise.lastTime": "Ultima vez:",
+  "exercise.lastTimeWeight": "Ultima vez:",
   "exercise.tryMoreWeight": "intenta +{{weight}}kg o +1 rep",
   "exercise.tryMoreReps": "intenta {{reps}} reps",
   "exercise.readyToAdvance": "Listo para avanzar al siguiente nivel.",
@@ -930,6 +930,8 @@
   "programs.copyLink": "Copia este enlace:",
   "programs.shareText": "Mira este programa de calistenia: {{name}}",
   "programs.moreOptions": "Más opciones",
+  "programs.switchSuccess": "Programa cambiado correctamente",
+  "programs.switchError": "Error al cambiar de programa. Intenta de nuevo.",
 
   "programEditor.editorTitle": "EDITOR DE PROGRAMA",
   "programEditor.newProgram": "NUEVO PROGRAMA",
@@ -2017,5 +2019,27 @@
   "social.replyingTo": "Respondiendo a {{name}}",
 
   "widgets.recentActivity": "Actividad reciente",
-  "widgets.completed": "completó"
+  "widgets.completed": "completó",
+
+  "warmupCooldown.sections.warmup": "Calentamiento",
+  "warmupCooldown.sections.main": "Bloque Principal",
+  "warmupCooldown.sections.cooldown": "Vuelta a Calma",
+  "warmupCooldown.transitions.warmupComplete": "Calentamiento completado. ¡Listo para entrenar!",
+  "warmupCooldown.transitions.mainComplete": "Bloque principal completado. Vuelta a calma.",
+  "warmupCooldown.transitions.start": "Comenzar",
+  "warmupCooldown.transitions.continue": "Continuar",
+  "warmupCooldown.skip.warmup": "Omitir calentamiento",
+  "warmupCooldown.skip.cooldown": "Omitir vuelta a calma",
+  "warmupCooldown.skip.remaining": "Omitir resto",
+  "warmupCooldown.nudge.warmupSkipped": "Recuerda: el calentamiento reduce el riesgo de lesión",
+  "warmupCooldown.nudge.cooldownSkipped": "La vuelta a calma ayuda a tu recuperación",
+  "warmupCooldown.freeSession.prompt": "¿Quieres agregar calentamiento y vuelta a calma?",
+  "warmupCooldown.freeSession.warmupToggle": "Calentamiento",
+  "warmupCooldown.freeSession.cooldownToggle": "Vuelta a calma",
+  "warmupCooldown.history.completed": "Completado",
+  "warmupCooldown.history.skipped": "Omitido",
+  "warmupCooldown.history.duration": "Duración: {{minutes}} min",
+  "warmupCooldown.editor.addWarmup": "Agregar ejercicio de calentamiento",
+  "warmupCooldown.editor.addCooldown": "Agregar ejercicio de vuelta a calma",
+  "warmupCooldown.editor.useTemplate": "Usar plantilla recomendada"
 }

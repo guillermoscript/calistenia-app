@@ -63,7 +63,7 @@ interface UseProgressReturn {
   usePB: boolean
   pbReady: boolean
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<void>
-  markWorkoutDone: (workoutKey: string, note?: string) => Promise<void>
+  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
   getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
@@ -163,10 +163,22 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
 
       sessionsRes.items.forEach((s: any) => {
         const date = utcToLocalDateStr(s.completed_at || s.created)
-        prog[`done_${date}_${s.workout_key}`] = {
+        const entry: import('../types').SessionDone = {
           done: true, date, workoutKey: s.workout_key,
           note: s.note || '',
         }
+        // Include warmup/cooldown data if present
+        if (s.warmup_skipped || s.warmup_completed || s.warmup_duration_seconds) {
+          entry.warmupCompleted = !!s.warmup_completed
+          entry.warmupSkipped = !!s.warmup_skipped
+          entry.warmupDurationSeconds = s.warmup_duration_seconds || 0
+        }
+        if (s.cooldown_skipped || s.cooldown_completed || s.cooldown_duration_seconds) {
+          entry.cooldownCompleted = !!s.cooldown_completed
+          entry.cooldownSkipped = !!s.cooldown_skipped
+          entry.cooldownDurationSeconds = s.cooldown_duration_seconds || 0
+        }
+        prog[`done_${date}_${s.workout_key}`] = entry
       })
 
       setsRes.items.forEach((s: any) => {
@@ -277,12 +289,21 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   }, [usePB, userId])
 
   // ─── markWorkoutDone ─────────────────────────────────────────────────────
-  const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '') => {
+  const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }) => {
     const date = todayStr()
     const key = `done_${date}_${workoutKey}`
 
     setProgress(prev => {
-      const newProg = { ...prev, [key]: { done: true as const, date, workoutKey, completedAt: Date.now(), note } }
+      const entry: import('../types').SessionDone = { done: true as const, date, workoutKey, completedAt: Date.now(), note }
+      if (warmupCooldown) {
+        entry.warmupCompleted = !(warmupCooldown.warmupSkipped ?? false) && (warmupCooldown.warmupDurationSeconds ?? 0) > 0
+        entry.warmupSkipped = warmupCooldown.warmupSkipped ?? false
+        entry.warmupDurationSeconds = warmupCooldown.warmupDurationSeconds ?? 0
+        entry.cooldownCompleted = !(warmupCooldown.cooldownSkipped ?? false) && (warmupCooldown.cooldownDurationSeconds ?? 0) > 0
+        entry.cooldownSkipped = warmupCooldown.cooldownSkipped ?? false
+        entry.cooldownDurationSeconds = warmupCooldown.cooldownDurationSeconds ?? 0
+      }
+      const newProg = { ...prev, [key]: entry }
       lsSet(newProg)
       return newProg
     })
@@ -300,6 +321,15 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           note: note || '',
         }
         if (!isFreeSession && activeProgramId) sessionData.program = activeProgramId
+        // Warmup/cooldown tracking
+        if (warmupCooldown) {
+          sessionData.warmup_completed = !(warmupCooldown.warmupSkipped ?? false) && (warmupCooldown.warmupDurationSeconds ?? 0) > 0
+          sessionData.warmup_skipped = warmupCooldown.warmupSkipped ?? false
+          sessionData.warmup_duration_seconds = warmupCooldown.warmupDurationSeconds ?? 0
+          sessionData.cooldown_completed = !(warmupCooldown.cooldownSkipped ?? false) && (warmupCooldown.cooldownDurationSeconds ?? 0) > 0
+          sessionData.cooldown_skipped = warmupCooldown.cooldownSkipped ?? false
+          sessionData.cooldown_duration_seconds = warmupCooldown.cooldownDurationSeconds ?? 0
+        }
         await pb.collection('sessions').create(sessionData)
       } catch (e) { console.warn('PB sessions error:', e) }
     }

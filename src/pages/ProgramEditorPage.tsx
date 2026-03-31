@@ -71,6 +71,7 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
   const [selectedPhaseTab, setSelectedPhaseTab] = useState(0)
   const [selectedDayId, setSelectedDayId] = useState('lun')
   const [showCatalog, setShowCatalog] = useState(false)
+  const [catalogSection, setCatalogSection] = useState<'warmup' | 'main' | 'cooldown'>('main')
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null)
 
   useEffect(() => {
@@ -121,10 +122,10 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
   const currentDay = state.days[currentDayKey]
 
   const handleAddFromCatalog = (ex: EditorExercise) => {
-    addExercise(currentDayKey, ex)
+    addExercise(currentDayKey, { ...ex, section: catalogSection })
   }
 
-  const handleAddCustom = () => {
+  const handleAddCustom = (section: 'warmup' | 'main' | 'cooldown' = 'main') => {
     const newEx: EditorExercise = {
       exerciseId: `custom_${Date.now()}`,
       name: '',
@@ -137,9 +138,15 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
       priority: 'med',
       isTimer: false,
       timerSeconds: 0,
+      section,
     }
     addExercise(currentDayKey, newEx)
     setExpandedExercise(currentDay ? currentDay.exercises.length : 0)
+  }
+
+  const openCatalogForSection = (section: 'warmup' | 'main' | 'cooldown') => {
+    setCatalogSection(section)
+    setShowCatalog(true)
   }
 
   return (
@@ -601,192 +608,209 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                 </Card>
               )}
 
-              {/* Exercise list */}
-              {currentDay?.type !== 'cardio' && <div className="space-y-2">
-                {currentDay?.exercises.map((ex, ei) => {
-                  const isExpanded = expandedExercise === ei
-                  return (
-                    <Card key={ei} className="overflow-hidden">
-                      <CardContent className="p-0">
-                        {/* Exercise header */}
-                        <div className="flex items-center gap-2 px-3 py-2.5">
-                          {/* Move buttons */}
-                          <div className="flex flex-col gap-0.5">
-                            <button
-                              onClick={() => moveExercise(currentDayKey, ei, 'up')}
-                              disabled={ei === 0}
-                              aria-label={t('programEditor.moveUp', { name: ex.name || t('programEditor.exercise') })}
-                              className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
-                            >
-                              ▲
-                            </button>
-                            <button
-                              onClick={() => moveExercise(currentDayKey, ei, 'down')}
-                              disabled={ei === currentDay.exercises.length - 1}
-                              aria-label={t('programEditor.moveDown', { name: ex.name || t('programEditor.exercise') })}
-                              className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
-                            >
-                              ▼
-                            </button>
-                          </div>
+              {/* Exercise list — grouped by section */}
+              {currentDay?.type !== 'cardio' && (() => {
+                const allExercises = currentDay?.exercises || []
+                const sections: { key: 'warmup' | 'main' | 'cooldown'; label: string; color: string; exercises: { ex: EditorExercise; globalIndex: number }[] }[] = [
+                  { key: 'warmup', label: t('warmupCooldown.sections.warmup'), color: 'text-amber-400', exercises: [] },
+                  { key: 'main', label: t('warmupCooldown.sections.main'), color: 'text-foreground', exercises: [] },
+                  { key: 'cooldown', label: t('warmupCooldown.sections.cooldown'), color: 'text-sky-400', exercises: [] },
+                ]
+                allExercises.forEach((ex, i) => {
+                  const sec = ex.section === 'warmup' ? 0 : ex.section === 'cooldown' ? 2 : 1
+                  sections[sec].exercises.push({ ex, globalIndex: i })
+                })
 
-                          {/* Name */}
-                          <div className="flex-1 min-w-0">
-                            <Input
-                              value={ex.name}
-                              onChange={e => updateExercise(currentDayKey, ei, { name: e.target.value })}
-                              placeholder={t('programEditor.exerciseName')}
-                              className="text-sm h-7 border-none bg-transparent px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            />
-                          </div>
+                return sections.map(section => (
+                  <div key={section.key} className="space-y-2">
+                    <div className={cn('font-mono text-[10px] tracking-[2px] uppercase', section.color)}>
+                      {section.label}
+                    </div>
 
-                          {/* Inline sets x reps x rest */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Input
-                              value={ex.sets}
-                              onChange={e => {
-                                const v = e.target.value
-                                const n = parseInt(v)
-                                updateExercise(currentDayKey, ei, { sets: isNaN(n) ? v : n })
-                              }}
-                              className="w-10 h-7 text-[11px] text-center px-1"
-                              placeholder="S"
-                            />
-                            <span className="text-muted-foreground text-[10px]">x</span>
-                            <Input
-                              value={ex.reps}
-                              onChange={e => updateExercise(currentDayKey, ei, { reps: e.target.value })}
-                              className="w-16 h-7 text-[11px] text-center px-1"
-                              placeholder="Reps"
-                            />
-                            <span className="text-muted-foreground text-[10px]">.</span>
-                            <Input
-                              value={ex.rest}
-                              onChange={e => updateExercise(currentDayKey, ei, { rest: parseInt(e.target.value) || 0 })}
-                              className="w-12 h-7 text-[11px] text-center px-1"
-                              placeholder="Rest"
-                            />
-                            <span className="text-muted-foreground text-[9px]">s</span>
-                          </div>
+                    {section.exercises.map(({ ex, globalIndex: ei }) => {
+                      const isExpanded = expandedExercise === ei
+                      return (
+                        <Card key={ei} className="overflow-hidden">
+                          <CardContent className="p-0">
+                            <div className="flex items-center gap-2 px-3 py-2.5">
+                              <div className="flex flex-col gap-0.5">
+                                <button
+                                  onClick={() => moveExercise(currentDayKey, ei, 'up')}
+                                  disabled={ei === 0}
+                                  aria-label={t('programEditor.moveUp', { name: ex.name || t('programEditor.exercise') })}
+                                  className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
+                                >
+                                  ▲
+                                </button>
+                                <button
+                                  onClick={() => moveExercise(currentDayKey, ei, 'down')}
+                                  disabled={ei === allExercises.length - 1}
+                                  aria-label={t('programEditor.moveDown', { name: ex.name || t('programEditor.exercise') })}
+                                  className="text-muted-foreground hover:text-foreground disabled:opacity-20 text-[10px]"
+                                >
+                                  ▼
+                                </button>
+                              </div>
 
-                          {/* Priority */}
-                          <select
-                            value={ex.priority}
-                            onChange={e => updateExercise(currentDayKey, ei, { priority: e.target.value as 'high' | 'med' | 'low' })}
-                            className="h-7 rounded border border-input bg-background px-1 text-[10px]"
-                          >
-                            {PRIORITY_OPTIONS.map(p => (
-                              <option key={p.value} value={p.value}>{t(p.i18nKey)}</option>
-                            ))}
-                          </select>
-
-                          {/* Expand / Remove */}
-                          <button
-                            onClick={() => setExpandedExercise(isExpanded ? null : ei)}
-                            className="text-muted-foreground hover:text-foreground text-xs px-1"
-                          >
-                            {isExpanded ? '▾' : '▸'}
-                          </button>
-                          <button
-                            onClick={() => removeExercise(currentDayKey, ei)}
-                            aria-label={t('programEditor.removeExercise', { name: ex.name || t('programEditor.exercise') })}
-                            className="text-muted-foreground hover:text-red-400 text-xs px-1"
-                          >
-                            ✕
-                          </button>
-                        </div>
-
-                        {/* Expanded details */}
-                        {isExpanded && (
-                          <div className="px-3 pb-3 pt-1 border-t border-border space-y-2.5 bg-muted/30">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                              <div>
-                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.muscles')}</label>
+                              <div className="flex-1 min-w-0">
                                 <Input
-                                  value={ex.muscles}
-                                  onChange={e => updateExercise(currentDayKey, ei, { muscles: e.target.value })}
-                                  placeholder={t('programEditor.musclesPlaceholder')}
-                                  className="text-sm h-8"
+                                  value={ex.name}
+                                  onChange={e => updateExercise(currentDayKey, ei, { name: e.target.value })}
+                                  placeholder={t('programEditor.exerciseName')}
+                                  className="text-sm h-7 border-none bg-transparent px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
                                 />
                               </div>
-                              <div>
-                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">YouTube</label>
+
+                              <div className="flex items-center gap-1 shrink-0">
                                 <Input
-                                  value={ex.youtube}
-                                  onChange={e => updateExercise(currentDayKey, ei, { youtube: e.target.value })}
-                                  placeholder={t('programEditor.youtubePlaceholder')}
-                                  className="text-sm h-8"
+                                  value={ex.sets}
+                                  onChange={e => {
+                                    const v = e.target.value
+                                    const n = parseInt(v)
+                                    updateExercise(currentDayKey, ei, { sets: isNaN(n) ? v : n })
+                                  }}
+                                  className="w-10 h-7 text-[11px] text-center px-1"
+                                  placeholder="S"
                                 />
+                                <span className="text-muted-foreground text-[10px]">x</span>
+                                <Input
+                                  value={ex.reps}
+                                  onChange={e => updateExercise(currentDayKey, ei, { reps: e.target.value })}
+                                  className="w-16 h-7 text-[11px] text-center px-1"
+                                  placeholder="Reps"
+                                />
+                                <span className="text-muted-foreground text-[10px]">.</span>
+                                <Input
+                                  value={ex.rest}
+                                  onChange={e => updateExercise(currentDayKey, ei, { rest: parseInt(e.target.value) || 0 })}
+                                  className="w-12 h-7 text-[11px] text-center px-1"
+                                  placeholder="Rest"
+                                />
+                                <span className="text-muted-foreground text-[9px]">s</span>
                               </div>
+
+                              <select
+                                value={ex.priority}
+                                onChange={e => updateExercise(currentDayKey, ei, { priority: e.target.value as 'high' | 'med' | 'low' })}
+                                className="h-7 rounded border border-input bg-background px-1 text-[10px]"
+                              >
+                                {PRIORITY_OPTIONS.map(p => (
+                                  <option key={p.value} value={p.value}>{t(p.i18nKey)}</option>
+                                ))}
+                              </select>
+
+                              <button
+                                onClick={() => setExpandedExercise(isExpanded ? null : ei)}
+                                className="text-muted-foreground hover:text-foreground text-xs px-1"
+                              >
+                                {isExpanded ? '▾' : '▸'}
+                              </button>
+                              <button
+                                onClick={() => removeExercise(currentDayKey, ei)}
+                                aria-label={t('programEditor.removeExercise', { name: ex.name || t('programEditor.exercise') })}
+                                className="text-muted-foreground hover:text-red-400 text-xs px-1"
+                              >
+                                ✕
+                              </button>
                             </div>
-                            <div>
-                              <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.note')}</label>
-                              <Textarea
-                                value={ex.note}
-                                onChange={e => updateExercise(currentDayKey, ei, { note: e.target.value })}
-                                placeholder={t('programEditor.notePlaceholder')}
-                                rows={2}
-                                className="text-sm"
-                              />
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <label className="flex items-center gap-2 text-sm">
-                                <input
-                                  type="checkbox"
-                                  checked={ex.isTimer}
-                                  onChange={e => updateExercise(currentDayKey, ei, { isTimer: e.target.checked })}
-                                  className="rounded"
-                                />
-                                <span className="text-[11px] text-muted-foreground">{t('programEditor.isTimer')}</span>
-                              </label>
-                              {ex.isTimer && (
-                                <div className="flex items-center gap-1.5">
-                                  <label className="text-[9px] text-muted-foreground">{t('programEditor.timerSeconds')}:</label>
-                                  <Input
-                                    type="number"
-                                    min={1}
-                                    value={ex.timerSeconds}
-                                    onChange={e => updateExercise(currentDayKey, ei, { timerSeconds: parseInt(e.target.value) || 0 })}
-                                    className="w-16 h-7 text-sm"
+
+                            {isExpanded && (
+                              <div className="px-3 pb-3 pt-1 border-t border-border space-y-2.5 bg-muted/30">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                  <div>
+                                    <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.muscles')}</label>
+                                    <Input
+                                      value={ex.muscles}
+                                      onChange={e => updateExercise(currentDayKey, ei, { muscles: e.target.value })}
+                                      placeholder={t('programEditor.musclesPlaceholder')}
+                                      className="text-sm h-8"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">YouTube</label>
+                                    <Input
+                                      value={ex.youtube}
+                                      onChange={e => updateExercise(currentDayKey, ei, { youtube: e.target.value })}
+                                      placeholder={t('programEditor.youtubePlaceholder')}
+                                      className="text-sm h-8"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('programEditor.note')}</label>
+                                  <Textarea
+                                    value={ex.note}
+                                    onChange={e => updateExercise(currentDayKey, ei, { note: e.target.value })}
+                                    placeholder={t('programEditor.notePlaceholder')}
+                                    rows={2}
+                                    className="text-sm"
                                   />
                                 </div>
-                              )}
-                            </div>
-                          </div>
+                                <div className="flex items-center gap-4">
+                                  <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                      type="checkbox"
+                                      checked={ex.isTimer}
+                                      onChange={e => updateExercise(currentDayKey, ei, { isTimer: e.target.checked })}
+                                      className="rounded"
+                                    />
+                                    <span className="text-[11px] text-muted-foreground">{t('programEditor.isTimer')}</span>
+                                  </label>
+                                  {ex.isTimer && (
+                                    <div className="flex items-center gap-1.5">
+                                      <label className="text-[9px] text-muted-foreground">{t('programEditor.timerSeconds')}:</label>
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        value={ex.timerSeconds}
+                                        onChange={e => updateExercise(currentDayKey, ei, { timerSeconds: parseInt(e.target.value) || 0 })}
+                                        className="w-16 h-7 text-sm"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+
+                    {section.exercises.length === 0 && section.key === 'main' && (
+                      <div className="py-4 text-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
+                        {t('programEditor.noExercises')}
+                      </div>
+                    )}
+
+                    {/* Per-section add buttons */}
+                    <div className="flex gap-2 flex-wrap pb-2">
+                      <Button
+                        onClick={() => openCatalogForSection(section.key)}
+                        size="sm"
+                        variant={section.key === 'main' ? 'default' : 'outline'}
+                        className={cn(
+                          'h-7 text-[10px] tracking-wide',
+                          section.key === 'main' && 'bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90'
                         )}
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-
-                {/* Empty state */}
-                {(!currentDay || currentDay.exercises.length === 0) && (
-                  <div className="py-8 text-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
-                    {t('programEditor.noExercises')}
+                      >
+                        + {section.key === 'warmup' ? t('warmupCooldown.editor.addWarmup')
+                           : section.key === 'cooldown' ? t('warmupCooldown.editor.addCooldown')
+                           : t('programEditor.addFromCatalog')}
+                      </Button>
+                      {section.key === 'main' && (
+                        <Button
+                          onClick={() => handleAddCustom('main')}
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[10px] tracking-wide"
+                        >
+                          + {t('programEditor.customExercise')}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>}
-
-              {/* Add buttons */}
-              {currentDay?.type !== 'cardio' && (
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  onClick={() => setShowCatalog(true)}
-                  size="sm"
-                  className="h-8 text-[10px] tracking-wide bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90"
-                >
-                  + {t('programEditor.addFromCatalog')}
-                </Button>
-                <Button
-                  onClick={handleAddCustom}
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-[10px] tracking-wide"
-                >
-                  + {t('programEditor.customExercise')}
-                </Button>
-              </div>
-              )}
+                ))
+              })()}
             </div>
           )}
         </div>

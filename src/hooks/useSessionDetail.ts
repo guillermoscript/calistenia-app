@@ -23,7 +23,17 @@ export interface SessionExercise {
 }
 
 interface SessionDetailResult {
-  session: { workoutKey: string; date: string; note?: string } | null
+  session: {
+    workoutKey: string
+    date: string
+    note?: string
+    warmupCompleted?: boolean
+    warmupSkipped?: boolean
+    warmupDurationSeconds?: number
+    cooldownCompleted?: boolean
+    cooldownSkipped?: boolean
+    cooldownDurationSeconds?: number
+  } | null
   exercises: SessionExercise[]
 }
 
@@ -49,6 +59,12 @@ export function useSessionDetail(
       workoutKey: sessionEntry.workoutKey,
       date: sessionEntry.date,
       note: sessionEntry.note || undefined,
+      warmupCompleted: sessionEntry.warmupCompleted,
+      warmupSkipped: sessionEntry.warmupSkipped,
+      warmupDurationSeconds: sessionEntry.warmupDurationSeconds,
+      cooldownCompleted: sessionEntry.cooldownCompleted,
+      cooldownSkipped: sessionEntry.cooldownSkipped,
+      cooldownDurationSeconds: sessionEntry.cooldownDurationSeconds,
     }
 
     // 2. Find all exercise logs for this date + workoutKey

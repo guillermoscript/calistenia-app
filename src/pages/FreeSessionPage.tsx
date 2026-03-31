@@ -14,6 +14,7 @@ import type { Exercise, Workout } from '../types'
 import type { TranslatableField } from '../lib/i18n-db'
 import { localize } from '../lib/i18n-db'
 import { useLocalize } from '../hooks/useLocalize'
+import WarmupCooldownPrompt from '../components/session/WarmupCooldownPrompt'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -223,6 +224,7 @@ export default function FreeSessionPage() {
   const [activeEquipment, setActiveEquipment] = useState<string | null>(null)
   const [selected, setSelected] = useState<CatalogExercise[]>(loadSavedQueue)
   const [queueOpen, setQueueOpen] = useState(false)
+  const [showWarmupPrompt, setShowWarmupPrompt] = useState(false)
   const startingRef = useRef(false)
 
   const debouncedSearch = useDebounce(search, 200)
@@ -313,16 +315,22 @@ export default function FreeSessionPage() {
 
   const startSession = useCallback(() => {
     if (selected.length === 0 || startingRef.current) return
+    setShowWarmupPrompt(true)
+  }, [selected.length])
+
+  const launchSession = useCallback((mainExercises: Exercise[], warmupExercises: Exercise[] = [], cooldownExercises: Exercise[] = []) => {
+    if (startingRef.current) return
     startingRef.current = true
+    const combined = [...warmupExercises, ...mainExercises, ...cooldownExercises]
     const workout: Workout = {
       phase: 0, day: 'lun', title: t('freeSession.freeSessionTitle'),
-      exercises: selected.map(ex => catalogToExercise(ex, i18n.language)),
+      exercises: combined,
     }
     contextStartSession(workout, `free_${Date.now()}`, 'free')
+    setShowWarmupPrompt(false)
     navigate('/session')
-    // Reset guard after a tick so re-entry from exit works
     setTimeout(() => { startingRef.current = false }, 100)
-  }, [selected.length, contextStartSession, selected, navigate, t, i18n.language])
+  }, [contextStartSession, navigate, t])
 
   const handleRetryLoad = useCallback(() => {
     setLoading(true)
@@ -645,6 +653,23 @@ export default function FreeSessionPage() {
           </div>
         )}
       </div>
+
+      {/* Warmup/Cooldown prompt */}
+      {showWarmupPrompt && (
+        <WarmupCooldownPrompt
+          exercises={selected.map(ex => catalogToExercise(ex, i18n.language))}
+          onConfirm={({ warmupExercises, cooldownExercises }) => {
+            launchSession(
+              selected.map(ex => catalogToExercise(ex, i18n.language)),
+              warmupExercises,
+              cooldownExercises,
+            )
+          }}
+          onSkip={() => {
+            launchSession(selected.map(ex => catalogToExercise(ex, i18n.language)))
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -153,6 +153,7 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
       pbRecordId:   r.id,
       demoImages:   r.demo_images || [],
       demoVideo:    r.demo_video || '',
+      section:      (r.section || 'main') as Exercise['section'],
     } as Exercise)
   })
   // Sort exercises by sort_order (stored in the full record list order from PB)
@@ -175,7 +176,7 @@ interface UseProgramsReturn {
   weekDays: WeekDay[]
   cardioDayConfigs: Record<string, CardioDayConfig>
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
-  selectProgram: (programId: string) => Promise<void>
+  selectProgram: (programId: string) => Promise<boolean>
   duplicateProgram: (programId: string) => Promise<string | null>
   deleteProgram: (programId: string) => Promise<boolean>
   refreshPrograms: () => Promise<void>
@@ -196,6 +197,11 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   const initialized = useRef(false)
   const lastUserId  = useRef<string | null>(null)
+  const selectingRef = useRef(false)
+  const programsRef = useRef<ProgramMeta[]>([])
+
+  // Keep programsRef in sync so selectProgram always reads latest
+  useEffect(() => { programsRef.current = programs }, [programs])
 
   // ── reset on user change ──────────────────────────────────────────────────
   useEffect(() => {
@@ -343,19 +349,14 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   }, [workoutsMap])
 
   // ── selectProgram ────────────────────────────────────────────────────────
-  const selectProgram = useCallback(async (programId: string): Promise<void> => {
-    if (!usePB || !userId) return
+  const selectProgram = useCallback(async (programId: string): Promise<boolean> => {
+    if (!usePB || !userId) return false
+    if (selectingRef.current) return false
+    selectingRef.current = true
 
     try {
-      // Unset current program(s)
-      const currentList = await pb.collection('user_programs').getList(1, 100, {
-        filter: pb.filter('user = {:uid} && is_current = true', { uid: userId }),
-      })
-      for (const rec of currentList.items) {
-        await pb.collection('user_programs').update(rec.id, { is_current: false })
-      }
-
-      // Create (or re-use) entry for new program
+      // 1. Set new program current FIRST (safe: a mid-failure leaves 2 current
+      //    records rather than 0, resolved on next load)
       let existing: RecordModel | null = null
       try {
         existing = await pb.collection('user_programs').getFirstListItem(
@@ -374,16 +375,30 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         })
       }
 
-      // Update local state
-      const newActive = programs.find(p => p.id === programId) || null
+      // 2. Unset old current program(s) in parallel
+      const currentList = await pb.collection('user_programs').getList(1, 100, {
+        filter: pb.filter('user = {:uid} && is_current = true && program != {:pid}', { uid: userId, pid: programId }),
+      })
+      await Promise.all(
+        currentList.items.map(rec =>
+          pb.collection('user_programs').update(rec.id, { is_current: false })
+        )
+      )
+
+      // 3. Update local state (use ref to avoid stale closure)
+      const newActive = programsRef.current.find(p => p.id === programId) || null
       setActiveProgram(newActive)
 
-      // Reload exercises/phases for new program
+      // 4. Reload exercises/phases for new program
       await loadProgramData(programId)
+      return true
     } catch (e) {
       console.error('usePrograms: selectProgram error', e)
+      return false
+    } finally {
+      selectingRef.current = false
     }
-  }, [usePB, userId, programs]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [usePB, userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── duplicateProgram ──────────────────────────────────────────────────────
   const duplicateProgram = useCallback(async (programId: string): Promise<string | null> => {
@@ -544,9 +559,39 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       await pb.collection('programs').delete(programId)
 
       // Update local state
-      setPrograms(prev => prev.filter(p => p.id !== programId))
+      const remaining = programsRef.current.filter(p => p.id !== programId)
+      setPrograms(remaining)
+
       if (activeProgram?.id === programId) {
-        setActiveProgram(null)
+        if (remaining.length > 0) {
+          // Auto-select first remaining program
+          const fallback = remaining[0]
+          setActiveProgram(fallback)
+          try {
+            let fbExisting: RecordModel | null = null
+            try {
+              fbExisting = await pb.collection('user_programs').getFirstListItem(
+                pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: fallback.id })
+              )
+            } catch { /* not found */ }
+            if (fbExisting) {
+              await pb.collection('user_programs').update(fbExisting.id, { is_current: true })
+            } else {
+              await pb.collection('user_programs').create({
+                user: userId, program: fallback.id, started_at: nowLocalForPB(), is_current: true,
+              })
+            }
+            await loadProgramData(fallback.id)
+          } catch (e) {
+            console.warn('usePrograms: fallback selection after delete failed', e)
+          }
+        } else {
+          setActiveProgram(null)
+          setPhases(FALLBACK_PHASES)
+          setWeekDays(FALLBACK_WEEK_DAYS)
+          setWorkoutsMap({})
+          setCardioDayConfigs({})
+        }
       }
 
       return true

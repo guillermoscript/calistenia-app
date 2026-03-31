@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Image } from 'lucide-react'
 import i18n from '../lib/i18n'
 import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
 import Timer from './Timer'
+import SectionTransition from './session/SectionTransition'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -21,6 +23,7 @@ import { cn } from '../lib/utils'
 import WorkoutShareCard from './WorkoutShareCard'
 import PRCelebration from './PRCelebration'
 import ReferralPrompt, { isReferralPromptShown } from './ReferralPrompt'
+import { getCurrentSection } from '../contexts/ActiveSessionContext'
 import type { PREvent } from '../hooks/useProgress'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
@@ -48,6 +51,7 @@ interface Step {
   exercise: Exercise
   setNumber: number
   totalSets: number
+  section: 'warmup' | 'main' | 'cooldown'
 }
 
 function buildSteps(exercises: Exercise[]): Step[] {
@@ -55,7 +59,7 @@ function buildSteps(exercises: Exercise[]): Step[] {
   exercises.forEach(ex => {
     const total = ex.sets === 'múltiples' ? 3 : (parseInt(String(ex.sets)) || 1)
     for (let s = 1; s <= total; s++) {
-      steps.push({ exercise: ex, setNumber: s, totalSets: total })
+      steps.push({ exercise: ex, setNumber: s, totalSets: total, section: ex.section || 'main' })
     }
   })
   return steps
@@ -767,7 +771,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
 
 // ─── Main SessionView ─────────────────────────────────────────────────────────
 
-type SessionPhase = 'exercise' | 'rest' | 'note' | 'celebrate'
+type SessionPhase = 'exercise' | 'rest' | 'note' | 'celebrate' | 'section-transition'
 
 interface SessionProgress {
   stepIdx: number
@@ -798,6 +802,13 @@ interface SessionViewProps {
   userId?: string
   referralCode?: string | null
   getTotalSessions?: () => number
+  /** Warmup/cooldown section skip handlers */
+  onSkipWarmup?: () => void
+  onSkipCooldown?: () => void
+  onSkipRemainingCooldown?: () => void
+  /** Section start time for tracking section durations */
+  sectionStartTime?: number | null
+  onSectionStartTimeChange?: (time: number | null) => void
 }
 
 export default function SessionView({
@@ -818,6 +829,11 @@ export default function SessionView({
   userId,
   referralCode,
   getTotalSessions,
+  onSkipWarmup,
+  onSkipCooldown,
+  onSkipRemainingCooldown,
+  sectionStartTime: externalSectionStartTime,
+  onSectionStartTimeChange,
 }: SessionViewProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -828,6 +844,10 @@ export default function SessionView({
   const [setsCount, setSetsCount] = useState<number>(initialProgress?.setsCount ?? 0)
   const [showExit,  setShowExit]  = useState<boolean>(false)
   const [prEvent,   setPREvent]   = useState<PREvent | null>(null)
+  // Track which section transition to show
+  const [transitionType, setTransitionType] = useState<'warmup-to-main' | 'main-to-cooldown'>('warmup-to-main')
+  // Index to advance to after transition
+  const pendingStepIdx = useRef<number | null>(null)
 
   // Sync progress to context so it survives navigation away and back
   useEffect(() => {
@@ -910,6 +930,17 @@ export default function SessionView({
     if (isLastStep) {
       setPhase('note')
     } else {
+      // Detect section transition (warmup→main or main→cooldown)
+      const currentSection = currentStep.section
+      const nextSection = nextStep?.section || 'main'
+      if (currentSection !== nextSection) {
+        const tt = currentSection === 'warmup' ? 'warmup-to-main' : 'main-to-cooldown'
+        setTransitionType(tt as 'warmup-to-main' | 'main-to-cooldown')
+        pendingStepIdx.current = stepIdx + 1
+        setPhase('section-transition')
+        return
+      }
+
       // Check superset: if current and next exercise share a supersetGroup, skip rest
       const currentGroup = currentStep.exercise.supersetGroup
       const nextExGroup = nextStep?.exercise.supersetGroup
@@ -928,6 +959,37 @@ export default function SessionView({
     setPhase('exercise')
     setPREvent(null)
   }, [])
+
+  const handleSectionContinue = useCallback(() => {
+    if (pendingStepIdx.current !== null) {
+      setStepIdx(pendingStepIdx.current)
+      pendingStepIdx.current = null
+    }
+    onSectionStartTimeChange?.(Date.now())
+    setPhase('exercise')
+  }, [onSectionStartTimeChange])
+
+  const handleSectionSkipCooldown = useCallback(() => {
+    onSkipCooldown?.()
+    toast.info(t('warmupCooldown.nudge.cooldownSkipped'), { duration: 3000 })
+  }, [onSkipCooldown, t])
+
+  const handleSkipWarmup = useCallback(() => {
+    onSkipWarmup?.()
+    toast.info(t('warmupCooldown.nudge.warmupSkipped'), { duration: 3000 })
+  }, [onSkipWarmup, t])
+
+  const handleSkipRemainingCooldown = useCallback(() => {
+    onSkipRemainingCooldown?.()
+    toast.info(t('warmupCooldown.nudge.cooldownSkipped'), { duration: 3000 })
+  }, [onSkipRemainingCooldown, t])
+
+  // Determine current section for skip button visibility
+  const stepSection = currentStep?.section || 'main'
+  const hasWarmup = workout.exercises.some(e => e.section === 'warmup')
+  const hasCooldown = workout.exercises.some(e => e.section === 'cooldown')
+  const isInWarmup = stepSection === 'warmup' && phase === 'exercise'
+  const isInCooldown = stepSection === 'cooldown' && (phase === 'exercise' || phase === 'rest')
 
   const handleNoteSaved = useCallback((note: string) => {
     onMarkDone(workoutKey, note)
@@ -966,6 +1028,11 @@ export default function SessionView({
               {phase === 'rest' && (
                 <div className="font-mono text-[10px] text-muted-foreground tracking-[3px]">DESCANSO</div>
               )}
+              {phase === 'section-transition' && (
+                <div className="font-mono text-[10px] text-lime tracking-[3px]">
+                  {t(`warmupCooldown.sections.${transitionType === 'warmup-to-main' ? 'warmup' : 'main'}`).toUpperCase()}
+                </div>
+              )}
               {phase === 'note' && (
                 <div className="font-mono text-[10px] text-lime tracking-[3px]">COMPLETADO</div>
               )}
@@ -988,6 +1055,28 @@ export default function SessionView({
             <div className="h-full bg-lime rounded-r-full transition-[width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
               style={{ width: `${((phase === 'note' ? steps.length : stepIdx + 1) / steps.length) * 100}%` }} />
           </div>
+
+          {/* Section skip buttons */}
+          {isInWarmup && hasWarmup && onSkipWarmup && (
+            <div className="flex justify-center py-1.5 border-b border-border">
+              <button
+                onClick={handleSkipWarmup}
+                className="font-mono text-[10px] tracking-wide text-muted-foreground hover:text-foreground transition-colors px-3 py-1"
+              >
+                {t('warmupCooldown.skip.warmup')}
+              </button>
+            </div>
+          )}
+          {isInCooldown && hasCooldown && onSkipRemainingCooldown && (
+            <div className="flex justify-center py-1.5 border-b border-border">
+              <button
+                onClick={handleSkipRemainingCooldown}
+                className="font-mono text-[10px] tracking-wide text-muted-foreground hover:text-foreground transition-colors px-3 py-1"
+              >
+                {t('warmupCooldown.skip.remaining')}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -1074,6 +1163,14 @@ export default function SessionView({
             onAdjust={setRestForExercise ? (id, secs) => setRestForExercise(id, secs) : undefined}
           />
         </div>
+      )}
+
+      {phase === 'section-transition' && (
+        <SectionTransition
+          type={transitionType}
+          onContinue={handleSectionContinue}
+          onSkip={transitionType === 'main-to-cooldown' ? handleSectionSkipCooldown : undefined}
+        />
       )}
 
       {phase === 'note' && (

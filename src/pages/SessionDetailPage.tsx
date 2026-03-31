@@ -207,6 +207,34 @@ export default function SessionDetailPage() {
         </div>
       </div>
 
+      {/* Warmup/Cooldown indicators */}
+      {session && (session.warmupCompleted || session.warmupSkipped || session.cooldownCompleted || session.cooldownSkipped) && (
+        <div className="mb-6 flex flex-wrap gap-3">
+          {(session.warmupCompleted || session.warmupSkipped) && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className={cn('size-2 rounded-full', session.warmupCompleted ? 'bg-emerald-500' : 'bg-muted-foreground/40')} />
+              <span>{t('warmupCooldown.sections.warmup')}</span>
+              <span className="text-[11px]">
+                {session.warmupCompleted
+                  ? `${t('warmupCooldown.history.completed')} · ${t('warmupCooldown.history.duration', { minutes: Math.round((session.warmupDurationSeconds || 0) / 60) })}`
+                  : t('warmupCooldown.history.skipped')}
+              </span>
+            </div>
+          )}
+          {(session.cooldownCompleted || session.cooldownSkipped) && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className={cn('size-2 rounded-full', session.cooldownCompleted ? 'bg-emerald-500' : 'bg-muted-foreground/40')} />
+              <span>{t('warmupCooldown.sections.cooldown')}</span>
+              <span className="text-[11px]">
+                {session.cooldownCompleted
+                  ? `${t('warmupCooldown.history.completed')} · ${t('warmupCooldown.history.duration', { minutes: Math.round((session.cooldownDurationSeconds || 0) / 60) })}`
+                  : t('warmupCooldown.history.skipped')}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Exercise list or empty state */}
       {exercises.length === 0 ? (
         <div className="py-12 text-center">
