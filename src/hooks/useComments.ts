@@ -18,7 +18,11 @@ export function useComments(userId: string | null) {
   const [commentsBySession, setCommentsBySession] = useState<Record<string, Comment[]>>({})
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({})
   const cacheTimestamps = useRef<Record<string, number>>({})
+  const commentsRef = useRef<Record<string, Comment[]>>({})
   const lastCommentTime = useRef<number>(0)
+
+  // Keep ref in sync with state
+  commentsRef.current = commentsBySession
 
   const getComments = useCallback(async (sessionId: string): Promise<Comment[]> => {
     if (!userId) return []
@@ -27,27 +31,77 @@ export function useComments(userId: string | null) {
 
     // Check cache
     const cached = cacheTimestamps.current[sessionId]
-    if (cached && Date.now() - cached < CACHE_TTL && commentsBySession[sessionId]) {
-      return commentsBySession[sessionId]
+    if (cached && Date.now() - cached < CACHE_TTL && commentsRef.current[sessionId]) {
+      return commentsRef.current[sessionId]
     }
 
     try {
-      const records = await pb.collection('comments').getFullList({
-        filter: `session_id = '${sessionId}'`,
-        sort: 'created',
-        expand: 'author',
-        $autoCancel: false,
+      let records: any[] = []
+
+      // PocketBase instances can differ on expand support for relation fields.
+      // Try expanded records first and gracefully fallback to plain records.
+      const attempts: Array<{ expand?: string }> = [
+        { expand: 'author' },
+        {},
+      ]
+
+      let lastError: any = null
+      for (const attempt of attempts) {
+        try {
+          records = await pb.collection('comments').getFullList({
+            filter: `session_id = '${sessionId}'`,
+            ...(attempt.expand ? { expand: attempt.expand } : {}),
+            $autoCancel: false,
+          })
+          lastError = null
+          break
+        } catch (error: any) {
+          lastError = error
+          if (error?.status !== 400) break
+        }
+      }
+
+      if (lastError) throw lastError
+
+      // If backend didn't sort, sort client-side when possible.
+      records = [...records].sort((a: any, b: any) => {
+        const aTime = new Date((a?.created || a?.updated || '') as string).getTime()
+        const bTime = new Date((b?.created || b?.updated || '') as string).getTime()
+
+        if (!Number.isNaN(aTime) && !Number.isNaN(bTime)) return aTime - bTime
+        if (!Number.isNaN(aTime)) return 1
+        if (!Number.isNaN(bTime)) return -1
+        return String(a?.id || '').localeCompare(String(b?.id || ''))
       })
+
+      const authorNameById = new Map<string, string>()
+      const authorIds = Array.from(new Set(records.map((r: any) => r.author).filter(Boolean))) as string[]
+
+      if (authorIds.length > 0) {
+        try {
+          const users = await pb.collection('users').getFullList({
+            filter: authorIds.map(id => `id = '${id}'`).join(' || '),
+            fields: 'id,display_name,email',
+            $autoCancel: false,
+          })
+
+          for (const u of users as any[]) {
+            authorNameById.set(u.id, u.display_name || u.email?.split('@')[0] || '?')
+          }
+        } catch {
+          // non-critical: fallback to expand data or '?'
+        }
+      }
 
       // Build flat list
       const flat: Comment[] = records.map((r: any) => ({
         id: r.id,
         sessionId: r.session_id,
         authorId: r.author,
-        authorName: r.expand?.author?.display_name || r.expand?.author?.email?.split('@')[0] || '?',
+        authorName: r.expand?.author?.display_name || r.expand?.author?.email?.split('@')[0] || authorNameById.get(r.author) || '?',
         text: r.text,
         parentId: r.parent_id || null,
-        created: r.created,
+        created: r.created || r.updated || new Date().toISOString(),
         replies: [],
       }))
 
@@ -74,7 +128,7 @@ export function useComments(userId: string | null) {
     } catch {
       return []
     }
-  }, [userId, commentsBySession])
+  }, [userId])
 
   const loadCommentCounts = useCallback(async (sessionIds: string[]) => {
     if (!userId || sessionIds.length === 0) return
