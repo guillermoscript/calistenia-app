@@ -45,6 +45,7 @@ export function CommentsSheet({
   const [text, setText] = useState('')
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null)
   const [sending, setSending] = useState(false)
+  const [compactMode, setCompactMode] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -74,6 +75,42 @@ export function CommentsSheet({
     }
   }, [replyTo])
 
+  // Compact layout for small mobile heights
+  useEffect(() => {
+    if (!isOpen) return
+
+    const visualViewport = window.visualViewport
+
+    const updateCompactMode = () => {
+      const viewportHeight = visualViewport?.height ?? window.innerHeight
+      setCompactMode(viewportHeight < 740)
+    }
+
+    updateCompactMode()
+    window.addEventListener('resize', updateCompactMode)
+    visualViewport?.addEventListener('resize', updateCompactMode)
+
+    return () => {
+      window.removeEventListener('resize', updateCompactMode)
+      visualViewport?.removeEventListener('resize', updateCompactMode)
+    }
+  }, [isOpen])
+
+  // Prevent background scroll while sheet is open (mobile-friendly)
+  useEffect(() => {
+    if (!isOpen) return
+
+    const prevBodyOverflow = document.body.style.overflow
+    const prevHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow
+      document.documentElement.style.overflow = prevHtmlOverflow
+    }
+  }, [isOpen])
+
   const handleSend = async () => {
     const trimmed = text.trim()
     if (!trimmed || sending) return
@@ -98,7 +135,7 @@ export function CommentsSheet({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 motion-safe:animate-fade-in"
@@ -106,9 +143,14 @@ export function CommentsSheet({
       />
 
       {/* Panel */}
-      <div className="relative w-full max-w-lg bg-card rounded-t-2xl flex flex-col max-h-[80vh] motion-safe:animate-slide-up">
+      <div className={cn(
+        'relative w-full max-w-lg bg-card rounded-t-2xl flex flex-col motion-safe:animate-slide-up',
+        compactMode ? 'max-h-[94dvh]' : 'max-h-[88dvh] sm:max-h-[80vh]'
+      )}>
+        <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-border/80" />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className={cn('flex items-center justify-between border-b border-border shrink-0', compactMode ? 'px-4 py-2.5' : 'px-4 py-3')}>
           <h2 className="text-sm font-semibold">{t('social.comments')}</h2>
           <button
             onClick={onClose}
@@ -122,7 +164,7 @@ export function CommentsSheet({
         </div>
 
         {/* Comments list */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+        <div ref={scrollRef} className={cn('flex-1 overflow-y-auto overscroll-contain px-4', compactMode ? 'py-2.5' : 'py-3')}>
           {loading && (
             <Loader label={t('social.loadingComments')} className="py-8" />
           )}
@@ -169,7 +211,7 @@ export function CommentsSheet({
         </div>
 
         {/* Footer: input */}
-        <div className="shrink-0 border-t border-border px-4 py-3">
+        <div className={cn('shrink-0 border-t border-border px-4 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]', compactMode ? 'pt-2.5' : 'pt-3')}>
           {replyTo && (
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs text-muted-foreground">
@@ -186,7 +228,7 @@ export function CommentsSheet({
               </button>
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-end gap-2">
             <input
               ref={inputRef}
               type="text"
@@ -194,7 +236,10 @@ export function CommentsSheet({
               onChange={(e) => setText(e.target.value.slice(0, 500))}
               onKeyDown={handleKeyDown}
               placeholder={t('social.commentPlaceholder')}
-              className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-lime/50"
+              className={cn(
+                'flex-1 bg-muted border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-lime/50',
+                compactMode ? 'h-9' : 'h-10'
+              )}
               maxLength={500}
               disabled={sending}
             />
@@ -202,7 +247,8 @@ export function CommentsSheet({
               onClick={handleSend}
               disabled={!text.trim() || sending}
               className={cn(
-                'shrink-0 size-9 flex items-center justify-center rounded-lg transition-all',
+                'shrink-0 flex items-center justify-center rounded-lg transition-all',
+                compactMode ? 'size-9' : 'size-10',
                 text.trim() && !sending
                   ? 'bg-lime text-background hover:bg-lime/90 active:scale-95'
                   : 'bg-muted text-muted-foreground cursor-not-allowed'
@@ -269,7 +315,7 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, isReply }: C
           {isOwn && (
             <button
               onClick={onDelete}
-              className="text-[11px] text-muted-foreground hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+              className="text-[11px] text-muted-foreground hover:text-red-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
             >
               <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M3 4h10M6 4V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5 4v8.5a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5V4" />
