@@ -103,7 +103,7 @@ interface ProgramDetailPageProps {
   activeProgram?: ProgramMeta | null
   onBack: () => void
   onNavigateToProgram?: (programId: string) => void
-  onSelectProgram?: (programId: string) => Promise<void>
+  onSelectProgram?: (programId: string) => Promise<boolean>
   onDuplicateProgram?: (programId: string) => Promise<void>
   onDeleteProgram?: (programId: string) => Promise<void>
   onEditProgram?: (programId: string) => void

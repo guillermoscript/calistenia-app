@@ -22,7 +22,7 @@ interface SharedProgramPageProps {
   userId?: string
   activeProgram?: ProgramMeta | null
   onNavigateToProgram?: (programId: string) => void
-  onSelectProgram?: (programId: string) => Promise<void>
+  onSelectProgram?: (programId: string) => Promise<boolean>
   onDuplicateProgram?: (programId: string) => Promise<void>
   onBack: () => void
   onLogin: () => void

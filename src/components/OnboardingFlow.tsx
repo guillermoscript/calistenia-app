@@ -30,7 +30,7 @@ interface OnboardingFlowProps {
   activeProgram: ProgramMeta | null
   userId?: string
   user?: any
-  onSelectProgram: (programId: string) => Promise<void>
+  onSelectProgram: (programId: string) => Promise<boolean>
   onCreateProgram: () => void
   onComplete: () => void
 }
