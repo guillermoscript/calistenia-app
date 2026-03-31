@@ -1000,9 +1000,8 @@ export default function SessionView({
   }, [onMarkDone, workoutKey, workout.title, setsCount])
 
   const handleInterruptConfirm = useCallback(() => {
-    onMarkDone(workoutKey, '[INTERRUMPIDO]')
     onExitSession()
-  }, [onMarkDone, workoutKey, onExitSession])
+  }, [onExitSession])
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background overflow-hidden">
