@@ -1,9 +1,23 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../lib/i18n'
 import { cn } from '../../lib/utils'
 import { Loader } from '../ui/loader'
+import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
+import { REACTION_EMOJIS, type EmojiReactions } from '../../hooks/useReactions'
 import type { Comment } from '../../hooks/useComments'
+
+// ── Reaction color map ──────────────────────────────────────────────────────
+
+const EMOJI_STYLES: Record<string, { active: string; ring: string }> = {
+  '🔥': { active: 'bg-orange-500/20 text-orange-300 ring-orange-500/40', ring: 'ring-orange-500/30' },
+  '💪': { active: 'bg-blue-500/20 text-blue-300 ring-blue-500/40', ring: 'ring-blue-500/30' },
+  '👏': { active: 'bg-yellow-500/20 text-yellow-300 ring-yellow-500/40', ring: 'ring-yellow-500/30' },
+  '🎯': { active: 'bg-red-500/20 text-red-300 ring-red-500/40', ring: 'ring-red-500/30' },
+  '🏆': { active: 'bg-amber-500/20 text-amber-300 ring-amber-500/40', ring: 'ring-amber-500/30' },
+}
+
+// ── Props ───────────────────────────────────────────────────────────────────
 
 interface CommentsSheetProps {
   sessionId: string
@@ -14,7 +28,11 @@ interface CommentsSheetProps {
   onAddComment: (sessionId: string, text: string, parentId?: string) => Promise<boolean>
   onDeleteComment: (commentId: string, sessionId: string) => Promise<boolean>
   currentUserId: string
+  reactions: EmojiReactions
+  onReact: (emoji: string) => void
 }
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function relativeTime(dateStr: string): string {
   const now = Date.now()
@@ -30,6 +48,8 @@ function relativeTime(dateStr: string): string {
   return new Date(dateStr.replace(' ', 'T')).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
 
+// ── Main component ──────────────────────────────────────────────────────────
+
 export function CommentsSheet({
   sessionId,
   isOpen,
@@ -39,13 +59,14 @@ export function CommentsSheet({
   onAddComment,
   onDeleteComment,
   currentUserId,
+  reactions,
+  onReact,
 }: CommentsSheetProps) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [text, setText] = useState('')
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null)
   const [sending, setSending] = useState(false)
-  const [compactMode, setCompactMode] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -61,7 +82,7 @@ export function CommentsSheet({
     }
   }, [isOpen, sessionId, onLoadComments])
 
-  // Scroll to bottom when new comments load
+  // Scroll to bottom when new comments arrive
   useEffect(() => {
     if (scrollRef.current && comments.length > 0) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -70,60 +91,20 @@ export function CommentsSheet({
 
   // Focus input when replying
   useEffect(() => {
-    if (replyTo && inputRef.current) {
-      inputRef.current.focus()
-    }
+    if (replyTo && inputRef.current) inputRef.current.focus()
   }, [replyTo])
 
-  // Compact layout for small mobile heights
-  useEffect(() => {
-    if (!isOpen) return
-
-    const visualViewport = window.visualViewport
-
-    const updateCompactMode = () => {
-      const viewportHeight = visualViewport?.height ?? window.innerHeight
-      setCompactMode(viewportHeight < 740)
-    }
-
-    updateCompactMode()
-    window.addEventListener('resize', updateCompactMode)
-    visualViewport?.addEventListener('resize', updateCompactMode)
-
-    return () => {
-      window.removeEventListener('resize', updateCompactMode)
-      visualViewport?.removeEventListener('resize', updateCompactMode)
-    }
-  }, [isOpen])
-
-  // Prevent background scroll while sheet is open (mobile-friendly)
-  useEffect(() => {
-    if (!isOpen) return
-
-    const prevBodyOverflow = document.body.style.overflow
-    const prevHtmlOverflow = document.documentElement.style.overflow
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = prevBodyOverflow
-      document.documentElement.style.overflow = prevHtmlOverflow
-    }
-  }, [isOpen])
-
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     const trimmed = text.trim()
     if (!trimmed || sending) return
-
     setSending(true)
     const success = await onAddComment(sessionId, trimmed, replyTo?.id)
     setSending(false)
-
     if (success) {
       setText('')
       setReplyTo(null)
     }
-  }
+  }, [text, sending, onAddComment, sessionId, replyTo])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -132,56 +113,105 @@ export function CommentsSheet({
     }
   }
 
-  if (!isOpen) return null
+  const totalReactions = Object.values(reactions).reduce((sum, r) => sum + r.count, 0)
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 motion-safe:animate-fade-in"
-        onClick={onClose}
-      />
+    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
+      <SheetContent
+        side="bottom"
+        className={cn(
+          'flex flex-col p-0 rounded-t-2xl border-t-0 max-h-[85dvh] sm:max-h-[75vh]',
+          'bg-background/98 backdrop-blur-xl',
+          '[&>button]:hidden', // hide default close button
+        )}
+      >
+        {/* Drag handle */}
+        <div className="mx-auto mt-2.5 mb-1 h-1 w-8 rounded-full bg-foreground/15" />
 
-      {/* Panel */}
-      <div className={cn(
-        'relative w-full max-w-lg bg-card rounded-t-2xl flex flex-col motion-safe:animate-slide-up',
-        compactMode ? 'max-h-[94dvh]' : 'max-h-[88dvh] sm:max-h-[80vh]'
-      )}>
-        <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-border/80" />
-
-        {/* Header */}
-        <div className={cn('flex items-center justify-between border-b border-border shrink-0', compactMode ? 'px-4 py-2.5' : 'px-4 py-3')}>
-          <h2 className="text-sm font-semibold">{t('social.comments')}</h2>
+        {/* Header — title + close */}
+        <div className="flex items-center justify-between px-5 pb-3">
+          <SheetTitle className="text-sm font-semibold tracking-tight">
+            {t('social.comments')}
+            {comments.length > 0 && (
+              <span className="ml-1.5 text-muted-foreground font-normal tabular-nums">
+                {comments.length}
+              </span>
+            )}
+          </SheetTitle>
           <button
             onClick={onClose}
-            className="size-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"
+            className="size-7 flex items-center justify-center rounded-full bg-muted/60 hover:bg-muted transition-colors text-muted-foreground"
           >
-            <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="4" y1="4" x2="12" y2="12" />
               <line x1="12" y1="4" x2="4" y2="12" />
             </svg>
           </button>
         </div>
 
+        {/* Reactions bar */}
+        <div className="px-5 pb-3">
+          <div className="flex items-center gap-1.5">
+            {REACTION_EMOJIS.map((emoji) => {
+              const data = reactions[emoji]
+              const active = data?.hasReacted || false
+              const count = data?.count || 0
+              const styles = EMOJI_STYLES[emoji]
+
+              return (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => onReact(emoji)}
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm ring-1 ring-inset transition-all duration-150 active:scale-[0.92]',
+                    active && styles
+                      ? styles.active
+                      : 'ring-border/60 text-muted-foreground hover:bg-muted/50 hover:ring-border',
+                  )}
+                >
+                  <span className="text-base leading-none">{emoji}</span>
+                  {count > 0 && (
+                    <span className="text-[11px] font-medium tabular-nums leading-none">{count}</span>
+                  )}
+                </button>
+              )
+            })}
+            {totalReactions > 0 && (
+              <span className="ml-auto text-[10px] text-muted-foreground/60 tabular-nums">
+                {totalReactions}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="h-px bg-border/50" />
+
         {/* Comments list */}
-        <div ref={scrollRef} className={cn('flex-1 overflow-y-auto overscroll-contain px-4', compactMode ? 'py-2.5' : 'py-3')}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-5 py-3 min-h-0">
           {loading && (
-            <Loader label={t('social.loadingComments')} className="py-8" />
+            <Loader label={t('social.loadingComments')} className="py-10" />
           )}
 
           {!loading && comments.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-2xl mb-2">💬</div>
-              <div className="text-sm text-muted-foreground">{t('social.noComments')}</div>
-              <div className="text-xs text-muted-foreground mt-1">{t('social.beFirstToComment')}</div>
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <div className="size-10 rounded-full bg-muted/50 flex items-center justify-center">
+                <svg className="size-5 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
+              <p className="text-xs text-muted-foreground/70">{t('social.beFirstToComment')}</p>
             </div>
           )}
 
           {!loading && comments.length > 0 && (
-            <div className="flex flex-col gap-3">
-              {comments.map((comment) => (
-                <div key={comment.id}>
-                  {/* Top-level comment */}
+            <div className="flex flex-col gap-4">
+              {comments.map((comment, idx) => (
+                <div
+                  key={comment.id}
+                  className="motion-safe:animate-fade-in"
+                  style={{ animationDelay: `${Math.min(idx, 8) * 30}ms`, animationFillMode: 'both' }}
+                >
                   <CommentBubble
                     comment={comment}
                     currentUserId={currentUserId}
@@ -189,9 +219,9 @@ export function CommentsSheet({
                     onDelete={() => onDeleteComment(comment.id, sessionId)}
                   />
 
-                  {/* Replies */}
+                  {/* Threaded replies */}
                   {comment.replies.length > 0 && (
-                    <div className="border-l-2 border-lime/20 ml-8 pl-3 mt-2 flex flex-col gap-2">
+                    <div className="ml-9 mt-2 pl-3 border-l border-lime/15 flex flex-col gap-2.5">
                       {comment.replies.map((reply) => (
                         <CommentBubble
                           key={reply.id}
@@ -210,62 +240,81 @@ export function CommentsSheet({
           )}
         </div>
 
-        {/* Footer: input */}
-        <div className={cn('shrink-0 border-t border-border px-4 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]', compactMode ? 'pt-2.5' : 'pt-3')}>
+        {/* Composer */}
+        <div className="shrink-0 border-t border-border/50 px-4 pt-2.5 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+          {/* Reply indicator */}
           {replyTo && (
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-muted-foreground">
-                {t('social.replyingTo')} <span className="font-medium text-foreground">{replyTo.name}</span>
+            <div className="flex items-center gap-2 mb-2 ml-0.5">
+              <div className="w-0.5 h-3.5 bg-lime/50 rounded-full" />
+              <span className="text-[11px] text-muted-foreground">
+                {t('social.replyingTo')} <span className="font-medium text-foreground/80">{replyTo.name}</span>
               </span>
               <button
                 onClick={() => setReplyTo(null)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="ml-auto text-muted-foreground/60 hover:text-foreground transition-colors"
               >
-                <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <svg className="size-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="4" y1="4" x2="12" y2="12" />
                   <line x1="12" y1="4" x2="4" y2="12" />
                 </svg>
               </button>
             </div>
           )}
+
           <div className="flex items-end gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value.slice(0, 500))}
-              onKeyDown={handleKeyDown}
-              placeholder={t('social.commentPlaceholder')}
-              className={cn(
-                'flex-1 bg-muted border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-lime/50',
-                compactMode ? 'h-9' : 'h-10'
+            <div className="flex-1 relative">
+              <input
+                ref={inputRef}
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value.slice(0, 500))}
+                onKeyDown={handleKeyDown}
+                placeholder={t('social.commentPlaceholder')}
+                className={cn(
+                  'w-full bg-muted/50 rounded-xl px-3.5 h-10 text-sm text-foreground',
+                  'placeholder:text-muted-foreground/50',
+                  'ring-1 ring-inset ring-border/40',
+                  'focus:outline-none focus:ring-lime/40 focus:bg-muted/70',
+                  'transition-all duration-150',
+                )}
+                maxLength={500}
+                disabled={sending}
+              />
+              {text.length > 400 && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground/50">
+                  {500 - text.length}
+                </span>
               )}
-              maxLength={500}
-              disabled={sending}
-            />
+            </div>
             <button
               onClick={handleSend}
               disabled={!text.trim() || sending}
               className={cn(
-                'shrink-0 flex items-center justify-center rounded-lg transition-all',
-                compactMode ? 'size-9' : 'size-10',
+                'shrink-0 size-10 flex items-center justify-center rounded-xl transition-all duration-150',
                 text.trim() && !sending
-                  ? 'bg-lime text-background hover:bg-lime/90 active:scale-95'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed'
+                  ? 'bg-lime text-lime-foreground active:scale-[0.92]'
+                  : 'bg-muted/30 text-muted-foreground/30 cursor-not-allowed',
               )}
             >
-              <svg className="size-4" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M1.5 1.3a.75.75 0 0 1 .78-.06l12 6.5a.75.75 0 0 1 0 1.32l-12 6.5A.75.75 0 0 1 1.2 14.6L3.9 8.5 1.2 2.4a.75.75 0 0 1 .3-1.1ZM4.6 9l-1.8 4.1L12.4 8 2.8 2.9 4.6 7h4.9a.5.5 0 0 1 0 1H4.6Z" />
-              </svg>
+              {sending ? (
+                <svg className="size-4 animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="8" cy="8" r="6" strokeOpacity="0.3" />
+                  <path d="M8 2a6 6 0 0 1 6 6" />
+                </svg>
+              ) : (
+                <svg className="size-4" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M1.5 1.3a.75.75 0 0 1 .78-.06l12 6.5a.75.75 0 0 1 0 1.32l-12 6.5A.75.75 0 0 1 1.2 14.6L3.9 8.5 1.2 2.4a.75.75 0 0 1 .3-1.1ZM4.6 9l-1.8 4.1L12.4 8 2.8 2.9 4.6 7h4.9a.5.5 0 0 1 0 1H4.6Z" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 
-// ── Individual comment bubble ─────────────────────────────────────────────────
+// ── Comment bubble ──────────────────────────────────────────────────────────
 
 interface CommentBubbleProps {
   comment: Comment
@@ -279,28 +328,44 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, isReply }: C
   const { t } = useTranslation()
   const isOwn = comment.authorId === currentUserId
 
+  // Generate a deterministic hue from the author name for avatar color
+  const hue = Array.from(comment.authorName).reduce((h, c) => h + c.charCodeAt(0), 0) % 360
+
   return (
     <div className="group flex gap-2.5">
       {/* Avatar */}
-      <div className={cn(
-        'shrink-0 rounded-full bg-accent flex items-center justify-center font-medium text-foreground',
-        isReply ? 'size-6 text-[10px]' : 'size-8 text-xs'
-      )}>
-        {comment.authorName[0]?.toUpperCase() || '?'}
+      <div
+        className={cn(
+          'shrink-0 rounded-full flex items-center justify-center font-semibold uppercase',
+          isReply ? 'size-6 text-[10px]' : 'size-8 text-[11px]',
+        )}
+        style={{
+          backgroundColor: `oklch(0.35 0.08 ${hue})`,
+          color: `oklch(0.85 0.1 ${hue})`,
+        }}
+      >
+        {comment.authorName[0] || '?'}
       </div>
 
-      {/* Content */}
+      {/* Body */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2">
-          <span className={cn('font-medium truncate', isReply ? 'text-xs' : 'text-sm')}>
+        <div className="flex items-baseline gap-1.5">
+          <span className={cn(
+            'font-medium truncate',
+            isReply ? 'text-[11px]' : 'text-[13px]',
+            isOwn && 'text-lime/90',
+          )}>
             {comment.authorName}
           </span>
-          <span className="text-[10px] text-muted-foreground shrink-0">
+          <span className="text-[10px] text-muted-foreground/50 shrink-0 tabular-nums">
             {relativeTime(comment.created)}
           </span>
         </div>
 
-        <p className={cn('text-muted-foreground mt-0.5 break-words', isReply ? 'text-xs' : 'text-sm')}>
+        <p className={cn(
+          'mt-0.5 break-words leading-relaxed',
+          isReply ? 'text-[12px] text-muted-foreground/80' : 'text-[13px] text-foreground/85',
+        )}>
           {comment.text}
         </p>
 
@@ -308,18 +373,16 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, isReply }: C
         <div className="flex items-center gap-3 mt-1">
           <button
             onClick={onReply}
-            className="text-[11px] text-muted-foreground hover:text-lime transition-colors"
+            className="text-[11px] text-muted-foreground/50 hover:text-lime transition-colors"
           >
             {t('social.reply')}
           </button>
           {isOwn && (
             <button
               onClick={onDelete}
-              className="text-[11px] text-muted-foreground hover:text-red-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+              className="text-[11px] text-muted-foreground/40 hover:text-red-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
             >
-              <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M3 4h10M6 4V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5 4v8.5a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5V4" />
-              </svg>
+              {t('common.delete')}
             </button>
           )}
         </div>

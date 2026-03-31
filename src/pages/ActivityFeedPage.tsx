@@ -52,7 +52,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   }, [items, loadForSessions, loadCommentCounts])
 
   return (
-    <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
+    <div className="max-w-3xl mx-auto px-4 md:px-6 pt-6 md:pt-8 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
       <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('feed.section')}</div>
       <h1 className="font-bebas text-4xl md:text-5xl mb-6">{t('feed.title')}</h1>
 
@@ -72,7 +72,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       )}
 
       {!loading && items.length > 0 && (
-        <div id="tour-feed-list" className="flex flex-col gap-2">
+        <div id="tour-feed-list" className="flex flex-col gap-3">
           {items.map((item, i) => {
             const reactions = getReactions(item.id)
             const commentCount = getCommentCount(item.id)
@@ -108,6 +108,8 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
           onAddComment={addComment}
           onDeleteComment={deleteComment}
           currentUserId={userId}
+          reactions={getReactions(commentsSessionId)}
+          onReact={(emoji) => toggleReaction(commentsSessionId, emoji)}
         />
       )}
     </div>
@@ -135,7 +137,7 @@ function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, on
   })
 
   return (
-    <div className="px-4 py-3.5 bg-card border border-border rounded-lg hover:border-lime/20 transition-colors">
+    <div className="px-4 py-3.5 bg-card border border-border rounded-xl hover:border-lime/20 transition-colors shadow-sm">
       {/* User + time */}
       <div className="flex items-center gap-2.5 mb-2.5">
         <button
@@ -187,23 +189,24 @@ function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, on
       </button>
 
       {/* Reactions + Comment */}
-      <div id="tour-feed-reaction" className="mt-2.5 flex items-center gap-2">
+      <div id="tour-feed-reaction" className="mt-2.5 flex flex-wrap items-center gap-2">
         <EmojiPicker reactions={reactions} onToggle={onReact} />
         <button
           onClick={(e) => { e.stopPropagation(); onComment() }}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-90 text-muted-foreground hover:text-sky-400 hover:bg-sky-500/10 border border-transparent"
+          className="inline-flex min-h-8 items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all duration-200 active:scale-95 text-muted-foreground hover:text-sky-400 hover:bg-sky-500/10 border border-border/60"
         >
           <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5l-3 3V3Z" />
           </svg>
-          {commentCount > 0 && <span>{commentCount}</span>}
+          <span>{t('social.comments')}</span>
+          <span className="font-medium tabular-nums">{commentCount}</span>
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation()
             shareWorkoutSession(item.displayName, item.workoutTitle, item.date, item.workoutKey)
           }}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-90 text-muted-foreground hover:text-pink-400 hover:bg-pink-500/10 border border-transparent"
+          className="inline-flex min-h-8 items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-95 text-muted-foreground hover:text-pink-400 hover:bg-pink-500/10 border border-transparent"
         >
           <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
             <circle cx="12" cy="3" r="2" />
