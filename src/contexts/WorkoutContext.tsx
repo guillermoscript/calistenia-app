@@ -37,7 +37,7 @@ interface WorkoutActions {
   checkAndUpdatePR: (exerciseId: string, reps: string) => Promise<PREvent | null>
   // Program actions
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
-  selectProgram: (programId: string) => Promise<void>
+  selectProgram: (programId: string) => Promise<boolean>
   duplicateProgram: (programId: string) => Promise<string | null>
   deleteProgram: (programId: string) => Promise<boolean>
   refreshPrograms: () => Promise<void>
