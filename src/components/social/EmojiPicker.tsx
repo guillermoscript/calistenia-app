@@ -29,7 +29,7 @@ export function EmojiPicker({ reactions, onToggle }: EmojiPickerProps) {
             type="button"
             onClick={() => onToggle(emoji)}
             className={cn(
-              'flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm transition-all active:scale-90',
+              'inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 py-1 text-sm transition-all active:scale-95',
               hasReacted && colors
                 ? cn(colors.bg, colors.text, colors.border)
                 : 'border-transparent text-muted-foreground hover:bg-card hover:border-border'
