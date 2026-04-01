@@ -33,7 +33,7 @@ export default function PhasePhotoBanner({ currentPhase, userId, hasCompletedWor
 
   if (!hasCompletedWorkoutInPhase || hasPhotosForPhase || dismissed || !userId) return null
 
-  const colors = PHASE_COLORS[currentPhase]
+  const colors = PHASE_COLORS[currentPhase] ?? PHASE_COLORS[1]
 
   const handleDismiss = () => {
     try { localStorage.setItem(DISMISS_KEY(currentPhase), '1') } catch {}
@@ -73,9 +73,10 @@ export default function PhasePhotoBanner({ currentPhase, userId, hasCompletedWor
           </Button>
           <button
             onClick={handleDismiss}
-            className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={t('common.dismiss', { defaultValue: 'Cerrar' })}
+            className="size-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md"
           >
-            <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <line x1="4" y1="4" x2="12" y2="12" /><line x1="12" y1="4" x2="4" y2="12" />
             </svg>
           </button>
