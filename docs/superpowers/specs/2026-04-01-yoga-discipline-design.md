@@ -13,8 +13,8 @@ Ashtanga is sequence-based: fixed series with specific pose order, mix of static
 ## Goals
 
 - Add yoga as a first-class program type alongside calisthenics
-- Reuse the existing session flow (ActiveSessionContext + SessionView) with zero changes to the session engine
-- Track yoga sessions: duration + poses completed
+- Reuse the existing session flow (ActiveSessionContext + SessionView) with minimal changes
+- Track yoga sessions using the existing `sessions` collection with optional new fields
 - Seed an Ashtanga Principiante program with progression across 4 phases
 
 ## Non-Goals
@@ -36,49 +36,46 @@ Add `'yoga'` to the existing union type in `src/types/index.ts:5`:
 export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest' | 'cardio' | 'yoga'
 ```
 
-### 1.2 Exercise Model — No Changes
+### 1.2 Exercise Model — No Changes to Interface
 
 Yoga poses use the existing `Exercise` interface as-is:
 
-| Pose type | `isTimer` | `timerSeconds` | `sets` | `reps` | `rest` | `stretchType` |
-|---|---|---|---|---|---|---|
-| Static hold (Trikonasana) | `true` | `30` | `1` | `1` | `0-5` | `'static'` |
-| Flow (Surya Namaskar A) | `false` | — | `5` | `1` | `0` | `'dynamic'` |
-| Breathing (Ujjayi) | `true` | `60` | `1` | `1` | `0` | `'static'` |
-| Final relaxation (Savasana) | `true` | `300` | `1` | `1` | `0` | `'static'` |
+| Pose type | `isTimer` | `timerSeconds` | `sets` | `reps` | `rest` |
+|---|---|---|---|---|---|
+| Static hold (Trikonasana) | `true` | `30` | `1` | `1` | `0-5` |
+| Flow (Surya Namaskar A) | `false` | — | `5` | `1` | `0` |
+| Breathing (Ujjayi) | `true` | `60` | `1` | `1` | `0` |
+| Final relaxation (Savasana) | `true` | `300` | `1` | `1` | `0` |
 
 - `section`: `'warmup'` | `'main'` | `'cooldown'` — used as-is
 - `muscles`: can store target areas (hips, hamstrings, shoulders)
 - `note`: alignment cues or modifications
 
+Note: `stretchType` exists on the TypeScript `Exercise` interface but is not a PocketBase field. It can be used in local/fallback data but is not required for the yoga implementation. Yoga poses are identified by their `category: 'yoga'` in the catalog.
+
 ### 1.3 Exercise Catalog Category
 
 Add `'yoga'` to `CATEGORIES` array in `ExerciseCatalogPicker.tsx`. The inference function recognizes yoga poses by category field from `exercises_catalog`.
 
-### 1.4 New Collection: `yoga_sessions`
+### 1.4 Tracking: Extend Existing `sessions` Collection
 
-PocketBase migration creating:
+Instead of a separate `yoga_sessions` collection, add optional fields to the existing `sessions` collection via migration:
 
-| Field | Type | Notes |
+| New Field | Type | Notes |
 |---|---|---|
-| `user` | relation → users | required |
-| `program` | relation → programs | optional (for free sessions) |
-| `workout_key` | text | "p1_lun" format |
-| `phase` | number | |
-| `day` | number | |
-| `duration_seconds` | number | total session time |
-| `poses_completed` | number | how many poses were done |
-| `total_poses` | number | how many were in the session |
-| `completed_at` | datetime | |
-| `notes` | text | optional user notes |
+| `duration_seconds` | number | optional, total session time (yoga + future use) |
+| `poses_completed` | number | optional, how many exercises/poses were done |
+| `total_poses` | number | optional, how many were in the session |
 
-API rules: users can only read/write their own records.
+These fields are optional so existing strength session records are unaffected. The existing `sessions` fields (`user`, `workout_key`, `phase`, `day`, `completed_at`, `note`, `program`) already cover everything else needed.
+
+This means yoga completions flow through the same `markWorkoutDone` path in `useProgress.ts` with minimal extension: pass `duration_seconds`, `poses_completed`, and `total_poses` as additional fields when the day type is yoga.
 
 ---
 
 ## 2. Session Flow
 
-**No changes to the session engine.** The existing `ActiveSessionContext` and `SessionView` handle yoga sessions natively:
+**Minimal changes to the session engine.** The existing `ActiveSessionContext` and `SessionView` handle yoga sessions natively. The only change is passing yoga-specific metadata on completion:
 
 ### 2.1 Step Progression
 
@@ -100,8 +97,9 @@ Each yoga pose becomes a `Step`. The existing logic handles:
 
 On completion:
 1. Show existing celebration screen
-2. Record `yoga_session` with duration and poses completed
-3. Mark day as completed in program progression
+2. Call `markWorkoutDone` (existing function in `useProgress.ts`) which writes to `sessions` collection
+3. For yoga days: `markWorkoutDone` receives additional optional params `{ duration_seconds, poses_completed, total_poses }` — computed from the session context (elapsed time since session start, count of completed steps vs total steps)
+4. Mark day as completed in program progression (existing logic, no change)
 
 ---
 
@@ -109,14 +107,16 @@ On completion:
 
 ### 3.1 Program Selection
 
-`ProgramSelectorModal` shows a visual badge/tag to distinguish program types:
-- Programs where all active days are `dayType: 'yoga'` display a "Yoga" badge
-- Programs with strength day types display "Calistenia" badge
+`ProgramSelectorModal` shows a visual badge/tag to distinguish program types. Detection logic: scan the program's `weekDays` array and check if all non-rest days (`type !== 'rest'`) have `type === 'yoga'`. This check runs client-side when rendering the selector.
+
+- All non-rest days are yoga → "Yoga" badge
+- Otherwise → "Calistenia" badge (default)
 
 ### 3.2 Dashboard
 
 When the current day is `dayType: 'yoga'`:
-- Day header shows yoga-specific color/icon
+- Add a `todayIsYoga` check (alongside existing `todayIsRest` and `todayIsCardio` in `DashboardPage.tsx`)
+- Day header shows yoga color (purple/indigo) and a yoga-themed label (e.g., "Yoga")
 - Exercise list shows poses (same component, different data)
 - "Empezar" launches the same `ActiveSessionPage`
 
@@ -182,7 +182,7 @@ When the current day is `dayType: 'yoga'`:
 | 1 | 4 | Foundations | 3 (L/M/V) | Surya Namaskar A/B + standing poses only |
 | 2 | 4 | Building | 3-4 (L/M/V or L/M/J/S) | + seated poses through Navasana |
 | 3 | 4 | Half Primary | 4 (L/M/J/S) | + seated through Setu Bandhasana |
-| 4 | Ongoing | Full Primary | 5-6 (L-V or L-S) | Complete primary series + finishing |
+| 4 | 12 | Full Primary | 5-6 (L-V or L-S) | Complete primary series + finishing |
 
 Rest days: `dayType: 'rest'`. Traditional Ashtanga rests on Saturdays and moon days, but for simplicity Phase 1-3 just use fixed rest days.
 
@@ -196,15 +196,16 @@ Rest days: `dayType: 'rest'`. Traditional Ashtanga rests on Saturdays and moon d
 | `src/components/ExerciseCatalogPicker.tsx` | Add `'yoga'` to `CATEGORIES` |
 | `src/components/ProgramSelectorModal.tsx` | Badge visual yoga/calistenia |
 | `src/pages/DashboardPage.tsx` | Color/icon for yoga days |
-| `pb_migrations/XXXX_created_yoga_sessions.js` | New `yoga_sessions` collection |
+| `pb_migrations/XXXX_extend_sessions.js` | Add optional `duration_seconds`, `poses_completed`, `total_poses` fields to `sessions` |
 | `pb_migrations/XXXX_seed_yoga_catalog.js` | Seed poses + program |
-| `src/hooks/usePrograms.ts` | Validate yoga program loading (likely works as-is) |
+| `src/hooks/usePrograms.ts` | Verified: program loading is type-agnostic (loads exercises by `workout_key`), no changes needed |
+| `src/hooks/useProgress.ts` | Extend `markWorkoutDone` to accept optional yoga metadata fields |
 | `src/data/` | Yoga program fallback data if needed |
 
 ## 6. What Does NOT Change
 
-- `ActiveSessionContext` — session engine untouched
-- `SessionView` — step-by-step flow untouched
+- `ActiveSessionContext` — session engine untouched (yoga uses the same step/phase/rest logic)
+- `SessionView` — step-by-step flow untouched (timer vs manual already works)
 - `WarmupCooldownPrompt` — works as-is
 - `Exercise` interface — no type changes
 - `CardioSessionContext/Page` — unaffected
