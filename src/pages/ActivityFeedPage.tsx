@@ -6,6 +6,7 @@ import i18n from '../lib/i18n'
 import { useActivityFeed, type FeedItem } from '../hooks/useActivityFeed'
 import { useReactions } from '../hooks/useReactions'
 import { useComments } from '../hooks/useComments'
+import { useCommentReactions } from '../hooks/useCommentReactions'
 import { EmojiPicker } from '../components/social/EmojiPicker'
 import { CommentsSheet } from '../components/social/CommentsSheet'
 import { cn } from '../lib/utils'
@@ -38,6 +39,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const { items, loading, load } = useActivityFeed(userId)
   const { loadForSessions, toggleReaction, getReactions } = useReactions(userId)
   const { getComments, loadCommentCounts, addComment, deleteComment, getCommentCount, commentsBySession } = useComments(userId)
+  const commentReactions = useCommentReactions(userId)
   const [commentsSessionId, setCommentsSessionId] = useState<string | null>(null)
 
   useEffect(() => { load() }, [load])
@@ -110,6 +112,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
           currentUserId={userId}
           reactions={getReactions(commentsSessionId)}
           onReact={(emoji) => toggleReaction(commentsSessionId, emoji)}
+          commentReactions={commentReactions}
         />
       )}
     </div>

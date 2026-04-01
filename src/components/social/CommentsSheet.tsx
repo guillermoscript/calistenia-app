@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils'
 import { Loader } from '../ui/loader'
 import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
 import { REACTION_EMOJIS, type EmojiReactions } from '../../hooks/useReactions'
+import { COMMENT_REACTION_EMOJIS, type CommentEmojiReactions } from '../../hooks/useCommentReactions'
 import type { Comment } from '../../hooks/useComments'
 
 // ── Reaction color map ──────────────────────────────────────────────────────
@@ -15,9 +16,16 @@ const EMOJI_STYLES: Record<string, { active: string; ring: string }> = {
   '👏': { active: 'bg-yellow-500/20 text-yellow-300 ring-yellow-500/40', ring: 'ring-yellow-500/30' },
   '🎯': { active: 'bg-red-500/20 text-red-300 ring-red-500/40', ring: 'ring-red-500/30' },
   '🏆': { active: 'bg-amber-500/20 text-amber-300 ring-amber-500/40', ring: 'ring-amber-500/30' },
+  '❤️': { active: 'bg-pink-500/20 text-pink-300 ring-pink-500/40', ring: 'ring-pink-500/30' },
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────
+
+interface CommentReactionsHook {
+  loadForComments: (commentIds: string[]) => Promise<void>
+  toggleReaction: (commentId: string, emoji: string) => Promise<void>
+  getReactions: (commentId: string) => CommentEmojiReactions
+}
 
 interface CommentsSheetProps {
   sessionId: string
@@ -30,6 +38,7 @@ interface CommentsSheetProps {
   currentUserId: string
   reactions: EmojiReactions
   onReact: (emoji: string) => void
+  commentReactions?: CommentReactionsHook
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -48,6 +57,16 @@ function relativeTime(dateStr: string): string {
   return new Date(dateStr.replace(' ', 'T')).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
 
+/** Collect all comment IDs (including replies) from a comment list */
+function collectCommentIds(comments: Comment[]): string[] {
+  const ids: string[] = []
+  for (const c of comments) {
+    ids.push(c.id)
+    for (const r of c.replies) ids.push(r.id)
+  }
+  return ids
+}
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 export function CommentsSheet({
@@ -61,6 +80,7 @@ export function CommentsSheet({
   currentUserId,
   reactions,
   onReact,
+  commentReactions,
 }: CommentsSheetProps) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
@@ -81,6 +101,14 @@ export function CommentsSheet({
       setReplyTo(null)
     }
   }, [isOpen, sessionId, onLoadComments])
+
+  // Load comment reactions when comments change
+  useEffect(() => {
+    if (comments.length > 0 && commentReactions) {
+      const ids = collectCommentIds(comments)
+      commentReactions.loadForComments(ids)
+    }
+  }, [comments, commentReactions])
 
   // Scroll to bottom when new comments arrive
   useEffect(() => {
@@ -217,6 +245,7 @@ export function CommentsSheet({
                     currentUserId={currentUserId}
                     onReply={() => setReplyTo({ id: comment.id, name: comment.authorName })}
                     onDelete={() => onDeleteComment(comment.id, sessionId)}
+                    commentReactions={commentReactions}
                   />
 
                   {/* Threaded replies */}
@@ -229,6 +258,7 @@ export function CommentsSheet({
                           currentUserId={currentUserId}
                           onReply={() => setReplyTo({ id: comment.id, name: reply.authorName })}
                           onDelete={() => onDeleteComment(reply.id, sessionId)}
+                          commentReactions={commentReactions}
                           isReply
                         />
                       ))}
@@ -321,31 +351,47 @@ interface CommentBubbleProps {
   currentUserId: string
   onReply: () => void
   onDelete: () => void
+  commentReactions?: CommentReactionsHook
   isReply?: boolean
 }
 
-function CommentBubble({ comment, currentUserId, onReply, onDelete, isReply }: CommentBubbleProps) {
+function CommentBubble({ comment, currentUserId, onReply, onDelete, commentReactions, isReply }: CommentBubbleProps) {
   const { t } = useTranslation()
   const isOwn = comment.authorId === currentUserId
+  const [showReactionPicker, setShowReactionPicker] = useState(false)
 
-  // Generate a deterministic hue from the author name for avatar color
+  // Generate a deterministic hue from the author name for avatar fallback color
   const hue = Array.from(comment.authorName).reduce((h, c) => h + c.charCodeAt(0), 0) % 360
+
+  const cReactions = commentReactions?.getReactions(comment.id) || {}
+  const hasAnyReaction = Object.values(cReactions).some(r => r.count > 0)
 
   return (
     <div className="group flex gap-2.5">
       {/* Avatar */}
-      <div
-        className={cn(
-          'shrink-0 rounded-full flex items-center justify-center font-semibold uppercase',
-          isReply ? 'size-6 text-[10px]' : 'size-8 text-[11px]',
-        )}
-        style={{
-          backgroundColor: `oklch(0.35 0.08 ${hue})`,
-          color: `oklch(0.85 0.1 ${hue})`,
-        }}
-      >
-        {comment.authorName[0] || '?'}
-      </div>
+      {comment.authorAvatarUrl ? (
+        <img
+          src={comment.authorAvatarUrl}
+          alt=""
+          className={cn(
+            'shrink-0 rounded-full object-cover',
+            isReply ? 'size-6' : 'size-8',
+          )}
+        />
+      ) : (
+        <div
+          className={cn(
+            'shrink-0 rounded-full flex items-center justify-center font-semibold uppercase',
+            isReply ? 'size-6 text-[10px]' : 'size-8 text-[11px]',
+          )}
+          style={{
+            backgroundColor: `oklch(0.35 0.08 ${hue})`,
+            color: `oklch(0.85 0.1 ${hue})`,
+          }}
+        >
+          {comment.authorName[0] || '?'}
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex-1 min-w-0">
@@ -369,6 +415,33 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, isReply }: C
           {comment.text}
         </p>
 
+        {/* Inline reactions display */}
+        {hasAnyReaction && (
+          <div className="flex items-center gap-1 mt-1 flex-wrap">
+            {COMMENT_REACTION_EMOJIS.map((emoji) => {
+              const data = cReactions[emoji]
+              if (!data || data.count === 0) return null
+              const styles = EMOJI_STYLES[emoji]
+              return (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => commentReactions?.toggleReaction(comment.id, emoji)}
+                  className={cn(
+                    'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] ring-1 ring-inset transition-all duration-150 active:scale-[0.92]',
+                    data.hasReacted && styles
+                      ? styles.active
+                      : 'ring-border/40 text-muted-foreground/70 hover:bg-muted/40',
+                  )}
+                >
+                  <span className="leading-none">{emoji}</span>
+                  <span className="font-medium tabular-nums leading-none">{data.count}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex items-center gap-3 mt-1">
           <button
@@ -377,6 +450,39 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, isReply }: C
           >
             {t('social.reply')}
           </button>
+          {/* React button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowReactionPicker(prev => !prev)}
+              className="text-[11px] text-muted-foreground/50 hover:text-lime transition-colors"
+            >
+              {hasAnyReaction ? '😊' : '+'} {!hasAnyReaction && t('social.react', { defaultValue: 'React' })}
+            </button>
+            {/* Reaction picker popover */}
+            {showReactionPicker && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowReactionPicker(false)} />
+                <div className="absolute left-0 bottom-full mb-1 z-50 flex items-center gap-0.5 bg-background/95 backdrop-blur-md border border-border/50 rounded-full px-1.5 py-1 shadow-lg">
+                  {COMMENT_REACTION_EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        commentReactions?.toggleReaction(comment.id, emoji)
+                        setShowReactionPicker(false)
+                      }}
+                      className={cn(
+                        'size-7 flex items-center justify-center rounded-full text-base hover:bg-muted/60 transition-colors active:scale-[0.85]',
+                        cReactions[emoji]?.hasReacted && 'bg-muted/80',
+                      )}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           {isOwn && (
             <button
               onClick={onDelete}

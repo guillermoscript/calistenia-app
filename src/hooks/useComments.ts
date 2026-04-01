@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 
 export interface Comment {
   id: string
   sessionId: string
   authorId: string
   authorName: string
+  authorAvatarUrl: string | null
   text: string
   parentId: string | null
   created: string
@@ -74,19 +75,22 @@ export function useComments(userId: string | null) {
         return String(a?.id || '').localeCompare(String(b?.id || ''))
       })
 
-      const authorNameById = new Map<string, string>()
+      const authorInfoById = new Map<string, { name: string; avatarUrl: string | null }>()
       const authorIds = Array.from(new Set(records.map((r: any) => r.author).filter(Boolean))) as string[]
 
       if (authorIds.length > 0) {
         try {
           const users = await pb.collection('users').getFullList({
             filter: authorIds.map(id => `id = '${id}'`).join(' || '),
-            fields: 'id,display_name,email',
+            fields: 'id,display_name,email,avatar,collectionId,collectionName',
             $autoCancel: false,
           })
 
           for (const u of users as any[]) {
-            authorNameById.set(u.id, u.display_name || u.email?.split('@')[0] || '?')
+            authorInfoById.set(u.id, {
+              name: u.display_name || u.email?.split('@')[0] || '?',
+              avatarUrl: getUserAvatarUrl(u, '100x100'),
+            })
           }
         } catch {
           // non-critical: fallback to expand data or '?'
@@ -94,16 +98,21 @@ export function useComments(userId: string | null) {
       }
 
       // Build flat list
-      const flat: Comment[] = records.map((r: any) => ({
-        id: r.id,
-        sessionId: r.session_id,
-        authorId: r.author,
-        authorName: r.expand?.author?.display_name || r.expand?.author?.email?.split('@')[0] || authorNameById.get(r.author) || '?',
-        text: r.text,
-        parentId: r.parent_id || null,
-        created: r.created || r.updated || new Date().toISOString(),
-        replies: [],
-      }))
+      const flat: Comment[] = records.map((r: any) => {
+        const info = authorInfoById.get(r.author)
+        const expandAuthor = r.expand?.author
+        return {
+          id: r.id,
+          sessionId: r.session_id,
+          authorId: r.author,
+          authorName: expandAuthor?.display_name || expandAuthor?.email?.split('@')[0] || info?.name || '?',
+          authorAvatarUrl: expandAuthor ? getUserAvatarUrl(expandAuthor, '100x100') : (info?.avatarUrl || null),
+          text: r.text,
+          parentId: r.parent_id || null,
+          created: r.created || r.updated || new Date().toISOString(),
+          replies: [],
+        }
+      })
 
       // Thread: group replies under parents (1 level max)
       const topLevel: Comment[] = []
