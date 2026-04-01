@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import type { Exercise, Workout } from '../types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -135,7 +135,8 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   const workoutKeyRef = useRef(restored?.workoutKey ?? '')
   const startedAtRef = useRef(restored?.startedAt ?? 0)
 
-  // Warmup/cooldown tracking refs (survive re-renders, persisted via getWarmupCooldownData)
+  // Transient warmup/cooldown metadata — refs because they don't drive UI,
+  // only read once at session end via getWarmupCooldownData().
   const warmupSkippedRef = useRef(false)
   const warmupDurationRef = useRef(0)
   const cooldownSkippedRef = useRef(false)
@@ -145,34 +146,22 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     setProgressState(prev => ({ ...prev, ...update }))
   }, [])
 
-  // Persist session envelope on every meaningful state change
+  // Persist session on state change and visibility change (single effect)
   useEffect(() => {
-    if (isActive && workout) {
-      saveToStorage({
-        workout,
-        workoutKey: workoutKeyRef.current,
-        source,
-        progress,
-        startedAt: startedAtRef.current,
-        sectionStartTime,
-      })
-    }
-  }, [isActive, workout, source, progress, sectionStartTime])
+    if (!isActive || !workout) return
 
-  // Persist on visibility change (user switches apps / locks phone)
-  useEffect(() => {
-    const handler = () => {
-      if (document.visibilityState === 'hidden' && isActive && workout) {
-        saveToStorage({
-          workout,
-          workoutKey: workoutKeyRef.current,
-          source,
-          progress,
-          startedAt: startedAtRef.current,
-          sectionStartTime,
-        })
-      }
-    }
+    const persist = () => saveToStorage({
+      workout,
+      workoutKey: workoutKeyRef.current,
+      source,
+      progress,
+      startedAt: startedAtRef.current,
+      sectionStartTime,
+    })
+
+    persist()
+
+    const handler = () => { if (document.visibilityState === 'hidden') persist() }
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
   }, [isActive, workout, source, progress, sectionStartTime])
@@ -201,15 +190,16 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     cooldownDurationSeconds: cooldownDurationRef.current,
   }), [])
 
-  // Build a flat step list matching SessionView's buildSteps logic
-  const buildFlatSteps = useCallback((exercises: Exercise[]) => {
+  // Memoized flat step list — avoids rebuilding on every skip call
+  const flatSteps = useMemo(() => {
+    if (!workout) return []
     const steps: { exercise: Exercise }[] = []
-    exercises.forEach(ex => {
+    workout.exercises.forEach(ex => {
       const total = ex.sets === 'múltiples' ? 3 : (parseInt(String(ex.sets)) || 1)
       for (let s = 1; s <= total; s++) steps.push({ exercise: ex })
     })
     return steps
-  }, [])
+  }, [workout])
 
   const skipWarmup = useCallback(() => {
     if (!workout) return
@@ -217,12 +207,11 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     if (sectionStartTime) {
       warmupDurationRef.current = Math.round((Date.now() - sectionStartTime) / 1000)
     }
-    const steps = buildFlatSteps(workout.exercises)
-    const firstMainIdx = steps.findIndex(s => (s.exercise.section || 'main') !== 'warmup')
+    const firstMainIdx = flatSteps.findIndex(s => (s.exercise.section || 'main') !== 'warmup')
     const targetIdx = firstMainIdx >= 0 ? firstMainIdx : 0
     setSectionStartTime(Date.now())
     setProgressState(prev => ({ ...prev, stepIdx: targetIdx, phase: 'exercise' }))
-  }, [workout, sectionStartTime, buildFlatSteps])
+  }, [workout, sectionStartTime, flatSteps])
 
   const skipCooldown = useCallback(() => {
     if (!workout) return
