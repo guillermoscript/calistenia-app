@@ -25,8 +25,7 @@ migrate((app) => {
     const col = app.findCollectionByNameOrId(collectionName)
     const rec = new Record(col)
     for (const [k, v] of Object.entries(data)) {
-      // JSON fields need explicit serialization for PB's JS runtime
-      rec.set(k, typeof v === "object" && v !== null ? JSON.stringify(v) : v)
+      rec.set(k, v)
     }
     app.save(rec)
     return rec

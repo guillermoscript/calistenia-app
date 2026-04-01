@@ -919,7 +919,9 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
             days: z.array(z.object({
               day_id: z.string(),
               day_name: z.string(),
+              day_type: z.string().optional().describe("Day type override (e.g. 'yoga', 'cardio'). Defaults to auto-detect from day_id."),
               day_focus: z.string().optional(),
+              day_color: z.string().optional(),
               workout_title: z.string().optional(),
               exercises: z.array(z.object({
                 sort_order: z.number().int().optional(),
@@ -978,6 +980,19 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           });
 
           for (const day of phase.days) {
+            // Create day config record for discipline detection
+            const resolvedDayType = day.day_type || dayTypeMap[day.day_id] || "full";
+            batch.collection("program_day_config").create({
+              program: program.id,
+              phase_number: phase.phase_number,
+              day_id: day.day_id,
+              day_name: toTranslatable(day.day_name),
+              day_type: resolvedDayType,
+              day_focus: toTranslatable(day.day_focus || ""),
+              day_color: day.day_color || phase.color || "#888",
+              sort_order: phase.days.indexOf(day) + 1,
+            });
+
             for (let ei = 0; ei < day.exercises.length; ei++) {
               const ex = day.exercises[ei];
               batch.collection("program_exercises").create({
@@ -986,8 +1001,8 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
                 day_id: day.day_id,
                 day_name: toTranslatable(day.day_name),
                 day_focus: toTranslatable(day.day_focus || ""),
-                day_type: dayTypeMap[day.day_id] || "full",
-                day_color: phase.color || "#888",
+                day_type: resolvedDayType,
+                day_color: day.day_color || phase.color || "#888",
                 workout_title: toTranslatable(day.workout_title || day.day_focus || ""),
                 exercise_id: ex.name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/_+$/, ""),
                 exercise_name: toTranslatable(ex.name),
