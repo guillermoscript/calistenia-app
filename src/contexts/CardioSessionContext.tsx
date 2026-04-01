@@ -35,6 +35,7 @@ interface CardioSessionContextValue {
   discard: () => void
   getHistory: (limit?: number) => Promise<CardioSession[]>
   deleteSession: (id: string) => Promise<void>
+  unsavedCount: number
 }
 
 const CardioSessionContext = createContext<CardioSessionContextValue | null>(null)
@@ -85,6 +86,32 @@ function clearStorage() {
   localStorage.removeItem(STORAGE_KEY)
 }
 
+// ── Unsaved session queue (retry on PocketBase failure) ─────────────────────
+
+const UNSAVED_KEY = 'calistenia_cardio_unsaved'
+const MAX_UNSAVED = 5
+
+function loadUnsaved(): Record<string, unknown>[] {
+  try {
+    const raw = localStorage.getItem(UNSAVED_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function pushUnsaved(session: Record<string, unknown>) {
+  try {
+    const queue = loadUnsaved()
+    queue.push(session)
+    // FIFO: drop oldest if over limit
+    while (queue.length > MAX_UNSAVED) queue.shift()
+    localStorage.setItem(UNSAVED_KEY, JSON.stringify(queue))
+  } catch { /* quota exceeded */ }
+}
+
+function clearUnsaved() {
+  localStorage.removeItem(UNSAVED_KEY)
+}
+
 // ── Provider ─────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -107,6 +134,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
   const [programId, setProgramId] = useState<string | null>(null)
   const [programDayKey, setProgramDayKey] = useState<string | null>(null)
+  const [unsavedCount, setUnsavedCount] = useState(0)
 
   const watchIdRef = useRef<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -122,6 +150,9 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const restoredRef = useRef(false)
   const stateRef = useRef<SessionState>('idle')
   const activityTypeRef = useRef<CardioActivityType>('running')
+  const lastGpsTimestampRef = useRef<number>(0)
+  const lastGpsRestartRef = useRef<number>(0)
+  const startTrackingRef = useRef<() => void>(() => {})
 
   // ── Persist to localStorage periodically ────────────────────────────────
 
@@ -150,9 +181,44 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   }, [state, persistSnapshot])
 
   // Also persist on visibility change (user switches app / locks screen)
+  // Best-effort: grab one last GPS point before the browser suspends JS
   useEffect(() => {
     const handler = () => {
-      if (document.visibilityState === 'hidden') persistSnapshot()
+      if (document.visibilityState === 'hidden') {
+        persistSnapshot()
+        // Try to capture a final position before suspension (may not resolve on iOS Safari)
+        if (stateRef.current === 'tracking' && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const { latitude, longitude, altitude, speed, accuracy } = pos.coords
+              if (accuracy > 30) return
+              const pts = pointsRef.current
+              const point: GpsPoint = {
+                lat: latitude, lng: longitude,
+                alt: altitude ?? undefined,
+                timestamp: pos.timestamp,
+                speed: speed ?? undefined,
+                accuracy,
+              }
+              if (pts.length > 0) {
+                const last = pts[pts.length - 1]
+                // Only add if this is actually a new position (>1s newer)
+                if (point.timestamp - last.timestamp < 1000) return
+                const d = haversineDistance(last.lat, last.lng, point.lat, point.lng)
+                const timeDiff = (point.timestamp - last.timestamp) / 1000
+                if (timeDiff > 0 && d / timeDiff > 14) return
+                distanceRef.current += d / 1000
+                setDistance(distanceRef.current)
+              }
+              pts.push(point)
+              setPointsCount(pts.length)
+              persistSnapshot()
+            },
+            () => { /* ignore errors — best effort */ },
+            { enableHighAccuracy: true, timeout: 3000 },
+          )
+        }
+      }
     }
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
@@ -212,13 +278,38 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
           const last = pts[pts.length - 1]
           const d = haversineDistance(last.lat, last.lng, point.lat, point.lng)
           const timeDiff = (point.timestamp - last.timestamp) / 1000
-          if (timeDiff > 0 && d / timeDiff > 14) return
 
-          const newDist = distanceRef.current + d / 1000
-          distanceRef.current = newDist
-          setDistance(newDist)
+          // ── Gap detection: >30s without a GPS point ──
+          const isGap = timeDiff > 30
 
-          const currentKm = Math.floor(newDist)
+          if (isGap) {
+            // Per-activity max speed for plausibility check
+            const maxSpeed: Record<CardioActivityType, number> = {
+              running: 6, walking: 3, cycling: 14,
+            }
+            const limit = maxSpeed[activityTypeRef.current] ?? 6
+            const plausible = timeDiff > 0 && (d / timeDiff) <= limit
+
+            if (plausible) {
+              // Add interpolated distance and flag the point
+              point.gap = true
+              const newDist = distanceRef.current + d / 1000
+              distanceRef.current = newDist
+              setDistance(newDist)
+            } else {
+              // Implausible (e.g., user drove) — push point without distance so tracking continues from new location
+              point.gap = true
+            }
+          } else {
+            // Normal real-time tracking — apply standard speed filter
+            if (timeDiff > 0 && d / timeDiff > 14) return
+
+            const newDist = distanceRef.current + d / 1000
+            distanceRef.current = newDist
+            setDistance(newDist)
+          }
+
+          const currentKm = Math.floor(distanceRef.current)
           if (currentKm > lastSplitKmRef.current) {
             lastSplitKmRef.current = currentKm
             lastSplitTimeRef.current = point.timestamp
@@ -231,6 +322,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
         pts.push(point)
         setPointsCount(pts.length)
+        lastGpsTimestampRef.current = Date.now()
 
         if (speed != null && speed > 0.5) {
           setCurrentPace(1000 / 60 / speed)
@@ -248,6 +340,9 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     )
   }, [])
 
+  // Keep ref in sync so startTimer health check can call it without circular deps
+  startTrackingRef.current = startTracking
+
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current)
@@ -262,6 +357,23 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     timerRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTimeRef.current - pausedDurationRef.current) / 1000)
       setDuration(elapsed)
+
+      // GPS health check: restart watchPosition if it silently died (with 30s cooldown)
+      const now = Date.now()
+      if (
+        stateRef.current === 'tracking' &&
+        document.visibilityState === 'visible' &&
+        lastGpsTimestampRef.current > 0 &&
+        now - lastGpsTimestampRef.current > 15000 &&
+        now - lastGpsRestartRef.current > 30000
+      ) {
+        lastGpsRestartRef.current = now
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current)
+          watchIdRef.current = null
+        }
+        startTrackingRef.current()
+      }
     }, 1000)
   }, [])
 
@@ -288,6 +400,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     lastSplitKmRef.current = 0
     lastSplitTimeRef.current = Date.now()
     maxSpeedRef.current = 0
+    lastGpsTimestampRef.current = 0
+    lastGpsRestartRef.current = 0
 
     setState('tracking')
     stateRef.current = 'tracking'
@@ -372,7 +486,12 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         const saved = await pb.collection('cardio_sessions').create(saveData)
         session.id = saved.id
       } catch (e) {
-        console.warn('Failed to save cardio session:', e)
+        console.warn('Failed to save cardio session, queuing for retry:', e)
+        const saveData: Record<string, unknown> = { user: userId, ...session }
+        if (programId) saveData.program = programId
+        if (programDayKey) saveData.program_day_key = programDayKey
+        pushUnsaved(saveData)
+        setUnsavedCount(loadUnsaved().length)
       }
     }
 
@@ -487,6 +606,35 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     }
   }, [startTracking, requestWakeLock, startTimer])
 
+  // ── Retry unsaved sessions on mount ────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return
+    const queue = loadUnsaved()
+    if (queue.length === 0) return
+    setUnsavedCount(queue.length)
+
+    let cancelled = false
+    ;(async () => {
+      const remaining: Record<string, unknown>[] = []
+      for (const session of queue) {
+        if (cancelled) { remaining.push(session); continue }
+        try {
+          await pb.collection('cardio_sessions').create(session)
+        } catch {
+          remaining.push(session)
+        }
+      }
+      if (cancelled) return
+      if (remaining.length > 0) {
+        try { localStorage.setItem(UNSAVED_KEY, JSON.stringify(remaining)) } catch {}
+      } else {
+        clearUnsaved()
+      }
+      setUnsavedCount(remaining.length)
+    })()
+    return () => { cancelled = true }
+  }, [userId])
+
   // ── Cleanup on unmount (e.g., user logs out) ────────────────────────────
 
   useEffect(() => {
@@ -511,7 +659,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
     programId, programDayKey,
-    start, pause, resume, finish, discard, getHistory, deleteSession,
+    start, pause, resume, finish, discard, getHistory, deleteSession, unsavedCount,
   }
 
   return (

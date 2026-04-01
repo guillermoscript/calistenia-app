@@ -144,11 +144,46 @@ export default function RouteMap({ points, height = '300px', className, live = f
     // Original GPS start/end for markers (always use raw points)
     const rawCoords = points.map(p => [p.lat, p.lng] as [number, number])
 
-    // Route polyline (snapped or raw)
+    // When using snapped coords or no gaps, render a single polyline.
+    // With gaps on raw GPS, render solid + dashed segments separately.
+    const hasGaps = points.some(p => p.gap)
+    const useSnapped = snappedCoords && !live
+    const renderGapSegments = hasGaps && !useSnapped
+
+    if (renderGapSegments) {
+      // Build segments: each run of non-gap points is solid, each gap transition is dashed
+      let segmentStart = 0
+      for (let i = 0; i < points.length; i++) {
+        if (points[i].gap && i > 0) {
+          // Render solid segment up to this gap
+          if (i - segmentStart > 1) {
+            const segCoords = points.slice(segmentStart, i).map(p => [p.lat, p.lng] as [number, number])
+            leaflet.polyline(segCoords, {
+              color: routeColor, weight: 4, opacity: 0.85, lineCap: 'round', lineJoin: 'round',
+            }).addTo(layers)
+          }
+          // Dashed line across the gap
+          leaflet.polyline(
+            [[points[i - 1].lat, points[i - 1].lng], [points[i].lat, points[i].lng]],
+            { color: routeColor, weight: 3, opacity: 0.5, dashArray: '8, 8' },
+          ).addTo(layers)
+          segmentStart = i
+        }
+      }
+      // Render final solid segment after last gap
+      if (points.length - segmentStart > 1) {
+        const segCoords = points.slice(segmentStart).map(p => [p.lat, p.lng] as [number, number])
+        leaflet.polyline(segCoords, {
+          color: routeColor, weight: 4, opacity: 0.85, lineCap: 'round', lineJoin: 'round',
+        }).addTo(layers)
+      }
+    }
+
+    // Full polyline: visible when no gap segments, invisible (weight 0) otherwise — used for bounds fitting
     const polyline = leaflet.polyline(routeCoords, {
       color: routeColor,
-      weight: 4,
-      opacity: 0.85,
+      weight: renderGapSegments ? 0 : 4,
+      opacity: renderGapSegments ? 0 : 0.85,
       lineCap: 'round',
       lineJoin: 'round',
     }).addTo(layers)

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useCardioSessionContext } from '../contexts/CardioSessionContext'
 import { useCardioStats } from '../hooks/useCardioStats'
-import { formatDuration, formatPace, formatSpeed, pointsToGPX } from '../lib/geo'
+import { formatDuration, formatPace, formatSpeed, pointsToGPX, assessTrackQuality } from '../lib/geo'
 import { useTranslation } from 'react-i18next'
 import { CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { todayStr } from '../lib/dateUtils'
@@ -35,7 +35,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
-    start, pause, resume, finish, discard, getHistory, deleteSession,
+    start, pause, resume, finish, discard, getHistory, deleteSession, unsavedCount,
   } = useCardioSessionContext()
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -100,6 +100,14 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
   const displaySession = savedSession
 
+  const trackQuality = useMemo(() => {
+    if (state !== 'finished') return null
+    const pts = displaySession?.gps_points ?? pointsRef.current
+    const dist = displaySession?.distance_km ?? distance
+    if (pts.length < 2) return null
+    return assessTrackQuality(pts, dist)
+  }, [state, displaySession, distance, pointsRef, pointsCount]) // pointsCount triggers recompute when points change
+
   const isTracking = state === 'tracking' || state === 'paused'
 
   return (
@@ -127,6 +135,13 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
       {/* Pre-session view */}
       {state === 'idle' && !savedSession && (
         <div className="space-y-6">
+          {/* Unsaved sessions indicator */}
+          {unsavedCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-mono">
+              <span>⚠</span>
+              <span>{t('cardio.unsavedSessions', '{{count}} session(s) pending upload', { count: unsavedCount })}</span>
+            </div>
+          )}
           {/* Program banner */}
           {isFromProgram && (
             <div className="p-3 rounded-lg bg-emerald-400/10 border border-emerald-400/20 text-center">
@@ -370,10 +385,27 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             <ElevationProfile points={pointsRef.current} height={80} />
           )}
 
+          {/* Track quality warning */}
+          {trackQuality && trackQuality.grade !== 'good' && (
+            <div className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono',
+              trackQuality.grade === 'poor' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400',
+            )}>
+              <span>{trackQuality.grade === 'poor' ? '⚠' : 'ℹ'}</span>
+              <span>
+                {trackQuality.grade === 'poor'
+                  ? t('cardio.trackingIssues', 'GPS tracking had issues — distance is approximate')
+                  : t('cardio.estimatedDistance', '~{{km}} km estimated from {{gaps}} GPS gap(s)', { km: trackQuality.gapDistanceKm, gaps: trackQuality.gapCount })}
+              </span>
+            </div>
+          )}
+
           {/* Expanded stats grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-4 bg-muted/60 rounded-xl">
-              <div className="font-bebas text-3xl text-lime tabular-nums">{(displaySession?.distance_km ?? distance).toFixed(2)}</div>
+              <div className="font-bebas text-3xl text-lime tabular-nums">
+                {trackQuality && trackQuality.grade !== 'good' ? '~' : ''}{(displaySession?.distance_km ?? distance).toFixed(2)}
+              </div>
               <div className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1">KM</div>
             </div>
             <div className="text-center p-4 bg-muted/60 rounded-xl">

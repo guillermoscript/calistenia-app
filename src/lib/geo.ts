@@ -157,6 +157,40 @@ export function formatSpeed(kmh: number): string {
   return kmh.toFixed(1)
 }
 
+export type TrackQualityGrade = 'good' | 'estimated' | 'poor'
+
+export interface TrackQuality {
+  grade: TrackQualityGrade
+  gapCount: number
+  gapDistanceKm: number
+}
+
+export function assessTrackQuality(points: GpsPoint[], totalDistanceKm: number): TrackQuality {
+  let gapCount = 0
+  let gapDistanceM = 0
+
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].gap) {
+      gapCount++
+      gapDistanceM += haversineDistance(
+        points[i - 1].lat, points[i - 1].lng,
+        points[i].lat, points[i].lng,
+      )
+    }
+  }
+
+  const gapDistanceKm = gapDistanceM / 1000
+  const pointDensity = totalDistanceKm > 0 ? points.length / totalDistanceKm : 0
+  const gapRatio = totalDistanceKm > 0 ? gapDistanceKm / totalDistanceKm : 0
+
+  let grade: TrackQualityGrade = 'good'
+  if (gapCount > 0 || pointDensity < 10) {
+    grade = gapRatio > 0.2 || pointDensity < 3 ? 'poor' : 'estimated'
+  }
+
+  return { grade, gapCount, gapDistanceKm: Math.round(gapDistanceKm * 100) / 100 }
+}
+
 export function pointsToGPX(points: GpsPoint[], activityType: string): string {
   const trkpts = points
     .map(p => {
