@@ -114,7 +114,7 @@ async function mcpAuth(req: any, res: any, next: any) {
   if (!authHeader?.startsWith("Bearer ")) {
     res.set(
       "WWW-Authenticate",
-      `Bearer resource_metadata="${resourceMetadataUrl}"`
+      `Bearer error="invalid_token", error_description="Missing Authorization header", resource_metadata="${resourceMetadataUrl}"`
     );
     res.status(401).json({ error: "invalid_token", error_description: "Missing Authorization header" });
     return;
@@ -195,6 +195,23 @@ app.post("/mcp", mcpAuth, async (req: any, res: any) => {
   }
 });
 
+// GET and DELETE on /mcp must return 405 in stateless mode (required by MCP Streamable HTTP spec)
+app.get("/mcp", (_req: any, res: any) => {
+  res.status(405).json({
+    jsonrpc: "2.0",
+    error: { code: -32000, message: "Method not allowed." },
+    id: null,
+  });
+});
+
+app.delete("/mcp", (_req: any, res: any) => {
+  res.status(405).json({
+    jsonrpc: "2.0",
+    error: { code: -32000, message: "Method not allowed." },
+    id: null,
+  });
+});
+
 // ── API routes (REST — still uses direct PB tokens) ──────────────────────────
 app.use("/api", createApiRouter());
 
@@ -219,7 +236,7 @@ app.listen(PORT, HOST, () => {
   console.error(`║  Public URL: ${SERVER_URL.padEnd(48)}║`);
   console.error(`║  PocketBase: ${PB_URL.padEnd(48)}║`);
   console.error(`╠════════════════════════════════════════════════════════════════╣`);
-  console.error(`║  MCP:   POST /mcp  (OAuth 2.1 + PB token fallback)           ║`);
+  console.error(`║  MCP:   /mcp  (OAuth 2.1 + PB token fallback)                ║`);
   console.error(`║  OAuth: /authorize · /token · /register · /revoke             ║`);
   console.error(`║  API:   /api/*                                                ║`);
   console.error(`║  Health: GET /health                                          ║`);

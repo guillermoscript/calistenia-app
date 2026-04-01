@@ -112,16 +112,12 @@ class InMemoryClientStore implements OAuthRegisteredClientsStore {
   }
 
   registerClient(
-    client: Omit<OAuthClientInformationFull, "client_id" | "client_id_issued_at">
+    client: OAuthClientInformationFull
   ): OAuthClientInformationFull {
-    const registered: OAuthClientInformationFull = {
-      ...client,
-      client_id: randomUUID(),
-      client_id_issued_at: Math.floor(Date.now() / 1000),
-    };
-    clients.set(registered.client_id, registered);
-    console.error(`[OAuth] Registered client: ${registered.client_name ?? registered.client_id}`);
-    return registered;
+    // The SDK generates client_id before calling this method — use it as-is
+    clients.set(client.client_id, client);
+    console.error(`[OAuth] Registered client: ${client.client_name ?? client.client_id}`);
+    return client;
   }
 }
 
