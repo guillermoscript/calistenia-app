@@ -2,7 +2,7 @@
 
 export type DayId = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
 
-export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest' | 'cardio'
+export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest' | 'cardio' | 'yoga'
 
 export type Priority = 'high' | 'med' | 'low'
 
@@ -102,6 +102,9 @@ export interface SessionDone {
   cooldownCompleted?: boolean
   cooldownSkipped?: boolean
   cooldownDurationSeconds?: number
+  durationSeconds?: number
+  posesCompleted?: number
+  totalPoses?: number
 }
 
 /** The progress map stores both exercise logs and session-done markers */
@@ -208,6 +211,7 @@ export interface ProgramMeta {
   cover_image?: string
   /** Resolved cover image URL (built from PB file service) */
   cover_image_url?: string
+  discipline?: 'yoga' | 'calistenia'
 }
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────

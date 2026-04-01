@@ -63,7 +63,7 @@ interface UseProgressReturn {
   usePB: boolean
   pbReady: boolean
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<void>
-  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }) => Promise<void>
+  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
   getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
@@ -178,6 +178,11 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           entry.cooldownSkipped = !!s.cooldown_skipped
           entry.cooldownDurationSeconds = s.cooldown_duration_seconds || 0
         }
+        if (s.duration_seconds != null || s.poses_completed != null || s.total_poses != null) {
+          entry.durationSeconds = s.duration_seconds ?? undefined
+          entry.posesCompleted = s.poses_completed ?? undefined
+          entry.totalPoses = s.total_poses ?? undefined
+        }
         prog[`done_${date}_${s.workout_key}`] = entry
       })
 
@@ -289,7 +294,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   }, [usePB, userId])
 
   // ─── markWorkoutDone ─────────────────────────────────────────────────────
-  const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }) => {
+  const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }) => {
     const date = todayStr()
     const key = `done_${date}_${workoutKey}`
 
@@ -302,6 +307,11 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         entry.cooldownCompleted = !(warmupCooldown.cooldownSkipped ?? false) && (warmupCooldown.cooldownDurationSeconds ?? 0) > 0
         entry.cooldownSkipped = warmupCooldown.cooldownSkipped ?? false
         entry.cooldownDurationSeconds = warmupCooldown.cooldownDurationSeconds ?? 0
+      }
+      if (yogaMeta) {
+        entry.durationSeconds = yogaMeta.duration_seconds
+        entry.posesCompleted = yogaMeta.poses_completed
+        entry.totalPoses = yogaMeta.total_poses
       }
       const newProg = { ...prev, [key]: entry }
       lsSet(newProg)
@@ -329,6 +339,12 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           sessionData.cooldown_completed = !(warmupCooldown.cooldownSkipped ?? false) && (warmupCooldown.cooldownDurationSeconds ?? 0) > 0
           sessionData.cooldown_skipped = warmupCooldown.cooldownSkipped ?? false
           sessionData.cooldown_duration_seconds = warmupCooldown.cooldownDurationSeconds ?? 0
+        }
+        // Yoga session metadata
+        if (yogaMeta) {
+          if (yogaMeta.duration_seconds != null) sessionData.duration_seconds = yogaMeta.duration_seconds
+          if (yogaMeta.poses_completed != null) sessionData.poses_completed = yogaMeta.poses_completed
+          if (yogaMeta.total_poses != null) sessionData.total_poses = yogaMeta.total_poses
         }
         await pb.collection('sessions').create(sessionData)
       } catch (e) { console.warn('PB sessions error:', e) }

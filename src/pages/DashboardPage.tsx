@@ -29,6 +29,7 @@ import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
 import type { CardioSession } from '../types'
 import type { CardioAggregateStats } from '../hooks/useCardioStats'
+import { toast } from 'sonner'
 
 
 // ── Quick Action Card ────────────────────────────────────────────────────────
@@ -305,6 +306,7 @@ export default function DashboardPage({
         const todayDay = weekDays.find(d => d.id === todayDayId)
         const todayIsRest = todayDay?.type === 'rest'
         const todayIsCardio = todayDay?.type === 'cardio'
+        const todayIsYoga = todayDay?.type === 'yoga'
         const todayWorkoutKey = `p${settings.phase || 1}_${todayDayId}`
         const todayDone = isWorkoutDone(todayWorkoutKey, today_str)
 
@@ -314,15 +316,18 @@ export default function DashboardPage({
               'mb-6 p-5 rounded-xl border-2 transition-all',
               todayDone
                 ? 'border-emerald-500/30 bg-emerald-500/5'
-                : todayIsCardio
-                  ? 'border-emerald-400/30 bg-emerald-400/5 cursor-pointer hover:border-emerald-400/50 active:scale-[0.99]'
-                  : todayIsRest
-                    ? 'border-border bg-card'
-                    : 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5 cursor-pointer hover:border-[hsl(var(--lime))]/50 active:scale-[0.99]',
+                : todayIsYoga
+                  ? 'border-purple-400/30 bg-purple-400/5 cursor-pointer hover:border-purple-400/50 active:scale-[0.99]'
+                  : todayIsCardio
+                    ? 'border-emerald-400/30 bg-emerald-400/5 cursor-pointer hover:border-emerald-400/50 active:scale-[0.99]'
+                    : todayIsRest
+                      ? 'border-border bg-card'
+                      : 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5 cursor-pointer hover:border-[hsl(var(--lime))]/50 active:scale-[0.99]',
             )}
             onClick={() => {
               if (todayDone) return
-              if (todayIsCardio) navigate(`/workout?day=${todayDayId}`)
+              if (todayIsYoga) navigate(`/workout?day=${todayDayId}`)
+              else if (todayIsCardio) navigate(`/workout?day=${todayDayId}`)
               else if (!todayIsRest) navigate(`/workout?day=${todayDayId}`)
             }}
             role={!todayIsRest && !todayDone ? 'button' : undefined}
@@ -330,11 +335,13 @@ export default function DashboardPage({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">
-                  {todayDone ? t('dashboard.todayWorkout') : todayIsCardio ? t('dashboard.todayCardio') : todayIsRest ? t('dashboard.todayRest') : t('dashboard.todayWorkout')}
+                  {todayDone ? t('dashboard.todayWorkout') : todayIsYoga ? t('dashboard.todayYoga', { defaultValue: 'YOGA DE HOY' }) : todayIsCardio ? t('dashboard.todayCardio') : todayIsRest ? t('dashboard.todayRest') : t('dashboard.todayWorkout')}
                 </div>
                 <div className="font-bebas text-2xl md:text-3xl leading-none">
                   {todayDone ? (
                     <span className="text-emerald-500">{t('dashboard.completed')}</span>
+                  ) : todayIsYoga ? (
+                    <span className="text-purple-400">{t('dashboard.yoga', { defaultValue: 'Yoga' })}</span>
                   ) : todayIsCardio ? (
                     <span className="text-emerald-400">{t(`cardio.${todayDay?.cardioConfig?.activityType || 'running'}`)}</span>
                   ) : todayIsRest ? (
@@ -355,10 +362,14 @@ export default function DashboardPage({
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                 </div>
+              ) : todayIsYoga ? (
+                <div className="size-12 rounded-full bg-purple-400/10 flex items-center justify-center shrink-0">
+                  <span className="text-2xl">🧘</span>
+                </div>
               ) : todayIsCardio ? (
                 <div className="text-3xl shrink-0">{CARDIO_ACTIVITY[todayDay?.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
               ) : todayIsRest ? (
-                <div className="text-3xl shrink-0">🧘</div>
+                <div className="text-3xl shrink-0">😴</div>
               ) : (
                 <div className="size-12 rounded-full bg-[hsl(var(--lime))]/10 flex items-center justify-center shrink-0">
                   <svg className="size-6 text-[hsl(var(--lime))]" viewBox="0 0 24 24" fill="currentColor">
@@ -656,7 +667,16 @@ export default function DashboardPage({
         <ProgramSelectorModal
           programs={programs}
           activeProgram={activeProgram}
-          onSelect={async (id: string) => { await onSelectProgram(id); setShowProgramModal(false) }}
+          onSelect={async (id: string) => {
+            const ok = await onSelectProgram(id)
+            if (ok) {
+              toast.success(t('programs.switchSuccess', { defaultValue: 'Programa cambiado correctamente' }))
+              setShowProgramModal(false)
+            } else {
+              toast.error(t('programs.switchError', { defaultValue: 'Error al cambiar de programa. Intenta de nuevo.' }))
+            }
+            return ok
+          }}
           onClose={() => setShowProgramModal(false)}
           onDuplicate={onDuplicateProgram ? (id: string) => { setShowProgramModal(false); onDuplicateProgram(id) } : undefined}
           onEdit={onEditProgram ? (id: string) => { setShowProgramModal(false); onEditProgram(id) } : undefined}

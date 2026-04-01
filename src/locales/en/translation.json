@@ -1099,6 +1099,7 @@
   "exerciseLibrary.category.full": "Full",
   "exerciseLibrary.category.movilidad": "Mobility",
   "exerciseLibrary.category.skill": "Skill",
+  "exerciseLibrary.category.yoga": "Yoga",
 
   "exerciseDetail.notFound": "Exercise not found",
   "exerciseDetail.notFoundDesc": "No exercise found with identifier \"{{id}}\"",

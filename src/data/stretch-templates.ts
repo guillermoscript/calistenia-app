@@ -65,4 +65,8 @@ export const stretchTemplates: Record<DayType, { warmup: Exercise[]; cooldown: E
     warmup: [],
     cooldown: [],
   },
+  yoga: {
+    warmup: [],
+    cooldown: [],
+  },
 }

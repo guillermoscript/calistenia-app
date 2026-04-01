@@ -55,6 +55,7 @@ const CATEGORIES = [
   { id: 'full',     label: 'Full' },
   { id: 'mobility', label: 'Movilidad' },
   { id: 'skill',    label: 'Skill' },
+  { id: 'yoga',     label: 'Yoga' },
 ]
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -72,6 +73,7 @@ function inferCategory(muscles: string, name: string): string {
   if (ml.includes('cuádriceps') || ml.includes('glúteo') || ml.includes('isquio') || ml.includes('pantorrilla') || nl.includes('squat') || nl.includes('lunge')) return 'legs'
   if (ml.includes('core') || ml.includes('oblicuo') || ml.includes('abdominal') || nl.includes('plank') || nl.includes('hollow')) return 'core'
   if (ml.includes('full') || nl.includes('burpee') || nl.includes('full')) return 'full'
+  if (nl.includes('asana') || nl.includes('surya') || nl.includes('namaskar') || nl.includes('pranayama') || nl.includes('savasana') || nl.includes('padma')) return 'yoga'
   if (nl.includes('stretch') || nl.includes('movilidad') || nl.includes('pose') || nl.includes('fold') || nl.includes('rotation')) return 'mobility'
   if (nl.includes('l-sit') || nl.includes('handstand') || nl.includes('muscle up') || nl.includes('front lever')) return 'skill'
   return 'full'

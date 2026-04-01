@@ -258,6 +258,26 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       $autoCancel: false,
     })
     const locale = i18n.language
+    // Fetch day configs for all programs to determine discipline (yoga vs calistenia)
+    const programIds = catalogRes.items.map(p => p.id)
+    let allDayConfigs: RecordModel[] = []
+    if (programIds.length > 0) {
+      try {
+        const dcRes = await pb.collection('program_day_config').getList(1, 2000, {
+          filter: programIds.map(id => pb.filter('program = {:id}', { id })).join(' || '),
+          fields: 'program,day_type',
+          $autoCancel: false,
+        })
+        allDayConfigs = dcRes.items
+      } catch { /* ignore — discipline defaults to calistenia */ }
+    }
+    const disciplineByProgram = new Map<string, 'yoga' | 'calistenia'>()
+    for (const pid of programIds) {
+      const days = allDayConfigs.filter(dc => dc.program === pid)
+      const nonRest = days.filter(dc => dc.day_type !== 'rest')
+      disciplineByProgram.set(pid, nonRest.length > 0 && nonRest.every(dc => dc.day_type === 'yoga') ? 'yoga' : 'calistenia')
+    }
+
     const catalog: ProgramMeta[] = catalogRes.items.map(p => ({
       id:             p.id,
       name:           localize(p.name, locale),
@@ -270,6 +290,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       difficulty:     p.difficulty || 'beginner',
       cover_image:    p.cover_image || undefined,
       cover_image_url: p.cover_image ? pb.files.getURL(p, p.cover_image, { thumb: '400x0' }) : undefined,
+      discipline:     disciplineByProgram.get(p.id) || 'calistenia',
     }))
     setPrograms(catalog)
 
@@ -490,6 +511,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           timer_seconds: e.timer_seconds,
           workout_title: e.workout_title,
           sort_order:    e.sort_order,
+          section:       e.section || 'main',
         })
       }
 

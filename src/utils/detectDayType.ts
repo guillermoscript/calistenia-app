@@ -20,7 +20,7 @@ const MUSCLE_MAP: Record<string, DayType> = {
 
 export function detectDayType(exercises: Exercise[]): DayType {
   const counts: Record<DayType, number> = {
-    push: 0, pull: 0, legs: 0, lumbar: 0, full: 0, cardio: 0, rest: 0,
+    push: 0, pull: 0, legs: 0, lumbar: 0, full: 0, cardio: 0, rest: 0, yoga: 0,
   }
 
   for (const ex of exercises) {

@@ -41,7 +41,7 @@ interface CatalogExercise {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-type CategoryId = 'todos' | 'push' | 'pull' | 'legs' | 'core' | 'lumbar' | 'full' | 'movilidad' | 'skill'
+type CategoryId = 'todos' | 'push' | 'pull' | 'legs' | 'core' | 'lumbar' | 'full' | 'movilidad' | 'skill' | 'yoga'
 
 interface CategoryDef {
   id: CategoryId
@@ -60,6 +60,7 @@ const CATEGORIES: CategoryDef[] = [
   { id: 'full',      label: 'Full',      color: 'text-yellow-400',      bg: 'bg-yellow-500/10' },
   { id: 'movilidad', label: 'Movilidad', color: 'text-emerald-400',     bg: 'bg-emerald-500/10' },
   { id: 'skill',     label: 'Skill',     color: 'text-violet-400',      bg: 'bg-violet-500/10' },
+  { id: 'yoga',      label: 'Yoga',      color: 'text-fuchsia-400',     bg: 'bg-fuchsia-500/10' },
 ]
 
 const CATEGORY_COLORS: Record<string, { text: string; bg: string; border: string }> = {
@@ -71,6 +72,7 @@ const CATEGORY_COLORS: Record<string, { text: string; bg: string; border: string
   full:      { text: 'text-yellow-400',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/20' },
   movilidad: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
   skill:     { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
+  yoga:      { text: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/20' },
 }
 
 const PRIORITY_DOT: Record<Priority, string> = {
@@ -307,6 +309,12 @@ function CategoryIcon({ category }: { category: string }) {
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="5" r="2" /><path d="M8 22l2-7 2 3 2-3 2 7" /><path d="M6 12c2-1 4-2 6-2s4 1 6 2" />
+        </svg>
+      )
+    case 'yoga':
+      return (
+        <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="4" r="2" /><path d="M12 6v4" /><path d="M8 20l4-10 4 10" /><path d="M6 14c2 0 4-2 6-2s4 2 6 2" />
         </svg>
       )
     default: // full body

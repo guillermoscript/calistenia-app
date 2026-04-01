@@ -70,11 +70,11 @@ export function useLeaderboard(userId: string | null) {
           pb.collection('users').getOne(uid, { $autoCancel: false }).catch(() => null),
           pb.collection('user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid }),
-            { $autoCancel: false },
+            { $autoCancel: false, fields: 'id,user,workout_streak_current' },
           ).catch(() => null),
           pb.collection('settings').getFirstListItem(
             pb.filter('user = {:uid}', { uid }),
-            { $autoCancel: false },
+            { $autoCancel: false, fields: 'id,user,pr_pullups,pr_pushups,pr_lsit,pr_handstand' },
           ).catch(() => null),
           pb.collection('sessions').getList(1, 1, {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', { uid, start: weekStartStr }),

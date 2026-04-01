@@ -607,7 +607,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
         </div>
       </div>
 
-      {showYoutube && <YoutubeModal query={exercise.youtube} onClose={() => setShowYoutube(false)} />}
+      {showYoutube && <YoutubeModal query={exercise.youtube?.trim() || exercise.name} onClose={() => setShowYoutube(false)} />}
       {showMedia && <MediaViewer exercise={exercise} onClose={() => setShowMedia(false)} />}
     </div>
   )
@@ -969,17 +969,24 @@ export default function SessionView({
     setPhase('exercise')
   }, [onSectionStartTimeChange])
 
+  const handleSkipWarmup = useCallback(() => {
+    const firstMainIdx = steps.findIndex(s => (s.section || 'main') !== 'warmup')
+    if (firstMainIdx >= 0) {
+      setStepIdx(firstMainIdx)
+      setPhase('exercise')
+    }
+    onSkipWarmup?.()
+    toast.info(t('warmupCooldown.nudge.warmupSkipped'), { duration: 3000 })
+  }, [onSkipWarmup, t, steps])
+
   const handleSectionSkipCooldown = useCallback(() => {
+    setPhase('note')
     onSkipCooldown?.()
     toast.info(t('warmupCooldown.nudge.cooldownSkipped'), { duration: 3000 })
   }, [onSkipCooldown, t])
 
-  const handleSkipWarmup = useCallback(() => {
-    onSkipWarmup?.()
-    toast.info(t('warmupCooldown.nudge.warmupSkipped'), { duration: 3000 })
-  }, [onSkipWarmup, t])
-
   const handleSkipRemainingCooldown = useCallback(() => {
+    setPhase('note')
     onSkipRemainingCooldown?.()
     toast.info(t('warmupCooldown.nudge.cooldownSkipped'), { duration: 3000 })
   }, [onSkipRemainingCooldown, t])

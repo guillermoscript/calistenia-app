@@ -413,7 +413,7 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
         )}
       </div>
 
-      {showYoutube && <YoutubeModal query={exercise.youtube} onClose={() => setShowYoutube(false)} />}
+      {showYoutube && <YoutubeModal query={exercise.youtube?.trim() || exercise.name} onClose={() => setShowYoutube(false)} />}
       {showMedia && <MediaViewer exercise={exercise} onClose={() => setShowMedia(false)} />}
       {showProgression && hasProgression && (
         <ProgressionChain

@@ -15,7 +15,7 @@ import type { ProgramMeta } from '../types'
 interface ProgramSelectorModalProps {
   programs: ProgramMeta[]
   activeProgram: ProgramMeta | null
-  onSelect: (programId: string) => Promise<void>
+  onSelect: (programId: string) => Promise<boolean>
   onClose: () => void
   onDuplicate?: (programId: string) => void
   onEdit?: (programId: string) => void
@@ -35,10 +35,10 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
     if (!pending) return
     setLoading(true)
     try {
-      await onSelect(pending)
+      const success = await onSelect(pending)
+      if (success) setPending(null)
     } finally {
       setLoading(false)
-      setPending(null)
     }
   }
 
@@ -102,6 +102,17 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
                       {prog.name}
                     </div>
                     <div className="flex gap-2 items-center">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'font-mono text-[9px]',
+                          prog.discipline === 'yoga'
+                            ? 'text-purple-400 border-purple-400/30'
+                            : 'text-[hsl(var(--lime))] border-[hsl(var(--lime))]/30',
+                        )}
+                      >
+                        {prog.discipline === 'yoga' ? 'YOGA' : 'CALISTENIA'}
+                      </Badge>
                       {prog.duration_weeks && (
                         <span className="font-mono text-[10px] text-muted-foreground">{prog.duration_weeks}W</span>
                       )}
