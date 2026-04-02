@@ -276,6 +276,34 @@ function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, us
   const location = useLocation()
   const { unreadCount } = useNotifications(userId)
 
+  // Collapsible sidebar sections — auto-expand section containing active route
+  const activeSectionIdx = useMemo(() => {
+    return NAV_SECTIONS.findIndex(s => s.items.some(item =>
+      item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
+    ))
+  }, [location.pathname])
+
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(() => new Set([Math.max(activeSectionIdx, 0)]))
+
+  // Keep active section expanded on route change
+  useEffect(() => {
+    if (activeSectionIdx >= 0) {
+      setExpandedSections(prev => {
+        if (prev.has(activeSectionIdx)) return prev
+        return new Set(prev).add(activeSectionIdx)
+      })
+    }
+  }, [activeSectionIdx])
+
+  const toggleSection = useCallback((idx: number) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev)
+      if (next.has(idx)) next.delete(idx)
+      else next.add(idx)
+      return next
+    })
+  }, [])
+
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
     return location.pathname.startsWith(path)
@@ -296,22 +324,40 @@ function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, us
           </div>
         </SidebarHeader>
         <SidebarContent className="px-2">
-          <div id="tour-sidebar-nav" className="flex flex-col gap-4">
-            {NAV_SECTIONS.map((section) => (
-              <div key={section.labelKey}>
-                {open ? <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{t(section.labelKey)}</div> : null}
-                <SidebarMenu>
-                  {section.items.map(({ path, labelKey, icon: Icon }) => (
-                    <SidebarMenuItem key={path}>
-                      <SidebarMenuButton isActive={isActive(path)} onClick={() => handleNav(path)} tooltip={t(labelKey)}>
-                        <Icon className="size-4 shrink-0" />
-                        <span>{t(labelKey)}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </div>
-            ))}
+          <div id="tour-sidebar-nav" className="flex flex-col gap-1">
+            {NAV_SECTIONS.map((section, idx) => {
+              const isExpanded = expandedSections.has(idx)
+              return (
+                <div key={section.labelKey}>
+                  {open ? (
+                    <button
+                      onClick={() => toggleSection(idx)}
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                    >
+                      <span>{t(section.labelKey)}</span>
+                      <svg
+                        className={cn('size-3 transition-transform duration-200', isExpanded && 'rotate-180')}
+                        viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                      >
+                        <polyline points="3,4.5 6,7.5 9,4.5" />
+                      </svg>
+                    </button>
+                  ) : null}
+                  {(isExpanded || !open) && (
+                    <SidebarMenu>
+                      {section.items.map(({ path, labelKey, icon: Icon }) => (
+                        <SidebarMenuItem key={path}>
+                          <SidebarMenuButton isActive={isActive(path)} onClick={() => handleNav(path)} tooltip={t(labelKey)}>
+                            <Icon className="size-4 shrink-0" />
+                            <span>{t(labelKey)}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  )}
+                </div>
+              )
+            })}
             {(userRole === 'admin' || userRole === 'editor') ? (
               <div>
                 {open ? <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{t('nav.sectionManagement')}</div> : null}
