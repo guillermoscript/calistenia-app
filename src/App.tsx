@@ -65,6 +65,8 @@ import { pb } from './lib/pocketbase'
 import { cn } from './lib/utils'
 import { Toaster } from 'sonner'
 import { BackgroundJobsProvider } from './contexts/BackgroundJobsContext'
+import { useNotifications } from './hooks/useNotifications'
+import { NotificationBadge } from './components/social/NotificationBadge'
 import type { Settings } from './types'
 import {
   SidebarProvider,
@@ -232,6 +234,7 @@ function MobileTabBar({ navigate, pathname }: { navigate: (p: string) => void; p
 interface AppShellProps {
   settings: Settings
   displayName: string
+  userId: string | null
   signOut: () => void
   dark: boolean
   toggleDark: () => void
@@ -266,11 +269,12 @@ const NAV_SECTIONS: { labelKey: string; items: NavItem[] }[] = [
   ]},
 ]
 
-function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
+function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, userRole, children }: AppShellProps) {
   const { t, i18n } = useTranslation()
   const { open, isMobile, setOpenMobile } = useSidebar()
   const navigate = useNavigate()
   const location = useLocation()
+  const { unreadCount } = useNotifications(userId)
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
@@ -383,6 +387,16 @@ function AppShell({ settings, displayName, signOut, dark, toggleDark, userRole, 
             >
               <span className={cn('px-2 sm:px-1.5 py-1 sm:py-0.5 transition-colors', i18n.language.startsWith('es') ? 'bg-lime-500/15 text-lime-500' : '')}>ES</span>
               <span className={cn('px-2 sm:px-1.5 py-1 sm:py-0.5 transition-colors', i18n.language.startsWith('en') ? 'bg-lime-500/15 text-lime-500' : '')}>EN</span>
+            </button>
+            {/* Notification bell */}
+            <button
+              onClick={() => handleNav('/notifications')}
+              className="relative size-8 sm:size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all"
+              aria-label={t('nav.notifications', { defaultValue: 'Notificaciones' })}
+              title={t('nav.notifications', { defaultValue: 'Notificaciones' })}
+            >
+              <BellIcon className="size-4" />
+              <NotificationBadge count={unreadCount} />
             </button>
             <span className="hidden sm:inline-flex text-[11px] text-muted-foreground border border-border rounded px-2 py-0.5 font-mono">{t('nav.phase')} {settings.phase}</span>
             <Button variant="ghost" size="icon" onClick={() => replayTourForPage(location.pathname)} className="hidden sm:inline-flex size-7 text-muted-foreground hover:text-foreground" aria-label={t('nav.pageGuide')} title={t('nav.pageGuide')}>
@@ -518,7 +532,7 @@ function AuthenticatedApp({
     ) : (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <AppShell settings={settings} displayName={displayName} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
+        <AppShell settings={settings} displayName={displayName} userId={userId ?? null} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
           <Suspense fallback={<AppLoader />}>
           <Routes>
             <Route path="/" element={
