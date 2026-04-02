@@ -29,9 +29,12 @@ migrate(
         END
       `).execute()
 
-      // Replace text field with json field
+      // Change field type in-place — MUST keep the same id so PocketBase
+      // treats it as a type change, not a drop+add (which loses data).
+      const existingId = field.id
       collection.fields.removeByName(fieldName)
       collection.fields.add(new Field({
+        id: existingId,
         name: fieldName,
         type: "json",
         required: false,
@@ -80,8 +83,10 @@ migrate(
         END
       `).execute()
 
+      const existingId = field.id
       collection.fields.removeByName(fieldName)
       collection.fields.add(new Field({
+        id: existingId,
         name: fieldName,
         type: "text",
         required: false,
