@@ -1,0 +1,710 @@
+{
+  "category": "pull",
+  "category_label": { "es": "Tirón", "en": "Pull" },
+  "subcategories": [
+    {
+      "name": { "es": "Dominadas", "en": "Pull-ups" },
+      "slug": "pull-ups",
+      "base_movement": {
+        "es": "Tirón vertical, dorsal y bíceps",
+        "en": "Vertical pull, lats and biceps"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Dead Hang", "en": "Dead Hang" },
+          "slug": "dead-hang",
+          "description": {
+            "es": "Agarre pasivo colgado de la barra con brazos completamente extendidos. Trabaja fuerza de agarre y descompresión espinal.",
+            "en": "Passive hang from the bar with fully extended arms. Builds grip strength and spinal decompression."
+          },
+          "muscles": { "es": "Agarre, descompresión espinal", "en": "Grip, spinal decompression" },
+          "difficulty_level": "beginner",
+          "equipment": ["pull_up_bar"],
+          "is_timer": true,
+          "default_sets": 3,
+          "default_reps": "1",
+          "default_timer_seconds": 30,
+          "default_rest_seconds": 60,
+          "progression_order": 1,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Active Hang (Escapular)", "en": "Active Hang (Scapular)" },
+          "slug": "active-hang-scapular",
+          "description": {
+            "es": "Cuélgate de la barra y deprime las escápulas activamente sin flexionar los codos. Activa dorsales y enseña control escapular.",
+            "en": "Hang from the bar and actively depress your scapulae without bending your elbows. Activates lats and teaches scapular control."
+          },
+          "muscles": { "es": "Dorsal, depresión escapular", "en": "Lats, scapular depression" },
+          "difficulty_level": "beginner",
+          "equipment": ["pull_up_bar"],
+          "is_timer": true,
+          "default_sets": 3,
+          "default_reps": "1",
+          "default_timer_seconds": 20,
+          "default_rest_seconds": 60,
+          "progression_order": 2,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pull-up Asistida (banda)", "en": "Assisted Pull-up (band)" },
+          "slug": "assisted-pull-up-band",
+          "description": {
+            "es": "Dominada con banda elástica en los pies o rodillas para reducir el peso corporal. Ideal para construir fuerza hacia la dominada completa.",
+            "en": "Pull-up with a resistance band on your feet or knees to reduce body weight. Ideal for building strength toward a full pull-up."
+          },
+          "muscles": { "es": "Dorsal, bíceps", "en": "Lats, biceps" },
+          "difficulty_level": "beginner",
+          "equipment": ["pull_up_bar", "resistance_band"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 90,
+          "progression_order": 3,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Dominadas Negativas", "en": "Negative Pull-ups" },
+          "slug": "negative-pull-ups",
+          "description": {
+            "es": "Salta o sube con ayuda hasta la posicion alta y baja lo mas lento posible. Construye fuerza excentrica para la dominada completa.",
+            "en": "Jump or assist yourself to the top position and lower as slowly as possible. Builds eccentric strength toward the full pull-up."
+          },
+          "muscles": { "es": "Dorsal, bíceps (excéntrico)", "en": "Lats, biceps (eccentric)" },
+          "difficulty_level": "beginner",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 90,
+          "progression_order": 4,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pull-up Estricto", "en": "Strict Pull-up" },
+          "slug": "strict-pull-up",
+          "description": {
+            "es": "Dominada con agarre prono a la anchura de los hombros. Sube hasta que la barbilla pase la barra sin balanceo.",
+            "en": "Pull-up with pronated grip at shoulder width. Pull until your chin clears the bar without swinging."
+          },
+          "muscles": { "es": "Dorsal, bíceps", "en": "Lats, biceps" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 5,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Chin-up (agarre supino)", "en": "Chin-up (supinated grip)" },
+          "slug": "chin-up",
+          "description": {
+            "es": "Dominada con palmas mirando hacia ti. Mayor activacion de biceps comparada con la dominada prona clasica.",
+            "en": "Pull-up with palms facing you. Greater biceps activation compared to the standard pronated pull-up."
+          },
+          "muscles": { "es": "Bíceps, dorsal", "en": "Biceps, lats" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 6,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Neutral Grip Pull-up", "en": "Neutral Grip Pull-up" },
+          "slug": "neutral-grip-pull-up",
+          "description": {
+            "es": "Dominada con palmas enfrentadas en agarre neutro. Mas amigable con los hombros y enfatiza el braquial.",
+            "en": "Pull-up with palms facing each other in a neutral grip. More shoulder-friendly and emphasizes the brachialis."
+          },
+          "muscles": { "es": "Dorsal, braquial, bíceps", "en": "Lats, brachialis, biceps" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 7,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Close Grip Pull-up", "en": "Close Grip Pull-up" },
+          "slug": "close-grip-pull-up",
+          "description": {
+            "es": "Dominada con manos juntas, mas estrecho que la anchura de los hombros. Incrementa la demanda en biceps y dorsal inferior.",
+            "en": "Pull-up with hands close together, narrower than shoulder width. Increases demand on biceps and lower lats."
+          },
+          "muscles": { "es": "Bíceps, dorsal inferior", "en": "Biceps, lower lats" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 8,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Wide Grip Pull-up", "en": "Wide Grip Pull-up" },
+          "slug": "wide-grip-pull-up",
+          "description": {
+            "es": "Dominada con agarre mas ancho que los hombros. Mayor enfasis en el dorsal ancho y el redondo mayor.",
+            "en": "Pull-up with a grip wider than shoulder width. Greater emphasis on the lats and teres major."
+          },
+          "muscles": { "es": "Dorsal, redondo mayor", "en": "Lats, teres major" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 9,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Ring Pull-up", "en": "Ring Pull-up" },
+          "slug": "ring-pull-up",
+          "description": {
+            "es": "Dominada en anillas que permite rotacion libre de las munyecas. Requiere mayor estabilizacion que en barra fija.",
+            "en": "Pull-up on rings allowing free wrist rotation. Requires greater stabilization than on a fixed bar."
+          },
+          "muscles": { "es": "Dorsal, biceps, estabilizadores", "en": "Lats, biceps, stabilizers" },
+          "difficulty_level": "intermediate",
+          "equipment": ["rings"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 10,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pull-up con Lastre", "en": "Weighted Pull-up" },
+          "slug": "weighted-pull-up",
+          "description": {
+            "es": "Dominada estricta con peso adicional (chaleco, cinturon o mancuerna entre los pies). Progresion de fuerza maxima.",
+            "en": "Strict pull-up with added weight (vest, belt, or dumbbell between feet). Maximum strength progression."
+          },
+          "muscles": { "es": "Dorsal, bíceps", "en": "Lats, biceps" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar", "weighted_vest"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 120,
+          "progression_order": 11,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Commando Pull-up", "en": "Commando Pull-up" },
+          "slug": "commando-pull-up",
+          "description": {
+            "es": "Dominada con agarre mixto perpendicular a la barra, subiendo la cabeza a un lado en cada rep. Trabaja oblicuos y dorsal asimetricamente.",
+            "en": "Pull-up with a mixed grip perpendicular to the bar, pulling your head to one side each rep. Works obliques and lats asymmetrically."
+          },
+          "muscles": { "es": "Dorsal, biceps, oblicuos", "en": "Lats, biceps, obliques" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 12,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "L-sit Pull-up", "en": "L-sit Pull-up" },
+          "slug": "l-sit-pull-up",
+          "description": {
+            "es": "Dominada manteniendo las piernas extendidas a 90 grados durante todo el movimiento. Anyade una gran demanda de core y flexores de cadera.",
+            "en": "Pull-up while holding your legs extended at 90 degrees throughout the movement. Adds major core and hip flexor demand."
+          },
+          "muscles": { "es": "Dorsal, core, flexores de cadera", "en": "Lats, core, hip flexors" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 13,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Towel Pull-up", "en": "Towel Pull-up" },
+          "slug": "towel-pull-up",
+          "description": {
+            "es": "Dominada agarrando una toalla colgada de la barra. Incrementa drasticamente la demanda de fuerza de agarre.",
+            "en": "Pull-up gripping a towel draped over the bar. Drastically increases grip strength demand."
+          },
+          "muscles": { "es": "Dorsal, agarre, biceps", "en": "Lats, grip, biceps" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar", "towel"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 14,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "accessory",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Typewriter Pull-up", "en": "Typewriter Pull-up" },
+          "slug": "typewriter-pull-up",
+          "description": {
+            "es": "Sube hasta la barra y desplazate lateralmente de un lado a otro sin bajar. Transicion hacia la dominada a un brazo.",
+            "en": "Pull up to the bar and shift laterally from side to side without lowering. Transition exercise toward the one-arm pull-up."
+          },
+          "muscles": { "es": "Dorsal unilateral", "en": "Unilateral lats" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 15,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Archer Pull-up", "en": "Archer Pull-up" },
+          "slug": "archer-pull-up",
+          "description": {
+            "es": "Dominada donde un brazo tira mientras el otro se extiende lateralmente. Carga la mayor parte del peso en un lado.",
+            "en": "Pull-up where one arm pulls while the other extends laterally. Loads most of the weight on one side."
+          },
+          "muscles": { "es": "Dorsal unilateral", "en": "Unilateral lats" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 16,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "One-Arm Pull-up Progresion", "en": "One-Arm Pull-up Progression" },
+          "slug": "one-arm-pull-up-progression",
+          "description": {
+            "es": "Variantes asistidas hacia la dominada a un brazo: negativas a un brazo, agarre de munyeca, o asistencia con banda.",
+            "en": "Assisted variants toward the one-arm pull-up: one-arm negatives, wrist grip, or band assistance."
+          },
+          "muscles": { "es": "Dorsal unilateral", "en": "Unilateral lats" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 17,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "One-Arm Pull-up", "en": "One-Arm Pull-up" },
+          "slug": "one-arm-pull-up",
+          "description": {
+            "es": "Dominada completa con un solo brazo. Uno de los movimientos de tiron mas avanzados en calistenia.",
+            "en": "Full pull-up with a single arm. One of the most advanced pulling movements in calisthenics."
+          },
+          "muscles": { "es": "Dorsal unilateral completo", "en": "Full unilateral lats" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 18,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": { "es": "Muscle-up", "en": "Muscle-up" },
+      "slug": "muscle-ups",
+      "base_movement": {
+        "es": "Tiron y empuje completo, transicion",
+        "en": "Full pull and push transition"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Muscle-up Negativo", "en": "Negative Muscle-up" },
+          "slug": "negative-muscle-up",
+          "description": {
+            "es": "Comienza arriba de la barra y baja lentamente a traves de la transicion. Construye fuerza excentrica para el muscle-up completo.",
+            "en": "Start above the bar and lower slowly through the transition. Builds eccentric strength for the full muscle-up."
+          },
+          "muscles": { "es": "Tiron y empuje excentrico", "en": "Pull and push eccentric" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 120,
+          "progression_order": 1,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Muscle-up", "en": "Muscle-up" },
+          "slug": "muscle-up",
+          "description": {
+            "es": "Dominada explosiva que transiciona por encima de la barra hasta un fondo. Combina tiron y empuje en un solo movimiento.",
+            "en": "Explosive pull-up that transitions over the bar into a dip. Combines pull and push in a single movement."
+          },
+          "muscles": { "es": "Tiron y empuje completo", "en": "Full pull and push" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 2,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Muscle-up x5 Flow", "en": "Muscle-up x5 Flow" },
+          "slug": "muscle-up-x5-flow",
+          "description": {
+            "es": "Cinco muscle-ups encadenados sin pausa. Trabaja la resistencia y fluidez en la transicion.",
+            "en": "Five muscle-ups chained without pause. Trains endurance and fluidity in the transition."
+          },
+          "muscles": { "es": "Tiron y empuje, resistencia", "en": "Pull and push endurance" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 3,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Muscle-up con Lastre", "en": "Weighted Muscle-up" },
+          "slug": "weighted-muscle-up",
+          "description": {
+            "es": "Muscle-up con peso adicional. Progresion de fuerza maxima para la transicion y el empuje.",
+            "en": "Muscle-up with added weight. Maximum strength progression for the transition and push phase."
+          },
+          "muscles": { "es": "Fuerza maxima, tiron y empuje", "en": "Max strength, pull and push" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar", "weighted_vest"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 4,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Ring Muscle-up", "en": "Ring Muscle-up" },
+          "slug": "ring-muscle-up",
+          "description": {
+            "es": "Muscle-up en anillas con false grip. La inestabilidad de las anillas exige mayor control y estabilizacion.",
+            "en": "Muscle-up on rings with false grip. The instability of rings demands greater control and stabilization."
+          },
+          "muscles": { "es": "Tiron y empuje, estabilizacion", "en": "Pull and push, stabilization" },
+          "difficulty_level": "advanced",
+          "equipment": ["rings"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 5,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": { "es": "Remo", "en": "Rows" },
+      "slug": "rows",
+      "base_movement": {
+        "es": "Tiron horizontal, romboides, trapecio y biceps",
+        "en": "Horizontal pull, rhomboids, traps and biceps"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Ring Row", "en": "Ring Row" },
+          "slug": "ring-row",
+          "description": {
+            "es": "Remo horizontal en anillas con el cuerpo inclinado. Ajusta la dificultad cambiando el angulo del cuerpo.",
+            "en": "Horizontal row on rings with your body at an incline. Adjust difficulty by changing your body angle."
+          },
+          "muscles": { "es": "Dorsal, biceps, estabilizadores", "en": "Lats, biceps, stabilizers" },
+          "difficulty_level": "beginner",
+          "equipment": ["rings"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 60,
+          "progression_order": 1,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Australian Pull-up (Remo Inclinado)", "en": "Australian Pull-up (Incline Row)" },
+          "slug": "australian-pull-up",
+          "description": {
+            "es": "Remo invertido bajo una barra baja con el cuerpo recto. Excelente para construir base de fuerza horizontal de tiron.",
+            "en": "Inverted row under a low bar with a straight body. Excellent for building a horizontal pulling strength base."
+          },
+          "muscles": { "es": "Dorsal, biceps, romboides", "en": "Lats, biceps, rhomboids" },
+          "difficulty_level": "beginner",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 60,
+          "progression_order": 2,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Inverted Row con Pausa", "en": "Inverted Row with Pause" },
+          "slug": "inverted-row-with-pause",
+          "description": {
+            "es": "Remo invertido con pausa de 2-3 segundos arriba. La pausa elimina impulso y maximiza la activacion de romboides y trapecio.",
+            "en": "Inverted row with a 2-3 second hold at the top. The pause eliminates momentum and maximizes rhomboid and trap activation."
+          },
+          "muscles": { "es": "Romboides, trapecio medio", "en": "Rhomboids, mid traps" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 3,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Australian Pull-up Pies Elevados", "en": "Feet Elevated Australian Pull-up" },
+          "slug": "feet-elevated-australian-pull-up",
+          "description": {
+            "es": "Remo invertido con los pies sobre un banco o caja elevada. Incrementa la carga comparado con la version estandar.",
+            "en": "Inverted row with feet on a bench or elevated box. Increases the load compared to the standard version."
+          },
+          "muscles": { "es": "Dorsal, biceps, romboides", "en": "Lats, biceps, rhomboids" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar", "bench"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 4,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Inverted Row Archer", "en": "Archer Inverted Row" },
+          "slug": "archer-inverted-row",
+          "description": {
+            "es": "Remo invertido donde un brazo tira mientras el otro se extiende. Carga unilateral que prepara para el remo a un brazo.",
+            "en": "Inverted row where one arm pulls while the other extends. Unilateral loading that prepares for the one-arm row."
+          },
+          "muscles": { "es": "Dorsal unilateral", "en": "Unilateral lats" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 5,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Renegade Row", "en": "Renegade Row" },
+          "slug": "renegade-row",
+          "description": {
+            "es": "Desde posicion de plancha, tira de un brazo hacia la cadera alternando lados. Combina tiron con anti-rotacion de core.",
+            "en": "From a plank position, row one arm to your hip alternating sides. Combines pulling with anti-rotation core work."
+          },
+          "muscles": { "es": "Dorsal, core anti-rotacion", "en": "Lats, anti-rotation core" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "progression_order": 6,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "secondary",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Front Lever Row", "en": "Front Lever Row" },
+          "slug": "front-lever-row",
+          "description": {
+            "es": "Remo horizontal desde posicion de front lever con el cuerpo paralelo al suelo. Requiere fuerza extrema de dorsal y core.",
+            "en": "Horizontal row from a front lever position with your body parallel to the ground. Requires extreme lat and core strength."
+          },
+          "muscles": { "es": "Dorsal, core, fuerza maxima", "en": "Lats, core, max strength" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "progression_order": 7,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "priority": "primary",
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": { "es": "Escapular y Accesorios", "en": "Scapular & Accessories" },
+      "slug": "scapular",
+      "base_movement": {
+        "es": "Activacion y trabajo auxiliar de espalda",
+        "en": "Back activation and accessory work"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Retraccion Escapular", "en": "Scapular Retraction" },
+          "slug": "scapular-retraction",
+          "description": {
+            "es": "Colgado de la barra, retrae las escapulas juntando los omoplatos sin flexionar los codos. Fundamental para salud del hombro.",
+            "en": "Hanging from the bar, retract your scapulae by squeezing your shoulder blades together without bending your elbows. Fundamental for shoulder health."
+          },
+          "muscles": { "es": "Romboides, trapecio", "en": "Rhomboids, traps" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "progression_order": 1,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "accessory",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Face Pull (banda/toalla)", "en": "Face Pull (band/towel)" },
+          "slug": "face-pull",
+          "description": {
+            "es": "Tira de una banda o toalla hacia la cara con los codos altos. Fortalece deltoides posterior y manguito rotador, clave para equilibrio del hombro.",
+            "en": "Pull a band or towel toward your face with elbows high. Strengthens rear delts and rotator cuff, key for shoulder balance."
+          },
+          "muscles": { "es": "Deltoides posterior, manguito rotador", "en": "Rear deltoids, rotator cuff" },
+          "difficulty_level": "intermediate",
+          "equipment": ["resistance_band", "towel"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "progression_order": 2,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "accessory",
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Towel Pull Apart", "en": "Towel Pull Apart" },
+          "slug": "towel-pull-apart",
+          "description": {
+            "es": "Sujeta una toalla tensa frente a ti y tira hacia afuera como si quisieras romperla. Activa deltoides posterior y retractores escapulares.",
+            "en": "Hold a taut towel in front of you and pull apart as if trying to tear it. Activates rear delts and scapular retractors."
+          },
+          "muscles": { "es": "Deltoides posterior", "en": "Rear deltoids" },
+          "difficulty_level": "intermediate",
+          "equipment": ["towel"],
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "progression_order": 3,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "priority": "accessory",
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    }
+  ]
+}

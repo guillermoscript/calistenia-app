@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Calistenia Exercise Catalog Seed",
+  "description": "Schema for seeding exercises_catalog and exercise_progressions tables. Each file represents one top-level category and contains subcategories (movement families) with their exercises ordered by progression difficulty.",
+  "type": "object",
+  "required": ["category", "category_label", "subcategories"],
+  "properties": {
+    "category": {
+      "type": "string",
+      "description": "Top-level category key stored in exercises_catalog.category",
+      "enum": [
+        "push",
+        "pull",
+        "legs",
+        "core",
+        "glutes_lower_back",
+        "skills",
+        "mobility",
+        "stretching",
+        "cardio"
+      ]
+    },
+    "category_label": {
+      "$ref": "#/$defs/i18n",
+      "description": "Human-readable category name for UI display"
+    },
+    "subcategories": {
+      "type": "array",
+      "description": "Movement families within this category (e.g., Push-ups, Dips within Push). Exercises within a subcategory form a natural progression chain.",
+      "items": { "$ref": "#/$defs/subcategory" }
+    }
+  },
+  "$defs": {
+    "i18n": {
+      "type": "object",
+      "description": "Translatable field — keys are ISO 639-1 locale codes. 'es' is required (primary language), 'en' recommended.",
+      "properties": {
+        "es": { "type": "string" },
+        "en": { "type": "string" }
+      },
+      "required": ["es"],
+      "additionalProperties": { "type": "string" }
+    },
+    "subcategory": {
+      "type": "object",
+      "description": "A movement family grouping related exercise variations and progressions",
+      "required": ["name", "slug", "base_movement", "exercises"],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/i18n",
+          "description": "Subcategory display name"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "URL-safe identifier for the subcategory"
+        },
+        "base_movement": {
+          "$ref": "#/$defs/i18n",
+          "description": "Short description of the base movement pattern"
+        },
+        "exercises": {
+          "type": "array",
+          "description": "Exercises ordered by progression_order (easiest first). Adjacent exercises form implicit prev/next progression links.",
+          "items": { "$ref": "#/$defs/exercise" },
+          "minItems": 1
+        }
+      }
+    },
+    "exercise": {
+      "type": "object",
+      "description": "A single exercise entry for exercises_catalog + optional progression data",
+      "required": ["name", "slug", "muscles", "difficulty_level", "equipment", "progression_order"],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/i18n",
+          "description": "Exercise display name → exercises_catalog.name (JSON)"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Unique URL-safe identifier → exercises_catalog.slug"
+        },
+        "description": {
+          "$ref": "#/$defs/i18n",
+          "description": "Detailed exercise description → exercises_catalog.description (JSON)"
+        },
+        "muscles": {
+          "$ref": "#/$defs/i18n",
+          "description": "Comma-separated target muscles → exercises_catalog.muscles (JSON)"
+        },
+        "difficulty_level": {
+          "type": "string",
+          "enum": ["beginner", "intermediate", "advanced"],
+          "description": "→ exercises_catalog.difficulty_level (select)"
+        },
+        "equipment": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "pull_up_bar",
+              "bench",
+              "parallel_bars",
+              "rings",
+              "resistance_band",
+              "towel",
+              "wall",
+              "weighted_vest",
+              "step_box",
+              "jump_rope"
+            ]
+          },
+          "description": "Required equipment keys → exercises_catalog.equipment (JSON array). Empty array = bodyweight only."
+        },
+        "is_timer": {
+          "type": "boolean",
+          "default": false,
+          "description": "True for isometric holds → exercises_catalog.is_timer"
+        },
+        "default_sets": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Recommended sets → exercises_catalog.default_sets"
+        },
+        "default_reps": {
+          "type": "string",
+          "description": "Recommended reps (can be range like '8-12' or text like 'max') → exercises_catalog.default_reps"
+        },
+        "default_rest_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Rest between sets in seconds → exercises_catalog.default_rest_seconds"
+        },
+        "default_timer_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Hold duration for timer exercises → exercises_catalog.default_timer_seconds"
+        },
+        "youtube": {
+          "type": "string",
+          "default": "",
+          "description": "YouTube video ID or URL → exercises_catalog.youtube"
+        },
+        "note": {
+          "$ref": "#/$defs/i18n",
+          "description": "Coaching cues or technique notes → exercises_catalog.note (JSON)"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["primary", "secondary", "accessory"],
+          "default": "primary",
+          "description": "Exercise importance tier → exercises_catalog.priority"
+        },
+        "image_files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 3,
+          "default": [],
+          "description": "Relative paths to demo images (uploaded to exercises_catalog.default_images). Empty = placeholder for later."
+        },
+        "video_file": {
+          "type": "string",
+          "default": "",
+          "description": "Relative path to demo video (uploaded to exercises_catalog.default_video). Empty = placeholder for later."
+        },
+        "progression_order": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Position in the subcategory's progression chain (1 = easiest). Used to build exercise_progressions records."
+        },
+        "target_reps_to_advance": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Reps needed before advancing to next progression → exercise_progressions.target_reps_to_advance"
+        },
+        "sessions_at_target": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3,
+          "description": "Consecutive sessions at target reps before advancing → exercise_progressions.sessions_at_target"
+        },
+        "source": {
+          "type": "string",
+          "default": "catalog",
+          "description": "Data source identifier → exercises_catalog.source"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["official", "private", "promoted"],
+          "default": "official",
+          "description": "Visibility status → exercises_catalog.status"
+        }
+      }
+    },
+    "equipment_key_reference": {
+      "description": "Equipment key mapping for reference (not used in validation)",
+      "type": "object",
+      "properties": {
+        "pull_up_bar": { "const": "Barra de dominadas / Pull-up bar" },
+        "bench": { "const": "Banco, silla o superficie elevada / Bench or elevated surface" },
+        "parallel_bars": { "const": "Paralelas o dos sillas / Parallel bars or two chairs" },
+        "rings": { "const": "Anillas de gimnasia / Gymnastic rings" },
+        "resistance_band": { "const": "Banda elástica / Resistance band" },
+        "towel": { "const": "Toalla / Towel" },
+        "wall": { "const": "Pared / Wall" },
+        "weighted_vest": { "const": "Mochila con peso o lastre / Weighted vest or backpack" },
+        "step_box": { "const": "Escalón o caja / Step or box" },
+        "jump_rope": { "const": "Cuerda de saltar / Jump rope" }
+      }
+    }
+  }
+}

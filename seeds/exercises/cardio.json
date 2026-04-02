@@ -1,0 +1,392 @@
+{
+  "category": "cardio",
+  "category_label": {
+    "es": "Cardio Bodyweight",
+    "en": "Bodyweight Cardio"
+  },
+  "subcategories": [
+    {
+      "name": {
+        "es": "Cardio Sin Equipo",
+        "en": "Bodyweight Cardio"
+      },
+      "slug": "cardio-bodyweight",
+      "base_movement": {
+        "es": "Acondicionamiento cardiovascular sin equipo",
+        "en": "Bodyweight cardiovascular conditioning"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Jumping Jacks",
+            "en": "Jumping Jacks"
+          },
+          "slug": "jumping-jacks",
+          "muscles": {
+            "es": "Cuerpo completo, cardio",
+            "en": "Full body, cardio"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Salto abriendo y cerrando piernas y brazos simultáneamente. Ejercicio clásico de calentamiento y activación cardiovascular.",
+            "en": "Jump while spreading legs and arms simultaneously. Classic warmup and cardiovascular activation exercise."
+          }
+        },
+        {
+          "name": {
+            "es": "Rodillas Altas",
+            "en": "High Knees"
+          },
+          "slug": "high-knees",
+          "muscles": {
+            "es": "Core, flexores de cadera, cardio",
+            "en": "Core, hip flexors, cardio"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Carrera en el sitio elevando las rodillas al nivel de la cadera. Activa core y flexores de cadera con alta demanda cardio.",
+            "en": "Running in place bringing knees to hip level. Activates core and hip flexors with high cardio demand."
+          }
+        },
+        {
+          "name": {
+            "es": "Patadas al Glúteo",
+            "en": "Butt Kicks"
+          },
+          "slug": "butt-kicks",
+          "muscles": {
+            "es": "Isquiotibiales, cardio",
+            "en": "Hamstrings, cardio"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Carrera en el sitio llevando los talones hacia los glúteos. Activa isquiotibiales y mejora la cadencia de carrera.",
+            "en": "Running in place kicking heels toward your glutes. Activates hamstrings and improves running cadence."
+          }
+        },
+        {
+          "name": {
+            "es": "Saltos de Estrella",
+            "en": "Star Jumps"
+          },
+          "slug": "star-jumps",
+          "muscles": {
+            "es": "Cuerpo completo, coordinación",
+            "en": "Full body, coordination"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Salto explosivo extendiendo brazos y piernas en forma de estrella. Trabaja coordinación y cardio de cuerpo completo.",
+            "en": "Explosive jump extending arms and legs into a star shape. Works coordination and full-body cardio."
+          }
+        },
+        {
+          "name": {
+            "es": "Saltos de Patinador",
+            "en": "Skater Jumps"
+          },
+          "slug": "skater-jumps-cardio",
+          "muscles": {
+            "es": "Glúteo medio, equilibrio, cardio",
+            "en": "Glute medius, balance, cardio"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Saltos laterales de una pierna a otra imitando el movimiento de un patinador. Trabaja glúteo medio, equilibrio y cardio.",
+            "en": "Lateral single-leg jumps mimicking a skating motion. Works glute medius, balance, and cardio."
+          }
+        },
+        {
+          "name": {
+            "es": "Mountain Climbers",
+            "en": "Mountain Climbers"
+          },
+          "slug": "mountain-climbers-cardio",
+          "muscles": {
+            "es": "Core, hombros, cardio",
+            "en": "Core, shoulders, cardio"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Desde posición de plancha, alterna llevando las rodillas al pecho a ritmo rápido. Combina trabajo de core y cardio.",
+            "en": "From plank position, alternate driving knees to chest at a fast pace. Combines core work and cardio."
+          }
+        },
+        {
+          "name": {
+            "es": "Mountain Climbers Cruzados",
+            "en": "Cross-body Mountain Climbers"
+          },
+          "slug": "cross-body-mountain-climbers",
+          "muscles": {
+            "es": "Oblicuos, cardio",
+            "en": "Obliques, cardio"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Mountain climbers llevando la rodilla hacia el codo opuesto. Añade trabajo de oblicuos al movimiento base.",
+            "en": "Mountain climbers driving the knee toward the opposite elbow. Adds oblique work to the base movement."
+          }
+        },
+        {
+          "name": {
+            "es": "Salto de Cuerda",
+            "en": "Jump Rope"
+          },
+          "slug": "jump-rope",
+          "muscles": {
+            "es": "Pantorrillas, coordinación, cardio",
+            "en": "Calves, coordination, cardio"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [
+            "jump_rope"
+          ],
+          "is_timer": true,
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "60s",
+          "default_timer_seconds": 60,
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Saltos continuos pasando la cuerda por debajo de los pies. Excelente para coordinación, pantorrillas y resistencia cardiovascular.",
+            "en": "Continuous jumps passing the rope under your feet. Excellent for coordination, calves, and cardiovascular endurance."
+          }
+        },
+        {
+          "name": {
+            "es": "Bear Crawl",
+            "en": "Bear Crawl"
+          },
+          "slug": "bear-crawl",
+          "muscles": {
+            "es": "Hombros, core, cuádriceps",
+            "en": "Shoulders, core, quads"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 9,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Desplazamiento a cuatro patas con rodillas sin tocar el suelo. Trabaja hombros, core y cuádriceps de forma integrada.",
+            "en": "Crawling on all fours with knees hovering off the ground. Works shoulders, core, and quads in an integrated way."
+          }
+        },
+        {
+          "name": {
+            "es": "Crab Walk",
+            "en": "Crab Walk"
+          },
+          "slug": "crab-walk",
+          "muscles": {
+            "es": "Tríceps, core, caderas",
+            "en": "Triceps, core, hips"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 10,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Desplazamiento boca arriba apoyado en manos y pies. Activa tríceps, core y movilidad de cadera.",
+            "en": "Moving face-up supported on hands and feet. Activates triceps, core, and hip mobility."
+          }
+        },
+        {
+          "name": {
+            "es": "Tuck Jumps",
+            "en": "Tuck Jumps"
+          },
+          "slug": "tuck-jumps-cardio",
+          "muscles": {
+            "es": "Cuádriceps, glúteos, explosividad",
+            "en": "Quads, glutes, explosiveness"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 11,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Salto vertical llevando las rodillas al pecho en el aire. Ejercicio pliométrico de alta intensidad cardiovascular.",
+            "en": "Vertical jump bringing knees to chest in the air. High-intensity plyometric cardio exercise."
+          }
+        },
+        {
+          "name": {
+            "es": "Shuttle Run",
+            "en": "Shuttle Run"
+          },
+          "slug": "shuttle-run",
+          "muscles": {
+            "es": "Agilidad, explosividad",
+            "en": "Agility, explosiveness"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 12,
+          "default_sets": 3,
+          "default_reps": "30-45s",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Carreras cortas de ida y vuelta entre dos puntos con cambios de dirección rápidos. Mejora agilidad y explosividad.",
+            "en": "Short back-and-forth sprints between two points with quick direction changes. Improves agility and explosiveness."
+          }
+        },
+        {
+          "name": {
+            "es": "Burpees",
+            "en": "Burpees"
+          },
+          "slug": "burpees",
+          "muscles": {
+            "es": "Cuerpo completo, cardio",
+            "en": "Full body, cardio"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 13,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Flexión de brazos seguida de salto explosivo. Ejercicio de cuerpo completo con alto gasto calórico y demanda cardiovascular.",
+            "en": "Push-up followed by an explosive jump. Full-body exercise with high caloric expenditure and cardiovascular demand."
+          }
+        },
+        {
+          "name": {
+            "es": "Burpee con Pull-up",
+            "en": "Burpee Pull-up"
+          },
+          "slug": "burpee-pull-up",
+          "muscles": {
+            "es": "Cuerpo completo, dorsales",
+            "en": "Full body, lats"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "progression_order": 14,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 30,
+          "priority": "secondary",
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official",
+          "description": {
+            "es": "Burpee completo seguido de una dominada al saltar hacia la barra. Combina empuje, tirón y cardio en un solo movimiento.",
+            "en": "Full burpee followed by a pull-up as you jump to the bar. Combines push, pull, and cardio in one movement."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1453 @@
+{
+  "category": "skills",
+  "category_label": {
+    "es": "Skills y Gimnásticos",
+    "en": "Skills & Gymnastics"
+  },
+  "subcategories": [
+    {
+      "name": {
+        "es": "Parada de Manos",
+        "en": "Handstand"
+      },
+      "slug": "handstand",
+      "base_movement": {
+        "es": "Inversión y equilibrio sobre manos",
+        "en": "Inversion and hand balance"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Wall Plank (pecho a pared)",
+            "en": "Wall Plank (chest to wall)"
+          },
+          "slug": "wall-plank-chest-to-wall",
+          "description": {
+            "es": "Plancha invertida con los pies en la pared y el pecho mirando hacia ella. Primer paso para acostumbrarse a la posición invertida.",
+            "en": "Inverted plank with feet on the wall and chest facing it. First step to get comfortable in an inverted position."
+          },
+          "muscles": {
+            "es": "Hombros, core",
+            "en": "Shoulders, core"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [
+            "wall"
+          ],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 30,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Handstand contra Pared (espalda)",
+            "en": "Wall Handstand (back to wall)"
+          },
+          "slug": "wall-handstand-back-to-wall",
+          "description": {
+            "es": "Parada de manos con la espalda apoyada contra la pared para seguridad. Permite practicar la alineación vertical sin miedo a caer.",
+            "en": "Handstand with your back resting against the wall for safety. Lets you practice vertical alignment without fear of falling."
+          },
+          "muscles": {
+            "es": "Hombros, core",
+            "en": "Shoulders, core"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [
+            "wall"
+          ],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 30,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Handstand contra Pared (pecho)",
+            "en": "Wall Handstand (chest to wall)"
+          },
+          "slug": "wall-handstand-chest-to-wall",
+          "description": {
+            "es": "Parada de manos con el pecho mirando a la pared, forzando mejor alineación. Más exigente que la variante de espalda por requerir mayor control de hombros.",
+            "en": "Handstand facing the wall, forcing better alignment. More demanding than the back-to-wall version as it requires greater shoulder control."
+          },
+          "muscles": {
+            "es": "Hombros, core, equilibrio",
+            "en": "Shoulders, core, balance"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "wall"
+          ],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 30,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Handstand Kick-ups",
+            "en": "Handstand Kick-ups"
+          },
+          "slug": "handstand-kick-ups",
+          "description": {
+            "es": "Impulso con una pierna para entrar en parada de manos libre. Entrena la coordinación y el control necesarios para encontrar el punto de equilibrio.",
+            "en": "Kicking up into a freestanding handstand. Trains the coordination and control needed to find the balance point."
+          },
+          "muscles": {
+            "es": "Hombros, coordinación",
+            "en": "Shoulders, coordination"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Handstand Libre (intentos)",
+            "en": "Freestanding Handstand (attempts)"
+          },
+          "slug": "freestanding-handstand-attempts",
+          "description": {
+            "es": "Intentos de mantener la parada de manos sin apoyo. Enfocado en acumular tiempo de equilibrio y corregir alineación en cada intento.",
+            "en": "Attempts to hold a freestanding handstand. Focused on accumulating balance time and correcting alignment on each attempt."
+          },
+          "muscles": {
+            "es": "Equilibrio, hombros, core",
+            "en": "Balance, shoulders, core"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Handstand 60s Libre",
+            "en": "60s Freestanding Handstand"
+          },
+          "slug": "freestanding-handstand-60s",
+          "description": {
+            "es": "Parada de manos libre mantenida durante 60 segundos. Demuestra dominio del equilibrio y resistencia de hombros.",
+            "en": "Freestanding handstand held for 60 seconds. Demonstrates mastery of balance and shoulder endurance."
+          },
+          "muscles": {
+            "es": "Equilibrio total",
+            "en": "Total balance"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 60,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Handstand Walk",
+            "en": "Handstand Walk"
+          },
+          "slug": "handstand-walk",
+          "description": {
+            "es": "Desplazamiento sobre las manos en posición invertida. Requiere dominio previo del handstand estático.",
+            "en": "Walking on your hands in an inverted position. Requires prior mastery of the static handstand."
+          },
+          "muscles": {
+            "es": "Hombros, core, coordinación",
+            "en": "Shoulders, core, coordination"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Press to Handstand (straddle)",
+            "en": "Press to Handstand (straddle)"
+          },
+          "slug": "press-to-handstand-straddle",
+          "description": {
+            "es": "Subida controlada a handstand con piernas abiertas, sin impulso. Requiere gran fuerza de compresión y flexibilidad de isquiotibiales.",
+            "en": "Controlled press up to handstand with legs straddled, no momentum. Requires great compression strength and hamstring flexibility."
+          },
+          "muscles": {
+            "es": "Hombros, compresión, flexibilidad",
+            "en": "Shoulders, compression, flexibility"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Press to Handstand (pike)",
+            "en": "Press to Handstand (pike)"
+          },
+          "slug": "press-to-handstand-pike",
+          "description": {
+            "es": "Subida a handstand con piernas juntas y rectas, la variante más difícil del press. Exige compresión y fuerza de hombros excepcional.",
+            "en": "Press to handstand with legs together and straight, the hardest press variant. Demands exceptional compression and shoulder strength."
+          },
+          "muscles": {
+            "es": "Hombros, compresión",
+            "en": "Shoulders, compression"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 9,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "L-sit y V-sit",
+        "en": "L-sit & V-sit"
+      },
+      "slug": "l-sit-v-sit",
+      "base_movement": {
+        "es": "Compresión de cadera en soporte",
+        "en": "Hip compression in support"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Tucked L-sit",
+            "en": "Tucked L-sit"
+          },
+          "slug": "tucked-l-sit",
+          "description": {
+            "es": "Soporte con rodillas recogidas al pecho, pies despegados del suelo. Primera progresión para desarrollar la fuerza de compresión del L-sit.",
+            "en": "Support hold with knees tucked to chest, feet off the ground. First progression to build the compression strength needed for L-sit."
+          },
+          "muscles": {
+            "es": "Core, hombros",
+            "en": "Core, shoulders"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "L-sit Progresión (una pierna)",
+            "en": "L-sit Progression (single leg)"
+          },
+          "slug": "l-sit-single-leg",
+          "description": {
+            "es": "L-sit con una pierna extendida y la otra recogida, alternando lados. Aumenta la demanda de compresión respecto al tucked L-sit.",
+            "en": "L-sit with one leg extended and the other tucked, alternating sides. Increases compression demand compared to the tucked L-sit."
+          },
+          "muscles": {
+            "es": "Core, flexores de cadera",
+            "en": "Core, hip flexors"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "L-sit en Paralelas",
+            "en": "L-sit on Parallel Bars"
+          },
+          "slug": "l-sit-parallel-bars",
+          "description": {
+            "es": "L-sit completo en paralelas con ambas piernas extendidas. Las paralelas facilitan el agarre y permiten mejor depresión escapular.",
+            "en": "Full L-sit on parallel bars with both legs extended. Bars make gripping easier and allow better scapular depression."
+          },
+          "muscles": {
+            "es": "Core, flexores de cadera, hombros",
+            "en": "Core, hip flexors, shoulders"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "parallel_bars"
+          ],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 20,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "L-sit en Barra",
+            "en": "L-sit on Bar"
+          },
+          "slug": "l-sit-on-bar",
+          "description": {
+            "es": "L-sit colgado de una barra con piernas paralelas al suelo. Combina fuerza de agarre con compresión de cadera.",
+            "en": "L-sit hanging from a bar with legs parallel to the ground. Combines grip strength with hip compression."
+          },
+          "muscles": {
+            "es": "Core, flexores de cadera, agarre",
+            "en": "Core, hip flexors, grip"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 4,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 20,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "L-sit en Anillas",
+            "en": "L-sit on Rings"
+          },
+          "slug": "l-sit-on-rings",
+          "description": {
+            "es": "L-sit en anillas, donde la inestabilidad aumenta la activación de estabilizadores. Variante más difícil que en barra o paralelas.",
+            "en": "L-sit on rings, where instability increases stabilizer activation. Harder variation than on bar or parallel bars."
+          },
+          "muscles": {
+            "es": "Core, estabilizadores",
+            "en": "Core, stabilizers"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "rings"
+          ],
+          "is_timer": true,
+          "progression_order": 5,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 20,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "V-sit",
+            "en": "V-sit"
+          },
+          "slug": "v-sit",
+          "description": {
+            "es": "Soporte con piernas extendidas por encima de la horizontal, formando una V. Progresión avanzada del L-sit que exige compresión extrema.",
+            "en": "Support hold with legs extended above horizontal, forming a V shape. Advanced L-sit progression demanding extreme compression."
+          },
+          "muscles": {
+            "es": "Compresión, flexores de cadera, core",
+            "en": "Compression, hip flexors, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 6,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Manna",
+            "en": "Manna"
+          },
+          "slug": "manna",
+          "description": {
+            "es": "Soporte con piernas elevadas por detrás del cuerpo, más allá de la vertical. Uno de los skills de compresión más difíciles en calistenia.",
+            "en": "Support hold with legs raised behind the body, past vertical. One of the most difficult compression skills in calisthenics."
+          },
+          "muscles": {
+            "es": "Compresión extrema, hombros",
+            "en": "Extreme compression, shoulders"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "parallel_bars"
+          ],
+          "is_timer": true,
+          "progression_order": 7,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 10,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Front Lever",
+        "en": "Front Lever"
+      },
+      "slug": "front-lever",
+      "base_movement": {
+        "es": "Tirón horizontal en suspensión",
+        "en": "Horizontal pull in suspension"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Front Lever Tucked",
+            "en": "Front Lever Tucked"
+          },
+          "slug": "front-lever-tucked",
+          "description": {
+            "es": "Suspensión horizontal boca arriba con rodillas recogidas al pecho. Primera progresión del front lever.",
+            "en": "Horizontal hang face-up with knees tucked to chest. First front lever progression."
+          },
+          "muscles": {
+            "es": "Dorsales, core, escápulas",
+            "en": "Lats, core, scapulae"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Front Lever Advanced Tuck",
+            "en": "Front Lever Advanced Tuck"
+          },
+          "slug": "front-lever-advanced-tuck",
+          "description": {
+            "es": "Front lever con rodillas recogidas pero caderas más extendidas que el tucked. Aumenta el brazo de palanca progresivamente.",
+            "en": "Front lever with knees tucked but hips more extended than the tucked version. Progressively increases the lever arm."
+          },
+          "muscles": {
+            "es": "Dorsales, core",
+            "en": "Lats, core"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Front Lever Single Leg",
+            "en": "Front Lever Single Leg"
+          },
+          "slug": "front-lever-single-leg",
+          "description": {
+            "es": "Front lever con una pierna extendida y la otra recogida. Paso intermedio entre advanced tuck y straddle.",
+            "en": "Front lever with one leg extended and the other tucked. Intermediate step between advanced tuck and straddle."
+          },
+          "muscles": {
+            "es": "Dorsales, core",
+            "en": "Lats, core"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Front Lever Straddle",
+            "en": "Front Lever Straddle"
+          },
+          "slug": "front-lever-straddle",
+          "description": {
+            "es": "Front lever con piernas abiertas y extendidas. Reduce la palanca respecto al completo manteniendo alta dificultad.",
+            "en": "Front lever with legs straddled and extended. Reduces leverage compared to full while maintaining high difficulty."
+          },
+          "muscles": {
+            "es": "Dorsales, core",
+            "en": "Lats, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 4,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Front Lever Completo",
+            "en": "Full Front Lever"
+          },
+          "slug": "full-front-lever",
+          "description": {
+            "es": "Suspensión horizontal completa boca arriba con cuerpo recto. Skill emblemático de tirón que demuestra fuerza de dorsales y core.",
+            "en": "Full horizontal hang face-up with a straight body. Iconic pulling skill that demonstrates lat and core strength."
+          },
+          "muscles": {
+            "es": "Dorsales, core, escápulas",
+            "en": "Lats, core, scapulae"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 5,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 10,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Front Lever Raises",
+            "en": "Front Lever Raises"
+          },
+          "slug": "front-lever-raises",
+          "description": {
+            "es": "Elevación desde colgado hasta posición de front lever de forma controlada. Variante dinámica que construye fuerza en todo el rango.",
+            "en": "Controlled raise from a dead hang to front lever position. Dynamic variation that builds strength through the full range."
+          },
+          "muscles": {
+            "es": "Dorsales, core (dinámico)",
+            "en": "Lats, core (dynamic)"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Front Lever Row",
+            "en": "Front Lever Row"
+          },
+          "slug": "front-lever-row-skill",
+          "description": {
+            "es": "Remo desde posición de front lever, llevando el cuerpo a la barra. Combina fuerza isométrica del front lever con tirón dinámico.",
+            "en": "Row from front lever position, pulling the body to the bar. Combines isometric front lever strength with dynamic pulling."
+          },
+          "muscles": {
+            "es": "Dorsales, core, fuerza máxima",
+            "en": "Lats, core, max strength"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Back Lever",
+        "en": "Back Lever"
+      },
+      "slug": "back-lever",
+      "base_movement": {
+        "es": "Soporte posterior en suspensión",
+        "en": "Posterior support in suspension"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Back Lever Tucked",
+            "en": "Back Lever Tucked"
+          },
+          "slug": "back-lever-tucked",
+          "description": {
+            "es": "Suspensión horizontal boca abajo con rodillas recogidas. Primera progresión del back lever que enseña la posición invertida.",
+            "en": "Horizontal hang face-down with knees tucked. First back lever progression that teaches the inverted position."
+          },
+          "muscles": {
+            "es": "Hombros, pecho, core",
+            "en": "Shoulders, chest, core"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Back Lever Advanced Tuck",
+            "en": "Back Lever Advanced Tuck"
+          },
+          "slug": "back-lever-advanced-tuck",
+          "description": {
+            "es": "Back lever con rodillas recogidas pero caderas más abiertas. Mayor demanda en hombros y pecho que la variante tucked.",
+            "en": "Back lever with knees tucked but hips more open. Greater shoulder and chest demand than the tucked version."
+          },
+          "muscles": {
+            "es": "Hombros, pecho",
+            "en": "Shoulders, chest"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Back Lever Straddle",
+            "en": "Back Lever Straddle"
+          },
+          "slug": "back-lever-straddle",
+          "description": {
+            "es": "Back lever con piernas abiertas y extendidas. Paso previo al back lever completo con menor brazo de palanca.",
+            "en": "Back lever with legs straddled and extended. Precursor to the full back lever with a shorter lever arm."
+          },
+          "muscles": {
+            "es": "Hombros, pecho, core",
+            "en": "Shoulders, chest, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Back Lever Completo",
+            "en": "Full Back Lever"
+          },
+          "slug": "full-back-lever",
+          "description": {
+            "es": "Suspensión horizontal boca abajo con cuerpo completamente recto. Requiere gran flexibilidad y fuerza de hombros en extensión.",
+            "en": "Full horizontal hang face-down with a completely straight body. Requires great flexibility and shoulder extension strength."
+          },
+          "muscles": {
+            "es": "Hombros, pecho, core",
+            "en": "Shoulders, chest, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 4,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 10,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Planche",
+        "en": "Planche"
+      },
+      "slug": "planche",
+      "base_movement": {
+        "es": "Soporte horizontal sobre manos",
+        "en": "Horizontal support on hands"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Planche Lean",
+            "en": "Planche Lean"
+          },
+          "slug": "planche-lean",
+          "description": {
+            "es": "Plancha con inclinación hacia adelante, hombros por delante de las muñecas. Prepara los hombros y muñecas para las progresiones de planche.",
+            "en": "Plank with forward lean, shoulders past the wrists. Prepares shoulders and wrists for planche progressions."
+          },
+          "muscles": {
+            "es": "Hombros, muñecas, core",
+            "en": "Shoulders, wrists, core"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 20,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Tuck Planche",
+            "en": "Tuck Planche"
+          },
+          "slug": "tuck-planche",
+          "description": {
+            "es": "Soporte horizontal con rodillas recogidas al pecho y pies despegados del suelo. Primera posición real de planche.",
+            "en": "Horizontal support with knees tucked to chest and feet off the ground. First real planche position."
+          },
+          "muscles": {
+            "es": "Hombros anteriores, core",
+            "en": "Anterior shoulders, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "parallel_bars"
+          ],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 10,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Advanced Tuck Planche",
+            "en": "Advanced Tuck Planche"
+          },
+          "slug": "advanced-tuck-planche",
+          "description": {
+            "es": "Planche con rodillas recogidas pero espalda plana y horizontal. Mayor exigencia en hombros que el tuck planche básico.",
+            "en": "Planche with knees tucked but back flat and horizontal. Greater shoulder demand than the basic tuck planche."
+          },
+          "muscles": {
+            "es": "Hombros, core",
+            "en": "Shoulders, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "parallel_bars"
+          ],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 10,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Straddle Planche",
+            "en": "Straddle Planche"
+          },
+          "slug": "straddle-planche",
+          "description": {
+            "es": "Planche con piernas abiertas y extendidas. Reduce ligeramente la palanca respecto al full planche.",
+            "en": "Planche with legs straddled and extended. Slightly reduces leverage compared to the full planche."
+          },
+          "muscles": {
+            "es": "Hombros, core",
+            "en": "Shoulders, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "parallel_bars"
+          ],
+          "is_timer": true,
+          "progression_order": 4,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 8,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Full Planche",
+            "en": "Full Planche"
+          },
+          "slug": "full-planche",
+          "description": {
+            "es": "Soporte horizontal completo con cuerpo recto y piernas juntas. Uno de los skills de fuerza más impresionantes en calistenia.",
+            "en": "Full horizontal support with a straight body and legs together. One of the most impressive strength skills in calisthenics."
+          },
+          "muscles": {
+            "es": "Hombros, core, fuerza total",
+            "en": "Shoulders, core, total strength"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "parallel_bars"
+          ],
+          "is_timer": true,
+          "progression_order": 5,
+          "default_sets": 5,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 5,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Tuck Planche Push-up",
+            "en": "Tuck Planche Push-up"
+          },
+          "slug": "tuck-planche-push-up",
+          "description": {
+            "es": "Flexión desde posición de tuck planche. Añade componente dinámico de empuje a la fuerza isométrica de la planche.",
+            "en": "Push-up from tuck planche position. Adds a dynamic pushing component to planche isometric strength."
+          },
+          "muscles": {
+            "es": "Hombros, pecho, core",
+            "en": "Shoulders, chest, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "parallel_bars"
+          ],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Planche Push-up",
+            "en": "Planche Push-up"
+          },
+          "slug": "planche-push-up",
+          "description": {
+            "es": "Flexión completa desde posición de planche con cuerpo horizontal. Movimiento de empuje de máxima dificultad en calistenia.",
+            "en": "Full push-up from planche position with a horizontal body. Maximum difficulty pushing movement in calisthenics."
+          },
+          "muscles": {
+            "es": "Hombros, pecho, core",
+            "en": "Shoulders, chest, core"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "parallel_bars"
+          ],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Equilibrios",
+        "en": "Balance Skills"
+      },
+      "slug": "balance",
+      "base_movement": {
+        "es": "Equilibrio y control corporal",
+        "en": "Balance and body control"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Crow Pose / Frog Stand",
+            "en": "Crow Pose / Frog Stand"
+          },
+          "slug": "crow-pose",
+          "description": {
+            "es": "Equilibrio sobre las manos con rodillas apoyadas en los tríceps y brazos flexionados. Primer skill de equilibrio en manos.",
+            "en": "Balance on your hands with knees resting on triceps and arms bent. First hand-balancing skill."
+          },
+          "muscles": {
+            "es": "Hombros, core, equilibrio",
+            "en": "Shoulders, core, balance"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 20,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Crane Pose (brazos rectos)",
+            "en": "Crane Pose (straight arms)"
+          },
+          "slug": "crane-pose",
+          "description": {
+            "es": "Similar al crow pose pero con brazos completamente extendidos. Requiere mayor fuerza de hombros y control de equilibrio.",
+            "en": "Similar to crow pose but with fully extended arms. Requires greater shoulder strength and balance control."
+          },
+          "muscles": {
+            "es": "Hombros, core",
+            "en": "Shoulders, core"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 20,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Side Crow",
+            "en": "Side Crow"
+          },
+          "slug": "side-crow",
+          "description": {
+            "es": "Equilibrio lateral sobre las manos con las piernas apoyadas en un brazo. Trabaja los oblicuos y el equilibrio asimétrico.",
+            "en": "Lateral hand balance with legs stacked on one arm. Works the obliques and asymmetric balance."
+          },
+          "muscles": {
+            "es": "Oblicuos, hombros, equilibrio",
+            "en": "Obliques, shoulders, balance"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Elbow Lever",
+            "en": "Elbow Lever"
+          },
+          "slug": "elbow-lever",
+          "description": {
+            "es": "Equilibrio horizontal boca abajo con el codo clavado en el abdomen. Enseña el control del centro de gravedad.",
+            "en": "Horizontal face-down balance with elbow planted in the abdomen. Teaches center of gravity control."
+          },
+          "muscles": {
+            "es": "Core, hombros, equilibrio",
+            "en": "Core, shoulders, balance"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 4,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 15,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Wall Sit",
+            "en": "Wall Sit"
+          },
+          "slug": "wall-sit",
+          "description": {
+            "es": "Sentadilla isométrica con la espalda apoyada en la pared y rodillas a 90 grados. Construye resistencia en cuádriceps y estabilidad de rodilla.",
+            "en": "Isometric squat with back against the wall and knees at 90 degrees. Builds quad endurance and knee stability."
+          },
+          "muscles": {
+            "es": "Cuádriceps, core",
+            "en": "Quads, core"
+          },
+          "difficulty_level": "beginner",
+          "equipment": [
+            "wall"
+          ],
+          "is_timer": true,
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 45,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Human Flag",
+        "en": "Human Flag"
+      },
+      "slug": "human-flag",
+      "base_movement": {
+        "es": "Soporte lateral en poste vertical",
+        "en": "Lateral support on vertical pole"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Human Flag Tucked",
+            "en": "Human Flag Tucked"
+          },
+          "slug": "human-flag-tucked",
+          "description": {
+            "es": "Bandera humana con rodillas recogidas para reducir la palanca. Primera progresión para aprender la posición lateral en poste.",
+            "en": "Human flag with knees tucked to reduce leverage. First progression to learn the lateral pole position."
+          },
+          "muscles": {
+            "es": "Oblicuos, hombros, dorsales",
+            "en": "Obliques, shoulders, lats"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 10,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Human Flag Straddle",
+            "en": "Human Flag Straddle"
+          },
+          "slug": "human-flag-straddle",
+          "description": {
+            "es": "Bandera humana con piernas abiertas y extendidas. Reduce la palanca respecto al flag completo mientras exige control lateral.",
+            "en": "Human flag with legs straddled and extended. Reduces leverage compared to full flag while demanding lateral control."
+          },
+          "muscles": {
+            "es": "Oblicuos, hombros",
+            "en": "Obliques, shoulders"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 8,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Human Flag Completo",
+            "en": "Full Human Flag"
+          },
+          "slug": "full-human-flag",
+          "description": {
+            "es": "Bandera humana con cuerpo completamente recto y horizontal. Demuestra fuerza lateral excepcional en oblicuos, hombros y dorsales.",
+            "en": "Human flag with a completely straight and horizontal body. Demonstrates exceptional lateral strength in obliques, shoulders, and lats."
+          },
+          "muscles": {
+            "es": "Oblicuos, hombros, dorsales",
+            "en": "Obliques, shoulders, lats"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 5,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 5,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Otros Skills",
+        "en": "Other Skills"
+      },
+      "slug": "other-skills",
+      "base_movement": {
+        "es": "Movimientos gimnásticos avanzados",
+        "en": "Advanced gymnastic movements"
+      },
+      "exercises": [
+        {
+          "name": {
+            "es": "Skin the Cat",
+            "en": "Skin the Cat"
+          },
+          "slug": "skin-the-cat",
+          "description": {
+            "es": "Rotación completa del cuerpo pasando por debajo de la barra hasta posición de german hang. Excelente para movilidad de hombros y preparación de back lever.",
+            "en": "Full body rotation passing under the bar to a german hang position. Excellent for shoulder mobility and back lever preparation."
+          },
+          "muscles": {
+            "es": "Hombros, dorsales, movilidad",
+            "en": "Shoulders, lats, mobility"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Ring Support Hold",
+            "en": "Ring Support Hold"
+          },
+          "slug": "ring-support-hold",
+          "description": {
+            "es": "Soporte con brazos extendidos en anillas, cuerpo vertical. Requisito fundamental para cualquier trabajo en anillas.",
+            "en": "Support hold with arms extended on rings, body vertical. Fundamental prerequisite for any ring work."
+          },
+          "muscles": {
+            "es": "Hombros, core, estabilizadores",
+            "en": "Shoulders, core, stabilizers"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "rings"
+          ],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 30,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Ring Turned Out Support",
+            "en": "Ring Turned Out Support"
+          },
+          "slug": "ring-turned-out-support",
+          "description": {
+            "es": "Soporte en anillas con palmas giradas hacia afuera (RTO). Aumenta significativamente la activación de bíceps y estabilizadores respecto al soporte normal.",
+            "en": "Ring support hold with palms turned out (RTO). Significantly increases bicep and stabilizer activation compared to regular support."
+          },
+          "muscles": {
+            "es": "Hombros, estabilizadores",
+            "en": "Shoulders, stabilizers"
+          },
+          "difficulty_level": "intermediate",
+          "equipment": [
+            "rings"
+          ],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 4,
+          "default_reps": "1",
+          "default_rest_seconds": 90,
+          "default_timer_seconds": 20,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Iron Cross Progresión",
+            "en": "Iron Cross Progression"
+          },
+          "slug": "iron-cross-progression",
+          "description": {
+            "es": "Trabajo progresivo hacia la cruz de hierro en anillas con brazos extendidos lateralmente. Requiere fuerza extrema de pecho, hombros y bíceps.",
+            "en": "Progressive work toward the iron cross on rings with arms extended laterally. Requires extreme chest, shoulder, and bicep strength."
+          },
+          "muscles": {
+            "es": "Pecho, hombros, bíceps",
+            "en": "Chest, shoulders, biceps"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "rings"
+          ],
+          "is_timer": true,
+          "progression_order": 4,
+          "default_sets": 5,
+          "default_reps": "1",
+          "default_rest_seconds": 120,
+          "default_timer_seconds": 5,
+          "target_reps_to_advance": 5,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Muscle-up to L-sit",
+            "en": "Muscle-up to L-sit"
+          },
+          "slug": "muscle-up-to-l-sit",
+          "description": {
+            "es": "Muscle-up que termina en posición de L-sit sobre la barra. Combina tirón explosivo, transición y fuerza de compresión en un solo movimiento.",
+            "en": "Muscle-up finishing in an L-sit position on top of the bar. Combines explosive pulling, transition, and compression strength in one movement."
+          },
+          "muscles": {
+            "es": "Tirón, empuje, compresión",
+            "en": "Pull, push, compression"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": {
+            "es": "Hefesto (Back Lever Pull-up)",
+            "en": "Hefesto (Back Lever Pull-up)"
+          },
+          "slug": "hefesto",
+          "description": {
+            "es": "Dominada desde posición de back lever con agarre supino. Movimiento de tirón extremo que combina fuerza de bíceps, hombros y dorsales.",
+            "en": "Pull-up from a back lever position with supinated grip. Extreme pulling movement combining bicep, shoulder, and lat strength."
+          },
+          "muscles": {
+            "es": "Hombros, bíceps, dorsales",
+            "en": "Shoulders, biceps, lats"
+          },
+          "difficulty_level": "advanced",
+          "equipment": [
+            "pull_up_bar"
+          ],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    }
+  ]
+}

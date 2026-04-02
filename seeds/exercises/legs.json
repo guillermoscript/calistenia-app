@@ -1,0 +1,910 @@
+{
+  "category": "legs",
+  "category_label": {
+    "es": "Piernas",
+    "en": "Legs"
+  },
+  "subcategories": [
+    {
+      "name": {
+        "es": "Sentadilla",
+        "en": "Squats"
+      },
+      "slug": "squats",
+      "base_movement": {
+        "es": "Flexión de rodilla y cadera bilateral",
+        "en": "Bilateral knee and hip flexion"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Sentadilla Bodyweight", "en": "Bodyweight Squat" },
+          "slug": "bodyweight-squat",
+          "description": {
+            "es": "Sentadilla básica con peso corporal. Baja hasta que los muslos estén paralelos al suelo manteniendo la espalda recta.",
+            "en": "Basic bodyweight squat. Lower until thighs are parallel to the ground while keeping your back straight."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos", "en": "Quads, glutes" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Sentadilla Goblet", "en": "Goblet Squat" },
+          "slug": "goblet-squat",
+          "description": {
+            "es": "Sentadilla sosteniendo un peso frente al pecho. La posición del peso ayuda a mantener el torso erguido y mejorar la profundidad.",
+            "en": "Squat holding a weight at chest height. The front-loaded position helps keep your torso upright and improve depth."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos, core", "en": "Quads, glutes, core" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Squat Profunda (ATG)", "en": "Deep Squat (ATG)" },
+          "slug": "deep-squat-atg",
+          "description": {
+            "es": "Sentadilla con rango completo bajando lo máximo posible (ass-to-grass). Desarrolla movilidad de tobillo y fuerza en el rango profundo.",
+            "en": "Full range-of-motion squat going as deep as possible (ass-to-grass). Builds ankle mobility and strength in the bottom range."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos, movilidad de tobillo", "en": "Quads, glutes, ankle mobility" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Squat con Pausa (3s)", "en": "Pause Squat (3s)" },
+          "slug": "pause-squat",
+          "description": {
+            "es": "Sentadilla con pausa de 3 segundos en la posición más baja. Elimina el impulso y aumenta el tiempo bajo tensión.",
+            "en": "Squat with a 3-second hold at the bottom. Eliminates momentum and increases time under tension."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos", "en": "Quads, glutes" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Hindu Squat", "en": "Hindu Squat" },
+          "slug": "hindu-squat",
+          "description": {
+            "es": "Sentadilla fluida elevando los talones al bajar con movimiento de brazos coordinado. Excelente para resistencia y movilidad de rodilla.",
+            "en": "Flowing squat raising heels at the bottom with coordinated arm movement. Excellent for endurance and knee mobility."
+          },
+          "muscles": { "es": "Cuádriceps, resistencia", "en": "Quads, endurance" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Squat Sissy", "en": "Sissy Squat" },
+          "slug": "sissy-squat",
+          "description": {
+            "es": "Sentadilla inclinando el torso hacia atrás con rodillas adelantadas. Aísla intensamente los cuádriceps con gran demanda articular.",
+            "en": "Squat leaning the torso back with knees tracking forward. Intensely isolates the quads with high joint demand."
+          },
+          "muscles": { "es": "Cuádriceps, rodillas", "en": "Quads, knees" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Jump Squat", "en": "Jump Squat" },
+          "slug": "jump-squat",
+          "description": {
+            "es": "Sentadilla explosiva saltando desde la posición baja. Desarrolla potencia y capacidad de salto.",
+            "en": "Explosive squat jumping from the bottom position. Builds lower-body power and jump capacity."
+          },
+          "muscles": { "es": "Piernas, explosividad", "en": "Legs, explosiveness" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Cossack Squat", "en": "Cossack Squat" },
+          "slug": "cossack-squat",
+          "description": {
+            "es": "Sentadilla lateral profunda con una pierna extendida al lado. Trabaja aductores, caderas y movilidad lateral.",
+            "en": "Deep lateral squat with one leg extended to the side. Works adductors, hips, and lateral mobility."
+          },
+          "muscles": { "es": "Aductores, caderas, movilidad", "en": "Adductors, hips, mobility" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pistol Squat Progresión (asistido)", "en": "Pistol Squat Progression (assisted)" },
+          "slug": "pistol-squat-assisted",
+          "description": {
+            "es": "Sentadilla a una pierna usando un banco o soporte como ayuda. Primer paso para dominar la pistol squat completa.",
+            "en": "Single-leg squat using a bench or support for assistance. First step toward mastering the full pistol squat."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos, equilibrio", "en": "Quads, glutes, balance" },
+          "difficulty_level": "intermediate",
+          "equipment": ["bench"],
+          "progression_order": 9,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pistol Squat Volumen", "en": "Pistol Squat Volume" },
+          "slug": "pistol-squat-volume",
+          "description": {
+            "es": "Pistol squat con enfoque en repeticiones y volumen de entrenamiento. Consolida la técnica con series más largas.",
+            "en": "Pistol squat focused on reps and training volume. Consolidates technique through longer sets."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos", "en": "Quads, glutes" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 10,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Shrimp Squat Progresión", "en": "Shrimp Squat Progression" },
+          "slug": "shrimp-squat-progression",
+          "description": {
+            "es": "Sentadilla a una pierna sujetando el pie trasero con la mano, versión asistida. Desarrolla equilibrio y fuerza unilateral.",
+            "en": "Single-leg squat holding the rear foot with your hand, assisted version. Builds balance and unilateral strength."
+          },
+          "muscles": { "es": "Cuádriceps, equilibrio", "en": "Quads, balance" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 11,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pistol Squat Libre", "en": "Freestanding Pistol Squat" },
+          "slug": "freestanding-pistol-squat",
+          "description": {
+            "es": "Sentadilla a una pierna con la pierna libre extendida al frente, sin asistencia. Requiere fuerza, equilibrio y movilidad de tobillo.",
+            "en": "Single-leg squat with the free leg extended forward, no assistance. Requires strength, balance, and ankle mobility."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos, equilibrio", "en": "Quads, glutes, balance" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 12,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pistol Squat con Lastre", "en": "Weighted Pistol Squat" },
+          "slug": "weighted-pistol-squat",
+          "description": {
+            "es": "Pistol squat con peso adicional (chaleco lastrado). La progresión final de fuerza unilateral de piernas.",
+            "en": "Pistol squat with added weight (weighted vest). The ultimate unilateral leg strength progression."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos", "en": "Quads, glutes" },
+          "difficulty_level": "advanced",
+          "equipment": ["weighted_vest"],
+          "progression_order": 13,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Shrimp Squat Completo", "en": "Full Shrimp Squat" },
+          "slug": "full-shrimp-squat",
+          "description": {
+            "es": "Shrimp squat completa con la rodilla trasera tocando el suelo. Exige gran movilidad de tobillo y control excéntrico.",
+            "en": "Full shrimp squat with the rear knee touching the floor. Demands great ankle mobility and eccentric control."
+          },
+          "muscles": { "es": "Cuádriceps, tobillo, equilibrio", "en": "Quads, ankle, balance" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 14,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Dragon Squat", "en": "Dragon Squat" },
+          "slug": "dragon-squat",
+          "description": {
+            "es": "Sentadilla a una pierna con la pierna libre cruzada por detrás. Combina fuerza extrema, equilibrio y movilidad de cadera.",
+            "en": "Single-leg squat with the free leg crossed behind. Combines extreme strength, balance, and hip mobility."
+          },
+          "muscles": { "es": "Cuádriceps, equilibrio, movilidad", "en": "Quads, balance, mobility" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 15,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Zancada",
+        "en": "Lunges"
+      },
+      "slug": "lunges",
+      "base_movement": {
+        "es": "Empuje unilateral, cuádriceps + glúteo",
+        "en": "Unilateral push, quads + glutes"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Forward Lunge", "en": "Forward Lunge" },
+          "slug": "forward-lunge",
+          "description": {
+            "es": "Zancada básica dando un paso al frente y bajando la rodilla trasera. Fundamento de todos los ejercicios de zancada.",
+            "en": "Basic lunge stepping forward and lowering the rear knee. Foundation for all lunge variations."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos", "en": "Quads, glutes" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Reverse Lunge", "en": "Reverse Lunge" },
+          "slug": "reverse-lunge",
+          "description": {
+            "es": "Zancada dando un paso hacia atrás. Menos estrés en la rodilla delantera y mayor activación de glúteos e isquiotibiales.",
+            "en": "Lunge stepping backward. Less stress on the front knee with greater glute and hamstring activation."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos, isquiotibiales", "en": "Quads, glutes, hamstrings" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Step-up", "en": "Step-up" },
+          "slug": "step-up",
+          "description": {
+            "es": "Sube a un cajón impulsándote con una sola pierna. Trabaja fuerza unilateral y estabilidad de rodilla.",
+            "en": "Step onto a box driving through one leg. Works unilateral strength and knee stability."
+          },
+          "muscles": { "es": "Glúteos, cuádriceps", "en": "Glutes, quads" },
+          "difficulty_level": "beginner",
+          "equipment": ["step_box"],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Walking Lunge", "en": "Walking Lunge" },
+          "slug": "walking-lunge",
+          "description": {
+            "es": "Zancadas continuas avanzando con cada paso. Añade un componente de equilibrio dinámico y coordinación.",
+            "en": "Continuous lunges moving forward with each step. Adds dynamic balance and coordination demands."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos, equilibrio", "en": "Quads, glutes, balance" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Lateral Lunge", "en": "Lateral Lunge" },
+          "slug": "lateral-lunge",
+          "description": {
+            "es": "Zancada lateral con una pierna extendida. Trabaja aductores y movilidad de cadera en el plano frontal.",
+            "en": "Side lunge with one leg extended. Works adductors and hip mobility in the frontal plane."
+          },
+          "muscles": { "es": "Aductores, cuádriceps", "en": "Adductors, quads" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Curtsy Lunge", "en": "Curtsy Lunge" },
+          "slug": "curtsy-lunge",
+          "description": {
+            "es": "Zancada cruzando la pierna por detrás en diagonal, como una reverencia. Enfatiza el glúteo medio y la estabilidad lateral.",
+            "en": "Lunge crossing the leg behind at an angle, like a curtsy. Emphasizes the glute medius and lateral stability."
+          },
+          "muscles": { "es": "Glúteo medio, cuádriceps", "en": "Glute medius, quads" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Bulgarian Split Squat", "en": "Bulgarian Split Squat" },
+          "slug": "bulgarian-split-squat",
+          "description": {
+            "es": "Sentadilla dividida con el pie trasero elevado en un banco. Gran demanda de fuerza unilateral y estabilidad.",
+            "en": "Split squat with the rear foot elevated on a bench. High unilateral strength and stability demand."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos, isquiotibiales", "en": "Quads, glutes, hamstrings" },
+          "difficulty_level": "intermediate",
+          "equipment": ["bench"],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Step-up Explosivo", "en": "Explosive Step-up" },
+          "slug": "explosive-step-up",
+          "description": {
+            "es": "Step-up con impulso explosivo para elevar la rodilla arriba del cajón. Desarrolla potencia unilateral.",
+            "en": "Step-up with explosive drive to lift the knee above the box. Builds unilateral power."
+          },
+          "muscles": { "es": "Glúteos, cuádriceps, potencia", "en": "Glutes, quads, power" },
+          "difficulty_level": "intermediate",
+          "equipment": ["step_box"],
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Step-up con Lastre", "en": "Weighted Step-up" },
+          "slug": "weighted-step-up",
+          "description": {
+            "es": "Step-up con peso adicional (chaleco lastrado). Aumenta la carga manteniendo el patrón de movimiento unilateral.",
+            "en": "Step-up with added weight (weighted vest). Increases load while maintaining the unilateral movement pattern."
+          },
+          "muscles": { "es": "Glúteos, cuádriceps", "en": "Glutes, quads" },
+          "difficulty_level": "intermediate",
+          "equipment": ["step_box", "weighted_vest"],
+          "progression_order": 9,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Lunge con Salto (alternado)", "en": "Jumping Lunge (alternating)" },
+          "slug": "jumping-lunge",
+          "description": {
+            "es": "Zancadas alternando piernas con salto entre cada repetición. Combina fuerza explosiva con coordinación.",
+            "en": "Alternating lunges with a jump between each rep. Combines explosive strength with coordination."
+          },
+          "muscles": { "es": "Cuádriceps, explosividad", "en": "Quads, explosiveness" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 10,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Bulgarian Split + Salto", "en": "Bulgarian Split + Jump" },
+          "slug": "bulgarian-split-jump",
+          "description": {
+            "es": "Bulgarian split squat con salto explosivo desde la posición baja. Máxima potencia unilateral de pierna.",
+            "en": "Bulgarian split squat with explosive jump from the bottom. Maximum unilateral leg power."
+          },
+          "muscles": { "es": "Explosividad de piernas", "en": "Leg explosiveness" },
+          "difficulty_level": "advanced",
+          "equipment": ["bench"],
+          "progression_order": 11,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Isquiotibiales y Posterior",
+        "en": "Hamstrings & Posterior Chain"
+      },
+      "slug": "hamstrings",
+      "base_movement": {
+        "es": "Bisagra de cadera y flexión de rodilla",
+        "en": "Hip hinge and knee flexion"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Good Morning (sin peso)", "en": "Good Morning (bodyweight)" },
+          "slug": "good-morning-bodyweight",
+          "description": {
+            "es": "Bisagra de cadera inclinando el torso al frente con las piernas casi rectas. Trabaja isquiotibiales, espalda baja y glúteos.",
+            "en": "Hip hinge tilting the torso forward with nearly straight legs. Works hamstrings, lower back, and glutes."
+          },
+          "muscles": { "es": "Isquiotibiales, espalda baja, glúteos", "en": "Hamstrings, lower back, glutes" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Single Leg RDL", "en": "Single Leg RDL" },
+          "slug": "single-leg-rdl",
+          "description": {
+            "es": "Peso muerto rumano a una pierna con la pierna libre extendiéndose hacia atrás. Excelente para equilibrio y cadena posterior.",
+            "en": "Single-leg Romanian deadlift with the free leg extending behind. Excellent for balance and posterior chain."
+          },
+          "muscles": { "es": "Isquiotibiales, glúteos, espalda baja", "en": "Hamstrings, glutes, lower back" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Sliding Leg Curl", "en": "Sliding Leg Curl" },
+          "slug": "sliding-leg-curl",
+          "description": {
+            "es": "Curl de pierna deslizando los pies sobre el suelo desde posición de puente. Aísla los isquiotibiales con control excéntrico.",
+            "en": "Leg curl sliding feet on the floor from a bridge position. Isolates the hamstrings with eccentric control."
+          },
+          "muscles": { "es": "Isquiotibiales, glúteos", "en": "Hamstrings, glutes" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Hip Thrust (peso corporal)", "en": "Hip Thrust (bodyweight)" },
+          "slug": "hip-thrust-bodyweight",
+          "description": {
+            "es": "Empuje de cadera con la espalda apoyada en un banco. El mejor ejercicio para activar glúteos al máximo.",
+            "en": "Hip thrust with upper back on a bench. The best exercise for maximum glute activation."
+          },
+          "muscles": { "es": "Glúteos, isquiotibiales", "en": "Glutes, hamstrings" },
+          "difficulty_level": "intermediate",
+          "equipment": ["bench"],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Nordic Curl (Regresión — negativas)", "en": "Nordic Curl (Regression — negatives)" },
+          "slug": "nordic-curl-negatives",
+          "description": {
+            "es": "Solo la fase excéntrica (bajada controlada) del nordic curl. Construye la fuerza necesaria para la versión completa.",
+            "en": "Only the eccentric phase (controlled lowering) of the nordic curl. Builds the strength needed for the full version."
+          },
+          "muscles": { "es": "Isquiotibiales (excéntrico)", "en": "Hamstrings (eccentric)" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Nordic Curl Asistido (banda)", "en": "Assisted Nordic Curl (band)" },
+          "slug": "assisted-nordic-curl",
+          "description": {
+            "es": "Nordic curl con banda elástica para reducir la carga. Permite practicar el rango completo con asistencia.",
+            "en": "Nordic curl with a resistance band to reduce the load. Allows practicing full range of motion with assistance."
+          },
+          "muscles": { "es": "Isquiotibiales", "en": "Hamstrings" },
+          "difficulty_level": "intermediate",
+          "equipment": ["resistance_band"],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Reverse Nordic Curl", "en": "Reverse Nordic Curl" },
+          "slug": "reverse-nordic-curl",
+          "description": {
+            "es": "De rodillas, inclina el torso hacia atrás manteniendo caderas extendidas. Trabaja cuádriceps y flexores de cadera de forma excéntrica.",
+            "en": "Kneeling, lean the torso back while keeping hips extended. Works quads and hip flexors eccentrically."
+          },
+          "muscles": { "es": "Cuádriceps, flexores de cadera", "en": "Quads, hip flexors" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Nordic Curl Completo", "en": "Full Nordic Curl" },
+          "slug": "full-nordic-curl",
+          "description": {
+            "es": "Nordic curl completo con fase excéntrica y concéntrica controladas. Uno de los ejercicios más exigentes para isquiotibiales.",
+            "en": "Full nordic curl with controlled eccentric and concentric phases. One of the most demanding hamstring exercises."
+          },
+          "muscles": { "es": "Isquiotibiales", "en": "Hamstrings" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Pantorrillas",
+        "en": "Calves"
+      },
+      "slug": "calves",
+      "base_movement": {
+        "es": "Flexión plantar",
+        "en": "Plantar flexion"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Tibialis Raise", "en": "Tibialis Raise" },
+          "slug": "tibialis-raise",
+          "description": {
+            "es": "Elevación de la punta del pie apoyado en los talones. Fortalece el tibial anterior para prevenir dolor de espinillas.",
+            "en": "Toe raise while standing on your heels. Strengthens the tibialis anterior to prevent shin splints."
+          },
+          "muscles": { "es": "Tibial anterior", "en": "Tibialis anterior" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "15-20",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Calf Raises (bilateral)", "en": "Calf Raises (bilateral)" },
+          "slug": "calf-raises-bilateral",
+          "description": {
+            "es": "Elevación de talones con ambos pies. Ejercicio base para fortalecer gastrocnemio y sóleo.",
+            "en": "Heel raises with both feet. Base exercise for strengthening the gastrocnemius and soleus."
+          },
+          "muscles": { "es": "Pantorrillas, sóleo", "en": "Calves, soleus" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "15-20",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Calf Raise Unilateral", "en": "Single Leg Calf Raise" },
+          "slug": "single-leg-calf-raise",
+          "description": {
+            "es": "Elevación de talón con una sola pierna. Duplica la carga y corrige desbalances entre piernas.",
+            "en": "Single-leg heel raise. Doubles the load and corrects imbalances between legs."
+          },
+          "muscles": { "es": "Gastrocnemio, sóleo", "en": "Gastrocnemius, soleus" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "15-20",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Calf Raise Elevado (déficit)", "en": "Deficit Calf Raise" },
+          "slug": "deficit-calf-raise",
+          "description": {
+            "es": "Elevación de talón desde un escalón permitiendo bajar más allá del nivel del suelo. Aumenta el rango de movimiento completo.",
+            "en": "Heel raise from a step allowing the heel to drop below floor level. Increases full range of motion."
+          },
+          "muscles": { "es": "Pantorrillas, rango completo", "en": "Calves, full ROM" },
+          "difficulty_level": "intermediate",
+          "equipment": ["step_box"],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "15-20",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Pliometría",
+        "en": "Plyometrics"
+      },
+      "slug": "plyometrics",
+      "base_movement": {
+        "es": "Movimientos explosivos de tren inferior",
+        "en": "Explosive lower body movements"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Skater Jumps", "en": "Skater Jumps" },
+          "slug": "skater-jumps",
+          "description": {
+            "es": "Saltos laterales de pierna a pierna imitando el movimiento de un patinador. Trabaja glúteo medio, equilibrio y cardio.",
+            "en": "Lateral jumps from leg to leg mimicking a skater's motion. Works glute medius, balance, and cardio."
+          },
+          "muscles": { "es": "Glúteo medio, equilibrio, cardio", "en": "Glute medius, balance, cardio" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Box Jump", "en": "Box Jump" },
+          "slug": "box-jump",
+          "description": {
+            "es": "Salto explosivo desde el suelo a un cajón. Desarrolla potencia de tren inferior y coordinación.",
+            "en": "Explosive jump from the floor onto a box. Develops lower-body power and coordination."
+          },
+          "muscles": { "es": "Explosividad total", "en": "Total explosiveness" },
+          "difficulty_level": "intermediate",
+          "equipment": ["step_box"],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Tuck Jumps", "en": "Tuck Jumps" },
+          "slug": "tuck-jumps",
+          "description": {
+            "es": "Salto vertical llevando las rodillas al pecho en el aire. Alta demanda de explosividad y core.",
+            "en": "Vertical jump bringing knees to chest in the air. High explosiveness and core demand."
+          },
+          "muscles": { "es": "Cuádriceps, glúteos, explosividad", "en": "Quads, glutes, explosiveness" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Broad Jump", "en": "Broad Jump" },
+          "slug": "broad-jump",
+          "description": {
+            "es": "Salto horizontal explosivo cubriendo la mayor distancia posible. Enfatiza cadena posterior y potencia de empuje.",
+            "en": "Explosive horizontal jump covering maximum distance. Emphasizes posterior chain and push-off power."
+          },
+          "muscles": { "es": "Cadena posterior, explosividad", "en": "Posterior chain, explosiveness" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Depth Jump", "en": "Depth Jump" },
+          "slug": "depth-jump",
+          "description": {
+            "es": "Cae desde un cajón y salta inmediatamente al tocar el suelo. Entrena la potencia reactiva y el ciclo estiramiento-acortamiento.",
+            "en": "Drop from a box and jump immediately upon landing. Trains reactive power and the stretch-shortening cycle."
+          },
+          "muscles": { "es": "Potencia reactiva", "en": "Reactive power" },
+          "difficulty_level": "advanced",
+          "equipment": ["step_box"],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Single Leg Box Jump", "en": "Single Leg Box Jump" },
+          "slug": "single-leg-box-jump",
+          "description": {
+            "es": "Salto al cajón impulsándote con una sola pierna. El ejercicio pliométrico unilateral más avanzado.",
+            "en": "Box jump driving off a single leg. The most advanced unilateral plyometric exercise."
+          },
+          "muscles": { "es": "Explosividad unilateral", "en": "Unilateral explosiveness" },
+          "difficulty_level": "advanced",
+          "equipment": ["step_box"],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    }
+  ]
+}

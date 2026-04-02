@@ -1,0 +1,728 @@
+{
+  "category": "core",
+  "category_label": {
+    "es": "Core",
+    "en": "Core"
+  },
+  "subcategories": [
+    {
+      "name": {
+        "es": "Planchas",
+        "en": "Planks"
+      },
+      "slug": "planks",
+      "base_movement": {
+        "es": "Estabilización anti-extensión",
+        "en": "Anti-extension stabilization"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Plank", "en": "Plank" },
+          "slug": "plank",
+          "description": {
+            "es": "Posición estática de tabla con antebrazos apoyados. Mantén el core apretado y el cuerpo en línea recta.",
+            "en": "Static forearm plank position. Keep your core tight and body in a straight line."
+          },
+          "muscles": { "es": "Core total", "en": "Total core" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_timer_seconds": 30,
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Plank Toque de Hombros", "en": "Shoulder Tap Plank" },
+          "slug": "shoulder-tap-plank",
+          "description": {
+            "es": "Desde posición de plank alto, toca el hombro contrario alternando manos. Trabaja la estabilidad anti-rotación mientras mantienes las caderas quietas.",
+            "en": "From a high plank, alternate tapping the opposite shoulder. Builds anti-rotation stability while keeping your hips square."
+          },
+          "muscles": { "es": "Core anti-rotación", "en": "Anti-rotation core" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Plancha Lateral", "en": "Side Plank" },
+          "slug": "side-plank",
+          "description": {
+            "es": "Apóyate sobre un antebrazo de lado, cuerpo recto y caderas elevadas. Fortalece los oblicuos y el cuadrado lumbar.",
+            "en": "Support yourself on one forearm sideways, body straight and hips lifted. Strengthens the obliques and quadratus lumborum."
+          },
+          "muscles": { "es": "Oblicuos, cuadrado lumbar", "en": "Obliques, quadratus lumborum" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_timer_seconds": 30,
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Plank con Extensión de Brazo", "en": "Plank with Arm Extension" },
+          "slug": "plank-arm-extension",
+          "description": {
+            "es": "Desde plank, extiende un brazo al frente alternando lados. Aumenta la demanda anti-extensión y anti-rotación respecto al plank básico.",
+            "en": "From a plank, extend one arm forward alternating sides. Increases anti-extension and anti-rotation demand over a basic plank."
+          },
+          "muscles": { "es": "Core, deltoides", "en": "Core, deltoids" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Plank RKC", "en": "RKC Plank" },
+          "slug": "rkc-plank",
+          "description": {
+            "es": "Plank de máxima tensión: aprieta glúteos, cuádriceps y junta codos hacia las rodillas sin moverte. Intervalos cortos con contracción total.",
+            "en": "Maximum-tension plank: squeeze glutes, quads, and drive elbows toward knees without moving. Short holds with full-body contraction."
+          },
+          "muscles": { "es": "Core total, glúteos (tensión máxima)", "en": "Total core, glutes (max tension)" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_timer_seconds": 30,
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Plancha Lateral con Rotación", "en": "Side Plank with Rotation" },
+          "slug": "side-plank-rotation",
+          "description": {
+            "es": "Desde plancha lateral, rota el brazo libre por debajo del cuerpo y vuelve a extenderlo. Añade trabajo rotacional a la plancha lateral básica.",
+            "en": "From a side plank, thread the free arm under your body and extend back up. Adds rotational work to the basic side plank."
+          },
+          "muscles": { "es": "Oblicuos, core rotacional", "en": "Obliques, rotational core" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Body Saw Plank", "en": "Body Saw Plank" },
+          "slug": "body-saw-plank",
+          "description": {
+            "es": "Desde plank de antebrazos, desplaza el cuerpo adelante y atrás como un serrucho. Aumenta la palanca y la demanda sobre los hombros y el core.",
+            "en": "From a forearm plank, rock your body forward and back like a saw. Increases leverage and demand on shoulders and core."
+          },
+          "muscles": { "es": "Core total, hombros", "en": "Total core, shoulders" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Copenhagen Plank", "en": "Copenhagen Plank" },
+          "slug": "copenhagen-plank",
+          "description": {
+            "es": "Plancha lateral con la pierna superior apoyada en un banco. Fortalece los aductores a la vez que trabaja oblicuos y estabilidad lateral.",
+            "en": "Side plank with your top leg resting on a bench. Strengthens the adductors while working obliques and lateral stability."
+          },
+          "muscles": { "es": "Aductores, oblicuos", "en": "Adductors, obliques" },
+          "difficulty_level": "intermediate",
+          "equipment": ["bench"],
+          "is_timer": true,
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_timer_seconds": 30,
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Plank en Anillas", "en": "Ring Plank" },
+          "slug": "ring-plank",
+          "description": {
+            "es": "Plank con manos o antebrazos en anillas. La inestabilidad de las anillas multiplica la activación de los estabilizadores del core.",
+            "en": "Plank with hands or forearms on rings. The ring instability multiplies core stabilizer activation."
+          },
+          "muscles": { "es": "Core total, estabilizadores", "en": "Total core, stabilizers" },
+          "difficulty_level": "intermediate",
+          "equipment": ["rings"],
+          "is_timer": true,
+          "progression_order": 9,
+          "default_sets": 3,
+          "default_timer_seconds": 30,
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Elevaciones de Piernas",
+        "en": "Leg Raises"
+      },
+      "slug": "leg-raises",
+      "base_movement": {
+        "es": "Flexión de cadera colgado o tumbado",
+        "en": "Hanging or lying hip flexion"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Elevación de Piernas Tumbado", "en": "Lying Leg Raise" },
+          "slug": "lying-leg-raise",
+          "description": {
+            "es": "Tumbado boca arriba, sube las piernas rectas hasta la vertical y baja con control. Punto de entrada para la progresión de elevaciones de piernas.",
+            "en": "Lying face up, raise straight legs to vertical and lower with control. Entry point for the leg raise progression."
+          },
+          "muscles": { "es": "Core inferior", "en": "Lower core" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Elevación de Rodillas Colgado", "en": "Hanging Knee Raise" },
+          "slug": "hanging-knee-raise",
+          "description": {
+            "es": "Colgado de la barra, sube las rodillas hacia el pecho. Trabaja el core inferior y el agarre a la vez, sin necesitar piernas rectas.",
+            "en": "Hanging from the bar, bring your knees toward your chest. Works lower core and grip together, without needing straight legs."
+          },
+          "muscles": { "es": "Core inferior, agarre", "en": "Lower core, grip" },
+          "difficulty_level": "beginner",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Elevación de Rodillas Oblicua Colgado", "en": "Oblique Hanging Knee Raise" },
+          "slug": "oblique-hanging-knee-raise",
+          "description": {
+            "es": "Colgado, sube las rodillas hacia un lado alternando. Añade trabajo de oblicuos a la elevación de rodillas estándar.",
+            "en": "Hanging, bring your knees to one side alternating. Adds oblique work to the standard knee raise."
+          },
+          "muscles": { "es": "Oblicuos, core", "en": "Obliques, core" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Elevación de Piernas Colgado", "en": "Hanging Leg Raise" },
+          "slug": "hanging-leg-raise",
+          "description": {
+            "es": "Colgado de la barra, sube las piernas rectas hasta la horizontal o más. Progresión del knee raise con mayor demanda de core y flexores de cadera.",
+            "en": "Hanging from the bar, raise straight legs to horizontal or higher. Progression from knee raises with greater core and hip flexor demand."
+          },
+          "muscles": { "es": "Core inferior, flexores de cadera", "en": "Lower core, hip flexors" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Elevación de Piernas en L Colgado", "en": "L-Hang Leg Raise" },
+          "slug": "l-hang-leg-raise",
+          "description": {
+            "es": "Mantén las piernas rectas a 90 grados colgado de la barra en posición de L. Isométrico intenso para core y flexores de cadera.",
+            "en": "Hold straight legs at 90 degrees while hanging from the bar in an L position. Intense isometric for core and hip flexors."
+          },
+          "muscles": { "es": "Core, flexores de cadera", "en": "Core, hip flexors" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "is_timer": true,
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_timer_seconds": 15,
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Toes to Bar", "en": "Toes to Bar" },
+          "slug": "toes-to-bar",
+          "description": {
+            "es": "Colgado, lleva los pies hasta tocar la barra con control. Rango completo de la elevación de piernas que exige fuerza y compresión total.",
+            "en": "Hanging, bring your feet all the way up to touch the bar with control. Full-range leg raise demanding total strength and compression."
+          },
+          "muscles": { "es": "Core total, agarre", "en": "Total core, grip" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Windshield Wipers Tumbado", "en": "Lying Windshield Wipers" },
+          "slug": "lying-windshield-wipers",
+          "description": {
+            "es": "Tumbado con piernas verticales, deja caer ambas piernas a un lado y al otro como un limpiaparabrisas. Versión en suelo más accesible que la colgada.",
+            "en": "Lying with legs vertical, drop both legs side to side like a windshield wiper. Floor version more accessible than the hanging variant."
+          },
+          "muscles": { "es": "Oblicuos, core rotacional", "en": "Obliques, rotational core" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Windshield Wipers", "en": "Windshield Wipers" },
+          "slug": "windshield-wipers",
+          "description": {
+            "es": "Colgado con piernas a la altura de la barra, gíralas de lado a lado. Movimiento avanzado de rotación que requiere gran fuerza de agarre y core.",
+            "en": "Hanging with legs at bar height, rotate them side to side. Advanced rotational movement requiring great grip and core strength."
+          },
+          "muscles": { "es": "Oblicuos, core rotacional", "en": "Obliques, rotational core" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Hollow y Arch",
+        "en": "Hollow & Arch"
+      },
+      "slug": "hollow-arch",
+      "base_movement": {
+        "es": "Posición gimnástica cóncavo/convexo",
+        "en": "Gymnastic concave/convex body position"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Hollow Body Hold", "en": "Hollow Body Hold" },
+          "slug": "hollow-body-hold",
+          "description": {
+            "es": "Tumbado boca arriba, eleva brazos y piernas del suelo creando forma de banana. Posición fundamental de la gimnasia para activar el core profundo.",
+            "en": "Lying face up, lift arms and legs off the floor creating a banana shape. Foundational gymnastic position for deep core activation."
+          },
+          "muscles": { "es": "Core profundo, transverso abdominal", "en": "Deep core, transverse abdominis" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_timer_seconds": 30,
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Arch Hold (Superman Dinámico)", "en": "Arch Hold (Dynamic Superman)" },
+          "slug": "arch-hold",
+          "description": {
+            "es": "Tumbado boca abajo, eleva brazos y piernas del suelo arqueando la espalda. Complemento del hollow que fortalece toda la cadena posterior.",
+            "en": "Lying face down, lift arms and legs off the floor arching your back. Hollow body complement that strengthens the entire posterior chain."
+          },
+          "muscles": { "es": "Erectores espinales, glúteos", "en": "Erectors, glutes" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "is_timer": true,
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_timer_seconds": 30,
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Hollow Body Rock", "en": "Hollow Body Rock" },
+          "slug": "hollow-body-rock",
+          "description": {
+            "es": "Mantén la posición hollow y mécete adelante y atrás sin perder la forma. Progresión dinámica del hollow hold que añade coordinación.",
+            "en": "Hold the hollow position and rock back and forth without breaking form. Dynamic hollow hold progression that adds coordination."
+          },
+          "muscles": { "es": "Core profundo, coordinación", "en": "Deep core, coordination" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Hollow-to-Arch Swing", "en": "Hollow-to-Arch Swing" },
+          "slug": "hollow-to-arch-swing",
+          "description": {
+            "es": "Colgado de la barra, alterna entre posición hollow y arch generando balanceo controlado. Ejercicio clave de kipping para gimnasia en barra.",
+            "en": "Hanging from the bar, alternate between hollow and arch positions generating a controlled swing. Key kipping drill for bar gymnastics."
+          },
+          "muscles": { "es": "Core total, dorsales, glúteos", "en": "Total core, lats, glutes" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Abdominales Dinámicos",
+        "en": "Dynamic Abs"
+      },
+      "slug": "dynamic-abs",
+      "base_movement": {
+        "es": "Flexión de tronco",
+        "en": "Trunk flexion"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Crunch", "en": "Crunch" },
+          "slug": "crunch",
+          "description": {
+            "es": "Tumbado boca arriba, eleva los hombros del suelo contrayendo el abdomen. Movimiento básico de flexión de tronco con rango corto.",
+            "en": "Lying face up, lift your shoulders off the floor by contracting the abs. Basic trunk flexion movement with a short range."
+          },
+          "muscles": { "es": "Recto abdominal", "en": "Rectus abdominis" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Crunch Bicicleta", "en": "Bicycle Crunch" },
+          "slug": "bicycle-crunch",
+          "description": {
+            "es": "Alterna codo con rodilla opuesta en movimiento de pedaleo. Combina flexión y rotación para trabajar oblicuos y recto abdominal a la vez.",
+            "en": "Alternate elbow to opposite knee in a pedaling motion. Combines flexion and rotation to work obliques and rectus abdominis together."
+          },
+          "muscles": { "es": "Oblicuos, recto abdominal", "en": "Obliques, rectus abdominis" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Sit-up", "en": "Sit-up" },
+          "slug": "sit-up",
+          "description": {
+            "es": "Desde tumbado, sube el torso completo hasta sentarte. Mayor rango que el crunch, involucrando también los flexores de cadera.",
+            "en": "From lying down, raise your full torso to a seated position. Greater range than a crunch, also engaging hip flexors."
+          },
+          "muscles": { "es": "Recto abdominal, flexores de cadera", "en": "Rectus abdominis, hip flexors" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Tuck-up", "en": "Tuck-up" },
+          "slug": "tuck-up",
+          "description": {
+            "es": "Tumbado, lleva simultáneamente rodillas y torso al centro en posición de tuck. Trabaja core inferior y superior a la vez con un movimiento compacto.",
+            "en": "Lying down, simultaneously bring knees and torso to center in a tuck. Works lower and upper core together in a compact movement."
+          },
+          "muscles": { "es": "Core inferior", "en": "Lower core" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Mountain Climbers", "en": "Mountain Climbers" },
+          "slug": "mountain-climbers",
+          "description": {
+            "es": "Desde plank alto, alterna llevando rodillas al pecho a ritmo rápido. Combina trabajo de core con componente cardiovascular.",
+            "en": "From a high plank, alternate driving knees to chest at a fast pace. Combines core work with a cardiovascular component."
+          },
+          "muscles": { "es": "Core, hombros, cardio", "en": "Core, shoulders, cardio" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "V-ups", "en": "V-ups" },
+          "slug": "v-ups",
+          "description": {
+            "es": "Desde tumbado, sube piernas y torso a la vez formando una V. Movimiento explosivo que demanda fuerza de core superior e inferior.",
+            "en": "From lying down, raise legs and torso simultaneously forming a V. Explosive movement demanding both upper and lower core strength."
+          },
+          "muscles": { "es": "Core superior e inferior", "en": "Upper and lower core" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Ab Wheel Rollout", "en": "Ab Wheel Rollout" },
+          "slug": "ab-wheel-rollout",
+          "description": {
+            "es": "De rodillas, extiende la rueda abdominal al frente y regresa con control. Trabaja la anti-extensión del core de forma progresiva.",
+            "en": "From your knees, roll the ab wheel forward and return with control. Progressively trains core anti-extension."
+          },
+          "muscles": { "es": "Core profundo, hombros", "en": "Deep core, shoulders" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Dragon Flag", "en": "Dragon Flag" },
+          "slug": "dragon-flag",
+          "description": {
+            "es": "Elevación del cuerpo recto desde un banco, apoyando solo los hombros. Movimiento avanzado de core completo popularizado por Bruce Lee.",
+            "en": "Raise your straight body from a bench, supporting only on your shoulders. Advanced full-core movement popularized by Bruce Lee."
+          },
+          "muscles": { "es": "Core total, dorsales", "en": "Total core, lats" },
+          "difficulty_level": "advanced",
+          "equipment": ["bench"],
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Ab Wheel Rollout de Pie", "en": "Standing Ab Wheel Rollout" },
+          "slug": "standing-ab-wheel-rollout",
+          "description": {
+            "es": "Rollout de rueda abdominal desde de pie, con rango completo. Progresión avanzada que requiere mucha más fuerza anti-extensión que la versión de rodillas.",
+            "en": "Ab wheel rollout from standing with full range. Advanced progression requiring far more anti-extension strength than the kneeling version."
+          },
+          "muscles": { "es": "Core profundo", "en": "Deep core" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 9,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pallof Press (banda)", "en": "Pallof Press (band)" },
+          "slug": "pallof-press",
+          "description": {
+            "es": "De pie con banda anclada al lado, extiende los brazos al frente resistiendo la rotación. Ejercicio clave de anti-rotación para estabilidad funcional.",
+            "en": "Standing with a band anchored to the side, press arms forward resisting rotation. Key anti-rotation exercise for functional stability."
+          },
+          "muscles": { "es": "Core anti-rotación", "en": "Anti-rotation core" },
+          "difficulty_level": "intermediate",
+          "equipment": ["resistance_band"],
+          "progression_order": 10,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Rotacionales y Anti-rotación",
+        "en": "Rotational & Anti-rotation"
+      },
+      "slug": "rotational",
+      "base_movement": {
+        "es": "Rotación controlada del tronco",
+        "en": "Controlled trunk rotation"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Russian Twist", "en": "Russian Twist" },
+          "slug": "russian-twist",
+          "description": {
+            "es": "Sentado con el torso inclinado hacia atrás, rota de lado a lado tocando el suelo. Ejercicio clásico de oblicuos con componente rotacional.",
+            "en": "Seated with torso leaning back, rotate side to side touching the floor. Classic oblique exercise with a rotational component."
+          },
+          "muscles": { "es": "Oblicuos", "en": "Obliques" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "10-15",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 20,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Woodchop (banda)", "en": "Woodchop (band)" },
+          "slug": "woodchop-band",
+          "description": {
+            "es": "Tira de la banda en diagonal de abajo hacia arriba o viceversa, como cortando leña. Patrón rotacional funcional que integra caderas y core.",
+            "en": "Pull the band diagonally from low to high or vice versa, like chopping wood. Functional rotational pattern integrating hips and core."
+          },
+          "muscles": { "es": "Oblicuos, caderas", "en": "Obliques, hips" },
+          "difficulty_level": "intermediate",
+          "equipment": ["resistance_band"],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Landmine Rotation", "en": "Landmine Rotation" },
+          "slug": "landmine-rotation",
+          "description": {
+            "es": "Sujeta el extremo de la barra con ambas manos y rótala de lado a lado en arco. Rotación con carga que trabaja oblicuos y estabilidad de cadera.",
+            "en": "Hold the end of a barbell with both hands and rotate it side to side in an arc. Loaded rotation that works obliques and hip stability."
+          },
+          "muscles": { "es": "Oblicuos, core", "en": "Obliques, core" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 60,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    }
+  ]
+}

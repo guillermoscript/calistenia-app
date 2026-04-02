@@ -1,0 +1,713 @@
+{
+  "category": "push",
+  "category_label": {
+    "es": "Empuje",
+    "en": "Push"
+  },
+  "subcategories": [
+    {
+      "name": {
+        "es": "Flexiones",
+        "en": "Push-ups"
+      },
+      "slug": "push-ups",
+      "base_movement": {
+        "es": "Empuje horizontal, pecho + tríceps + hombros",
+        "en": "Horizontal push, chest + triceps + shoulders"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Push-up Rodillas", "en": "Knee Push-up" },
+          "slug": "knee-push-up",
+          "description": {
+            "es": "Flexión con las rodillas apoyadas en el suelo para reducir la carga. Ideal para principiantes o como ejercicio de calentamiento.",
+            "en": "Push-up performed with knees on the ground to reduce the load. Great for beginners or as a warm-up exercise."
+          },
+          "muscles": { "es": "Pecho, hombros, tríceps", "en": "Chest, shoulders, triceps" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Incline Push-up", "en": "Incline Push-up" },
+          "slug": "incline-push-up",
+          "description": {
+            "es": "Flexión con las manos elevadas sobre un banco o superficie. Reduce la carga respecto a la flexión estándar manteniendo el rango completo.",
+            "en": "Push-up with hands elevated on a bench or surface. Reduces the load compared to a standard push-up while keeping full range of motion."
+          },
+          "muscles": { "es": "Pecho, tríceps (menor carga)", "en": "Chest, triceps (lower load)" },
+          "difficulty_level": "beginner",
+          "equipment": ["bench"],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Push-up Estándar", "en": "Standard Push-up" },
+          "slug": "standard-push-up",
+          "description": {
+            "es": "Flexión de brazos con las manos a la anchura de los hombros. Mantén el cuerpo recto de cabeza a pies durante todo el movimiento.",
+            "en": "Push-up with hands shoulder-width apart. Keep your body in a straight line from head to heels throughout the movement."
+          },
+          "muscles": { "es": "Pecho, hombros, tríceps", "en": "Chest, shoulders, triceps" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Hindu Push-up", "en": "Hindu Push-up" },
+          "slug": "hindu-push-up",
+          "description": {
+            "es": "Flexión fluida que combina pike y cobra en un solo movimiento. Trabaja hombros, pecho y mejora la flexibilidad de columna.",
+            "en": "Flowing push-up that combines pike and cobra in one movement. Works shoulders, chest and improves spinal flexibility."
+          },
+          "muscles": { "es": "Hombros, pecho, flexibilidad", "en": "Shoulders, chest, flexibility" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Wide Push-up", "en": "Wide Push-up" },
+          "slug": "wide-push-up",
+          "description": {
+            "es": "Flexión con las manos más abiertas que los hombros. Aumenta la activación del pecho externo y los deltoides.",
+            "en": "Push-up with hands placed wider than shoulder-width. Increases activation of the outer chest and deltoids."
+          },
+          "muscles": { "es": "Pecho externo, deltoides", "en": "Outer chest, deltoids" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Diamond Push-up", "en": "Diamond Push-up" },
+          "slug": "diamond-push-up",
+          "description": {
+            "es": "Flexión con las manos juntas formando un diamante bajo el pecho. Enfatiza tríceps y pecho interno.",
+            "en": "Push-up with hands close together forming a diamond shape under your chest. Emphasizes triceps and inner chest."
+          },
+          "muscles": { "es": "Tríceps, pecho interno", "en": "Triceps, inner chest" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Decline Push-up", "en": "Decline Push-up" },
+          "slug": "decline-push-up",
+          "description": {
+            "es": "Flexión con los pies elevados sobre un banco. Transfiere más carga al pecho superior y hombros.",
+            "en": "Push-up with feet elevated on a bench. Shifts more load to the upper chest and shoulders."
+          },
+          "muscles": { "es": "Pecho superior, hombros", "en": "Upper chest, shoulders" },
+          "difficulty_level": "intermediate",
+          "equipment": ["bench"],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Staggered Push-up", "en": "Staggered Push-up" },
+          "slug": "staggered-push-up",
+          "description": {
+            "es": "Flexión con una mano adelantada y otra retrasada. Introduce carga asimétrica que prepara para variantes unilaterales.",
+            "en": "Push-up with one hand forward and the other back. Introduces asymmetric loading that prepares you for unilateral variations."
+          },
+          "muscles": { "es": "Pecho, tríceps, asimetría", "en": "Chest, triceps, asymmetry" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Sphinx Push-up", "en": "Sphinx Push-up" },
+          "slug": "sphinx-push-up",
+          "description": {
+            "es": "Flexión desde posición de plancha sobre antebrazos, empujando hasta extender los brazos. Altamente exigente para tríceps.",
+            "en": "Push-up from a forearm plank position, pressing up to full arm extension. Extremely demanding on the triceps."
+          },
+          "muscles": { "es": "Tríceps, core", "en": "Triceps, core" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 9,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Spiderman Push-up", "en": "Spiderman Push-up" },
+          "slug": "spiderman-push-up",
+          "description": {
+            "es": "Flexión llevando la rodilla al codo en cada repetición. Añade trabajo de oblicuos y flexores de cadera al empuje estándar.",
+            "en": "Push-up bringing your knee to your elbow on each rep. Adds oblique and hip flexor work to the standard push-up."
+          },
+          "muscles": { "es": "Pecho, oblicuos, flexores de cadera", "en": "Chest, obliques, hip flexors" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 10,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Archer Push-up (Regresión)", "en": "Archer Push-up (Regression)" },
+          "slug": "archer-push-up-regression",
+          "description": {
+            "es": "Versión asistida del archer push-up con el brazo extendido apoyado ligeramente. Introduce la carga unilateral de forma progresiva.",
+            "en": "Assisted version of the archer push-up with the extended arm providing light support. Introduces unilateral loading progressively."
+          },
+          "muscles": { "es": "Pecho unilateral", "en": "Unilateral chest" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 11,
+          "default_sets": 3,
+          "default_reps": "6-10",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Archer Push-up", "en": "Archer Push-up" },
+          "slug": "archer-push-up",
+          "description": {
+            "es": "Flexión con un brazo extendido lateralmente mientras el otro realiza el empuje. Casi toda la carga recae en un solo brazo.",
+            "en": "Push-up with one arm extended to the side while the other does the pushing. Almost all the load falls on a single arm."
+          },
+          "muscles": { "es": "Pecho unilateral", "en": "Unilateral chest" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 12,
+          "default_sets": 3,
+          "default_reps": "6-10",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Clapping Push-up", "en": "Clapping Push-up" },
+          "slug": "clapping-push-up",
+          "description": {
+            "es": "Flexión explosiva en la que das una palmada en el aire antes de aterrizar. Desarrolla potencia y velocidad de empuje.",
+            "en": "Explosive push-up where you clap in mid-air before landing. Builds pushing power and speed."
+          },
+          "muscles": { "es": "Pecho, tríceps, explosividad", "en": "Chest, triceps, explosiveness" },
+          "difficulty_level": "intermediate",
+          "equipment": [],
+          "progression_order": 13,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pseudo Planche Push-up", "en": "Pseudo Planche Push-up" },
+          "slug": "pseudo-planche-push-up",
+          "description": {
+            "es": "Flexión con las manos giradas hacia atrás y posicionadas cerca de la cadera. Carga intensamente los hombros anteriores, paso previo a la planche.",
+            "en": "Push-up with hands rotated back and positioned near the hips. Intensely loads the front delts as a planche progression step."
+          },
+          "muscles": { "es": "Hombros anteriores, pecho", "en": "Anterior shoulders, chest" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 14,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Tiger Bend Push-up", "en": "Tiger Bend Push-up" },
+          "slug": "tiger-bend-push-up",
+          "description": {
+            "es": "Flexión que baja hasta apoyar los antebrazos y luego empuja de vuelta a la posición de brazos extendidos. Combinación extrema de tríceps y hombros.",
+            "en": "Push-up that lowers onto the forearms then presses back to full arm extension. Extreme combination of triceps and shoulder strength."
+          },
+          "muscles": { "es": "Tríceps, hombros, pecho", "en": "Triceps, shoulders, chest" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 15,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "One-Arm Push-up Progresión", "en": "One-Arm Push-up Progression" },
+          "slug": "one-arm-push-up-progression",
+          "description": {
+            "es": "Variantes asistidas de la flexión a un brazo: piernas abiertas, mano en elevación o negativas. Construye la fuerza para la versión completa.",
+            "en": "Assisted one-arm push-up variations: wide legs, hand on elevation, or negatives. Builds the strength needed for the full version."
+          },
+          "muscles": { "es": "Pecho unilateral completo", "en": "Full unilateral chest" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 16,
+          "default_sets": 3,
+          "default_reps": "3-6",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Superman Push-up", "en": "Superman Push-up" },
+          "slug": "superman-push-up",
+          "description": {
+            "es": "Flexión explosiva donde las manos y los pies despegan del suelo simultáneamente. Exige máxima potencia de empuje y control del core.",
+            "en": "Explosive push-up where both hands and feet leave the ground simultaneously. Demands maximum pushing power and core control."
+          },
+          "muscles": { "es": "Pecho, tríceps, máxima explosividad", "en": "Chest, triceps, max explosiveness" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 17,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "One-Arm Push-up", "en": "One-Arm Push-up" },
+          "slug": "one-arm-push-up",
+          "description": {
+            "es": "Flexión completa con un solo brazo, la otra mano detrás de la espalda. Requiere fuerza unilateral y estabilidad de core excepcionales.",
+            "en": "Full push-up on a single arm with the other hand behind your back. Requires exceptional unilateral strength and core stability."
+          },
+          "muscles": { "es": "Pecho unilateral completo", "en": "Full unilateral chest" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 18,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Maltese Push-up", "en": "Maltese Push-up" },
+          "slug": "maltese-push-up",
+          "description": {
+            "es": "Flexión con los brazos abiertos lateralmente y girados hacia fuera, similar a la posición de cruz maltesa en anillas. Enorme demanda sobre hombros y bíceps.",
+            "en": "Push-up with arms spread wide and rotated outward, mimicking the maltese cross position on rings. Enormous demand on shoulders and biceps."
+          },
+          "muscles": { "es": "Hombros, pecho, bíceps", "en": "Shoulders, chest, biceps" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 19,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "90° Push-up", "en": "90° Push-up" },
+          "slug": "90-degree-push-up",
+          "description": {
+            "es": "Flexión que transiciona a una V invertida con el cuerpo a 90 grados. Combina empuje horizontal y vertical con alta demanda de hombros y core.",
+            "en": "Push-up that transitions into an inverted V with the body at 90 degrees. Combines horizontal and vertical pushing with heavy shoulder and core demand."
+          },
+          "muscles": { "es": "Hombros, tríceps, core", "en": "Shoulders, triceps, core" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 20,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Pike Push-up y HSPU",
+        "en": "Pike Push-up & HSPU"
+      },
+      "slug": "pike-hspu",
+      "base_movement": {
+        "es": "Empuje vertical, hombros + tríceps",
+        "en": "Vertical push, shoulders + triceps"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Pike Push-up", "en": "Pike Push-up" },
+          "slug": "pike-push-up",
+          "description": {
+            "es": "Flexión en posición de V invertida con la cadera elevada. Transfiere la carga a los hombros, primer paso hacia el handstand push-up.",
+            "en": "Push-up in an inverted V position with hips elevated. Shifts the load to the shoulders as the first step toward handstand push-ups."
+          },
+          "muscles": { "es": "Deltoides, tríceps", "en": "Deltoids, triceps" },
+          "difficulty_level": "beginner",
+          "equipment": [],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pike Push-up Elevado", "en": "Elevated Pike Push-up" },
+          "slug": "elevated-pike-push-up",
+          "description": {
+            "es": "Pike push-up con los pies elevados sobre un banco. Aumenta el ángulo vertical y la carga sobre los hombros.",
+            "en": "Pike push-up with feet elevated on a bench. Increases the vertical angle and the load on your shoulders."
+          },
+          "muscles": { "es": "Deltoides, tríceps", "en": "Deltoids, triceps" },
+          "difficulty_level": "intermediate",
+          "equipment": ["bench"],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "6-10",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Pike HSPU", "en": "Pike HSPU" },
+          "slug": "pike-hspu",
+          "description": {
+            "es": "Pike push-up con los pies en un banco y la cabeza tocando el suelo en cada rep. Simula el rango del HSPU sin estar invertido.",
+            "en": "Pike push-up with feet on a bench and head touching the floor each rep. Simulates HSPU range of motion without being fully inverted."
+          },
+          "muscles": { "es": "Deltoides, tríceps", "en": "Deltoids, triceps" },
+          "difficulty_level": "intermediate",
+          "equipment": ["bench"],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Wall HSPU Negativas", "en": "Wall HSPU Negatives" },
+          "slug": "wall-hspu-negatives",
+          "description": {
+            "es": "Fase excéntrica del handstand push-up contra la pared: baja lentamente hasta la cabeza. Construye fuerza para la versión completa.",
+            "en": "Eccentric phase of the wall handstand push-up: lower slowly until your head touches. Builds strength for the full version."
+          },
+          "muscles": { "es": "Deltoides, tríceps", "en": "Deltoids, triceps" },
+          "difficulty_level": "intermediate",
+          "equipment": ["wall"],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Handstand Push-up (pared)", "en": "Handstand Push-up (wall)" },
+          "slug": "wall-handstand-push-up",
+          "description": {
+            "es": "Flexión invertida contra la pared, bajando la cabeza al suelo y empujando de vuelta. Ejercicio base de empuje vertical en calistenia.",
+            "en": "Inverted push-up against a wall, lowering your head to the floor and pressing back up. The foundational vertical push exercise in calisthenics."
+          },
+          "muscles": { "es": "Deltoides, tríceps, core", "en": "Deltoids, triceps, core" },
+          "difficulty_level": "advanced",
+          "equipment": ["wall"],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "3-6",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Deficit HSPU", "en": "Deficit HSPU" },
+          "slug": "deficit-hspu",
+          "description": {
+            "es": "Handstand push-up contra la pared con las manos sobre paralelas o bloques. Aumenta el rango de movimiento más allá de la cabeza.",
+            "en": "Wall handstand push-up with hands on parallettes or blocks. Extends the range of motion beyond head level."
+          },
+          "muscles": { "es": "Deltoides, tríceps, ROM completo", "en": "Deltoids, triceps, full ROM" },
+          "difficulty_level": "advanced",
+          "equipment": ["parallel_bars", "wall"],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Handstand Push-up (libre)", "en": "Freestanding Handstand Push-up" },
+          "slug": "freestanding-handstand-push-up",
+          "description": {
+            "es": "Flexión invertida sin apoyo de pared. Requiere dominio del equilibrio en handstand además de la fuerza de empuje.",
+            "en": "Inverted push-up without wall support. Requires mastery of handstand balance on top of pressing strength."
+          },
+          "muscles": { "es": "Deltoides, tríceps, equilibrio", "en": "Deltoids, triceps, balance" },
+          "difficulty_level": "advanced",
+          "equipment": [],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    },
+    {
+      "name": {
+        "es": "Fondos",
+        "en": "Dips"
+      },
+      "slug": "dips",
+      "base_movement": {
+        "es": "Empuje vertical descendente, tríceps + pecho",
+        "en": "Vertical downward push, triceps + chest"
+      },
+      "exercises": [
+        {
+          "name": { "es": "Dips en Silla", "en": "Bench Dips" },
+          "slug": "bench-dips",
+          "description": {
+            "es": "Fondos con las manos apoyadas en un banco y los pies en el suelo. Versión accesible que aísla los tríceps.",
+            "en": "Dips with hands on a bench and feet on the floor. Accessible version that isolates the triceps."
+          },
+          "muscles": { "es": "Tríceps, hombros", "en": "Triceps, shoulders" },
+          "difficulty_level": "beginner",
+          "equipment": ["bench"],
+          "progression_order": 1,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Dips Asistidos (banda)", "en": "Assisted Dips (band)" },
+          "slug": "assisted-dips-band",
+          "description": {
+            "es": "Fondos en paralelas con una banda elástica que asiste en la subida. Permite practicar el movimiento completo con menos carga.",
+            "en": "Parallel bar dips with a resistance band assisting on the way up. Lets you practice the full movement with reduced load."
+          },
+          "muscles": { "es": "Tríceps, pecho", "en": "Triceps, chest" },
+          "difficulty_level": "beginner",
+          "equipment": ["parallel_bars", "resistance_band"],
+          "progression_order": 2,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 15,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Dips Paralelas (2 sillas)", "en": "Parallel Bar Dips" },
+          "slug": "parallel-bar-dips",
+          "description": {
+            "es": "Fondos en barras paralelas con el peso corporal completo. Trabaja tríceps y pecho inferior de forma intensa.",
+            "en": "Dips on parallel bars at full bodyweight. Intensely works triceps and lower chest."
+          },
+          "muscles": { "es": "Tríceps, pecho inferior", "en": "Triceps, lower chest" },
+          "difficulty_level": "intermediate",
+          "equipment": ["parallel_bars"],
+          "progression_order": 3,
+          "default_sets": 3,
+          "default_reps": "8-12",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Korean Dips", "en": "Korean Dips" },
+          "slug": "korean-dips",
+          "description": {
+            "es": "Fondos con las manos agarrando la barra detrás del cuerpo. Exige mayor movilidad de hombros y activa los deltoides de forma única.",
+            "en": "Dips gripping the bar behind your body. Demands greater shoulder mobility and uniquely activates the deltoids."
+          },
+          "muscles": { "es": "Tríceps, hombros, movilidad", "en": "Triceps, shoulders, mobility" },
+          "difficulty_level": "intermediate",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 4,
+          "default_sets": 3,
+          "default_reps": "6-10",
+          "default_rest_seconds": 90,
+          "target_reps_to_advance": 12,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Dips con Lastre", "en": "Weighted Dips" },
+          "slug": "weighted-dips",
+          "description": {
+            "es": "Fondos en paralelas con peso adicional (chaleco o cinturón). Incrementa la fuerza más allá de lo que permite el peso corporal.",
+            "en": "Parallel bar dips with added weight (vest or belt). Builds strength beyond what bodyweight alone allows."
+          },
+          "muscles": { "es": "Tríceps, pecho", "en": "Triceps, chest" },
+          "difficulty_level": "intermediate",
+          "equipment": ["parallel_bars", "weighted_vest"],
+          "progression_order": 5,
+          "default_sets": 3,
+          "default_reps": "6-10",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 10,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Ring Dips", "en": "Ring Dips" },
+          "slug": "ring-dips",
+          "description": {
+            "es": "Fondos en anillas, que se mueven libremente. La inestabilidad activa los estabilizadores del hombro y pecho de forma intensa.",
+            "en": "Dips on gymnastic rings that move freely. The instability intensely activates shoulder and chest stabilizers."
+          },
+          "muscles": { "es": "Tríceps, pecho, estabilizadores", "en": "Triceps, chest, stabilizers" },
+          "difficulty_level": "advanced",
+          "equipment": ["rings"],
+          "progression_order": 6,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Ring Dips con Lastre", "en": "Weighted Ring Dips" },
+          "slug": "weighted-ring-dips",
+          "description": {
+            "es": "Fondos en anillas con peso adicional. Combina la inestabilidad de las anillas con sobrecarga para fuerza avanzada.",
+            "en": "Ring dips with added weight. Combines ring instability with overload for advanced strength development."
+          },
+          "muscles": { "es": "Tríceps, pecho", "en": "Triceps, chest" },
+          "difficulty_level": "advanced",
+          "equipment": ["rings", "weighted_vest"],
+          "progression_order": 7,
+          "default_sets": 3,
+          "default_reps": "5-8",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        },
+        {
+          "name": { "es": "Impossible Dips", "en": "Impossible Dips" },
+          "slug": "impossible-dips",
+          "description": {
+            "es": "Fondos en barra recta donde el cuerpo pasa de debajo a encima de la barra. Movimiento avanzado que combina fondo con muscle-up invertido.",
+            "en": "Dips on a straight bar where the body transitions from below to above the bar. Advanced move combining a dip with an inverted muscle-up."
+          },
+          "muscles": { "es": "Tríceps, pecho, core", "en": "Triceps, chest, core" },
+          "difficulty_level": "advanced",
+          "equipment": ["pull_up_bar"],
+          "progression_order": 8,
+          "default_sets": 3,
+          "default_reps": "3-5",
+          "default_rest_seconds": 120,
+          "target_reps_to_advance": 8,
+          "sessions_at_target": 3,
+          "source": "catalog",
+          "status": "official"
+        }
+      ]
+    }
+  ]
+}

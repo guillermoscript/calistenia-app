@@ -41,7 +41,7 @@ interface CatalogExercise {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-type CategoryId = 'todos' | 'push' | 'pull' | 'legs' | 'core' | 'lumbar' | 'full' | 'movilidad' | 'skill' | 'yoga'
+type CategoryId = 'todos' | 'push' | 'pull' | 'legs' | 'core' | 'glutes_lower_back' | 'cardio' | 'full' | 'mobility' | 'skills' | 'yoga'
 
 interface CategoryDef {
   id: CategoryId
@@ -51,28 +51,30 @@ interface CategoryDef {
 }
 
 const CATEGORIES: CategoryDef[] = [
-  { id: 'todos',     label: 'Todos',     color: 'text-foreground',      bg: 'bg-muted' },
-  { id: 'push',      label: 'Push',      color: 'text-lime-400',        bg: 'bg-lime-500/10' },
-  { id: 'pull',      label: 'Pull',      color: 'text-sky-400',         bg: 'bg-sky-500/10' },
-  { id: 'legs',      label: 'Legs',      color: 'text-pink-400',        bg: 'bg-pink-500/10' },
-  { id: 'core',      label: 'Core',      color: 'text-amber-400',       bg: 'bg-amber-500/10' },
-  { id: 'lumbar',    label: 'Lumbar',     color: 'text-red-400',         bg: 'bg-red-500/10' },
-  { id: 'full',      label: 'Full',      color: 'text-yellow-400',      bg: 'bg-yellow-500/10' },
-  { id: 'movilidad', label: 'Movilidad', color: 'text-emerald-400',     bg: 'bg-emerald-500/10' },
-  { id: 'skill',     label: 'Skill',     color: 'text-violet-400',      bg: 'bg-violet-500/10' },
-  { id: 'yoga',      label: 'Yoga',      color: 'text-fuchsia-400',     bg: 'bg-fuchsia-500/10' },
+  { id: 'todos',            label: 'Todos',     color: 'text-foreground',      bg: 'bg-muted' },
+  { id: 'push',             label: 'Push',      color: 'text-lime-400',        bg: 'bg-lime-500/10' },
+  { id: 'pull',             label: 'Pull',      color: 'text-sky-400',         bg: 'bg-sky-500/10' },
+  { id: 'legs',             label: 'Legs',      color: 'text-pink-400',        bg: 'bg-pink-500/10' },
+  { id: 'core',             label: 'Core',      color: 'text-amber-400',       bg: 'bg-amber-500/10' },
+  { id: 'glutes_lower_back',label: 'Lumbar',     color: 'text-red-400',         bg: 'bg-red-500/10' },
+  { id: 'cardio',           label: 'Cardio',    color: 'text-orange-400',      bg: 'bg-orange-500/10' },
+  { id: 'full',             label: 'Full',      color: 'text-yellow-400',      bg: 'bg-yellow-500/10' },
+  { id: 'mobility',         label: 'Movilidad', color: 'text-emerald-400',     bg: 'bg-emerald-500/10' },
+  { id: 'skills',           label: 'Skill',     color: 'text-violet-400',      bg: 'bg-violet-500/10' },
+  { id: 'yoga',             label: 'Yoga',      color: 'text-fuchsia-400',     bg: 'bg-fuchsia-500/10' },
 ]
 
 const CATEGORY_COLORS: Record<string, { text: string; bg: string; border: string }> = {
-  push:      { text: 'text-lime-400',    bg: 'bg-lime-500/10',    border: 'border-lime-500/20' },
-  pull:      { text: 'text-sky-400',     bg: 'bg-sky-500/10',     border: 'border-sky-500/20' },
-  legs:      { text: 'text-pink-400',    bg: 'bg-pink-500/10',    border: 'border-pink-500/20' },
-  core:      { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
-  lumbar:    { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
-  full:      { text: 'text-yellow-400',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/20' },
-  movilidad: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-  skill:     { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
-  yoga:      { text: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/20' },
+  push:             { text: 'text-lime-400',    bg: 'bg-lime-500/10',    border: 'border-lime-500/20' },
+  pull:             { text: 'text-sky-400',     bg: 'bg-sky-500/10',     border: 'border-sky-500/20' },
+  legs:             { text: 'text-pink-400',    bg: 'bg-pink-500/10',    border: 'border-pink-500/20' },
+  core:             { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
+  glutes_lower_back:{ text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+  cardio:           { text: 'text-orange-400',  bg: 'bg-orange-500/10',  border: 'border-orange-500/20' },
+  full:             { text: 'text-yellow-400',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/20' },
+  mobility:         { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  skills:           { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
+  yoga:             { text: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/20' },
 }
 
 const PRIORITY_DOT: Record<Priority, string> = {
@@ -293,19 +295,25 @@ function CategoryIcon({ category }: { category: string }) {
           <ellipse cx="12" cy="12" rx="4" ry="6" /><line x1="12" y1="6" x2="12" y2="18" /><line x1="8" y1="10" x2="16" y2="10" /><line x1="8" y1="14" x2="16" y2="14" />
         </svg>
       )
-    case 'lumbar':
+    case 'glutes_lower_back':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3c0 0-3 4-3 9s3 9 3 9" /><path d="M12 3c0 0 3 4 3 9s-3 9-3 9" />
         </svg>
       )
-    case 'skill':
+    case 'cardio':
+      return (
+        <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 12h4l3-9 4 18 3-9h4" />
+        </svg>
+      )
+    case 'skills':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2l2.5 7H22l-6 4.5 2.5 7L12 16l-6.5 4.5 2.5-7L2 9h7.5z" />
         </svg>
       )
-    case 'movilidad':
+    case 'mobility':
       return (
         <svg className={cn(base, color)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="5" r="2" /><path d="M8 22l2-7 2 3 2-3 2 7" /><path d="M6 12c2-1 4-2 6-2s4 1 6 2" />
@@ -368,7 +376,7 @@ export default function ExerciseLibraryPage() {
         const available = await isPocketBaseAvailable()
         if (available && !cancelled) {
           try {
-            const res = await pb.collection('exercises_catalog').getList(1, 200, { sort: 'name' })
+            const res = await pb.collection('exercises_catalog').getList(1, 500, { sort: 'name' })
             if (!cancelled && res.items.length > 0) {
               setExercises(res.items.map(mapPBRecord))
               setLoading(false)
