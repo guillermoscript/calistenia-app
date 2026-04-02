@@ -3,46 +3,22 @@
 /**
  * Convert translatable text fields to JSON fields for i18n support (v2).
  *
- * Replaces the broken 1774378004 migration that used field.type mutation
- * (not supported by PocketBase). This migration handles both cases:
- *   - Field is still text (needs conversion)
- *   - Field is already json (1774378004 partially succeeded — skip)
- *
  * Affected collections and fields:
  *   exercises_catalog: name, muscles, note, description
  *   achievements:      name, description
  *   food_categories:   name
  *   food_tags:         name
+ *
+ * NOTE: PocketBase drops + recreates columns on type change.
+ * Data recovery from orphaned columns happens after app.save().
  */
 migrate(
   (app) => {
-    function convertField(collection, fieldName) {
+    function changeFieldType(collection, fieldName) {
       const field = collection.fields.getByName(fieldName)
-      if (!field) return // field doesn't exist, skip
+      if (!field) return
+      if (field.type === "json") return // already converted
 
-      // Already json? Skip schema change, just ensure data is wrapped
-      if (field.type === "json") {
-        app.db().newQuery(`
-          UPDATE ${collection.name}
-          SET ${fieldName} = json_object('es', ${fieldName})
-          WHERE ${fieldName} IS NOT NULL
-            AND ${fieldName} != ''
-            AND json_valid(${fieldName}) = 0
-        `).execute()
-        return
-      }
-
-      // Convert data first (text → JSON string stored in text column)
-      app.db().newQuery(`
-        UPDATE ${collection.name}
-        SET ${fieldName} = CASE
-          WHEN ${fieldName} IS NULL OR ${fieldName} = '' THEN '{"es":""}'
-          WHEN json_valid(${fieldName}) = 1 THEN ${fieldName}
-          ELSE json_object('es', ${fieldName})
-        END
-      `).execute()
-
-      // Remove text field, add json field
       collection.fields.removeByName(fieldName)
       collection.fields.add(new Field({
         name: fieldName,
@@ -51,46 +27,74 @@ migrate(
       }))
     }
 
+    function recoverData(app, tableName, fieldName) {
+      try {
+        const result = []
+        app.db().newQuery(`PRAGMA table_info(${tableName})`).all(result)
+        const columns = result.map(r => r.name)
+        const orphaned = columns.filter(c => c.startsWith(`_removed_${fieldName}`))
+
+        for (const oldCol of orphaned) {
+          const countResult = []
+          app.db().newQuery(`
+            SELECT COUNT(*) as cnt FROM ${tableName}
+            WHERE "${oldCol}" IS NOT NULL AND "${oldCol}" != ''
+              AND (${fieldName} IS NULL OR ${fieldName} = '' OR ${fieldName} = '{"es":""}')
+          `).all(countResult)
+
+          if (countResult.length > 0 && countResult[0].cnt > 0) {
+            app.db().newQuery(`
+              UPDATE ${tableName}
+              SET ${fieldName} = CASE
+                WHEN json_valid("${oldCol}") = 1 THEN "${oldCol}"
+                ELSE json_object('es', "${oldCol}")
+              END
+              WHERE "${oldCol}" IS NOT NULL AND "${oldCol}" != ''
+                AND (${fieldName} IS NULL OR ${fieldName} = '' OR ${fieldName} = '{"es":""}')
+            `).execute()
+          }
+        }
+      } catch { /* ignore */ }
+    }
+
     // ── exercises_catalog ──────────────────────────────────────────
     const ec = app.findCollectionByNameOrId("exercises_catalog")
     for (const f of ["name", "muscles", "note", "description"]) {
-      convertField(ec, f)
+      changeFieldType(ec, f)
     }
     app.save(ec)
+    for (const f of ["name", "muscles", "note", "description"]) {
+      recoverData(app, "exercises_catalog", f)
+    }
 
     // ── achievements ──────────────────────────────────────────────
     const ach = app.findCollectionByNameOrId("achievements")
     for (const f of ["name", "description"]) {
-      convertField(ach, f)
+      changeFieldType(ach, f)
     }
     app.save(ach)
+    for (const f of ["name", "description"]) {
+      recoverData(app, "achievements", f)
+    }
 
     // ── food_categories ───────────────────────────────────────────
     const fc = app.findCollectionByNameOrId("food_categories")
-    convertField(fc, "name")
+    changeFieldType(fc, "name")
     app.save(fc)
+    recoverData(app, "food_categories", "name")
 
     // ── food_tags ─────────────────────────────────────────────────
     const ft = app.findCollectionByNameOrId("food_tags")
-    convertField(ft, "name")
+    changeFieldType(ft, "name")
     app.save(ft)
+    recoverData(app, "food_tags", "name")
   },
   (app) => {
     function revertField(collection, fieldName) {
       const field = collection.fields.getByName(fieldName)
       if (!field) return
-      if (field.type !== "json") return // already text, skip
+      if (field.type !== "json") return
 
-      // Unwrap JSON to plain string
-      app.db().newQuery(`
-        UPDATE ${collection.name}
-        SET ${fieldName} = CASE
-          WHEN json_valid(${fieldName}) = 1 THEN COALESCE(json_extract(${fieldName}, '$.es'), '')
-          ELSE COALESCE(${fieldName}, '')
-        END
-      `).execute()
-
-      // Remove json field, add text field
       collection.fields.removeByName(fieldName)
       collection.fields.add(new Field({
         name: fieldName,

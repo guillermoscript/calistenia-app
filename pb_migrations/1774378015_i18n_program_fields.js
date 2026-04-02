@@ -3,8 +3,13 @@
 /**
  * Convert program-related text fields to JSON for i18n support.
  *
- * The program editor sends toTranslatable() objects like {"es":"..."} but
- * these collections still had text fields, causing "Cannot be blank" errors.
+ * IMPORTANT: PocketBase drops + recreates columns on type changes, even when
+ * the field ID is preserved. Data converted BEFORE app.save() is lost.
+ *
+ * Strategy:
+ *   1. Change field types (text → json) via app.save()
+ *   2. AFTER save, find the orphaned _removed_* columns (old data)
+ *   3. Copy data from orphaned columns to the new JSON columns, wrapping in i18n
  *
  * Affected collections and fields:
  *   programs:           name, description
@@ -14,23 +19,11 @@
  */
 migrate(
   (app) => {
-    function convertField(collection, fieldName) {
+    function changeFieldType(collection, fieldName) {
       const field = collection.fields.getByName(fieldName)
       if (!field) return
       if (field.type === "json") return // already converted
 
-      // Wrap existing text data in JSON
-      app.db().newQuery(`
-        UPDATE ${collection.name}
-        SET ${fieldName} = CASE
-          WHEN ${fieldName} IS NULL OR ${fieldName} = '' THEN '{"es":""}'
-          WHEN json_valid(${fieldName}) = 1 THEN ${fieldName}
-          ELSE json_object('es', ${fieldName})
-        END
-      `).execute()
-
-      // Change field type in-place — MUST keep the same id so PocketBase
-      // treats it as a type change, not a drop+add (which loses data).
       const existingId = field.id
       collection.fields.removeByName(fieldName)
       collection.fields.add(new Field({
@@ -41,32 +34,83 @@ migrate(
       }))
     }
 
+    function recoverData(app, tableName, fieldName) {
+      // After app.save(), PB renamed the old column to _removed_<name>_<hash>.
+      // Find it and copy data to the new (empty) JSON column.
+      try {
+        const result = []
+        app.db().newQuery(`PRAGMA table_info(${tableName})`).all(result)
+        const columns = result.map(r => r.name)
+
+        const orphaned = columns.filter(c =>
+          c.startsWith(`_removed_${fieldName}`)
+        )
+
+        for (const oldCol of orphaned) {
+          // Check if orphaned column has data
+          const countResult = []
+          app.db().newQuery(`
+            SELECT COUNT(*) as cnt FROM ${tableName}
+            WHERE "${oldCol}" IS NOT NULL AND "${oldCol}" != ''
+              AND (${fieldName} IS NULL OR ${fieldName} = '' OR ${fieldName} = '{"es":""}')
+          `).all(countResult)
+
+          if (countResult.length > 0 && countResult[0].cnt > 0) {
+            // Wrap text data in i18n JSON and copy to new column
+            app.db().newQuery(`
+              UPDATE ${tableName}
+              SET ${fieldName} = CASE
+                WHEN "${oldCol}" IS NULL OR "${oldCol}" = '' THEN '{"es":""}'
+                WHEN json_valid("${oldCol}") = 1 THEN "${oldCol}"
+                ELSE json_object('es', "${oldCol}")
+              END
+              WHERE "${oldCol}" IS NOT NULL AND "${oldCol}" != ''
+                AND (${fieldName} IS NULL OR ${fieldName} = '' OR ${fieldName} = '{"es":""}')
+            `).execute()
+          }
+        }
+      } catch (e) {
+        // If table doesn't exist or columns aren't found, skip silently
+      }
+    }
+
     // ── programs ──────────────────────────────────────────────────
     const programs = app.findCollectionByNameOrId("programs")
     for (const f of ["name", "description"]) {
-      convertField(programs, f)
+      changeFieldType(programs, f)
     }
     app.save(programs)
+    // Recover data AFTER save (columns have been recreated at this point)
+    for (const f of ["name", "description"]) {
+      recoverData(app, "programs", f)
+    }
 
     // ── program_phases ───────────────────────────────────────────
     const phases = app.findCollectionByNameOrId("program_phases")
-    convertField(phases, "name")
+    changeFieldType(phases, "name")
     app.save(phases)
+    recoverData(app, "program_phases", "name")
 
     // ── program_exercises ────────────────────────────────────────
     const exercises = app.findCollectionByNameOrId("program_exercises")
     for (const f of ["day_name", "day_focus", "exercise_name", "muscles", "note", "workout_title"]) {
-      convertField(exercises, f)
+      changeFieldType(exercises, f)
     }
     app.save(exercises)
+    for (const f of ["day_name", "day_focus", "exercise_name", "muscles", "note", "workout_title"]) {
+      recoverData(app, "program_exercises", f)
+    }
 
     // ── program_day_config ───────────────────────────────────────
     try {
       const dayConfig = app.findCollectionByNameOrId("program_day_config")
       for (const f of ["day_name", "day_focus"]) {
-        convertField(dayConfig, f)
+        changeFieldType(dayConfig, f)
       }
       app.save(dayConfig)
+      for (const f of ["day_name", "day_focus"]) {
+        recoverData(app, "program_day_config", f)
+      }
     } catch { /* collection may not exist in older deployments */ }
   },
   (app) => {
@@ -74,14 +118,6 @@ migrate(
       const field = collection.fields.getByName(fieldName)
       if (!field) return
       if (field.type !== "json") return
-
-      app.db().newQuery(`
-        UPDATE ${collection.name}
-        SET ${fieldName} = CASE
-          WHEN json_valid(${fieldName}) = 1 THEN COALESCE(json_extract(${fieldName}, '$.es'), '')
-          ELSE COALESCE(${fieldName}, '')
-        END
-      `).execute()
 
       const existingId = field.id
       collection.fields.removeByName(fieldName)
@@ -93,6 +129,7 @@ migrate(
       }))
     }
 
+    // Revert schema (data recovery on revert would need the same orphaned-column approach)
     const programs = app.findCollectionByNameOrId("programs")
     for (const f of ["name", "description"]) {
       revertField(programs, f)

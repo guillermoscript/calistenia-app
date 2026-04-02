@@ -37,6 +37,7 @@ const DAY_TYPE_OPTIONS = [
   { value: 'lumbar', labelKey: 'dayType.lumbar' },
   { value: 'full',   labelKey: 'dayType.full' },
   { value: 'cardio', labelKey: 'dayType.cardio' },
+  { value: 'yoga',   labelKey: 'dayType.yoga' },
   { value: 'rest',   labelKey: 'dayType.rest' },
 ]
 

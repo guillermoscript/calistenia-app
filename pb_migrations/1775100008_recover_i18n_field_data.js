@@ -1,14 +1,14 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 /**
- * Recovery migration: the original i18n migration (1774378015) used
- * removeByName + add with a NEW field id, causing PocketBase to treat
- * it as a column drop + recreate — losing data.
+ * Recovery migration: find orphaned _removed_* columns from the i18n
+ * migration and copy data back to the new JSON columns.
  *
- * PocketBase renames dropped columns to `_removed_<name>_<suffix>` or
- * similar. This migration attempts to find those orphaned columns and
- * copy data back. If no orphaned columns exist (fresh DB or already
- * recovered), this is a no-op.
+ * PocketBase renames dropped columns to `_removed_<name>_<suffix>`.
+ * This migration finds those columns and restores lost data.
+ *
+ * If no orphaned columns exist (fresh DB or already recovered), this is a no-op.
+ * For full data re-population, use: node scripts/repair-program-data.mjs
  */
 migrate(
   (app) => {
@@ -17,10 +17,10 @@ migrate(
       { name: "program_phases",     fields: ["name"] },
       { name: "program_exercises",  fields: ["day_name", "day_focus", "exercise_name", "muscles", "note", "workout_title"] },
       { name: "program_day_config", fields: ["day_name", "day_focus"] },
+      { name: "exercises_catalog",  fields: ["name", "muscles", "note", "description"] },
     ]
 
     for (const table of tables) {
-      // Get actual SQLite columns for this table
       let columns
       try {
         const result = []
@@ -29,17 +29,15 @@ migrate(
       } catch { continue }
 
       for (const fieldName of table.fields) {
-        // Find orphaned columns: PocketBase names them like `_removed_fieldName_hash`
+        // Find orphaned columns: PocketBase names them `_removed_fieldName_hash`
         const orphaned = columns.filter(c =>
           c.startsWith(`_removed_${fieldName}`) || c.startsWith(`__${fieldName}`)
         )
 
         if (orphaned.length === 0) continue
 
-        // Use the first orphaned column that has actual data
         for (const oldCol of orphaned) {
           try {
-            // Check if the orphaned column has data and current column is empty
             const countResult = []
             app.db().newQuery(`
               SELECT COUNT(*) as cnt FROM ${table.name}
@@ -48,10 +46,13 @@ migrate(
             `).all(countResult)
 
             if (countResult.length > 0 && countResult[0].cnt > 0) {
-              // Copy data from orphaned column to the new column
+              // Wrap in i18n format if needed, then copy
               app.db().newQuery(`
                 UPDATE ${table.name}
-                SET ${fieldName} = "${oldCol}"
+                SET ${fieldName} = CASE
+                  WHEN json_valid("${oldCol}") = 1 THEN "${oldCol}"
+                  ELSE json_object('es', "${oldCol}")
+                END
                 WHERE "${oldCol}" IS NOT NULL AND "${oldCol}" != '' AND "${oldCol}" != '{"es":""}'
                   AND (${fieldName} IS NULL OR ${fieldName} = '' OR ${fieldName} = '{"es":""}')
               `).execute()
