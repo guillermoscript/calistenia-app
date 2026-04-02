@@ -62,7 +62,8 @@ async function api(path, opts = {}) {
     const body = await res.text();
     throw new Error(`${res.status} ${path}: ${body}`);
   }
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : {};
 }
 
 async function deleteAll(collection, filter) {
