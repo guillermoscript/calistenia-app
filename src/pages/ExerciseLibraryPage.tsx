@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS } from '../data/workouts'
@@ -17,6 +17,7 @@ import type { TranslatableField } from '../lib/i18n-db'
 import { localize } from '../lib/i18n-db'
 import { useLocalize } from '../hooks/useLocalize'
 import { SearchIcon } from '../components/icons/nav-icons'
+import { op } from '../lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -352,6 +353,17 @@ export default function ExerciseLibraryPage() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
 
   const { wgerResults, wgerLoading, wgerError, searchWger: doWgerSearch, importExercise, importing, clearResults } = useWgerSearch()
+
+  // Debounced search tracking
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const trackSearch = useCallback((term: string) => {
+    clearTimeout(searchTimerRef.current)
+    if (term.length >= 2) {
+      searchTimerRef.current = setTimeout(() => {
+        op.track('exercise_searched', { query: term })
+      }, 1500)
+    }
+  }, [])
   const { favoriteIds, toggleFavorite, isFavorite, count: favCount } = useFavorites()
 
   // Collect exercise IDs from active program
@@ -486,7 +498,7 @@ export default function ExerciseLibraryPage() {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); trackSearch(e.target.value) }}
           placeholder={t('exerciseLibrary.searchPlaceholder')}
           className="w-full h-12 pl-11 pr-4 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-lime-400/30 focus:ring-1 focus:ring-lime-400/20 transition-all text-sm"
         />

@@ -71,6 +71,13 @@ op.track('event_name', { key: 'value' })
 | `streak_milestone` | StreakMilestone.tsx | User sees & dismisses a streak milestone | `days` (7 / 14 / 30 / 60 / 100) |
 | `session_started` | ActiveSessionContext.tsx | User starts a workout session | `workout_key`, `source` (program / free) |
 | `program_started` | useProgress.ts | First workout completed in a program | `program_id` |
+| `login_completed` | useAuth.ts | Existing user logs in (email or Google) | `method` (email / google) |
+| `onboarding_step_viewed` | OnboardingFlow.tsx | User navigates to an onboarding step | `step` (index), `step_name` (welcome / profile / program / orientation) |
+| `workout_abandoned` | ActiveSessionContext.tsx | User closes tab/navigates away during active session | `workout_key`, `source`, `duration_seconds` |
+| `pr_achieved` | useProgress.ts | User sets a new personal record | `exercise_id`, `pr_key`, `old_value`, `new_value` |
+| `exercise_searched` | ExerciseLibraryPage.tsx | User types 2+ chars in exercise search (debounced 1.5s) | `query` |
+| `notification_clicked` | main.tsx (via SW message) | User clicks a push notification | `url`, `title` |
+| `page_error` | main.tsx | React error boundary catches an error | `error_type` (uncaught / caught / recoverable), `message` |
 
 ### Automatic Events (no code needed)
 
@@ -121,6 +128,18 @@ Shows: Do new users actually complete their first workout? Where do they get stu
 session_started → workout_completed
 ```
 Shows: How many started sessions get completed? High drop-off = UX friction in session flow.
+
+#### 5. Retention Funnel
+```
+login_completed → session_started → workout_completed
+```
+Shows: Are returning users still completing workouts?
+
+#### 6. Onboarding Step Funnel
+```
+onboarding_step_viewed (welcome) → onboarding_step_viewed (profile) → onboarding_step_viewed (program) → onboarding_step_viewed (orientation) → onboarding_completed
+```
+Shows: Which onboarding step has the biggest drop-off?
 
 ### Dashboards to Build
 
@@ -240,8 +259,10 @@ These fire automatically thanks to `trackAttributes: true`. Use for one-off trac
 | `friend_added` | After 50 users | User adds a friend | Medium |
 | `meal_logged` | When nutrition is prioritized | AI meal analysis completed | High |
 | `sleep_logged` | When sleep is prioritized | Sleep entry saved | Low |
-| `pr_achieved` | After 50 users | User sets a personal record | Medium |
 | `feature_used` | After 100 users | First use of secondary features | Low |
+| `upgrade_started` | When payments are built | User initiates upgrade flow | High |
+| `payment_completed` | When payments are built | User completes payment | High |
+| `subscription_cancelled` | When payments are built | User cancels subscription | High |
 
 ### How to Add a New Event
 

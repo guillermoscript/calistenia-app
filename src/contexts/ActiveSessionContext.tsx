@@ -164,7 +164,20 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
 
     const handler = () => { if (document.visibilityState === 'hidden') persist() }
     document.addEventListener('visibilitychange', handler)
-    return () => document.removeEventListener('visibilitychange', handler)
+
+    // Track session abandonment when closing/navigating away mid-session
+    const abandonHandler = () => {
+      if (isActive && workoutKeyRef.current) {
+        const elapsed = Math.round((Date.now() - startedAtRef.current) / 1000)
+        op.track('workout_abandoned', { workout_key: workoutKeyRef.current, source, duration_seconds: elapsed })
+      }
+    }
+    window.addEventListener('beforeunload', abandonHandler)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handler)
+      window.removeEventListener('beforeunload', abandonHandler)
+    }
   }, [isActive, workout, source, progress, sectionStartTime])
 
   const startSession = useCallback((w: Workout, key: string, src: SessionSource) => {

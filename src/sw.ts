@@ -69,12 +69,14 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const targetUrl = event.notification.data?.url || '/'
+  const notifTitle = event.notification.title || ''
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // If there's already an open tab, focus it
+      // If there's already an open tab, focus it and notify for analytics
       for (const client of windowClients) {
         if ('focus' in client) {
+          client.postMessage({ type: 'NOTIFICATION_CLICKED', url: targetUrl, title: notifTitle })
           return (client as WindowClient).navigate(targetUrl).then(c => c?.focus())
         }
       }

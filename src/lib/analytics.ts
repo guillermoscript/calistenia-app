@@ -7,3 +7,11 @@ export const op = new OpenPanel({
   trackOutgoingLinks: true,
   trackAttributes: true,
 })
+
+// Lightweight health check — logs to console if analytics endpoint is unreachable.
+// Runs once on load so you know if ad blockers or network issues are silently dropping events.
+if (typeof window !== 'undefined') {
+  fetch('https://openpanel.guille.tech/api', { method: 'HEAD', mode: 'no-cors' }).catch(() => {
+    console.warn('[analytics] OpenPanel endpoint unreachable — events may be blocked by ad blocker or network issue')
+  })
+}

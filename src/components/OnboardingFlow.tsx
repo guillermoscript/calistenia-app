@@ -116,6 +116,13 @@ export default function OnboardingFlow({
   const orientationStep = needsProfile ? 3 : 2
   const totalSteps = needsProfile ? 4 : 3
 
+  const STEP_NAMES = ['welcome', 'profile', 'program', 'orientation'] as const
+  const goToStep = (s: number) => {
+    const name = s === profileStep ? 'profile' : s === programStep ? 'program' : s === orientationStep ? 'orientation' : STEP_NAMES[s] || `step_${s}`
+    op.track('onboarding_step_viewed', { step: s, step_name: name })
+    setStep(s)
+  }
+
   const handleSelectProgram = async (programId: string) => {
     setSelectedProgramId(programId)
     setSelecting(true)
@@ -142,7 +149,7 @@ export default function OnboardingFlow({
       console.warn('Failed to save onboarding profile:', e)
     }
     setSavingProfile(false)
-    setStep(programStep)
+    goToStep(programStep)
   }
 
   const handleFinish = () => {
@@ -214,7 +221,7 @@ export default function OnboardingFlow({
             </Card>
 
             <Button
-              onClick={() => setStep(needsProfile ? profileStep : programStep)}
+              onClick={() => goToStep(needsProfile ? profileStep : programStep)}
               className="w-full h-12 font-bebas text-xl tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background"
             >
               {needsProfile ? t('onboarding.startBtn') : t('onboarding.chooseProgramBtn')}
@@ -352,7 +359,7 @@ export default function OnboardingFlow({
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => setStep(0)}
+                onClick={() => goToStep(0)}
                 className="flex-1 h-11 font-mono text-xs tracking-wide"
               >
                 {t('onboarding.back')}
@@ -367,7 +374,7 @@ export default function OnboardingFlow({
             </div>
 
             <button
-              onClick={() => setStep(programStep)}
+              onClick={() => goToStep(programStep)}
               className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
             >
               {t('onboarding.skipForNow')}
@@ -495,13 +502,13 @@ export default function OnboardingFlow({
             <div className="flex gap-3 mt-6">
               <Button
                 variant="outline"
-                onClick={() => setStep(needsProfile ? profileStep : 0)}
+                onClick={() => goToStep(needsProfile ? profileStep : 0)}
                 className="flex-1 h-11 font-mono text-xs tracking-wide"
               >
                 {t('onboarding.back')}
               </Button>
               <Button
-                onClick={() => setStep(orientationStep)}
+                onClick={() => goToStep(orientationStep)}
                 disabled={!selectedProgramId || selecting}
                 className="flex-1 h-11 font-bebas text-lg tracking-wide bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background disabled:opacity-40"
               >
@@ -563,7 +570,7 @@ export default function OnboardingFlow({
             </Button>
 
             <button
-              onClick={() => setStep(programStep)}
+              onClick={() => goToStep(programStep)}
               className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
             >
               {t('onboarding.backToProgram')}

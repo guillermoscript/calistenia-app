@@ -503,6 +503,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     const current = (settingsRef.current as unknown as Record<string, number>)[prKey] || 0
     if (repsNum > current) {
       await updateSettings({ [prKey]: repsNum } as Partial<Settings>)
+      op.track('pr_achieved', { exercise_id: exerciseId, pr_key: String(prKey), old_value: current, new_value: repsNum })
       return { exerciseId, prKey: String(prKey), oldValue: current, newValue: repsNum }
     }
     return null

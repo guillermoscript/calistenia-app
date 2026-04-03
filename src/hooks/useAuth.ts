@@ -151,6 +151,8 @@ export function useAuth(): UseAuthReturn {
       // If this is a newly created user (no referral_code yet), trigger post-registration
       if (result.record && !result.record.referral_code) {
         justRegistered.current = true
+      } else {
+        op.track('login_completed', { method: 'google' })
       }
     } catch (err: any) {
       if (err?.isAbort) return // user closed popup
@@ -166,6 +168,7 @@ export function useAuth(): UseAuthReturn {
     setIsLoading(true)
     try {
       await pb.collection('users').authWithPassword(email, password)
+      op.track('login_completed', { method: 'email' })
     } catch (err: any) {
       setAuthError(err?.message || i18n.t('auth.loginError'))
     } finally {
