@@ -927,6 +927,8 @@
   "programs.deleteActive": "Delete (active)",
   "programs.deleteProgram": "Delete program",
   "programs.deleteConfirm": "Delete this program? This action cannot be undone.",
+  "programs.deleteSuccess": "Program deleted",
+  "programs.deleteError": "Failed to delete program",
   "programs.linkCopied": "Link copied to clipboard",
   "programs.copyLink": "Copy this link:",
   "programs.shareText": "Check out this calisthenics program: {{name}}",

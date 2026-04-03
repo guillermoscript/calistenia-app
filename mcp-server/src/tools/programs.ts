@@ -470,6 +470,22 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     async ({ program_id }) => {
       try {
         const program = await pb.collection("programs").getOne(program_id);
+
+        // Delete user_programs entries first — they have cascadeDelete: false + required,
+        // so PocketBase blocks program deletion if these exist
+        try {
+          const userProgs = await pb.collection("user_programs").getFullList({
+            filter: pb.filter("program = {:pid}", { pid: program_id }),
+            fields: "id",
+            requestKey: null,
+          });
+          for (const up of userProgs) {
+            await pb.collection("user_programs").delete(up.id);
+          }
+        } catch { /* no user_programs entries */ }
+
+        // Now safe to delete — program_exercises, program_phases, program_day_config
+        // are cascade-deleted by PocketBase automatically
         await pb.collection("programs").delete(program_id);
         return {
           content: [{ type: "text", text: `Deleted program **${localize(program.name)}**` }],

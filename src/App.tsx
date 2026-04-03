@@ -63,7 +63,7 @@ import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from './lib/offlineQueue'
 import { pb } from './lib/pocketbase'
 import { cn } from './lib/utils'
-import { Toaster } from 'sonner'
+import { Toaster, toast } from 'sonner'
 import { BackgroundJobsProvider } from './contexts/BackgroundJobsContext'
 import { useNotifications } from './hooks/useNotifications'
 import { NotificationBadge } from './components/social/NotificationBadge'
@@ -474,6 +474,7 @@ function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, us
 function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole: import('./types').UserRole }) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { activeProgram } = useWorkoutState()
   const { selectProgram, duplicateProgram, deleteProgram } = useWorkoutActions()
 
@@ -486,8 +487,13 @@ function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole
   }, [duplicateProgram, navigate])
   const handleDelete = useCallback(async (pid: string) => {
     const success = await deleteProgram(pid)
-    if (success) navigate('/programs')
-  }, [deleteProgram, navigate])
+    if (success) {
+      toast.success(t('programs.deleteSuccess'))
+      navigate('/programs')
+    } else {
+      toast.error(t('programs.deleteError'))
+    }
+  }, [deleteProgram, navigate, t])
 
   if (!id) return null
   return (

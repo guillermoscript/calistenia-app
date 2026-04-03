@@ -237,7 +237,7 @@ async function checkAchievements(
       });
       hasBatchOps = true;
       if (isUnlocked) {
-        newlyUnlocked.push(ach.name as string);
+        newlyUnlocked.push(localize(ach.name));
       }
     }
   }

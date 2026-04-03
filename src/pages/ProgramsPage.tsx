@@ -14,6 +14,7 @@ import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import type { ProgramMeta, UserRole } from '../types'
 import { ShareIcon, PlusIcon, EditIcon, SearchIcon } from '../components/icons/nav-icons'
 import i18n from '../lib/i18n'
+import { toast } from 'sonner'
 
 // ── Share helper ───────────────────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ interface ProgramCardProps {
   isActive: boolean
   onSelect: () => void
   onShare: () => void
-  onDelete?: () => void
+  onDelete?: () => void | Promise<void>
   onEdit?: () => void
   onView?: () => void
 }
@@ -294,8 +295,13 @@ export default function ProgramsPage() {
   const onEditProgram = useCallback((id: string) => navigate(`/programs/${id}/edit`), [navigate])
   const onViewProgram = useCallback((_id?: string) => navigate('/workout'), [navigate])
   const onDeleteProgram = useCallback(async (id: string) => {
-    await deleteProgram(id)
-  }, [deleteProgram])
+    const success = await deleteProgram(id)
+    if (success) {
+      toast.success(t('programs.deleteSuccess'))
+    } else {
+      toast.error(t('programs.deleteError'))
+    }
+  }, [deleteProgram, t])
   const isAdmin = userRole === 'admin' || userRole === 'editor'
   const [search, setSearch] = useState('')
 

@@ -539,8 +539,8 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
           const dayId = ex.day_id as string;
           if (!scheduledDays.has(dayId)) {
             scheduledDays.set(dayId, {
-              day_name: ex.day_name as string,
-              day_focus: ex.day_focus as string,
+              day_name: localize(ex.day_name),
+              day_focus: localize(ex.day_focus),
               exercises: [],
             });
           }
@@ -564,7 +564,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         // Muscle group volume from program exercises
         const muscleVolume = new Map<string, number>();
         for (const ex of programExercises) {
-          const muscles = (ex.muscles as string)?.split(",").map((m: string) => m.trim()) ?? [];
+          const muscles = localize(ex.muscles)?.split(",").map((m: string) => m.trim()) ?? [];
           const exId = ex.exercise_id as string;
           const volume = exerciseVolume.get(exId) ?? 0;
           for (const muscle of muscles) {
@@ -590,7 +590,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         // Neglected exercises (in program but no sets logged)
         const allScheduledExercises = programExercises.map((e) => ({
           id: e.exercise_id as string,
-          name: e.exercise_name as string,
+          name: localize(e.exercise_name),
         }));
         const neglectedExercises = allScheduledExercises.filter(
           (e) => !exerciseVolume.has(e.id) || (exerciseVolume.get(e.id) ?? 0) === 0
@@ -979,7 +979,7 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
 
         const program = userPrograms[0].expand?.program as Record<string, unknown>;
         const programId = program?.id as string;
-        const programName = program?.name as string;
+        const programName = localize(program?.name as string);
 
         const settings = await pb
           .collection("settings")
@@ -1008,18 +1008,18 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
           const dayId = ex.day_id as string;
           if (!dayMap.has(dayId)) {
             dayMap.set(dayId, {
-              name: ex.day_name as string,
-              focus: ex.day_focus as string,
-              title: ex.workout_title as string,
+              name: localize(ex.day_name),
+              focus: localize(ex.day_focus),
+              title: localize(ex.workout_title),
               exercises: [],
             });
           }
           dayMap.get(dayId)!.exercises.push({
-            name: ex.exercise_name as string,
+            name: localize(ex.exercise_name),
             sets: ex.sets as number,
             reps: ex.reps as string,
             rest: ex.rest_seconds as number,
-            muscles: ex.muscles as string,
+            muscles: localize(ex.muscles),
           });
         }
 

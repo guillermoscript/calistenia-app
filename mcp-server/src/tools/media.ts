@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AuthManager } from "../auth.js";
 import { errorResult, ResponseFormat } from "../utils.js";
+import { localize } from "../lib/i18n.js";
 
 export function registerMediaTools(server: McpServer, auth: AuthManager) {
   const pb = auth.getClient();
@@ -62,7 +63,7 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
           results.push({
             id: rec.id,
             collection: "program_exercises",
-            name: rec.exercise_name as string,
+            name: localize(rec.exercise_name),
             images,
             image_urls: images.map((f) => pb.files.getUrl(rec, f)),
             video,
@@ -80,7 +81,7 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
               results.push({
                 id: rec.id,
                 collection: "program_exercises",
-                name: rec.exercise_name as string,
+                name: localize(rec.exercise_name),
                 images,
                 image_urls: images.map((f) => pb.files.getUrl(rec, f)),
                 video,
@@ -98,7 +99,7 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
           results.push({
             id: rec.id,
             collection: "exercises_catalog",
-            name: rec.name as string,
+            name: localize(rec.name),
             images,
             image_urls: images.map((f) => pb.files.getUrl(rec, f)),
             video,

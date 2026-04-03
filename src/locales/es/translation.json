@@ -927,6 +927,8 @@
   "programs.deleteActive": "Eliminar (activo)",
   "programs.deleteProgram": "Eliminar programa",
   "programs.deleteConfirm": "¿Eliminar este programa? Esta acción no se puede deshacer.",
+  "programs.deleteSuccess": "Programa eliminado",
+  "programs.deleteError": "Error al eliminar el programa",
   "programs.linkCopied": "Enlace copiado al portapapeles",
   "programs.copyLink": "Copia este enlace:",
   "programs.shareText": "Mira este programa de calistenia: {{name}}",
