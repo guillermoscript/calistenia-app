@@ -1,5 +1,9 @@
 import * as Sentry from "@sentry/react";
 
+// Detect language early (before i18n loads) — mirrors i18next detection order
+const detectedLang = localStorage.getItem("i18nextLng") || navigator.language || "es";
+const isSpanish = detectedLang.startsWith("es");
+
 Sentry.init({
   dsn: "https://45325daff5446587024f972577dbbb70@o4507789962706944.ingest.us.sentry.io/4511134403723264",
   environment: import.meta.env.MODE,
@@ -16,7 +20,43 @@ Sentry.init({
     Sentry.feedbackIntegration({
       colorScheme: "system",
       enableScreenshot: true,
-      triggerLabel: "Bug",
+      ...(isSpanish
+        ? {
+            triggerLabel: "Reportar problema",
+            formTitle: "¿Algo no funciona?",
+            nameLabel: "Tu nombre",
+            namePlaceholder: "Ej: María",
+            emailLabel: "Correo (para respuesta)",
+            emailPlaceholder: "tu@correo.com",
+            messageLabel: "¿Qué ocurrió?",
+            messagePlaceholder:
+              "Describe lo que hiciste, qué salió mal y qué esperabas que pasara",
+            submitButtonLabel: "Enviar reporte",
+            cancelButtonLabel: "Cancelar",
+            successMessageText:
+              "¡Recibido! Revisaremos tu reporte lo antes posible.",
+            addScreenshotButtonLabel: "Adjuntar captura",
+            removeScreenshotButtonLabel: "Quitar captura",
+            isRequiredLabel: "(obligatorio)",
+          }
+        : {
+            triggerLabel: "Report issue",
+            formTitle: "Something not working?",
+            nameLabel: "Your name",
+            namePlaceholder: "E.g. Alex",
+            emailLabel: "Email (for follow-up)",
+            emailPlaceholder: "you@email.com",
+            messageLabel: "What happened?",
+            messagePlaceholder:
+              "Describe what you did, what went wrong, and what you expected",
+            submitButtonLabel: "Send report",
+            cancelButtonLabel: "Cancel",
+            successMessageText:
+              "Got it! We'll look into this as soon as possible.",
+            addScreenshotButtonLabel: "Attach screenshot",
+            removeScreenshotButtonLabel: "Remove screenshot",
+            isRequiredLabel: "(required)",
+          }),
     }),
   ],
 
