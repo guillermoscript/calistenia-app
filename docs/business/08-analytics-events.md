@@ -111,85 +111,96 @@ This means every event after identify is tied to a specific user. You can see pe
 
 ---
 
-## OpenPanel Dashboard Setup
+## Reports & Dashboards
 
-### Funnels to Create
+All reports are created in OpenPanel at **Reports** → chart type selector → pick events → Save.
 
-Go to **Insights** → **+ Create report** → **Funnel**
+### Status Legend
 
-#### 1. Acquisition Funnel
-```
-screen_view (path = /) → cta_clicked → signup_completed → onboarding_completed → workout_completed
-```
-Shows: How many landing page visitors become active users. Where do they drop off?
+- [x] = Created in OpenPanel
+- [ ] = Not yet created (create when events have data)
 
-#### 2. Referral Funnel
-```
-invite_sent → invite_landing_viewed → signup_completed
-```
-Shows: How effective is the referral system? What % of invite links convert?
+---
 
-#### 3. Activation Funnel
-```
-signup_completed → onboarding_completed → program_selected → session_started → workout_completed
-```
-Shows: Do new users actually complete their first workout? Where do they get stuck?
+### Funnel Reports
 
-#### 4. Session Completion Funnel
-```
-session_started → workout_completed
-```
-Shows: How many started sessions get completed? High drop-off = UX friction in session flow.
+| # | Report Name | Chart Type | Events (in order) | Dashboard | Status |
+|---|------------|------------|-------------------|-----------|--------|
+| F1 | **Acquisition Funnel** | Funnel | `screen_view` → `cta_clicked` → `signup_completed` → `onboarding_completed` → `workout_completed` | Main | [x] |
+| F2 | **Referral Funnel** | Funnel | `invite_sent` → `invite_landing_viewed` → `signup_completed` | Referral | [ ] |
+| F3 | **Activation Funnel** | Funnel | `signup_completed` → `onboarding_completed` → `program_selected` → `session_started` → `workout_completed` | Main | [ ] |
+| F4 | **Session Completion** | Funnel | `session_started` → `workout_completed` | Main | [ ] |
+| F5 | **Retention Funnel** | Funnel | `login_completed` → `session_started` → `workout_completed` | Main | [ ] |
+| F6 | **Onboarding Steps** | Funnel | `onboarding_step_viewed` (welcome) → (profile) → (program) → (orientation) → `onboarding_completed` | Main | [ ] |
+| F7 | **Cardio Session Completion** | Funnel | `cardio_started` → `cardio_completed` | Feature Adoption | [ ] |
+| F8 | **Nutrition Flow** | Funnel | `meal_analyzed` → `meal_logged` | Feature Adoption | [ ] |
+| F9 | **Challenge Lifecycle** | Funnel | `challenge_created` → `challenge_joined` → `challenge_completed` | Social | [ ] |
 
-#### 5. Retention Funnel
-```
-login_completed → session_started → workout_completed
-```
-Shows: Are returning users still completing workouts?
+### Trend Reports (Line/Area Charts)
 
-#### 6. Onboarding Step Funnel
-```
-onboarding_step_viewed (welcome) → onboarding_step_viewed (profile) → onboarding_step_viewed (program) → onboarding_step_viewed (orientation) → onboarding_completed
-```
-Shows: Which onboarding step has the biggest drop-off?
+| # | Report Name | Chart Type | Event | Breakdown | Dashboard | Status |
+|---|------------|------------|-------|-----------|-----------|--------|
+| T1 | **Signups Over Time** | Linear | `signup_completed` | `method` | Main | [ ] |
+| T2 | **Logins Over Time** | Linear | `login_completed` | `method` | Main | [ ] |
+| T3 | **Workouts Over Time** | Linear | `workout_completed` | — | Main | [ ] |
+| T4 | **Cardio Over Time** | Linear | `cardio_completed` | `activity_type` | Feature Adoption | [ ] |
+| T5 | **Meals Logged Over Time** | Linear | `meal_logged` | `meal_type` | Feature Adoption | [ ] |
+| T6 | **Water Logged Over Time** | Linear | `water_logged` | — | Feature Adoption | [ ] |
+| T7 | **Sleep Entries Over Time** | Linear | `sleep_logged` | — | Feature Adoption | [ ] |
+| T8 | **Sessions Started vs Completed** | Linear | `session_started` + `workout_completed` | — | Main | [ ] |
+| T9 | **Invites Over Time** | Linear | `invite_sent` | `method` | Referral | [ ] |
+| T10 | **Errors Over Time** | Linear | `page_error` | `error_type` | Health | [ ] |
 
-### Dashboards to Build
+### Breakdown Reports (Bar/Pie Charts)
 
-Go to **Dashboards** → **+ Create dashboard** → pin reports
+| # | Report Name | Chart Type | Event | Breakdown By | Dashboard | Status |
+|---|------------|------------|-------|-------------|-----------|--------|
+| B1 | **CTA Performance** | Bar | `cta_clicked` | `location` | Main | [ ] |
+| B2 | **Share Card Types** | Pie | `share_card_shared` | `card_type` | Engagement | [ ] |
+| B3 | **Cardio Activities** | Pie | `cardio_completed` | `activity_type` | Feature Adoption | [ ] |
+| B4 | **Meal Types** | Pie | `meal_logged` | `meal_type` | Feature Adoption | [ ] |
+| B5 | **Auth Methods** | Pie | `signup_completed` | `method` | Main | [ ] |
+| B6 | **Challenge Metrics** | Bar | `challenge_created` | `metric` | Social | [ ] |
+| B7 | **Notification Clicks** | Bar | `notification_clicked` | `url` | Engagement | [ ] |
+| B8 | **Exercise Search Queries** | Bar | `exercise_searched` | `query` | Engagement | [ ] |
+| B9 | **Streak Milestones** | Bar | `streak_milestone` | `days` | Engagement | [ ] |
+| B10 | **Workout Abandoned Duration** | Histogram | `workout_abandoned` | `duration_seconds` | Health | [ ] |
 
-**Main Dashboard (check daily):**
-- Unique visitors (widget)
-- Signups over time (Events → filter `signup_completed`)
-- Workouts over time (Events → filter `workout_completed`)
-- CTA performance (Events → filter `cta_clicked`, break down by `location` property)
-- Acquisition funnel (pin the funnel report)
+### Metric Reports (Single Number Widgets)
 
-**Referral Dashboard (check weekly):**
-- Invites sent over time (Events → filter `invite_sent`, break down by `method`)
-- Invite landing views (Events → filter `invite_landing_viewed`)
-- Referral conversions (Events → filter `referral_converted`)
-- Referral funnel (pin the funnel report)
+| # | Report Name | Chart Type | Event | Dashboard | Status |
+|---|------------|------------|-------|-----------|--------|
+| M1 | **Total Signups (30d)** | Metric | `signup_completed` | Main | [ ] |
+| M2 | **Total Workouts (30d)** | Metric | `workout_completed` | Main | [ ] |
+| M3 | **Total Meals Logged (30d)** | Metric | `meal_logged` | Feature Adoption | [ ] |
+| M4 | **PWA Installs (30d)** | Metric | `app_installed` | Main | [ ] |
+| M5 | **PRs Achieved (30d)** | Metric | `pr_achieved` | Engagement | [ ] |
+| M6 | **Active Challenges** | Metric | `challenge_created` | Social | [ ] |
+| M7 | **Leaderboard Views (30d)** | Metric | `leaderboard_viewed` | Social | [ ] |
+| M8 | **AI Meal Analyses (30d)** | Metric | `meal_analyzed` | Feature Adoption | [ ] |
 
-### Key Sections in OpenPanel
+---
 
-| Section | What It Shows | When to Check |
-|---------|--------------|---------------|
-| **Overview** | Visitors, sessions, bounce rate, pageviews | Daily |
-| **Events** | All custom events with properties | Daily |
-| **Pages** | Which pages get traffic (landing, blog, invite) | Weekly |
-| **Profiles** | Identified users with name, email, tier | When investigating specific users |
-| **Sessions** | Individual session replays (if enabled) | When debugging UX issues |
-| **Realtime** | Live visitors on the site right now | During launches/campaigns |
-| **Insights** | Funnels, retention, custom reports | Weekly |
-| **Refs / Source / Medium / Campaign** | UTM attribution | After running ads |
+### Dashboards
 
-### Alerts to Set Up
+| Dashboard | Reports | Check Frequency |
+|-----------|---------|-----------------|
+| **Main** | F1, F3, F4, F5, F6, T1, T2, T3, T8, B1, B5, M1, M2, M4 | Daily |
+| **Feature Adoption** | F7, F8, T4, T5, T6, T7, B3, B4, M3, M8 | Weekly |
+| **Engagement** | B2, B7, B8, B9, M5 | Weekly |
+| **Referral** | F2, T9 | Weekly |
+| **Social** | F9, B6, M6, M7 | Weekly |
+| **Health** | T10, B10 | When issues arise |
 
-Go to **Notifications** → create alerts:
+### Alerts (Notifications)
 
-- **Zero signups in 48h** → Something is broken (landing page, auth, deploy)
-- **Spike in screen_view but no signups** → Funnel is broken (CTA or auth page issue)
-- **invite_sent spike** → A user is actively sharing (reach out and thank them)
+| Alert | Condition | Action |
+|-------|-----------|--------|
+| **Zero signups in 48h** | `signup_completed` = 0 for 2 days | Something is broken (landing page, auth, deploy) |
+| **Spike in screen_view but no signups** | High `screen_view`, zero `signup_completed` | Funnel is broken (CTA or auth page issue) |
+| **invite_sent spike** | Sudden increase in `invite_sent` | A user is actively sharing (reach out and thank them) |
+| **page_error spike** | `page_error` count > 10 in 1 hour | Check Sentry for details |
+| **Zero workouts in 48h** | `workout_completed` = 0 for 2 days | Engagement drop — check if deploy broke something |
 
 ---
 
@@ -266,15 +277,10 @@ These fire automatically thanks to `trackAttributes: true`. Use for one-off trac
 
 | Event | When to Add | Trigger | Priority |
 |-------|------------|---------|----------|
-| `challenge_created` | After 50 users | User creates a challenge | Medium |
-| `challenge_joined` | After 50 users | User joins a challenge | Medium |
-| `friend_added` | After 50 users | User adds a friend | Medium |
-| `meal_logged` | When nutrition is prioritized | AI meal analysis completed | High |
-| `sleep_logged` | When sleep is prioritized | Sleep entry saved | Low |
-| `feature_used` | After 100 users | First use of secondary features | Low |
 | `upgrade_started` | When payments are built | User initiates upgrade flow | High |
 | `payment_completed` | When payments are built | User completes payment | High |
 | `subscription_cancelled` | When payments are built | User cancels subscription | High |
+| `feature_used` | After 100 users | First use of secondary features | Low |
 
 ### How to Add a New Event
 
