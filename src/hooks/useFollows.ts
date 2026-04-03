@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { op } from '../lib/analytics'
 
 export interface FollowUser {
   id: string
@@ -106,6 +107,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
         follower: pb.authStore.record?.id ?? userId,
         following: targetUserId,
       })
+      op.track('user_followed', { target_id: targetUserId })
       return true
     } catch (e: any) {
       // Revert optimistic update

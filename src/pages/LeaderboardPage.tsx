@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '../hooks/useLeaderboard'
 import { cn } from '../lib/utils'
+import { op } from '../lib/analytics'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 
@@ -30,7 +31,7 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
   const [category, setCategory] = useState<LeaderboardCategory>('sessions_week')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('week')
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(); op.track('leaderboard_viewed') }, [load])
 
   // Map time filter to actual category for sessions
   const activeCategory: LeaderboardCategory =

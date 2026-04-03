@@ -13,6 +13,7 @@ import CardioStats from '../components/cardio/CardioStats'
 import CardioShareCard from '../components/cardio/CardioShareCard'
 import ElevationProfile from '../components/cardio/ElevationProfile'
 import { Button } from '../components/ui/button'
+import { op } from '../lib/analytics'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { cn } from '../lib/utils'
 import { useAuthState } from '../contexts/AuthContext'
@@ -67,10 +68,14 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
   const handleFinish = async () => {
     const session = await finish(note.trim() || undefined)
+    if (session) {
+      op.track('cardio_completed', { activity_type: session.activity_type, distance_km: session.distance_km, duration_seconds: session.duration_seconds })
+    }
     setSavedSession(session)
   }
 
   const handleDiscard = () => {
+    op.track('cardio_discarded', { activity_type: selectedActivity })
     discard()
     setSavedSession(null)
   }
@@ -181,6 +186,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           <Button
             id="tour-cardio-start"
             onClick={() => {
+              op.track('cardio_started', { activity_type: selectedActivity })
               start(selectedActivity, urlProgram || undefined, urlDayKey || undefined)
               // Clear URL params after starting
               if (isFromProgram) setSearchParams({}, { replace: true })

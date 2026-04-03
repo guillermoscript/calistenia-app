@@ -12,6 +12,7 @@ import { useFoodCatalog } from '../../hooks/useFoodCatalog'
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner'
 import { useFoodHistory } from '../../hooks/useFoodHistory'
 import { useMealTemplates } from '../../hooks/useMealTemplates'
+import { op } from '../../lib/analytics'
 import { calcMacros, normalizeToBase100, migrateLegacyFood, createEmptyFood } from '../../lib/macro-calc'
 import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate, MealType } from '../../types'
 
@@ -325,6 +326,7 @@ export default function MealLoggerContent({
       foods.filter(f => f.name.trim()).forEach(f => saveFoodToCatalog(f))
       const hour = localHour()
       foods.filter(f => f.name.trim()).forEach(f => trackFood(f, mealType, hour))
+      op.track('meal_logged', { meal_type: mealType, food_count: validFoods.length, calories: totals.calories })
       setStep('success')
     } catch {
       setError(t('nutrition.logger.saveError'))

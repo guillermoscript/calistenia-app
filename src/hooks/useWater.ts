@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { op } from '../lib/analytics'
 import { todayStr, addDays, localMidnightAsUTC, nowLocalForPB } from '../lib/dateUtils'
 
 const LS_KEY = 'calistenia_water'
@@ -137,6 +138,7 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
   const addWater = useCallback(async (ml: number) => {
     if (adding) return // prevent rapid double-clicks
     setAdding(true)
+    op.track('water_logged', { amount_ml: ml })
     const localId = `local_${Date.now()}`
     const entry: WaterEntry = { id: localId, amount_ml: ml, logged_at: nowLocalForPB() }
 

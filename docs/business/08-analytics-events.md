@@ -78,6 +78,18 @@ op.track('event_name', { key: 'value' })
 | `exercise_searched` | ExerciseLibraryPage.tsx | User types 2+ chars in exercise search (debounced 1.5s) | `query` |
 | `notification_clicked` | main.tsx (via SW message) | User clicks a push notification | `url`, `title` |
 | `page_error` | main.tsx | React error boundary catches an error | `error_type` (uncaught / caught / recoverable), `message` |
+| `cardio_started` | CardioSessionPage.tsx | User starts a cardio session | `activity_type` (running / walking / cycling) |
+| `cardio_completed` | CardioSessionPage.tsx | User finishes a cardio session | `activity_type`, `distance_km`, `duration_seconds` |
+| `cardio_discarded` | CardioSessionPage.tsx | User discards a cardio session | `activity_type` |
+| `meal_logged` | MealLoggerContent.tsx | User saves a meal entry | `meal_type`, `food_count`, `calories` |
+| `meal_analyzed` | useNutrition.ts | AI photo analysis completes | `food_count`, `ai_model` |
+| `water_logged` | useWater.ts | User logs water intake | `amount_ml` |
+| `challenge_created` | useChallenges.ts | User creates a challenge | `metric`, `duration_days`, `participant_count` |
+| `challenge_joined` | useChallengeDetail.ts | User is added to a challenge | `challenge_id` |
+| `challenge_completed` | useChallenges.ts | Challenge auto-ends when expired | `challenge_id` |
+| `user_followed` | useFollows.ts | User follows another user | `target_id` |
+| `leaderboard_viewed` | LeaderboardPage.tsx | User opens the leaderboard | — |
+| `sleep_logged` | SleepPage.tsx | User logs a new sleep entry | `quality` |
 
 ### Automatic Events (no code needed)
 

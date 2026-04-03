@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import i18n from '../lib/i18n'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
+import { op } from '../lib/analytics'
 import { todayStr, toLocalDateStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
 import type {
   NutritionEntry,
@@ -257,8 +258,10 @@ export function useNutrition(userId: string | null) {
     }
     const data = await res.json()
     // AI SDK v6 returns { analysis: { foods, totals, meal_description }, model_used, usage }
+    const foods = data.analysis?.foods ?? []
+    op.track('meal_analyzed', { food_count: foods.length, ai_model: data.model_used || 'unknown' })
     return {
-      foods: data.analysis?.foods ?? [],
+      foods,
       totals: data.analysis?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 },
       meal_description: data.analysis?.meal_description || '',
       ai_model: data.model_used || 'unknown',

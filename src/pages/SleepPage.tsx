@@ -8,6 +8,7 @@ import SleepWeekChart from '../components/sleep/SleepWeekChart'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
+import { op } from '../lib/analytics'
 import {
   Dialog,
   DialogContent,
@@ -203,6 +204,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
       await updateSleepEntry(editingEntry.id, input)
     } else {
       await saveSleepEntry(input)
+      op.track('sleep_logged', { quality: formData.quality })
     }
     setFormOpen(false)
     setEditingEntry(null)

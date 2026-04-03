@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { op } from '../lib/analytics'
 import { localMidnightAsUTC, addDays, utcToLocalDateStr } from '../lib/dateUtils'
 import type { Challenge, ChallengeMetric } from '../types'
 import type { LeaderboardEntry } from './useLeaderboard'
@@ -85,6 +86,7 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
         challenge: challengeId,
         user: targetUserId,
       })
+      op.track('challenge_joined', { challenge_id: challengeId })
       await load()
       return true
     } catch {

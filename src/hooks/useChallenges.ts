@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { op } from '../lib/analytics'
 import { todayStr } from '../lib/dateUtils'
 import type { Challenge, ChallengeMetric, ChallengeStatus } from '../types'
 
@@ -49,6 +50,7 @@ export function useChallenges(userId: string | null) {
           try {
             await pb.collection('challenges').update(c.id, { status: 'ended' })
             c.status = 'ended'
+            op.track('challenge_completed', { challenge_id: c.id })
           } catch { /* creator-only, ignore if not creator */ }
         }
 
@@ -120,6 +122,7 @@ export function useChallenges(userId: string | null) {
         )
       )
 
+      op.track('challenge_created', { metric: data.metric, duration_days: Math.ceil((new Date(data.ends_at).getTime() - new Date(data.starts_at).getTime()) / 86400000), participant_count: allParticipants.length })
       await load()
       return challenge.id
     } catch (e) {
