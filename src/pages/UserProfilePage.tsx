@@ -115,7 +115,7 @@ export default function UserProfilePage() {
         let recentSessions: ProfileData['recentSessions'] = []
         try {
           const sessions = await pb.collection('sessions').getList(1, 100, {
-            filter: pb.filter('user = {:uid} && created >= {:start}', {
+            filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
               uid: userId,
               start: localMidnightAsUTC(`${yearMonth}-01`),
             }),
@@ -123,7 +123,7 @@ export default function UserProfilePage() {
             $autoCancel: false,
           })
           for (const s of sessions.items) {
-            const date = utcToLocalDateStr(s.created)
+            const date = utcToLocalDateStr(s.completed_at)
             if (date && monthActivity.hasOwnProperty(date)) {
               monthActivity[date] = true
             }
