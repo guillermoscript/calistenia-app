@@ -350,7 +350,17 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       } catch (e) { console.warn('PB sessions error:', e) }
     }
 
-    op.track('workout_completed', { workout_key: workoutKey, is_free_session: workoutKey.startsWith('free_') })
+    const isFree = workoutKey.startsWith('free_')
+    op.track('workout_completed', { workout_key: workoutKey, is_free_session: isFree })
+
+    // Track first workout in a program as program_started
+    if (!isFree && activeProgramId) {
+      const psKey = `calistenia_program_started_${activeProgramId}_${userId}`
+      if (!localStorage.getItem(psKey)) {
+        localStorage.setItem(psKey, Date.now().toString())
+        op.track('program_started', { program_id: activeProgramId })
+      }
+    }
   }, [usePB, userId, activeProgramId])
 
   // ─── unmarkWorkoutDone ───────────────────────────────────────────────────

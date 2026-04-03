@@ -4,6 +4,7 @@ import i18n from '../../lib/i18n'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
+import { op } from '../../lib/analytics'
 import type { DailyTotals, NutritionGoal } from '../../types'
 
 interface DailySummaryCardProps {
@@ -221,6 +222,7 @@ export default function DailySummaryCard({ date, totals, goals, waterMl, waterGo
       const blob = await canvasToBlob(canvas)
       if (!blob) return
       await shareImage(blob, `nutricion_${date}.png`, `Mi nutricion ${formatDate(date)}`)
+      op.track('share_card_shared', { card_type: 'nutrition' })
     } catch (e) {
       console.warn('Share error:', e)
     }

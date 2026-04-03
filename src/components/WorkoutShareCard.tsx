@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import i18n from '../lib/i18n'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
+import { op } from '../lib/analytics'
 import { todayStr } from '../lib/dateUtils'
 import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage } from '../lib/canvas-helpers'
 import type { Exercise } from '../types'
@@ -318,6 +319,7 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
         `${workoutTitle} - ${formatDate(dateStr)}`,
         shareText,
       )
+      op.track('share_card_shared', { card_type: 'workout' })
     } catch (e) {
       console.warn('Share error:', e)
     }

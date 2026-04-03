@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { op } from '../lib/analytics'
 
 const DISMISS_KEY = 'calistenia_install_dismiss'
 const DISMISS_DAYS = 14
@@ -67,6 +68,7 @@ export default function InstallPrompt() {
       await deferredPrompt.current.prompt()
       const { outcome } = await deferredPrompt.current.userChoice
       if (outcome === 'accepted') {
+        op.track('app_installed', { method: 'native_prompt' })
         setShowPrompt(false)
       }
       deferredPrompt.current = null

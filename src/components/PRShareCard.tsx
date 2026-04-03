@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
+import { op } from '../lib/analytics'
 import { todayStr } from '../lib/dateUtils'
 import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage, CARD_COLORS } from '../lib/canvas-helpers'
 import i18n from '../lib/i18n'
@@ -203,6 +204,7 @@ export default function PRShareCard({ prEvent, exerciseName, userName, avatarUrl
         `${t('pr.newRecord')} — ${exerciseName}`,
         shareText,
       )
+      op.track('share_card_shared', { card_type: 'pr' })
     } catch (e) {
       console.warn('PR share error:', e)
     }

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { shareContent } from '../lib/share'
+import { op } from '../lib/analytics'
 
 const MILESTONES = [7, 14, 30, 60, 100] as const
 
@@ -47,6 +48,7 @@ export default function StreakMilestone({ streak, userId, userName, referralCode
   }, [streak, t, referralCode])
 
   const handleDismiss = useCallback(() => {
+    op.track('streak_milestone', { days: streak })
     markMilestoneShown(streak, userId)
     onDismiss()
   }, [streak, userId, onDismiss])

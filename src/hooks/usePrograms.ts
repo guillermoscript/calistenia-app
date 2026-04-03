@@ -28,6 +28,7 @@ import {
   getWorkout as fallbackGetWorkout,
 } from '../data/workouts'
 import { nowLocalForPB } from '../lib/dateUtils'
+import { op } from '../lib/analytics'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
 import i18n from '../lib/i18n'
 import { localize } from '../lib/i18n-db'
@@ -412,6 +413,8 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
       // 4. Reload exercises/phases for new program
       await loadProgramData(programId)
+
+      op.track('program_selected', { program_id: programId, program_name: newActive?.name || '' })
       return true
     } catch (e) {
       console.error('usePrograms: selectProgram error', e)

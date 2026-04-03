@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
+import { op } from '../../lib/analytics'
 import { formatPace, formatDuration, formatSpeed } from '../../lib/geo'
 import i18n from '../../lib/i18n'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
@@ -210,6 +211,7 @@ export default function CardioShareCard({ session, referralCode }: CardioShareCa
         `${getActivityLabel(session.activity_type)} — ${session.distance_km.toFixed(2)} km`,
         shareText,
       )
+      op.track('share_card_shared', { card_type: 'cardio', activity: session.activity_type })
     } catch (e) {
       console.warn('Share error:', e)
     }

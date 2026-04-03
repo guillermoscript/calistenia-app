@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import type { Exercise, Workout } from '../types'
+import { op } from '../lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -179,6 +180,7 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     cooldownSkippedRef.current = false
     cooldownDurationRef.current = 0
     setIsActive(true)
+    op.track('session_started', { workout_key: key, source: src })
     // Persist immediately
     saveToStorage({ workout: w, workoutKey: key, source: src, progress: INITIAL_PROGRESS, startedAt: now, sectionStartTime: now })
   }, [])
