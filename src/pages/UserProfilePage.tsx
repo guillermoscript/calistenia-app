@@ -80,13 +80,14 @@ export default function UserProfilePage() {
       setLoading(true)
       try {
         // Fetch user
-        const user = await pb.collection('users').getOne(userId)
+        const user = await pb.collection('users').getOne(userId, { $autoCancel: false })
 
         // Fetch user_stats
         let stats: any = {}
         try {
           stats = await pb.collection('user_stats').getFirstListItem(
-            pb.filter('user = {:uid}', { uid: userId })
+            pb.filter('user = {:uid}', { uid: userId }),
+            { $autoCancel: false }
           )
         } catch { /* no stats yet */ }
 
@@ -119,6 +120,7 @@ export default function UserProfilePage() {
               start: localMidnightAsUTC(`${yearMonth}-01`),
             }),
             sort: '-completed_at',
+            $autoCancel: false,
           })
           for (const s of sessions.items) {
             const date = utcToLocalDateStr(s.created)
