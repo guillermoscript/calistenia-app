@@ -108,6 +108,9 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
   const weekDiff = stats.sessionsThisWeek - stats.sessionsPrevWeek
   const monthDiff = stats.sessionsThisMonth - stats.sessionsPrevMonth
 
+  const goalPct = filter !== 'free' ? Math.min((stats.sessionsThisWeek / stats.weeklyGoal) * 100, 100) : 0
+  const goalMet = stats.sessionsThisWeek >= stats.weeklyGoal
+
   return (
     <div className="grid grid-cols-3 gap-4 mb-8">
       <div>
@@ -115,12 +118,20 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
           {stats.sessionsThisWeek}
           {filter !== 'free' && <span className="text-lg text-muted-foreground">/{stats.weeklyGoal}</span>}
         </div>
-        <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1 uppercase">
+        {filter !== 'free' && (
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-2 max-w-[80px]">
+            <div
+              className={cn('h-full rounded-full transition-all duration-500', goalMet ? 'bg-emerald-500' : 'bg-lime')}
+              style={{ width: `${goalPct}%` }}
+            />
+          </div>
+        )}
+        <div className="text-[10px] text-muted-foreground tracking-[1.5px] mt-1.5 uppercase">
           {filter === 'free' ? t('progress.summary.freePerWeek') : t('progress.summary.sessionsPerWeek')}
         </div>
         {weekDiff !== 0 && (
-          <div className={cn('text-[11px] mt-1', weekDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
-            {weekDiff > 0 ? '+' : ''}{weekDiff} {t('progress.summary.vsLastWeek')}
+          <div className={cn('text-[11px] mt-1 font-medium', weekDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
+            {weekDiff > 0 ? '\u2191' : '\u2193'} {Math.abs(weekDiff)} {t('progress.summary.vsLastWeek')}
           </div>
         )}
       </div>
@@ -133,8 +144,8 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
           {filter === 'free' ? t('progress.summary.freePerMonth') : t('progress.summary.sessionsPerMonth')}
         </div>
         {monthDiff !== 0 && (
-          <div className={cn('text-[11px] mt-1', monthDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
-            {monthDiff > 0 ? '+' : ''}{monthDiff} {t('progress.summary.vsLastMonth')}
+          <div className={cn('text-[11px] mt-1 font-medium', monthDiff > 0 ? 'text-emerald-500' : 'text-red-400')}>
+            {monthDiff > 0 ? '\u2191' : '\u2193'} {Math.abs(monthDiff)} {t('progress.summary.vsLastMonth')}
           </div>
         )}
       </div>

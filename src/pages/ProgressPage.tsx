@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { WORKOUTS } from '../data/workouts'
@@ -22,8 +22,47 @@ import PhotoComparator from '../components/progress/PhotoComparator'
 import PhasePhotoTimeline from '../components/progress/PhasePhotoTimeline'
 import BodyMeasurementsTracker from '../components/progress/BodyMeasurementsTracker'
 import ExportData from '../components/progress/ExportData'
+import { Input } from '../components/ui/input'
 import { useWeight } from '../hooks/useWeight'
 import { useBodyPhotos } from '../hooks/useBodyPhotos'
+
+function ChartsExerciseList({ exerciseLogs, t }: { exerciseLogs: Record<string, ExerciseLog[]>; t: (key: string) => string }) {
+  const [search, setSearch] = useState('')
+  const entries = Object.entries(exerciseLogs)
+  const filtered = search
+    ? entries.filter(([exId]) => exId.replace(/_/g, ' ').toLowerCase().includes(search.toLowerCase()))
+    : entries
+  const showSearch = entries.length > 6
+
+  return (
+    <div id="tour-exercise-charts" className="mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">{t('progress.chartsByExercise')}</div>
+        {showSearch && (
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={t('progress.searchExercise')}
+            className="h-7 w-40 text-xs"
+          />
+        )}
+      </div>
+      <div className="flex flex-col gap-2.5">
+        {filtered.map(([exId, logs]) => (
+          <ExerciseChart
+            key={exId}
+            exerciseName={exId}
+            logs={logs}
+            showSessionType
+          />
+        ))}
+        {filtered.length === 0 && search && (
+          <div className="text-sm text-muted-foreground text-center py-4">{t('common.noResults')}</div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 interface SessionLog {
   date: string
@@ -33,6 +72,7 @@ interface SessionLog {
   note: string
   isFree: boolean
   exerciseCount: number
+  totalSets: number
 }
 
 export default function ProgressPage() {
@@ -53,11 +93,12 @@ export default function ProgressPage() {
         const workoutKey = parts.slice(2).join('_')
         const isFree = workoutKey.startsWith('free_')
         const workout = isFree ? null : WORKOUTS[workoutKey]
-        const exerciseCount = isFree
-          ? Object.keys(progress).filter(k =>
-              !k.startsWith('done_') && k.includes(workoutKey) && k.includes(date)
-            ).length
-          : 0
+        const sessionEntries = Object.values(progress).filter(v => {
+          const log = v as ExerciseLog
+          return log.exerciseId && log.sets && log.date === date && log.workoutKey === workoutKey
+        }) as ExerciseLog[]
+        const exerciseCount = isFree ? sessionEntries.length : 0
+        const totalSets = sessionEntries.reduce((acc, log) => acc + log.sets.length, 0)
         return {
           date, workoutKey,
           title: isFree ? t('progress.freeSession') : (workout?.title || workoutKey),
@@ -65,6 +106,7 @@ export default function ProgressPage() {
           note: (val as { note?: string }).note || '',
           isFree,
           exerciseCount,
+          totalSets,
         }
       })
       .sort((a, b) => b.date.localeCompare(a.date))
@@ -150,15 +192,34 @@ export default function ProgressPage() {
                         <div className="text-xs text-muted-foreground w-16 shrink-0">{relativeDate(log.date)}</div>
                         <div className="min-w-0">
                           <div className={cn('text-sm font-medium truncate', log.isFree ? 'text-violet-400' : phaseColor?.text)}>{log.title}</div>
-                          {log.isFree && log.exerciseCount > 0 && (
-                            <div className="text-[11px] text-muted-foreground">{t('progress.exerciseCount', { count: log.exerciseCount })}</div>
-                          )}
+                          <div className="text-[11px] text-muted-foreground">
+                            {log.totalSets > 0
+                              ? t('common.sets', { count: log.totalSets })
+                              : log.isFree && log.exerciseCount > 0
+                                ? t('progress.exerciseCount', { count: log.exerciseCount })
+                                : null}
+                          </div>
                         </div>
                       </div>
-                      {log.note && (
-                        <div className="text-[11px] text-muted-foreground italic truncate max-w-[120px] hidden sm:block">"{log.note}"</div>
-                      )}
-                      <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {log.note && (
+                          <div className="text-[11px] text-muted-foreground italic truncate max-w-[120px] hidden sm:block">"{log.note}"</div>
+                        )}
+                        {log.totalSets > 0 && (
+                          <div className="flex gap-px">
+                            {Array.from({ length: Math.min(Math.ceil(log.totalSets / 5), 5) }).map((_, j) => (
+                              <div
+                                key={j}
+                                className={cn(
+                                  'w-1 h-3 rounded-full',
+                                  log.isFree ? 'bg-violet-400/60' : phaseColor ? phaseColor.bg.replace('/10', '/40') : 'bg-lime/40'
+                                )}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        <svg className="size-4 text-muted-foreground" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+                      </div>
                     </button>
                   )
                 })}
@@ -171,36 +232,7 @@ export default function ProgressPage() {
 
           {/* ── Tab 2: Gráficas ── */}
           <TabsContent value="graficas">
-            {/* Exercise Charts */}
-            {Object.keys(exerciseLogs).length > 0 && (
-              <div id="tour-exercise-charts" className="mb-8">
-                <div className="text-[10px] text-muted-foreground tracking-[3px] mb-4 uppercase">{t('progress.chartsByExercise')}</div>
-                <div className="flex flex-col gap-2.5">
-                  {Object.entries(exerciseLogs).map(([exId, logs]) => (
-                    <ExerciseChart
-                      key={exId}
-                      exerciseName={exId}
-                      logs={logs}
-                      showSessionType
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Weight Progression (lastre) */}
-            <WeightProgressionChart exerciseLogs={exerciseLogs} />
-
-            {/* Volume Load */}
-            <VolumeLoadChart progress={progress} />
-
-            {/* Muscle Volume */}
-            <MuscleVolumeChart progress={progress} />
-
-            {/* 1RM Calculator */}
-            <OneRepMaxCalculator exerciseLogs={exerciseLogs} />
-
-            {Object.keys(exerciseLogs).length === 0 && (
+            {Object.keys(exerciseLogs).length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
                 <div className="font-bebas text-2xl mb-2">{t('progress.noChartsData')}</div>
                 <div className="text-sm mb-4">{t('progress.noChartsDataDesc')}</div>
@@ -211,6 +243,27 @@ export default function ProgressPage() {
                   {t('progress.goTrain')}
                 </button>
               </div>
+            ) : (
+              <>
+                {/* Headline: Weekly Volume + Muscle Distribution */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 [&>*]:mb-0">
+                  <VolumeLoadChart progress={progress} />
+                  <MuscleVolumeChart progress={progress} />
+                </div>
+
+                {/* Weight Progression (lastre) */}
+                <WeightProgressionChart exerciseLogs={exerciseLogs} />
+
+                {/* 1RM Calculator */}
+                <OneRepMaxCalculator exerciseLogs={exerciseLogs} bodyweightKg={
+                  weights.length > 0
+                    ? [...weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight_kg
+                    : undefined
+                } />
+
+                {/* Exercise Charts with filter */}
+                <ChartsExerciseList exerciseLogs={exerciseLogs} t={t} />
+              </>
             )}
           </TabsContent>
 

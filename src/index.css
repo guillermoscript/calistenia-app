@@ -47,6 +47,13 @@
     /* Lime accent — used only for completed/active states */
     --lime: 74 90% 38%;
     --lime-foreground: 0 0% 100%;
+
+    /* Chart colors (hex for Recharts) */
+    --chart-axis: #71717a;
+    --chart-grid: #d4d4d8;
+    --chart-tooltip-bg: #ffffff;
+    --chart-tooltip-border: #e4e4e7;
+    --chart-tooltip-text: #18181b;
   }
 
   .dark {
@@ -91,6 +98,13 @@
     /* Lime accent */
     --lime: 74 90% 57%;
     --lime-foreground: 0 0% 7%;
+
+    /* Chart colors (hex for Recharts) */
+    --chart-axis: #a1a1aa;
+    --chart-grid: #3f3f46;
+    --chart-tooltip-bg: #18181b;
+    --chart-tooltip-border: #3f3f46;
+    --chart-tooltip-text: #ffffff;
   }
 }
 

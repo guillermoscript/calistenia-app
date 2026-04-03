@@ -84,9 +84,8 @@ export default function FreeProgressPage() {
 
       {freeLogs.length === 0 ? (
         <div className="text-center py-16 px-5 text-muted-foreground">
-          <div className="text-5xl mb-4">🏋️</div>
           <div className="font-bebas text-3xl mb-2">{t('freeProgress.noSessions')}</div>
-          <div className="text-sm">{t('freeProgress.noSessionsDesc')}</div>
+          <div className="text-sm leading-relaxed max-w-xs mx-auto">{t('freeProgress.noSessionsDesc')}</div>
         </div>
       ) : (
         <div>

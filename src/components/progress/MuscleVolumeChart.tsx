@@ -54,38 +54,50 @@ interface MuscleVolumeChartProps {
 
 export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) {
   const { t } = useTranslation()
-  const volumeByGroup = useMemo(() => {
+
+  const { current, previous } = useMemo(() => {
     const now = new Date()
     const weekStart = new Date(now)
     weekStart.setDate(now.getDate() - now.getDay() + 1) // Monday
     const weekStartStr = toLocalDateStr(weekStart)
 
-    const volume: Record<string, number> = {}
+    const prevWeekStart = new Date(weekStart)
+    prevWeekStart.setDate(weekStart.getDate() - 7)
+    const prevWeekStartStr = toLocalDateStr(prevWeekStart)
 
-    Object.entries(progress).forEach(([key, val]) => {
+    const currentVol: Record<string, number> = {}
+    const prevVol: Record<string, number> = {}
+
+    Object.entries(progress).forEach(([key]) => {
       if (!key.startsWith('done_')) return
       const date = key.split('_')[1]
-      if (date < weekStartStr) return
-
       const workoutKey = key.split('_').slice(2).join('_')
       const workout = WORKOUTS[workoutKey]
       if (!workout) return
 
+      const isCurrentWeek = date >= weekStartStr
+      const isPrevWeek = date >= prevWeekStartStr && date < weekStartStr
+      if (!isCurrentWeek && !isPrevWeek) return
+
+      const target = isCurrentWeek ? currentVol : prevVol
       workout.exercises.forEach(ex => {
         const groups = classifyMuscle(ex.muscles)
         const sets = typeof ex.sets === 'number' ? ex.sets : 3
         groups.forEach(g => {
-          volume[g] = (volume[g] || 0) + sets
+          target[g] = (target[g] || 0) + sets
         })
       })
     })
 
-    return Object.entries(volume).sort((a, b) => b[1] - a[1])
+    return {
+      current: Object.entries(currentVol).sort((a, b) => b[1] - a[1]),
+      previous: prevVol,
+    }
   }, [progress])
 
-  if (volumeByGroup.length === 0) return null
+  if (current.length === 0) return null
 
-  const maxSets = Math.max(...volumeByGroup.map(([, v]) => v), 1)
+  const maxSets = Math.max(...current.map(([, v]) => v), 1)
 
   return (
     <div className="mb-8">
@@ -93,14 +105,23 @@ export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) 
       <Card>
         <CardContent className="p-5">
           <div className="space-y-2.5">
-            {volumeByGroup.map(([group, sets]) => {
+            {current.map(([group, sets]) => {
               const pct = (sets / maxSets) * 100
               const color = GROUP_COLORS[group] || 'bg-zinc-500'
+              const prevSets = previous[group] || 0
+              const diff = sets - prevSets
               return (
                 <div key={group}>
                   <div className="flex justify-between mb-1">
                     <span className="text-[12px] text-foreground">{t(GROUP_LABEL_KEYS[group] || group)}</span>
-                    <span className="text-[11px] text-muted-foreground font-mono">{sets} {t('progress.muscleVolume.sets')}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-muted-foreground font-mono">{sets} {t('progress.muscleVolume.sets')}</span>
+                      {prevSets > 0 && diff !== 0 && (
+                        <span className={cn('text-[10px] font-medium', diff > 0 ? 'text-emerald-500' : 'text-red-400')}>
+                          {diff > 0 ? '\u2191' : '\u2193'}{Math.abs(diff)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div

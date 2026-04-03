@@ -25,6 +25,7 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
   const [category, setCategory] = useState('front')
   const [date, setDate] = useState(() => todayStr())
   const [note, setNote] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
@@ -148,13 +149,30 @@ export default function BodyPhotosTimeline({ userId }: BodyPhotosTimelineProps) 
                     <div className="text-[9px] text-muted-foreground mt-0.5 truncate">{photo.note}</div>
                   )}
                 </div>
-                <button
-                  onClick={() => { if (confirm(t('progress.bodyPhotos.confirmDelete'))) deletePhoto(photo.id) }}
-                  className="absolute top-1.5 right-1.5 size-6 rounded-full bg-black/60 text-white/70 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs"
-                  title={t('progress.bodyPhotos.delete')}
-                >
-                  x
-                </button>
+                {confirmDeleteId === photo.id ? (
+                  <div className="absolute top-1.5 right-1.5 flex gap-1">
+                    <button
+                      onClick={() => { deletePhoto(photo.id); setConfirmDeleteId(null) }}
+                      className="size-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs font-medium"
+                    >
+                      <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,8 7,12 13,4" /></svg>
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="size-6 rounded-full bg-black/60 text-white/70 flex items-center justify-center text-xs"
+                    >
+                      <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="4" x2="12" y2="12" /><line x1="12" y1="4" x2="4" y2="12" /></svg>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteId(photo.id)}
+                    className="absolute top-1.5 right-1.5 size-7 rounded-full bg-black/60 text-white/70 hover:text-red-400 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    title={t('progress.bodyPhotos.delete')}
+                  >
+                    <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="4" y1="4" x2="12" y2="12" /><line x1="12" y1="4" x2="4" y2="12" /></svg>
+                  </button>
+                )}
               </div>
             ))}
           </div>

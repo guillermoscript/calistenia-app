@@ -94,22 +94,22 @@ export default function ExerciseChart({ exerciseName, logs, showSessionType, las
               <LineChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 10, fill: '#a1a1aa' }}
+                  tick={{ fontSize: 10, fill: 'var(--chart-axis)' }}
                   tickFormatter={(v: string) => v.slice(5)}
-                  stroke="#3f3f46"
+                  stroke="var(--chart-grid)"
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: '#a1a1aa' }}
-                  stroke="#3f3f46"
+                  tick={{ fontSize: 10, fill: 'var(--chart-axis)' }}
+                  stroke="var(--chart-grid)"
                   allowDecimals={false}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#18181b',
-                    border: '1px solid #3f3f46',
+                    backgroundColor: 'var(--chart-tooltip-bg)',
+                    border: '1px solid var(--chart-tooltip-border)',
                     borderRadius: '8px',
                     fontSize: '12px',
-                    color: '#fff',
+                    color: 'var(--chart-tooltip-text)',
                   }}
                   labelFormatter={(v: string) => `${t('progress.exerciseChart.date')}: ${v}`}
                   formatter={(value: number) => [`${value} reps`, t('progress.exerciseChart.maxReps')]}
