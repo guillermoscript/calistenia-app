@@ -14,9 +14,12 @@
 migrate((app) => {
   const users = app.findCollectionByNameOrId("users")
 
-  // C6: require authentication for list/view
-  users.listRule = '@request.auth.id != ""'
-  users.viewRule = '@request.auth.id != ""'
+  // C6: require authentication for list/view, but allow public lookup by referral_code
+  // (needed for invite landing page — unauthenticated visitors must resolve a referral link).
+  // PB evaluates listRule per-record: unauthenticated requests only see records with a referral_code,
+  // and the client-side filter narrows to the specific code. Email is protected by emailVisibility.
+  users.listRule = '@request.auth.id != "" || referral_code != ""'
+  users.viewRule = '@request.auth.id != "" || referral_code != ""'
 
   // C1: prevent users from changing their own role or tier
   users.updateRule = 'id = @request.auth.id && @request.body.role:isset = false && @request.body.tier:isset = false'

@@ -116,29 +116,11 @@ export function useReferrals(userId: string | null) {
       // Block self-referral
       if (referrer.id === userId) return false
 
-      // Create referral record
+      // Create referral record — server hook handles points, follows, and notifications
       await pb.collection('referrals').create({
         referrer: referrer.id,
         referred: userId,
         source: 'quick_invite',
-      })
-
-      // Award 100 points to referrer
-      await pb.collection('point_transactions').create({
-        user: referrer.id,
-        amount: 100,
-        type: 'referral_signup',
-        reference_id: userId,
-        description: 'referral_signup',
-      })
-
-      // Award 50 welcome bonus to the new user
-      await pb.collection('point_transactions').create({
-        user: userId,
-        amount: 50,
-        type: 'referral_bonus',
-        reference_id: referrer.id,
-        description: 'Bonus por registrarte con invitación',
       })
 
       return true

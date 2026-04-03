@@ -14,7 +14,8 @@ interface AuthPageProps {
 export default function AuthPage({ signInWithGoogle, signInWithEmail, signUpWithEmail, authError, isLoading }: AuthPageProps) {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : searchParams.get('ref') && searchParams.get('mode') !== 'login' ? 'signup' : 'login'
+  const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
