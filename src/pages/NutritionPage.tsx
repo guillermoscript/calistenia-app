@@ -119,6 +119,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     getDailyTotals,
     getEntriesForDate,
     fetchEntriesForDate,
+    fetchEntriesForDateRange,
     getWeeklyHistory,
     getRecentEntries,
   } = useNutrition(userId)
@@ -131,12 +132,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     setSearchParams(isToday ? {} : { date: selectedDate }, { replace: true })
   }, [selectedDate, fetchEntriesForDate, setSearchParams])
 
-  // Preload last 7 days for weekly chart
+  // Preload last 7 days for weekly chart (single batch request)
   useEffect(() => {
-    for (let i = 1; i <= 6; i++) {
-      fetchEntriesForDate(addDays(todayStr(), -i))
-    }
-  }, [fetchEntriesForDate])
+    fetchEntriesForDateRange(addDays(todayStr(), -6), todayStr())
+  }, [fetchEntriesForDateRange])
 
   const [frequentMeals, setFrequentMeals] = useState<NutritionEntry[]>([])
 

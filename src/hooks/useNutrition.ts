@@ -227,6 +227,68 @@ export function useNutrition(userId: string | null) {
     }
   }, [usePB, userId])
 
+  // ─── Batch fetch for a date range (single API call) ───────────────────────
+  const fetchEntriesForDateRange = useCallback(async (startDate: string, endDate: string): Promise<void> => {
+    if (!usePB || !userId) return
+
+    // Collect dates that still need fetching
+    const needsFetch: string[] = []
+    let d = startDate
+    while (d <= endDate) {
+      if (!loadedDates.current.has(d)) needsFetch.push(d)
+      d = addDays(d, 1)
+    }
+    if (needsFetch.length === 0) return
+
+    // Mark all as loading to prevent duplicate requests
+    for (const dt of needsFetch) loadedDates.current.add(dt)
+
+    try {
+      const rangeStart = localMidnightAsUTC(needsFetch[0])
+      const rangeEnd = localMidnightAsUTC(addDays(needsFetch[needsFetch.length - 1], 1))
+      const res = await pb.collection('nutrition_entries').getList(1, 500, {
+        filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
+          uid: userId,
+          start: rangeStart,
+          end: rangeEnd,
+        }),
+        sort: '-logged_at',
+        $autoCancel: false,
+      })
+
+      if (res.items.length === 0) return
+
+      const mapped: NutritionEntry[] = res.items.map((r: any) => ({
+        id: r.id,
+        user: r.user,
+        photoUrls: resolvePhotoUrls(r),
+        mealType: r.meal_type,
+        foods: Array.isArray(r.foods) ? r.foods : [],
+        totalCalories: Number(r.total_calories) || 0,
+        totalProtein: Number(r.total_protein) || 0,
+        totalCarbs: Number(r.total_carbs) || 0,
+        totalFat: Number(r.total_fat) || 0,
+        aiModel: r.ai_model || undefined,
+        source: (r.source as NutritionSource) || undefined,
+        loggedAt: r.logged_at,
+      }))
+
+      setEntries(prev => {
+        const existingIds = new Set(prev.map(e => e.id))
+        const newEntries = mapped.filter(e => !existingIds.has(e.id))
+        if (newEntries.length === 0) return prev
+        const updated = [...prev, ...newEntries].sort(
+          (a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
+        )
+        lsSetEntries(updated)
+        return updated
+      })
+    } catch {
+      // Allow retry on error
+      for (const dt of needsFetch) loadedDates.current.delete(dt)
+    }
+  }, [usePB, userId])
+
   // ─── AI analysis ──────────────────────────────────────────────────────────
   const analyzeMeal = useCallback(async (
     imageFiles: File | File[],
@@ -617,6 +679,7 @@ export function useNutrition(userId: string | null) {
     getWeeklyHistory,
     getEntriesForDate,
     fetchEntriesForDate,
+    fetchEntriesForDateRange,
     getRemainingMacros,
     getRecentEntries,
   }

@@ -30,12 +30,12 @@ const updateSW = registerSW({
     if (!registration) return
 
     setInterval(() => {
-      registration.update()
+      registration.update().catch(() => {})
     }, 60 * 1000)
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
-        registration.update()
+        registration.update().catch(() => {})
       }
     })
   },
