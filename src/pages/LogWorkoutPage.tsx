@@ -347,7 +347,7 @@ export default function LogWorkoutPage() {
               value={search}
               onChange={e => { setSearch(e.target.value); setShowDropdown(true) }}
               onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               placeholder={t('logWorkout.exercisePlaceholder')}
               className="text-sm"
             />
@@ -357,7 +357,7 @@ export default function LogWorkoutPage() {
                   <button
                     key={item.id}
                     type="button"
-                    onMouseDown={() => addExerciseFromCatalog(item)}
+                    onClick={() => addExerciseFromCatalog(item)}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
                   >
                     <div className="font-medium">{l(item.name)}</div>
@@ -367,7 +367,7 @@ export default function LogWorkoutPage() {
                 {search.trim() && filteredCatalog.length === 0 && (
                   <button
                     type="button"
-                    onMouseDown={addCustomExercise}
+                    onClick={addCustomExercise}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors text-teal-400"
                   >
                     + {t('logWorkout.addExercise')}: &quot;{search.trim()}&quot;
@@ -376,7 +376,7 @@ export default function LogWorkoutPage() {
                 {search.trim() && filteredCatalog.length > 0 && (
                   <button
                     type="button"
-                    onMouseDown={addCustomExercise}
+                    onClick={addCustomExercise}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors border-t border-border text-muted-foreground"
                   >
                     + {t('logWorkout.addExercise')}: &quot;{search.trim()}&quot;
