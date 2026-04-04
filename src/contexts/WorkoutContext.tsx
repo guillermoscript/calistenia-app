@@ -22,8 +22,8 @@ interface WorkoutState {
 
 interface WorkoutActions {
   // Progress actions
-  logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<PREvent | null>
-  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }) => Promise<void>
+  logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => Promise<PREvent | null>
+  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   // Progress queries
@@ -89,8 +89,8 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   } = useProgress(userId, activeProgram?.id ?? null)
 
   // Wrap logSet to auto-detect PRs
-  const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>): Promise<PREvent | null> => {
-    await rawLogSet(exerciseId, workoutKey, setData)
+  const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string): Promise<PREvent | null> => {
+    await rawLogSet(exerciseId, workoutKey, setData, date)
     if (setData.reps) return checkAndUpdatePR(exerciseId, setData.reps as string)
     return null
   }, [rawLogSet, checkAndUpdatePR])

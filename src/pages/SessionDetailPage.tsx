@@ -32,7 +32,7 @@ const STATIC_CATALOG = buildExerciseCatalog()
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseWorkoutKey(key: string, t: TFunction): string {
-  if (key.startsWith('free_')) return t('progress.freeSession')
+  if (key.startsWith('free_') || key.startsWith('manual_')) return t('progress.freeSession')
   const [phaseStr, day] = key.split('_')
   const phase = phaseStr.replace('p', '')
   const dayKeys: Record<string, string> = {

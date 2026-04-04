@@ -24,7 +24,6 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sentry/react": "^10.46.0",
-    "@sentry/vite-plugin": "^5.1.1",
     "@tailwindcss/typography": "^0.5.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -40,6 +39,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-i18next": "^17.0.0",
+    "react-is": "^19.2.4",
     "react-router-dom": "^7.13.1",
     "recharts": "^3.8.0",
     "sonner": "^2.0.7",
@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "@sentry/vite-plugin": "^5.1.1",
     "@tailwindcss/vite": "^4.2.2",
     "@types/leaflet": "^1.9.21",
     "@types/react": "^19.2.14",

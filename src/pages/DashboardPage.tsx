@@ -427,6 +427,13 @@ export default function DashboardPage({
             accent="text-purple-500"
             onClick={() => navigate('/progress')}
           />
+          <QuickAction
+            icon={<svg className="size-5 text-teal-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="1" width="12" height="14" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="8" y2="11"/><path d="M10.5 10l1 1 2-2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            label={t('dashboard.quickAction.logWorkout')}
+            description={t('dashboard.quickAction.logWorkoutDesc')}
+            accent="text-teal-400"
+            onClick={() => navigate('/log-workout')}
+          />
         </div>
       </div>
 
