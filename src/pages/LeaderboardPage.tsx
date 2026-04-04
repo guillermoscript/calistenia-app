@@ -22,7 +22,11 @@ export default function LeaderboardPage({ userId }: LeaderboardPageProps) {
 
   const CATEGORIES: { id: LeaderboardCategory; label: string; unit: string; hasTimeFilter: boolean }[] = [
     { id: 'sessions_week', label: t('leaderboard.sessions'), unit: '', hasTimeFilter: true },
+    { id: 'total_sessions', label: t('leaderboard.totalSessions'), unit: '', hasTimeFilter: false },
     { id: 'streak', label: t('leaderboard.streak'), unit: t('leaderboard.streakUnit'), hasTimeFilter: false },
+    { id: 'streak_best', label: t('leaderboard.bestStreak'), unit: t('leaderboard.streakUnit'), hasTimeFilter: false },
+    { id: 'xp', label: 'XP', unit: 'xp', hasTimeFilter: false },
+    { id: 'total_sets', label: t('leaderboard.totalSets'), unit: '', hasTimeFilter: false },
     { id: 'pr_pullups', label: 'Pull-ups', unit: 'reps', hasTimeFilter: false },
     { id: 'pr_pushups', label: 'Push-ups', unit: 'reps', hasTimeFilter: false },
     { id: 'pr_lsit', label: 'L-sit', unit: 's', hasTimeFilter: false },

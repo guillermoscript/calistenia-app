@@ -266,3 +266,37 @@ export function WhatsNewButton({ className }: { className?: string }) {
     </>
   )
 }
+
+// ── Home page button (optional, with unseen dot) ────────────────────────────
+
+export function WhatsNewHomeButton({ className }: { className?: string }) {
+  const { t } = useTranslation()
+  const unseen = useMemo(() => getUnseenVersions(), [])
+  const hasUnseen = unseen.length > 0
+  const [open, setOpen] = useState(false)
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (!next && hasUnseen) markSeen()
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className={cn(
+          'inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors',
+          className,
+        )}
+      >
+        {hasUnseen && <span className="size-1.5 rounded-full bg-lime-400 animate-pulse" />}
+        {t('whatsNew.title')} · v{APP_VERSION}
+      </button>
+      <WhatsNewDialog
+        open={open}
+        onOpenChange={handleOpenChange}
+        versions={hasUnseen ? unseen : undefined}
+      />
+    </>
+  )
+}

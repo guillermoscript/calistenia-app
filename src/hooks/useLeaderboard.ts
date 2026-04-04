@@ -11,7 +11,7 @@ export interface LeaderboardEntry {
   isCurrentUser: boolean
 }
 
-export type LeaderboardCategory = 'sessions_week' | 'sessions_month' | 'streak' | 'pr_pullups' | 'pr_pushups' | 'pr_lsit' | 'pr_handstand'
+export type LeaderboardCategory = 'sessions_week' | 'sessions_month' | 'streak' | 'streak_best' | 'total_sessions' | 'xp' | 'total_sets' | 'pr_pullups' | 'pr_pushups' | 'pr_lsit' | 'pr_handstand'
 
 export interface LeaderboardData {
   entries: Record<LeaderboardCategory, LeaderboardEntry[]>
@@ -23,7 +23,8 @@ const CACHE_TTL = 30_000 // 30 seconds
 
 export function useLeaderboard(userId: string | null) {
   const [entries, setEntries] = useState<Record<LeaderboardCategory, LeaderboardEntry[]>>({
-    sessions_week: [], sessions_month: [], streak: [],
+    sessions_week: [], sessions_month: [], streak: [], streak_best: [],
+    total_sessions: [], xp: [], total_sets: [],
     pr_pullups: [], pr_pushups: [], pr_lsit: [], pr_handstand: [],
   })
   const [loading, setLoading] = useState(false)
@@ -70,7 +71,7 @@ export function useLeaderboard(userId: string | null) {
           pb.collection('users').getOne(uid, { $autoCancel: false }).catch(() => null),
           pb.collection('user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid }),
-            { $autoCancel: false, fields: 'id,user,workout_streak_current' },
+            { $autoCancel: false, fields: 'id,user,workout_streak_current,workout_streak_best,total_sessions,total_sets,xp' },
           ).catch(() => null),
           pb.collection('settings').getFirstListItem(
             pb.filter('user = {:uid}', { uid }),
@@ -98,6 +99,10 @@ export function useLeaderboard(userId: string | null) {
           sessionsWeek: (weekSessionsRes as any)?.totalItems || 0,
           sessionsMonth: (monthSessionsRes as any)?.totalItems || 0,
           streak: (statsRes as any)?.workout_streak_current || 0,
+          streak_best: (statsRes as any)?.workout_streak_best || 0,
+          total_sessions: (statsRes as any)?.total_sessions || 0,
+          total_sets: (statsRes as any)?.total_sets || 0,
+          xp: (statsRes as any)?.xp || 0,
           pr_pullups: (settingsRes as any)?.pr_pullups || 0,
           pr_pushups: (settingsRes as any)?.pr_pushups || 0,
           pr_lsit: (settingsRes as any)?.pr_lsit || 0,
@@ -123,6 +128,10 @@ export function useLeaderboard(userId: string | null) {
         sessions_week: build('sessionsWeek'),
         sessions_month: build('sessionsMonth'),
         streak: build('streak'),
+        streak_best: build('streak_best'),
+        total_sessions: build('total_sessions'),
+        xp: build('xp'),
+        total_sets: build('total_sets'),
         pr_pullups: build('pr_pullups'),
         pr_pushups: build('pr_pushups'),
         pr_lsit: build('pr_lsit'),

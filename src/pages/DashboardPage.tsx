@@ -30,6 +30,7 @@ import { useAuthState } from '../contexts/AuthContext'
 import type { CardioSession } from '../types'
 import type { CardioAggregateStats } from '../hooks/useCardioStats'
 import { toast } from 'sonner'
+import { WhatsNewHomeButton } from '../components/WhatsNew'
 
 
 // ── Quick Action Card ────────────────────────────────────────────────────────
@@ -263,6 +264,7 @@ export default function DashboardPage({
           <Badge variant={usePB ? 'outline' : 'secondary'} className={cn('text-[9px]', usePB ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10' : 'text-amber-600 border-amber-500/40 bg-amber-500/10')}>
             {usePB ? t('dashboard.synced') : t('dashboard.localOnly')}
           </Badge>
+          <WhatsNewHomeButton />
         </div>
       </div>
 

@@ -58,7 +58,7 @@ import { CardioSessionProvider } from './contexts/CardioSessionContext'
 import { ActiveSessionProvider, useActiveSession } from './contexts/ActiveSessionContext'
 import { useRestPreferences } from './hooks/useRestPreferences'
 import InstallPrompt from './components/InstallPrompt'
-import WhatsNew, { WhatsNewButton } from './components/WhatsNew'
+import { WhatsNewButton } from './components/WhatsNew'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
 import AppTour, { replayTourForPage } from './components/AppTour'
 import { setupAutoSync } from './lib/offlineQueue'
@@ -647,7 +647,6 @@ function AuthenticatedApp({
     </CardioSessionProvider>
     </BackgroundJobsProvider>
     <InstallPrompt />
-    <WhatsNew />
     <Toaster position="bottom-center" richColors closeButton />
     </>
   )

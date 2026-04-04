@@ -236,12 +236,8 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           filter: pb.filter('user = {:userId} && is_current = true', { userId }),
           fields: 'id,program,is_current',
         });
-        if (current.length > 0) {
-          const deactivateBatch = pb.createBatch();
-          for (const up of current) {
-            deactivateBatch.collection("user_programs").update(up.id, { is_current: false });
-          }
-          await deactivateBatch.send();
+        for (const up of current) {
+          await pb.collection("user_programs").update(up.id, { is_current: false });
         }
 
         // Check if user already has this program selected
@@ -808,14 +804,12 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
 
         let totalExercises = 0;
 
-        // 2. Create phases and exercises using batch
-        const batch = pb.createBatch();
-
+        // 2. Create phases and exercises sequentially
         for (let pi = 0; pi < input.phases.length; pi++) {
           const phase = input.phases[pi];
           const phaseNumber = pi + 1;
 
-          batch.collection("program_phases").create({
+          await pb.collection("program_phases").create({
             program: program.id,
             phase_number: phaseNumber,
             name: toTranslatable(phase.name),
@@ -827,7 +821,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           for (const day of phase.days) {
             for (let ei = 0; ei < day.exercises.length; ei++) {
               const ex = day.exercises[ei];
-              batch.collection("program_exercises").create({
+              await pb.collection("program_exercises").create({
                 program: program.id,
                 phase_number: phaseNumber,
                 day_id: day.day_id,
@@ -853,20 +847,14 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           }
         }
 
-        await batch.send();
-
         // 4. Optionally set as current program
         if (input.set_as_current) {
           const current = await pb.collection("user_programs").getFullList({
             filter: pb.filter('user = {:userId} && is_current = true', { userId }),
             fields: 'id,program,is_current',
           });
-          if (current.length > 0) {
-            const deactivateBatch = pb.createBatch();
-            for (const up of current) {
-              deactivateBatch.collection("user_programs").update(up.id, { is_current: false });
-            }
-            await deactivateBatch.send();
+          for (const up of current) {
+            await pb.collection("user_programs").update(up.id, { is_current: false });
           }
           await pb.collection("user_programs").create({
             user: userId,
