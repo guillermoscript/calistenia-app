@@ -8,6 +8,7 @@ import { Loader } from '../components/ui/loader'
 import { cn } from '../lib/utils'
 import { ShareButton } from '../components/ShareButton'
 import { shareRoutine } from '../lib/share'
+import { useLocalize } from '../hooks/useLocalize'
 
 interface ProgramPhase {
   id: string
@@ -57,6 +58,7 @@ interface PhaseGroup {
 
 export default function RoutineViewPage() {
   const { t } = useTranslation()
+  const l = useLocalize()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -96,8 +98,8 @@ export default function RoutineViewPage() {
           return
         }
 
-        setProgramName(program.name)
-        setProgramDescription(program.description || '')
+        setProgramName(l(program.name))
+        setProgramDescription(l(program.description) || '')
         setDurationWeeks(program.duration_weeks || 0)
 
         // Fetch phases
@@ -118,7 +120,14 @@ export default function RoutineViewPage() {
         const groups: PhaseGroup[] = phasesRes.items.map((phase: any) => {
           const phaseExercises = exercisesRes.items.filter(
             (e: any) => e.phase_number === phase.phase_number
-          ) as unknown as ProgramExercise[]
+          ).map((e: any) => ({
+            ...e,
+            exercise_name: l(e.exercise_name),
+            day_name: l(e.day_name),
+            day_focus: l(e.day_focus),
+            muscles: l(e.muscles),
+            note: l(e.note),
+          })) as unknown as ProgramExercise[]
 
           // Group by day_id
           const dayMap = new Map<string, DayGroup>()
@@ -136,7 +145,7 @@ export default function RoutineViewPage() {
           }
 
           return {
-            phase: phase as ProgramPhase,
+            phase: { ...phase, name: l(phase.name) } as ProgramPhase,
             days: Array.from(dayMap.values()),
           }
         })
@@ -149,7 +158,7 @@ export default function RoutineViewPage() {
       }
     }
     load()
-  }, [userId])
+  }, [userId, l])
 
   if (loading) {
     return (

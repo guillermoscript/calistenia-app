@@ -134,13 +134,14 @@ export default function UserProfilePage() {
             .slice(0, 10)
             .map((s: any) => {
               const workout = WORKOUTS[s.workout_key]
+              const rawTitle = workout?.title || s.workout_key || 'Sesión'
               return {
                 id: s.id,
                 workoutKey: s.workout_key,
-                workoutTitle: workout?.title || s.workout_key || 'Sesión',
+                workoutTitle: typeof rawTitle === 'string' ? rawTitle : l(rawTitle),
                 phase: s.phase || 1,
                 completedAt: s.completed_at || s.created,
-                note: s.note || '',
+                note: typeof s.note === 'string' ? s.note : l(s.note) || '',
               }
             })
         } catch { /* no sessions collection or access */ }
@@ -153,7 +154,8 @@ export default function UserProfilePage() {
             { expand: 'program', $autoCancel: false }
           )
           if (upRes.expand?.program) {
-            activeProgram = { name: l((upRes.expand.program as any).name), id: (upRes.expand.program as any).id }
+            const progName = l((upRes.expand.program as any).name)
+            activeProgram = { name: typeof progName === 'string' ? progName : String(progName), id: (upRes.expand.program as any).id }
           }
         } catch { /* no active program */ }
 
@@ -187,7 +189,7 @@ export default function UserProfilePage() {
       }
     }
     load()
-  }, [userId])
+  }, [userId, l])
 
   // Load extended compare stats when user toggles compare mode
   useEffect(() => {
