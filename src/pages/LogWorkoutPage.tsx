@@ -5,8 +5,10 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { WORKOUTS, PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS } from '../data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '../data/supplementary-exercises'
 import catalogData from '../data/exercise-catalog.json'
+import dayjs from 'dayjs'
 import { todayStr } from '../lib/dateUtils'
 import { cn } from '../lib/utils'
+import { PHASE_COLORS } from '../lib/style-tokens'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent } from '../components/ui/card'
@@ -26,6 +28,7 @@ interface CatalogItem {
 }
 
 interface LogSet {
+  key: string
   reps: string
   weight: string
   rpe: string
@@ -33,6 +36,7 @@ interface LogSet {
 
 interface LogExercise {
   id: string
+  key: string
   name: string
   sets: LogSet[]
 }
@@ -136,8 +140,9 @@ export default function LogWorkoutPage() {
   const addExerciseFromCatalog = useCallback((item: CatalogItem) => {
     setExercises(prev => [...prev, {
       id: item.id,
+      key: `${item.id}_${Date.now()}`,
       name: l(item.name),
-      sets: [{ reps: '', weight: '', rpe: '' }],
+      sets: [{ key: `s_${Date.now()}`, reps: '', weight: '', rpe: '' }],
     }])
     setSearch('')
     setShowDropdown(false)
@@ -146,10 +151,12 @@ export default function LogWorkoutPage() {
   const addCustomExercise = useCallback(() => {
     const name = search.trim()
     if (!name) return
+    const id = makeCustomId(name)
     setExercises(prev => [...prev, {
-      id: makeCustomId(name),
+      id,
+      key: `${id}_${Date.now()}`,
       name,
-      sets: [{ reps: '', weight: '', rpe: '' }],
+      sets: [{ key: `s_${Date.now()}`, reps: '', weight: '', rpe: '' }],
     }])
     setSearch('')
     setShowDropdown(false)
@@ -170,7 +177,7 @@ export default function LogWorkoutPage() {
 
   const addSet = (exIdx: number) => {
     setExercises(prev => prev.map((ex, i) =>
-      i !== exIdx ? ex : { ...ex, sets: [...ex.sets, { reps: '', weight: '', rpe: '' }] }
+      i !== exIdx ? ex : { ...ex, sets: [...ex.sets, { key: `s_${Date.now()}`, reps: '', weight: '', rpe: '' }] }
     ))
   }
 
@@ -178,7 +185,7 @@ export default function LogWorkoutPage() {
     setExercises(prev => prev.map((ex, i) => {
       if (i !== exIdx) return ex
       const newSets = ex.sets.filter((_, j) => j !== setIdx)
-      return { ...ex, sets: newSets.length > 0 ? newSets : [{ reps: '', weight: '', rpe: '' }] }
+      return { ...ex, sets: newSets.length > 0 ? newSets : [{ key: `s_${Date.now()}`, reps: '', weight: '', rpe: '' }] }
     }))
   }
 
@@ -202,18 +209,20 @@ export default function LogWorkoutPage() {
     try {
       await markWorkoutDone(workoutKey, note, undefined, undefined, date)
 
-      const baseTs = new Date(date + 'T12:00:00').getTime()
+      const baseTs = dayjs(date).hour(12).valueOf()
+      const setPromises: Promise<unknown>[] = []
       for (const ex of exercises) {
         for (const set of ex.sets) {
           if (!set.reps.trim()) continue
-          await logSet(ex.id, workoutKey, {
+          setPromises.push(logSet(ex.id, workoutKey, {
             reps: set.reps,
             weight: set.weight ? parseFloat(set.weight) : undefined,
             rpe: set.rpe ? parseFloat(set.rpe) : undefined,
             timestamp: baseTs,
-          }, date)
+          }, date))
         }
       }
+      await Promise.all(setPromises)
 
       toast.success(t('logWorkout.successToast', { date }))
       navigate(-1)
@@ -286,7 +295,7 @@ export default function LogWorkoutPage() {
                 <div className="flex gap-2 flex-wrap">
                   {PHASES.map(p => {
                     const isSelected = selectedPhase === p.id
-                    const pa = ({ 1: 'border-lime text-lime', 2: 'border-sky-500 text-sky-500', 3: 'border-pink-500 text-pink-500', 4: 'border-amber-400 text-amber-400' } as Record<number, string>)[p.id] || ''
+                    const pc = PHASE_COLORS[p.id]
                     return (
                       <Button
                         key={p.id}
@@ -295,7 +304,7 @@ export default function LogWorkoutPage() {
                         onClick={() => { setSelectedPhase(p.id); setSelectedDay(null) }}
                         className={cn(
                           'text-[11px] tracking-wide transition-all duration-200 shrink-0',
-                          isSelected ? cn(pa, 'bg-accent/50') : 'text-muted-foreground'
+                          isSelected ? cn(pc?.border?.replace('border-l-', 'border-'), pc?.text, 'bg-accent/50') : 'text-muted-foreground'
                         )}
                       >
                         F{p.id}{p.nameKey ? ` — ${t(p.nameKey)}` : p.name ? ` — ${p.name}` : ''}
@@ -364,20 +373,14 @@ export default function LogWorkoutPage() {
                     <div className="text-[11px] text-muted-foreground">{l(item.muscles)}</div>
                   </button>
                 ))}
-                {search.trim() && filteredCatalog.length === 0 && (
+                {search.trim() && (
                   <button
                     type="button"
                     onClick={addCustomExercise}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors text-teal-400"
-                  >
-                    + {t('logWorkout.addExercise')}: &quot;{search.trim()}&quot;
-                  </button>
-                )}
-                {search.trim() && filteredCatalog.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={addCustomExercise}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors border-t border-border text-muted-foreground"
+                    className={cn(
+                      'w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors',
+                      filteredCatalog.length > 0 ? 'border-t border-border text-muted-foreground' : 'text-teal-400'
+                    )}
                   >
                     + {t('logWorkout.addExercise')}: &quot;{search.trim()}&quot;
                   </button>
@@ -394,7 +397,7 @@ export default function LogWorkoutPage() {
           )}
 
           {exercises.map((ex, exIdx) => (
-            <div key={exIdx} className="border border-border rounded-lg p-3 space-y-2">
+            <div key={ex.key} className="border border-border rounded-lg p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{ex.name}</span>
                 <button
@@ -409,7 +412,7 @@ export default function LogWorkoutPage() {
               {/* Sets */}
               <div className="space-y-1.5">
                 {ex.sets.map((set, setIdx) => (
-                  <div key={setIdx} className="flex items-center gap-1.5">
+                  <div key={set.key} className="flex items-center gap-1.5">
                     <span className="text-[11px] text-muted-foreground w-5 text-right shrink-0">{setIdx + 1}</span>
                     <Input
                       value={set.reps}
