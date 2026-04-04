@@ -73,6 +73,7 @@ interface CircuitExercise {
 | `note` | text | optional |
 | `program` | relation | optional, if from a program |
 | `program_day_key` | text | optional |
+| `config` | json | Full CircuitDefinition snapshot (timing, rest values) for history display |
 
 API rules: owner-only read/write, authenticated users can view (for leaderboard).
 
@@ -85,7 +86,7 @@ Create a new migration file (next sequential number after existing migrations) t
 ### Entry points
 
 1. **Dedicated page (`/circuit`)** — New nav item. Preset templates at top, "Build Custom" button below.
-2. **Free Session** — New toggle/tab at top: "Exercises" | "Circuit". Switching to Circuit shows the builder.
+2. **Free Session** — New toggle/tab at top: "Exercises" | "Circuit". Switching to Circuit shows the builder. When the user taps "Start", the circuit definition is persisted to `CircuitSessionContext` (localStorage), then the app navigates to `/circuit/active`. Any existing free session exercise queue is preserved independently (separate localStorage key).
 3. **Programs** — No builder. Circuit days are pre-defined in workout data and launch directly into execution.
 
 ### Builder flow
@@ -185,28 +186,42 @@ Also add `'circuit'` entries to `DAY_TYPE_COLORS` in `style-tokens.ts` and `stre
 
 ### Workout data structure
 
+Circuit config lives on `WeekDay` (parallel to `cardioConfig`), not on `Workout`:
+
+```typescript
+// Add to WeekDay interface:
+interface WeekDay {
+  // ... existing fields (id, type, cardioConfig, etc.)
+  circuitConfig?: CircuitDefinition  // present when type === 'circuit'
+}
+```
+
+Example program day:
+
 ```typescript
 {
-  phase: 2,
-  day: 'sab',
-  title: 'Circuito Cardio',
-  dayType: 'circuit',
-  circuit: {
+  id: 'sab',
+  type: 'circuit',
+  circuitConfig: {
+    id: 'p2_sab_circuit',
+    name: { es: 'Circuito Cardio', en: 'Cardio Circuit' },
     mode: 'timed',
     rounds: 4,
-    restBetweenExercises: 10,
+    restBetweenExercises: 0,
     restBetweenRounds: 60,
     workSeconds: 40,
     restSeconds: 20,
     exercises: [
-      { exerciseId: 'burpees', name: 'Burpees' },
-      { exerciseId: 'mountain_climbers', name: 'Mountain Climbers' },
-      { exerciseId: 'jump_squats', name: 'Jump Squats' },
-      { exerciseId: 'plank_shoulder_taps', name: 'Plank Shoulder Taps' },
+      { exerciseId: 'burpees', name: { es: 'Burpees', en: 'Burpees' } },
+      { exerciseId: 'mountain_climbers', name: { es: 'Escaladores', en: 'Mountain Climbers' } },
+      { exerciseId: 'jump_squats', name: { es: 'Sentadillas con salto', en: 'Jump Squats' } },
+      { exerciseId: 'plank_shoulder_taps', name: { es: 'Plancha toca hombros', en: 'Plank Shoulder Taps' } },
     ]
   }
 }
 ```
+
+Note: Exercise names in `CircuitExercise` use `TranslatableField` for consistency with the app's i18n pattern. For catalog exercises, names can be resolved from the catalog at build time.
 
 ### WorkoutPage changes
 
@@ -217,8 +232,8 @@ Also add `'circuit'` entries to `DAY_TYPE_COLORS` in `style-tokens.ts` and `stre
 ### Session completion
 
 - Circuit sessions saved to `circuit_sessions` collection (not `sessions`)
-- **Streak integration:** Update `useProgress` to also query `circuit_sessions` when calculating daily streaks. A circuit session on a given day counts as a workout done.
-- **Leaderboard integration:** Update `useLeaderboard` to include `circuit_sessions` in session counts. Add a new `completeCircuitSession` function (parallel to `markWorkoutDone`) that saves to `circuit_sessions` and updates user stats.
+- **Streak & stats integration:** Streaks and `total_sessions` are managed server-side in the `user_stats` PB collection (updated via `pb_hooks/notification_service.pb.js`). Add a PB hook that fires on `circuit_sessions` record creation and increments `total_sessions`, updates `workout_streak_current` and `workout_streak_best` — same logic as the existing session completion hook.
+- **Leaderboard integration:** Update `useLeaderboard` to query both `sessions` and `circuit_sessions` when counting `sessions_week`/`sessions_month` (parallel PB queries, sum the counts). Note: `cardio_sessions` has the same omission — fix all three collections in one pass. Add a new `completeCircuitSession` function (parallel to `markWorkoutDone`) that saves to `circuit_sessions` and triggers the PB hook.
 - **Session detail:** Use route-based detection: `/session/:date/:workoutKey` for regular sessions, `/circuit/history/:id` for circuit sessions. `CircuitSessionDetailPage` (new) renders round/exercise summary. Link from calendar/history views based on session type.
 
 ## Routing
@@ -261,6 +276,17 @@ Program circuit days redirect to `/circuit/active`. The `CircuitSessionContext` 
 | Tabata | timed | 20s | 10s | 8 | User picks |
 | EMOM (simplified) | timed | 60s | 0s | 4 | User picks |
 | Bodyweight Circuit | circuit | — | — | 3 | 5 pre-selected bodyweight exercises |
+
+## Analytics Events
+
+Track via OpenPanel, consistent with existing event patterns in `docs/business/08-analytics-events.md`:
+
+| Event | Properties | When |
+|-------|-----------|------|
+| `circuit_started` | `mode`, `rounds`, `exercise_count`, `preset_name?` | User starts a circuit |
+| `circuit_completed` | `mode`, `rounds_completed`, `rounds_target`, `duration_seconds`, `exercise_count` | Circuit finishes |
+| `circuit_abandoned` | `mode`, `rounds_completed`, `rounds_target`, `exercise_index` | User exits mid-circuit |
+| `circuit_preset_used` | `preset_name` | User selects a preset template |
 
 ## Out of Scope
 
