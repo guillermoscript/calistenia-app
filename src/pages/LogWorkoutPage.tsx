@@ -234,12 +234,6 @@ export default function LogWorkoutPage() {
     }
   }
 
-  // ── Day labels ───────────────────────────────────────────────────────────
-  const dayKeys: Record<string, string> = {
-    lun: 'common.days.mon', mar: 'common.days.tue', mie: 'common.days.wed',
-    jue: 'common.days.thu', vie: 'common.days.fri', sab: 'common.days.sat', dom: 'common.days.sun',
-  }
-
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -332,7 +326,7 @@ export default function LogWorkoutPage() {
                           isSelected ? 'border-teal-400 text-teal-400 bg-accent/50' : 'text-muted-foreground'
                         )}
                       >
-                        {dayKeys[d.id] ? t(dayKeys[d.id]) : d.id}
+                        {d.nameKey ? t(d.nameKey) : d.name ?? d.id}
                       </Button>
                     )
                   })}
