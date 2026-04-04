@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { todayStr, toLocalDateStr, nowLocalForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
+import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
 import type { Settings, ProgressMap, SetData, ExerciseLog } from '../types'
 
@@ -62,8 +62,8 @@ interface UseProgressReturn {
   settings: Settings
   usePB: boolean
   pbReady: boolean
-  logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => Promise<void>
-  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }) => Promise<void>
+  logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => Promise<void>
+  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
   getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
@@ -263,14 +263,14 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   }
 
   // ─── logSet ──────────────────────────────────────────────────────────────
-  const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>) => {
-    const date = todayStr()
-    const key = `${date}_${workoutKey}_${exerciseId}`
+  const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => {
+    const d = date || todayStr()
+    const key = `${d}_${workoutKey}_${exerciseId}`
 
     // Siempre guardar en localStorage (cache inmediato)
     setProgress(prev => {
-      const existing = prev[key] as ExerciseLog | undefined || { sets: [], date, workoutKey, exerciseId }
-      const updated = { ...existing, sets: [...existing.sets, { ...setData, timestamp: Date.now() }] } as ExerciseLog
+      const existing = prev[key] as ExerciseLog | undefined || { sets: [], date: d, workoutKey, exerciseId }
+      const updated = { ...existing, sets: [...existing.sets, { ...setData, timestamp: setData.timestamp ?? Date.now() }] } as ExerciseLog
       const newProg = { ...prev, [key]: updated }
       lsSet(newProg)
       return newProg
@@ -287,19 +287,19 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           note: setData.note || '',
           weight_kg: setData.weight ?? null,
           rpe: setData.rpe ?? null,
-          logged_at: nowLocalForPB(),
+          logged_at: date ? localDateForPB(date) : nowLocalForPB(),
         })
       } catch (e) { console.warn('PB sets_log error:', e) }
     }
   }, [usePB, userId])
 
   // ─── markWorkoutDone ─────────────────────────────────────────────────────
-  const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }) => {
-    const date = todayStr()
-    const key = `done_${date}_${workoutKey}`
+  const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string) => {
+    const d = date || todayStr()
+    const key = `done_${d}_${workoutKey}`
 
     setProgress(prev => {
-      const entry: import('../types').SessionDone = { done: true as const, date, workoutKey, completedAt: Date.now(), note }
+      const entry: import('../types').SessionDone = { done: true as const, date: d, workoutKey, completedAt: Date.now(), note }
       if (warmupCooldown) {
         entry.warmupCompleted = !(warmupCooldown.warmupSkipped ?? false) && (warmupCooldown.warmupDurationSeconds ?? 0) > 0
         entry.warmupSkipped = warmupCooldown.warmupSkipped ?? false
@@ -320,14 +320,14 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
 
     if (usePB && userId) {
       try {
-        const isFreeSession = workoutKey.startsWith('free_')
+        const isFreeSession = workoutKey.startsWith('free_') || workoutKey.startsWith('manual_')
         const [phaseStr, day] = workoutKey.split('_')
         const sessionData: Record<string, any> = {
           user: userId,
           workout_key: workoutKey,
           phase: isFreeSession ? -1 : parseInt(phaseStr.replace('p', '')),
           day: isFreeSession ? 'free' : day,
-          completed_at: nowLocalForPB(),
+          completed_at: date ? localDateForPB(date) : nowLocalForPB(),
           note: note || '',
         }
         if (!isFreeSession && activeProgramId) sessionData.program = activeProgramId
@@ -350,7 +350,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       } catch (e) { console.warn('PB sessions error:', e) }
     }
 
-    const isFree = workoutKey.startsWith('free_')
+    const isFree = workoutKey.startsWith('free_') || workoutKey.startsWith('manual_')
     op.track('workout_completed', { workout_key: workoutKey, is_free_session: isFree })
 
     // Track first workout in a program as program_started

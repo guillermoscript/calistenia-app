@@ -29,6 +29,7 @@ const EditorPage = lazy(() => import('./pages/EditorPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const RemindersPage = lazy(() => import('./pages/RemindersPage'))
 const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
+const LogWorkoutPage = lazy(() => import('./pages/LogWorkoutPage'))
 const FreeProgressPage = lazy(() => import('./pages/FreeProgressPage'))
 const ActiveSessionPage = lazy(() => import('./pages/ActiveSessionPage'))
 const CardioSessionPage = lazy(() => import('./pages/CardioSessionPage'))
@@ -157,6 +158,7 @@ function getBreadcrumbKey(pathname: string): string {
   if (pathname === '/challenges/new') return 'breadcrumb.newChallenge'
   if (RE_CHALLENGE_DETAIL.test(pathname)) return 'breadcrumb.challengeDetail'
   if (RE_ADD_FRIEND.test(pathname)) return 'breadcrumb.addFriend'
+  if (pathname === '/log-workout') return 'breadcrumb.logWorkout'
   if (pathname === '/nutrition/log') return 'breadcrumb.logMeal'
   if (RE_SHARED_PROGRAM.test(pathname)) return 'breadcrumb.sharedProgram'
   if (pathname.match(/^\/u\/[^/]+\/routine$/)) return 'breadcrumb.routine'
@@ -247,6 +249,7 @@ const NAV_SECTIONS: { labelKey: string; items: NavItem[] }[] = [
     { path: '/', labelKey: 'nav.dashboard', icon: LayoutIcon },
     { path: '/workout', labelKey: 'nav.workout', icon: DumbbellIcon },
     { path: '/free-session', labelKey: 'nav.freeSession', icon: FreeSessionIcon },
+    { path: '/log-workout', labelKey: 'nav.logWorkout', icon: PencilIcon },
     { path: '/cardio', labelKey: 'nav.cardio', icon: RunningIcon },
     { path: '/lumbar', labelKey: 'nav.lumbar', icon: SpineIcon },
   ]},
@@ -608,6 +611,7 @@ function AuthenticatedApp({
             <Route path="/programs/:id" element={<ProgramDetailPageRoute userId={userId!} userRole={userRole} />} />
             <Route path="/exercises" element={<ExerciseLibraryPage />} />
             <Route path="/free-session" element={<FreeSessionPage />} />
+            <Route path="/log-workout" element={<LogWorkoutPage />} />
             <Route path="/cardio" element={<CardioSessionPage userId={userId!} />} />
             <Route path="/sleep" element={<SleepPage userId={userId!} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
