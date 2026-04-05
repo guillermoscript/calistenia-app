@@ -1,8 +1,10 @@
+import type { TranslatableField } from '../lib/i18n-db'
+
 // ─── Workout & Program Data ──────────────────────────────────────────────────
 
 export type DayId = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
 
-export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest' | 'cardio' | 'yoga'
+export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest' | 'cardio' | 'yoga' | 'circuit'
 
 export type Priority = 'high' | 'med' | 'low'
 
@@ -62,6 +64,26 @@ export interface CardioDayConfig {
   targetDurationMin?: number
 }
 
+export interface CircuitExercise {
+  exerciseId: string
+  name: TranslatableField
+  reps?: string
+  workSecondsOverride?: number
+  restSecondsOverride?: number
+}
+
+export interface CircuitDefinition {
+  id: string
+  name: TranslatableField
+  mode: 'circuit' | 'timed'
+  exercises: CircuitExercise[]
+  rounds: number
+  restBetweenExercises: number
+  restBetweenRounds: number
+  workSeconds?: number
+  restSeconds?: number
+}
+
 export interface WeekDay {
   id: DayId
   name: string
@@ -71,6 +93,7 @@ export interface WeekDay {
   type: DayType
   color: string
   cardioConfig?: CardioDayConfig
+  circuitConfig?: CircuitDefinition
 }
 
 // ─── Progress & Sessions ─────────────────────────────────────────────────────

@@ -307,3 +307,14 @@ export function PlusIcon({ className }: IconProps) {
     </svg>
   )
 }
+
+export function CircuitIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <path d="M8 1v2M8 13v2" />
+      <path d="M1 8h2M13 8h2" />
+      <circle cx="8" cy="8" r="5" />
+      <path d="M8 5v3l2 1.5" />
+    </svg>
+  )
+}

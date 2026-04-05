@@ -375,3 +375,83 @@ onRecordAfterUpdateSuccess(function(e) {
     console.log("[notif] streak hook error:", err)
   }
 }, "user_stats")
+
+// ── Circuit session streak + total_sessions update ──────────────────────────
+// When a circuit_sessions record is created, update user_stats:
+// - Increment total_sessions
+// - Update workout_streak_current using date-checking logic
+//
+// NOTE: There is no existing hook for regular `sessions` that does this —
+// the same pattern should be added for `sessions` and `cardio_sessions`
+// when those collections need server-side streak tracking.
+
+onRecordAfterCreateSuccess(function(e) {
+  try {
+    var userId = e.record.getString("user")
+    if (!userId) return
+
+    var stats = null
+    try {
+      var records = $app.findRecordsByFilter(
+        "user_stats",
+        "user = '" + userId + "'",
+        "",
+        1,
+        0
+      )
+      if (records && records.length > 0) {
+        stats = records[0]
+      }
+    } catch (err) {
+      console.log("[circuit_streak] user_stats lookup failed:", err)
+      return
+    }
+
+    if (!stats) {
+      console.log("[circuit_streak] no user_stats record for user " + userId)
+      return
+    }
+
+    // Increment total_sessions
+    var totalSessions = stats.getInt("total_sessions") || 0
+    stats.set("total_sessions", totalSessions + 1)
+
+    // Update streak: check if last workout was yesterday or today
+    var currentStreak = stats.getInt("workout_streak_current") || 0
+    var bestStreak = stats.getInt("workout_streak_best") || 0
+    var lastWorkoutDate = stats.getString("last_workout_date") || ""
+
+    var now = new Date()
+    var todayStr = now.getFullYear() + "-" +
+      String(now.getMonth() + 1).padStart(2, "0") + "-" +
+      String(now.getDate()).padStart(2, "0")
+
+    if (lastWorkoutDate === todayStr) {
+      // Already worked out today — no streak change, just save total_sessions
+    } else {
+      // Check if last workout was yesterday
+      var yesterday = new Date(now)
+      yesterday.setDate(yesterday.getDate() - 1)
+      var yesterdayStr = yesterday.getFullYear() + "-" +
+        String(yesterday.getMonth() + 1).padStart(2, "0") + "-" +
+        String(yesterday.getDate()).padStart(2, "0")
+
+      if (lastWorkoutDate === yesterdayStr) {
+        currentStreak += 1
+      } else {
+        // Streak broken — start at 1
+        currentStreak = 1
+      }
+
+      stats.set("workout_streak_current", currentStreak)
+      if (currentStreak > bestStreak) {
+        stats.set("workout_streak_best", currentStreak)
+      }
+      stats.set("last_workout_date", todayStr)
+    }
+
+    $app.save(stats)
+  } catch (err) {
+    console.log("[circuit_streak] hook error:", err)
+  }
+}, "circuit_sessions")

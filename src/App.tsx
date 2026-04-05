@@ -33,6 +33,8 @@ const LogWorkoutPage = lazy(() => import('./pages/LogWorkoutPage'))
 const FreeProgressPage = lazy(() => import('./pages/FreeProgressPage'))
 const ActiveSessionPage = lazy(() => import('./pages/ActiveSessionPage'))
 const CardioSessionPage = lazy(() => import('./pages/CardioSessionPage'))
+const CircuitPage = lazy(() => import('./pages/CircuitPage'))
+const CircuitActivePage = lazy(() => import('./pages/CircuitActivePage'))
 const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
@@ -55,6 +57,7 @@ import OfflineBanner from './components/OfflineBanner'
 import ActiveCardioBar from './components/cardio/ActiveCardioBar'
 import ActiveSessionBubble from './components/ActiveFreeSessionBubble'
 import { CardioSessionProvider } from './contexts/CardioSessionContext'
+import { CircuitSessionProvider, useCircuitSession } from './contexts/CircuitSessionContext'
 import { ActiveSessionProvider, useActiveSession } from './contexts/ActiveSessionContext'
 import { useRestPreferences } from './hooks/useRestPreferences'
 import InstallPrompt from './components/InstallPrompt'
@@ -90,7 +93,7 @@ import {
   ProfileIcon, ProgramIcon, ExerciseIcon, RunningIcon, ChallengeIcon,
   ActivityIcon, FriendsIcon, TrophyIcon, FreeSessionIcon, CalendarNavIcon,
   ShieldIcon, PencilIcon, LogOutIcon, SunIcon, MoonIcon, SleepIcon, BellIcon,
-  ReferralIcon,
+  ReferralIcon, CircuitIcon,
 } from './components/icons/nav-icons'
 
 /** Auto-navigates to /session on mount if a persisted session exists */
@@ -104,6 +107,23 @@ function SessionRestoreNavigator() {
     if (isActive && location.pathname !== '/session' && !hasNavigated.current) {
       hasNavigated.current = true
       navigate('/session', { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return null
+}
+
+/** Auto-navigates to /circuit/active on mount if a persisted circuit session exists */
+function CircuitRestoreNavigator() {
+  const { isActive } = useCircuitSession()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const hasNavigated = useRef(false)
+
+  useEffect(() => {
+    if (isActive && location.pathname !== '/circuit/active' && !hasNavigated.current) {
+      hasNavigated.current = true
+      navigate('/circuit/active', { replace: true })
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -128,6 +148,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/exercises', labelKey: 'nav.exercises',       icon: ExerciseIcon },
   { path: '/free-session', labelKey: 'nav.freeSession',  icon: FreeSessionIcon },
   { path: '/cardio',    labelKey: 'nav.cardio',          icon: RunningIcon },
+  { path: '/circuit',   labelKey: 'nav.circuit',         icon: CircuitIcon },
   { path: '/feed',      labelKey: 'nav.activity',        icon: ActivityIcon },
   { path: '/friends',   labelKey: 'nav.friends',         icon: FriendsIcon },
   { path: '/leaderboard', labelKey: 'nav.leaderboard',   icon: TrophyIcon },
@@ -251,6 +272,7 @@ const NAV_SECTIONS: { labelKey: string; items: NavItem[] }[] = [
     { path: '/free-session', labelKey: 'nav.freeSession', icon: FreeSessionIcon },
     { path: '/log-workout', labelKey: 'nav.logWorkout', icon: PencilIcon },
     { path: '/cardio', labelKey: 'nav.cardio', icon: RunningIcon },
+    { path: '/circuit', labelKey: 'nav.circuit', icon: CircuitIcon },
     { path: '/lumbar', labelKey: 'nav.lumbar', icon: SpineIcon },
   ]},
   { labelKey: 'nav.sectionTracking', items: [
@@ -578,11 +600,16 @@ function AuthenticatedApp({
     <OfflineBanner />
     <BackgroundJobsProvider>
     <CardioSessionProvider userId={userId!} userWeight={nutritionGoals?.weight}>
+    <CircuitSessionProvider userId={userId}>
     <ActiveSessionProvider getRestForExercise={getRestForExercise} setRestForExercise={setRestForExercise}>
-    {/* Session page renders full-screen, outside the app shell */}
+    {/* Full-screen session pages render outside the app shell */}
     {location.pathname === '/session' ? (
       <Suspense fallback={<AppLoader />}>
         <ActiveSessionPage />
+      </Suspense>
+    ) : location.pathname === '/circuit/active' ? (
+      <Suspense fallback={<AppLoader />}>
+        <CircuitActivePage />
       </Suspense>
     ) : (
     <SidebarProvider>
@@ -613,6 +640,8 @@ function AuthenticatedApp({
             <Route path="/free-session" element={<FreeSessionPage />} />
             <Route path="/log-workout" element={<LogWorkoutPage />} />
             <Route path="/cardio" element={<CardioSessionPage userId={userId!} />} />
+            <Route path="/circuit" element={<CircuitPage />} />
+            <Route path="/circuit/active" element={<CircuitActivePage />} />
             <Route path="/sleep" element={<SleepPage userId={userId!} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
             <Route path="/session/:date/:workoutKey" element={<SessionDetailPage />} />
@@ -643,7 +672,9 @@ function AuthenticatedApp({
     <ActiveCardioBar />
     <ActiveSessionBubble />
     <SessionRestoreNavigator />
+    <CircuitRestoreNavigator />
     </ActiveSessionProvider>
+    </CircuitSessionProvider>
     </CardioSessionProvider>
     </BackgroundJobsProvider>
     <InstallPrompt />

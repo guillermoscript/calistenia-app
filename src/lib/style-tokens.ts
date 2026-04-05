@@ -23,6 +23,7 @@ export const DAY_TYPE_COLORS: Record<DayType, { badge: string; border: string }>
   rest:   { badge: 'border-border text-muted-foreground bg-transparent', border: 'border-l-border' },
   cardio: { badge: 'border-emerald-400/60 text-emerald-400 bg-emerald-400/5', border: 'border-l-emerald-400' },
   yoga:   { badge: 'border-violet-400/60 text-violet-400 bg-violet-400/5', border: 'border-l-violet-400' },
+  circuit: { badge: 'border-orange-500/60 text-orange-500 bg-orange-500/5', border: 'border-l-orange-500' },
 }
 
 // ── Priority colors ─────────────────────────────────────────────────────────

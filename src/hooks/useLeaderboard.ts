@@ -67,7 +67,12 @@ export function useLeaderboard(userId: string | null) {
 
       // Parallel fetch for each user
       const userDataPromises = allUserIds.map(async (uid) => {
-        const [userRes, statsRes, settingsRes, weekSessionsRes, monthSessionsRes] = await Promise.all([
+        const [
+          userRes, statsRes, settingsRes,
+          weekSessionsRes, monthSessionsRes,
+          weekCircuitRes, monthCircuitRes,
+          weekCardioRes, monthCardioRes,
+        ] = await Promise.all([
           pb.collection('users').getOne(uid, { $autoCancel: false }).catch(() => null),
           pb.collection('user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid }),
@@ -85,19 +90,42 @@ export function useLeaderboard(userId: string | null) {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', { uid, start: monthStartStr }),
             $autoCancel: false,
           }).catch(() => ({ totalItems: 0 })),
+          pb.collection('circuit_sessions').getList(1, 1, {
+            filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: weekStartStr }),
+            $autoCancel: false,
+          }).catch(() => ({ totalItems: 0 })),
+          pb.collection('circuit_sessions').getList(1, 1, {
+            filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: monthStartStr }),
+            $autoCancel: false,
+          }).catch(() => ({ totalItems: 0 })),
+          pb.collection('cardio_sessions').getList(1, 1, {
+            filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: weekStartStr }),
+            $autoCancel: false,
+          }).catch(() => ({ totalItems: 0 })),
+          pb.collection('cardio_sessions').getList(1, 1, {
+            filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: monthStartStr }),
+            $autoCancel: false,
+          }).catch(() => ({ totalItems: 0 })),
         ])
 
         const displayName = (userRes as any)?.display_name || (userRes as any)?.email?.split('@')[0] || '?'
         const avatarUrl = userRes ? getUserAvatarUrl(userRes as any, '100x100') : null
         const isMe = uid === userId
 
+        const weekStrength = (weekSessionsRes as any)?.totalItems || 0
+        const weekCircuit = (weekCircuitRes as any)?.totalItems || 0
+        const weekCardio = (weekCardioRes as any)?.totalItems || 0
+        const monthStrength = (monthSessionsRes as any)?.totalItems || 0
+        const monthCircuit = (monthCircuitRes as any)?.totalItems || 0
+        const monthCardio = (monthCardioRes as any)?.totalItems || 0
+
         return {
           userId: uid,
           displayName,
           avatarUrl,
           isCurrentUser: isMe,
-          sessionsWeek: (weekSessionsRes as any)?.totalItems || 0,
-          sessionsMonth: (monthSessionsRes as any)?.totalItems || 0,
+          sessionsWeek: weekStrength + weekCircuit + weekCardio,
+          sessionsMonth: monthStrength + monthCircuit + monthCardio,
           streak: (statsRes as any)?.workout_streak_current || 0,
           streak_best: (statsRes as any)?.workout_streak_best || 0,
           total_sessions: (statsRes as any)?.total_sessions || 0,

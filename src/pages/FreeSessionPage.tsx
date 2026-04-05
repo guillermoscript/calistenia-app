@@ -10,11 +10,13 @@ import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
-import type { Exercise, Workout } from '../types'
+import type { Exercise, Workout, CircuitDefinition } from '../types'
 import type { TranslatableField } from '../lib/i18n-db'
 import { localize } from '../lib/i18n-db'
 import { useLocalize } from '../hooks/useLocalize'
 import WarmupCooldownPrompt from '../components/session/WarmupCooldownPrompt'
+import CircuitBuilder from '../components/circuit/CircuitBuilder'
+import { useCircuitSession } from '../contexts/CircuitSessionContext'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -215,7 +217,9 @@ export default function FreeSessionPage() {
   const { t, i18n } = useTranslation()
   const l = useLocalize()
   const { isActive: sessionActive, startSession: contextStartSession } = useActiveSession()
+  const { startCircuit } = useCircuitSession()
   const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState<'exercises' | 'circuit'>('exercises')
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -357,6 +361,11 @@ export default function FreeSessionPage() {
     load()
   }, [])
 
+  const handleCircuitStart = useCallback((circuit: CircuitDefinition) => {
+    startCircuit(circuit, 'custom')
+    navigate('/circuit/active')
+  }, [startCircuit, navigate])
+
   // ── Active session — show resume banner ────────────────────────────────
 
   const totalSets = selected.reduce((sum, ex) => sum + (typeof ex.sets === 'number' ? ex.sets : 3), 0)
@@ -399,6 +408,28 @@ export default function FreeSessionPage() {
         </h1>
       </div>
 
+      {/* ── Tab toggle ────────────────────────────────────────────────────── */}
+      <div className="flex gap-1 rounded-lg bg-card p-1 mb-4">
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeTab === 'exercises' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('exercises')}
+        >
+          {t('nav.exercises')}
+        </button>
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeTab === 'circuit' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('circuit')}
+        >
+          {t('nav.circuit')}
+        </button>
+      </div>
+
+      {activeTab === 'exercises' ? (
+      <>
       {/* ── Two-column layout on desktop ────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:gap-6">
 
@@ -653,6 +684,11 @@ export default function FreeSessionPage() {
           </div>
         )}
       </div>
+
+      </>
+      ) : (
+        <CircuitBuilder onStart={handleCircuitStart} />
+      )}
 
       {/* Warmup/Cooldown prompt */}
       {showWarmupPrompt && (

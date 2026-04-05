@@ -69,4 +69,8 @@ export const stretchTemplates: Record<DayType, { warmup: Exercise[]; cooldown: E
     warmup: [],
     cooldown: [],
   },
+  circuit: {
+    warmup: [ankle_mobility('warmup'), hip_circles('warmup'), leg_swings('warmup'), arm_circles('warmup')],
+    cooldown: [hamstring_stretch('cooldown'), calf_stretch('cooldown'), hip_flexor_stretch('cooldown'), deep_breathing('cooldown')],
+  },
 }
