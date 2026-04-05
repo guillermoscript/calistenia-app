@@ -761,8 +761,16 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     day_id: z.string().describe("Day identifier (e.g. 'd1')"),
     day_name: z.string().describe("Day display name"),
     day_focus: z.string().optional().describe("Day focus (e.g. 'Push + Core')"),
+    day_type: z.string().optional().describe("Day type (e.g. 'push', 'cardio', 'circuit')"),
     workout_title: z.string().optional(),
     exercises: z.array(ExerciseInput).min(1),
+    // Circuit fields (required when day_type is 'circuit')
+    circuit_mode: z.enum(['circuit', 'timed']).optional().describe("Circuit mode: 'circuit' (rep-based) or 'timed' (HIIT/Tabata). Required when day_type is 'circuit'."),
+    circuit_rounds: z.number().int().min(1).max(20).optional().describe("Number of rounds. Default 3."),
+    circuit_work_seconds: z.number().int().optional().describe("Work interval seconds for timed mode. Default 40."),
+    circuit_rest_seconds: z.number().int().optional().describe("Rest interval seconds for timed mode. Default 20."),
+    circuit_rest_between_exercises: z.number().int().optional().describe("Rest between exercises in seconds. Default 0."),
+    circuit_rest_between_rounds: z.number().int().optional().describe("Rest between rounds in seconds. Default 60."),
   });
 
   const PhaseInput = z.object({
@@ -827,6 +835,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
                 day_id: day.day_id,
                 day_name: toTranslatable(day.day_name),
                 day_focus: toTranslatable(day.day_focus || ""),
+                day_type: day.day_type || "",
                 workout_title: toTranslatable(day.workout_title || ""),
                 exercise_id: ex.exercise_id || ex.name.toLowerCase().replace(/\s+/g, "-"),
                 exercise_name: toTranslatable(ex.name),
@@ -843,6 +852,21 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
                 section: ex.section ?? "main",
               });
               totalExercises++;
+            }
+
+            // Create circuit config if day_type is 'circuit'
+            if (day.day_type === 'circuit') {
+              await pb.collection('program_day_config').create({
+                program: program.id,
+                day_id: day.day_id,
+                day_type: 'circuit',
+                circuit_mode: day.circuit_mode ?? 'circuit',
+                circuit_rounds: day.circuit_rounds ?? 3,
+                circuit_work_seconds: day.circuit_work_seconds ?? 40,
+                circuit_rest_seconds: day.circuit_rest_seconds ?? 20,
+                circuit_rest_between_exercises: day.circuit_rest_between_exercises ?? 0,
+                circuit_rest_between_rounds: day.circuit_rest_between_rounds ?? 60,
+              });
             }
           }
         }
@@ -927,6 +951,13 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
               day_focus: z.string().optional(),
               day_color: z.string().optional(),
               workout_title: z.string().optional(),
+              // Circuit fields (required when day_type is 'circuit')
+              circuit_mode: z.enum(['circuit', 'timed']).optional().describe("Circuit mode: 'circuit' (rep-based) or 'timed' (HIIT/Tabata). Required when day_type is 'circuit'."),
+              circuit_rounds: z.number().int().min(1).max(20).optional().describe("Number of rounds. Default 3."),
+              circuit_work_seconds: z.number().int().optional().describe("Work interval seconds for timed mode. Default 40."),
+              circuit_rest_seconds: z.number().int().optional().describe("Rest interval seconds for timed mode. Default 20."),
+              circuit_rest_between_exercises: z.number().int().optional().describe("Rest between exercises in seconds. Default 0."),
+              circuit_rest_between_rounds: z.number().int().optional().describe("Rest between rounds in seconds. Default 60."),
               exercises: z.array(z.object({
                 sort_order: z.number().int().optional(),
                 name: z.string(),
@@ -986,7 +1017,7 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
           for (const day of phase.days) {
             // Create day config record for discipline detection
             const resolvedDayType = day.day_type || dayTypeMap[day.day_id] || "full";
-            batch.collection("program_day_config").create({
+            const dayConfigData: Record<string, unknown> = {
               program: program.id,
               phase_number: phase.phase_number,
               day_id: day.day_id,
@@ -995,7 +1026,19 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
               day_focus: toTranslatable(day.day_focus || ""),
               day_color: day.day_color || phase.color || "#888",
               sort_order: phase.days.indexOf(day) + 1,
-            });
+            };
+
+            // Add circuit config fields when day_type is 'circuit'
+            if (resolvedDayType === 'circuit') {
+              dayConfigData.circuit_mode = day.circuit_mode ?? 'circuit';
+              dayConfigData.circuit_rounds = day.circuit_rounds ?? 3;
+              dayConfigData.circuit_work_seconds = day.circuit_work_seconds ?? 40;
+              dayConfigData.circuit_rest_seconds = day.circuit_rest_seconds ?? 20;
+              dayConfigData.circuit_rest_between_exercises = day.circuit_rest_between_exercises ?? 0;
+              dayConfigData.circuit_rest_between_rounds = day.circuit_rest_between_rounds ?? 60;
+            }
+
+            batch.collection("program_day_config").create(dayConfigData);
 
             for (let ei = 0; ei < day.exercises.length; ei++) {
               const ex = day.exercises[ei];

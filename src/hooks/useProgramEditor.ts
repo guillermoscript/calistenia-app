@@ -35,6 +35,12 @@ export interface EditorDay {
   cardioActivityType?: import('../types').CardioActivityType
   cardioTargetDistanceKm?: number
   cardioTargetDurationMin?: number
+  circuitMode?: 'circuit' | 'timed'
+  circuitRounds?: number
+  circuitWorkSeconds?: number
+  circuitRestSeconds?: number
+  circuitRestBetweenExercises?: number
+  circuitRestBetweenRounds?: number
 }
 
 export interface EditorExercise {
@@ -382,6 +388,14 @@ export function useProgramEditor() {
             days[key].cardioTargetDistanceKm = dc.cardio_target_distance_km || undefined
             days[key].cardioTargetDurationMin = dc.cardio_target_duration_min || undefined
           }
+          if (dc.day_type === 'circuit') {
+            days[key].circuitMode = dc.circuit_mode || 'circuit'
+            days[key].circuitRounds = dc.circuit_rounds || 3
+            days[key].circuitWorkSeconds = dc.circuit_work_seconds || 40
+            days[key].circuitRestSeconds = dc.circuit_rest_seconds || 20
+            days[key].circuitRestBetweenExercises = dc.circuit_rest_between_exercises || 0
+            days[key].circuitRestBetweenRounds = dc.circuit_rest_between_rounds || 60
+          }
         }
       }
 
@@ -553,6 +567,14 @@ export function useProgramEditor() {
                 dayConfigData.cardio_activity_type = day.cardioActivityType || 'running'
                 if (day.cardioTargetDistanceKm) dayConfigData.cardio_target_distance_km = day.cardioTargetDistanceKm
                 if (day.cardioTargetDurationMin) dayConfigData.cardio_target_duration_min = day.cardioTargetDurationMin
+              }
+              if (day.type === 'circuit') {
+                dayConfigData.circuit_mode = day.circuitMode ?? 'circuit'
+                dayConfigData.circuit_rounds = day.circuitRounds ?? 3
+                dayConfigData.circuit_work_seconds = day.circuitWorkSeconds ?? 40
+                dayConfigData.circuit_rest_seconds = day.circuitRestSeconds ?? 20
+                dayConfigData.circuit_rest_between_exercises = day.circuitRestBetweenExercises ?? 0
+                dayConfigData.circuit_rest_between_rounds = day.circuitRestBetweenRounds ?? 60
               }
               await pb.collection('program_day_config').create(dayConfigData)
             } catch { /* day config save failed — non-critical */ }

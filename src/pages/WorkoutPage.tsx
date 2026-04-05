@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { WEEK_DAYS as FALLBACK_WEEK_DAYS, PHASES as FALLBACK_PHASES, getWorkout as fallbackGetWorkout } from '../data/workouts'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
+import { useCircuitSession } from '../contexts/CircuitSessionContext'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { localDay } from '../lib/dateUtils'
 import { useAuthState } from '../contexts/AuthContext'
@@ -15,12 +16,13 @@ import { triggerWorkoutDetailTour } from '../components/AppTour'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
 import { DAY_TYPE_COLORS, CARDIO_ACTIVITY } from '../lib/style-tokens'
-import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData, CardioDayConfig } from '../types'
+import type { Settings, Phase, WeekDay, DayId, DayType, Workout, ExerciseLog, SetData, CardioDayConfig, CircuitDefinition } from '../types'
 
 export default function WorkoutPage() {
   const { settings, phases: phasesProp, weekDays: weekDaysProp, cardioDayConfigs, activeProgram } = useWorkoutState()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, unmarkWorkoutDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { startSession } = useActiveSession()
+  const { startCircuit } = useCircuitSession()
   const { userId, userRole } = useAuthState()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -74,7 +76,13 @@ export default function WorkoutPage() {
     navigate('/session')
   }, [workout, workoutKey, startSession, navigate])
 
-  const selectedDayType = WEEK_DAYS.find(d => d.id === selectedDay)?.type
+  const handleStartCircuit = useCallback((config: CircuitDefinition) => {
+    startCircuit(config, 'program', activeProgram?.id, `${selectedDay}`)
+    navigate('/circuit/active')
+  }, [startCircuit, activeProgram, selectedDay, navigate])
+
+  const selectedWeekDay = WEEK_DAYS.find(d => d.id === selectedDay)
+  const selectedDayType = selectedWeekDay?.type
 
   return (
     <div className="max-w-[900px] mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -257,6 +265,44 @@ export default function WorkoutPage() {
               className="font-bebas text-xl tracking-wide bg-emerald-500 hover:bg-emerald-400 text-white px-8 h-12"
             >
               {t('workout.startCardio')}
+            </Button>
+          </div>
+        )
+      })() : selectedDay && selectedDayType === 'circuit' && selectedWeekDay?.circuitConfig ? (() => {
+        // If circuitConfig exists but has no exercises, build from workout exercises
+        const circuitCfg = selectedWeekDay.circuitConfig
+        if (circuitCfg.exercises.length === 0 && workout?.exercises) {
+          circuitCfg.exercises = workout.exercises.map(ex => ({
+            exerciseId: ex.id,
+            name: { es: ex.name, en: ex.name },
+            reps: ex.reps,
+          }))
+        }
+        return (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-orange-500/30 text-orange-500">
+                  {circuitCfg.mode === 'timed' ? 'HIIT' : t('circuit.modes.circuit')}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t('circuit.summary', {
+                  rounds: circuitCfg.rounds,
+                  exercises: circuitCfg.exercises.length
+                })}
+              </p>
+              {circuitCfg.mode === 'timed' && circuitCfg.workSeconds && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {circuitCfg.workSeconds}s {t('circuit.work').toLowerCase()} / {circuitCfg.restSeconds ?? 0}s {t('circuit.rest').toLowerCase()}
+                </p>
+              )}
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => handleStartCircuit(circuitCfg)}
+            >
+              {t('circuit.startCircuit')}
             </Button>
           </div>
         )

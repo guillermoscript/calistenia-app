@@ -180,6 +180,7 @@
   "dayType.cardio": "Cardio",
   "dayType.yoga": "Yoga",
   "dayType.rest": "Rest",
+  "dayType.circuit": "Circuit / HIIT",
 
   "auth.tagline": "Train with purpose",
   "auth.loginSubtitle": "Sign in to continue",

@@ -38,6 +38,7 @@ const DAY_TYPE_OPTIONS = [
   { value: 'full',   labelKey: 'dayType.full' },
   { value: 'cardio', labelKey: 'dayType.cardio' },
   { value: 'yoga',   labelKey: 'dayType.yoga' },
+  { value: 'circuit', labelKey: 'dayType.circuit' },
   { value: 'rest',   labelKey: 'dayType.rest' },
 ]
 
@@ -504,6 +505,74 @@ export default function ProgramEditorPage({ userId, userRole = 'user' }: Program
                                   value={(day as any).cardioTargetDurationMin || ''}
                                   onChange={e => updateDay(dayKey, { cardioTargetDurationMin: parseInt(e.target.value) || undefined } as any)}
                                   placeholder={t('programEditor.durationPlaceholder')}
+                                  className="text-sm h-8"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {day.type === 'circuit' && (
+                          <div className="space-y-2 p-3 bg-orange-400/5 border border-orange-400/20 rounded-lg">
+                            <div className="text-[9px] text-orange-400 tracking-widest uppercase mb-1">{t('circuit.title')}</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.modes.circuit')} / {t('circuit.modes.timed')}</label>
+                                <select
+                                  className="w-full h-8 rounded-md border border-input bg-background px-3 text-sm"
+                                  value={(day as any).circuitMode ?? 'circuit'}
+                                  onChange={(e) => updateDay(dayKey, { circuitMode: e.target.value as 'circuit' | 'timed' } as any)}
+                                >
+                                  <option value="circuit">{t('circuit.modes.circuit')}</option>
+                                  <option value="timed">{t('circuit.modes.timed')}</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.rounds')}</label>
+                                <Input
+                                  type="number" min={1} max={20}
+                                  value={(day as any).circuitRounds ?? 3}
+                                  onChange={(e) => updateDay(dayKey, { circuitRounds: parseInt(e.target.value) || 3 } as any)}
+                                  className="text-sm h-8"
+                                />
+                              </div>
+                              {((day as any).circuitMode ?? 'circuit') === 'timed' && (
+                                <>
+                                  <div>
+                                    <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.workTime')}</label>
+                                    <Input
+                                      type="number" min={5} max={120} step={5}
+                                      value={(day as any).circuitWorkSeconds ?? 40}
+                                      onChange={(e) => updateDay(dayKey, { circuitWorkSeconds: parseInt(e.target.value) || 40 } as any)}
+                                      className="text-sm h-8"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.restTime')}</label>
+                                    <Input
+                                      type="number" min={0} max={60} step={5}
+                                      value={(day as any).circuitRestSeconds ?? 20}
+                                      onChange={(e) => updateDay(dayKey, { circuitRestSeconds: parseInt(e.target.value) || 20 } as any)}
+                                      className="text-sm h-8"
+                                    />
+                                  </div>
+                                </>
+                              )}
+                              <div>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.restBetweenExercises')}</label>
+                                <Input
+                                  type="number" min={0} max={120} step={5}
+                                  value={(day as any).circuitRestBetweenExercises ?? 0}
+                                  onChange={(e) => updateDay(dayKey, { circuitRestBetweenExercises: parseInt(e.target.value) || 0 } as any)}
+                                  className="text-sm h-8"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-muted-foreground tracking-widest uppercase block mb-1">{t('circuit.restBetweenRounds')}</label>
+                                <Input
+                                  type="number" min={0} max={180} step={15}
+                                  value={(day as any).circuitRestBetweenRounds ?? 60}
+                                  onChange={(e) => updateDay(dayKey, { circuitRestBetweenRounds: parseInt(e.target.value) || 60 } as any)}
                                   className="text-sm h-8"
                                 />
                               </div>

@@ -77,6 +77,19 @@ function buildWeekDays(exerciseRecords: RecordModel[], dayConfigRecords: RecordM
           targetDurationMin: dc.cardio_target_duration_min || undefined,
         }
       }
+      if (dc.day_type === 'circuit') {
+        day.circuitConfig = {
+          id: `${dc.day_id}_circuit`,
+          name: { es: 'Circuito', en: 'Circuit' },
+          mode: dc.circuit_mode ?? 'circuit',
+          exercises: [],
+          rounds: dc.circuit_rounds ?? 3,
+          restBetweenExercises: dc.circuit_rest_between_exercises ?? 0,
+          restBetweenRounds: dc.circuit_rest_between_rounds ?? 60,
+          workSeconds: dc.circuit_work_seconds,
+          restSeconds: dc.circuit_rest_seconds,
+        }
+      }
       seen[dc.day_id] = day
     }
   })
@@ -483,6 +496,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           if (dc.cardio_activity_type) data.cardio_activity_type = dc.cardio_activity_type
           if (dc.cardio_target_distance_km) data.cardio_target_distance_km = dc.cardio_target_distance_km
           if (dc.cardio_target_duration_min) data.cardio_target_duration_min = dc.cardio_target_duration_min
+          if (dc.circuit_mode) data.circuit_mode = dc.circuit_mode
+          if (dc.circuit_rounds) data.circuit_rounds = dc.circuit_rounds
+          if (dc.circuit_work_seconds) data.circuit_work_seconds = dc.circuit_work_seconds
+          if (dc.circuit_rest_seconds) data.circuit_rest_seconds = dc.circuit_rest_seconds
+          if (dc.circuit_rest_between_exercises) data.circuit_rest_between_exercises = dc.circuit_rest_between_exercises
+          if (dc.circuit_rest_between_rounds) data.circuit_rest_between_rounds = dc.circuit_rest_between_rounds
           await pb.collection('program_day_config').create(data)
         }
       } catch { /* no day config to copy */ }
