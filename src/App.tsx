@@ -70,7 +70,7 @@ import { pb } from './lib/pocketbase'
 import { cn } from './lib/utils'
 import { Toaster, toast } from 'sonner'
 import { BackgroundJobsProvider } from './contexts/BackgroundJobsContext'
-import { useNotifications } from './hooks/useNotifications'
+import { NotificationsProvider, useNotificationsContext } from './contexts/NotificationsContext'
 import { NotificationBadge } from './components/social/NotificationBadge'
 import type { Settings } from './types'
 import {
@@ -300,7 +300,7 @@ function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, us
   const { open, isMobile, setOpenMobile } = useSidebar()
   const navigate = useNavigate()
   const location = useLocation()
-  const { unreadCount } = useNotifications(userId)
+  const { unreadCount } = useNotificationsContext()
 
   // Collapsible sidebar sections — auto-expand section containing active route
   const activeSectionIdx = useMemo(() => {
@@ -502,7 +502,7 @@ function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { activeProgram } = useWorkoutState()
-  const { selectProgram, duplicateProgram, deleteProgram } = useWorkoutActions()
+  const { selectProgram, abandonProgram, duplicateProgram, deleteProgram } = useWorkoutActions()
 
   const goToPrograms = useCallback(() => navigate('/programs'), [navigate])
   const goToProgram = useCallback((pid: string) => navigate(`/programs/${pid}`), [navigate])
@@ -511,6 +511,16 @@ function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole
     const newId = await duplicateProgram(pid)
     if (newId) navigate(`/programs/${newId}/edit`)
   }, [duplicateProgram, navigate])
+  const handleAbandon = useCallback(async (pid: string): Promise<boolean> => {
+    const success = await abandonProgram(pid)
+    if (success) {
+      toast.success(t('programDetail.abandonSuccess'))
+      navigate('/programs')
+    } else {
+      toast.error(t('programDetail.abandonError'))
+    }
+    return success
+  }, [abandonProgram, navigate, t])
   const handleDelete = useCallback(async (pid: string) => {
     const success = await deleteProgram(pid)
     if (success) {
@@ -527,7 +537,7 @@ function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole
       programId={id} userId={userId} userRole={userRole} activeProgram={activeProgram}
       onBack={goToPrograms} onNavigateToProgram={goToProgram}
       onSelectProgram={selectProgram} onDuplicateProgram={handleDuplicate}
-      onDeleteProgram={handleDelete} onEditProgram={handleEdit}
+      onDeleteProgram={handleDelete} onAbandonProgram={handleAbandon} onEditProgram={handleEdit}
     />
   )
 }
@@ -613,6 +623,7 @@ function AuthenticatedApp({
         <CircuitActivePage />
       </Suspense>
     ) : (
+    <NotificationsProvider userId={userId ?? null}>
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AppShell settings={settings} displayName={displayName} userId={userId ?? null} signOut={signOut} dark={dark} toggleDark={toggleDark} userRole={userRole}>
@@ -655,7 +666,7 @@ function AuthenticatedApp({
             <Route path="/leaderboard" element={<LeaderboardPage userId={userId!} />} />
             <Route path="/add/:userId" element={<AddFriendPage currentUserId={userId!} />} />
             <Route path="/u/:userId/routine" element={<RoutineViewPage />} />
-            <Route path="/notifications" element={<NotificationsPage userId={userId!} />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/referrals" element={<ReferralsPage userId={userId!} />} />
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}
@@ -670,6 +681,7 @@ function AuthenticatedApp({
         </AppShell>
       </div>
     </SidebarProvider>
+    </NotificationsProvider>
     )}
     <ActiveCardioBar />
     <ActiveSessionBubble />

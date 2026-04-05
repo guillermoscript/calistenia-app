@@ -106,6 +106,7 @@ interface ProgramDetailPageProps {
   onSelectProgram?: (programId: string) => Promise<boolean>
   onDuplicateProgram?: (programId: string) => Promise<void>
   onDeleteProgram?: (programId: string) => Promise<void>
+  onAbandonProgram?: (programId: string) => Promise<boolean>
   onEditProgram?: (programId: string) => void
   /** If true, show as shared view (for non-logged-in or add-to-mine) */
   isSharedView?: boolean
@@ -122,6 +123,7 @@ export default function ProgramDetailPage({
   onSelectProgram,
   onDuplicateProgram,
   onDeleteProgram,
+  onAbandonProgram,
   onEditProgram,
   isSharedView = false,
   onLogin,
@@ -137,6 +139,7 @@ export default function ProgramDetailPage({
   const [selectedPhase, setSelectedPhase] = useState<string>('1')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false)
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())
   const [lastSessions, setLastSessions] = useState<Record<string, string>>({})
 
@@ -330,6 +333,17 @@ export default function ProgramDetailPage({
       await onDuplicateProgram(programId)
     } finally {
       setActionLoading(null)
+    }
+  }
+
+  const handleAbandon = async () => {
+    if (!onAbandonProgram) return
+    setActionLoading('abandon')
+    try {
+      await onAbandonProgram(programId)
+    } finally {
+      setActionLoading(null)
+      setShowAbandonConfirm(false)
     }
   }
 
@@ -548,6 +562,16 @@ export default function ProgramDetailPage({
                 >
                   <EditIcon className="size-3.5 mr-2" />
                   {t('programDetail.edit')}
+                </Button>
+              )}
+              {onAbandonProgram && isActive && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAbandonConfirm(true)}
+                  disabled={actionLoading === 'abandon'}
+                  className="font-mono text-[11px] tracking-widest h-11 px-5 border-orange-500/20 text-orange-400 hover:border-orange-500/40 hover:bg-orange-500/5"
+                >
+                  {actionLoading === 'abandon' ? t('programDetail.abandoning') : t('programDetail.abandonProgram')}
                 </Button>
               )}
               {onDeleteProgram && isOwn && !isActive && (
@@ -814,6 +838,18 @@ export default function ProgramDetailPage({
           cancelLabel={t('common.cancel')}
           variant="destructive"
           onConfirm={() => onDeleteProgram(programId)}
+        />
+      )}
+      {onAbandonProgram && (
+        <ConfirmDialog
+          open={showAbandonConfirm}
+          onOpenChange={setShowAbandonConfirm}
+          title={t('programDetail.abandonProgram')}
+          description={t('programDetail.abandonConfirm')}
+          confirmLabel={t('programDetail.abandonConfirmLabel')}
+          cancelLabel={t('common.cancel')}
+          variant="destructive"
+          onConfirm={handleAbandon}
         />
       )}
     </div>

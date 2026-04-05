@@ -191,6 +191,7 @@ interface UseProgramsReturn {
   cardioDayConfigs: Record<string, CardioDayConfig>
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<boolean>
+  abandonProgram: (programId: string) => Promise<boolean>
   duplicateProgram: (programId: string) => Promise<string | null>
   deleteProgram: (programId: string) => Promise<boolean>
   refreshPrograms: () => Promise<void>
@@ -400,7 +401,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       } catch { /* not found */ }
 
       if (existing) {
-        await pb.collection('user_programs').update(existing.id, { is_current: true })
+        await pb.collection('user_programs').update(existing.id, { is_current: true, status: 'active', ended_at: '' })
       } else {
         await pb.collection('user_programs').create({
           user:       userId,
@@ -436,6 +437,61 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       selectingRef.current = false
     }
   }, [usePB, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── abandonProgram ───────────────────────────────────────────────────────
+  const abandonProgram = useCallback(async (programId: string): Promise<boolean> => {
+    if (!usePB || !userId) return false
+
+    try {
+      // 1. Find the user_programs record
+      let upRecord: RecordModel | null = null
+      try {
+        upRecord = await pb.collection('user_programs').getFirstListItem(
+          pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId })
+        )
+      } catch { /* not found */ }
+
+      if (!upRecord) return false
+
+      // 2. Count sessions completed in this program
+      let sessionsCompleted = 0
+      try {
+        const sessionsRes = await pb.collection('sessions').getList(1, 1, {
+          filter: pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId }),
+          $autoCancel: false,
+        })
+        sessionsCompleted = sessionsRes.totalItems
+      } catch { /* ignore */ }
+
+      // 3. Mark as abandoned
+      await pb.collection('user_programs').update(upRecord.id, {
+        status: 'abandoned',
+        ended_at: nowLocalForPB(),
+        is_current: false,
+      })
+
+      // 4. Clear active program in local state
+      if (activeProgram?.id === programId) {
+        setActiveProgram(null)
+        setPhases(FALLBACK_PHASES)
+        setWeekDays(FALLBACK_WEEK_DAYS)
+        setWorkoutsMap({})
+        setCardioDayConfigs({})
+      }
+
+      // 5. Track analytics
+      op.track('program_abandoned', {
+        program_id: programId,
+        program_name: programsRef.current.find(p => p.id === programId)?.name || '',
+        sessions_completed: sessionsCompleted,
+      })
+
+      return true
+    } catch (e) {
+      console.error('usePrograms: abandonProgram error', e)
+      return false
+    }
+  }, [usePB, userId, activeProgram]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── duplicateProgram ──────────────────────────────────────────────────────
   const duplicateProgram = useCallback(async (programId: string): Promise<string | null> => {
@@ -663,6 +719,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     cardioDayConfigs,
     getWorkout,
     selectProgram,
+    abandonProgram,
     duplicateProgram,
     deleteProgram,
     refreshPrograms,
