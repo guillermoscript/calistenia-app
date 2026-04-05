@@ -28,7 +28,7 @@ function formatDate(y: number, m: number, d: number) {
 }
 
 export interface CalendarEntry {
-  type: 'workout' | 'cardio'
+  type: 'workout' | 'cardio' | 'circuit'
   date: string
   workoutKey: string
   note: string
@@ -36,6 +36,12 @@ export interface CalendarEntry {
   activityType?: string
   distanceKm?: number
   durationSeconds?: number
+  // Circuit-specific fields
+  circuitName?: string
+  circuitMode?: 'circuit' | 'timed'
+  roundsCompleted?: number
+  roundsTarget?: number
+  circuitDurationSeconds?: number
 }
 
 interface DayNutritionSummary {
@@ -61,6 +67,7 @@ export default function CalendarPage() {
   const [viewMonth, setViewMonth] = useState(today.getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([])
+  const [circuitSessions, setCircuitSessions] = useState<any[]>([])
   const [nutritionByDate, setNutritionByDate] = useState<Record<string, DayNutritionSummary>>({})
   const [waterByDate, setWaterByDate] = useState<Record<string, DayWaterSummary>>({})
 
@@ -90,14 +97,21 @@ export default function CalendarPage() {
       const available = await isPocketBaseAvailable()
       if (!available || cancelled) return
 
-      // Fetch all three in parallel
-      const [cardioRes, nutritionRes, waterRes] = await Promise.allSettled([
+      // Fetch all four in parallel
+      const [cardioRes, circuitRes, nutritionRes, waterRes] = await Promise.allSettled([
         pb.collection('cardio_sessions').getList(1, 200, {
           filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at < {:end}', {
             uid: userId, start: pbStart, end: pbEnd,
           }),
           sort: '-started_at',
           fields: 'id,activity_type,distance_km,duration_seconds,started_at,finished_at,note',
+        }),
+        pb.collection('circuit_sessions').getList(1, 200, {
+          filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at < {:end}', {
+            uid: userId, start: pbStart, end: pbEnd,
+          }),
+          sort: '-started_at',
+          fields: 'id,circuit_name,mode,rounds_completed,rounds_target,duration_seconds,started_at,finished_at,note',
         }),
         pb.collection('nutrition_entries').getList(1, 500, {
           filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
@@ -120,6 +134,13 @@ export default function CalendarPage() {
         setCardioSessions(cardioRes.value.items as unknown as CardioSession[])
       } else {
         console.warn('Calendar: cardio fetch failed', cardioRes.reason)
+      }
+
+      // Circuit
+      if (circuitRes.status === 'fulfilled') {
+        setCircuitSessions(circuitRes.value.items)
+      } else {
+        console.warn('Calendar: circuit fetch failed', circuitRes.reason)
       }
 
       // Nutrition — aggregate by date (convert UTC timestamps to local dates)
@@ -189,8 +210,29 @@ export default function CalendarPage() {
       })
     })
 
+    // Circuit sessions
+    circuitSessions.forEach((cs: any) => {
+      const date = utcToLocalDateStr(cs.started_at || '')
+      if (!date) return
+      if (!map[date]) map[date] = []
+      const name = typeof cs.circuit_name === 'object'
+        ? (cs.circuit_name?.[i18n.language] || cs.circuit_name?.en || cs.circuit_name?.es || '')
+        : (cs.circuit_name || '')
+      map[date].push({
+        type: 'circuit',
+        date,
+        workoutKey: `circuit_${cs.id}`,
+        note: cs.note || '',
+        circuitName: name,
+        circuitMode: cs.mode,
+        roundsCompleted: cs.rounds_completed,
+        roundsTarget: cs.rounds_target,
+        circuitDurationSeconds: cs.duration_seconds,
+      })
+    })
+
     return map
-  }, [progress, cardioSessions])
+  }, [progress, cardioSessions, circuitSessions])
 
   const selectedSessions = selectedDate ? sessionsByDate[selectedDate] || [] : []
 
@@ -237,6 +279,7 @@ export default function CalendarPage() {
   const parseWorkoutKey = (key: string) => {
     if (key.startsWith('free_')) return t('calendar.freeSession')
     if (key.startsWith('cardio_')) return t('calendar.cardio', { defaultValue: 'Cardio' })
+    if (key.startsWith('circuit_')) return t('calendar.circuit', { defaultValue: 'Circuit' })
     const [phaseStr, day] = key.split('_')
     const phase = phaseStr.replace('p', '')
     return t('calendar.phaseDay', { phase, day: t(`day.${day}`) || day })
@@ -317,10 +360,10 @@ export default function CalendarPage() {
                   </span>
                   {hasAnyData && (
                     <div className="flex gap-0.5">
-                      {sessions.slice(0, 2).map((s, j) => (
+                      {sessions.slice(0, 3).map((s, j) => (
                         <div key={j} className={cn(
                           'size-1 rounded-full',
-                          s.type === 'cardio' ? 'bg-sky-400' : s.workoutKey.startsWith('free_') ? 'bg-violet-400' : 'bg-lime',
+                          s.type === 'circuit' ? 'bg-orange-500' : s.type === 'cardio' ? 'bg-sky-400' : s.workoutKey.startsWith('free_') ? 'bg-violet-400' : 'bg-lime',
                         )} />
                       ))}
                       {nutrition && <div className="size-1 rounded-full bg-amber-400" />}
@@ -367,9 +410,10 @@ export default function CalendarPage() {
               <div className="space-y-2">
                 {selectedSessions.map((s, i) => {
                   const isCardio = s.type === 'cardio'
+                  const isCircuit = s.type === 'circuit'
                   const isFree = s.workoutKey.startsWith('free_')
-                  const accentHover = isCardio ? 'hover:border-sky-400/30' : isFree ? 'hover:border-violet-400/30' : 'hover:border-lime/30'
-                  const titleColor = isCardio ? 'text-sky-400' : isFree ? 'text-violet-400' : ''
+                  const accentHover = isCircuit ? 'hover:border-orange-500/30' : isCardio ? 'hover:border-sky-400/30' : isFree ? 'hover:border-violet-400/30' : 'hover:border-lime/30'
+                  const titleColor = isCircuit ? 'text-orange-500' : isCardio ? 'text-sky-400' : isFree ? 'text-violet-400' : ''
 
                   const cardioLabel = isCardio && s.activityType
                     ? { running: t('calendar.running'), walking: t('calendar.walking'), cycling: t('calendar.cycling') }[s.activityType] || 'Cardio'
@@ -379,18 +423,54 @@ export default function CalendarPage() {
                     ? `${s.distanceKm.toFixed(2)} km${s.durationSeconds ? ` · ${Math.floor(s.durationSeconds / 60)} min` : ''}`
                     : null
 
+                  const circuitMeta = isCircuit
+                    ? [
+                        s.roundsCompleted != null && s.roundsTarget != null
+                          ? `${s.roundsCompleted}/${s.roundsTarget} ${t('calendar.rounds', { defaultValue: 'rounds' })}`
+                          : null,
+                        s.circuitDurationSeconds
+                          ? `${Math.floor(s.circuitDurationSeconds / 60)} min`
+                          : null,
+                      ].filter(Boolean).join(' · ')
+                    : null
+
+                  const handleClick = () => {
+                    if (isCircuit) {
+                      const circuitId = s.workoutKey.replace('circuit_', '')
+                      navigate(`/circuit/history/${circuitId}`)
+                    } else if (isCardio) {
+                      navigate('/cardio')
+                    } else {
+                      navigate(`/session/${s.date}/${s.workoutKey}`)
+                    }
+                  }
+
                   return (
                     <button
                       key={i}
-                      onClick={() => !isCardio ? navigate(`/session/${s.date}/${s.workoutKey}`) : navigate('/cardio')}
+                      onClick={handleClick}
                       className={cn('w-full text-left px-4 py-3 bg-muted/30 rounded-lg border border-border transition-colors flex items-center justify-between gap-3', accentHover)}
                     >
                       <div>
-                        <div className={cn('text-sm font-medium', titleColor)}>
-                          {isCardio ? (cardioLabel || 'Cardio') : parseWorkoutKey(s.workoutKey)}
+                        <div className="flex items-center gap-2">
+                          <span className={cn('text-sm font-medium', titleColor)}>
+                            {isCircuit
+                              ? (s.circuitName || t('calendar.circuit', { defaultValue: 'Circuit' }))
+                              : isCardio
+                                ? (cardioLabel || 'Cardio')
+                                : parseWorkoutKey(s.workoutKey)}
+                          </span>
+                          {isCircuit && (
+                            <Badge variant="outline" className="text-[9px] tracking-wide border-orange-500/30 text-orange-500 bg-orange-500/10">
+                              {s.circuitMode === 'timed' ? 'HIIT' : t('calendar.circuit', { defaultValue: 'Circuit' })}
+                            </Badge>
+                          )}
                         </div>
                         {cardioMeta && (
                           <div className="text-[11px] text-muted-foreground mt-0.5">{cardioMeta}</div>
+                        )}
+                        {circuitMeta && (
+                          <div className="text-[11px] text-muted-foreground mt-0.5">{circuitMeta}</div>
                         )}
                         {s.note && (
                           <div className="text-xs text-muted-foreground mt-1 italic">{s.note}</div>

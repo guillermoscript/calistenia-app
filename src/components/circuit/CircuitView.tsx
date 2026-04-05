@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { X, Pause } from 'lucide-react'
@@ -16,6 +16,7 @@ import { useCircuitSession } from '../../contexts/CircuitSessionContext'
 import { useLocalize } from '../../hooks/useLocalize'
 import * as sounds from '../../lib/sounds'
 import type { CircuitDefinition } from '../../types'
+import { getLocalQuote } from '../../lib/quotes'
 
 // ── Confetti (reused from SessionView pattern) ──────────────────────────────
 
@@ -213,6 +214,7 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
   const [showExit, setShowExit] = useState(false)
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
+  const quote = useMemo(() => getLocalQuote(), [])
 
   // ── Wake lock to prevent screen sleep during circuit ──────────────────────
 
@@ -373,6 +375,13 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
             <span>{t('circuit.duration', { minutes: elapsedMin, seconds: elapsedSec })}</span>
           </div>
         </div>
+
+        {quote && (
+          <div className="max-w-[320px]" style={{ animation: 'fadeUp 0.5s 0.25s ease-out both' }}>
+            <div className="text-base italic text-foreground/70 leading-relaxed mb-1.5">"{quote.q}"</div>
+            <div className="font-mono text-[11px] text-muted-foreground tracking-wide">— {quote.a}</div>
+          </div>
+        )}
 
         <div className="w-full max-w-[360px]" style={{ animation: 'fadeUp 0.5s 0.35s ease-out both' }}>
           <div className="h-px mb-4 bg-gradient-to-r from-transparent via-border to-transparent" />

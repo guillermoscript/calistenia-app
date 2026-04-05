@@ -35,6 +35,7 @@ const ActiveSessionPage = lazy(() => import('./pages/ActiveSessionPage'))
 const CardioSessionPage = lazy(() => import('./pages/CardioSessionPage'))
 const CircuitPage = lazy(() => import('./pages/CircuitPage'))
 const CircuitActivePage = lazy(() => import('./pages/CircuitActivePage'))
+const CircuitSessionDetailPage = lazy(() => import('./pages/CircuitSessionDetailPage'))
 const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
@@ -642,6 +643,7 @@ function AuthenticatedApp({
             <Route path="/cardio" element={<CardioSessionPage userId={userId!} />} />
             <Route path="/circuit" element={<CircuitPage />} />
             <Route path="/circuit/active" element={<CircuitActivePage />} />
+            <Route path="/circuit/history/:id" element={<CircuitSessionDetailPage />} />
             <Route path="/sleep" element={<SleepPage userId={userId!} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
             <Route path="/session/:date/:workoutKey" element={<SessionDetailPage />} />

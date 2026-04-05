@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Image } from 'lucide-react'
-import i18n from '../lib/i18n'
 import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
 import Timer from './Timer'
@@ -29,23 +28,7 @@ import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
 import { PRIORITY_COLORS } from '../lib/style-tokens'
 import type { Exercise, Workout, ExerciseLog, SetData, Priority } from '../types'
-
-interface Quote {
-  q: string
-  a: string
-}
-
-function getLocalQuotes(): Quote[] {
-  return Array.from({ length: 20 }, (_, i) => ({
-    q: i18n.t(`motivation.quote${i}`),
-    a: i18n.t(`motivation.author${i}`),
-  }))
-}
-
-function getLocalQuote(): Quote {
-  const quotes = getLocalQuotes()
-  return quotes[Math.floor(Math.random() * quotes.length)]
-}
+import { getLocalQuote, type Quote } from '../lib/quotes'
 
 interface Step {
   exercise: Exercise
