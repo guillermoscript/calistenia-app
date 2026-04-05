@@ -323,6 +323,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           program:    catalog[0].id,
           started_at: nowLocalForPB(),
           is_current: true,
+          status:     'active',
         })
       }
     }
@@ -408,6 +409,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           program:    programId,
           started_at: nowLocalForPB(),
           is_current: true,
+          status:     'active',
         })
       }
 
@@ -675,10 +677,10 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
               )
             } catch { /* not found */ }
             if (fbExisting) {
-              await pb.collection('user_programs').update(fbExisting.id, { is_current: true })
+              await pb.collection('user_programs').update(fbExisting.id, { is_current: true, status: 'active', ended_at: '' })
             } else {
               await pb.collection('user_programs').create({
-                user: userId, program: fallback.id, started_at: nowLocalForPB(), is_current: true,
+                user: userId, program: fallback.id, started_at: nowLocalForPB(), is_current: true, status: 'active',
               })
             }
             await loadProgramData(fallback.id)
