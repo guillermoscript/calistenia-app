@@ -201,6 +201,7 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
     startedAt,
     isPaused,
     advanceExercise,
+    advanceFromGetReady,
     advanceToNextPhase,
     pause,
     resume,
@@ -212,6 +213,36 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
   const [showExit, setShowExit] = useState(false)
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
+
+  // ── Wake lock to prevent screen sleep during circuit ──────────────────────
+
+  useEffect(() => {
+    let wakeLock: WakeLockSentinel | null = null
+
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen')
+        }
+      } catch {
+        // Wake lock request failed (e.g., low battery, not supported)
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock()
+      }
+    }
+
+    requestWakeLock()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      wakeLock?.release()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
 
   // ── Elapsed timer ──────────────────────────────────────────────────────────
 
@@ -238,11 +269,19 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
     }
   }, [progress.phase])
 
+  // Play get ready sound
+  useEffect(() => {
+    if (progress.phase === 'getReady') {
+      sounds.playGetReady()
+      sounds.vibrate([200, 100, 200])
+    }
+  }, [progress.phase])
+
   // Play round complete sound
   useEffect(() => {
     if (progress.phase === 'roundRest') {
       sounds.playGetReady()
-      sounds.vibrate([200, 100, 200])
+      sounds.vibrate([100, 50, 100])
     }
   }, [progress.phase])
 
@@ -252,7 +291,9 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
   const nextExerciseIndex = progress.currentExerciseIndex + 1
   const nextExercise = nextExerciseIndex < circuit.exercises.length
     ? circuit.exercises[nextExerciseIndex]
-    : circuit.exercises[0] // wraps to first exercise of next round
+    : progress.currentRound + 1 < circuit.rounds
+      ? circuit.exercises[0]
+      : null
 
   // ── Completion handler ────────────────────────────────────────────────────
 
@@ -363,6 +404,7 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
 
   // ── Active workout phases ─────────────────────────────────────────────────
 
+  const isGetReady = progress.phase === 'getReady'
   const isRest = progress.phase === 'rest' || progress.phase === 'roundRest'
   const isWork = progress.phase === 'work'
   const isExercise = progress.phase === 'exercise'
@@ -412,6 +454,36 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
       {/* ── Main content ───────────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 gap-5 overflow-y-auto">
 
+        {/* ── Get Ready phase (both modes) ──────────────────────────────── */}
+        {isGetReady && currentExercise && (
+          <div className="flex flex-col items-center gap-5 w-full max-w-md text-center">
+            {/* Exercise name */}
+            <div className="font-bebas tracking-[2px] text-foreground leading-tight"
+              style={{ fontSize: 'clamp(24px, 7vw, 38px)' }}>
+              {l(currentExercise.name)}
+            </div>
+
+            {/* Countdown ring */}
+            <CountdownRing
+              key="get-ready"
+              seconds={5}
+              totalSeconds={5}
+              isPaused={isPaused}
+              label={t('circuit.getReady')}
+              labelColor="hsl(var(--lime))"
+              onComplete={advanceFromGetReady}
+            />
+
+            {/* Position */}
+            <div className="font-mono text-[11px] text-muted-foreground tracking-[2px]">
+              {t('circuit.exercisePosition', {
+                current: 1,
+                total: circuit.exercises.length,
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── Circuit mode: exercise phase ─────────────────────────────────── */}
         {isExercise && currentExercise && (
           <div className="flex flex-col items-center gap-5 w-full max-w-md text-center">
@@ -436,9 +508,19 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
               })}
             </div>
 
+            {/* Next exercise preview */}
+            {nextExercise && (
+              <p className="font-mono text-[11px] text-muted-foreground/60 tracking-[1px] mt-3">
+                {t('circuit.nextUp', { name: l(nextExercise.name) })}
+              </p>
+            )}
+
             {/* Done button */}
             <Button
-              onClick={advanceExercise}
+              onClick={() => {
+                sounds.vibrate([50])
+                advanceExercise()
+              }}
               className="w-full max-w-[320px] h-14 font-bebas text-2xl tracking-[2px] bg-lime text-lime-foreground hover:bg-lime/90"
             >
               {t('circuit.done')} ✓
@@ -446,7 +528,10 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
 
             {/* Skip link */}
             <button
-              onClick={advanceExercise}
+              onClick={() => {
+                sounds.vibrate([30])
+                advanceExercise()
+              }}
               className="font-mono text-[11px] text-muted-foreground/60 tracking-[1px] hover:text-muted-foreground transition-colors"
             >
               {t('circuit.skip')}
@@ -481,6 +566,13 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
                 total: circuit.exercises.length,
               })}
             </div>
+
+            {/* Next exercise preview */}
+            {nextExercise && (
+              <p className="font-mono text-[11px] text-muted-foreground/60 tracking-[1px] mt-3">
+                {t('circuit.nextUp', { name: l(nextExercise.name) })}
+              </p>
+            )}
           </div>
         )}
 
@@ -514,7 +606,10 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
 
             {/* Skip rest */}
             <button
-              onClick={advanceToNextPhase}
+              onClick={() => {
+                sounds.vibrate([30])
+                advanceToNextPhase()
+              }}
               className="font-mono text-[11px] text-muted-foreground/60 tracking-[1px] hover:text-muted-foreground transition-colors"
             >
               {t('circuit.skip')}
@@ -539,6 +634,9 @@ export default function CircuitView({ circuit }: CircuitViewProps) {
           >
             {t('circuit.resume')}
           </Button>
+          <p className="font-mono text-[10px] text-muted-foreground/40 tracking-[1px] mt-4">
+            {t('circuit.tapToResume')}
+          </p>
         </div>
       )}
 

@@ -1,10 +1,79 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocalize } from '../../hooks/useLocalize'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
+import { pb, isPocketBaseAvailable } from '../../lib/pocketbase'
+import { WORKOUTS } from '../../data/workouts'
+import { localize } from '../../lib/i18n-db'
 import type { CircuitDefinition, CircuitExercise } from '../../types'
 import type { TranslatableField } from '../../lib/i18n-db'
+
+// ── Catalog item (lightweight shape for the picker) ───────────────────────────
+
+interface CatalogItem {
+  exerciseId: string
+  name: TranslatableField
+  muscles: TranslatableField
+  reps: string
+}
+
+/** Build a de-duplicated catalog from the hardcoded WORKOUTS map. */
+function extractFallbackCatalog(): CatalogItem[] {
+  const seen = new Set<string>()
+  const items: CatalogItem[] = []
+  Object.values(WORKOUTS).forEach((w) =>
+    w.exercises.forEach((ex) => {
+      if (seen.has(ex.id)) return
+      seen.add(ex.id)
+      items.push({
+        exerciseId: ex.id,
+        name: ex.name as TranslatableField,
+        muscles: ex.muscles as TranslatableField,
+        reps: ex.reps,
+      })
+    }),
+  )
+  return items.sort((a, b) =>
+    localize(a.name, 'es').localeCompare(localize(b.name, 'es')),
+  )
+}
+
+/** Hook that loads the exercise catalog once (PocketBase first, WORKOUTS fallback). */
+function useCatalog() {
+  const [catalog, setCatalog] = useState<CatalogItem[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const available = await isPocketBaseAvailable()
+      if (available) {
+        try {
+          const res = await pb.collection('exercises_catalog').getList(1, 500, { sort: 'name' })
+          if (!cancelled && res.items.length > 0) {
+            setCatalog(
+              res.items.map((r) => ({
+                exerciseId: r.exercise_id || r.id,
+                name: r.name as TranslatableField,
+                muscles: (r.muscles ?? '') as TranslatableField,
+                reps: r.reps ?? '10',
+              })),
+            )
+            return
+          }
+        } catch {
+          /* fall through */
+        }
+      }
+      if (!cancelled) setCatalog(extractFallbackCatalog())
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return catalog
+}
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -191,6 +260,7 @@ function ExerciseCard({
 export default function CircuitBuilder({ initialPreset, onStart }: CircuitBuilderProps) {
   const { t } = useTranslation()
   const l = useLocalize()
+  const catalog = useCatalog()
 
   // State from initial preset
   const [mode, setMode] = useState<'circuit' | 'timed'>(initialPreset?.mode ?? 'circuit')
@@ -200,20 +270,58 @@ export default function CircuitBuilder({ initialPreset, onStart }: CircuitBuilde
   const [workSeconds, setWorkSeconds] = useState(initialPreset?.workSeconds ?? 40)
   const [restSeconds, setRestSeconds] = useState(initialPreset?.restSeconds ?? 20)
   const [exercises, setExercises] = useState<CircuitExercise[]>(initialPreset?.exercises ?? [])
-  const [newExerciseName, setNewExerciseName] = useState('')
+
+  // ── Exercise search state ───────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showResults, setShowResults] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+
+  const filteredCatalog = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return []
+    const q = searchQuery.toLowerCase()
+    return catalog
+      .filter((ex) => l(ex.name).toLowerCase().includes(q) || l(ex.muscles).toLowerCase().includes(q))
+      .slice(0, 6)
+  }, [searchQuery, catalog, l])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowResults(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   // ── Exercise list mutations ──────────────────────────────────────────────
 
-  const addExercise = useCallback(() => {
-    const name = newExerciseName.trim()
+  const addExerciseFromCatalog = useCallback(
+    (item: CatalogItem) => {
+      setExercises((prev) => [
+        ...prev,
+        {
+          exerciseId: item.exerciseId,
+          name: item.name,
+          reps: mode === 'circuit' ? item.reps || '10' : undefined,
+        },
+      ])
+    },
+    [mode],
+  )
+
+  const addCustomExercise = useCallback(() => {
+    const name = searchQuery.trim()
     if (!name) return
     const id = name.toLowerCase().replace(/\s+/g, '_')
     setExercises((prev) => [
       ...prev,
       { exerciseId: id, name: { es: name, en: name }, reps: mode === 'circuit' ? '10' : undefined },
     ])
-    setNewExerciseName('')
-  }, [newExerciseName, mode])
+    setSearchQuery('')
+    setShowResults(false)
+  }, [searchQuery, mode])
 
   const updateExercise = useCallback((index: number, ex: CircuitExercise) => {
     setExercises((prev) => prev.map((e, i) => (i === index ? ex : e)))
@@ -369,30 +477,57 @@ export default function CircuitBuilder({ initialPreset, onStart }: CircuitBuilde
         ))}
       </div>
 
-      {/* Add exercise */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          className="flex-1 text-sm px-3 py-2 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/20 placeholder:text-muted-foreground/40"
-          placeholder={t('circuit.exerciseNamePlaceholder')}
-          value={newExerciseName}
-          onChange={(e) => setNewExerciseName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              addExercise()
-            }
-          }}
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-          disabled={!newExerciseName.trim()}
-          onClick={addExercise}
-        >
-          {t('circuit.add')}
-        </Button>
+      {/* Add exercise — search with catalog dropdown */}
+      <div ref={searchRef} className="relative">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="flex-1 text-sm px-3 py-2 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/20 placeholder:text-muted-foreground/40"
+            placeholder={t('circuit.exerciseNamePlaceholder')}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setShowResults(true)
+            }}
+            onFocus={() => setShowResults(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addCustomExercise()
+              }
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            disabled={!searchQuery.trim()}
+            onClick={addCustomExercise}
+          >
+            {t('circuit.add')}
+          </Button>
+        </div>
+
+        {/* Catalog search results dropdown */}
+        {showResults && filteredCatalog.length > 0 && (
+          <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-10 max-h-52 overflow-y-auto">
+            {filteredCatalog.map((item) => (
+              <button
+                key={item.exerciseId}
+                type="button"
+                className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted/50 border-b border-border/50 last:border-0 transition-colors"
+                onClick={() => {
+                  addExerciseFromCatalog(item)
+                  setSearchQuery('')
+                  setShowResults(false)
+                }}
+              >
+                <span className="font-medium">{l(item.name)}</span>
+                <span className="text-[11px] text-muted-foreground ml-2">{l(item.muscles)}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Start button — sticky bottom */}

@@ -8,7 +8,7 @@ import { op } from '../lib/analytics'
 export interface CircuitProgress {
   currentRound: number          // 0-indexed
   currentExerciseIndex: number  // 0-indexed within the round
-  phase: 'exercise' | 'rest' | 'roundRest' | 'work' | 'celebrate'
+  phase: 'getReady' | 'exercise' | 'rest' | 'roundRest' | 'work' | 'celebrate'
   completedExercises: number    // total across all rounds
 }
 
@@ -32,10 +32,12 @@ interface CircuitSessionContextType {
   source: 'custom' | 'preset' | 'program'
   programId?: string
   programDayKey?: string
+  unsavedCount: number
 
   // Actions
   startCircuit: (circuit: CircuitDefinition, source: 'custom' | 'preset' | 'program', programId?: string, programDayKey?: string) => void
   advanceExercise: () => void
+  advanceFromGetReady: () => void
   advanceToNextPhase: () => void
   pause: () => void
   resume: () => void
@@ -46,6 +48,8 @@ interface CircuitSessionContextType {
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'calistenia_circuit_active'
+const UNSAVED_KEY = 'calistenia_circuit_unsaved'
+const MAX_UNSAVED = 5
 const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 const INITIAL_PROGRESS: CircuitProgress = {
@@ -87,9 +91,32 @@ function clearStorage() {
   try { localStorage.removeItem(STORAGE_KEY) } catch {}
 }
 
+// ── Unsaved session queue (retry on PocketBase failure) ─────────────────────
+
+function loadUnsaved(): Record<string, unknown>[] {
+  try {
+    const raw = localStorage.getItem(UNSAVED_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function pushUnsaved(session: Record<string, unknown>) {
+  try {
+    const queue = loadUnsaved()
+    queue.push(session)
+    // FIFO: drop oldest if over limit
+    while (queue.length > MAX_UNSAVED) queue.shift()
+    localStorage.setItem(UNSAVED_KEY, JSON.stringify(queue))
+  } catch { /* quota exceeded */ }
+}
+
+function clearUnsaved() {
+  localStorage.removeItem(UNSAVED_KEY)
+}
+
 // ── Complete circuit session (PB + analytics) ───────────────────────────────
 
-async function completeCircuitSession(
+function buildCircuitSessionData(
   userId: string,
   circuit: CircuitDefinition,
   progress: CircuitProgress,
@@ -98,7 +125,7 @@ async function completeCircuitSession(
   programId?: string,
   programDayKey?: string,
   note?: string,
-) {
+): Record<string, unknown> {
   const now = Date.now()
   const durationSeconds = Math.round((now - startedAt) / 1000)
   const roundsCompleted = progress.phase === 'celebrate'
@@ -122,16 +149,7 @@ async function completeCircuitSession(
   if (programId) data.program = programId
   if (programDayKey) data.program_day_key = programDayKey
 
-  await pb.collection('circuit_sessions').create(data)
-
-  op.track('circuit_completed', {
-    mode: circuit.mode,
-    rounds_completed: roundsCompleted,
-    rounds_target: circuit.rounds,
-    exercise_count: circuit.exercises.length,
-    duration_seconds: durationSeconds,
-    source,
-  })
+  return data
 }
 
 // ── Context ─────────────────────────────────────────────────────────────────
@@ -152,6 +170,8 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
   const [progress, setProgress] = useState<CircuitProgress>(restored?.progress ?? INITIAL_PROGRESS)
   const [isPaused, setIsPaused] = useState(restored?.isPaused ?? false)
   const [source, setSource] = useState<'custom' | 'preset' | 'program'>(restored?.source ?? 'custom')
+
+  const [unsavedCount, setUnsavedCount] = useState(0)
 
   const startedAtRef = useRef(restored?.startedAt ?? 0)
   const programIdRef = useRef(restored?.programId)
@@ -192,8 +212,7 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
     programIdRef.current = progId
     programDayKeyRef.current = progDayKey
 
-    const initialPhase = c.mode === 'timed' ? 'work' : 'exercise'
-    const initial: CircuitProgress = { ...INITIAL_PROGRESS, phase: initialPhase }
+    const initial: CircuitProgress = { ...INITIAL_PROGRESS, phase: 'getReady' }
 
     setCircuit(c)
     setSource(src)
@@ -282,6 +301,13 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
     })
   }, [circuit])
 
+  const advanceFromGetReady = useCallback(() => {
+    setProgress(prev => ({
+      ...prev,
+      phase: circuit?.mode === 'timed' ? 'work' : 'exercise',
+    }))
+  }, [circuit])
+
   const advanceToNextPhase = useCallback(() => {
     if (!circuit) return
 
@@ -325,20 +351,33 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
   const doComplete = useCallback(async (note?: string) => {
     if (!circuit || !userId) return
 
+    const data = buildCircuitSessionData(
+      userId,
+      circuit,
+      progress,
+      startedAtRef.current,
+      source,
+      programIdRef.current,
+      programDayKeyRef.current,
+      note,
+    )
+
     try {
-      await completeCircuitSession(
-        userId,
-        circuit,
-        progress,
-        startedAtRef.current,
-        source,
-        programIdRef.current,
-        programDayKeyRef.current,
-        note,
-      )
+      await pb.collection('circuit_sessions').create(data)
     } catch (e) {
-      console.warn('Failed to save circuit session:', e)
+      console.warn('Failed to save circuit session, queuing for retry:', e)
+      pushUnsaved(data)
+      setUnsavedCount(loadUnsaved().length)
     }
+
+    op.track('circuit_completed', {
+      mode: circuit.mode,
+      rounds_completed: data.rounds_completed as number,
+      rounds_target: circuit.rounds,
+      exercise_count: circuit.exercises.length,
+      duration_seconds: data.duration_seconds as number,
+      source,
+    })
 
     clearStorage()
     setIsActive(false)
@@ -360,6 +399,62 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
     }
   }, [circuit, source])
 
+  // ── Flush unsaved sessions on mount + online event ─────────────────────
+
+  const flushUnsaved = useCallback(async () => {
+    if (!userId) return
+    const queue = loadUnsaved()
+    if (queue.length === 0) return
+
+    const remaining: Record<string, unknown>[] = []
+    for (const session of queue) {
+      try {
+        await pb.collection('circuit_sessions').create(session)
+      } catch {
+        remaining.push(session)
+      }
+    }
+    if (remaining.length > 0) {
+      try { localStorage.setItem(UNSAVED_KEY, JSON.stringify(remaining)) } catch {}
+    } else {
+      clearUnsaved()
+    }
+    setUnsavedCount(remaining.length)
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId) return
+    const queue = loadUnsaved()
+    if (queue.length === 0) return
+    setUnsavedCount(queue.length)
+
+    let cancelled = false
+    ;(async () => {
+      const remaining: Record<string, unknown>[] = []
+      for (const session of queue) {
+        if (cancelled) { remaining.push(session); continue }
+        try {
+          await pb.collection('circuit_sessions').create(session)
+        } catch {
+          remaining.push(session)
+        }
+      }
+      if (cancelled) return
+      if (remaining.length > 0) {
+        try { localStorage.setItem(UNSAVED_KEY, JSON.stringify(remaining)) } catch {}
+      } else {
+        clearUnsaved()
+      }
+      setUnsavedCount(remaining.length)
+    })()
+    return () => { cancelled = true }
+  }, [userId])
+
+  useEffect(() => {
+    window.addEventListener('online', flushUnsaved)
+    return () => window.removeEventListener('online', flushUnsaved)
+  }, [flushUnsaved])
+
   const value: CircuitSessionContextType = {
     isActive,
     circuit,
@@ -369,8 +464,10 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
     source,
     programId: programIdRef.current,
     programDayKey: programDayKeyRef.current,
+    unsavedCount,
     startCircuit,
     advanceExercise,
+    advanceFromGetReady,
     advanceToNextPhase,
     pause,
     resume,
