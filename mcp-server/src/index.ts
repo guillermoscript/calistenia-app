@@ -40,6 +40,7 @@ import { registerGamificationTools } from "./tools/gamification.js";
 import { registerMediaTools } from "./tools/media.js";
 import { registerExerciseTools } from "./tools/exercises.js";
 import { registerHealthTools } from "./tools/health.js";
+import { registerCircuitTools } from "./tools/circuits.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
 import { createApiRouter } from "./api/index.js";
@@ -66,6 +67,7 @@ function createServerWithAuth(auth: AuthManager): McpServer {
   registerMediaTools(server, auth);
   registerExerciseTools(server, auth);
   registerHealthTools(server, auth);
+  registerCircuitTools(server, auth);
   registerResources(server, auth);
   registerPrompts(server);
 
