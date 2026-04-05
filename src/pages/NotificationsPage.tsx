@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import i18n from '../lib/i18n'
-import { useNotifications, type AppNotification } from '../hooks/useNotifications'
+import { useNotificationsContext } from '../contexts/NotificationsContext'
+import type { AppNotification } from '../hooks/useNotifications'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
 import { Button } from '../components/ui/button'
@@ -68,11 +69,7 @@ function getNotificationRoute(n: AppNotification): string {
   }
 }
 
-interface NotificationsPageProps {
-  userId: string
-}
-
-export default function NotificationsPage({ userId }: NotificationsPageProps) {
+export default function NotificationsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const {
@@ -81,7 +78,7 @@ export default function NotificationsPage({ userId }: NotificationsPageProps) {
     loadNotifications,
     markAsRead,
     markAllAsRead,
-  } = useNotifications(userId)
+  } = useNotificationsContext()
 
   useEffect(() => {
     loadNotifications()
