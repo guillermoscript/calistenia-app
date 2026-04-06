@@ -12,51 +12,47 @@ export function QualityBreakdownPanel({ entry }: QualityBreakdownPanelProps) {
   if (!qualityScore || !qualityBreakdown) return null
 
   return (
-    <div className="space-y-3 px-1 pb-3">
+    <div className="space-y-4 px-1 pb-3">
       {/* Score + Summary */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2.5">
         <QualityScoreBadge score={qualityScore} size="md" />
-        <span className="text-xs text-muted-foreground">{qualityBreakdown.summary}</span>
+        <p className="text-sm text-foreground/80 leading-snug">{qualityBreakdown.summary}</p>
       </div>
 
-      {/* Positives & Negatives */}
-      <div className="flex flex-wrap gap-1.5">
+      {/* Positives & Negatives — listed, not chips */}
+      <div className="space-y-1.5">
         {qualityBreakdown.positives.map((p, i) => (
-          <span
-            key={`p-${i}`}
-            className={`text-[9px] tracking-wider px-1.5 py-px rounded ${BADGE_COLORS.positive}`}
-          >
-            {p}
-          </span>
+          <div key={`p-${i}`} className="flex gap-2 text-xs">
+            <span className="text-green-400 shrink-0">+</span>
+            <span className="text-foreground/70">{p}</span>
+          </div>
         ))}
         {qualityBreakdown.negatives.map((n, i) => (
-          <span
-            key={`n-${i}`}
-            className={`text-[9px] tracking-wider px-1.5 py-px rounded ${BADGE_COLORS.negative}`}
-          >
-            {n}
-          </span>
+          <div key={`n-${i}`} className="flex gap-2 text-xs">
+            <span className="text-red-400 shrink-0">-</span>
+            <span className="text-foreground/70">{n}</span>
+          </div>
         ))}
       </div>
 
       {/* Coach Message */}
       {qualityMessage && (
-        <p className="text-xs text-muted-foreground leading-relaxed">{qualityMessage}</p>
+        <p className="text-xs text-foreground/60 leading-relaxed">{qualityMessage}</p>
       )}
 
       {/* Suggestion (only if score < B) */}
       {qualitySuggestion && (
-        <div className="bg-muted/50 rounded-lg p-2.5 space-y-1.5">
+        <div className="bg-muted/50 rounded-lg p-3 space-y-2">
           <p className="text-xs font-medium text-foreground">{qualitySuggestion.text}</p>
           {qualitySuggestion.alternatives.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-1">
               {qualitySuggestion.alternatives.map((alt, i) => (
-                <span
-                  key={i}
-                  className={`text-[9px] tracking-wider px-1.5 py-px rounded ${BADGE_COLORS.suggestion}`}
-                >
-                  {alt.name} — {alt.portionNote}
-                </span>
+                <div key={i} className="flex gap-2 text-xs">
+                  <span className={`${BADGE_COLORS.suggestion} shrink-0 px-1.5 py-0.5 rounded text-[10px]`}>
+                    {alt.name}
+                  </span>
+                  <span className="text-foreground/50">{alt.portionNote}</span>
+                </div>
               ))}
             </div>
           )}
