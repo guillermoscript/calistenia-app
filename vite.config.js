@@ -76,6 +76,14 @@ export default defineConfig({
         target: 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
+      '/api/score-meal-quality': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+      },
+      '/api/generate-weekly-insight': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+      },
       '/mcp': {
         target: 'http://127.0.0.1:3001',
         changeOrigin: true,

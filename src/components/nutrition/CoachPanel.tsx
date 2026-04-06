@@ -1,17 +1,9 @@
 import { useEffect, useMemo } from 'react'
 import { QualityScoreBadge } from './QualityScoreBadge'
 import { BADGE_DEFINITIONS } from '../../lib/badge-definitions'
-import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
+import { MEAL_TYPE_COLORS, SCORE_BAR_COLORS, BADGE_COLORS } from '../../lib/style-tokens'
 import { cn } from '../../lib/utils'
 import type { NutritionEntry, NutritionCoachInsight, NutritionBadge, QualityScore } from '../../types'
-
-const SCORE_BAR_COLORS: Record<QualityScore, string> = {
-  A: 'bg-green-500',
-  B: 'bg-lime-500',
-  C: 'bg-yellow-500',
-  D: 'bg-orange-500',
-  E: 'bg-red-500',
-}
 
 const SCORE_HEIGHT: Record<QualityScore, string> = {
   A: 'h-10',
@@ -112,7 +104,7 @@ export function CoachPanel({
               return (
                 <span
                   key={i}
-                  className="text-[9px] tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/20 px-2 py-1 rounded flex items-center gap-1"
+                  className={`text-[9px] tracking-wider px-2 py-1 rounded flex items-center gap-1 ${BADGE_COLORS.achievement}`}
                 >
                   <span>{def.icon}</span>
                   <span>{def.label}</span>
@@ -173,7 +165,7 @@ function WeeklyCoachView({
                 day.score ? SCORE_BAR_COLORS[day.score] : 'bg-muted',
                 day.score ? SCORE_HEIGHT[day.score] : 'h-1',
               )} />
-              <span className="text-[8px] text-muted-foreground">{day.dayLabel}</span>
+              <span className="text-[10px] text-muted-foreground">{day.dayLabel}</span>
             </div>
           ))}
         </div>

@@ -262,8 +262,26 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   }, [analyzeMeal])
 
   const handleSaveEntry = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => {
-    await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
-  }, [saveEntry, userId])
+    const saved = await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
+    // Fire async quality scoring for manual/barcode entries (no qualityScore yet)
+    if (!saved.qualityScore && saved.foods.length > 0) {
+      scoreMealQuality(
+        saved.foods.map(f => ({ name: f.name, calories: f.baseCal100 * (f.portionAmount || 1), protein: f.baseProt100 * (f.portionAmount || 1), carbs: f.baseCarbs100 * (f.portionAmount || 1), fat: f.baseFat100 * (f.portionAmount || 1) })),
+        { calories: saved.totalCalories, protein: saved.totalProtein, carbs: saved.totalCarbs, fat: saved.totalFat },
+        saved.mealType,
+        goals ? { goal: goals.goal, remainingMacros: remaining } : undefined,
+      ).then(async (quality) => {
+        if (quality && saved.id && !saved.id.startsWith('local_')) {
+          await updateEntry(saved.id, {
+            qualityScore: quality.score,
+            qualityBreakdown: quality.breakdown,
+            qualityMessage: quality.message,
+            qualitySuggestion: quality.suggestion,
+          })
+        }
+      }).catch(() => { /* non-blocking */ })
+    }
+  }, [saveEntry, userId, scoreMealQuality, goals, remaining, updateEntry])
 
   const handleSavePlannedMeal = useCallback(async (meal: PlannedMeal) => {
     const food: FoodItem = {
@@ -536,13 +554,13 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             />
           ) : null}
 
-          {/* Secondary zone — collapsed by default */}
+          {/* Coach & Insights tab */}
           <div>
             <button
               onClick={() => setShowInsights(v => !v)}
               className="w-full flex items-center justify-between py-3 text-[10px] tracking-[0.3em] text-muted-foreground uppercase hover:text-foreground transition-colors"
             >
-              <span>{t('nutrition.suggestionsAndHistory')}</span>
+              <span>{entries.some(e => e.qualityScore) ? 'Coach' : t('nutrition.suggestionsAndHistory')}</span>
               <svg
                 className={cn('size-4 transition-transform duration-200', showInsights && 'rotate-180')}
                 viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
@@ -552,7 +570,19 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             </button>
 
             {showInsights && (
-              <div className="space-y-8 pb-4">
+              <div className="space-y-6 pb-4">
+                {/* Coach tip */}
+                {dailyInsight?.coachMessage && (
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="text-lg leading-none shrink-0">💬</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed flex-1">
+                        {dailyInsight.coachMessage}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {entries.some(e => e.qualityScore) && (
                   <CoachPanel
                     entries={entries}

@@ -193,6 +193,14 @@ function getNutritionSteps(): DriveStep[] {
       },
     },
     {
+      element: '#tour-nutrition-score',
+      popover: {
+        title: i18n.t('tour.nutrition.score.title'),
+        description: i18n.t('tour.nutrition.score.desc'),
+        side: 'bottom',
+      },
+    },
+    {
       element: '#tour-meal-logger',
       popover: {
         title: i18n.t('tour.nutrition.mealLogger.title'),
@@ -527,6 +535,59 @@ function getRemindersSteps(): DriveStep[] {
   ]
 }
 
+function getCircuitSteps(): DriveStep[] {
+  return [
+    {
+      element: '#tour-circuit-presets',
+      popover: {
+        title: i18n.t('tour.circuit.presets.title'),
+        description: i18n.t('tour.circuit.presets.desc'),
+        side: 'bottom',
+      },
+    },
+    {
+      element: '#tour-circuit-custom',
+      popover: {
+        title: i18n.t('tour.circuit.custom.title'),
+        description: i18n.t('tour.circuit.custom.desc'),
+        side: 'bottom',
+      },
+    },
+    {
+      element: '#tour-circuit-mode',
+      popover: {
+        title: i18n.t('tour.circuit.mode.title'),
+        description: i18n.t('tour.circuit.mode.desc'),
+        side: 'bottom',
+      },
+    },
+    {
+      element: '#tour-circuit-config',
+      popover: {
+        title: i18n.t('tour.circuit.config.title'),
+        description: i18n.t('tour.circuit.config.desc'),
+        side: 'bottom',
+      },
+    },
+    {
+      element: '#tour-circuit-add',
+      popover: {
+        title: i18n.t('tour.circuit.add.title'),
+        description: i18n.t('tour.circuit.add.desc'),
+        side: 'top',
+      },
+    },
+    {
+      element: '#tour-circuit-start',
+      popover: {
+        title: i18n.t('tour.circuit.start.title'),
+        description: i18n.t('tour.circuit.start.desc'),
+        side: 'top',
+      },
+    },
+  ]
+}
+
 // Map page paths to their tour steps
 const PAGE_TOURS: Record<string, { page: string; getSteps: () => DriveStep[] }> = {
   '/': { page: 'dashboard', getSteps: getDashboardSteps },
@@ -545,6 +606,7 @@ const PAGE_TOURS: Record<string, { page: string; getSteps: () => DriveStep[] }> 
   '/calendar': { page: 'calendar', getSteps: getCalendarSteps },
   '/nutrition/log': { page: 'meal-logger', getSteps: getMealLoggerSteps },
   '/reminders': { page: 'reminders', getSteps: getRemindersSteps },
+  '/circuit': { page: 'circuit', getSteps: getCircuitSteps },
 }
 
 // ── Driver.js runner ──────────────────────────────────────────────────────────

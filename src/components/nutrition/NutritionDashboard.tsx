@@ -7,8 +7,9 @@ import EditMealSheet from './EditMealSheet'
 import MacroBar from './MacroBar'
 import { QualityScoreBadge } from './QualityScoreBadge'
 import { QualityBreakdownPanel } from './QualityBreakdownPanel'
+import { ScoreCriteriaDialog } from './ScoreCriteriaDialog'
 import { useTranslation } from 'react-i18next'
-import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
+import { MEAL_TYPE_COLORS, BADGE_COLORS, MACRO_COLORS } from '../../lib/style-tokens'
 import type { NutritionEntry, QualityScore } from '../../types'
 
 interface NutritionDashboardProps {
@@ -22,7 +23,7 @@ interface NutritionDashboardProps {
 }
 
 
-function CalorieGauge({ consumed, target }: { consumed: number; target: number }) {
+function CalorieGauge({ consumed, target, dailyScore, onScoreInfoClick }: { consumed: number; target: number; dailyScore?: QualityScore; onScoreInfoClick?: () => void }) {
   const { t } = useTranslation()
   const pct = target > 0 ? Math.min(consumed / target, 1.2) : 0
   const clampedPct = Math.min(pct, 1)
@@ -66,6 +67,9 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
         <span className="text-[10px] text-muted-foreground tracking-widest">
           / {target} kcal
         </span>
+        {dailyScore && (
+          <QualityScoreBadge score={dailyScore} size="sm" onClick={onScoreInfoClick} />
+        )}
       </div>
     </div>
   )
@@ -74,8 +78,8 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
 export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry, onDuplicateEntry, selectedDate }: NutritionDashboardProps) {
   const { t } = useTranslation()
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
-  const [expandedQuality, setExpandedQuality] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [showScoreCriteria, setShowScoreCriteria] = useState(false)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
 
   // Daily quality score (weighted average by calories)
@@ -116,20 +120,19 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
       {/* Calorie gauge + macros */}
       <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex flex-col sm:flex-row items-center gap-6">
-          <div className="relative">
-            <CalorieGauge consumed={dailyTotals.calories} target={goals.dailyCalories} />
-            {dailyQualityScore && (
-              <div className="absolute -top-1 -right-1">
-                <QualityScoreBadge score={dailyQualityScore} size="md" />
-              </div>
-            )}
-          </div>
+          <CalorieGauge
+            consumed={dailyTotals.calories}
+            target={goals.dailyCalories}
+            dailyScore={dailyQualityScore}
+            onScoreInfoClick={() => setShowScoreCriteria(true)}
+          />
           <div className="flex-1 w-full space-y-3">
-            <MacroBar label={t('nutrition.protein')} current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
-            <MacroBar label={t('nutrition.carbs')} current={dailyTotals.carbs} target={goals.dailyCarbs} color="bg-amber-400" />
-            <MacroBar label={t('nutrition.fat')} current={dailyTotals.fat} target={goals.dailyFat} color="bg-pink-500" />
+            <MacroBar label={t('nutrition.protein')} current={dailyTotals.protein} target={goals.dailyProtein} color={MACRO_COLORS.protein.bar} />
+            <MacroBar label={t('nutrition.carbs')} current={dailyTotals.carbs} target={goals.dailyCarbs} color={MACRO_COLORS.carbs.bar} />
+            <MacroBar label={t('nutrition.fat')} current={dailyTotals.fat} target={goals.dailyFat} color={MACRO_COLORS.fat.bar} />
           </div>
         </div>
+        <ScoreCriteriaDialog open={showScoreCriteria} onOpenChange={setShowScoreCriteria} />
       </div>
 
       {/* Meal timeline */}
@@ -216,14 +219,14 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               {t(`meal.${entry.mealType}`).toUpperCase()}
                             </span>
                             {entry.source?.startsWith('ai_') && (
-                              <span className="text-[8px] font-mono tracking-wider bg-violet-500/15 text-violet-400 border border-violet-500/20 px-1.5 py-px rounded">
+                              <span className={`text-[8px] font-mono tracking-wider px-1.5 py-px rounded ${BADGE_COLORS.ai}`}>
                                 {t('nutrition.aiBadge')}
                               </span>
                             )}
                             <QualityScoreBadge
                               score={entry.qualityScore}
-                              size="sm"
-                              onClick={() => setExpandedQuality(expandedQuality === entryId ? null : entryId)}
+                              size="md"
+                              pending={!entry.qualityScore && entry.foods.length > 0}
                             />
                             <span className="text-[10px] text-muted-foreground/60">{formatTime(entry.loggedAt)}</span>
                             <span className={cn(
@@ -259,9 +262,9 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             'flex gap-3 text-[10px]',
                             weight === 'large' ? 'mt-2' : 'mt-1',
                           )}>
-                            <span className="text-sky-500">{Math.round(entry.totalProtein)}g P</span>
-                            <span className="text-amber-400">{Math.round(entry.totalCarbs)}g C</span>
-                            <span className="text-pink-500">{Math.round(entry.totalFat)}g G</span>
+                            <span className={MACRO_COLORS.protein.text}>{Math.round(entry.totalProtein)}g P</span>
+                            <span className={MACRO_COLORS.carbs.text}>{Math.round(entry.totalCarbs)}g C</span>
+                            <span className={MACRO_COLORS.fat.text}>{Math.round(entry.totalFat)}g G</span>
                           </div>
                         </button>
 
@@ -299,8 +302,8 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                         )}
                       </div>
 
-                      {/* Quality breakdown (separate expansion) */}
-                      {expandedQuality === entryId && entry.qualityScore && (
+                      {/* Quality breakdown — shown when meal is expanded */}
+                      {isExpanded && entry.qualityScore && (
                         <div className={cn(
                           'border-t border-border/50',
                           weight === 'large' ? 'px-4 pt-3' : 'px-3 pt-3',

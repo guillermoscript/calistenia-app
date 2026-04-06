@@ -3,7 +3,7 @@
  *
  * Import from here instead of defining local constants per-file.
  */
-import type { DayType, Priority } from '../types'
+import type { DayType, Priority, QualityScore } from '../types'
 
 // ── Phase colors ────────────────────────────────────────────────────────────
 export const PHASE_COLORS: Record<number, { border: string; text: string; bg: string; badge: string }> = {
@@ -46,4 +46,45 @@ export const MEAL_TYPE_COLORS: Record<string, { color: string; bg: string }> = {
   almuerzo: { color: 'text-sky-500',   bg: 'bg-sky-500/10 border-sky-500/30' },
   cena:     { color: 'text-pink-500',  bg: 'bg-pink-500/10 border-pink-500/30' },
   snack:    { color: 'text-lime',      bg: 'bg-lime/10 border-lime/30' },
+}
+
+// ── Semantic badge colors (used for tags, chips, inline indicators) ──────
+export const BADGE_COLORS = {
+  positive: 'bg-green-500/15 text-green-400 border border-green-500/20',
+  negative: 'bg-red-500/15 text-red-400 border border-red-500/20',
+  suggestion: 'bg-blue-500/15 text-blue-400 border border-blue-500/20',
+  ai: 'bg-violet-500/15 text-violet-400 border border-violet-500/20',
+  achievement: 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
+} as const
+
+// ── Macro colors ────────────────────────────────────────────────────────
+export const MACRO_COLORS = {
+  protein: { bar: 'bg-sky-500', text: 'text-sky-500' },
+  carbs: { bar: 'bg-amber-400', text: 'text-amber-400' },
+  fat: { bar: 'bg-pink-500', text: 'text-pink-500' },
+} as const
+
+// ── Quality score colors ─────────────────────────────────────────────────
+export const SCORE_COLORS: Record<QualityScore, string> = {
+  A: 'bg-green-500 text-white',
+  B: 'bg-lime-500 text-white',
+  C: 'bg-yellow-500 text-black',
+  D: 'bg-orange-500 text-white',
+  E: 'bg-red-500 text-white',
+}
+
+export const SCORE_BORDER_COLORS: Record<QualityScore, string> = {
+  A: 'border-green-500/30',
+  B: 'border-lime-500/30',
+  C: 'border-yellow-500/30',
+  D: 'border-orange-500/30',
+  E: 'border-red-500/30',
+}
+
+export const SCORE_BAR_COLORS: Record<QualityScore, string> = {
+  A: 'bg-green-500',
+  B: 'bg-lime-500',
+  C: 'bg-yellow-500',
+  D: 'bg-orange-500',
+  E: 'bg-red-500',
 }

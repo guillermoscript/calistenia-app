@@ -1,5 +1,6 @@
 import type { NutritionEntry } from '../../types'
 import { QualityScoreBadge } from './QualityScoreBadge'
+import { BADGE_COLORS } from '../../lib/style-tokens'
 
 interface QualityBreakdownPanelProps {
   entry: NutritionEntry
@@ -23,7 +24,7 @@ export function QualityBreakdownPanel({ entry }: QualityBreakdownPanelProps) {
         {qualityBreakdown.positives.map((p, i) => (
           <span
             key={`p-${i}`}
-            className="text-[9px] tracking-wider bg-green-500/15 text-green-400 border border-green-500/20 px-1.5 py-px rounded"
+            className={`text-[9px] tracking-wider px-1.5 py-px rounded ${BADGE_COLORS.positive}`}
           >
             {p}
           </span>
@@ -31,7 +32,7 @@ export function QualityBreakdownPanel({ entry }: QualityBreakdownPanelProps) {
         {qualityBreakdown.negatives.map((n, i) => (
           <span
             key={`n-${i}`}
-            className="text-[9px] tracking-wider bg-red-500/15 text-red-400 border border-red-500/20 px-1.5 py-px rounded"
+            className={`text-[9px] tracking-wider px-1.5 py-px rounded ${BADGE_COLORS.negative}`}
           >
             {n}
           </span>
@@ -52,7 +53,7 @@ export function QualityBreakdownPanel({ entry }: QualityBreakdownPanelProps) {
               {qualitySuggestion.alternatives.map((alt, i) => (
                 <span
                   key={i}
-                  className="text-[9px] tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/20 px-1.5 py-px rounded"
+                  className={`text-[9px] tracking-wider px-1.5 py-px rounded ${BADGE_COLORS.suggestion}`}
                 >
                   {alt.name} — {alt.portionNote}
                 </span>
