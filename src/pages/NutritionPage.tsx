@@ -257,9 +257,19 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   }, [calculateMacros])
 
   const handleAnalyze = useCallback(async (imageFiles: File[], mealType: string, description?: string): Promise<{ foods: FoodItem[]; meal_description?: string }> => {
-    const result = await analyzeMeal(imageFiles, mealType, description)
+    const recentScores = entries
+      .filter(e => e.qualityScore)
+      .slice(0, 5)
+      .map(e => ({ mealType: e.mealType, score: e.qualityScore!, loggedAt: e.loggedAt }))
+    const userCtx = {
+      goal: goals?.goal,
+      remainingMacros: remaining,
+      recentScores: recentScores.length > 0 ? recentScores : undefined,
+      logHour: new Date().getHours(),
+    }
+    const result = await analyzeMeal(imageFiles, mealType, description, userCtx)
     return { foods: result.foods, meal_description: result.meal_description }
-  }, [analyzeMeal])
+  }, [analyzeMeal, goals, remaining, entries])
 
   const handleSaveEntry = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => {
     const saved = await saveEntry({ ...entry, user: userId || undefined }, photoFiles)

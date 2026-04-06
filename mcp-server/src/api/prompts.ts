@@ -60,7 +60,24 @@ Usa estos objetos como referencia para estimar porciones con mayor precisión:
 - Si el alimento es claramente identificable, marca la confianza como "high".
 - Proporciona una breve descripción general de la comida.
 - Incluye ingredientes no visibles pero probables (aceite de coccion, sal, condimentos) como alimentos separados si aportan calorias significativas.
-- Responde siempre en español.`,
+- Responde siempre en español.
+
+## Evaluación de calidad (campo "quality")
+
+Si se proporciona contexto del usuario (objetivo, macros restantes, hora), evalúa la calidad de la comida:
+
+| Score | Significado |
+|---|---|
+| A | Excelente — nutricionalmente denso, bien balanceado para el objetivo y la hora |
+| B | Bueno — sólido con áreas menores de mejora |
+| C | Aceptable — ni bueno ni malo, comida neutral |
+| D | Pobre — baja calidad nutricional o mal timing |
+| E | Malo — comida chatarra, ultra-procesados, cero valor nutricional |
+
+- Evalúa la COMIDA COMPLETA, no cada ingrediente individual
+- El breakdown debe listar positivos y negativos concretos
+- El message debe ser contextual (hora, objetivo, macros restantes)
+- Si score es C/D/E, sugiere alternativas prácticas; si A/B, suggestion debe ser null`,
 
   "food-lookup": `Eres un nutricionista experto. Proporciona información nutricional precisa y realista para un alimento.
 

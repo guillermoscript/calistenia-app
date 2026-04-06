@@ -17,6 +17,7 @@ export async function submitAnalyzeMealJob(
   files: File[],
   mealType: string,
   description?: string,
+  userContext?: { goal?: string; remainingMacros?: { calories: number; protein: number; carbs: number; fat: number }; recentScores?: { mealType: string; score: string; loggedAt: string }[]; logHour?: number },
 ): Promise<string> {
   const formData = new FormData()
   for (const file of files) {
@@ -24,6 +25,17 @@ export async function submitAnalyzeMealJob(
   }
   formData.append('meal_type', mealType)
   if (description) formData.append('description', description)
+  if (userContext) {
+    if (userContext.goal) formData.append('goal', userContext.goal)
+    if (userContext.logHour != null) formData.append('log_hour', String(userContext.logHour))
+    if (userContext.remainingMacros) {
+      formData.append('remaining_calories', String(userContext.remainingMacros.calories))
+      formData.append('remaining_protein', String(userContext.remainingMacros.protein))
+      formData.append('remaining_carbs', String(userContext.remainingMacros.carbs))
+      formData.append('remaining_fat', String(userContext.remainingMacros.fat))
+    }
+    if (userContext.recentScores) formData.append('recent_scores', JSON.stringify(userContext.recentScores))
+  }
 
   const res = await fetch(`${AI_API_URL}/api/jobs/analyze-meal`, {
     method: 'POST',

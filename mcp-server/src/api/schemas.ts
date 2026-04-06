@@ -85,5 +85,5 @@ const BaseMealAnalysisSchema = z.object({
 });
 
 export const MealAnalysisSchema = BaseMealAnalysisSchema.extend({
-  quality: QualityBlockSchema.optional().describe("Evaluación de calidad nutricional de la comida completa. Incluir siempre que se proporcione contexto del usuario."),
+  quality: QualityBlockSchema.nullable().describe("Evaluación de calidad nutricional de la comida completa. Incluir cuando se proporcione contexto del usuario, null si no hay contexto."),
 });
