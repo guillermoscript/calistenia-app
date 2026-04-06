@@ -47,11 +47,18 @@ export async function processJob(jobId: string): Promise<void> {
           })
         );
 
+        // Build user context for quality scoring if provided
+        let userContext: import("./meal-analyzer.js").UserContext | undefined;
+        if (input.user_context) {
+          userContext = input.user_context;
+        }
+
         result = await analyzeMealImage({
           images,
           mealType: input.meal_type ?? "comida",
           description: input.description,
           tier,
+          userContext,
         });
         notifTitle = "Comida analizada";
         notifBody = "Toca para revisar los alimentos detectados.";

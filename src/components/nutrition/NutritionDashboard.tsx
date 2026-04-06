@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { cn } from '../../lib/utils'
 import { todayStr, localHour } from '../../lib/dateUtils'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 import EditMealSheet from './EditMealSheet'
 import MacroBar from './MacroBar'
+import { QualityScoreBadge } from './QualityScoreBadge'
+import { QualityBreakdownPanel } from './QualityBreakdownPanel'
 import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
-import type { NutritionEntry } from '../../types'
+import type { NutritionEntry, QualityScore } from '../../types'
 
 interface NutritionDashboardProps {
   dailyTotals: { calories: number; protein: number; carbs: number; fat: number }
@@ -72,8 +74,21 @@ function CalorieGauge({ consumed, target }: { consumed: number; target: number }
 export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry, onDuplicateEntry, selectedDate }: NutritionDashboardProps) {
   const { t } = useTranslation()
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
+  const [expandedQuality, setExpandedQuality] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
+
+  // Daily quality score (weighted average by calories)
+  const dailyQualityScore = useMemo((): QualityScore | undefined => {
+    const scored = entries.filter(e => e.qualityScore)
+    if (scored.length < 2) return undefined
+    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 }
+    const reverseMap: Record<number, QualityScore> = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'E' }
+    const totalWeight = scored.reduce((s, e) => s + e.totalCalories, 0)
+    if (totalWeight === 0) return undefined
+    const weightedAvg = scored.reduce((s, e) => s + scoreMap[e.qualityScore!] * e.totalCalories, 0) / totalWeight
+    return reverseMap[Math.round(weightedAvg)]
+  }, [entries])
 
   if (!goals) return null
 
@@ -101,7 +116,14 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
       {/* Calorie gauge + macros */}
       <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex flex-col sm:flex-row items-center gap-6">
-          <CalorieGauge consumed={dailyTotals.calories} target={goals.dailyCalories} />
+          <div className="relative">
+            <CalorieGauge consumed={dailyTotals.calories} target={goals.dailyCalories} />
+            {dailyQualityScore && (
+              <div className="absolute -top-1 -right-1">
+                <QualityScoreBadge score={dailyQualityScore} size="md" />
+              </div>
+            )}
+          </div>
           <div className="flex-1 w-full space-y-3">
             <MacroBar label={t('nutrition.protein')} current={dailyTotals.protein} target={goals.dailyProtein} color="bg-sky-500" />
             <MacroBar label={t('nutrition.carbs')} current={dailyTotals.carbs} target={goals.dailyCarbs} color="bg-amber-400" />
@@ -198,6 +220,11 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                                 {t('nutrition.aiBadge')}
                               </span>
                             )}
+                            <QualityScoreBadge
+                              score={entry.qualityScore}
+                              size="sm"
+                              onClick={() => setExpandedQuality(expandedQuality === entryId ? null : entryId)}
+                            />
                             <span className="text-[10px] text-muted-foreground/60">{formatTime(entry.loggedAt)}</span>
                             <span className={cn(
                               'ml-auto tabular-nums',
@@ -271,6 +298,16 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                           </div>
                         )}
                       </div>
+
+                      {/* Quality breakdown (separate expansion) */}
+                      {expandedQuality === entryId && entry.qualityScore && (
+                        <div className={cn(
+                          'border-t border-border/50',
+                          weight === 'large' ? 'px-4 pt-3' : 'px-3 pt-3',
+                        )}>
+                          <QualityBreakdownPanel entry={entry} />
+                        </div>
+                      )}
 
                       {/* Expanded detail — only per-food breakdown (no repeated totals) */}
                       {isExpanded && (

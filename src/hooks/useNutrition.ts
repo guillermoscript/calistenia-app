@@ -13,6 +13,9 @@ import type {
   Sex,
   DailyTotals,
   FoodItem,
+  QualityScore,
+  QualityBreakdown,
+  QualitySuggestion,
 } from '../types'
 
 /** Resolve photo URLs from a PocketBase record */
@@ -24,6 +27,28 @@ function resolvePhotoUrls(rec: any): string[] {
     }
   }
   return urls
+}
+
+/** Map a PocketBase nutrition_entries record to a NutritionEntry */
+function mapPBToEntry(r: any): NutritionEntry {
+  return {
+    id: r.id,
+    user: r.user,
+    photoUrls: resolvePhotoUrls(r),
+    mealType: r.meal_type,
+    foods: Array.isArray(r.foods) ? r.foods : [],
+    totalCalories: Number(r.total_calories) || 0,
+    totalProtein: Number(r.total_protein) || 0,
+    totalCarbs: Number(r.total_carbs) || 0,
+    totalFat: Number(r.total_fat) || 0,
+    aiModel: r.ai_model || undefined,
+    source: (r.source as NutritionSource) || undefined,
+    loggedAt: r.logged_at,
+    qualityScore: r.quality_score || undefined,
+    qualityBreakdown: r.quality_breakdown || undefined,
+    qualityMessage: r.quality_message || undefined,
+    qualitySuggestion: r.quality_suggestion ?? undefined,
+  }
 }
 
 const LS_ENTRIES = 'calistenia_nutrition_entries'
@@ -116,20 +141,7 @@ export function useNutrition(userId: string | null) {
         }),
       ])
 
-      const mapped: NutritionEntry[] = entriesRes.items.map((r: any) => ({
-        id: r.id,
-        user: r.user,
-        photoUrls: resolvePhotoUrls(r),
-        mealType: r.meal_type,
-        foods: Array.isArray(r.foods) ? r.foods : [],
-        totalCalories: Number(r.total_calories) || 0,
-        totalProtein: Number(r.total_protein) || 0,
-        totalCarbs: Number(r.total_carbs) || 0,
-        totalFat: Number(r.total_fat) || 0,
-        aiModel: r.ai_model || undefined,
-        source: (r.source as NutritionSource) || undefined,
-        loggedAt: r.logged_at,
-      }))
+      const mapped: NutritionEntry[] = entriesRes.items.map(mapPBToEntry)
 
       // Merge with cached entries from other days instead of replacing
       const cachedEntries = lsGetEntries()
@@ -197,20 +209,7 @@ export function useNutrition(userId: string | null) {
 
       if (res.items.length === 0) return
 
-      const mapped: NutritionEntry[] = res.items.map((r: any) => ({
-        id: r.id,
-        user: r.user,
-        photoUrls: resolvePhotoUrls(r),
-        mealType: r.meal_type,
-        foods: Array.isArray(r.foods) ? r.foods : [],
-        totalCalories: Number(r.total_calories) || 0,
-        totalProtein: Number(r.total_protein) || 0,
-        totalCarbs: Number(r.total_carbs) || 0,
-        totalFat: Number(r.total_fat) || 0,
-        aiModel: r.ai_model || undefined,
-        source: (r.source as NutritionSource) || undefined,
-        loggedAt: r.logged_at,
-      }))
+      const mapped: NutritionEntry[] = res.items.map(mapPBToEntry)
 
       setEntries(prev => {
         const existingIds = new Set(prev.map(e => e.id))
@@ -258,20 +257,7 @@ export function useNutrition(userId: string | null) {
 
       if (res.items.length === 0) return
 
-      const mapped: NutritionEntry[] = res.items.map((r: any) => ({
-        id: r.id,
-        user: r.user,
-        photoUrls: resolvePhotoUrls(r),
-        mealType: r.meal_type,
-        foods: Array.isArray(r.foods) ? r.foods : [],
-        totalCalories: Number(r.total_calories) || 0,
-        totalProtein: Number(r.total_protein) || 0,
-        totalCarbs: Number(r.total_carbs) || 0,
-        totalFat: Number(r.total_fat) || 0,
-        aiModel: r.ai_model || undefined,
-        source: (r.source as NutritionSource) || undefined,
-        loggedAt: r.logged_at,
-      }))
+      const mapped: NutritionEntry[] = res.items.map(mapPBToEntry)
 
       setEntries(prev => {
         const existingIds = new Set(prev.map(e => e.id))
@@ -294,7 +280,8 @@ export function useNutrition(userId: string | null) {
     imageFiles: File | File[],
     mealType: string,
     description?: string,
-  ): Promise<{ foods: FoodItem[]; totals: DailyTotals; meal_description: string; ai_model: string }> => {
+    userContext?: { goal?: string; remainingMacros?: DailyTotals; recentScores?: { mealType: string; score: string; loggedAt: string }[]; topFoods?: string[]; logHour?: number },
+  ): Promise<{ foods: FoodItem[]; totals: DailyTotals; meal_description: string; ai_model: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }> => {
     const formData = new FormData()
     const files = Array.isArray(imageFiles) ? imageFiles : [imageFiles]
     for (const file of files) {
@@ -302,6 +289,20 @@ export function useNutrition(userId: string | null) {
     }
     formData.append('meal_type', mealType)
     if (description) formData.append('description', description)
+
+    // Append user context for quality scoring
+    if (userContext) {
+      if (userContext.goal) formData.append('goal', userContext.goal)
+      if (userContext.logHour != null) formData.append('log_hour', String(userContext.logHour))
+      if (userContext.remainingMacros) {
+        formData.append('remaining_calories', String(userContext.remainingMacros.calories))
+        formData.append('remaining_protein', String(userContext.remainingMacros.protein))
+        formData.append('remaining_carbs', String(userContext.remainingMacros.carbs))
+        formData.append('remaining_fat', String(userContext.remainingMacros.fat))
+      }
+      if (userContext.recentScores) formData.append('recent_scores', JSON.stringify(userContext.recentScores))
+      if (userContext.topFoods) formData.append('top_foods', JSON.stringify(userContext.topFoods))
+    }
 
     const headers: Record<string, string> = {}
     if (pb.authStore.token) {
@@ -319,7 +320,6 @@ export function useNutrition(userId: string | null) {
       throw new Error(errBody.error || `Analyze meal failed: ${res.status}`)
     }
     const data = await res.json()
-    // AI SDK v6 returns { analysis: { foods, totals, meal_description }, model_used, usage }
     const foods = data.analysis?.foods ?? []
     op.track('meal_analyzed', { food_count: foods.length, ai_model: data.model_used || 'unknown' })
     return {
@@ -327,6 +327,41 @@ export function useNutrition(userId: string | null) {
       totals: data.analysis?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 },
       meal_description: data.analysis?.meal_description || '',
       ai_model: data.model_used || 'unknown',
+      quality: data.analysis?.quality || undefined,
+    }
+  }, [])
+
+  // ─── Text-only quality scoring (for manual/barcode entries) ──────────────
+  const scoreMealQuality = useCallback(async (
+    foods: { name: string; calories: number; protein: number; carbs: number; fat: number }[],
+    totals: DailyTotals,
+    mealType: string,
+    userContext?: { goal?: string; remainingMacros?: DailyTotals; recentScores?: { mealType: string; score: string; loggedAt: string }[]; topFoods?: string[]; logHour?: number },
+  ): Promise<{ score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } | null> => {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (pb.authStore.token) {
+        headers['Authorization'] = `Bearer ${pb.authStore.token}`
+      }
+      const res = await fetch(`${AI_API_URL}/api/score-meal-quality`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          foods,
+          totals,
+          meal_type: mealType,
+          ...(userContext?.goal && { goal: userContext.goal }),
+          ...(userContext?.logHour != null && { log_hour: userContext.logHour }),
+          ...(userContext?.remainingMacros && { remaining_macros: userContext.remainingMacros }),
+          ...(userContext?.recentScores && { recent_scores: userContext.recentScores }),
+          ...(userContext?.topFoods && { top_foods: userContext.topFoods }),
+        }),
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      return data.quality || null
+    } catch {
+      return null
     }
   }, [])
 
@@ -371,23 +406,25 @@ export function useNutrition(userId: string | null) {
           }
         }
 
+        // Write quality fields if present
+        if (entry.qualityScore) {
+          if (body instanceof FormData) {
+            body.append('quality_score', entry.qualityScore)
+            if (entry.qualityBreakdown) body.append('quality_breakdown', JSON.stringify(entry.qualityBreakdown))
+            if (entry.qualityMessage) body.append('quality_message', entry.qualityMessage)
+            if (entry.qualitySuggestion !== undefined) body.append('quality_suggestion', JSON.stringify(entry.qualitySuggestion))
+          } else {
+            body.quality_score = entry.qualityScore
+            if (entry.qualityBreakdown) body.quality_breakdown = entry.qualityBreakdown
+            if (entry.qualityMessage) body.quality_message = entry.qualityMessage
+            if (entry.qualitySuggestion !== undefined) body.quality_suggestion = entry.qualitySuggestion
+          }
+        }
+
         const created: any = await pb.collection('nutrition_entries').create(body)
         // Re-fetch to ensure file fields are fully populated
         const rec: any = await pb.collection('nutrition_entries').getOne(created.id, { $autoCancel: false })
-        saved = {
-          id: rec.id,
-          user: rec.user,
-          photoUrls: resolvePhotoUrls(rec),
-          mealType: rec.meal_type,
-          foods: rec.foods || [],
-          totalCalories: rec.total_calories,
-          totalProtein: rec.total_protein,
-          totalCarbs: rec.total_carbs,
-          totalFat: rec.total_fat,
-          aiModel: rec.ai_model || undefined,
-          source: (rec.source as NutritionSource) || undefined,
-          loggedAt: rec.logged_at,
-        }
+        saved = mapPBToEntry(rec)
       } catch (e) {
         console.warn('PB nutrition_entries create error:', e)
       }
@@ -431,6 +468,10 @@ export function useNutrition(userId: string | null) {
       if (data.totalFat !== undefined) pbData.total_fat = data.totalFat
       if (data.aiModel !== undefined) pbData.ai_model = data.aiModel
       if (data.source !== undefined) pbData.source = data.source
+      if (data.qualityScore !== undefined) pbData.quality_score = data.qualityScore
+      if (data.qualityBreakdown !== undefined) pbData.quality_breakdown = data.qualityBreakdown
+      if (data.qualityMessage !== undefined) pbData.quality_message = data.qualityMessage
+      if (data.qualitySuggestion !== undefined) pbData.quality_suggestion = data.qualitySuggestion
       await pb.collection('nutrition_entries').update(entryId, pbData)
     }
 
@@ -623,20 +664,7 @@ export function useNutrition(userId: string | null) {
           filter: pb.filter('user = {:uid}', { uid: userId }),
           sort: '-logged_at',
         })
-        return res.items.map((r: any) => ({
-          id: r.id,
-          user: r.user,
-          photoUrls: resolvePhotoUrls(r),
-          mealType: r.meal_type,
-          foods: Array.isArray(r.foods) ? r.foods : [],
-          totalCalories: Number(r.total_calories) || 0,
-          totalProtein: Number(r.total_protein) || 0,
-          totalCarbs: Number(r.total_carbs) || 0,
-          totalFat: Number(r.total_fat) || 0,
-          aiModel: r.ai_model || undefined,
-          source: (r.source as NutritionSource) || undefined,
-          loggedAt: r.logged_at,
-        }))
+        return res.items.map(mapPBToEntry)
       } catch {
         return entries.slice(0, limit)
       }
@@ -663,6 +691,7 @@ export function useNutrition(userId: string | null) {
 
     // AI analysis
     analyzeMeal,
+    scoreMealQuality,
 
     // CRUD
     saveEntry,

@@ -314,6 +314,19 @@ export interface MealReminder {
 
 export type NutritionSource = 'manual' | 'ai_weekly_plan' | 'ai_daily_plan'
 
+export type QualityScore = 'A' | 'B' | 'C' | 'D' | 'E'
+
+export interface QualityBreakdown {
+  positives: string[]
+  negatives: string[]
+  summary: string
+}
+
+export interface QualitySuggestion {
+  text: string
+  alternatives: { name: string; portionNote: string }[]
+}
+
 export interface NutritionEntry {
   id?: string
   user?: string
@@ -327,6 +340,32 @@ export interface NutritionEntry {
   aiModel?: string
   source?: NutritionSource
   loggedAt: string
+  qualityScore?: QualityScore
+  qualityBreakdown?: QualityBreakdown
+  qualityMessage?: string
+  qualitySuggestion?: QualitySuggestion | null
+}
+
+export interface NutritionCoachInsight {
+  id?: string
+  user?: string
+  type: 'daily' | 'weekly'
+  periodStart: string
+  overallScore?: QualityScore
+  insights?: { patterns: { type: string; message: string }[]; highlights: string[]; concerns: string[] }
+  coachMessage?: string
+  streaks?: { currentGood: number; bestGood: number; currentBad: number }
+  generatedAt?: string
+}
+
+export type BadgeType = 'first_a' | 'streak_3' | 'streak_7' | 'streak_30' | 'weekly_improvement' | 'no_e_week' | 'balanced_day' | 'comeback'
+
+export interface NutritionBadge {
+  id?: string
+  user?: string
+  badgeType: BadgeType
+  earnedAt?: string
+  metadata?: Record<string, unknown>
 }
 
 export type NutritionGoalType = 'muscle_gain' | 'fat_loss' | 'recomp' | 'maintain'

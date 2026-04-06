@@ -11,7 +11,7 @@ import multer from "multer";
 import PocketBase from "pocketbase";
 import config, { type AppConfig } from "./config.js";
 import { getAvailableProviders } from "./model-resolver.js";
-import { analyzeMealImage } from "./meal-analyzer.js";
+import { analyzeMealImage, scoreMealQuality, type UserContext } from "./meal-analyzer.js";
 import { lookupFoodByName } from "./food-lookup.js";
 import { generateDailyMealPlan } from "./meal-plan-generator.js";
 import { sendPushToUser } from "./push-sender.js";
@@ -179,11 +179,35 @@ export function createApiRouter(): Router {
           mimeType: f.mimetype,
         }));
 
+        // Build user context for quality scoring
+        let userContext: UserContext | undefined;
+        try {
+          const ctx: UserContext = {};
+          if (req.body.goal) ctx.goal = req.body.goal;
+          if (req.body.log_hour != null) ctx.logHour = Number(req.body.log_hour);
+          if (req.body.remaining_calories != null) {
+            ctx.remainingMacros = {
+              calories: Number(req.body.remaining_calories),
+              protein: Number(req.body.remaining_protein ?? 0),
+              carbs: Number(req.body.remaining_carbs ?? 0),
+              fat: Number(req.body.remaining_fat ?? 0),
+            };
+          }
+          if (req.body.recent_scores) {
+            ctx.recentScores = JSON.parse(req.body.recent_scores);
+          }
+          if (req.body.top_foods) {
+            ctx.topFoods = JSON.parse(req.body.top_foods);
+          }
+          if (Object.keys(ctx).length > 0) userContext = ctx;
+        } catch { /* ignore malformed context */ }
+
         const result = await analyzeMealImage({
           images,
           mealType,
           description,
           tier,
+          userContext,
         });
 
         return res.json({ meal_type: mealType, model_tier: tier, ...result });
@@ -573,6 +597,64 @@ export function createApiRouter(): Router {
         if (err.status === 404) {
           return res.status(404).json({ error: "Trabajo no encontrado" });
         }
+        next(err);
+      }
+    }
+  );
+
+  // ── Nutrition quality scoring (text-only, for manual/barcode entries) ──────
+
+  router.post(
+    "/score-meal-quality",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        const { foods, totals, meal_type } = req.body ?? {};
+        if (!foods?.length || !totals || !meal_type) {
+          return res.status(400).json({ error: "Se requieren foods, totals y meal_type" });
+        }
+        const tier: Tier =
+          req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+
+        let userContext: UserContext | undefined;
+        try {
+          const ctx: UserContext = {};
+          if (req.body.goal) ctx.goal = req.body.goal;
+          if (req.body.log_hour != null) ctx.logHour = Number(req.body.log_hour);
+          if (req.body.remaining_macros) ctx.remainingMacros = req.body.remaining_macros;
+          if (req.body.recent_scores) ctx.recentScores = req.body.recent_scores;
+          if (req.body.top_foods) ctx.topFoods = req.body.top_foods;
+          if (Object.keys(ctx).length > 0) userContext = ctx;
+        } catch { /* ignore */ }
+
+        const quality = await scoreMealQuality({ foods, totals, mealType: meal_type, tier, userContext });
+        return res.json({ quality });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // ── Weekly nutrition insight generation ──────────────────────────────────
+
+  router.post(
+    "/generate-weekly-insight",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        const { meals, goal, previous_week_score } = req.body ?? {};
+        if (!meals?.length) {
+          return res.status(400).json({ error: "Se requieren las comidas de la semana" });
+        }
+        const tier: Tier =
+          req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
+
+        const { generateWeeklyInsight } = await import("./weekly-insight-generator.js");
+        const result = await generateWeeklyInsight({ meals, goal, previousWeekScore: previous_week_score, tier });
+        return res.json(result);
+      } catch (err) {
         next(err);
       }
     }

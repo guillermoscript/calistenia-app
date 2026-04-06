@@ -12,17 +12,20 @@ import DailyMealPlan, { type PlannedMeal } from '../components/nutrition/DailyMe
 import DailySummaryCard from '../components/nutrition/DailySummaryCard'
 import WeeklyMealPlan from '../components/nutrition/WeeklyMealPlan'
 import { useNutrition } from '../hooks/useNutrition'
+import { useNutritionCoach } from '../hooks/useNutritionCoach'
 import { useWeeklyMealPlan } from '../hooks/useWeeklyMealPlan'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
 import { submitAnalyzeMealJob } from '../lib/ai-jobs-api'
 import { toast } from 'sonner'
 import { useWater } from '../hooks/useWater'
 import WaterTracker from '../components/WaterTracker'
+import { CoachPanel } from '../components/nutrition/CoachPanel'
+import { BADGE_DEFINITIONS } from '../lib/badge-definitions'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
-import type { NutritionGoal, NutritionEntry, FoodItem, Sex } from '../types'
+import type { NutritionGoal, NutritionEntry, FoodItem, Sex, QualityScore } from '../types'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
@@ -122,7 +125,22 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     fetchEntriesForDateRange,
     getWeeklyHistory,
     getRecentEntries,
+    scoreMealQuality,
   } = useNutrition(userId)
+
+  const {
+    dailyInsight,
+    weeklyInsight,
+    badges,
+    generatingWeekly,
+    loadBadges,
+    upsertDailyInsight,
+    getWeeklyInsight,
+    generateWeeklyInsight,
+  } = useNutritionCoach(userId)
+
+  // Load badges on mount
+  useEffect(() => { loadBadges() }, [loadBadges])
 
   // Sync URL with selected date and fetch entries on-demand
   useEffect(() => {
@@ -187,6 +205,32 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     const missed = last3.filter(d => d.calories > 0 && d.calories < goals.dailyCalories * 0.7)
     return missed.length >= 2
   }, [weeklyHistory, goals])
+
+  // Compute daily quality score
+  const dailyQualityScore = useMemo((): QualityScore | undefined => {
+    const scored = entries.filter(e => e.qualityScore)
+    if (scored.length < 2) return undefined
+    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 }
+    const reverseMap: Record<number, QualityScore> = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'E' }
+    const totalWeight = scored.reduce((s, e) => s + e.totalCalories, 0)
+    if (totalWeight === 0) return undefined
+    const weightedAvg = scored.reduce((s, e) => s + scoreMap[e.qualityScore!] * e.totalCalories, 0) / totalWeight
+    return reverseMap[Math.round(weightedAvg)]
+  }, [entries])
+
+  // Persist daily score and check badges
+  useEffect(() => {
+    if (!dailyQualityScore || selectedDate !== todayStr()) return
+    upsertDailyInsight(selectedDate, dailyQualityScore, entries).then(({ newBadges }) => {
+      for (const badge of newBadges) {
+        const def = BADGE_DEFINITIONS[badge]
+        toast.success(`${def.icon} ${def.label}`, {
+          description: def.description,
+          duration: 5000,
+        })
+      }
+    })
+  }, [dailyQualityScore, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loggedMealTypes = useMemo(
     () => [...new Set(entries.map(e => e.mealType))],
@@ -509,6 +553,17 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
             {showInsights && (
               <div className="space-y-8 pb-4">
+                {entries.some(e => e.qualityScore) && (
+                  <CoachPanel
+                    entries={entries}
+                    dailyInsight={dailyInsight}
+                    weeklyInsight={weeklyInsight}
+                    badges={badges}
+                    generatingWeekly={generatingWeekly}
+                    activeTab={activeTab}
+                  />
+                )}
+
                 <MealSuggestions remaining={remaining} />
 
                 <WeeklyNutritionChart

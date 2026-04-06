@@ -39,7 +39,35 @@ export const FoodItemSchema = z.object({
     .describe("Alias y términos relacionados en minúsculas para facilitar búsqueda (ej: ['pollo', 'ave', 'carne blanca'])"),
 });
 
-export const MealAnalysisSchema = z.object({
+export const QualityAlternativeSchema = z.object({
+  name: z.string().describe("Nombre del alimento alternativo sugerido"),
+  portionNote: z.string().describe("Nota de porción sugerida (ej: '150g de pechuga a la plancha')"),
+});
+
+export const QualityBlockSchema = z.object({
+  score: z
+    .enum(["A", "B", "C", "D", "E"])
+    .describe("Score de calidad nutricional de la comida COMPLETA (no por ingrediente). A=excelente, B=bueno, C=aceptable, D=pobre, E=malo"),
+  breakdown: z
+    .object({
+      positives: z.array(z.string()).describe("Aspectos positivos de la comida (ej: 'Alto en proteína', 'Buena fuente de fibra')"),
+      negatives: z.array(z.string()).describe("Aspectos negativos (ej: 'Exceso de azúcares simples', 'Bajo en micronutrientes')"),
+      summary: z.string().describe("Resumen de una línea del porqué del score"),
+    })
+    .describe("Desglose de por qué la comida recibió ese score"),
+  message: z
+    .string()
+    .describe("Mensaje contextual considerando la hora, el objetivo del usuario, y patrones recientes. Ajusta el tono: suave si es un caso aislado, más directo si hay patrón repetido de mala alimentación. Si la comida es buena, felicita."),
+  suggestion: z
+    .object({
+      text: z.string().describe("Sugerencia de mejora (ej: 'Prueba cambiar las papas fritas por batata al horno')"),
+      alternatives: z.array(QualityAlternativeSchema).describe("Alimentos alternativos sugeridos, preferiblemente del historial del usuario"),
+    })
+    .nullable()
+    .describe("Sugerencia con alternativas si score < B. null si score es A o B."),
+});
+
+const BaseMealAnalysisSchema = z.object({
   foods: z
     .array(FoodItemSchema)
     .describe("Lista de alimentos detectados en la imagen"),
@@ -54,4 +82,8 @@ export const MealAnalysisSchema = z.object({
   meal_description: z
     .string()
     .describe("Breve descripción de la comida en español (1-2 oraciones)"),
+});
+
+export const MealAnalysisSchema = BaseMealAnalysisSchema.extend({
+  quality: QualityBlockSchema.optional().describe("Evaluación de calidad nutricional de la comida completa. Incluir siempre que se proporcione contexto del usuario."),
 });
