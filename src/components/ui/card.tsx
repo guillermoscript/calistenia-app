@@ -51,4 +51,15 @@ function CardFooter({ className, ref, ...props }: React.HTMLAttributes<HTMLDivEl
   )
 }
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+function CardAction({ className, children, ref, ...props }: any) {
+  return (
+    <div
+      ref={ref}
+      className={cn("", className)}
+      {...props}>
+      {children}
+    </div>
+  )
+}
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, CardAction }

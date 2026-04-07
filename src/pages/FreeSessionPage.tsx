@@ -17,6 +17,7 @@ import { useLocalize } from '../hooks/useLocalize'
 import WarmupCooldownPrompt from '../components/session/WarmupCooldownPrompt'
 import CircuitBuilder from '../components/circuit/CircuitBuilder'
 import { useCircuitSession } from '../contexts/CircuitSessionContext'
+import AISessionTab from '../components/free-session/AISessionTab'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -219,7 +220,7 @@ export default function FreeSessionPage() {
   const { isActive: sessionActive, startSession: contextStartSession } = useActiveSession()
   const { startCircuit } = useCircuitSession()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'exercises' | 'circuit'>('exercises')
+  const [activeTab, setActiveTab] = useState<'exercises' | 'circuit' | 'ia'>('exercises')
   const [catalog, setCatalog] = useState<CatalogExercise[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -425,6 +426,14 @@ export default function FreeSessionPage() {
           onClick={() => setActiveTab('circuit')}
         >
           {t('nav.circuit')}
+        </button>
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeTab === 'ia' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('ia')}
+        >
+          IA
         </button>
       </div>
 
@@ -686,8 +695,10 @@ export default function FreeSessionPage() {
       </div>
 
       </>
-      ) : (
+      ) : activeTab === 'circuit' ? (
         <CircuitBuilder onStart={handleCircuitStart} />
+      ) : (
+        <AISessionTab />
       )}
 
       {/* Warmup/Cooldown prompt */}

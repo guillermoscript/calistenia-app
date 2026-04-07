@@ -14,6 +14,7 @@ import { getAvailableProviders } from "./model-resolver.js";
 import { analyzeMealImage, scoreMealQuality, type UserContext } from "./meal-analyzer.js";
 import { lookupFoodByName } from "./food-lookup.js";
 import { generateDailyMealPlan } from "./meal-plan-generator.js";
+import { handleGenerateFreeSession } from "./free-session-generator.js";
 import { sendPushToUser } from "./push-sender.js";
 import { processJob, getAdminPB } from "./job-processor.js";
 import type { Tier } from "./model-resolver.js";
@@ -654,6 +655,20 @@ export function createApiRouter(): Router {
         const { generateWeeklyInsight } = await import("./weekly-insight-generator.js");
         const result = await generateWeeklyInsight({ meals, goal, previousWeekScore: previous_week_score, tier });
         return res.json(result);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Free session generation (AI-powered, streaming)
+  router.post(
+    "/generate-free-session",
+    requireAuth,
+    rateLimit,
+    async (req: any, res: any, next: any) => {
+      try {
+        await handleGenerateFreeSession(req, res);
       } catch (err) {
         next(err);
       }

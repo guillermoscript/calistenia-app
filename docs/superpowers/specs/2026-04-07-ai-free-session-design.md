@@ -41,8 +41,8 @@ Follows existing pattern: `requireAuth` → `rateLimit` → handler.
 **Handler logic:**
 1. Build system prompt with user context data + lightweight markdown exercise overview
 2. Register `search_exercises` tool for the AI to query PocketBase `exercises_catalog`
-3. Call `streamText()` with resolved model, `maxTokens: 2000`, `stopWhen: stepCountIs(5)` (bounds tool loops)
-4. Return `result.toDataStreamResponse()`
+3. Call `streamText()` with resolved model, `maxOutputTokens: 2000`, `stopWhen: isStepCount(5)` (bounds tool loops)
+4. Return `result.pipeUIMessageStreamToResponse(res)` (Express pattern for `useChat` compatibility)
 
 **Model resolution:** Uses existing `resolveModel(tier)` — model choice is trivial to change.
 
@@ -62,7 +62,7 @@ Benefits:
 - Minimal tokens in prompt
 - Modular — same tool reusable for future features
 - Always-fresh data from PocketBase
-- `streamText` supports tools natively with `stopWhen: stepCountIs(N)`
+- `streamText` supports tools natively with `stopWhen: isStepCount(N)`
 
 ### AI Output Format
 
@@ -101,7 +101,7 @@ FreeSessionPage.tsx
 - Location: home, park, gym
 - Available time: slider 15-60 min
 
-**`<AISessionTab>`** — Uses `useChat` from AI SDK pointing to the endpoint. Submitting the form builds the first user message. Uses ai-elements for rendering.
+**`<AISessionTab>`** — Uses `useChat` from `@ai-sdk/react` with `DefaultChatTransport` pointing to the endpoint. Manages input state via `useState` (not built-in). Submitting the form builds the first user message via `sendMessage()`. Uses ai-elements for rendering.
 
 **`<SessionPreview>`** — Parses exercise JSON from AI response. Drag-to-reorder, remove per exercise, add from catalog. "Empezar sesión" calls `startSession()` from `ActiveSessionContext`.
 
