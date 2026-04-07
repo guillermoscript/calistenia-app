@@ -18,6 +18,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --production
 
 COPY --from=builder /app/build ./build
+COPY data/ ./data/
 
 RUN adduser -D -u 1001 apiuser
 USER apiuser
