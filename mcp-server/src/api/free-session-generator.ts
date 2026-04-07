@@ -28,9 +28,12 @@ let exerciseCatalog: CatalogExercise[] = [];
 function loadCatalog() {
   if (exerciseCatalog.length > 0) return;
   try {
-    // Resolve path: from mcp-server/src/api/ → ../../../src/data/exercise-catalog.json
+    // Try local copy first (Docker/prod), then fallback to monorepo path (dev)
     const __dirname = dirname(fileURLToPath(import.meta.url));
-    const catalogPath = resolve(__dirname, "../../../src/data/exercise-catalog.json");
+    let catalogPath = resolve(__dirname, "../../data/exercise-catalog.json");
+    try { readFileSync(catalogPath); } catch {
+      catalogPath = resolve(__dirname, "../../../src/data/exercise-catalog.json");
+    }
     const raw = JSON.parse(readFileSync(catalogPath, "utf-8"));
     const categories = raw.categories || {};
     for (const [catKey, catData] of Object.entries(categories) as any[]) {
