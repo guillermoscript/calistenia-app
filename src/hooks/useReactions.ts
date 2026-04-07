@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { notifyReaction } from '../lib/notifications'
 
 export const REACTION_EMOJIS = ['🔥', '💪', '👏', '🎯', '🏆'] as const
 
@@ -61,7 +60,7 @@ export function useReactions(userId: string | null) {
     }
   }, [userId])
 
-  const toggleReaction = useCallback(async (sessionId: string, emoji: string) => {
+  const toggleReaction = useCallback(async (sessionId: string, emoji: string, sessionOwnerId?: string) => {
     if (!userId) return
     const available = await isPocketBaseAvailable()
     if (!available) return
@@ -94,6 +93,19 @@ export function useReactions(userId: string | null) {
           reactor: userId,
           emoji,
         })
+
+        // Create notification for session owner
+        if (sessionOwnerId && sessionOwnerId !== userId) {
+          pb.collection('notifications').create({
+            user: sessionOwnerId,
+            type: 'reaction',
+            actor: userId,
+            reference_id: sessionId,
+            reference_type: 'session',
+            read: false,
+            data: { emoji },
+          }).catch(() => {})
+        }
       }
     } catch {
       // Revert optimistic update

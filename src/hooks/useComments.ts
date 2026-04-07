@@ -161,7 +161,7 @@ export function useComments(userId: string | null) {
     } catch { /* silent */ }
   }, [userId])
 
-  const addComment = useCallback(async (sessionId: string, text: string, parentId?: string): Promise<boolean> => {
+  const addComment = useCallback(async (sessionId: string, text: string, parentId?: string, sessionOwnerId?: string): Promise<boolean> => {
     if (!userId) return false
 
     // Rate limit: 5 seconds between comments
@@ -184,6 +184,20 @@ export function useComments(userId: string | null) {
       delete cacheTimestamps.current[sessionId]
       // Update count
       setCommentCounts(prev => ({ ...prev, [sessionId]: (prev[sessionId] || 0) + 1 }))
+
+      // Create notification for session owner (or parent comment author for replies)
+      if (sessionOwnerId && sessionOwnerId !== userId) {
+        pb.collection('notifications').create({
+          user: sessionOwnerId,
+          type: parentId ? 'comment_reply' : 'comment',
+          actor: userId,
+          reference_id: sessionId,
+          reference_type: 'session',
+          read: false,
+          data: { text: text.trim().slice(0, 100) },
+        }).catch(() => {})
+      }
+
       // Reload comments
       await getComments(sessionId)
       return true

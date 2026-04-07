@@ -42,6 +42,10 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const commentReactions = useCommentReactions(userId)
   const [commentsSessionId, setCommentsSessionId] = useState<string | null>(null)
 
+  const commentsSessionOwner = commentsSessionId
+    ? items.find(i => i.id === commentsSessionId)?.userId
+    : undefined
+
   useEffect(() => { load() }, [load])
 
   // Load reactions and comment counts once feed items are available
@@ -86,10 +90,11 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
               >
                 <FeedCard
                   item={item}
+                  isOwnPost={item.userId === userId}
                   onTap={() => navigate(`/u/${item.userId}`)}
                   onTapUser={() => navigate(`/u/${item.userId}`)}
                   reactions={reactions}
-                  onReact={(emoji) => toggleReaction(item.id, emoji)}
+                  onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}
                   commentCount={commentCount}
                   onComment={() => setCommentsSessionId(item.id)}
                 />
@@ -107,11 +112,11 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
           onClose={() => setCommentsSessionId(null)}
           comments={commentsBySession[commentsSessionId] || []}
           onLoadComments={getComments}
-          onAddComment={addComment}
+          onAddComment={(sid, text, parentId) => addComment(sid, text, parentId, commentsSessionOwner)}
           onDeleteComment={deleteComment}
           currentUserId={userId}
           reactions={getReactions(commentsSessionId)}
-          onReact={(emoji) => toggleReaction(commentsSessionId, emoji)}
+          onReact={(emoji) => toggleReaction(commentsSessionId, emoji, commentsSessionOwner)}
           commentReactions={commentReactions}
         />
       )}
@@ -123,6 +128,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
 
 interface FeedCardProps {
   item: FeedItem
+  isOwnPost?: boolean
   onTap: () => void
   onTapUser: () => void
   reactions: Record<string, { count: number; hasReacted: boolean }>
@@ -131,7 +137,7 @@ interface FeedCardProps {
   onComment: () => void
 }
 
-function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, onComment }: FeedCardProps) {
+function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, commentCount, onComment }: FeedCardProps) {
   const { t, i18n } = useTranslation()
   const phaseColor = PHASE_COLORS[item.phase]
 
@@ -159,6 +165,7 @@ function FeedCard({ item, onTap, onTapUser, reactions, onReact, commentCount, on
             className="text-sm font-medium truncate hover:text-lime transition-colors block"
           >
             {item.displayName}
+            {isOwnPost && <span className="ml-1.5 text-[10px] text-lime font-normal">({t('feed.you')})</span>}
           </button>
           <span className="text-[10px] text-muted-foreground">{formattedDate} · {relativeTime(item.completedAt, t)}</span>
         </div>

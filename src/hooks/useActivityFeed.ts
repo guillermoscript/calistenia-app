@@ -43,15 +43,10 @@ export function useActivityFeed(userId: string | null) {
       })
       const followedIds = followsRes.map((r: any) => r.following as string)
 
-      if (followedIds.length === 0) {
-        setItems([])
-        setLoading(false)
-        return
-      }
-
-      // 2. Fetch recent sessions for all followed users in a single query
-      // PocketBase supports filter OR chains — batch to avoid N+1 calls
-      const uidFilter = followedIds
+      // 2. Fetch recent sessions for followed users + own sessions
+      // Include own user so you can see comments/reactions on your workouts
+      const allUserIds = [...new Set([userId, ...followedIds])]
+      const uidFilter = allUserIds
         .map(uid => pb.filter('user = {:uid}', { uid }))
         .join(' || ')
 
@@ -61,8 +56,8 @@ export function useActivityFeed(userId: string | null) {
           sort: '-completed_at',
           $autoCancel: false,
         }).catch(() => ({ items: [] as any[] })),
-        pb.collection('users').getList(1, followedIds.length, {
-          filter: followedIds.map(uid => pb.filter('id = {:uid}', { uid })).join(' || '),
+        pb.collection('users').getList(1, allUserIds.length, {
+          filter: allUserIds.map(uid => pb.filter('id = {:uid}', { uid })).join(' || '),
           $autoCancel: false,
         }).catch(() => ({ items: [] as any[] })),
       ])
