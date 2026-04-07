@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import i18n from '../../lib/i18n'
 import { cn } from '../../lib/utils'
+import { timeAgo } from '../../lib/dateUtils'
 import { Loader } from '../ui/loader'
 import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
 import { REACTION_EMOJIS, type EmojiReactions } from '../../hooks/useReactions'
@@ -43,24 +43,7 @@ interface CommentsSheetProps {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function relativeTime(dateStr: string): string {
-  if (!dateStr) return ''
-  const now = Date.now()
-  // PocketBase format: "2026-04-03 12:00:00.000Z" — ensure valid ISO
-  let normalized = dateStr.replace(' ', 'T')
-  if (!normalized.endsWith('Z') && !normalized.includes('+')) normalized += 'Z'
-  const then = new Date(normalized).getTime()
-  if (Number.isNaN(then)) return ''
-  const diffMin = Math.floor((now - then) / 60000)
-  if (diffMin < 1) return i18n.t('feed.now')
-  if (diffMin < 60) return i18n.t('feed.minutesAgo', { count: diffMin })
-  const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return i18n.t('feed.hoursAgo', { count: diffH })
-  const diffD = Math.floor(diffH / 24)
-  if (diffD === 1) return i18n.t('common.yesterday')
-  if (diffD <= 7) return i18n.t('common.daysAgo', { count: diffD })
-  return new Date(normalized).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
-}
+// Use shared dayjs-based timeAgo from dateUtils
 
 /** Collect all comment IDs (including replies) from a comment list */
 function collectCommentIds(comments: Comment[]): string[] {
@@ -409,7 +392,7 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, commentReact
             {comment.authorName}
           </span>
           <span className="text-[10px] text-muted-foreground/50 shrink-0 tabular-nums">
-            {relativeTime(comment.created)}
+            {timeAgo(comment.created)}
           </span>
         </div>
 

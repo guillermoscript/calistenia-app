@@ -9,6 +9,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import isoWeek from 'dayjs/plugin/isoWeek'
+import relativeTimePlugin from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/es'
 import 'dayjs/locale/en'
 import i18n from './i18n'
@@ -16,6 +17,7 @@ import i18n from './i18n'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(isoWeek)
+dayjs.extend(relativeTimePlugin)
 
 // Sync dayjs locale with i18n language
 dayjs.locale(i18n.language)
@@ -117,6 +119,30 @@ export function localDateForPB(dateStr: string): string {
 /** Number of days between two YYYY-MM-DD date strings (a - b), timezone-aware. */
 export function diffDays(a: string, b: string): number {
   return dayjs.tz(a, _tz).diff(dayjs.tz(b, _tz), 'day')
+}
+
+/**
+ * Parse a PocketBase timestamp (e.g. "2026-04-03 12:00:00.000Z") into a dayjs UTC instance.
+ * Handles both space-separated and T-separated formats, with or without trailing Z.
+ */
+function parsePBTimestamp(dateStr: string): dayjs.Dayjs {
+  return dayjs.utc(dateStr.replace(' ', 'T'))
+}
+
+/**
+ * Human-friendly relative time from a PocketBase timestamp.
+ * Uses dayjs relativeTime plugin with the current i18n locale.
+ * Returns e.g. "hace 3 horas", "2 days ago", "3 abr" for older dates.
+ */
+export function timeAgo(dateStr: string): string {
+  if (!dateStr) return ''
+  const d = parsePBTimestamp(dateStr)
+  if (!d.isValid()) return ''
+  const diffDaysVal = dayjs().diff(d, 'day')
+  if (diffDaysVal > 7) {
+    return d.tz(_tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
+  }
+  return d.tz(_tz).fromNow()
 }
 
 /** Human-friendly relative date label (Today, Yesterday, N days ago, or short date). */

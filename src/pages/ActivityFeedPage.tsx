@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
 import i18n from '../lib/i18n'
+import { timeAgo } from '../lib/dateUtils'
 import { useActivityFeed, type FeedItem } from '../hooks/useActivityFeed'
 import { useReactions } from '../hooks/useReactions'
 import { useComments } from '../hooks/useComments'
@@ -15,23 +15,7 @@ import { Button } from '../components/ui/button'
 import { PHASE_COLORS } from '../lib/style-tokens'
 import { shareWorkoutSession } from '../lib/share'
 
-function relativeTime(dateStr: string, t: TFunction): string {
-  if (!dateStr) return ''
-  const now = Date.now()
-  let normalized = dateStr.replace(' ', 'T')
-  if (!normalized.endsWith('Z') && !normalized.includes('+')) normalized += 'Z'
-  const then = new Date(normalized).getTime()
-  if (Number.isNaN(then)) return ''
-  const diffMin = Math.floor((now - then) / 60000)
-  if (diffMin < 1) return t('feed.now')
-  if (diffMin < 60) return t('feed.minutesAgo', { count: diffMin })
-  const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return t('feed.hoursAgo', { count: diffH })
-  const diffD = Math.floor(diffH / 24)
-  if (diffD === 1) return t('feed.yesterday')
-  if (diffD <= 7) return t('feed.daysAgo', { count: diffD })
-  return new Date(normalized).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
-}
+// relativeTime replaced by shared timeAgo from dateUtils
 
 interface ActivityFeedPageProps {
   userId: string
@@ -194,7 +178,7 @@ function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, comme
             {item.displayName}
             {isOwnPost && <span className="ml-1.5 text-[10px] text-lime font-normal">({t('feed.you')})</span>}
           </button>
-          <span className="text-[10px] text-muted-foreground">{formattedDate} · {relativeTime(item.completedAt, t)}</span>
+          <span className="text-[10px] text-muted-foreground">{formattedDate} · {timeAgo(item.completedAt)}</span>
         </div>
       </div>
 
