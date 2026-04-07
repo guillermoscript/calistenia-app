@@ -211,26 +211,26 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                           className="flex-1 min-w-0 text-left"
                           aria-expanded={isExpanded}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                             <span className={cn(
-                              'text-[9px] tracking-widest',
+                              'text-[9px] tracking-widest shrink-0',
                               mealInfo.color,
                             )}>
                               {t(`meal.${entry.mealType}`).toUpperCase()}
                             </span>
                             {entry.source?.startsWith('ai_') && (
-                              <span className={`text-[8px] font-mono tracking-wider px-1.5 py-px rounded ${BADGE_COLORS.ai}`}>
+                              <span className={`text-[8px] font-mono tracking-wider px-1.5 py-px rounded shrink-0 ${BADGE_COLORS.ai}`}>
                                 {t('nutrition.aiBadge')}
                               </span>
                             )}
                             <QualityScoreBadge
                               score={entry.qualityScore}
-                              size="md"
+                              size="sm"
                               pending={!entry.qualityScore && entry.foods.length > 0}
                             />
-                            <span className="text-[10px] text-muted-foreground/60">{formatTime(entry.loggedAt)}</span>
+                            <span className="text-[10px] text-muted-foreground/60 shrink-0">{formatTime(entry.loggedAt)}</span>
                             <span className={cn(
-                              'ml-auto tabular-nums',
+                              'ml-auto tabular-nums shrink-0',
                               weight === 'large' ? 'font-bebas text-xl text-foreground' : 'text-xs text-foreground font-medium',
                             )}>
                               {Math.round(entry.totalCalories)}

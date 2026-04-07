@@ -14,12 +14,12 @@ import { useFoodHistory } from '../../hooks/useFoodHistory'
 import { useMealTemplates } from '../../hooks/useMealTemplates'
 import { op } from '../../lib/analytics'
 import { calcMacros, normalizeToBase100, migrateLegacyFood, createEmptyFood } from '../../lib/macro-calc'
-import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate, MealType } from '../../types'
+import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate, MealType, QualityScore, QualityBreakdown, QualitySuggestion } from '../../types'
 
 const MAX_PHOTOS = 5
 
 export interface MealLoggerContentProps {
-  onAnalyze: (imageFiles: File[], mealType: string, description?: string) => Promise<{ foods: FoodItem[]; meal_description?: string }>
+  onAnalyze: (imageFiles: File[], mealType: string, description?: string) => Promise<{ foods: FoodItem[]; meal_description?: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }>
   onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => Promise<void>
   userId: string | null
   dailyTotals: DailyTotals
@@ -30,7 +30,7 @@ export interface MealLoggerContentProps {
   /** Send current analysis to background processing */
   onSendToBackground?: (imageFiles: File[], mealType: string, description?: string) => void
   /** Pre-populated analysis from a completed background job */
-  initialAnalysis?: { foods: FoodItem[]; meal_description?: string } | null
+  initialAnalysis?: { foods: FoodItem[]; meal_description?: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } } | null
 }
 
 const MEAL_OPTIONS: { id: MealType; labelKey: string; icon: string }[] = [
@@ -118,6 +118,7 @@ export default function MealLoggerContent({
   const [quickText, setQuickText] = useState('')
   const [imageDescription, setImageDescription] = useState('')
   const [mealDescription, setMealDescription] = useState('')
+  const [analysisQuality, setAnalysisQuality] = useState<{ score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } | undefined>()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -214,6 +215,7 @@ export default function MealLoggerContent({
       }
       setFoods(normalized)
       setMealDescription(result.meal_description || '')
+      setAnalysisQuality(result.quality)
       setStep('review')
     } catch {
       if (cancelledRef.current) return
@@ -254,6 +256,7 @@ export default function MealLoggerContent({
       })
       setFoods(normalized)
       setMealDescription(initialAnalysis.meal_description || '')
+      setAnalysisQuality(initialAnalysis.quality)
       setStep('review')
     }
   }, [initialAnalysis])
@@ -322,6 +325,12 @@ export default function MealLoggerContent({
         totalCarbs: totals.carbs,
         totalFat: totals.fat,
         loggedAt: nowLocalForPB(),
+        ...(analysisQuality ? {
+          qualityScore: analysisQuality.score,
+          qualityBreakdown: analysisQuality.breakdown,
+          qualityMessage: analysisQuality.message,
+          qualitySuggestion: analysisQuality.suggestion,
+        } : {}),
       }, imageFiles.length > 0 ? imageFiles : undefined)
       foods.filter(f => f.name.trim()).forEach(f => saveFoodToCatalog(f))
       const hour = localHour()
@@ -346,6 +355,7 @@ export default function MealLoggerContent({
     setQuickText('')
     setImageDescription('')
     setMealDescription('')
+    setAnalysisQuality(undefined)
     setShowSaveTemplate(false)
     setTemplateName('')
     resetBarcode()

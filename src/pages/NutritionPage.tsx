@@ -25,6 +25,7 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
+import { useMealLoggerActions } from '../hooks/useMealLoggerActions'
 import type { NutritionGoal, NutritionEntry, FoodItem, Sex, QualityScore } from '../types'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
@@ -110,8 +111,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   } = useWeeklyMealPlan(userId)
   const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
 
+  const nutrition = useNutrition(userId)
   const {
     goals,
+    entries: allEntries,
     isReady,
     saveGoals,
     saveEntry,
@@ -126,7 +129,12 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     getWeeklyHistory,
     getRecentEntries,
     scoreMealQuality,
-  } = useNutrition(userId)
+    getRemainingMacros,
+  } = nutrition
+
+  const { handleAnalyze, handleSave: handleSaveEntry } = useMealLoggerActions({
+    userId, goals, entries: allEntries, analyzeMeal, scoreMealQuality, saveEntry, updateEntry, getRemainingMacros,
+  })
 
   const {
     dailyInsight,
@@ -255,43 +263,6 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       dailyFat: result.dailyFat,
     }
   }, [calculateMacros])
-
-  const handleAnalyze = useCallback(async (imageFiles: File[], mealType: string, description?: string): Promise<{ foods: FoodItem[]; meal_description?: string }> => {
-    const recentScores = entries
-      .filter(e => e.qualityScore)
-      .slice(0, 5)
-      .map(e => ({ mealType: e.mealType, score: e.qualityScore!, loggedAt: e.loggedAt }))
-    const userCtx = {
-      goal: goals?.goal,
-      remainingMacros: remaining,
-      recentScores: recentScores.length > 0 ? recentScores : undefined,
-      logHour: new Date().getHours(),
-    }
-    const result = await analyzeMeal(imageFiles, mealType, description, userCtx)
-    return { foods: result.foods, meal_description: result.meal_description }
-  }, [analyzeMeal, goals, remaining, entries])
-
-  const handleSaveEntry = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => {
-    const saved = await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
-    // Fire async quality scoring for manual/barcode entries (no qualityScore yet)
-    if (!saved.qualityScore && saved.foods.length > 0) {
-      scoreMealQuality(
-        saved.foods.map(f => ({ name: f.name, calories: f.baseCal100 * (f.portionAmount || 1), protein: f.baseProt100 * (f.portionAmount || 1), carbs: f.baseCarbs100 * (f.portionAmount || 1), fat: f.baseFat100 * (f.portionAmount || 1) })),
-        { calories: saved.totalCalories, protein: saved.totalProtein, carbs: saved.totalCarbs, fat: saved.totalFat },
-        saved.mealType,
-        goals ? { goal: goals.goal, remainingMacros: remaining } : undefined,
-      ).then(async (quality) => {
-        if (quality && saved.id && !saved.id.startsWith('local_')) {
-          await updateEntry(saved.id, {
-            qualityScore: quality.score,
-            qualityBreakdown: quality.breakdown,
-            qualityMessage: quality.message,
-            qualitySuggestion: quality.suggestion,
-          })
-        }
-      }).catch(() => { /* non-blocking */ })
-    }
-  }, [saveEntry, userId, scoreMealQuality, goals, remaining, updateEntry])
 
   const handleSavePlannedMeal = useCallback(async (meal: PlannedMeal) => {
     const food: FoodItem = {

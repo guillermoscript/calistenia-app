@@ -4,10 +4,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import MealLoggerContent from '../components/nutrition/MealLoggerContent'
 import { useNutrition } from '../hooks/useNutrition'
+import { useMealLoggerActions } from '../hooks/useMealLoggerActions'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
 import { submitAnalyzeMealJob, fetchJobStatus } from '../lib/ai-jobs-api'
 import { migrateLegacyFood } from '../lib/macro-calc'
-import type { NutritionEntry, FoodItem } from '../types'
+import type { AnalyzeResult } from '../hooks/useMealLoggerActions'
 
 interface MealLoggerPageProps {
   userId: string | null
@@ -17,19 +18,28 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+
   const {
     goals,
+    entries,
     analyzeMeal,
+    scoreMealQuality,
     saveEntry,
+    updateEntry,
     getDailyTotals,
+    getRemainingMacros,
     getRecentEntries,
   } = useNutrition(userId)
-  const { addJob, getJob, clearJob, canSubmit } = useBackgroundJobs()
+
+  const { handleAnalyze, handleSave } = useMealLoggerActions({
+    userId, goals, entries, analyzeMeal, scoreMealQuality, saveEntry, updateEntry, getRemainingMacros,
+  })
 
   const dailyTotals = useMemo(() => getDailyTotals(), [getDailyTotals])
+  const { addJob, getJob, clearJob, canSubmit } = useBackgroundJobs()
 
-  // Load completed background job result
-  const [initialAnalysis, setInitialAnalysis] = useState<{ foods: FoodItem[]; meal_description?: string } | null>(null)
+  // ─── Background job handling ───────────────────────────────────────────────
+  const [initialAnalysis, setInitialAnalysis] = useState<AnalyzeResult | null>(null)
   const [jobLoading, setJobLoading] = useState(false)
   const jobId = searchParams.get('job')
 
@@ -40,6 +50,7 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
         !f.baseCal100 ? migrateLegacyFood(f) : f
       ),
       meal_description: analysis.meal_description || '',
+      quality: analysis.quality || undefined,
     })
   }, [])
 
@@ -54,7 +65,6 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
       return
     }
 
-    // Not in cache — fetch from server
     setJobLoading(true)
     fetchJobStatus(jobId).then(job => {
       if (job.status === 'completed' && job.result) {
@@ -65,21 +75,18 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
         toast.error(t('nutrition.analysisError'), { description: job.error || t('nutrition.analysisErrorDesc') })
         setSearchParams({}, { replace: true })
       } else {
-        // Still processing — keep showing loading, poll will catch completion
         setJobLoading(true)
       }
     }).catch(() => {
       setSearchParams({}, { replace: true })
     }).finally(() => {
-      // Only clear loading if we got a final result
-      setJobLoading(prev => {
+      setJobLoading(() => {
         const cached = getJob(jobId)
         return cached?.status === 'pending' || cached?.status === 'processing' ? true : false
       })
     })
   }, [jobId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Watch for job completion via polling when we arrived with a still-processing job
   useEffect(() => {
     if (!jobId || !jobLoading) return
     const cached = getJob(jobId)
@@ -95,25 +102,11 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
     }
   }, [jobId, jobLoading, getJob, clearJob, loadJobResult, setSearchParams])
 
-  const handleAnalyze = useCallback(async (imageFiles: File[], mealType: string, description?: string): Promise<{ foods: FoodItem[]; meal_description?: string }> => {
-    const result = await analyzeMeal(imageFiles, mealType, description)
-    return { foods: result.foods, meal_description: result.meal_description }
-  }, [analyzeMeal])
-
-  const handleSave = useCallback(async (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => {
-    await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
-  }, [saveEntry, userId])
-
-  const handleSaveSuccess = useCallback(() => {
-    setTimeout(() => navigate('/nutrition'), 1200)
-  }, [navigate])
-
+  // ─── Background send ──────────────────────────────────────────────────────
   const handleSendToBackground = useCallback((imageFiles: File[], mealType: string, description?: string) => {
-    // Check limit BEFORE making the API call to avoid wasting money
     if (!addJob('_pending', 'analyze-meal')) return
     submitAnalyzeMealJob(imageFiles, mealType, description)
       .then(id => {
-        // Replace the placeholder ID with the real server ID
         clearJob('_pending')
         addJob(id, 'analyze-meal')
         toast.info(t('nutrition.analyzingBackground'), {
@@ -126,6 +119,10 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
         toast.error(t('nutrition.analysisError'), { description: t('nutrition.analysisErrorDesc') })
       })
   }, [addJob, clearJob])
+
+  const handleSaveSuccess = useCallback(() => {
+    setTimeout(() => navigate('/nutrition'), 1200)
+  }, [navigate])
 
   return (
     <div className="max-w-lg mx-auto px-4 md:px-6 py-6 md:py-8">
