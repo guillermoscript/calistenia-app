@@ -805,6 +805,8 @@
   "notif.achievement": "Desbloqueaste: {{name}}",
   "notif.anAchievement": "un logro",
   "notif.streak": "{{days}} días seguidos entrenando!",
+  "notif.referralSignup": "{{name}} se unió con tu enlace de referido!",
+  "notif.referralBonus": "Ganaste un bonus — {{name}} completó su primer entrenamiento!",
   "notif.default": "{{name}} interactuó contigo",
 
   "challenges.section": "Social",

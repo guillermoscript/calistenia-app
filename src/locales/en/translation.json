@@ -805,6 +805,8 @@
   "notif.achievement": "Unlocked: {{name}}",
   "notif.anAchievement": "an achievement",
   "notif.streak": "{{days}} consecutive days training!",
+  "notif.referralSignup": "{{name}} joined using your referral link!",
+  "notif.referralBonus": "You earned a bonus — {{name}} completed their first workout!",
   "notif.default": "{{name}} interacted with you",
 
   "challenges.section": "Social",

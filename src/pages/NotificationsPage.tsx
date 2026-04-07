@@ -10,8 +10,10 @@ import { Loader } from '../components/ui/loader'
 import { Button } from '../components/ui/button'
 
 function relativeTime(dateStr: string, t: TFunction): string {
+  if (!dateStr) return ''
   const now = Date.now()
   const then = new Date(dateStr.replace(' ', 'T')).getTime()
+  if (isNaN(then)) return ''
   const diffMin = Math.floor((now - then) / 60000)
   if (diffMin < 1) return t('feed.now')
   if (diffMin < 60) return t('feed.minutesAgo', { count: diffMin })
@@ -43,6 +45,10 @@ function getNotificationMessage(n: AppNotification, t: TFunction): string {
       return `${n.data?.achievementIcon || '🏅'} ${t('notif.achievement', { name: n.data?.achievementName || t('notif.anAchievement') })}`
     case 'streak':
       return t('notif.streak', { days: n.data?.days || '' })
+    case 'referral_signup':
+      return t('notif.referralSignup', { name: n.data?.referredName || n.actorName })
+    case 'referral_bonus':
+      return t('notif.referralBonus', { name: n.data?.referredName || n.actorName })
     default:
       return t('notif.default', { name: n.actorName })
   }
@@ -64,6 +70,9 @@ function getNotificationRoute(n: AppNotification): string {
       return '/profile'
     case 'streak':
       return '/progress'
+    case 'referral_signup':
+    case 'referral_bonus':
+      return '/referrals'
     default:
       return '/'
   }
