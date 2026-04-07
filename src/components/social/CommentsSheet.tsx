@@ -44,8 +44,13 @@ interface CommentsSheetProps {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function relativeTime(dateStr: string): string {
+  if (!dateStr) return ''
   const now = Date.now()
-  const then = new Date(dateStr.replace(' ', 'T')).getTime()
+  // PocketBase format: "2026-04-03 12:00:00.000Z" — ensure valid ISO
+  let normalized = dateStr.replace(' ', 'T')
+  if (!normalized.endsWith('Z') && !normalized.includes('+')) normalized += 'Z'
+  const then = new Date(normalized).getTime()
+  if (Number.isNaN(then)) return ''
   const diffMin = Math.floor((now - then) / 60000)
   if (diffMin < 1) return i18n.t('feed.now')
   if (diffMin < 60) return i18n.t('feed.minutesAgo', { count: diffMin })
@@ -54,7 +59,7 @@ function relativeTime(dateStr: string): string {
   const diffD = Math.floor(diffH / 24)
   if (diffD === 1) return i18n.t('common.yesterday')
   if (diffD <= 7) return i18n.t('common.daysAgo', { count: diffD })
-  return new Date(dateStr.replace(' ', 'T')).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
+  return new Date(normalized).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
 
 /** Collect all comment IDs (including replies) from a comment list */
@@ -461,18 +466,20 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, commentReact
             {/* Reaction picker popover */}
             {showReactionPicker && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowReactionPicker(false)} />
-                <div className="absolute left-0 bottom-full mb-1 z-50 flex items-center gap-0.5 bg-background/95 backdrop-blur-md border border-border/50 rounded-full px-1.5 py-1 shadow-lg">
+                <div className="fixed inset-0" style={{ zIndex: 60 }} onClick={() => setShowReactionPicker(false)} />
+                <div className="absolute left-0 bottom-full mb-1 flex items-center gap-1 bg-background/95 backdrop-blur-md border border-border/50 rounded-full px-2 py-1.5 shadow-lg" style={{ zIndex: 61 }}>
                   {COMMENT_REACTION_EMOJIS.map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
-                      onClick={() => {
+                      onPointerDown={(e) => {
+                        e.stopPropagation()
+                        e.preventDefault()
                         commentReactions?.toggleReaction(comment.id, emoji)
                         setShowReactionPicker(false)
                       }}
                       className={cn(
-                        'size-7 flex items-center justify-center rounded-full text-base hover:bg-muted/60 transition-colors active:scale-[0.85]',
+                        'size-8 flex items-center justify-center rounded-full text-lg hover:bg-muted/60 transition-colors active:scale-[0.85]',
                         cReactions[emoji]?.hasReacted && 'bg-muted/80',
                       )}
                     >

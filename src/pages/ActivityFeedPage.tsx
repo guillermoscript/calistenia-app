@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
@@ -16,8 +16,12 @@ import { PHASE_COLORS } from '../lib/style-tokens'
 import { shareWorkoutSession } from '../lib/share'
 
 function relativeTime(dateStr: string, t: TFunction): string {
+  if (!dateStr) return ''
   const now = Date.now()
-  const then = new Date(dateStr.replace(' ', 'T')).getTime()
+  let normalized = dateStr.replace(' ', 'T')
+  if (!normalized.endsWith('Z') && !normalized.includes('+')) normalized += 'Z'
+  const then = new Date(normalized).getTime()
+  if (Number.isNaN(then)) return ''
   const diffMin = Math.floor((now - then) / 60000)
   if (diffMin < 1) return t('feed.now')
   if (diffMin < 60) return t('feed.minutesAgo', { count: diffMin })
@@ -26,7 +30,7 @@ function relativeTime(dateStr: string, t: TFunction): string {
   const diffD = Math.floor(diffH / 24)
   if (diffD === 1) return t('feed.yesterday')
   if (diffD <= 7) return t('feed.daysAgo', { count: diffD })
-  return new Date(dateStr.replace(' ', 'T')).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
+  return new Date(normalized).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
 
 interface ActivityFeedPageProps {
@@ -36,7 +40,7 @@ interface ActivityFeedPageProps {
 export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { items, loading, load } = useActivityFeed(userId)
+  const { items, loading, loadingMore, hasMore, load, loadMore } = useActivityFeed(userId)
   const { loadForSessions, toggleReaction, getReactions } = useReactions(userId)
   const { getComments, loadCommentCounts, addComment, deleteComment, getCommentCount, commentsBySession } = useComments(userId)
   const commentReactions = useCommentReactions(userId)
@@ -46,7 +50,21 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
     ? items.find(i => i.id === commentsSessionId)?.userId
     : undefined
 
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => { load() }, [load])
+
+  // Infinite scroll: observe sentinel element
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) loadMore() },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loadMore])
 
   // Load reactions and comment counts once feed items are available
   useEffect(() => {
@@ -104,6 +122,13 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
         </div>
       )}
 
+      {/* Infinite scroll sentinel */}
+      {!loading && items.length > 0 && hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-6">
+          {loadingMore && <Loader label={t('feed.loading')} />}
+        </div>
+      )}
+
       {/* Comments Sheet */}
       {commentsSessionId && (
         <CommentsSheet
@@ -141,7 +166,9 @@ function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, comme
   const { t, i18n } = useTranslation()
   const phaseColor = PHASE_COLORS[item.phase]
 
-  const formattedDate = new Date(item.completedAt.replace(' ', 'T')).toLocaleDateString(i18n.language, {
+  let normalizedDate = item.completedAt.replace(' ', 'T')
+  if (!normalizedDate.endsWith('Z') && !normalizedDate.includes('+')) normalizedDate += 'Z'
+  const formattedDate = new Date(normalizedDate).toLocaleDateString(i18n.language, {
     weekday: 'short', day: 'numeric', month: 'short',
   })
 

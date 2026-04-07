@@ -2141,7 +2141,7 @@
   "social.beFirstToComment": "Sé el primero en comentar",
   "social.commentPlaceholder": "Escribe un comentario…",
   "social.reply": "Responder",
-  "social.replyingTo": "Respondiendo a {{name}}",
+  "social.replyingTo": "Respondiendo a",
 
   "widgets.recentActivity": "Actividad reciente",
   "widgets.completed": "completó",
