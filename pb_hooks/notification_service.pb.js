@@ -229,7 +229,7 @@ onRecordAfterCreateSuccess(function(e) {
   }
 }, "comments")
 
-// ── Challenge join notifications ─────────────────────────────────────────────
+// ── Challenge join + invite notifications ────────────────────────────────────
 
 onRecordAfterCreateSuccess(function(e) {
   try {
@@ -248,6 +248,35 @@ onRecordAfterCreateSuccess(function(e) {
       return
     }
 
+    // Determine who made the API call (inviter vs self-join)
+    var requestAuthId = ""
+    try {
+      var info = e.requestInfo()
+      if (info && info.auth) requestAuthId = info.auth.id || ""
+    } catch (err) { /* pre-0.36 or internal call */ }
+
+    // If someone else added this participant → notify the invited user
+    if (requestAuthId && requestAuthId !== userId) {
+      var inviterName = getUserName(requestAuthId)
+
+      createNotification(
+        userId,
+        "challenge_invite",
+        requestAuthId,
+        challengeId,
+        "challenge",
+        { inviterName: inviterName, challengeTitle: challengeTitle }
+      )
+
+      sendPush(
+        userId,
+        (inviterName || "Alguien") + " te invito a un desafio",
+        challengeTitle,
+        "/challenges/" + challengeId
+      )
+    }
+
+    // Notify the challenge creator that someone joined
     if (!creatorId || creatorId === userId) return
 
     var userName = getUserName(userId)
@@ -455,3 +484,76 @@ onRecordAfterCreateSuccess(function(e) {
     console.log("[circuit_streak] hook error:", err)
   }
 }, "circuit_sessions")
+
+// ── Referral bonus notifications (first workout) ────────────────────────────
+// When a referred user completes their first session, notify the referrer.
+
+function checkReferralBonus(userId) {
+  try {
+    // Check if user was referred
+    var referrals = $app.findRecordsByFilter(
+      "referrals",
+      "referred = '" + userId + "'",
+      "",
+      1,
+      0
+    )
+    if (!referrals || referrals.length === 0) return
+
+    var referrerId = referrals[0].getString("referrer")
+    if (!referrerId) return
+
+    // Check if this is the user's first session (count across all session types)
+    var sessionCount = 0
+    try {
+      var sessions = $app.findRecordsByFilter("sessions", "user = '" + userId + "'", "", 2, 0)
+      sessionCount += sessions.length
+    } catch (err) { /* collection might not exist */ }
+    try {
+      var circuits = $app.findRecordsByFilter("circuit_sessions", "user = '" + userId + "'", "", 2, 0)
+      sessionCount += circuits.length
+    } catch (err) { /* collection might not exist */ }
+    try {
+      var cardio = $app.findRecordsByFilter("cardio_sessions", "user = '" + userId + "'", "", 2, 0)
+      sessionCount += cardio.length
+    } catch (err) { /* collection might not exist */ }
+
+    // Only fire on the very first session (count === 1 because the record was just created)
+    if (sessionCount !== 1) return
+
+    var referredName = getUserName(userId)
+
+    createNotification(
+      referrerId,
+      "referral_bonus",
+      userId,
+      userId,
+      "user",
+      { referredName: referredName }
+    )
+
+    sendPush(
+      referrerId,
+      "Tu referido completo su primer entrenamiento!",
+      (referredName || "Tu referido") + " ya esta entrenando",
+      "/referrals"
+    )
+  } catch (err) {
+    console.log("[notif] referral_bonus error:", err)
+  }
+}
+
+onRecordAfterCreateSuccess(function(e) {
+  var userId = e.record.getString("user")
+  if (userId) checkReferralBonus(userId)
+}, "sessions")
+
+onRecordAfterCreateSuccess(function(e) {
+  var userId = e.record.getString("user")
+  if (userId) checkReferralBonus(userId)
+}, "circuit_sessions")
+
+onRecordAfterCreateSuccess(function(e) {
+  var userId = e.record.getString("user")
+  if (userId) checkReferralBonus(userId)
+}, "cardio_sessions")

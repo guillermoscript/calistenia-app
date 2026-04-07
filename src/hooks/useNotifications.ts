@@ -105,31 +105,6 @@ export function useNotifications(userId: string | null) {
     } catch { /* silent */ }
   }, [userId])
 
-  // Create a notification (called by other hooks as side effect)
-  const createNotification = useCallback(async (
-    targetUserId: string,
-    type: NotificationType,
-    referenceId: string,
-    referenceType: string,
-    data?: Record<string, any>
-  ) => {
-    if (!userId || userId === targetUserId) return // Don't notify yourself
-    const available = await isPocketBaseAvailable()
-    if (!available) return
-
-    try {
-      await pb.collection('notifications').create({
-        user: targetUserId,
-        type,
-        actor: userId,
-        reference_id: referenceId,
-        reference_type: referenceType,
-        read: false,
-        data: data || {},
-      })
-    } catch { /* silent — notification creation is non-critical */ }
-  }, [userId])
-
   // Subscribe to realtime updates for live badge
   useEffect(() => {
     if (!userId) return
@@ -169,6 +144,5 @@ export function useNotifications(userId: string | null) {
     refreshUnreadCount,
     markAsRead,
     markAllAsRead,
-    createNotification,
   }
 }
