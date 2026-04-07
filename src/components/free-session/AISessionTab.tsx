@@ -9,6 +9,7 @@ import { Shimmer } from '../ai-elements/shimmer'
 import { Suggestions, Suggestion } from '../ai-elements/suggestion'
 import { Button } from '../ui/button'
 import { pb } from '../../lib/pocketbase'
+import { AI_API_URL } from '../../lib/ai-api'
 
 interface AIExercise {
   id: string
@@ -18,7 +19,7 @@ interface AIExercise {
 }
 
 const transport = new DefaultChatTransport({
-  api: '/api/generate-free-session',
+  api: `${AI_API_URL}/api/generate-free-session`,
   headers: () => {
     const headers: Record<string, string> = {}
     if (pb.authStore.token) {
