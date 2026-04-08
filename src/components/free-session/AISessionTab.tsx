@@ -43,7 +43,6 @@ export default function AISessionTab() {
   const [aiExercises, setAiExercises] = useState<AIExercise[]>([])
   const userContextRef = useRef<UserContext | null>(null)
 
-  // Transport with dynamic body that includes userContext
   const transport = useMemo(() => new DefaultChatTransport({
     api: `${AI_API_URL}/api/generate-free-session`,
     headers: () => {
@@ -98,6 +97,10 @@ export default function AISessionTab() {
     sendMessage({ text: suggestion })
   }, [isStreaming, sendMessage])
 
+  const handleAddExercise = useCallback((exercise: AIExercise) => {
+    setAiExercises(prev => [...prev, exercise])
+  }, [])
+
   const handleRemoveExercise = useCallback((idx: number) => {
     setAiExercises(prev => prev.filter((_, i) => i !== idx))
   }, [])
@@ -132,12 +135,12 @@ export default function AISessionTab() {
     )
   }
 
-  // Chat view (after first generation)
+  // Chat view — full height flex layout
   return (
-    <div className="flex flex-col gap-3 h-full">
-      {/* Conversation area */}
-      <Conversation className="min-h-[120px] max-h-[40vh] rounded-xl border border-border bg-card">
-        <ConversationContent>
+    <div className="flex flex-col h-[calc(100vh-12rem)]">
+      {/* Scrollable conversation area — takes all available space */}
+      <Conversation className="flex-1 min-h-0">
+        <ConversationContent className="gap-4 px-0 py-4">
           {messages.map(message => {
             if (message.role === 'user') {
               return (
@@ -188,52 +191,58 @@ export default function AISessionTab() {
             }
             return null
           })()}
+
+          {/* Session preview — inside the conversation scroll */}
+          {aiExercises.length > 0 && !isStreaming && (
+            <div className="px-0">
+              <SessionPreview
+                exercises={aiExercises}
+                onRemove={handleRemoveExercise}
+                onReorder={handleReorder}
+                onAdd={handleAddExercise}
+              />
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              Error generando sesión. Intenta de nuevo.
+            </div>
+          )}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
 
-      {/* Session preview */}
-      {aiExercises.length > 0 && !isStreaming && (
-        <SessionPreview
-          exercises={aiExercises}
-          onRemove={handleRemoveExercise}
-          onReorder={handleReorder}
-        />
-      )}
+      {/* Bottom bar — pinned below conversation */}
+      <div className="shrink-0 pt-3 space-y-2">
+        {/* Suggestion pills */}
+        {!isStreaming && hasMessages && (
+          <Suggestions>
+            {SUGGESTIONS.map(s => (
+              <Suggestion key={s} suggestion={s} onClick={handleSuggestion}>{s}</Suggestion>
+            ))}
+          </Suggestions>
+        )}
 
-      {/* Error */}
-      {error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          Error generando sesión. Intenta de nuevo.
-        </div>
-      )}
-
-      {/* Suggestion pills */}
-      {!isStreaming && hasMessages && (
-        <Suggestions>
-          {SUGGESTIONS.map(s => (
-            <Suggestion key={s} suggestion={s} onClick={handleSuggestion}>{s}</Suggestion>
-          ))}
-        </Suggestions>
-      )}
-
-      {/* PromptInput */}
-      <PromptInput
-        onSubmit={handleChatSubmit}
-        className="w-full"
-      >
-        <PromptInputTextarea
-          value={input}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.currentTarget.value)}
-          placeholder="Pide cambios... (más core, quita dominadas, etc.)"
-          className="min-h-[44px] pr-12"
-        />
-        <PromptInputSubmit
-          status={promptStatus}
-          disabled={!input.trim() && !isStreaming}
-          className="absolute bottom-1 right-1"
-        />
-      </PromptInput>
+        {/* PromptInput — full width with visible submit */}
+        <PromptInput
+          onSubmit={handleChatSubmit}
+          className="w-full"
+        >
+          <PromptInputTextarea
+            value={input}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.currentTarget.value)}
+            placeholder="Pide cambios... (más core, quita dominadas, etc.)"
+            className="min-h-[44px] pr-12"
+          />
+          <PromptInputSubmit
+            status={promptStatus}
+            disabled={!input.trim() && !isStreaming}
+            className="absolute bottom-1 right-1"
+          />
+        </PromptInput>
+      </div>
     </div>
   )
 }

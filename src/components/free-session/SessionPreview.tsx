@@ -19,6 +19,7 @@ interface SessionPreviewProps {
   exercises: AIExercise[]
   onRemove: (idx: number) => void
   onReorder: (fromIdx: number, toIdx: number) => void
+  onAdd?: (exercise: AIExercise) => void
 }
 
 /** Build a lookup map of all known exercises from local catalogs */
@@ -83,11 +84,13 @@ export function parseExercisesFromMarkdown(text: string): AIExercise[] {
   return []
 }
 
-export default function SessionPreview({ exercises, onRemove, onReorder }: SessionPreviewProps) {
+export default function SessionPreview({ exercises, onRemove, onReorder, onAdd }: SessionPreviewProps) {
   const catalogMap = useMemo(() => buildCatalogMap(), [])
   const { startSession } = useActiveSession()
   const navigate = useNavigate()
   const [starting, setStarting] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Resolve AI exercises to full Exercise objects, discarding unknowns
   const resolvedExercises = useMemo(() => {
@@ -183,6 +186,82 @@ export default function SessionPreview({ exercises, onRemove, onReorder }: Sessi
           )
         })}
       </div>
+
+      {/* Add exercise search */}
+      {onAdd && (
+        <div className="px-3 py-2 border-t border-border">
+          {!searchOpen ? (
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors w-full justify-center py-1"
+            >
+              <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="3" x2="8" y2="13" /><line x1="3" y1="8" x2="13" y2="8" /></svg>
+              Agregar ejercicio
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Buscar ejercicio..."
+                  autoFocus
+                  className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-[hsl(var(--lime))]/50"
+                />
+                <button
+                  onClick={() => { setSearchOpen(false); setSearchQuery('') }}
+                  className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                >
+                  <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="4" x2="12" y2="12" /><line x1="12" y1="4" x2="4" y2="12" /></svg>
+                </button>
+              </div>
+              {searchQuery.length >= 2 && (() => {
+                const q = searchQuery.toLowerCase()
+                const existingIds = new Set(exercises.map(e => e.id))
+                const results = Array.from(catalogMap.entries())
+                  .filter(([id, ex]) => {
+                    if (existingIds.has(id)) return false
+                    const name = typeof ex.name === 'string' ? ex.name : ex.name || ''
+                    const muscles = typeof ex.muscles === 'string' ? ex.muscles : ''
+                    return name.toLowerCase().includes(q) || muscles.toLowerCase().includes(q)
+                  })
+                  .slice(0, 6)
+
+                if (results.length === 0) {
+                  return <p className="text-[11px] text-muted-foreground text-center py-1">Sin resultados</p>
+                }
+
+                return (
+                  <div className="max-h-[150px] overflow-y-auto space-y-0.5">
+                    {results.map(([id, ex]) => {
+                      const name = typeof ex.name === 'string' ? ex.name : id
+                      const muscles = typeof ex.muscles === 'string' ? ex.muscles : ''
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => {
+                            onAdd({ id, sets: Number(ex.sets) || 3, reps: ex.reps || '8-12', rest: ex.rest ?? 60 })
+                            setSearchQuery('')
+                            setSearchOpen(false)
+                          }}
+                          className="flex items-center gap-2 w-full rounded-lg px-2 py-1.5 text-left hover:bg-accent/30 transition-colors"
+                        >
+                          <svg className="size-3.5 shrink-0 text-[hsl(var(--lime))]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="3" x2="8" y2="13" /><line x1="3" y1="8" x2="13" y2="8" /></svg>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[12px] font-medium truncate">{name}</div>
+                            {muscles && <div className="text-[10px] text-muted-foreground truncate">{muscles}</div>}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+        </div>
+      )}
 
       {resolvedExercises.length > 0 && (
         <div className="p-3 border-t border-border">
