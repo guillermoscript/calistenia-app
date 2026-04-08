@@ -241,7 +241,13 @@ export async function handleGenerateFreeSession(req: any, res: any) {
   // Truncate to last 10 messages to bound token cost
   const truncatedMessages = messages.slice(-10);
 
-  const modelMessages = await convertToModelMessages(truncatedMessages);
+  let modelMessages;
+  try {
+    modelMessages = await convertToModelMessages(truncatedMessages);
+  } catch (err) {
+    console.error("[free-session] convertToModelMessages failed:", err, "messages:", JSON.stringify(truncatedMessages).slice(0, 500));
+    return res.status(400).json({ error: "Formato de mensajes inválido" });
+  }
 
   const result = streamText({
     model,
