@@ -1,13 +1,22 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import SessionForm from './SessionForm'
 import SessionPreview, { parseExercisesFromMarkdown } from './SessionPreview'
-import { Conversation, ConversationContent, ConversationScrollButton } from '../ai-elements/conversation'
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton,
+} from '../ai-elements/conversation'
 import { Message, MessageContent, MessageResponse } from '../ai-elements/message'
+import {
+  PromptInput,
+  PromptInputTextarea,
+  PromptInputSubmit,
+} from '../ai-elements/prompt-input'
 import { Shimmer } from '../ai-elements/shimmer'
 import { Suggestions, Suggestion } from '../ai-elements/suggestion'
-import { Button } from '../ui/button'
 import { pb } from '../../lib/pocketbase'
 import { AI_API_URL } from '../../lib/ai-api'
 
@@ -40,7 +49,6 @@ export default function AISessionTab() {
   const [input, setInput] = useState('')
   const { messages, sendMessage, status, error } = useChat({ transport })
   const [aiExercises, setAiExercises] = useState<AIExercise[]>([])
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const isStreaming = status === 'streaming' || status === 'submitted'
   const hasMessages = messages.length > 0
@@ -64,24 +72,17 @@ export default function AISessionTab() {
     sendMessage({ text: message })
   }, [isStreaming, sendMessage])
 
-  const handleChatSend = useCallback(() => {
-    const text = input.trim()
-    if (!text || isStreaming) return
-    sendMessage({ text })
+  const handleChatSubmit = useCallback(({ text }: { text: string }) => {
+    const trimmed = text.trim()
+    if (!trimmed || isStreaming) return
+    sendMessage({ text: trimmed })
     setInput('')
-  }, [input, isStreaming, sendMessage])
+  }, [isStreaming, sendMessage])
 
   const handleSuggestion = useCallback((suggestion: string) => {
     if (isStreaming) return
     sendMessage({ text: suggestion })
   }, [isStreaming, sendMessage])
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleChatSend()
-    }
-  }, [handleChatSend])
 
   const handleRemoveExercise = useCallback((idx: number) => {
     setAiExercises(prev => prev.filter((_, i) => i !== idx))
@@ -94,6 +95,14 @@ export default function AISessionTab() {
       return next
     })
   }, [])
+
+  // Derive prompt status for PromptInputSubmit
+  const promptStatus = useMemo(() => {
+    if (status === 'submitted') return 'submitted' as const
+    if (status === 'streaming') return 'streaming' as const
+    if (error) return 'error' as const
+    return 'ready' as const
+  }, [status, error])
 
   // Form view (no messages yet)
   if (!hasMessages) {
@@ -112,13 +121,13 @@ export default function AISessionTab() {
 
   // Chat view (after first generation)
   return (
-    <div className="flex flex-col gap-4">
-      {/* Chat messages */}
+    <div className="flex flex-col gap-3">
+      {/* Conversation area */}
       <Conversation className="min-h-[200px] max-h-[50vh] rounded-xl border border-border bg-card">
-        <ConversationContent className="">
+        <ConversationContent>
           {messages.map(message => (
-            <Message key={message.id} from={message.role} className="">
-              <MessageContent className="">
+            <Message key={message.id} from={message.role}>
+              <MessageContent>
                 {message.role === 'user' ? (
                   <p className="text-sm whitespace-pre-wrap">
                     {message.parts
@@ -138,19 +147,30 @@ export default function AISessionTab() {
             </Message>
           ))}
 
-          {isStreaming && messages[messages.length - 1]?.role === 'user' && (
-            <Message from="assistant" className="">
-              <MessageContent className="">
-                <Shimmer className="">Generando sesión...</Shimmer>
-              </MessageContent>
-            </Message>
+          {/* Loading shimmer while AI is thinking */}
+          {isStreaming && (
+            (() => {
+              const lastMsg = messages[messages.length - 1]
+              const hasAssistantText = lastMsg?.role === 'assistant' &&
+                lastMsg.parts?.some((p: any) => p.type === 'text' && p.text.length > 0)
+              if (!hasAssistantText) {
+                return (
+                  <Message from="assistant">
+                    <MessageContent>
+                      <Shimmer className="text-sm">Buscando ejercicios y generando tu sesión...</Shimmer>
+                    </MessageContent>
+                  </Message>
+                )
+              }
+              return null
+            })()
           )}
         </ConversationContent>
-        <ConversationScrollButton className="" />
+        <ConversationScrollButton />
       </Conversation>
 
       {/* Session preview */}
-      {aiExercises.length > 0 && (
+      {aiExercises.length > 0 && !isStreaming && (
         <SessionPreview
           exercises={aiExercises}
           onRemove={handleRemoveExercise}
@@ -167,35 +187,30 @@ export default function AISessionTab() {
 
       {/* Suggestion pills */}
       {!isStreaming && hasMessages && (
-        <Suggestions className="">
+        <Suggestions>
           {SUGGESTIONS.map(s => (
-            <Suggestion key={s} suggestion={s} onClick={handleSuggestion} className="">{s}</Suggestion>
+            <Suggestion key={s} suggestion={s} onClick={handleSuggestion}>{s}</Suggestion>
           ))}
         </Suggestions>
       )}
 
-      {/* Chat input */}
-      <div className="flex gap-2">
-        <textarea
-          ref={textareaRef}
+      {/* PromptInput */}
+      <PromptInput
+        onSubmit={handleChatSubmit}
+        className="w-full"
+      >
+        <PromptInputTextarea
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.currentTarget.value)}
           placeholder="Pide cambios... (más core, quita dominadas, etc.)"
-          rows={1}
-          className="flex-1 field-sizing-content max-h-24 min-h-[44px] rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-lime/50 resize-none"
+          className="min-h-[44px] pr-12"
         />
-        <Button
-          onClick={handleChatSend}
-          disabled={!input.trim() || isStreaming}
-          size="icon"
-          className="shrink-0 bg-[hsl(var(--lime))] text-[hsl(var(--lime-foreground))] hover:bg-[hsl(var(--lime))]/90 h-[44px] w-[44px]"
-        >
-          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-        </Button>
-      </div>
+        <PromptInputSubmit
+          status={promptStatus}
+          disabled={!input.trim() && !isStreaming}
+          className="absolute bottom-1 right-1"
+        />
+      </PromptInput>
     </div>
   )
 }

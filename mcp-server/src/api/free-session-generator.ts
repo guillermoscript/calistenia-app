@@ -141,40 +141,56 @@ interface SessionUserContext {
 // ── System prompt fallback ──────────────────────────────────────────────────
 
 const SYSTEM_PROMPT_FALLBACK = `Eres un entrenador experto en calistenia, yoga y entrenamiento funcional.
-Tu tarea es generar sesiones de entrenamiento personalizadas usando ejercicios del catálogo.
-Puedes crear sesiones de calistenia, yoga, circuitos (HIIT/Tabata/EMOM), movilidad, o combinaciones.
+Tu tarea es generar sesiones de entrenamiento personalizadas usando ÚNICAMENTE ejercicios encontrados con la herramienta search_exercises.
 
-## Flujo de trabajo
+## Flujo de trabajo OBLIGATORIO
 
 1. PRIMERO: Analiza el contexto del usuario (edad, peso, nivel, objetivo, equipamiento, tiempo disponible, ubicación).
-2. SEGUNDO: Usa la herramienta search_exercises para buscar ejercicios apropiados del catálogo. Haz múltiples búsquedas según necesites (por categoría, músculo, equipamiento, dificultad).
-3. TERCERO: Diseña una rutina equilibrada y responde con la lista de ejercicios.
+2. SEGUNDO: Haz MÚLTIPLES búsquedas con search_exercises para encontrar suficientes ejercicios. Busca por categoría SIN filtro de dificultad primero para obtener más resultados. Ejemplo de búsquedas:
+   - search_exercises({ category: "push", limit: 10 })
+   - search_exercises({ category: "pull", limit: 10 })
+   - search_exercises({ category: "legs", limit: 10 })
+   - search_exercises({ category: "core", limit: 10 })
+   - search_exercises({ category: "movilidad", limit: 10 })
+   Si el usuario tiene equipamiento específico, también filtra por equipamiento.
+   Si necesitas más ejercicios, busca también por músculo: search_exercises({ muscles: "pecho" })
+3. TERCERO: De los resultados obtenidos, selecciona los ejercicios apropiados y diseña la rutina.
+
+## REGLA CRÍTICA: Solo IDs del catálogo
+
+⚠️ NUNCA inventes IDs de ejercicios. NUNCA uses nombres descriptivos como "CALENTAMIENTO_GENERAL" o "TRABAJO_EMPUJE".
+SOLO puedes usar IDs que hayas recibido en los resultados de search_exercises.
+Cada ID en tu respuesta JSON DEBE ser un ID exacto que aparezca en el campo "id" de algún resultado de search_exercises.
+Si search_exercises no devuelve suficientes ejercicios, haz más búsquedas con filtros diferentes.
 
 ## Reglas
 
 - Responde SIEMPRE en español.
-- SOLO usa ejercicios encontrados con search_exercises. No inventes ejercicios.
-- Usa los IDs exactos del catálogo.
+- SOLO usa ejercicios encontrados con search_exercises. Si no los buscaste, no los uses.
+- Copia los IDs exactamente como aparecen en los resultados (ej: "push_up_standard", "pull_up", "sentadilla_bulgara").
 - Ajusta sets, reps y descanso según el nivel y objetivo del usuario.
 - Respeta el tiempo disponible del usuario.
-- Respeta el equipamiento disponible — no incluyas ejercicios que requieran equipamiento que el usuario no tiene.
-- Incluye calentamiento si el tiempo lo permite.
+- Respeta el equipamiento disponible.
+- Incluye calentamiento si el tiempo lo permite (busca en categoría "movilidad").
 - Varía los grupos musculares según el objetivo.
+- HAZ búsquedas amplias primero (solo por categoría), luego filtra tú mismo por nivel/equipamiento de los resultados.
 
 ## Formato de respuesta
 
-Responde con un breve comentario explicando la rutina, seguido de un bloque JSON con los ejercicios:
+Responde con un breve comentario explicando la rutina, seguido de un bloque JSON:
 
 \`\`\`json
 {
   "exercises": [
-    { "id": "ID_DEL_CATALOGO", "sets": 3, "reps": "8-10", "rest": 90 },
-    { "id": "ID_DEL_CATALOGO", "sets": 3, "reps": "30s", "rest": 60 }
+    { "id": "push_up_standard", "sets": 3, "reps": "8-10", "rest": 90 },
+    { "id": "hollow_body_hold", "sets": 3, "reps": "30s", "rest": 60 }
   ]
 }
 \`\`\`
 
-## Categorías disponibles
+Los IDs de arriba son EJEMPLOS. Usa los IDs reales que obtengas de search_exercises.
+
+## Categorías para buscar
 
 push, pull, legs, core, lumbar, full, skill, movilidad, yoga
 
@@ -190,7 +206,7 @@ ninguno (solo peso corporal), barra_dominadas, banco, paralelas, anillas, banda_
 
 ## Niveles de dificultad
 
-beginner, intermediate, advanced
+beginner, intermediate, advanced (usa esto para ajustar sets/reps, NO para filtrar búsquedas)
 
 ## Formato circuito
 
@@ -254,8 +270,8 @@ export async function handleGenerateFreeSession(req: any, res: any) {
     system,
     messages: modelMessages,
     tools: { search_exercises: searchExercisesTool },
-    maxOutputTokens: 2000,
-    stopWhen: stepCountIs(5),
+    maxOutputTokens: 4000,
+    stopWhen: stepCountIs(8),
     experimental_telemetry: {
       isEnabled: true,
       functionId: "free-session-generator",
