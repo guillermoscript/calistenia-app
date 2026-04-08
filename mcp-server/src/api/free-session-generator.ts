@@ -28,12 +28,18 @@ let exerciseCatalog: CatalogExercise[] = [];
 function loadCatalog() {
   if (exerciseCatalog.length > 0) return;
   try {
-    // Try local copy first (Docker/prod), then fallback to monorepo path (dev)
+    // Try multiple paths: CWD/data (Docker), relative to file (dev), monorepo (dev fallback)
     const __dirname = dirname(fileURLToPath(import.meta.url));
-    let catalogPath = resolve(__dirname, "../../data/exercise-catalog.json");
-    try { readFileSync(catalogPath); } catch {
-      catalogPath = resolve(__dirname, "../../../src/data/exercise-catalog.json");
+    const candidates = [
+      resolve(process.cwd(), "data/exercise-catalog.json"),           // Docker: /app/data/
+      resolve(__dirname, "../../data/exercise-catalog.json"),          // Compiled: build/api/ → data/
+      resolve(__dirname, "../../../src/data/exercise-catalog.json"),   // Dev: src/api/ → ../../../src/data/
+    ];
+    let catalogPath = "";
+    for (const p of candidates) {
+      try { readFileSync(p); catalogPath = p; break; } catch { /* try next */ }
     }
+    if (!catalogPath) throw new Error(`Catalog not found. Tried: ${candidates.join(", ")}`);
     const raw = JSON.parse(readFileSync(catalogPath, "utf-8"));
     const categories = raw.categories || {};
     for (const [catKey, catData] of Object.entries(categories) as any[]) {
