@@ -177,7 +177,9 @@ Si search_exercises no devuelve suficientes ejercicios, haz más búsquedas con 
 
 ## Formato de respuesta
 
-Responde con un breve comentario explicando la rutina, seguido de un bloque JSON:
+Responde con un breve comentario en español explicando la rutina (qué trabajará, por qué la diseñaste así, tips).
+NO muestres detalles técnicos como IDs, series, o repeticiones en el texto — eso lo verá el usuario en la interfaz de sesión.
+Al FINAL de tu respuesta (después de todo el texto), incluye UN SOLO bloque JSON con los ejercicios:
 
 \`\`\`json
 {
@@ -189,6 +191,7 @@ Responde con un breve comentario explicando la rutina, seguido de un bloque JSON
 \`\`\`
 
 Los IDs de arriba son EJEMPLOS. Usa los IDs reales que obtengas de search_exercises.
+El JSON es procesado por la app, el usuario NO lo ve — así que no lo expliques ni hagas referencia a él.
 
 ## Categorías para buscar
 

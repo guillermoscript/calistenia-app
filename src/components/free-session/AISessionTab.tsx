@@ -1,12 +1,11 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import SessionForm from './SessionForm'
+import SessionForm, { type UserContext } from './SessionForm'
 import SessionPreview, { parseExercisesFromMarkdown } from './SessionPreview'
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
   ConversationScrollButton,
 } from '../ai-elements/conversation'
 import { Message, MessageContent, MessageResponse } from '../ai-elements/message'
@@ -27,16 +26,10 @@ interface AIExercise {
   rest: number
 }
 
-const transport = new DefaultChatTransport({
-  api: `${AI_API_URL}/api/generate-free-session`,
-  headers: () => {
-    const headers: Record<string, string> = {}
-    if (pb.authStore.token) {
-      headers['Authorization'] = `Bearer ${pb.authStore.token}`
-    }
-    return headers
-  },
-})
+/** Strip ```json ... ``` blocks from AI text so users only see the explanation */
+function stripJsonBlocks(text: string): string {
+  return text.replace(/```json\s*[\s\S]*?```/g, '').trim()
+}
 
 const SUGGESTIONS = [
   'Más core',
@@ -47,8 +40,28 @@ const SUGGESTIONS = [
 
 export default function AISessionTab() {
   const [input, setInput] = useState('')
-  const { messages, sendMessage, status, error } = useChat({ transport })
   const [aiExercises, setAiExercises] = useState<AIExercise[]>([])
+  const userContextRef = useRef<UserContext | null>(null)
+
+  // Transport with dynamic body that includes userContext
+  const transport = useMemo(() => new DefaultChatTransport({
+    api: `${AI_API_URL}/api/generate-free-session`,
+    headers: () => {
+      const headers: Record<string, string> = {}
+      if (pb.authStore.token) {
+        headers['Authorization'] = `Bearer ${pb.authStore.token}`
+      }
+      return headers
+    },
+    body: () => {
+      if (userContextRef.current) {
+        return { userContext: userContextRef.current }
+      }
+      return {}
+    },
+  }), [])
+
+  const { messages, sendMessage, status, error } = useChat({ transport })
 
   const isStreaming = status === 'streaming' || status === 'submitted'
   const hasMessages = messages.length > 0
@@ -67,8 +80,9 @@ export default function AISessionTab() {
     }
   }, [messages])
 
-  const handleFormSubmit = useCallback((message: string) => {
+  const handleFormSubmit = useCallback((message: string, context: UserContext) => {
     if (isStreaming) return
+    userContextRef.current = context
     sendMessage({ text: message })
   }, [isStreaming, sendMessage])
 
@@ -96,7 +110,6 @@ export default function AISessionTab() {
     })
   }, [])
 
-  // Derive prompt status for PromptInputSubmit
   const promptStatus = useMemo(() => {
     if (status === 'submitted') return 'submitted' as const
     if (status === 'streaming') return 'streaming' as const
@@ -121,50 +134,60 @@ export default function AISessionTab() {
 
   // Chat view (after first generation)
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 h-full">
       {/* Conversation area */}
-      <Conversation className="min-h-[200px] max-h-[50vh] rounded-xl border border-border bg-card">
+      <Conversation className="min-h-[120px] max-h-[40vh] rounded-xl border border-border bg-card">
         <ConversationContent>
-          {messages.map(message => (
-            <Message key={message.id} from={message.role}>
-              <MessageContent>
-                {message.role === 'user' ? (
-                  <p className="text-sm whitespace-pre-wrap">
-                    {message.parts
-                      ?.filter((p: any) => p.type === 'text')
-                      .map((p: any) => p.text)
-                      .join('') || ''}
-                  </p>
-                ) : (
-                  <MessageResponse>
-                    {message.parts
-                      ?.filter((p: any) => p.type === 'text')
-                      .map((p: any) => p.text)
-                      .join('') || ''}
-                  </MessageResponse>
-                )}
-              </MessageContent>
-            </Message>
-          ))}
+          {messages.map(message => {
+            if (message.role === 'user') {
+              return (
+                <Message key={message.id} from="user">
+                  <MessageContent>
+                    <p className="text-sm">
+                      {message.parts
+                        ?.filter((p: any) => p.type === 'text')
+                        .map((p: any) => p.text)
+                        .join('') || ''}
+                    </p>
+                  </MessageContent>
+                </Message>
+              )
+            }
+
+            // Assistant: strip JSON blocks, only show explanation text
+            const fullText = message.parts
+              ?.filter((p: any) => p.type === 'text')
+              .map((p: any) => p.text)
+              .join('') || ''
+            const displayText = stripJsonBlocks(fullText)
+
+            if (!displayText) return null
+
+            return (
+              <Message key={message.id} from="assistant">
+                <MessageContent>
+                  <MessageResponse>{displayText}</MessageResponse>
+                </MessageContent>
+              </Message>
+            )
+          })}
 
           {/* Loading shimmer while AI is thinking */}
-          {isStreaming && (
-            (() => {
-              const lastMsg = messages[messages.length - 1]
-              const hasAssistantText = lastMsg?.role === 'assistant' &&
-                lastMsg.parts?.some((p: any) => p.type === 'text' && p.text.length > 0)
-              if (!hasAssistantText) {
-                return (
-                  <Message from="assistant">
-                    <MessageContent>
-                      <Shimmer className="text-sm">Buscando ejercicios y generando tu sesión...</Shimmer>
-                    </MessageContent>
-                  </Message>
-                )
-              }
-              return null
-            })()
-          )}
+          {isStreaming && (() => {
+            const lastMsg = messages[messages.length - 1]
+            const hasAssistantText = lastMsg?.role === 'assistant' &&
+              lastMsg.parts?.some((p: any) => p.type === 'text' && p.text.length > 0)
+            if (!hasAssistantText) {
+              return (
+                <Message from="assistant">
+                  <MessageContent>
+                    <Shimmer className="text-sm">Buscando ejercicios y generando tu sesión...</Shimmer>
+                  </MessageContent>
+                </Message>
+              )
+            }
+            return null
+          })()}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>

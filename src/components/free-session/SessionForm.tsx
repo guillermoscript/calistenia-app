@@ -40,8 +40,20 @@ const LEVELS = [
   { id: 'avanzado', label: 'Avanzado' },
 ]
 
+export interface UserContext {
+  age?: number
+  weight?: number
+  height?: number
+  sex?: string
+  level: string
+  goal: string
+  equipment: string[]
+  location: string
+  availableTime: number
+}
+
 interface SessionFormProps {
-  onSubmit: (message: string) => void
+  onSubmit: (message: string, context: UserContext) => void
   isLoading?: boolean
 }
 
@@ -89,21 +101,29 @@ export default function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
   }
 
   const handleSubmit = () => {
-    const parts: string[] = []
-    parts.push(`Generar una sesión de calistenia de ${availableTime} minutos.`)
-    parts.push(`Objetivo: ${goal}.`)
-    if (age) parts.push(`Edad: ${age} años.`)
-    if (weight) parts.push(`Peso: ${weight} kg.`)
-    if (height) parts.push(`Altura: ${height} cm.`)
-    if (sex) parts.push(`Sexo: ${sex}.`)
-    parts.push(`Nivel: ${level}.`)
-    parts.push(`Ubicación: ${location}.`)
-    if (equipment.length > 0) {
-      parts.push(`Equipamiento disponible: ${equipment.join(', ')}.`)
-    } else {
-      parts.push('Sin equipamiento.')
+    const ctx: UserContext = {
+      level,
+      goal,
+      equipment,
+      location,
+      availableTime,
+      ...(age ? { age: Number(age) } : {}),
+      ...(weight ? { weight: Number(weight) } : {}),
+      ...(height ? { height: Number(height) } : {}),
+      ...(sex ? { sex } : {}),
     }
-    onSubmit(parts.join(' '))
+
+    const GOAL_LABELS: Record<string, string> = {
+      fuerza: 'fuerza', resistencia: 'resistencia', movilidad: 'movilidad',
+      yoga: 'yoga', circuito: 'circuito', mixto: 'mixto',
+    }
+    const LOCATION_LABELS: Record<string, string> = {
+      casa: 'casa', parque: 'parque', gimnasio: 'gimnasio',
+    }
+
+    // Short user-visible message
+    const msg = `Sesión de ${availableTime} min · ${GOAL_LABELS[goal] || goal} · ${LOCATION_LABELS[location] || location}`
+    onSubmit(msg, ctx)
   }
 
   return (
