@@ -5,13 +5,19 @@ const TEST_NAME = 'PW Tester'
 
 async function register(page) {
   const email = `pw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}@test.com`
-  await page.goto('/')
-  await page.getByRole('button', { name: /registrarse/i }).click()
-  await page.getByPlaceholder('Guillermo').fill(TEST_NAME)
-  await page.getByPlaceholder('tu@email.com').fill(email)
-  await page.getByPlaceholder(/mínimo 8/i).fill(TEST_PASS)
-  await page.getByRole('button', { name: /crear cuenta/i }).click()
-  await expect(page.locator('header nav')).toBeVisible({ timeout: 15000 })
+  await page.goto('/auth?mode=signup')
+  const nameField = page.getByPlaceholder(/^name$|^nombre$/i)
+  await expect(nameField).toBeVisible({ timeout: 10000 })
+  await nameField.fill(TEST_NAME)
+  await page.getByPlaceholder(/^email$/i).fill(email)
+  await page.getByPlaceholder(/^password$|^contraseña$/i).fill(TEST_PASS)
+  await page.getByRole('button', { name: /create account|crear cuenta/i }).click()
+  // Skip onboarding if it appears
+  const skipBtn = page.getByText(/ya conozco la app|skip|saltar/i)
+  const headerNav = page.locator('header nav')
+  await expect(skipBtn.or(headerNav)).toBeVisible({ timeout: 15000 })
+  if (await skipBtn.isVisible()) await skipBtn.click()
+  await expect(headerNav).toBeVisible({ timeout: 10000 })
   return email
 }
 

@@ -91,10 +91,10 @@ export default function CircuitPage() {
   return (
     <div className="max-w-lg mx-auto px-4 pt-6 pb-24">
       {/* Header */}
-      <h1 className="text-xl font-bold mb-5">{t('circuit.pageTitle')}</h1>
+      <h1 id="tour-circuit-header" className="text-xl font-bold mb-5">{t('circuit.pageTitle')}</h1>
 
       {/* Preset cards */}
-      <section className="space-y-2.5 mb-5">
+      <section id="tour-circuit-presets" className="space-y-2.5 mb-5">
         <h2 className="text-sm font-medium text-muted-foreground">{t('circuit.presets')}</h2>
         {CIRCUIT_PRESETS.map((preset) => (
           <PresetCard
@@ -110,6 +110,7 @@ export default function CircuitPage() {
 
       {/* Build custom button */}
       <Button
+        id="tour-circuit-custom"
         variant="outline"
         className={cn('w-full mb-5', showCustomBuilder && 'border-lime/30 text-lime')}
         onClick={handleCustom}
@@ -120,6 +121,7 @@ export default function CircuitPage() {
       {/* Builder */}
       {(selectedPreset || showCustomBuilder) && (
         <CircuitBuilder
+          id="tour-circuit-builder"
           initialPreset={selectedPreset?.template}
           onStart={handleStart}
         />

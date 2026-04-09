@@ -45,13 +45,13 @@ export function QualityBreakdownPanel({ entry }: QualityBreakdownPanelProps) {
         <div className="bg-muted/50 rounded-lg p-3 space-y-2">
           <p className="text-xs font-medium text-foreground">{qualitySuggestion.text}</p>
           {qualitySuggestion.alternatives.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               {qualitySuggestion.alternatives.map((alt, i) => (
-                <div key={i} className="flex gap-2 text-xs">
-                  <span className={`${BADGE_COLORS.suggestion} shrink-0 px-1.5 py-0.5 rounded text-[10px]`}>
+                <div key={i} className="space-y-1 text-xs">
+                  <span className={`${BADGE_COLORS.suggestion} inline-block px-1.5 py-0.5 rounded text-[10px]`}>
                     {alt.name}
                   </span>
-                  <span className="text-foreground/50">{alt.portionNote}</span>
+                  <p className="text-foreground/50 leading-snug">{alt.portionNote}</p>
                 </div>
               ))}
             </div>
