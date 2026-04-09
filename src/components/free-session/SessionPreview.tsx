@@ -13,6 +13,7 @@ interface AIExercise {
   sets: number
   reps: string
   rest: number
+  phase?: 'warmup' | 'main' | 'cooldown'
 }
 
 interface SessionPreviewProps {
@@ -124,11 +125,11 @@ export default function SessionPreview({ exercises, onRemove, onReorder, onAdd }
   if (exercises.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="px-4 py-3 border-b border-border">
+    <div className="rounded-xl border border-border/80 bg-card overflow-hidden shadow-sm ring-1 ring-lime/10">
+      <div className="px-4 py-2.5 border-b border-border bg-lime/[0.03]">
         <div className="flex items-center justify-between">
-          <div className="text-[10px] text-muted-foreground tracking-[2px] uppercase">Tu sesión</div>
-          <span className="text-[10px] text-muted-foreground">
+          <div className="text-[10px] text-lime/80 tracking-[2px] uppercase font-medium">Tu sesión</div>
+          <span className="text-[10px] text-muted-foreground tabular-nums">
             {resolvedExercises.length} ejercicios
             {resolvedExercises.length < exercises.length && (
               <span className="text-amber-400 ml-1">
@@ -146,41 +147,60 @@ export default function SessionPreview({ exercises, onRemove, onReorder, onAdd }
             ? (typeof resolved.name === 'string' ? resolved.name : aiEx.id)
             : aiEx.id
           const muscles = resolved?.muscles || ''
+          const phase = aiEx.phase || 'main'
+          const prevPhase = idx > 0 ? (exercises[idx - 1].phase || 'main') : null
+          const showPhaseHeader = phase !== prevPhase
 
           return (
-            <div key={`${aiEx.id}-${idx}`}
-              className={cn(
+            <div key={`${aiEx.id}-${idx}`}>
+              {showPhaseHeader && (
+                <div className={cn(
+                  'flex items-center gap-2 px-2 pt-2 pb-1',
+                  idx > 0 && 'mt-1 border-t border-border/50'
+                )}>
+                  <span className={cn(
+                    'text-[9px] tracking-[1.5px] uppercase font-semibold',
+                    phase === 'warmup' && 'text-amber-400/80',
+                    phase === 'main' && 'text-lime/80',
+                    phase === 'cooldown' && 'text-sky-400/80',
+                  )}>
+                    {phase === 'warmup' ? 'Calentamiento' : phase === 'cooldown' ? 'Vuelta a la calma' : 'Principal'}
+                  </span>
+                </div>
+              )}
+              <div className={cn(
                 'flex items-center gap-2 rounded-lg px-2 py-2 group transition-colors',
                 resolved ? 'hover:bg-accent/30' : 'opacity-40 line-through'
               )}>
-              <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">{idx + 1}</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-medium truncate leading-tight">{name}</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  {muscles && <span className="text-[10px] text-muted-foreground truncate">{muscles}</span>}
-                  <span className="text-[10px] text-muted-foreground/40">·</span>
-                  <span className="text-[10px] font-mono text-muted-foreground shrink-0">{aiEx.sets}×{aiEx.reps}</span>
-                  <span className="text-[10px] text-muted-foreground/40">·</span>
-                  <span className="text-[10px] font-mono text-muted-foreground shrink-0">{aiEx.rest}s</span>
+                <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">{idx + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium truncate leading-tight">{name}</div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {muscles && <span className="text-[10px] text-muted-foreground truncate">{muscles}</span>}
+                    <span className="text-[10px] text-muted-foreground/40">·</span>
+                    <span className="text-[10px] font-mono text-muted-foreground shrink-0">{aiEx.sets}×{aiEx.reps}</span>
+                    <span className="text-[10px] text-muted-foreground/40">·</span>
+                    <span className="text-[10px] font-mono text-muted-foreground shrink-0">{aiEx.rest}s</span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
-                {idx > 0 && (
-                  <button onClick={() => onReorder(idx, idx - 1)}
-                    className="p-1.5 rounded hover:bg-accent transition-colors">
-                    <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="4,10 8,6 12,10" /></svg>
+                <div className="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
+                  {idx > 0 && (
+                    <button onClick={() => onReorder(idx, idx - 1)}
+                      className="p-1.5 rounded hover:bg-accent transition-colors">
+                      <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="4,10 8,6 12,10" /></svg>
+                    </button>
+                  )}
+                  {idx < exercises.length - 1 && (
+                    <button onClick={() => onReorder(idx, idx + 1)}
+                      className="p-1.5 rounded hover:bg-accent transition-colors">
+                      <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="4,6 8,10 12,6" /></svg>
+                    </button>
+                  )}
+                  <button onClick={() => onRemove(idx)}
+                    className="p-1.5 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors">
+                    <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="4" x2="12" y2="12" /><line x1="12" y1="4" x2="4" y2="12" /></svg>
                   </button>
-                )}
-                {idx < exercises.length - 1 && (
-                  <button onClick={() => onReorder(idx, idx + 1)}
-                    className="p-1.5 rounded hover:bg-accent transition-colors">
-                    <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="4,6 8,10 12,6" /></svg>
-                  </button>
-                )}
-                <button onClick={() => onRemove(idx)}
-                  className="p-1.5 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors">
-                  <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="4" x2="12" y2="12" /><line x1="12" y1="4" x2="4" y2="12" /></svg>
-                </button>
+                </div>
               </div>
             </div>
           )

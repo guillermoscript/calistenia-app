@@ -124,6 +124,48 @@ const searchExercisesTool = tool({
   },
 });
 
+// ── create_session tool ────────────────────────────────────────────────────
+
+const createSessionTool = tool({
+  description:
+    "Crea la sesión de entrenamiento final con los ejercicios seleccionados del catálogo. " +
+    "Llama esta herramienta UNA VEZ al final, después de buscar y seleccionar ejercicios con search_exercises. " +
+    "Cada ID DEBE ser un ID exacto obtenido de resultados de search_exercises.",
+  inputSchema: z.object({
+    exercises: z.array(z.object({
+      id: z.string().describe("ID exacto del ejercicio del catálogo"),
+      sets: z.number().int().min(1).max(10).describe("Número de series"),
+      reps: z.string().describe("Repeticiones o duración (ej: '8-12', '30s', '5')"),
+      rest: z.number().int().min(0).max(300).describe("Descanso en segundos entre series"),
+      phase: z.enum(["warmup", "main", "cooldown"]).default("main").describe("Fase del ejercicio: warmup (calentamiento), main (principal), cooldown (vuelta a la calma)"),
+    })).min(1).describe("Lista de ejercicios para la sesión, ordenados por fase: warmup → main → cooldown"),
+    format: z.enum(["standard", "circuit"]).default("standard").describe("Formato de la sesión"),
+    circuit_type: z.enum(["tabata", "emom", "rounds"]).optional().describe("Tipo de circuito (solo si format=circuit)"),
+    rounds: z.number().int().optional().describe("Rondas del circuito"),
+    work_seconds: z.number().int().optional().describe("Segundos de trabajo por ejercicio (circuito)"),
+    rest_seconds: z.number().int().optional().describe("Segundos de descanso entre ejercicios (circuito)"),
+  }),
+  execute: async (input) => {
+    // Validate exercise IDs against catalog
+    loadCatalog();
+    const catalogIds = new Set(exerciseCatalog.map((ex) => ex.id));
+    const validExercises = input.exercises.filter((ex) => catalogIds.has(ex.id));
+    const invalidIds = input.exercises.filter((ex) => !catalogIds.has(ex.id)).map((ex) => ex.id);
+
+    return {
+      success: validExercises.length > 0,
+      exercises: validExercises,
+      exercise_count: validExercises.length,
+      format: input.format,
+      ...(input.circuit_type && { circuit_type: input.circuit_type }),
+      ...(input.rounds && { rounds: input.rounds }),
+      ...(input.work_seconds && { work_seconds: input.work_seconds }),
+      ...(input.rest_seconds && { rest_seconds: input.rest_seconds }),
+      ...(invalidIds.length > 0 && { invalid_ids: invalidIds }),
+    };
+  },
+});
+
 // ── User context type ───────────────────────────────────────────────────────
 
 interface SessionUserContext {
@@ -171,27 +213,23 @@ Si search_exercises no devuelve suficientes ejercicios, haz más búsquedas con 
 - Ajusta sets, reps y descanso según el nivel y objetivo del usuario.
 - Respeta el tiempo disponible del usuario.
 - Respeta el equipamiento disponible.
-- Incluye calentamiento si el tiempo lo permite (busca en categoría "movilidad").
+- SIEMPRE incluye calentamiento (phase: "warmup") y vuelta a la calma (phase: "cooldown").
+  - Calentamiento: 2-4 ejercicios de movilidad/activación (busca en categoría "movilidad"). Ej: rotaciones articulares, movilidad de caderas, activación de core.
+  - Vuelta a la calma: 1-3 ejercicios de estiramientos/movilidad (busca en categoría "movilidad" o "yoga"). Ej: child's pose, cat-cow, estiramiento de caderas.
+  - Bloque principal: ejercicios de fuerza/skill según el objetivo (phase: "main").
 - Varía los grupos musculares según el objetivo.
 - HAZ búsquedas amplias primero (solo por categoría), luego filtra tú mismo por nivel/equipamiento de los resultados.
+- SIEMPRE busca en categoría "movilidad" para encontrar ejercicios de calentamiento y vuelta a la calma.
 
 ## Formato de respuesta
 
-Responde con un breve comentario en español explicando la rutina (qué trabajará, por qué la diseñaste así, tips).
-NO muestres detalles técnicos como IDs, series, o repeticiones en el texto — eso lo verá el usuario en la interfaz de sesión.
-Al FINAL de tu respuesta (después de todo el texto), incluye UN SOLO bloque JSON con los ejercicios:
+1. PRIMERO: Busca ejercicios con search_exercises (varias búsquedas).
+2. SEGUNDO: Responde con un breve comentario en español explicando la rutina (qué trabajará, por qué la diseñaste así, tips).
+   NO muestres detalles técnicos como IDs, series, o repeticiones en el texto — eso lo verá el usuario en la interfaz de sesión.
+3. TERCERO: Llama a create_session con los ejercicios seleccionados. SIEMPRE usa create_session para entregar la rutina.
 
-\`\`\`json
-{
-  "exercises": [
-    { "id": "push_up_standard", "sets": 3, "reps": "8-10", "rest": 90 },
-    { "id": "hollow_body_hold", "sets": 3, "reps": "30s", "rest": 60 }
-  ]
-}
-\`\`\`
-
-Los IDs de arriba son EJEMPLOS. Usa los IDs reales que obtengas de search_exercises.
-El JSON es procesado por la app, el usuario NO lo ve — así que no lo expliques ni hagas referencia a él.
+IMPORTANTE: SIEMPRE debes llamar a create_session al final. No uses bloques JSON en el texto.
+Si el usuario pide cambios, busca ejercicios nuevos si es necesario y llama a create_session otra vez con la sesión actualizada.
 
 ## Categorías para buscar
 
@@ -213,17 +251,7 @@ beginner, intermediate, advanced (usa esto para ajustar sets/reps, NO para filtr
 
 ## Formato circuito
 
-Si el usuario pide un circuito, incluye el campo "format" en el JSON:
-\`\`\`json
-{
-  "format": "circuit",
-  "circuit_type": "tabata" | "emom" | "rounds",
-  "rounds": 3,
-  "work_seconds": 30,
-  "rest_seconds": 15,
-  "exercises": [...]
-}
-\`\`\``;
+Si el usuario pide un circuito, usa create_session con format="circuit" y los campos circuit_type, rounds, work_seconds, rest_seconds.`;
 
 // ── Main handler ────────────────────────────────────────────────────────────
 
@@ -272,9 +300,9 @@ export async function handleGenerateFreeSession(req: any, res: any) {
     model,
     system,
     messages: modelMessages,
-    tools: { search_exercises: searchExercisesTool },
+    tools: { search_exercises: searchExercisesTool, create_session: createSessionTool },
     maxOutputTokens: 4000,
-    stopWhen: stepCountIs(8),
+    stopWhen: stepCountIs(12),
     experimental_telemetry: {
       isEnabled: true,
       functionId: "free-session-generator",
