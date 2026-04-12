@@ -1,9 +1,10 @@
-import { useMemo, useEffect, useRef } from 'react'
+import { useMemo, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration } from '../../lib/geo'
 import { playRankUp, playRankDown, vibrate } from '../../lib/sounds'
+import { serverNow } from '../../lib/race/raceClock'
 import { useRaceContext } from '../../contexts/RaceContext'
 import RaceMap from './RaceMap'
 import type { RaceParticipant } from '../../types/race'
@@ -93,8 +94,20 @@ export default function RaceLive() {
 
   // My stats override from tracker (more fresh than PB echo)
   const myDistance = myStats?.distance_km ?? me?.distance_km ?? 0
-  const myDuration = myStats?.duration_seconds ?? me?.duration_seconds ?? 0
   const myPace = myStats?.avg_pace ?? me?.avg_pace ?? 0
+
+  // Pure server-time elapsed — independent of GPS ticks so the timer and
+  // remaining-time counter always tick even when GPS is stuck.
+  const [elapsedNow, setElapsedNow] = useState(0)
+  useEffect(() => {
+    if (!race?.starts_at) return
+    const startMs = new Date(race.starts_at).getTime()
+    const tick = () => setElapsedNow(Math.max(0, Math.floor((serverNow() - startMs) / 1000)))
+    tick()
+    const id = setInterval(tick, 500)
+    return () => clearInterval(id)
+  }, [race?.starts_at])
+  const myDuration = elapsedNow
 
   if (!race) return null
 
@@ -142,7 +155,18 @@ export default function RaceLive() {
       {/* My stats bar */}
       <div className="grid grid-cols-3 gap-2 bg-muted/40 border border-border rounded-xl p-3">
         <Stat label="KM" value={myDistance.toFixed(2)} />
-        <Stat label={t('race.elapsed').toUpperCase()} value={formatDuration(Math.floor(myDuration))} />
+        {hasTimeTarget ? (
+          <Stat
+            label="RESTA"
+            value={formatDuration(Math.max(0, Math.floor(race.target_duration_seconds - myDuration)))}
+            highlight={race.target_duration_seconds - myDuration < 30}
+          />
+        ) : (
+          <Stat
+            label={t('race.elapsed').toUpperCase()}
+            value={formatDuration(Math.floor(myDuration))}
+          />
+        )}
         <Stat label="PACE" value={formatPace(myPace)} />
       </div>
 
@@ -186,10 +210,13 @@ export default function RaceLive() {
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="text-center">
-      <div className="font-bebas text-2xl tabular-nums leading-none">{value}</div>
+      <div className={cn(
+        'font-bebas text-2xl tabular-nums leading-none',
+        highlight && 'text-red-400 animate-pulse',
+      )}>{value}</div>
       <div className="text-[9px] font-mono text-muted-foreground tracking-[0.2em] mt-1">{label}</div>
     </div>
   )
