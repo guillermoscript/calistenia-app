@@ -4,10 +4,10 @@ import { useAuthState } from '../contexts/AuthContext'
 import { RaceProvider, useRaceContext } from '../contexts/RaceContext'
 import { Loader } from '../components/ui/loader'
 import { Button } from '../components/ui/button'
-import RaceLobbyV2 from '../components/race/RaceLobbyV2'
+import RaceLobby from '../components/race/RaceLobby'
 import RaceCountdown from '../components/race/RaceCountdown'
 import RaceLive from '../components/race/RaceLive'
-import RaceResultsV2 from '../components/race/RaceResultsV2'
+import RaceResults from '../components/race/RaceResults'
 
 export default function RacePage() {
   const { id } = useParams<{ id: string }>()
@@ -68,12 +68,12 @@ function RaceRouter() {
       )
 
     case 'lobby':
-      return <RaceLobbyV2 />
+      return <RaceLobby />
 
     case 'countdown':
       return (
         <>
-          <RaceLobbyV2 />
+          <RaceLobby />
           <RaceCountdown />
         </>
       )
@@ -82,7 +82,7 @@ function RaceRouter() {
       return <RaceLive />
 
     case 'finished':
-      return <RaceResultsV2 />
+      return <RaceResults />
 
     case 'cancelled':
       return (

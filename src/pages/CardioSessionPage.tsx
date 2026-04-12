@@ -16,7 +16,7 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { op } from '../lib/analytics'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
-import CreateRaceDialogV2 from '../components/race/CreateRaceDialogV2'
+import CreateRaceDialog from '../components/race/CreateRaceDialog'
 import { cn } from '../lib/utils'
 import { useAuthState } from '../contexts/AuthContext'
 import type { CardioActivityType, CardioSession } from '../types'
@@ -237,7 +237,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             </Button>
           </div>
 
-          <CreateRaceDialogV2
+          <CreateRaceDialog
             open={showCreateRace}
             onOpenChange={setShowCreateRace}
             onCreated={(race) => navigate(`/race/${race.id}`)}
