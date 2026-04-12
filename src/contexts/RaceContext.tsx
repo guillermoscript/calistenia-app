@@ -154,6 +154,49 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const isCreator = !!(race && userId && race.creator === userId)
   const hasJoined = !!me
 
+  // ── Time-mode hard deadline ─────────────────────────────────────────────
+  // When serverNow - starts_at >= target, freeze the participant and close
+  // the race. Runs on a 500ms clock-only interval so it fires even if GPS
+  // is stuck or the user is indoors. Complementary to the GPS-tick
+  // auto-finish inside the tracker onUpdate.
+  useEffect(() => {
+    if (phase !== 'racing' || !me || !race) return
+    if (race.mode !== 'time' || race.target_duration_seconds <= 0) return
+    if (!race.starts_at) return
+    const startAtMs = new Date(race.starts_at).getTime()
+    const targetMs = race.target_duration_seconds * 1000
+
+    const check = () => {
+      if (autoFinishedRef.current) return
+      const elapsed = serverNow() - startAtMs
+      if (elapsed < targetMs) return
+      autoFinishedRef.current = true
+      const trk = trackerRef.current
+      const stats = latestStatsRef.current
+      const finalStats = stats ?? {
+        distance_km: me.distance_km ?? 0,
+        duration_seconds: race.target_duration_seconds,
+        avg_pace: me.avg_pace ?? 0,
+        last_lat: me.last_lat ?? 0,
+        last_lng: me.last_lng ?? 0,
+      }
+      finishParticipant(me.id, {
+        distance_km: finalStats.distance_km,
+        duration_seconds: race.target_duration_seconds,
+        avg_pace: finalStats.avg_pace,
+        last_lat: finalStats.last_lat,
+        last_lng: finalStats.last_lng,
+        gps_track: trk ? trk.getGpsTrack() : [],
+      }).catch(err => {
+        setLastError({ kind: 'push', message: (err as Error).message })
+      })
+      trk?.stop()
+    }
+    check()
+    const id = setInterval(check, 500)
+    return () => clearInterval(id)
+  }, [phase, me?.id, race?.starts_at, race?.mode, race?.target_duration_seconds, raceId])
+
   // ── Measure clock offset once ─────────────────────────────────────────────
   useEffect(() => {
     measureOffset().catch(() => {})
