@@ -20,7 +20,7 @@ export default function RacePage() {
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-4">
         <h1 className="font-bebas text-3xl text-red-400">{t('race.noRace')}</h1>
         <Button onClick={() => navigate('/cardio')} variant="outline" className="font-bebas tracking-widest">
-          CARDIO
+          {t('race.backToCardio').toUpperCase()}
         </Button>
       </div>
     )
@@ -86,9 +86,9 @@ function RaceRouter() {
     case 'cancelled':
       return (
         <div className="max-w-md mx-auto px-4 py-16 text-center space-y-4">
-          <h1 className="font-bebas text-3xl text-muted-foreground">CANCELADA</h1>
+          <h1 className="font-bebas text-3xl text-muted-foreground">{t('race.cancelled').toUpperCase()}</h1>
           <Button onClick={() => navigate('/cardio')} variant="outline" className="font-bebas tracking-widest">
-            CARDIO
+            {t('race.backToCardio').toUpperCase()}
           </Button>
         </div>
       )

@@ -309,7 +309,9 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         retryCountRef.current = 0
       } catch (err) {
         if (err instanceof RaceAuthError) {
-          setLastError({ kind: 'auth', message: 'Sesión expirada — vuelve a iniciar sesión' })
+          // Plain-string for i18n-less context; UI shows message directly.
+          // Translation happens via errorKindToMessage in the consumer if needed.
+          setLastError({ kind: 'auth', message: 'race.sessionExpired' })
           return
         }
         const count = retryCountRef.current + 1

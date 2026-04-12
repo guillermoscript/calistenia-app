@@ -22,7 +22,7 @@ export default function RaceLobby() {
   const handleJoin = async () => {
     const displayName = (user as { display_name?: string; name?: string } | null)?.display_name
       || (user as { name?: string } | null)?.name
-      || 'Athlete'
+      || t('race.athlete')
     try {
       await actions.join(displayName)
     } catch { /* surfaced via lastError */ }
@@ -96,7 +96,7 @@ export default function RaceLobby() {
               <span className="text-sm font-medium flex-1">{p.display_name}</span>
               {p.status === 'ready' && (
                 <span className="text-[9px] font-mono tracking-widest text-lime bg-lime/10 px-1.5 py-0.5 rounded">
-                  READY
+                  {t('race.ready').toUpperCase()}
                 </span>
               )}
               {p.user === me?.user && (
@@ -127,7 +127,7 @@ export default function RaceLobby() {
             variant="outline"
             className="w-full h-12 font-bebas text-lg tracking-widest border-lime/30 text-lime hover:bg-lime/10"
           >
-            READY
+            {t('race.ready').toUpperCase()}
           </Button>
         )}
         <div className="grid grid-cols-2 gap-2">
@@ -143,14 +143,14 @@ export default function RaceLobby() {
             variant="outline"
             className="h-11 font-bebas text-lg tracking-widest border-border"
           >
-            {showQR ? 'OCULTAR QR' : 'MOSTRAR QR'}
+            {(showQR ? t('race.hideQR') : t('race.showQR')).toUpperCase()}
           </Button>
         </div>
         {showQR && (
           <div className="flex flex-col items-center gap-2 p-4 bg-muted/40 border border-border rounded-xl">
             <img src={qrUrl} alt="Race QR" className="rounded-lg" width={240} height={240} />
             <div className="text-[10px] font-mono text-muted-foreground tracking-widest text-center px-2">
-              Escanea con la cámara del teléfono para unirse
+              {t('race.scanHint')}
             </div>
           </div>
         )}
@@ -168,7 +168,7 @@ export default function RaceLobby() {
             variant="outline"
             className="w-full h-10 font-mono text-xs tracking-widest border-border text-muted-foreground"
           >
-            CANCELAR
+            {t('race.cancel').toUpperCase()}
           </Button>
         )}
       </div>

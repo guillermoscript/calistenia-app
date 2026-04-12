@@ -115,7 +115,9 @@ export default function RaceLive() {
     <div className="max-w-md mx-auto px-4 py-6 space-y-5">
       {lastError && (
         <div className="flex items-start gap-2 text-xs bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg px-3 py-2">
-          <span className="flex-1">{lastError.message}</span>
+          <span className="flex-1">
+            {lastError.message.startsWith('race.') ? t(lastError.message) : lastError.message}
+          </span>
           {lastError.kind === 'gps' && (
             <button
               onClick={() => {
@@ -129,7 +131,7 @@ export default function RaceLive() {
               }}
               className="text-lime font-mono tracking-widest uppercase text-[10px] px-2 py-0.5 rounded border border-lime/30 hover:bg-lime/10"
             >
-              Reintentar
+              {t('race.retryGps')}
             </button>
           )}
           <button onClick={clearError} className="text-red-300/60 hover:text-red-300">×</button>
@@ -154,10 +156,10 @@ export default function RaceLive() {
 
       {/* My stats bar */}
       <div className="grid grid-cols-3 gap-2 bg-muted/40 border border-border rounded-xl p-3">
-        <Stat label="KM" value={myDistance.toFixed(2)} />
+        <Stat label={t('race.km').toUpperCase()} value={myDistance.toFixed(2)} />
         {hasTimeTarget ? (
           <Stat
-            label="RESTA"
+            label={t('race.remaining').toUpperCase()}
             value={formatDuration(Math.max(0, Math.floor(race.target_duration_seconds - myDuration)))}
             highlight={race.target_duration_seconds - myDuration < 30}
           />
@@ -167,7 +169,7 @@ export default function RaceLive() {
             value={formatDuration(Math.floor(myDuration))}
           />
         )}
-        <Stat label="PACE" value={formatPace(myPace)} />
+        <Stat label={t('race.pace').toUpperCase()} value={formatPace(myPace)} />
       </div>
 
       {/* Target progress */}
@@ -202,7 +204,7 @@ export default function RaceLive() {
             variant="outline"
             className="w-full h-11 font-bebas text-lg tracking-widest border-border text-muted-foreground"
           >
-            Abandonar
+            {t('race.leave').toUpperCase()}
           </Button>
         )}
       </div>
@@ -274,7 +276,7 @@ function Leaderboard({ sorted, currentUserId }: { sorted: RaceParticipant[]; cur
                   )}
                   {isDnf && (
                     <span className="text-[9px] font-mono tracking-widest text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">
-                      DNF
+                      {t('race.dnf')}
                     </span>
                   )}
                 </div>

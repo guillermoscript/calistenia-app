@@ -113,31 +113,31 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
 
           <div>
             <label className="text-xs text-muted-foreground tracking-widest uppercase mb-1.5 block">
-              ACTIVIDAD
+              {t('race.activity')}
             </label>
             <div className="grid grid-cols-3 gap-2">
               <ModeButton active={activityType === 'running'} onClick={() => setActivityType('running')}>
-                🏃 CORRER
+                {t('race.activityRun').toUpperCase()}
               </ModeButton>
               <ModeButton active={activityType === 'walking'} onClick={() => setActivityType('walking')}>
-                🚶 CAMINAR
+                {t('race.activityWalk').toUpperCase()}
               </ModeButton>
               <ModeButton active={activityType === 'cycling'} onClick={() => setActivityType('cycling')}>
-                🚴 BICI
+                {t('race.activityBike').toUpperCase()}
               </ModeButton>
             </div>
           </div>
 
           <div>
             <label className="text-xs text-muted-foreground tracking-widest uppercase mb-1.5 block">
-              MODO
+              {t('race.mode')}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <ModeButton active={mode === 'distance'} onClick={() => setMode('distance')}>
-                DISTANCIA
+                {t('race.modeDistance').toUpperCase()}
               </ModeButton>
               <ModeButton active={mode === 'time'} onClick={() => setMode('time')}>
-                TIEMPO
+                {t('race.modeTime').toUpperCase()}
               </ModeButton>
             </div>
           </div>
@@ -150,9 +150,9 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
               className="size-4 accent-lime"
             />
             <div className="flex-1">
-              <div className="text-sm font-medium">Pública</div>
+              <div className="text-sm font-medium">{t('race.public')}</div>
               <div className="text-[10px] text-muted-foreground font-mono">
-                Aparece en la búsqueda de races cerca
+                {t('race.publicDesc')}
               </div>
             </div>
           </label>
@@ -177,7 +177,7 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
           {mode === 'time' && (
             <div>
               <label className="text-xs text-muted-foreground tracking-widest uppercase mb-1.5 block">
-                MINUTOS
+                {t('race.minutes')}
               </label>
               <Input
                 type="number"
@@ -193,7 +193,7 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
 
           <div>
             <label className="text-xs text-muted-foreground tracking-widest uppercase mb-1.5 block">
-              RUTA (opcional)
+              {t('race.route')} ({t('race.optional')})
             </label>
             <RouteDrawer points={routePoints} onChange={setRoutePoints} height="200px" />
           </div>

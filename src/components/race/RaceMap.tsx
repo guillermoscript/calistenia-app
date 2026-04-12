@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type L from 'leaflet'
 import { cn } from '../../lib/utils'
 
@@ -32,6 +33,7 @@ function getLimeColor(): string {
 }
 
 export default function RaceMap({ routePoints, markers, height = '240px', className }: RaceMapProps) {
+  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const routeLayerRef = useRef<L.LayerGroup | null>(null)
@@ -175,7 +177,7 @@ export default function RaceMap({ routePoints, markers, height = '240px', classN
   if (!hasContent) {
     return (
       <div className={cn('flex items-center justify-center bg-muted/50 rounded-xl', className)} style={{ height }}>
-        <span className="text-sm text-muted-foreground">Sin ruta disponible</span>
+        <span className="text-sm text-muted-foreground">{t('race.noRoute')}</span>
       </div>
     )
   }

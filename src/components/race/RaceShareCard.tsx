@@ -14,18 +14,18 @@ interface RaceShareCardProps {
   userName?: string
 }
 
-const TIERS = {
-  gold:    { accent: '#fbbf24', dim: '#fbbf2415', mid: '#fbbf2440', ring: '#fbbf2470', label: 'CAMPEÓN' },
-  silver:  { accent: '#c0c0c8', dim: '#c0c0c815', mid: '#c0c0c840', ring: '#c0c0c860', label: '2DO LUGAR' },
-  bronze:  { accent: '#cd7f32', dim: '#cd7f3215', mid: '#cd7f3240', ring: '#cd7f3260', label: '3ER LUGAR' },
-  default: { accent: '#6b7280', dim: '#6b728015', mid: '#6b728030', ring: '#6b728040', label: 'FINISHER' },
+const TIER_COLORS = {
+  gold:    { accent: '#fbbf24', dim: '#fbbf2415', mid: '#fbbf2440', ring: '#fbbf2470' },
+  silver:  { accent: '#c0c0c8', dim: '#c0c0c815', mid: '#c0c0c840', ring: '#c0c0c860' },
+  bronze:  { accent: '#cd7f32', dim: '#cd7f3215', mid: '#cd7f3240', ring: '#cd7f3260' },
+  default: { accent: '#6b7280', dim: '#6b728015', mid: '#6b728030', ring: '#6b728040' },
 } as const
 
-function getTier(rank: number) {
-  if (rank === 0) return TIERS.gold
-  if (rank === 1) return TIERS.silver
-  if (rank === 2) return TIERS.bronze
-  return TIERS.default
+function getTierColors(rank: number) {
+  if (rank === 0) return TIER_COLORS.gold
+  if (rank === 1) return TIER_COLORS.silver
+  if (rank === 2) return TIER_COLORS.bronze
+  return TIER_COLORS.default
 }
 
 export default function RaceShareCard({ race, participants, currentUserId, userName }: RaceShareCardProps) {
@@ -70,10 +70,14 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
       if (!me) return
 
       const rank = myIdx
-      const tier = getTier(rank)
+      const tier = getTierColors(rank)
+      const tierLabel = rank === 0 ? t('race.tierChampion')
+        : rank === 1 ? t('race.tierSecond')
+        : rank === 2 ? t('race.tierThird')
+        : t('race.tierFinisher')
       const isWinner = rank === 0
       const isPodium = rank < 3
-      const displayName = userName || me.display_name || 'Atleta'
+      const displayName = userName || me.display_name || t('race.athlete')
       const initial = displayName[0].toUpperCase()
       const totalElapsed = race.starts_at && race.finished_at
         ? Math.floor((new Date(race.finished_at!).getTime() - new Date(race.starts_at).getTime()) / 1000)
@@ -139,7 +143,7 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
       ctx.font = '400 10px "DM Sans", system-ui, sans-serif'
       const meta = [
         totalElapsed > 0 ? formatDuration(totalElapsed) : null,
-        `${sorted.length} participantes`,
+        `${sorted.length} ${t('race.participantsFull')}`,
       ].filter(Boolean).join(' · ')
       ctx.fillText(meta, pad, y + 10)
       y += 28
@@ -206,7 +210,7 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
       ctx.fillStyle = tier.accent
       ctx.font = '700 11px "DM Sans", system-ui, sans-serif'
       ctx.letterSpacing = '3px'
-      const badgeText = isWinner ? `#1 · ${tier.label}` : isPodium ? `#${rank + 1} · ${tier.label}` : `#${rank + 1} · ${tier.label}`
+      const badgeText = `#${rank + 1} · ${tierLabel.toUpperCase()}`
       const badgeW = ctx.measureText(badgeText).width + 24
       fillRRect(ctx, w / 2 - badgeW / 2, y + 4, badgeW, 24, 12, tier.dim)
       ctx.fillText(badgeText, w / 2, y + 20)
@@ -262,9 +266,9 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
       fillRRect(ctx, pad, y, cw, stripH, 10, cardBg)
 
       const statItems = [
-        { label: 'RITMO', value: formatPace(me.avg_pace), color: isPodium ? tier.accent : fgDim },
-        { label: 'TIEMPO', value: formatDuration(me.duration_seconds), color: fg },
-        { label: 'PUESTO', value: `${rank + 1}/${sorted.length}`, color: tier.accent },
+        { label: t('race.pace').toUpperCase(), value: formatPace(me.avg_pace), color: isPodium ? tier.accent : fgDim },
+        { label: t('race.time').toUpperCase(), value: formatDuration(me.duration_seconds), color: fg },
+        { label: t('race.leader').toUpperCase(), value: `${rank + 1}/${sorted.length}`, color: tier.accent },
       ]
 
       const colW = cw / statItems.length
@@ -291,7 +295,7 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
       ctx.fillStyle = fgMuted
       ctx.font = '500 8px "DM Sans", system-ui, sans-serif'
       ctx.letterSpacing = '2px'
-      ctx.fillText('CLASIFICACIÓN', pad, y + 8)
+      ctx.fillText(t('race.leaderboard').toUpperCase(), pad, y + 8)
       ctx.letterSpacing = '0px'
       y += 18
 
@@ -305,7 +309,7 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
         const p = sorted[i]
         const ry = y + 5 + i * rowH
         const isMe = p.user === currentUserId
-        const rt = getTier(i)
+        const rt = getTierColors(i)
 
         if (isMe) {
           fillRRect(ctx, pad + 3, ry, cw - 6, rowH - 2, 6, tier.dim)
@@ -341,7 +345,7 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
         const extraY = y + listH + 2
         ctx.fillStyle = fgMuted
         ctx.font = '400 9px "DM Sans", system-ui, sans-serif'
-        ctx.fillText(`+${sorted.length - maxShow} más`, pad + 16, extraY + 10)
+        ctx.fillText(t('race.moreItems', { n: sorted.length - maxShow }), pad + 16, extraY + 10)
       }
 
       // ─── FOOTER ───

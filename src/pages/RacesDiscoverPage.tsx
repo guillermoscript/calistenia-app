@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Loader } from '../components/ui/loader'
@@ -13,6 +14,7 @@ const ACTIVITY_EMOJI: Record<string, string> = {
 }
 
 export default function RacesDiscoverPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -43,9 +45,9 @@ export default function RacesDiscoverPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-5 pb-24">
       <div>
-        <h1 className="font-bebas text-4xl md:text-5xl leading-none tracking-wide">RACES CERCA</h1>
+        <h1 className="font-bebas text-4xl md:text-5xl leading-none tracking-wide">{t('race.nearbyTitle').toUpperCase()}</h1>
         <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
-          Carreras públicas abiertas a unirse
+          {t('race.nearbySubtitle')}
         </p>
       </div>
 
@@ -53,19 +55,19 @@ export default function RacesDiscoverPage() {
         <Input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por nombre..."
+          placeholder={t('race.searchPlaceholder')}
           className="bg-muted/40 border-border"
         />
         <div className="flex items-center gap-2">
           {coords ? (
             <div className="flex-1 flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
               <span className="size-2 rounded-full bg-lime animate-pulse" />
-              <span>UBICACIÓN OK</span>
+              <span>{t('race.locationOk').toUpperCase()}</span>
               <button
                 onClick={() => setCoords(null)}
                 className="ml-auto text-[9px] underline hover:text-foreground"
               >
-                Quitar
+                {t('race.removeLocation')}
               </button>
             </div>
           ) : (
@@ -86,7 +88,7 @@ export default function RacesDiscoverPage() {
               variant="outline"
               className="flex-1 h-9 text-xs font-mono tracking-widest border-border"
             >
-              {locating ? 'LOCATING...' : '📍 USAR MI UBICACIÓN'}
+              {(locating ? t('race.locating') : t('race.useLocation')).toUpperCase()}
             </Button>
           )}
           {coords && (
@@ -118,8 +120,8 @@ export default function RacesDiscoverPage() {
       {!loading && races.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <div className="text-4xl mb-2">🔍</div>
-          <p className="text-sm">Sin races públicas {coords ? 'cerca' : ''}</p>
-          <p className="text-[10px] font-mono mt-1">Crea una y compártela</p>
+          <p className="text-sm">{t('race.noPublicRaces')} {coords ? t('race.nearHint') : ''}</p>
+          <p className="text-[10px] font-mono mt-1">{t('race.createAndShare')}</p>
         </div>
       )}
 
@@ -146,10 +148,10 @@ export default function RacesDiscoverPage() {
                   <span>{Math.round(r.target_duration_seconds / 60)} min</span>
                 )}
                 {r.status === 'countdown' && (
-                  <span className="text-amber-400">● POR EMPEZAR</span>
+                  <span className="text-amber-400">● {t('race.startingSoon').toUpperCase()}</span>
                 )}
                 {r.status === 'waiting' && (
-                  <span className="text-lime">● ESPERANDO</span>
+                  <span className="text-lime">● {t('race.waitingLabel').toUpperCase()}</span>
                 )}
               </div>
             </div>

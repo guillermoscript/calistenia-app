@@ -110,7 +110,7 @@ export default function RaceResults() {
 
       {winner && (
         <div className="rounded-2xl border border-lime/30 bg-lime/5 px-4 py-5 text-center">
-          <div className="text-[10px] font-mono tracking-[0.3em] text-lime mb-1">WINNER</div>
+          <div className="text-[10px] font-mono tracking-[0.3em] text-lime mb-1">{t('race.winner').toUpperCase()}</div>
           <div className="font-bebas text-3xl">{winner.display_name}</div>
           <div className="mt-2 text-sm font-mono text-muted-foreground">
             {winner.distance_km.toFixed(2)} km · {formatDuration(winner.duration_seconds)} · {formatPace(winner.avg_pace)} /km
@@ -139,7 +139,7 @@ export default function RaceResults() {
                   <span className="text-sm font-medium truncate">{p.display_name}</span>
                   {isDnf && (
                     <span className="text-[9px] font-mono tracking-widest text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">
-                      DNF
+                      {t('race.dnf')}
                     </span>
                   )}
                 </div>
@@ -175,7 +175,7 @@ export default function RaceResults() {
           variant="outline"
           className="w-full h-11 font-bebas text-lg tracking-widest border-lime/30 text-lime hover:bg-lime/10"
         >
-          {savedId ? 'GUARDADO ✓' : saving ? '...' : 'Guardar como entrenamiento'}
+          {savedId ? t('race.saved').toUpperCase() : saving ? '...' : t('race.saveAsWorkout').toUpperCase()}
         </Button>
       )}
 
@@ -185,7 +185,7 @@ export default function RaceResults() {
           variant="outline"
           className="w-full h-11 font-bebas text-lg tracking-widest border-border"
         >
-          EXPORTAR GPX (Strava)
+          {t('race.exportGpx').toUpperCase()}
         </Button>
       )}
 
@@ -194,7 +194,7 @@ export default function RaceResults() {
         variant="outline"
         className="w-full h-11 font-bebas text-lg tracking-widest border-border"
       >
-        CARDIO
+        {t('race.backToCardio').toUpperCase()}
       </Button>
     </div>
   )

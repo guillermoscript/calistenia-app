@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useRacePRs } from '../../hooks/useRacePRs'
 import { formatDuration, formatPace } from '../../lib/geo'
 
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export default function RacePRsPanel({ userId }: Props) {
+  const { t } = useTranslation()
   const { prs, loading } = useRacePRs(userId)
 
   if (loading) return null
@@ -15,13 +17,13 @@ export default function RacePRsPanel({ userId }: Props) {
     <div className="border border-border rounded-xl p-4 bg-muted/20">
       <div className="flex items-center justify-between mb-4">
         <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase">
-          Records de Race
+          {t('race.prsTitle')}
         </div>
         <div className="flex items-center gap-3 text-[10px] font-mono">
           {prs.wins > 0 && (
-            <span className="text-lime">👑 {prs.wins} {prs.wins === 1 ? 'WIN' : 'WINS'}</span>
+            <span className="text-lime">👑 {prs.wins} {t('race.prsWins').toUpperCase()}</span>
           )}
-          <span className="text-muted-foreground">{prs.finishes} FINISHED</span>
+          <span className="text-muted-foreground">{prs.finishes} {t('race.prsFinished').toUpperCase()}</span>
         </div>
       </div>
 
@@ -35,7 +37,7 @@ export default function RacePRsPanel({ userId }: Props) {
         <div className="space-y-1 border-t border-border pt-3">
           {prs.fastestRace && (
             <div className="flex items-center justify-between text-[11px] font-mono">
-              <span className="text-muted-foreground">⚡ Ritmo más rápido</span>
+              <span className="text-muted-foreground">{t('race.prsFastestPace')}</span>
               <span className="text-foreground">
                 {formatPace(prs.fastestRace.durationSeconds / 60 / prs.fastestRace.distanceKm)} /km
               </span>
@@ -43,7 +45,7 @@ export default function RacePRsPanel({ userId }: Props) {
           )}
           {prs.longestRace && (
             <div className="flex items-center justify-between text-[11px] font-mono">
-              <span className="text-muted-foreground">📏 Race más larga</span>
+              <span className="text-muted-foreground">{t('race.prsLongest')}</span>
               <span className="text-foreground">{prs.longestRace.distanceKm.toFixed(2)} km</span>
             </div>
           )}

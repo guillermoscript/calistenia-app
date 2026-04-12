@@ -222,7 +222,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
               onClick={() => navigate('/races/discover')}
               className="h-10 font-bebas text-base tracking-widest border-border text-muted-foreground hover:text-foreground"
             >
-              🔍 BUSCAR
+              {t('race.findNearby').toUpperCase()}
             </Button>
           </div>
 
