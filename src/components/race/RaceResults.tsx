@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuthState } from '../../contexts/AuthContext'
 import { useRaceContext } from '../../contexts/RaceContext'
+import { pb } from '../../lib/pocketbase'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration } from '../../lib/geo'
@@ -16,6 +17,37 @@ export default function RaceResults() {
   const userName = (user as { display_name?: string; name?: string } | null)?.display_name
     || (user as { name?: string } | null)?.name
     || undefined
+  const [savedId, setSavedId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const handleSaveAsWorkout = async () => {
+    if (!me || !race || savedId || saving) return
+    setSaving(true)
+    try {
+      const userId = pb.authStore.record?.id
+      if (!userId) throw new Error('not authed')
+      const session = {
+        user: userId,
+        activity_type: 'running',
+        gps_points: (me.gps_track || []).map(pt => ({
+          lat: pt.lat, lng: pt.lng, timestamp: (race.starts_at ? new Date(race.starts_at).getTime() : 0) + pt.t,
+        })),
+        distance_km: me.distance_km,
+        duration_seconds: me.duration_seconds,
+        avg_pace: me.avg_pace,
+        elevation_gain: 0,
+        started_at: race.starts_at || new Date().toISOString(),
+        finished_at: me.finished_at || race.finished_at || new Date().toISOString(),
+        note: `Race: ${race.name}`,
+      }
+      const saved = await pb.collection('cardio_sessions').create(session)
+      setSavedId(saved.id)
+    } catch (e) {
+      console.warn('save as workout failed:', e)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const sorted = useMemo(() => {
     const list = [...participants]
@@ -113,6 +145,17 @@ export default function RaceResults() {
           currentUserId={me.user}
           userName={userName}
         />
+      )}
+
+      {me && me.status === 'finished' && (
+        <Button
+          onClick={handleSaveAsWorkout}
+          disabled={saving || !!savedId}
+          variant="outline"
+          className="w-full h-11 font-bebas text-lg tracking-widest border-lime/30 text-lime hover:bg-lime/10"
+        >
+          {savedId ? 'GUARDADO ✓' : saving ? '...' : 'Guardar como entrenamiento'}
+        </Button>
       )}
 
       <Button

@@ -121,6 +121,31 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     if (phase === 'finished' || phase === 'cancelled') clearRaceSnapshot()
   }, [phase])
 
+  // Auto-finish when every participant is finished or dnf. Any client can
+  // flip status; PB updateRule makes this idempotent (first-wins).
+  useEffect(() => {
+    if (phase !== 'racing') return
+    if (participants.length === 0) return
+    const allDone = participants.every(p => p.status === 'finished' || p.status === 'dnf')
+    if (!allDone) return
+    apiFinishRace(raceId).catch(() => { /* already finished, ignore */ })
+  }, [phase, participants, raceId])
+
+  // Auto-cancel stale races past ends_at. Client-side watchdog; every
+  // subscribed client races to write, first wins via updateRule.
+  useEffect(() => {
+    if (phase !== 'racing' || !race?.ends_at) return
+    const check = () => {
+      const remaining = msUntil(race.ends_at)
+      if (remaining <= 0) {
+        apiFinishRace(raceId).catch(() => { /* ignore */ })
+      }
+    }
+    check()
+    const id = setInterval(check, 30000)
+    return () => clearInterval(id)
+  }, [phase, race?.ends_at, raceId])
+
   // ── Derived values ────────────────────────────────────────────────────────
   const me = useMemo<RaceParticipant | null>(
     () => participants.find(p => p.user === userId) ?? null,
@@ -243,13 +268,22 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     tracker.start()
 
     // Wake lock
-    ;(async () => {
+    const acquireWakeLock = async () => {
       try {
         if ('wakeLock' in navigator) {
           wakeLockRef.current = await navigator.wakeLock.request('screen')
         }
       } catch { /* ignore */ }
-    })()
+    }
+    acquireWakeLock()
+
+    // iOS Safari releases wake lock on backgrounding — re-acquire on return
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && !wakeLockRef.current) {
+        acquireWakeLock()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
 
     // Push interval
     pushTimerRef.current = setInterval(async () => {
@@ -298,6 +332,7 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
       pushTimerRef.current = null
       autoFinishedRef.current = false
       setMyStats(null)
+      document.removeEventListener('visibilitychange', onVisibility)
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch(() => {})
         wakeLockRef.current = null
