@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useCardioSessionContext } from '../contexts/CardioSessionContext'
 import { useCardioStats } from '../hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, pointsToGPX, assessTrackQuality } from '../lib/geo'
@@ -13,8 +13,10 @@ import CardioStats from '../components/cardio/CardioStats'
 import CardioShareCard from '../components/cardio/CardioShareCard'
 import ElevationProfile from '../components/cardio/ElevationProfile'
 import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
 import { op } from '../lib/analytics'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
+import CreateRaceDialogV2 from '../components/race/CreateRaceDialogV2'
 import { cn } from '../lib/utils'
 import { useAuthState } from '../contexts/AuthContext'
 import type { CardioActivityType, CardioSession } from '../types'
@@ -47,6 +49,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const urlTargetMin = searchParams.get('targetMin')
   const isFromProgram = !!(urlProgram && urlDayKey)
 
+  const navigate = useNavigate()
   const { weeklyStats, monthlyStats, records, weeklyTrend, loadStats } = useCardioStats(userId)
 
   const [selectedActivity, setSelectedActivity] = useState<CardioActivityType>(urlActivity || 'running')
@@ -54,6 +57,9 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const [historyLoading, setHistoryLoading] = useState(true)
   const [savedSession, setSavedSession] = useState<CardioSession | null>(null)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+  const [raceName, setRaceName] = useState('')
+  const [showCreateRace, setShowCreateRace] = useState(false)
+  const [raceLink, setRaceLink] = useState('')
 
   // Load history and stats on mount and when returning to idle (after finishing a session)
   const isIdle = state === 'idle'
@@ -124,7 +130,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
       {/* Header — hidden during tracking to save screen space */}
       {!isTracking && (
         <div className="mb-8">
-          <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">CARDIO</h1>
+          <h1 className="font-bebas text-5xl md:text-7xl leading-none tracking-wide">CARDIO <span className="text-lime text-xs align-top">build-v3</span></h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">
             {t('cardio.gpsTracking')}
           </p>
@@ -201,10 +207,46 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             {t('cardio.start')} {t(ACTIVITIES.find(a => a.id === selectedActivity)?.labelKey || 'cardio.running').toUpperCase()}
           </Button>
 
+          {/* Create race competition */}
+          <Button
+            variant="outline"
+            onClick={() => setShowCreateRace(true)}
+            className="w-full h-10 font-bebas text-base tracking-widest border-border text-muted-foreground hover:text-foreground"
+          >
+            {t('race.create')}
+          </Button>
+
+          {/* Join race by link */}
+          <div className="flex gap-2">
+            <Input
+              value={raceLink}
+              onChange={e => setRaceLink(e.target.value)}
+              placeholder={t('race.pasteLinkPlaceholder')}
+              className="flex-1 h-10 text-sm"
+            />
+            <Button
+              variant="outline"
+              onClick={() => {
+                const raceId = raceLink.includes('/race/') ? raceLink.split('/race/')[1].split('?')[0] : raceLink.trim()
+                if (raceId) navigate(`/race/${raceId}`)
+              }}
+              disabled={!raceLink.trim()}
+              className="h-10 font-bebas tracking-widest"
+            >
+              {t('race.join')}
+            </Button>
+          </div>
+
+          <CreateRaceDialogV2
+            open={showCreateRace}
+            onOpenChange={setShowCreateRace}
+            onCreated={(race) => navigate(`/race/${race.id}`)}
+          />
+
           {/* History */}
           <div id="tour-cardio-history">
             <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-4 uppercase">{t('cardio.history')}</div>
-            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} referralCode={referralCode} />
+            <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} referralCode={referralCode} userName={(user as any)?.display_name || undefined} />
           </div>
 
           {/* Stats section */}
@@ -475,6 +517,15 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             className="w-full text-base px-3.5 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/20 placeholder:text-muted-foreground/40 transition-all resize-none"
           />
 
+          {/* Race name for share card */}
+          <Input
+            value={raceName}
+            onChange={e => setRaceName(e.target.value)}
+            placeholder={t('cardio.raceNamePlaceholder')}
+            maxLength={60}
+            className="h-11"
+          />
+
           {/* Actions */}
           <div className="flex gap-2">
             <Button
@@ -492,7 +543,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
                 GPX
               </Button>
             )}
-            {displaySession && <CardioShareCard session={displaySession} referralCode={referralCode} />}
+            {displaySession && <CardioShareCard session={displaySession} referralCode={referralCode} raceName={raceName || undefined} userName={(user as any)?.display_name || undefined} />}
           </div>
         </div>
       )}
