@@ -85,6 +85,22 @@ export default function RaceLive() {
       {lastError && (
         <div className="flex items-start gap-2 text-xs bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg px-3 py-2">
           <span className="flex-1">{lastError.message}</span>
+          {lastError.kind === 'gps' && (
+            <button
+              onClick={() => {
+                // Re-request geolocation to force the permission prompt again.
+                if (!navigator.geolocation) return
+                navigator.geolocation.getCurrentPosition(
+                  () => clearError(),
+                  () => { /* still denied, leave banner */ },
+                  { enableHighAccuracy: true, timeout: 5000 },
+                )
+              }}
+              className="text-lime font-mono tracking-widest uppercase text-[10px] px-2 py-0.5 rounded border border-lime/30 hover:bg-lime/10"
+            >
+              Reintentar
+            </button>
+          )}
           <button onClick={clearError} className="text-red-300/60 hover:text-red-300">×</button>
         </div>
       )}

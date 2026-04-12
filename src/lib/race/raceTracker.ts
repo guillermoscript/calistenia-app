@@ -13,6 +13,8 @@ export interface RaceTrackerStats {
 export interface RaceTrackerOptions {
   startAtMs: number
   minAccuracyM?: number
+  initialDistanceKm?: number
+  initialGpsTrack?: RaceGpsPoint[]
   onUpdate: (stats: RaceTrackerStats) => void
   onError?: (e: Error) => void
 }
@@ -36,11 +38,12 @@ export function createRaceTracker(opts: RaceTrackerOptions): RaceTracker {
   const minAccuracy = opts.minAccuracyM ?? DEFAULT_MIN_ACCURACY_M
   let watchId: number | null = null
   let tickInterval: ReturnType<typeof setInterval> | null = null
-  let track: RaceGpsPoint[] = []
-  let distanceKm = 0
-  let lastLat = 0
-  let lastLng = 0
-  let hasPosition = false
+  let track: RaceGpsPoint[] = opts.initialGpsTrack ? [...opts.initialGpsTrack] : []
+  let distanceKm = opts.initialDistanceKm ?? 0
+  const lastFromTrack = track.length > 0 ? track[track.length - 1] : null
+  let lastLat = lastFromTrack?.lat ?? 0
+  let lastLng = lastFromTrack?.lng ?? 0
+  let hasPosition = lastFromTrack != null
   let disposed = false
 
   const computeStats = (): RaceTrackerStats => {

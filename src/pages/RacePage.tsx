@@ -51,7 +51,7 @@ export default function RacePage() {
 function RaceRouter() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { phase } = useRaceContext()
+  const { phase, hasJoined } = useRaceContext()
 
   switch (phase) {
     case 'loading':
@@ -71,12 +71,11 @@ function RaceRouter() {
       return <RaceLobby />
 
     case 'countdown':
-      return (
-        <>
-          <RaceLobby />
-          <RaceCountdown />
-        </>
-      )
+      // If you haven't joined yet, show the lobby (with Join) instead of the
+      // fullscreen countdown overlay — late joiners need to see the button.
+      return hasJoined
+        ? <><RaceLobby /><RaceCountdown /></>
+        : <RaceLobby />
 
     case 'racing':
       return <RaceLive />
