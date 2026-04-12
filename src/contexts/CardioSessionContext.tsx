@@ -147,6 +147,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const maxSpeedRef = useRef<number>(0)
   const pointsRef = useRef<GpsPoint[]>([])
   const distanceRef = useRef<number>(0)
+  const durationRef = useRef<number>(0)
+  const currentPaceRef = useRef<number>(0)
   const restoredRef = useRef(false)
   const stateRef = useRef<SessionState>('idle')
   const activityTypeRef = useRef<CardioActivityType>('running')
@@ -223,6 +225,10 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
   }, [persistSnapshot])
+
+  // Keep refs synced with state for use inside long-lived intervals
+  useEffect(() => { durationRef.current = duration }, [duration])
+  useEffect(() => { currentPaceRef.current = currentPace }, [currentPace])
 
   // ── Wake lock ───────────────────────────────────────────────────────────
 
