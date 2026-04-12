@@ -1,15 +1,21 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useAuthState } from '../../contexts/AuthContext'
 import { useRaceContext } from '../../contexts/RaceContext'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration } from '../../lib/geo'
+import RaceShareCard from './RaceShareCard'
 
 export default function RaceResults() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuthState()
   const { race, participants, me } = useRaceContext()
+  const userName = (user as { display_name?: string; name?: string } | null)?.display_name
+    || (user as { name?: string } | null)?.name
+    || undefined
 
   const sorted = useMemo(() => {
     const list = [...participants]
@@ -99,6 +105,15 @@ export default function RaceResults() {
           )
         })}
       </div>
+
+      {me && (
+        <RaceShareCard
+          race={race}
+          participants={participants}
+          currentUserId={me.user}
+          userName={userName}
+        />
+      )}
 
       <Button
         onClick={() => navigate('/cardio')}
