@@ -61,7 +61,9 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
           if (aFin) return -1
           if (bFin) return 1
         }
-        return b.distance_km - a.distance_km
+        if (b.distance_km !== a.distance_km) return b.distance_km - a.distance_km
+        if (a.duration_seconds !== b.duration_seconds) return a.duration_seconds - b.duration_seconds
+        return a.display_name.localeCompare(b.display_name)
       })
       const myIdx = sorted.findIndex(p => p.user === currentUserId)
       const me = sorted[myIdx]

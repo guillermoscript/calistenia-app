@@ -93,6 +93,22 @@ export function playTimerComplete(): void {
   } catch {}
 }
 
+/** Upward arpeggio — you moved up in the race leaderboard */
+export function playRankUp(): void {
+  try {
+    tone(660, 0, 0.1, 0.85, 'triangle')
+    tone(880, 0.08, 0.15, 0.9, 'triangle')
+  } catch {}
+}
+
+/** Downward tone — you moved down in the race leaderboard */
+export function playRankDown(): void {
+  try {
+    tone(440, 0, 0.15, 0.7, 'sine')
+    tone(330, 0.1, 0.18, 0.7, 'sine')
+  } catch {}
+}
+
 /** Try to vibrate the device */
 export function vibrate(pattern: number | number[] = [100]): void {
   try {

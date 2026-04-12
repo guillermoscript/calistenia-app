@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuthState } from '../../contexts/AuthContext'
 import { useRaceContext } from '../../contexts/RaceContext'
@@ -11,8 +12,12 @@ export default function RaceLobby() {
   const {
     race, participants, me, isCreator, hasJoined, lastError, clearError, actions,
   } = useRaceContext()
+  const [showQR, setShowQR] = useState(false)
 
   if (!race) return null
+
+  const raceUrl = `${window.location.origin}/race/${race.id}`
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(raceUrl)}&color=a3e635&bgcolor=09090b&margin=10`
 
   const handleJoin = async () => {
     const displayName = (user as { display_name?: string; name?: string } | null)?.display_name
@@ -24,11 +29,10 @@ export default function RaceLobby() {
   }
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/race/${race.id}`
     if (navigator.share) {
-      try { await navigator.share({ title: race.name, url }) } catch { /* cancelled */ }
+      try { await navigator.share({ title: race.name, url: raceUrl }) } catch { /* cancelled */ }
     } else {
-      try { await navigator.clipboard.writeText(url) } catch { /* ignore */ }
+      try { await navigator.clipboard.writeText(raceUrl) } catch { /* ignore */ }
     }
   }
 
@@ -126,13 +130,30 @@ export default function RaceLobby() {
             READY
           </Button>
         )}
-        <Button
-          onClick={handleShare}
-          variant="outline"
-          className="w-full h-11 font-bebas text-lg tracking-widest border-border"
-        >
-          {t('race.share')}
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            onClick={handleShare}
+            variant="outline"
+            className="h-11 font-bebas text-lg tracking-widest border-border"
+          >
+            {t('race.share')}
+          </Button>
+          <Button
+            onClick={() => setShowQR(v => !v)}
+            variant="outline"
+            className="h-11 font-bebas text-lg tracking-widest border-border"
+          >
+            {showQR ? 'OCULTAR QR' : 'MOSTRAR QR'}
+          </Button>
+        </div>
+        {showQR && (
+          <div className="flex flex-col items-center gap-2 p-4 bg-muted/40 border border-border rounded-xl">
+            <img src={qrUrl} alt="Race QR" className="rounded-lg" width={240} height={240} />
+            <div className="text-[10px] font-mono text-muted-foreground tracking-widest text-center px-2">
+              Escanea con la cámara del teléfono para unirse
+            </div>
+          </div>
+        )}
         {canStart && (
           <Button
             onClick={actions.startCountdown}

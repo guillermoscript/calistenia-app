@@ -17,6 +17,7 @@ import { Input } from '../components/ui/input'
 import { op } from '../lib/analytics'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import CreateRaceDialog from '../components/race/CreateRaceDialog'
+import RacePRsPanel from '../components/race/RacePRsPanel'
 import { cn } from '../lib/utils'
 import { useAuthState } from '../contexts/AuthContext'
 import type { CardioActivityType, CardioSession } from '../types'
@@ -242,6 +243,8 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
             onOpenChange={setShowCreateRace}
             onCreated={(race) => navigate(`/race/${race.id}`)}
           />
+
+          <RacePRsPanel userId={userId} />
 
           {/* History */}
           <div id="tour-cardio-history">

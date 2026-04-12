@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration } from '../../lib/geo'
+import { playRankUp, playRankDown, vibrate } from '../../lib/sounds'
 import { useRaceContext } from '../../contexts/RaceContext'
 import RaceMap from './RaceMap'
 import type { RaceParticipant } from '../../types/race'
@@ -26,13 +27,30 @@ export default function RaceLive() {
       }
       if (aFin) return -1
       if (bFin) return 1
-      return b.distance_km - a.distance_km
+      // Primary: distance. Ties broken by less elapsed time (better pace),
+      // then by display_name for stable order.
+      if (b.distance_km !== a.distance_km) return b.distance_km - a.distance_km
+      if (a.duration_seconds !== b.duration_seconds) return a.duration_seconds - b.duration_seconds
+      return a.display_name.localeCompare(b.display_name)
     })
     return list
   }, [participants])
 
   const leaderId = sorted[0]?.id
   const leaderDistance = sorted[0]?.distance_km ?? 0
+
+  // Sound + vibration when my rank changes during the race
+  const myRank = me ? sorted.findIndex(p => p.id === me.id) : -1
+  const prevRankRef = useRef<number>(myRank)
+  useEffect(() => {
+    if (myRank < 0 || sorted.length < 2) { prevRankRef.current = myRank; return }
+    const prev = prevRankRef.current
+    if (prev >= 0 && prev !== myRank) {
+      if (myRank < prev) { playRankUp(); vibrate([60, 40, 60]) }
+      else { playRankDown(); vibrate(120) }
+    }
+    prevRankRef.current = myRank
+  }, [myRank, sorted.length])
 
   const mapMarkers = useMemo(() => {
     // Build markers from server-echoed participant positions, then override

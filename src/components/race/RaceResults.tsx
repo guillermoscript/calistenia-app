@@ -6,7 +6,7 @@ import { useRaceContext } from '../../contexts/RaceContext'
 import { pb } from '../../lib/pocketbase'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { formatPace, formatDuration } from '../../lib/geo'
+import { formatPace, formatDuration, pointsToGPX } from '../../lib/geo'
 import RaceShareCard from './RaceShareCard'
 
 export default function RaceResults() {
@@ -19,6 +19,25 @@ export default function RaceResults() {
     || undefined
   const [savedId, setSavedId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const handleExportGPX = () => {
+    if (!me || !race || !me.gps_track || me.gps_track.length === 0) return
+    const startMs = race.starts_at ? new Date(race.starts_at).getTime() : Date.now()
+    const gpsPoints = me.gps_track.map(pt => ({
+      lat: pt.lat,
+      lng: pt.lng,
+      timestamp: startMs + pt.t,
+    }))
+    const gpx = pointsToGPX(gpsPoints, 'running')
+    const blob = new Blob([gpx], { type: 'application/gpx+xml' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const safeName = race.name.replace(/[^a-z0-9]+/gi, '_').toLowerCase()
+    a.download = `race_${safeName}_${me.display_name}.gpx`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const handleSaveAsWorkout = async () => {
     if (!me || !race || savedId || saving) return
@@ -63,7 +82,9 @@ export default function RaceResults() {
       if (bFin) return 1
       if (a.status === 'dnf' && b.status !== 'dnf') return 1
       if (b.status === 'dnf' && a.status !== 'dnf') return -1
-      return b.distance_km - a.distance_km
+      if (b.distance_km !== a.distance_km) return b.distance_km - a.distance_km
+      if (a.duration_seconds !== b.duration_seconds) return a.duration_seconds - b.duration_seconds
+      return a.display_name.localeCompare(b.display_name)
     })
     return list
   }, [participants])
@@ -155,6 +176,16 @@ export default function RaceResults() {
           className="w-full h-11 font-bebas text-lg tracking-widest border-lime/30 text-lime hover:bg-lime/10"
         >
           {savedId ? 'GUARDADO ✓' : saving ? '...' : 'Guardar como entrenamiento'}
+        </Button>
+      )}
+
+      {me && me.gps_track && me.gps_track.length > 1 && (
+        <Button
+          onClick={handleExportGPX}
+          variant="outline"
+          className="w-full h-11 font-bebas text-lg tracking-widest border-border"
+        >
+          EXPORTAR GPX (Strava)
         </Button>
       )}
 
