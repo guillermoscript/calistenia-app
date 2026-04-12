@@ -26,6 +26,7 @@ import { subscribeRace } from '../lib/race/raceRealtime'
 import { measureOffset, serverNow, msUntil } from '../lib/race/raceClock'
 import { createRaceTracker, type RaceTracker, type RaceTrackerStats } from '../lib/race/raceTracker'
 import { RaceAuthError, RaceNotFoundError } from '../lib/race/errors'
+import { op } from '../lib/analytics'
 import type { Race, RaceParticipant } from '../types/race'
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -298,6 +299,7 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const join = useCallback(async (displayName: string) => {
     try {
       await apiJoinRace(raceId, displayName)
+      op.track('race_joined', { race_id: raceId })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
       throw err
@@ -316,15 +318,21 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const startCountdownAction = useCallback(async () => {
     try {
       await apiStartCountdown(raceId)
+      op.track('race_started', {
+        race_id: raceId,
+        participants: participants.length,
+        mode: race?.mode,
+      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
       throw err
     }
-  }, [raceId])
+  }, [raceId, participants.length, race?.mode])
 
   const cancelRaceAction = useCallback(async () => {
     try {
       await apiCancelRace(raceId)
+      op.track('race_cancelled', { race_id: raceId })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
     }
@@ -361,6 +369,12 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     }
     try {
       await apiFinishRace(raceId)
+      const stats = latestStatsRef.current
+      op.track('race_finished', {
+        race_id: raceId,
+        my_distance_km: stats?.distance_km ?? 0,
+        my_duration_seconds: Math.floor(stats?.duration_seconds ?? 0),
+      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
     }

@@ -12,6 +12,7 @@ import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
 import RouteDrawer from './RouteDrawer'
 import { createRace } from '../../lib/race/raceApi'
+import { op } from '../../lib/analytics'
 import type { Race, RaceMode } from '../../types/race'
 
 interface Props {
@@ -42,6 +43,13 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
         target_distance_km: mode === 'distance' && targetKm ? parseFloat(targetKm) : undefined,
         target_duration_seconds: mode === 'time' && targetMin ? parseFloat(targetMin) * 60 : undefined,
         route_points: routePoints.length > 0 ? routePoints : undefined,
+      })
+      op.track('race_created', {
+        race_id: race.id,
+        mode,
+        target_distance_km: race.target_distance_km,
+        target_duration_seconds: race.target_duration_seconds,
+        has_route: routePoints.length > 0,
       })
       onCreated(race)
       setName('')
