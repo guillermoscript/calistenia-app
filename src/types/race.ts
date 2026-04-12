@@ -4,6 +4,8 @@ export type RaceStatus = 'waiting' | 'countdown' | 'active' | 'finished' | 'canc
 
 export type ParticipantStatus = 'joined' | 'ready' | 'racing' | 'finished' | 'dnf'
 
+export type RaceActivityType = 'running' | 'walking' | 'cycling'
+
 export interface Race {
   id: string
   creator: string
@@ -16,6 +18,10 @@ export interface Race {
   ends_at: string
   finished_at: string | null
   route_points: Array<{ lat: number; lng: number }> | null
+  is_public: boolean
+  origin_lat: number
+  origin_lng: number
+  activity_type: RaceActivityType
   created: string
   updated: string
 }

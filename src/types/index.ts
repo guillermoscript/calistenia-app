@@ -559,6 +559,7 @@ export interface WeeklyPlanDay {
 export type {
   RaceMode,
   RaceStatus,
+  RaceActivityType,
   ParticipantStatus,
   Race,
   RaceParticipant,

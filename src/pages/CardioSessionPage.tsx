@@ -209,13 +209,22 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           </Button>
 
           {/* Create race competition */}
-          <Button
-            variant="outline"
-            onClick={() => setShowCreateRace(true)}
-            className="w-full h-10 font-bebas text-base tracking-widest border-border text-muted-foreground hover:text-foreground"
-          >
-            {t('race.create')}
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateRace(true)}
+              className="h-10 font-bebas text-base tracking-widest border-border text-muted-foreground hover:text-foreground"
+            >
+              {t('race.create')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/races/discover')}
+              className="h-10 font-bebas text-base tracking-widest border-border text-muted-foreground hover:text-foreground"
+            >
+              🔍 BUSCAR
+            </Button>
+          </div>
 
           {/* Join race by link */}
           <div className="flex gap-2">

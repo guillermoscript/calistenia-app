@@ -36,6 +36,8 @@ const CardioSessionPage = lazy(() => import('./pages/CardioSessionPage'))
 const CircuitPage = lazy(() => import('./pages/CircuitPage'))
 const CircuitActivePage = lazy(() => import('./pages/CircuitActivePage'))
 const CircuitSessionDetailPage = lazy(() => import('./pages/CircuitSessionDetailPage'))
+const RacePage = lazy(() => import('./pages/RacePage'))
+const RacesDiscoverPage = lazy(() => import('./pages/RacesDiscoverPage'))
 const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
@@ -652,6 +654,7 @@ function AuthenticatedApp({
             <Route path="/free-session" element={<FreeSessionPage />} />
             <Route path="/log-workout" element={<LogWorkoutPage />} />
             <Route path="/cardio" element={<CardioSessionPage userId={userId!} />} />
+            <Route path="/races/discover" element={<RacesDiscoverPage />} />
             <Route path="/circuit" element={<CircuitPage />} />
             <Route path="/circuit/active" element={<CircuitActivePage />} />
             <Route path="/circuit/history/:id" element={<CircuitSessionDetailPage />} />
@@ -751,6 +754,11 @@ function AppInner() {
   // Public invite landing — accessible both logged-in and logged-out
   if (location.pathname.startsWith('/invite/')) {
     return <Suspense fallback={<Loader />}><Routes><Route path="/invite/:code/challenge/:challengeId" element={<InviteLandingPage />} /><Route path="/invite/:code" element={<InviteLandingPage />} /></Routes></Suspense>
+  }
+
+  // Public race page — accessible pre-auth (shows login prompt if not authenticated)
+  if (location.pathname.startsWith('/race/')) {
+    return <Suspense fallback={<Loader />}><div className="min-h-screen bg-background"><Routes><Route path="/race/:id" element={<RacePage />} /></Routes></div></Suspense>
   }
 
   if (!user) {

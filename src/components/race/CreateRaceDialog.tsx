@@ -13,7 +13,7 @@ import { cn } from '../../lib/utils'
 import RouteDrawer from './RouteDrawer'
 import { createRace } from '../../lib/race/raceApi'
 import { op } from '../../lib/analytics'
-import type { Race, RaceMode } from '../../types/race'
+import type { Race, RaceMode, RaceActivityType } from '../../types/race'
 
 interface Props {
   open: boolean
@@ -25,6 +25,8 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
   const { t } = useTranslation()
   const [name, setName] = useState('')
   const [mode, setMode] = useState<RaceMode>('distance')
+  const [activityType, setActivityType] = useState<RaceActivityType>('running')
+  const [isPublic, setIsPublic] = useState(false)
   const [targetKm, setTargetKm] = useState('')
   const [targetMin, setTargetMin] = useState('')
   const [routePoints, setRoutePoints] = useState<Array<{ lat: number; lng: number }>>([])
@@ -37,12 +39,29 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
     setLoading(true)
     setError('')
     try {
+      // Best-effort geolocation for proximity search (optional, short timeout)
+      let origin: { lat: number; lng: number } | null = null
+      if (isPublic && navigator.geolocation) {
+        origin = await new Promise(resolve => {
+          navigator.geolocation.getCurrentPosition(
+            pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null),
+            { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 },
+          )
+        })
+      } else if (routePoints.length > 0) {
+        origin = { lat: routePoints[0].lat, lng: routePoints[0].lng }
+      }
       const race = await createRace({
         name: name.trim(),
         mode,
+        activity_type: activityType,
         target_distance_km: mode === 'distance' && targetKm ? parseFloat(targetKm) : undefined,
         target_duration_seconds: mode === 'time' && targetMin ? parseFloat(targetMin) * 60 : undefined,
         route_points: routePoints.length > 0 ? routePoints : undefined,
+        is_public: isPublic,
+        origin_lat: origin?.lat,
+        origin_lng: origin?.lng,
       })
       op.track('race_created', {
         race_id: race.id,
@@ -57,6 +76,8 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
       setTargetMin('')
       setRoutePoints([])
       setMode('distance')
+      setActivityType('running')
+      setIsPublic(false)
       onOpenChange(false)
     } catch (err) {
       setError((err as Error)?.message || 'Error')
@@ -92,6 +113,23 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
 
           <div>
             <label className="text-xs text-muted-foreground tracking-widest uppercase mb-1.5 block">
+              ACTIVIDAD
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <ModeButton active={activityType === 'running'} onClick={() => setActivityType('running')}>
+                🏃 CORRER
+              </ModeButton>
+              <ModeButton active={activityType === 'walking'} onClick={() => setActivityType('walking')}>
+                🚶 CAMINAR
+              </ModeButton>
+              <ModeButton active={activityType === 'cycling'} onClick={() => setActivityType('cycling')}>
+                🚴 BICI
+              </ModeButton>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground tracking-widest uppercase mb-1.5 block">
               MODO
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -103,6 +141,21 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
               </ModeButton>
             </div>
           </div>
+
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/40 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={e => setIsPublic(e.target.checked)}
+              className="size-4 accent-lime"
+            />
+            <div className="flex-1">
+              <div className="text-sm font-medium">Pública</div>
+              <div className="text-[10px] text-muted-foreground font-mono">
+                Aparece en la búsqueda de races cerca
+              </div>
+            </div>
+          </label>
 
           {mode === 'distance' && (
             <div>

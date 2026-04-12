@@ -5,6 +5,7 @@ import type {
   Race,
   RaceParticipant,
   RaceMode,
+  RaceActivityType,
   RaceGpsPoint,
 } from '../../types/race'
 
@@ -14,9 +15,13 @@ const RACE_WINDOW_HOURS = 3
 export interface CreateRaceInput {
   name: string
   mode: RaceMode
+  activity_type: RaceActivityType
   target_distance_km?: number
   target_duration_seconds?: number
   route_points?: Array<{ lat: number; lng: number }>
+  is_public?: boolean
+  origin_lat?: number
+  origin_lng?: number
 }
 
 export async function createRace(input: CreateRaceInput): Promise<Race> {
@@ -27,10 +32,14 @@ export async function createRace(input: CreateRaceInput): Promise<Race> {
       creator: userId,
       name: input.name,
       mode: input.mode,
+      activity_type: input.activity_type,
       target_distance_km: input.mode === 'distance' ? (input.target_distance_km ?? 0) : 0,
       target_duration_seconds: input.mode === 'time' ? (input.target_duration_seconds ?? 0) : 0,
       status: 'waiting',
       route_points: input.route_points && input.route_points.length > 0 ? input.route_points : null,
+      is_public: input.is_public ?? false,
+      origin_lat: input.origin_lat ?? 0,
+      origin_lng: input.origin_lng ?? 0,
     })
   } catch (e) {
     throw wrapPbError(e)
