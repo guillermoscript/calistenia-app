@@ -554,3 +554,13 @@ export interface WeeklyPlanDay {
   meals: WeeklyPlannedMeal[]
   notes: string
 }
+
+// ─── Races ──────────────────────────────────────────────────────────────────
+export type {
+  RaceMode,
+  RaceStatus,
+  ParticipantStatus,
+  Race,
+  RaceParticipant,
+  RaceGpsPoint,
+} from './race'
