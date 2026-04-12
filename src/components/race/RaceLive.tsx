@@ -35,7 +35,11 @@ export default function RaceLive() {
   const leaderDistance = sorted[0]?.distance_km ?? 0
 
   const mapMarkers = useMemo(() => {
-    return participants
+    // Build markers from server-echoed participant positions, then override
+    // the current user's marker with the live tracker stats so it appears
+    // immediately on race start (no wait for first push round-trip) and
+    // stays smooth between 3s pushes.
+    const fromParticipants = participants
       .filter(p => p.last_lat != null && p.last_lng != null)
       .map(p => ({
         id: p.id,
@@ -45,7 +49,29 @@ export default function RaceLive() {
         isMe: p.user === me?.user,
         isLeader: p.id === leaderId,
       }))
-  }, [participants, me?.user, leaderId])
+
+    const hasMe = fromParticipants.some(m => m.isMe)
+    const meHasLiveFix =
+      myStats &&
+      myStats.last_lat != null &&
+      myStats.last_lng != null &&
+      !(myStats.last_lat === 0 && myStats.last_lng === 0)
+
+    if (!meHasLiveFix) return fromParticipants
+
+    const liveMe = {
+      id: me?.id ?? 'me',
+      lat: myStats!.last_lat,
+      lng: myStats!.last_lng,
+      label: me?.display_name ?? 'TÚ',
+      isMe: true,
+      isLeader: me?.id === leaderId,
+    }
+
+    return hasMe
+      ? fromParticipants.map(m => (m.isMe ? liveMe : m))
+      : [...fromParticipants, liveMe]
+  }, [participants, me?.user, me?.id, me?.display_name, leaderId, myStats])
 
   // My stats override from tracker (more fresh than PB echo)
   const myDistance = myStats?.distance_km ?? me?.distance_km ?? 0
