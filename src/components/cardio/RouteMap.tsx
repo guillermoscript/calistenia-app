@@ -86,6 +86,10 @@ export default function RouteMap({ points, height = '300px', className, live = f
         attributionControl: false,
       })
 
+      // Initialize with a default view so touch/drag events before the first
+      // fitBounds() don't throw "Set map center and zoom first" (GYM-GUILLE-M/J/H).
+      map.setView([0, 0], 2)
+
       leaflet.tileLayer(TILES_URL, {
         attribution: TILES_ATTR,
         maxZoom: 19,

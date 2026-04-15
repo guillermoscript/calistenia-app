@@ -9,6 +9,7 @@ import RouteMap from './RouteMap'
 import CardioShareCard from './CardioShareCard'
 import ElevationProfile from './ElevationProfile'
 import SplitsTable from './SplitsTable'
+import { Input } from '../ui/input'
 import type { CardioSession } from '../../types'
 
 interface CardioHistoryProps {
@@ -16,12 +17,14 @@ interface CardioHistoryProps {
   loading?: boolean
   onDelete?: (id: string) => Promise<void>
   referralCode?: string | null
+  userName?: string
 }
 
-export default function CardioHistory({ sessions, loading, onDelete, referralCode }: CardioHistoryProps) {
+export default function CardioHistory({ sessions, loading, onDelete, referralCode, userName }: CardioHistoryProps) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [raceName, setRaceName] = useState('')
 
   if (loading) {
     return (
@@ -54,7 +57,7 @@ export default function CardioHistory({ sessions, loading, onDelete, referralCod
           <div key={sessionKey} className="rounded-xl border border-border bg-muted/30 overflow-hidden">
             {/* Collapsed row */}
             <button
-              onClick={() => setExpanded(isExpanded ? null : sessionKey)}
+              onClick={() => { setExpanded(isExpanded ? null : sessionKey); setRaceName('') }}
               className="w-full text-left p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
@@ -193,7 +196,14 @@ export default function CardioHistory({ sessions, loading, onDelete, referralCod
                   )}
                 </div>
 
-                {/* Actions */}
+                {/* Race name + Actions */}
+                <Input
+                  value={raceName}
+                  onChange={e => setRaceName(e.target.value)}
+                  placeholder={t('cardio.raceNamePlaceholder')}
+                  maxLength={60}
+                  className="h-9 text-sm"
+                />
                 <div className="flex items-center justify-between">
                   {onDelete && session.id && (
                     <Button
@@ -210,7 +220,7 @@ export default function CardioHistory({ sessions, loading, onDelete, referralCod
                     </Button>
                   )}
                   <div className="ml-auto">
-                    <CardioShareCard session={session} referralCode={referralCode} />
+                    <CardioShareCard session={session} referralCode={referralCode} raceName={raceName || undefined} userName={userName} />
                   </div>
                 </div>
               </div>

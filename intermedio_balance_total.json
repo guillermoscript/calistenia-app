@@ -1,0 +1,1181 @@
+{
+  "program": {
+    "id": "ynrn978k1ha8810",
+    "name": "Intermedio – Balance Total",
+    "description": "Programa intermedio 6 días/semana. Fuerza, postura, core seguro sin crunches y lumbar. Progresión hacia muscle up, HSPU y pistol squat.",
+    "difficulty": "intermediate",
+    "duration_weeks": 12,
+    "days_per_week": 6,
+    "rest_day": "Domingo",
+    "equipment": ["Barra de dominadas", "Paralelas", "Ligas (ligera y media-pesada)"],
+    "notes": "Core sin crunches por hernia abdominal. Énfasis en postura, lumbar y hombros. Progresión hacia muscle up, HSPU completo y pistol squat."
+  },
+  "phases": [
+    {
+      "phase_number": 1,
+      "name": "Fase 1 – Fundamentos de postura y fuerza base",
+      "weeks": "1-4",
+      "color": "#3B8BD4",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Empuje horizontal + Tríceps",
+          "workout_title": "Push – Pecho y tríceps",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Flexiones con pausa en el fondo",
+              "muscles": "Pecho, tríceps, hombros",
+              "sets": 4,
+              "reps": "12-15",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Baja lento 3s, pausa 1s en el fondo, sube explosivo. Máximo rango de movimiento."
+            },
+            {
+              "sort_order": 2,
+              "name": "Dips en paralelas",
+              "muscles": "Pecho inferior, tríceps, hombros",
+              "sets": 4,
+              "reps": "10-12",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Inclínate ligeramente hacia adelante para pecho. Baja hasta 90° mínimo. Controlado."
+            },
+            {
+              "sort_order": 3,
+              "name": "Flexiones diamante",
+              "muscles": "Tríceps, pecho interior",
+              "sets": 3,
+              "reps": "10-12",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Manos en diamante bajo el pecho. Codos muy cerrados al bajar."
+            },
+            {
+              "sort_order": 4,
+              "name": "Flexiones Archer",
+              "muscles": "Pecho unilateral, tríceps, estabilizadores",
+              "sets": 3,
+              "reps": "6-8 c/lado",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Posición wide, baja hacia un lado mientras el otro brazo se extiende. Alterna. Progresión hacia one-arm push-up."
+            },
+            {
+              "sort_order": 5,
+              "name": "Extensión de tríceps con liga",
+              "muscles": "Tríceps cabeza larga",
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Liga anclada arriba (barra). Codos fijos, extiende completamente. Aísla el tríceps."
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Jalar + Retracción escapular + Postura",
+          "workout_title": "Pull – Espalda y postura",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Dominadas pronadas (grip ancho)",
+              "muscles": "Dorsales, bíceps, romboides",
+              "sets": 4,
+              "reps": "6-8",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Agarre ancho. Lleva pecho a la barra. Pausa 1s arriba apretando escápulas."
+            },
+            {
+              "sort_order": 2,
+              "name": "Chin-ups (supino)",
+              "muscles": "Bíceps, dorsales, pectoral menor",
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Agarre supino, manos al ancho de hombros. Codos cerca al cuerpo. Baja completamente."
+            },
+            {
+              "sort_order": 3,
+              "name": "Retracción escapular en barra (scapular pull-up)",
+              "muscles": "Romboides, trapecio inferior, serrato",
+              "sets": 3,
+              "reps": "10-12",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Colgado en barra, SIN doblar codos. Solo sube y baja las escápulas. Clave para postura encorvada."
+            },
+            {
+              "sort_order": 4,
+              "name": "Face pull con liga",
+              "muscles": "Deltoides posterior, romboides, manguito rotador",
+              "sets": 4,
+              "reps": "15-20",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga anclada a la barra a altura de cara. Jala hacia tu cara separando manos. Codos arriba. CLAVE para postura y hombros."
+            },
+            {
+              "sort_order": 5,
+              "name": "Australian pull-up con pausa",
+              "muscles": "Dorsales medios, romboides, bíceps",
+              "sets": 3,
+              "reps": "10-12",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Pausa 2s arriba apretando escápulas juntas. Espalda media/alta activada al máximo."
+            }
+          ]
+        },
+        {
+          "day_id": "mie",
+          "day_name": "Miércoles",
+          "day_focus": "Piernas + Core seguro (sin crunches)",
+          "workout_title": "Piernas + Core seguro",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Sentadilla búlgara",
+              "muscles": "Cuádriceps, glúteos, equilibrio",
+              "sets": 4,
+              "reps": "8-10 c/pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Pie trasero en banca/barra baja. Baja hasta 90° rodilla delantera. Torso erguido."
+            },
+            {
+              "sort_order": 2,
+              "name": "Pistol squat asistida (con liga o barra)",
+              "muscles": "Cuádriceps, glúteos, equilibrio, tobillo",
+              "sets": 3,
+              "reps": "5-6 c/pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Sostente de barra o usa liga. Baja en una pierna hasta donde puedas. Progresión clave."
+            },
+            {
+              "sort_order": 3,
+              "name": "Dead bug",
+              "muscles": "Core profundo, transverso abdominal",
+              "sets": 3,
+              "reps": "8 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Acostado boca arriba, espalda baja en el suelo. Extiende brazo y pierna opuestos lentamente. SEGURO para hernia. No arquees la espalda."
+            },
+            {
+              "sort_order": 4,
+              "name": "Bird dog",
+              "muscles": "Lumbar, glúteos, core estabilizador",
+              "sets": 3,
+              "reps": "10 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "En cuadrupedia, extiende brazo derecho y pierna izquierda. Cadera sin rotar. Aguanta 2s. Excelente para lumbar sin riesgo."
+            },
+            {
+              "sort_order": 5,
+              "name": "Plancha lateral con rotación",
+              "muscles": "Oblicuos, core lateral, hombro",
+              "sets": 3,
+              "reps": "10 c/lado",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Desde plancha lateral, baja la cadera al suelo y sube. Añade rotación del brazo libre hacia arriba. Sin flexión lumbar."
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Empuje vertical + Hombros",
+          "workout_title": "Hombros – Empuje vertical",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Pike push-up con pies elevados",
+              "muscles": "Deltoides, tríceps, trapecio superior",
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Pies en banca o barra baja. Caderas altas en V. Baja la cabeza entre las manos. Progresión directa al HSPU."
+            },
+            {
+              "sort_order": 2,
+              "name": "Handstand hold contra pared",
+              "muscles": "Deltoides, core, trapecios, estabilizadores",
+              "sets": 3,
+              "reps": "3×20s",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "note": "Pared como apoyo. Busca alinear muñecas-hombros-caderas-pies. Empieza con 10-15s y progresa. Base del HSPU."
+            },
+            {
+              "sort_order": 3,
+              "name": "Elevación lateral con liga",
+              "muscles": "Deltoides medial",
+              "sets": 3,
+              "reps": "12-15 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga bajo el pie. Sube el brazo lateralmente hasta la altura del hombro. Codo ligeramente doblado. Lento y controlado."
+            },
+            {
+              "sort_order": 4,
+              "name": "Rotación externa con liga (hombro)",
+              "muscles": "Manguito rotador, deltoides posterior",
+              "sets": 3,
+              "reps": "15 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Codo a 90° pegado al costado. Rota el antebrazo hacia afuera con la liga. Fundamental para salud del hombro y postura."
+            },
+            {
+              "sort_order": 5,
+              "name": "Wall slide (deslizamiento en pared)",
+              "muscles": "Trapecio inferior, serrato, manguito rotador",
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 45,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Espalda y brazos pegados a la pared. Desliza brazos arriba y abajo manteniendo contacto. Corrector de postura encorvada."
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Pull pesado + Lumbar + Postura",
+          "workout_title": "Pull pesado + Lumbar",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Dominadas con pausa (agarre neutro o supino)",
+              "muscles": "Dorsales, bíceps, core",
+              "sets": 5,
+              "reps": "5-7",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Pausa 2s arriba, baja en 3s. Máxima tensión muscular."
+            },
+            {
+              "sort_order": 2,
+              "name": "Muscle up negativo",
+              "muscles": "Dorsales, pecho, tríceps, core",
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Sube con salto a posición de dip en barra, luego baja lentamente la fase de jalar. 4-5s en la negativa. Progresión directa al muscle up."
+            },
+            {
+              "sort_order": 3,
+              "name": "Superman con pausa",
+              "muscles": "Erector espinal, glúteos, lumbar",
+              "sets": 4,
+              "reps": "12",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Boca abajo, levanta brazos y piernas. Aguanta 3s arriba apretando glúteos. Directo al lumbar sin riesgo."
+            },
+            {
+              "sort_order": 4,
+              "name": "Hollow body hold",
+              "muscles": "Core profundo, transverso, flexores de cadera",
+              "sets": 3,
+              "reps": "30s",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Espalda baja pegada al suelo siempre. Brazos y piernas extendidos a pocos cm. Si es muy difícil dobla las rodillas."
+            },
+            {
+              "sort_order": 5,
+              "name": "McGill curl-up",
+              "muscles": "Recto abdominal, core superficial",
+              "sets": 3,
+              "reps": "5 × 10s hold",
+              "rest_seconds": 45,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Una pierna doblada, la otra estirada. Manos bajo la zona lumbar. Levanta SOLO cabeza y hombros 2-3 cm. Aguanta 10s. El crunch más seguro para hernias."
+            }
+          ]
+        },
+        {
+          "day_id": "sab",
+          "day_name": "Sábado",
+          "day_focus": "Full body + Movilidad + Explosividad",
+          "workout_title": "Full body + Movilidad",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Muscle up con liga (asistido)",
+              "muscles": "Dorsales, pecho, tríceps, core, hombros",
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Liga en la barra para asistencia. Practica la transición. El objetivo es dominar el movimiento antes de hacerlo limpio."
+            },
+            {
+              "sort_order": 2,
+              "name": "Squat jump",
+              "muscles": "Cuádriceps, glúteos, cardio",
+              "sets": 4,
+              "reps": "10",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Baja a sentadilla completa, salta explosivo. Aterriza suave con rodillas flexionadas."
+            },
+            {
+              "sort_order": 3,
+              "name": "Movilidad de cadera (world's greatest stretch)",
+              "muscles": "Cadera, isquios, glúteos, torácica",
+              "sets": 3,
+              "reps": "5 c/lado",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Paso largo adelante, codo al suelo, rota el torso abriendo el brazo al cielo. Combate el encorvamiento y rigidez de cadera por sedentarismo."
+            },
+            {
+              "sort_order": 4,
+              "name": "Rotación torácica en el suelo",
+              "muscles": "Columna torácica, romboides, oblicuos",
+              "sets": 3,
+              "reps": "10 c/lado",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "De lado en el suelo, rodillas dobladas a 90°. Abre el brazo de arriba hacia atrás rotando la columna torácica. Clave para postura encorvada."
+            },
+            {
+              "sort_order": 5,
+              "name": "Plancha con desplazamiento (plank walkout)",
+              "muscles": "Core completo, hombros, estabilizadores",
+              "sets": 3,
+              "reps": "30s",
+              "rest_seconds": 45,
+              "priority": "accessory",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "note": "Desde plancha alta, camina las manos hacia adelante lo máximo posible sin hundir la cadera, regresa."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_number": 2,
+      "name": "Fase 2 – Fuerza e intensidad",
+      "weeks": "5-8",
+      "color": "#1D9E75",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Empuje horizontal + Tríceps",
+          "workout_title": "Push – Fuerza",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Flexiones con lastre (mochila)",
+              "muscles": "Pecho, tríceps, hombros",
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Mochila con 5-10kg en la espalda. Mantén técnica perfecta."
+            },
+            {
+              "sort_order": 2,
+              "name": "Dips en paralelas con lastre",
+              "muscles": "Pecho inferior, tríceps",
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Mochila con peso. Baja lento 3s."
+            },
+            {
+              "sort_order": 3,
+              "name": "Pseudo planche push-up",
+              "muscles": "Pecho, deltoides anterior, tríceps, core",
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Manos apuntando hacia atrás junto a la cadera. Cuerpo inclinado hacia adelante. Progresión hacia planche."
+            },
+            {
+              "sort_order": 4,
+              "name": "Flexiones decline pies elevados",
+              "muscles": "Pecho superior, deltoides anterior",
+              "sets": 3,
+              "reps": "10-12",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Pies en barra baja o banca. Mayor énfasis en pecho superior. Baja lento 3s."
+            },
+            {
+              "sort_order": 5,
+              "name": "Extensión de tríceps con liga overhead",
+              "muscles": "Tríceps cabeza larga",
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Liga anclada arriba. Brazos extendidos sobre la cabeza, dobla codos detrás. Cabeza larga del tríceps máximamente estirada."
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Jalar pesado Postura",
+          "workout_title": "Pull Pesado Postura",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Dominadas con lastre",
+              "muscles": "Dorsales, bíceps, core",
+              "sets": 5,
+              "reps": "5-6",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Mochila con 5-8kg. Baja completamente, sube explosivo."
+            },
+            {
+              "sort_order": 2,
+              "name": "Archer pull-up",
+              "muscles": "Dorsales unilateral, bíceps",
+              "sets": 4,
+              "reps": "4-5 c/lado",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Agarre ancho, jala hacia un lado mientras el otro brazo se extiende. Progresion a one-arm pull-up."
+            },
+            {
+              "sort_order": 3,
+              "name": "Face pull con liga intensidad",
+              "muscles": "Deltoides posterior, romboides, manguito rotador",
+              "sets": 4,
+              "reps": "20",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga más resistente. Mismo movimiento que Fase 1 pero mayor tensión. Clave para postura."
+            },
+            {
+              "sort_order": 4,
+              "name": "Retraccion Y con liga",
+              "muscles": "Trapecio inferior, romboides",
+              "sets": 3,
+              "reps": "15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga anclada abajo. Brazos en Y, jala hacia arriba. Corrige postura encorvada."
+            },
+            {
+              "sort_order": 5,
+              "name": "Curl biceps con liga",
+              "muscles": "Bíceps",
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Liga bajo el pie. Codo fijo al costado. Sube 2s, baja 3s controlado."
+            }
+          ]
+        },
+        {
+          "day_id": "mie",
+          "day_name": "Miércoles",
+          "day_focus": "Piernas Core",
+          "workout_title": "Piernas Core Fase 2",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Pistol squat libre",
+              "muscles": "Cuádriceps, glúteos, equilibrio",
+              "sets": 4,
+              "reps": "4-6 c/pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Sin asistencia. Si no llegas al fondo todavía, usa la liga solo como guía."
+            },
+            {
+              "sort_order": 2,
+              "name": "Sentadilla bulgara salto",
+              "muscles": "Cuádriceps, glúteos, potencia",
+              "sets": 3,
+              "reps": "6 c/pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Pie trasero en banca. Baja y salta explosivo. Aterriza suave. Potencia unilateral."
+            },
+            {
+              "sort_order": 3,
+              "name": "Dead bug lento",
+              "muscles": "Core profundo",
+              "sets": 3,
+              "reps": "10 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "5s extender brazo y pierna, 5s regresar. Espalda baja siempre en el suelo."
+            },
+            {
+              "sort_order": 4,
+              "name": "Bird dog con liga",
+              "muscles": "Lumbar, glúteos, core estabilizador",
+              "sets": 3,
+              "reps": "12 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga en el tobillo. Mayor resistencia al extender pierna. Lumbar trabajando activamente."
+            },
+            {
+              "sort_order": 5,
+              "name": "Plancha lateral dinámica",
+              "muscles": "Oblicuos, core lateral",
+              "sets": 3,
+              "reps": "10 c/lado",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Desde plancha lateral baja cadera al suelo y sube. Sin flexión lumbar."
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Empuje vertical Hombros",
+          "workout_title": "Hombros Fase 2",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "HSPU negativo contra pared",
+              "muscles": "Deltoides, tríceps, trapecio",
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Handstand en pared, baja la cabeza al suelo en 5s. Sube con impulso si es necesario."
+            },
+            {
+              "sort_order": 2,
+              "name": "Pike push-up rango amplio",
+              "muscles": "Deltoides, tríceps",
+              "sets": 3,
+              "reps": "8-10",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Manos sobre paralelas o bloques. Mayor rango de movimiento. Progresión al HSPU."
+            },
+            {
+              "sort_order": 3,
+              "name": "Press hombros con liga",
+              "muscles": "Deltoides, tríceps",
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga bajo los pies. Prensa sobre la cabeza con codos ligeramente adelante."
+            },
+            {
+              "sort_order": 4,
+              "name": "Elevacion lateral liga",
+              "muscles": "Deltoides medial",
+              "sets": 3,
+              "reps": "15 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga bajo el pie. Sube brazo a altura de hombro. Baja 3s controlado."
+            },
+            {
+              "sort_order": 5,
+              "name": "Wall slide con rotacion",
+              "muscles": "Trapecio inferior, serrato, manguito rotador",
+              "sets": 3,
+              "reps": "12",
+              "rest_seconds": 45,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Espalda en pared, desliza brazos en W luego extiende a Y. Cada rep activa toda la cadena postural."
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Pull Lumbar",
+          "workout_title": "Pull Lumbar F2",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Dominadas lastre",
+              "muscles": "Dorsales, bíceps",
+              "sets": 5,
+              "reps": "4-5",
+              "rest_seconds": 150,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Máxima carga manteniendo técnica perfecta."
+            },
+            {
+              "sort_order": 2,
+              "name": "Muscle up con transicion",
+              "muscles": "Dorsales, pecho, tríceps, core",
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Practica la transición: tira explosivo, inclina el cuerpo y empuja. Usa liga si necesitas."
+            },
+            {
+              "sort_order": 3,
+              "name": "Superman Y T W",
+              "muscles": "Trapecio, romboides, lumbar, deltoides posterior",
+              "sets": 3,
+              "reps": "8 c/posicion",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Boca abajo. Levanta brazos en Y, luego T, luego W. 8 reps en cada posición. Activa toda la espalda posterior."
+            },
+            {
+              "sort_order": 4,
+              "name": "Hollow body hold",
+              "muscles": "Core profundo, transverso",
+              "sets": 3,
+              "reps": "40s",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 40,
+              "note": "40s esta vez. Espalda baja pegada al suelo siempre."
+            },
+            {
+              "sort_order": 5,
+              "name": "McGill curl-up",
+              "muscles": "Recto abdominal, core superficial",
+              "sets": 3,
+              "reps": "6x10s hold",
+              "rest_seconds": 45,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "6 repeticiones aguantando 10s. El más seguro para hernias."
+            }
+          ]
+        },
+        {
+          "day_id": "sab",
+          "day_name": "Sábado",
+          "day_focus": "Full Body Movilidad",
+          "workout_title": "Full Body Movilidad F2",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Muscle up limpio",
+              "muscles": "Dorsales, pecho, tríceps, core",
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 150,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Sin liga. Tira explosivo, transición con codos hacia afuera, empuja arriba. Objetivo de la Fase 2."
+            },
+            {
+              "sort_order": 2,
+              "name": "Pistol squat libre",
+              "muscles": "Cuádriceps, glúteos, equilibrio",
+              "sets": 4,
+              "reps": "5 c/pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Sin asistencia. Objetivo de esta fase."
+            },
+            {
+              "sort_order": 3,
+              "name": "Rotacion toracica en suelo",
+              "muscles": "Columna torácica, romboides, oblicuos",
+              "sets": 3,
+              "reps": "12 c/lado",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "De lado, rodillas a 90. Abre brazo hacia atrás llevando hombro al suelo. Esencial contra el encorvamiento."
+            },
+            {
+              "sort_order": 4,
+              "name": "Cat cow toracico",
+              "muscles": "Columna torácica, lumbar, core",
+              "sets": 3,
+              "reps": "10",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "En cuadrupedia, arquea y redondea la espalda lento. Movilidad de columna. Perfecto para el sedentarismo."
+            },
+            {
+              "sort_order": 5,
+              "name": "Worlds greatest stretch",
+              "muscles": "Cadera, isquios, glúteos, torácica",
+              "sets": 3,
+              "reps": "6 c/lado",
+              "rest_seconds": 45,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Paso largo adelante, codo al suelo, rota el torso abriendo el brazo al cielo. Movilidad total del cuerpo."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_number": 3,
+      "name": "Fase 3 – Progresión avanzada",
+      "weeks": "9-12",
+      "color": "#BA7517",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Empuje horizontal + Tríceps",
+          "workout_title": "Push Avanzado F3",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Flexiones a una mano asistidas",
+              "muscles": "Pecho unilateral, tríceps, core",
+              "sets": 4,
+              "reps": "4-6 c/lado",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Mano de apoyo en barra baja o en bloque. Progresión real al one-arm push-up."
+            },
+            {
+              "sort_order": 2,
+              "name": "Dips paralelas con lastre",
+              "muscles": "Pecho inferior, tríceps",
+              "sets": 5,
+              "reps": "6",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Máxima carga posible. 5 series de 6. Fuerza de empuje absoluta."
+            },
+            {
+              "sort_order": 3,
+              "name": "Pseudo planche lean",
+              "muscles": "Deltoides anterior, pecho, core",
+              "sets": 4,
+              "reps": "20s",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "note": "Plancha alta con manos hacia atrás. Inclínate hacia adelante lo máximo posible sin doblar codos. Base del planche."
+            },
+            {
+              "sort_order": 4,
+              "name": "Flexiones explosivas con palmada",
+              "muscles": "Pecho, tríceps, potencia",
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Baja lento 3s y sube explosivo hasta despegar las manos. Palmada en el aire. Potencia de empuje para muscle up."
+            },
+            {
+              "sort_order": 5,
+              "name": "Triceps dip negativo lento",
+              "muscles": "Tríceps, pecho inferior",
+              "sets": 3,
+              "reps": "8",
+              "rest_seconds": 75,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "En paralelas, baja en 6s hasta el fondo. Sube normal. Hipertrofia de tríceps con tiempo bajo tensión."
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Pull avanzado",
+          "workout_title": "Pull Avanzado F3",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Dominadas a una mano asistidas",
+              "muscles": "Dorsales unilateral, bíceps, core",
+              "sets": 4,
+              "reps": "3-5 c/lado",
+              "rest_seconds": 150,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Usa liga ligera en una mano. El otro brazo trabaja casi solo. Progresión al one-arm pull-up."
+            },
+            {
+              "sort_order": 2,
+              "name": "Muscle up en serie",
+              "muscles": "Dorsales, pecho, tríceps, core",
+              "sets": 5,
+              "reps": "3-5",
+              "rest_seconds": 150,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Series de 3-5 muscle ups limpios sin parar. Enfócate en la fluidez de la transición."
+            },
+            {
+              "sort_order": 3,
+              "name": "Face pull con liga doble",
+              "muscles": "Deltoides posterior, romboides, manguito rotador",
+              "sets": 4,
+              "reps": "25",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Dos ligas juntas para mayor resistencia. Postura nunca deja de trabajarse aunque estés en Fase avanzada."
+            },
+            {
+              "sort_order": 4,
+              "name": "L-sit en paralelas",
+              "muscles": "Core, flexores cadera, tríceps, dorsales",
+              "sets": 4,
+              "reps": "10-15s",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 12,
+              "note": "En paralelas, levanta caderas y extiende ambas piernas. Progresión: tuck L-sit primero si no salen las piernas extendidas."
+            },
+            {
+              "sort_order": 5,
+              "name": "Curl biceps negativo lento",
+              "muscles": "Bíceps, braquial",
+              "sets": 3,
+              "reps": "10",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Sube rápido con liga, baja en 5s. Fase excéntrica para hipertrofia máxima de bíceps."
+            }
+          ]
+        },
+        {
+          "day_id": "mie",
+          "day_name": "Miércoles",
+          "day_focus": "Piernas Core avanzado",
+          "workout_title": "Piernas Core Avanzado F3",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Pistol squat en serie",
+              "muscles": "Cuádriceps, glúteos, equilibrio",
+              "sets": 5,
+              "reps": "5 c/pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Series de 5 pistol squat por pierna sin asistencia. Control total en bajada y subida."
+            },
+            {
+              "sort_order": 2,
+              "name": "Shrimp squat asistido",
+              "muscles": "Cuádriceps, glúteos, flexor cadera",
+              "sets": 3,
+              "reps": "4 c/pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Pie trasero sujeto con la mano. Baja hasta que rodilla trasera toque el suelo. Versión avanzada de piernas."
+            },
+            {
+              "sort_order": 3,
+              "name": "Dragon flag negativo",
+              "muscles": "Core completo, lumbar, flexores cadera",
+              "sets": 4,
+              "reps": "5-6",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Acostado bajo una barra, sostente. Cuerpo recto desde hombros. Baja lento en 5s. SIN flexión lumbar. Solo fase excéntrica."
+            },
+            {
+              "sort_order": 4,
+              "name": "Hollow body rock",
+              "muscles": "Core profundo, transverso",
+              "sets": 3,
+              "reps": "20",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Desde hollow body hold, balancea el cuerpo adelante y atrás manteniendo la tensión. 20 balanceos sin perder la posición."
+            },
+            {
+              "sort_order": 5,
+              "name": "McGill curl-up avanzado",
+              "muscles": "Recto abdominal, core superficial",
+              "sets": 3,
+              "reps": "8x10s hold",
+              "rest_seconds": 45,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "8 repeticiones aguantando 10s cada una. Mayor volumen que Fase 1 y 2. Absolutamente seguro para la hernia."
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Hombros avanzado HSPU",
+          "workout_title": "Hombros Avanzado F3",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "HSPU completo contra pared",
+              "muscles": "Deltoides, tríceps, trapecio, core",
+              "sets": 5,
+              "reps": "3-5",
+              "rest_seconds": 150,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Handstand en pared, baja hasta que cabeza toque el suelo y sube completamente. Si no salen, haz 3 negativos de 5s. Objetivo de la Fase 3."
+            },
+            {
+              "sort_order": 2,
+              "name": "Pike push-up deficit con paralelas",
+              "muscles": "Deltoides, tríceps",
+              "sets": 4,
+              "reps": "8-10",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Manos en paralelas bajas para mayor rango. Nariz baja por debajo del nivel de las manos."
+            },
+            {
+              "sort_order": 3,
+              "name": "Press hombros con liga pesada",
+              "muscles": "Deltoides anterior y medial, tríceps",
+              "sets": 4,
+              "reps": "12",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Liga más resistente que Fase 2. Sobrecarga progresiva de hombros."
+            },
+            {
+              "sort_order": 4,
+              "name": "Elevacion lateral excentrica",
+              "muscles": "Deltoides medial",
+              "sets": 3,
+              "reps": "10 c/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Sube con dos brazos, baja con uno solo en 5s. Fase excéntrica unilateral. Máxima activación del deltoides medial."
+            },
+            {
+              "sort_order": 5,
+              "name": "Cuban press con liga",
+              "muscles": "Manguito rotador, deltoides posterior, trapecio",
+              "sets": 3,
+              "reps": "12",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": false,
+              "note": "Remo a 90 grados, rota antebrazos hacia arriba, press sobre la cabeza. Movimiento completo de salud del hombro."
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Pull máximo Lumbar",
+          "workout_title": "Pull Maximo Lumbar F3",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Dominadas maxima intensidad",
+              "muscles": "Dorsales, bíceps, core",
+              "sets": 5,
+              "reps": "5",
+              "rest_seconds": 180,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "5x5 con el máximo lastre posible. O 5x max sin lastre con pausa de 3s arriba."
+            },
+            {
+              "sort_order": 2,
+              "name": "Front lever negativo",
+              "muscles": "Dorsales, core, hombros, tríceps",
+              "sets": 4,
+              "reps": "4-5",
+              "rest_seconds": 150,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Colgado en barra, sube piernas a horizontal y baja lento en 5s. Primero con rodillas dobladas (tuck)."
+            },
+            {
+              "sort_order": 3,
+              "name": "Superman Y T W avanzado",
+              "muscles": "Trapecio, romboides, lumbar, deltoides posterior",
+              "sets": 4,
+              "reps": "10 c/posicion",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Con liga ligera en las manos para mayor resistencia. 10 reps en cada posición Y T W."
+            },
+            {
+              "sort_order": 4,
+              "name": "Dragon flag negativo con pausa",
+              "muscles": "Core completo, lumbar, flexores cadera",
+              "sets": 4,
+              "reps": "5",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Baja en 5s, pausa 2s a mitad del recorrido, termina de bajar. Sin flexión lumbar. Tensión máxima de core."
+            },
+            {
+              "sort_order": 5,
+              "name": "Hollow body hold maximo",
+              "muscles": "Core profundo, transverso",
+              "sets": 3,
+              "reps": "60s",
+              "rest_seconds": 60,
+              "priority": "accessory",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "note": "60s objetivo. Si pierdes la espalda baja del suelo para inmediatamente."
+            }
+          ]
+        },
+        {
+          "day_id": "sab",
+          "day_name": "Sábado",
+          "day_focus": "Full body Movilidad avanzada",
+          "workout_title": "Full Body Movilidad F3",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": "Muscle up en serie maximo",
+              "muscles": "Dorsales, pecho, tríceps, core",
+              "sets": 5,
+              "reps": "5-8",
+              "rest_seconds": 180,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Series de 5-8 muscle ups limpios sin parar. Test de la Fase 3. Fluidez total en la transición."
+            },
+            {
+              "sort_order": 2,
+              "name": "Pistol squat con lastre",
+              "muscles": "Cuádriceps, glúteos, equilibrio",
+              "sets": 4,
+              "reps": "5 c/pierna",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "note": "Mochila con 5kg. Pistol squat completo con peso extra. Fuerza unilateral de piernas al máximo nivel."
+            },
+            {
+              "sort_order": 3,
+              "name": "Rotacion toracica profunda",
+              "muscles": "Columna torácica, romboides, oblicuos",
+              "sets": 3,
+              "reps": "15 c/lado",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "En cuadrupedia, lleva un codo al suelo mientras el otro brazo se abre al cielo. Máxima movilidad torácica."
+            },
+            {
+              "sort_order": 4,
+              "name": "Worlds greatest stretch avanzado",
+              "muscles": "Cadera, isquios, glúteos, torácica",
+              "sets": 3,
+              "reps": "8 c/lado",
+              "rest_seconds": 45,
+              "priority": "secondary",
+              "is_timer": false,
+              "note": "Igual que Fase 1 y 2 pero agrega una rotación de rodilla hacia adentro al final de cada rep. Mayor movilidad de cadera y tobillo."
+            },
+            {
+              "sort_order": 5,
+              "name": "Tuck planche hold",
+              "muscles": "Deltoides anterior, core, serratos, tríceps",
+              "sets": 4,
+              "reps": "10-15s",
+              "rest_seconds": 90,
+              "priority": "accessory",
+              "is_timer": true,
+              "timer_seconds": 12,
+              "note": "En paralelas o suelo, levanta las rodillas al pecho y mantén el cuerpo horizontal. El primer paso real hacia el planche."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

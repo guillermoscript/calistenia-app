@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Shot List — La Perla Run</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #000;
+    color: #e5e5e5;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 6rem;
+  }
+
+  /* Top bar */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid #222;
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .topbar .title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+  }
+  .topbar .title span { color: #a3e635; }
+  .topbar .rule {
+    font-size: 0.65rem;
+    background: #a3e635;
+    color: #000;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  /* Phase headers */
+  .phase {
+    position: sticky;
+    top: 2.6rem;
+    z-index: 90;
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #222;
+  }
+  .phase-pre { background: rgba(96,165,250,0.12); color: #60a5fa; }
+  .phase-run { background: rgba(163,230,53,0.12); color: #a3e635; }
+  .phase-code { background: rgba(251,146,60,0.12); color: #fb923c; }
+  .phase-finish { background: rgba(192,132,252,0.12); color: #c084fc; }
+  .phase-react { background: rgba(248,113,113,0.12); color: #f87171; }
+  .phase-broll { background: rgba(56,189,248,0.12); color: #38bdf8; }
+
+  /* Shot card */
+  .shot {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .shot.key {
+    background: rgba(163,230,53,0.04);
+    border-left: 3px solid #a3e635;
+  }
+  .shot.critical {
+    background: rgba(251,146,60,0.06);
+    border-left: 3px solid #fb923c;
+  }
+
+  .shot-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+  }
+  .shot-num {
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .n-cam { background: rgba(96,165,250,0.2); color: #60a5fa; }
+  .n-key { background: rgba(163,230,53,0.2); color: #a3e635; }
+  .n-crit { background: rgba(251,146,60,0.2); color: #fb923c; }
+  .n-react { background: rgba(248,113,113,0.2); color: #f87171; }
+  .n-broll { background: rgba(56,189,248,0.2); color: #38bdf8; }
+
+  .shot-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .shot-desc {
+    font-size: 0.8rem;
+    color: #a3a3a3;
+    margin-bottom: 0.35rem;
+  }
+
+  /* Direction tags */
+  .dirs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .dir {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .dir-pos { background: rgba(96,165,250,0.15); color: #93c5fd; }
+  .dir-ang { background: rgba(192,132,252,0.15); color: #d8b4fe; }
+  .dir-frame { background: rgba(251,146,60,0.15); color: #fdba74; }
+  .dir-tip { background: rgba(163,230,53,0.15); color: #bef264; }
+  .dir-warn { background: rgba(248,113,113,0.15); color: #fca5a5; }
+
+  /* Counter */
+  .counter {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid #222;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+  }
+  .counter div {
+    font-size: 0.6rem;
+    color: #737373;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .counter .num {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: block;
+    line-height: 1.2;
+  }
+  .counter .c-cam .num { color: #60a5fa; }
+  .counter .c-key .num { color: #a3e635; }
+  .counter .c-react .num { color: #f87171; }
+  .counter .c-broll .num { color: #38bdf8; }
+
+  /* Divider */
+  .divider {
+    padding: 0.6rem 1rem;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #525252;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<!-- Sticky top bar -->
+<div class="topbar">
+  <div class="title">Shot List — <span>La Perla Run</span></div>
+  <div class="rule">VERTICAL 9:16</div>
+</div>
+
+<!-- ==================== PRE-CARRERA ==================== -->
+<div class="phase phase-pre">&#128247; Pre-carrera — Ambiente</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-broll">1</div>
+    <div class="shot-title">Arco de salida / banderas La Perla</div>
+  </div>
+  <p class="shot-desc">Toma general del arco, banderas, branding del evento.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Frente al arco</span>
+    <span class="dir dir-frame">Plano abierto</span>
+  </div>
+</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-broll">2</div>
+    <div class="shot-title">Gente calentando / energia</div>
+  </div>
+  <p class="shot-desc">Corredores estirando, musica, vibe del evento. Varias tomas cortas.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Caminar entre la gente</span>
+    <span class="dir dir-ang">A la altura de pecho</span>
+  </div>
+</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-broll">3</div>
+    <div class="shot-title">Detalles: zapatillas, numeros, camisetas</div>
+  </div>
+  <p class="shot-desc">Close-ups de detalles de corredores. 3-4 tomas rapidas.</p>
+  <div class="dirs">
+    <span class="dir dir-ang">Angulo bajo / cercano</span>
+  </div>
+</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-cam">4</div>
+    <div class="shot-title">Guillermo en la linea de salida</div>
+  </div>
+  <p class="shot-desc">Guillermo entre los corredores, listo para arrancar. Que mire a camara un segundo.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Frente a el</span>
+    <span class="dir dir-frame">Cintura para arriba</span>
+    <span class="dir dir-tip">Que mire a camara</span>
+  </div>
+</div>
+
+<!-- ==================== CORRIENDO ==================== -->
+<div class="phase phase-run">&#127939; Km 0 → 2 — Corriendo</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-cam">5</div>
+    <div class="shot-title">Corriendo con el grupo — LADO</div>
+  </div>
+  <p class="shot-desc">Correr al lado de Guillermo, capturar de perfil. Que se vean otros corredores.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Al lado, trotando juntos</span>
+    <span class="dir dir-ang">Altura de pecho</span>
+    <span class="dir dir-frame">Medio cuerpo + grupo atras</span>
+  </div>
+</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-cam">6</div>
+    <div class="shot-title">Corriendo — FRENTE</div>
+  </div>
+  <p class="shot-desc">Parar y dejar que Guillermo corra hacia ti. O caminar hacia atras.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Frente a el, el se acerca</span>
+    <span class="dir dir-ang">Ligeramente de abajo</span>
+  </div>
+</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-cam">7</div>
+    <div class="shot-title">Corriendo — ATRAS</div>
+  </div>
+  <p class="shot-desc">Guillermo alejandose con el grupo. Se ve su espalda y los demas.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Detras, parado</span>
+    <span class="dir dir-frame">Plano abierto</span>
+  </div>
+</div>
+
+<div class="shot key">
+  <div class="shot-header">
+    <div class="shot-num n-key">8</div>
+    <div class="shot-title">Muestra la app trackeando</div>
+  </div>
+  <p class="shot-desc">Guillermo levanta el telefono hacia la camara mostrando la app con GPS activo.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Frente a el</span>
+    <span class="dir dir-frame">Telefono en primer plano + cara atras</span>
+    <span class="dir dir-tip">Que se vea la pantalla verde</span>
+  </div>
+</div>
+
+<div class="shot key">
+  <div class="shot-header">
+    <div class="shot-num n-key">9</div>
+    <div class="shot-title">Guillermo FRENA y sale del grupo</div>
+  </div>
+  <p class="shot-desc">Se detiene, se sale al borde. Los demas siguen corriendo. PLANO ABIERTO.</p>
+  <div class="dirs">
+    <span class="dir dir-frame">Cuerpo entero + corredores siguiendo</span>
+    <span class="dir dir-tip">El CONTRASTE es lo importante</span>
+    <span class="dir dir-warn">3 tomas: amplia, media, cercana</span>
+  </div>
+</div>
+
+<!-- ==================== CODEANDO CON IA ==================== -->
+<div class="phase phase-code">&#129302; ~Km 2 — Hablando con la IA (ESCENA CLAVE)</div>
+
+<div class="shot critical">
+  <div class="shot-header">
+    <div class="shot-num n-crit">10</div>
+    <div class="shot-title">&#11088; Sobre el hombro — voz + terminal</div>
+  </div>
+  <p class="shot-desc">DETRAS de Guillermo, por encima del hombro derecho. Se ve la PANTALLA del telefono (terminal negra con texto) y su boca hablando. El texto aparece mientras habla.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Detras, sobre hombro derecho</span>
+    <span class="dir dir-frame">Pantalla + boca en cuadro</span>
+    <span class="dir dir-warn">LA TOMA MAS IMPORTANTE</span>
+  </div>
+</div>
+
+<div class="shot critical">
+  <div class="shot-header">
+    <div class="shot-num n-crit">11</div>
+    <div class="shot-title">&#11088; Perfil hablando</div>
+  </div>
+  <p class="shot-desc">Desde el LADO. Guillermo con el telefono cerca de la boca. Se nota que DICTA, no escribe.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Al lado, su altura</span>
+    <span class="dir dir-frame">Medio cuerpo, telefono visible</span>
+  </div>
+</div>
+
+<div class="shot critical">
+  <div class="shot-header">
+    <div class="shot-num n-crit">12</div>
+    <div class="shot-title">&#11088; Plano abierto — el absurdo</div>
+  </div>
+  <p class="shot-desc">Desde LEJOS (3-5m). Guillermo hablando al telefono + corredores pasando al fondo. Un pana hablando con una IA mientras todos corren.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">3-5 metros, parado</span>
+    <span class="dir dir-frame">Guillermo + corredores pasando</span>
+    <span class="dir dir-tip">VENDE el absurdo del video</span>
+  </div>
+</div>
+
+<div class="shot critical">
+  <div class="shot-header">
+    <div class="shot-num n-crit">13</div>
+    <div class="shot-title">&#11088; Detalle pantalla — IA generando</div>
+  </div>
+  <p class="shot-desc">MUY CERCA de la pantalla del telefono. Que se vea la terminal con texto verde apareciendo linea por linea.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Muy cerca, 20-30cm</span>
+    <span class="dir dir-frame">Solo la pantalla</span>
+  </div>
+</div>
+
+<div class="shot critical">
+  <div class="shot-header">
+    <div class="shot-num n-crit">14</div>
+    <div class="shot-title">&#11088; Corredores pasando — toma fija</div>
+  </div>
+  <p class="shot-desc">Toma FIJA. Guillermo a un lado del cuadro (hablando al telefono), gente cruza el cuadro por el otro lado. 10-15 segundos minimo.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Parado, no mover camara</span>
+    <span class="dir dir-frame">Guillermo izquierda + corredores derecha</span>
+    <span class="dir dir-warn">Minimo 15 seg sin cortar</span>
+  </div>
+</div>
+
+<div class="shot critical">
+  <div class="shot-header">
+    <div class="shot-num n-crit">15</div>
+    <div class="shot-title">Cara de "funciono"</div>
+  </div>
+  <p class="shot-desc">Cuando la IA termina, Guillermo mira la pantalla y sonrie. Grabar esa reaccion de frente.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Frente a el</span>
+    <span class="dir dir-frame">Cara + telefono</span>
+  </div>
+</div>
+
+<div class="shot critical">
+  <div class="shot-header">
+    <div class="shot-num n-crit">16</div>
+    <div class="shot-title">Deploy — sobre el hombro</div>
+  </div>
+  <p class="shot-desc">Sobre el hombro: se ve "git push" en la terminal. Despues la cara de Guillermo celebrando.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Sobre hombro → frente</span>
+    <span class="dir dir-tip">Que diga "deployed" o celebre</span>
+  </div>
+</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-cam">17</div>
+    <div class="shot-title">Se levanta y vuelve a correr</div>
+  </div>
+  <p class="shot-desc">Guillermo guarda telefono, se levanta, arranca a correr. Verlo alejarse.</p>
+  <div class="dirs">
+    <span class="dir dir-frame">Plano medio → abierto</span>
+    <span class="dir dir-tip">Si uso laptop: guardarla en mochila</span>
+  </div>
+</div>
+
+<div class="divider">&#9201; Guillermo codea ~3 min — hay tiempo para TODAS las tomas</div>
+
+<!-- ==================== META ==================== -->
+<div class="phase phase-finish">&#127937; Meta — Llegada</div>
+
+<div class="shot key">
+  <div class="shot-header">
+    <div class="shot-num n-key">18</div>
+    <div class="shot-title">Cruzando la meta — de frente</div>
+  </div>
+  <p class="shot-desc">Posicionarse EN la meta apuntando hacia los corredores. Capturar a Guillermo cruzando.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">En la linea de meta</span>
+    <span class="dir dir-frame">De frente, que se vea el arco</span>
+    <span class="dir dir-warn">Llegar antes que Guillermo</span>
+  </div>
+</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-broll">19</div>
+    <div class="shot-title">Celebracion en la meta</div>
+  </div>
+  <p class="shot-desc">Gente celebrando, chocando manos, energia post-carrera.</p>
+  <div class="dirs">
+    <span class="dir dir-frame">Plano abierto, varias tomas</span>
+  </div>
+</div>
+
+<div class="shot key">
+  <div class="shot-header">
+    <div class="shot-num n-key">20</div>
+    <div class="shot-title">Sobre hombro — stats finales en la app</div>
+  </div>
+  <p class="shot-desc">Guillermo abre la app y ve sus stats. Por detras, que se vea el mapa GPS y los splits.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Detras, sobre hombro</span>
+    <span class="dir dir-frame">Pantalla con mapa + stats</span>
+  </div>
+</div>
+
+<div class="shot key">
+  <div class="shot-header">
+    <div class="shot-num n-key">21</div>
+    <div class="shot-title">Genera la share card — sobre hombro</div>
+  </div>
+  <p class="shot-desc">Guillermo escribe "La Perla Run" en el campo y presiona compartir. Se ve la card con el banner verde.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Sobre hombro</span>
+    <span class="dir dir-frame">Pantalla: input → card aparece</span>
+    <span class="dir dir-tip">"LA PERLA RUN" en verde</span>
+  </div>
+</div>
+
+<div class="shot key">
+  <div class="shot-header">
+    <div class="shot-num n-key">22</div>
+    <div class="shot-title">Share card hacia camara</div>
+  </div>
+  <p class="shot-desc">Guillermo voltea el telefono HACIA la camara mostrando la share card. Que la card llene la pantalla.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Frente a el</span>
+    <span class="dir dir-frame">Telefono centrado, card visible</span>
+    <span class="dir dir-warn">Sostener 3-4 segundos quieto</span>
+  </div>
+</div>
+
+<!-- ==================== REACCIONES ==================== -->
+<div class="phase phase-react">&#128525; Post-carrera — Reacciones (VALE ORO)</div>
+
+<div class="shot" style="border-left: 3px solid #f87171; background: rgba(248,113,113,0.04);">
+  <div class="shot-header">
+    <div class="shot-num n-react">23</div>
+    <div class="shot-title">Mostrando card a corredor #1</div>
+  </div>
+  <p class="shot-desc">Guillermo se acerca a alguien: "mira esto, lo hice durante la carrera". Grabar la CARA de la persona reaccionando.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Al lado del grupo</span>
+    <span class="dir dir-frame">Caras, expresiones</span>
+    <span class="dir dir-tip">Audio genuino = potente</span>
+  </div>
+</div>
+
+<div class="shot" style="border-left: 3px solid #f87171; background: rgba(248,113,113,0.04);">
+  <div class="shot-header">
+    <div class="shot-num n-react">24</div>
+    <div class="shot-title">Reaccion corredor #2</div>
+  </div>
+  <p class="shot-desc">Otra persona diferente. Buscar alguien que diga "que cool" o "pasame el link".</p>
+  <div class="dirs">
+    <span class="dir dir-frame">Medio-cerrado, caras</span>
+  </div>
+</div>
+
+<div class="shot" style="border-left: 3px solid #f87171; background: rgba(248,113,113,0.04);">
+  <div class="shot-header">
+    <div class="shot-num n-react">25</div>
+    <div class="shot-title">Reaccion corredor #3</div>
+  </div>
+  <p class="shot-desc">Mas reacciones. Cuantas mas mejor — en edicion se escogen las mejores.</p>
+  <div class="dirs">
+    <span class="dir dir-warn">Minimo 3, ideal 5+</span>
+  </div>
+</div>
+
+<div class="shot" style="border-left: 3px solid #f87171; background: rgba(248,113,113,0.04);">
+  <div class="shot-header">
+    <div class="shot-num n-react">26</div>
+    <div class="shot-title">Reacciones #4 y #5</div>
+  </div>
+  <p class="shot-desc">Seguir buscando reacciones. Estas son el CIERRE del video — sin ellas pierde impacto.</p>
+  <div class="dirs">
+    <span class="dir dir-warn">SUPER IMPORTANTES para el video</span>
+  </div>
+</div>
+
+<!-- ==================== CTA / EXTRAS ==================== -->
+<div class="phase phase-broll">&#127916; Extras — CTA y seguridad</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-cam">27</div>
+    <div class="shot-title">CTA a camara</div>
+  </div>
+  <p class="shot-desc">Guillermo mirando a camara: "La app es gratis, link en bio". Grabar 2-3 versiones.</p>
+  <div class="dirs">
+    <span class="dir dir-pos">Frente, estable</span>
+    <span class="dir dir-frame">Cintura para arriba</span>
+    <span class="dir dir-warn">2-3 tomas por si acaso</span>
+  </div>
+</div>
+
+<div class="shot">
+  <div class="shot-header">
+    <div class="shot-num n-broll">28</div>
+    <div class="shot-title">B-roll extra del evento</div>
+  </div>
+  <p class="shot-desc">Tomas sueltas: gente corriendo en grupo, agua, musica, animacion. Todo sirve para montaje.</p>
+  <div class="dirs">
+    <span class="dir dir-tip">Variedad: cerca, lejos, detalles</span>
+  </div>
+</div>
+
+<!-- Bottom counter -->
+<div class="counter">
+  <div class="c-cam">
+    <span class="num">28</span>
+    tomas total
+  </div>
+  <div class="c-key">
+    <span class="num">7</span>
+    clave
+  </div>
+  <div class="c-react">
+    <span class="num">4</span>
+    reacciones
+  </div>
+  <div class="c-broll">
+    <span class="num">4</span>
+    b-roll
+  </div>
+</div>
+
+</body>
+</html>

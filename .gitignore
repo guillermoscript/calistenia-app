@@ -26,6 +26,10 @@ pocketbase
 # Test artifacts
 test-results/
 playwright-report/
+.playwright-mcp/
+**/.playwright-mcp/
+vite_out.log
+pb_data_backup_*/
 
 # AI agent config — project-specific tooling, not needed by contributors
 .agents/

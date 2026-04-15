@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Promocional: La Perla Run x Calistenia App</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg-card: #141414;
+    --bg-card-alt: #1a1a1a;
+    --border: #262626;
+    --text: #e5e5e5;
+    --text-dim: #a3a3a3;
+    --text-muted: #737373;
+    --accent: #a3e635;
+    --accent-dim: rgba(163, 230, 53, 0.15);
+    --red: #f87171;
+    --blue: #60a5fa;
+    --orange: #fb923c;
+    --purple: #c084fc;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 3rem 1rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2.5rem;
+  }
+  .header .badge {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.8rem;
+    border-radius: 100px;
+    margin-bottom: 1rem;
+  }
+  .header h1 {
+    font-size: clamp(1.5rem, 5vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+  .header h1 span { color: var(--accent); }
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .header .concept {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* Section */
+  section {
+    margin-bottom: 2.5rem;
+  }
+  .section-number {
+    display: inline-block;
+    background: var(--accent);
+    color: #0a0a0a;
+    font-size: 0.7rem;
+    font-weight: 700;
+    width: 1.5rem;
+    height: 1.5rem;
+    line-height: 1.5rem;
+    text-align: center;
+    border-radius: 6px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card p { color: var(--text-dim); font-size: 0.9rem; }
+
+  /* Meta tags */
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .meta-tag {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  .meta-tag strong { color: var(--text); }
+
+  /* Storyboard */
+  .act {
+    margin-bottom: 1.5rem;
+    border-left: 3px solid var(--accent);
+    padding-left: 0;
+  }
+  .act-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--accent-dim);
+    border-radius: 0 10px 0 0;
+    margin-bottom: 0;
+  }
+  .act-header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .act-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .shot {
+    padding: 1rem 1rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .shot:last-child { border-bottom: none; }
+  .shot-top {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .shot-time {
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+    min-width: 3.5rem;
+    flex-shrink: 0;
+  }
+  .shot-type {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .type-camera { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .type-screen { background: rgba(192,132,252,0.15); color: var(--purple); }
+  .type-mixed  { background: rgba(251,146,60,0.15); color: var(--orange); }
+
+  .shot-desc {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-bottom: 0.3rem;
+  }
+  .shot-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--border);
+  }
+
+  /* Camera directions */
+  .cam-dir {
+    margin-top: 0.5rem;
+    background: rgba(96,165,250,0.08);
+    border: 1px solid rgba(96,165,250,0.2);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  .cam-dir .dir-label {
+    font-weight: 700;
+    color: var(--blue);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.3rem;
+  }
+  .cam-dir .dir-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-start;
+    padding: 0.2rem 0;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .cam-dir .dir-icon {
+    flex-shrink: 0;
+    width: 1.2rem;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+  .guille-dir {
+    margin-top: 0.4rem;
+    background: rgba(163,230,53,0.08);
+    border: 1px solid rgba(163,230,53,0.2);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  .guille-dir .dir-label {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.3rem;
+  }
+  .guille-dir .dir-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-start;
+    padding: 0.2rem 0;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .guille-dir .dir-icon {
+    flex-shrink: 0;
+    width: 1.2rem;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  /* Shot importance */
+  .shot.key-shot {
+    background: rgba(163,230,53,0.05);
+    border-left: 3px solid var(--accent);
+    margin-left: -3px;
+    padding-left: calc(1rem + 3px);
+  }
+
+  /* Progress bar */
+  .timeline-bar {
+    height: 6px;
+    background: var(--bg-card-alt);
+    border-radius: 100px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    display: flex;
+  }
+  .timeline-bar div { height: 100%; }
+  .tb-hook    { width: 20%;  background: var(--blue); }
+  .tb-absurd  { width: 33%;  background: var(--orange); }
+  .tb-payoff  { width: 33%;  background: var(--accent); }
+  .tb-cta     { width: 14%;  background: var(--purple); }
+
+  .timeline-labels {
+    display: flex;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+  }
+  .timeline-labels span { text-align: center; }
+  .timeline-labels .tl-hook   { width: 20%; color: var(--blue); }
+  .timeline-labels .tl-absurd { width: 33%; color: var(--orange); }
+  .timeline-labels .tl-payoff { width: 33%; color: var(--accent); }
+  .timeline-labels .tl-cta    { width: 14%; color: var(--purple); }
+
+  /* Checklist */
+  .checklist {
+    list-style: none;
+    padding: 0;
+  }
+  .checklist li {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist .icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+    width: 1.5rem;
+    text-align: center;
+  }
+
+  /* Day timeline */
+  .day-timeline {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+  .day-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.35rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    background: var(--border);
+  }
+  .day-item {
+    position: relative;
+    padding: 0.5rem 0 0.5rem 0.75rem;
+  }
+  .day-item::before {
+    content: '';
+    position: absolute;
+    left: -1.2rem;
+    top: 0.85rem;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+  }
+  .day-item.key::before {
+    width: 10px;
+    height: 10px;
+    left: -1.3rem;
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  .day-item .label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .day-item .detail {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  /* Distribution grid */
+  .dist-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  @media (min-width: 500px) {
+    .dist-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .dist-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+  }
+  .dist-item .platform {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+  }
+  .dist-item .note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  /* Tips */
+  .tip {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    color: var(--text-dim);
+  }
+  .tip:last-child { border-bottom: none; }
+  .tip .bullet {
+    flex-shrink: 0;
+    color: var(--accent);
+    font-weight: 700;
+    margin-top: 0.05rem;
+  }
+
+  /* Equipment grid */
+  .equip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  @media (max-width: 400px) {
+    .equip-grid { grid-template-columns: 1fr; }
+  }
+  .equip-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  .equip-item .e-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .equip-item .e-name { font-size: 0.8rem; font-weight: 600; }
+  .equip-item .e-note { font-size: 0.72rem; color: var(--text-muted); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+  }
+  .footer p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  /* Print */
+  @media print {
+    body { background: #fff; color: #111; }
+    .card { border-color: #ddd; background: #f9f9f9; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="badge">Guia de Grabacion</div>
+    <h1>Video Promocional:<br><span>La Perla Run</span> x Calistenia App</h1>
+    <p class="subtitle">Guia de grabacion para el equipo</p>
+    <p class="concept">
+      Guillermo corre La Perla Run mientras su app trackea via GPS. A mitad de carrera, para y <strong style="color:var(--accent);">le habla a una IA por voz</strong> desde su telefono &mdash; la IA escribe el codigo de un feature personalizado para la carrera. Hace deploy en vivo, termina la carrera, y muestra el resultado: una share card con "LA PERLA RUN" y sus stats reales.
+    </p>
+  </header>
+
+  <!-- 1. CONCEPTO -->
+  <section>
+    <h2><span class="section-number">1</span> Concepto del Video</h2>
+    <div class="card">
+      <p style="color: var(--text); font-weight: 600; font-size: 1rem; margin-bottom: 0.75rem;">
+        "Le hable a una IA mientras corria y ella codeo un feature para mi app"
+      </p>
+      <p style="margin-bottom: 0.75rem;">
+        Inspirado en un video viral donde alguien codifico una app mientras corria un maraton usando dictado por voz. Nuestro twist es MEJOR: Guillermo corre La Perla Run, para en el km 2, y <strong>le habla a una IA (Claude Code) por voz</strong> desde su telefono conectado via Tailscale a su PC de escritorio. Le dice lo que necesita, la IA escribe el codigo, y el hace deploy &mdash; todo durante la carrera. Al terminar muestra el resultado: una share card personalizada con "LA PERLA RUN" y sus stats reales.
+      </p>
+      <div class="meta-row">
+        <span class="meta-tag"><strong>Duracion:</strong> 60-75s</span>
+        <span class="meta-tag"><strong>Formato:</strong> Vertical 9:16</span>
+        <span class="meta-tag"><strong>Para:</strong> Reels / TikTok</span>
+        <span class="meta-tag"><strong>Tono:</strong> Absurdo + tecnico</span>
+      </div>
+    </div>
+
+    <div class="card" style="border-color: rgba(163,230,53,0.3); background: rgba(163,230,53,0.05);">
+      <p style="color: var(--accent); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">&#129302; Por que esto es mejor que el video original</p>
+      <ul class="checklist">
+        <li><span class="icon">&#128172;</span> <strong>El original:</strong> un pana dictaba texto a codigo con Wispr Flow (glorified dictado)</li>
+        <li><span class="icon">&#129302;</span> <strong>Nuestro video:</strong> la IA PIENSA y genera el codigo &mdash; Guillermo solo le dice que quiere</li>
+        <li><span class="icon">&#128241;</span> <strong>Setup:</strong> telefono con Termius + Tailscale + Claude Code CLI en su PC de escritorio</li>
+        <li><span class="icon">&#127908;</span> <strong>Voz:</strong> dictado de iOS (el microfono del teclado) transcribe lo que dice directo en la terminal</li>
+        <li><span class="icon">&#128640;</span> <strong>Resultado:</strong> un feature REAL desplegado en produccion durante una carrera</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 1.5. SETUP TECNICO -->
+  <section>
+    <h2><span class="section-number">&#9881;&#65039;</span> Setup Tecnico (como funciona)</h2>
+
+    <div class="card">
+      <p style="color: var(--text); font-weight: 600; margin-bottom: 0.75rem;">Diagrama de conexion</p>
+      <div style="font-family: 'SF Mono','Menlo','Consolas',monospace; font-size: 0.75rem; color: var(--text-dim); line-height: 1.8; padding: 0.5rem; background: var(--bg); border-radius: 8px; overflow-x: auto;">
+        &#127908; Voz de Guillermo<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&#8595;<br>
+        &#128241; iPhone (dictado iOS &rarr; texto en teclado)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&#8595;<br>
+        &#128274; Termius app (SSH via Tailscale VPN)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&#8595;<br>
+        &#128421; PC de escritorio (tmux + Claude Code CLI)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&#8595;<br>
+        &#129302; Claude Code genera el codigo<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&#8595;<br>
+        &#128640; git push &rarr; deploy en produccion
+      </div>
+    </div>
+
+    <h3 style="margin-top: 1rem;">Preparacion antes de la carrera</h3>
+    <div class="card" style="padding: 0.5rem 1rem;">
+      <ul class="checklist">
+        <li><span class="icon">1&#65039;&#8419;</span> <strong>En tu PC:</strong> Abrir terminal, iniciar <code style="color:var(--accent);">tmux new -s race</code></li>
+        <li><span class="icon">2&#65039;&#8419;</span> <strong>En tmux:</strong> Navegar al repo y tener Claude Code listo (<code style="color:var(--accent);">cd calistenia-app && claude</code>)</li>
+        <li><span class="icon">3&#65039;&#8419;</span> <strong>Tailscale:</strong> Confirmar que esta activo y tu PC es alcanzable desde el telefono</li>
+        <li><span class="icon">4&#65039;&#8419;</span> <strong>En el iPhone:</strong> Abrir Termius, conectar via SSH a tu PC (usar IP de Tailscale)</li>
+        <li><span class="icon">5&#65039;&#8419;</span> <strong>Probar:</strong> Hacer <code style="color:var(--accent);">tmux attach -t race</code> y verificar que ves Claude Code</li>
+        <li><span class="icon">6&#65039;&#8419;</span> <strong>Probar dictado:</strong> Presionar el microfono del teclado iOS y hablar &mdash; verificar que el texto aparece en la terminal</li>
+        <li><span class="icon">&#9888;&#65039;</span> <strong>Screen recording:</strong> Activar en AMBOS &mdash; telefono (iOS) y PC (OBS o QuickTime)</li>
+      </ul>
+    </div>
+
+    <h3 style="margin-top: 1rem;">El truco de produccion</h3>
+    <div class="card" style="border-color: rgba(251,146,60,0.3); background: rgba(251,146,60,0.05);">
+      <p style="color: var(--orange); font-weight: 600; margin-bottom: 0.5rem;">&#127916; Plan A + Plan B</p>
+      <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 0.75rem;">
+        <strong>Plan A (ideal):</strong> Durante la carrera, hablarle a Claude Code EN VIVO. Si responde bien y el internet funciona &mdash; perfecto, usas esa toma.
+      </p>
+      <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 0.75rem;">
+        <strong>Plan B (backup):</strong> Pre-grabar la sesion de Claude Code en tu PC la noche anterior. Durante la carrera, solo grabas la parte de VOZ + la terminal abierta. En edicion combinas: tu voz real + screen recording de Claude trabajando (pre-grabado) + deploy real.
+      </p>
+      <p style="color: var(--text-dim); font-size: 0.85rem;">
+        <strong>El deploy SI es real:</strong> En ambos planes, el <code style="color:var(--accent);">git push</code> durante la carrera es genuino. El feature se despliega en vivo.
+      </p>
+    </div>
+
+    <h3 style="margin-top: 1rem;">Que decirle a la IA (guion sugerido)</h3>
+    <div class="card" style="font-family: 'SF Mono','Menlo','Consolas',monospace; font-size: 0.8rem; line-height: 1.6;">
+      <p style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; font-family: system-ui;">Lo que Guillermo dice por voz:</p>
+      <p style="color: var(--accent);">"Necesito que al share card de cardio le agregues un banner con el nombre de la carrera. Que el usuario pueda escribir el nombre del evento, por ejemplo La Perla Run, y que aparezca en grande en la card con el color accent de fondo y texto blanco"</p>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; font-family: system-ui;">Claude Code responde generando codigo...</p>
+    </div>
+  </section>
+
+  <!-- 2. STORYBOARD -->
+  <section>
+    <h2><span class="section-number">2</span> Storyboard / Shot List</h2>
+
+    <!-- Progress bar -->
+    <div class="timeline-bar">
+      <div class="tb-hook"></div>
+      <div class="tb-absurd"></div>
+      <div class="tb-payoff"></div>
+      <div class="tb-cta"></div>
+    </div>
+    <div class="timeline-labels">
+      <span class="tl-hook">Hook 0-15s</span>
+      <span class="tl-absurd">El Absurdo 15-40s</span>
+      <span class="tl-payoff">Payoff 40-65s</span>
+      <span class="tl-cta">CTA 65-75s</span>
+    </div>
+
+    <!-- ACT 1 -->
+    <div class="act">
+      <div class="act-header">
+        <h3>Acto 1: El Hook</h3>
+        <span class="act-time">0 - 15 segundos</span>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">0-3s</span>
+          <span class="shot-type type-camera">&#127909; Camara</span>
+          <strong>HOOK</strong>
+        </div>
+        <p class="shot-desc">Guillermo corriendo con el grupo La Perla, sudando, mira a camara con cara de "se me ocurrio algo".</p>
+        <p class="shot-text">Texto overlay: "Estoy en medio de una carrera y se me ocurrio una idea"</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto (amigo) &mdash; que grabar</div>
+          <div class="dir-row"><span class="dir-icon">&#128205;</span> Posicion: corriendo AL LADO de Guillermo, ligeramente adelante</div>
+          <div class="dir-row"><span class="dir-icon">&#128248;</span> Angulo: a la altura del pecho de Guillermo, ligeramente de abajo hacia arriba</div>
+          <div class="dir-row"><span class="dir-icon">&#127916;</span> Encuadre: Guillermo de cintura para arriba, que se vean otros corredores atras (desenfocados)</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> CLAVE: Guillermo mira directo a la camara un segundo &mdash; eso es el hook</div>
+          <div class="dir-row"><span class="dir-icon">&#9888;&#65039;</span> Grabar 3-4 tomas de esto &mdash; corriendo juntos, probar distintos angulos</div>
+        </div>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; que hacer</div>
+          <div class="dir-row"><span class="dir-icon">&#127939;</span> Correr normal, con el telefono en la mano (pantalla hacia abajo)</div>
+          <div class="dir-row"><span class="dir-icon">&#128064;</span> A la senal: mirar a camara con expresion de "tengo una idea" (levantar cejas, media sonrisa)</div>
+        </div>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">3-8s</span>
+          <span class="shot-type type-mixed">&#127916; Mixto</span>
+        </div>
+        <p class="shot-desc">Guillermo levanta el telefono hacia la camara mostrando la app trackeando en vivo.</p>
+        <p class="shot-text">Texto overlay: "Mi app ya me esta trackeando..."</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; que grabar</div>
+          <div class="dir-row"><span class="dir-icon">&#128205;</span> Posicion: FRENTE a Guillermo, caminando hacia atras o parado mientras el se acerca</div>
+          <div class="dir-row"><span class="dir-icon">&#128248;</span> Angulo: apuntar al telefono que Guillermo muestra &mdash; la pantalla debe verse en cuadro</div>
+          <div class="dir-row"><span class="dir-icon">&#127916;</span> Encuadre: telefono en primer plano + cara de Guillermo detras (desenfocada)</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> La pantalla del telefono muestra la barra verde de tracking con distancia y pace</div>
+          <div class="dir-row"><span class="dir-icon">&#9888;&#65039;</span> ALTERNATIVA: esto tambien se puede cubrir con screen recording de Guillermo &mdash; grabar ambas opciones</div>
+        </div>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; que hacer</div>
+          <div class="dir-row"><span class="dir-icon">&#128241;</span> Levantar el telefono hacia la camara mostrando la app (pantalla con ActiveCardioBar visible)</div>
+          <div class="dir-row"><span class="dir-icon">&#128250;</span> Screen recording del telefono ENCENDIDO desde antes de la carrera</div>
+        </div>
+      </div>
+
+      <div class="shot key-shot">
+        <div class="shot-top">
+          <span class="shot-time">8-15s</span>
+          <span class="shot-type type-camera">&#127909; Camara</span>
+          <strong style="color: var(--accent);">TRANSICION CLAVE</strong>
+        </div>
+        <p class="shot-desc">Guillermo frena, sale del grupo de corredores, busca un lugar donde sentarse/apoyarse. Saca el telefono con intencion.</p>
+        <p class="shot-text">Texto overlay: "...pero le falta algo"</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; que grabar (TOMA IMPORTANTE)</div>
+          <div class="dir-row"><span class="dir-icon">&#128205;</span> Posicion: quedarse parado donde Guillermo frena, grabar TODO el movimiento</div>
+          <div class="dir-row"><span class="dir-icon">&#128248;</span> Seguir a Guillermo: cuerpo entero mientras frena &rarr; camina hacia el borde &rarr; se sienta</div>
+          <div class="dir-row"><span class="dir-icon">&#127939;</span> IMPORTANTE: que se vean corredores pasando detras mientras Guillermo se detiene &mdash; esto es el CONTRASTE</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> Grabar toma AMPLIA (cuerpo entero + corredores) Y toma CERRADA (manos sacando telefono)</div>
+          <div class="dir-row"><span class="dir-icon">&#9888;&#65039;</span> Grabar minimo 3 tomas de esto &mdash; una amplia, una media, una del telefono</div>
+        </div>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; que hacer</div>
+          <div class="dir-row"><span class="dir-icon">&#127939;</span> Frenar gradualmente (no de golpe), salir del grupo, buscar un banco/borde/poste</div>
+          <div class="dir-row"><span class="dir-icon">&#128241;</span> Sentarse o apoyarse. Sacar el telefono con cara de "voy a hacer algo"</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> OPCION: si llevas laptop en mochila, sacarla aqui en vez del telefono &mdash; mas absurdo y visual</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 2 -->
+    <div class="act">
+      <div class="act-header">
+        <h3>Acto 2: El Absurdo &mdash; Codeando</h3>
+        <span class="act-time">15 - 40 segundos</span>
+      </div>
+
+      <div class="shot key-shot">
+        <div class="shot-top">
+          <span class="shot-time">15-25s</span>
+          <span class="shot-type type-mixed">&#127916; Mixto</span>
+          <strong style="color: var(--accent);">ESCENA PRINCIPAL &mdash; HABLANDO CON LA IA</strong>
+        </div>
+        <p class="shot-desc">Guillermo abre Termius en su telefono (terminal negra con texto), acerca el telefono a su boca, presiona el microfono del teclado iOS, y LE HABLA A LA IA. Se ve como el texto aparece en la terminal mientras el habla.</p>
+        <p class="shot-text">Guillermo dice en voz alta: "Necesito que al share card de cardio le agregues un banner con el nombre de la carrera, que diga La Perla Run"</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; GRABAR ESTAS 5 TOMAS (todas importan)</div>
+          <div class="dir-row"><span class="dir-icon">1&#65039;&#8419;</span> <strong>SOBRE EL HOMBRO:</strong> DETRAS de Guillermo, por encima del hombro. Que se vea la TERMINAL en la pantalla del telefono y su boca hablando. Esta es LA toma mas importante &mdash; se ve como habla y el texto aparece.</div>
+          <div class="dir-row"><span class="dir-icon">2&#65039;&#8419;</span> <strong>PERFIL HABLANDO:</strong> Desde el LADO. Guillermo con el telefono cerca de la boca, hablando. Se nota que esta DICTANDO, no escribiendo.</div>
+          <div class="dir-row"><span class="dir-icon">3&#65039;&#8419;</span> <strong>PLANO ABIERTO:</strong> Desde LEJOS (3-5m). Guillermo parado/sentado hablando a su telefono + corredores pasando al fondo. El contraste ABSURDO: un pana hablando con una IA mientras todos corren.</div>
+          <div class="dir-row"><span class="dir-icon">4&#65039;&#8419;</span> <strong>DETALLE PANTALLA:</strong> MUY CERCA de la pantalla del telefono. Que se vea la terminal con Claude Code respondiendo, generando codigo linea por linea.</div>
+          <div class="dir-row"><span class="dir-icon">5&#65039;&#8419;</span> <strong>CARA DE "FUNCIONO":</strong> Cuando Claude termina de generar el codigo, Guillermo mira la pantalla y sonrie. Grabar esa reaccion.</div>
+          <div class="dir-row"><span class="dir-icon">&#9888;&#65039;</span> Guillermo va a estar ~3 minutos con la IA &mdash; hay MUCHO tiempo para todas las tomas. No apurarse.</div>
+        </div>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; que hacer</div>
+          <div class="dir-row"><span class="dir-icon">&#128241;</span> <strong>Abrir Termius:</strong> ya debe estar conectado via SSH + Tailscale a tu PC con Claude Code en tmux</div>
+          <div class="dir-row"><span class="dir-icon">&#127908;</span> <strong>Presionar microfono:</strong> el icono de microfono del teclado iOS. Hablar CLARO y FUERTE (hay ruido de carrera)</div>
+          <div class="dir-row"><span class="dir-icon">&#128172;</span> <strong>Que decir:</strong> "Necesito que al share card de cardio le agregues un banner con el nombre de la carrera, que diga La Perla Run en grande, con el color accent de fondo y texto blanco"</div>
+          <div class="dir-row"><span class="dir-icon">&#9166;</span> <strong>Presionar Enter:</strong> despues de que iOS transcriba, presionar Enter para enviar a Claude Code</div>
+          <div class="dir-row"><span class="dir-icon">&#129302;</span> <strong>Esperar:</strong> Claude Code genera el codigo. La terminal se llena de texto verde &mdash; esto se ve INCREIBLE en camara</div>
+          <div class="dir-row"><span class="dir-icon">&#128250;</span> <strong>Screen recording ENCENDIDO</strong> en el telefono &mdash; captura toda la interaccion con la IA</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> <strong>Backup:</strong> Si Claude no responde (internet malo), no pasa nada &mdash; tenemos la sesion pre-grabada en el PC. Se edita despues.</div>
+        </div>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">25-32s</span>
+          <span class="shot-type type-camera">&#127909; Camara</span>
+        </div>
+        <p class="shot-desc">Montaje rapido: Guillermo hablando con el telefono &rarr; corredores pasando &rarr; terminal con codigo apareciendo &rarr; cara concentrada mirando la pantalla.</p>
+        <p class="shot-text">Texto overlay: "Le pedi a una IA que codeara un feature mientras yo corria"</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; que grabar</div>
+          <div class="dir-row"><span class="dir-icon">&#127939;</span> <strong>Corredores pasando:</strong> Toma FIJA con Guillermo a un lado (hablando al telefono) y gente cruzando el cuadro por el otro lado. ESTE es el shot del absurdo.</div>
+          <div class="dir-row"><span class="dir-icon">&#128064;</span> <strong>Cara concentrada:</strong> Guillermo mirando la terminal mientras Claude genera codigo. Expresion de fascinacion.</div>
+          <div class="dir-row"><span class="dir-icon">&#128566;</span> <strong>Reacciones de curiosos:</strong> Si alguien mira raro a Guillermo hablando a su telefono &mdash; GRABAR ESO. Es oro puro.</div>
+          <div class="dir-row"><span class="dir-icon">&#9888;&#65039;</span> Grabar muchas tomas de gente pasando &mdash; en edicion se seleccionan las mejores</div>
+        </div>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">32-38s</span>
+          <span class="shot-type type-mixed">&#127916; Mixto</span>
+          <strong style="color: var(--orange);">DEPLOY EN VIVO</strong>
+        </div>
+        <p class="shot-desc">En la terminal: <code>git push</code> &rarr; deploy completo. Guillermo celebra: "Deployed. En produccion."</p>
+        <p class="shot-text">Texto overlay: "Listo. Deployed."</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; que grabar</div>
+          <div class="dir-row"><span class="dir-icon">&#128248;</span> <strong>Sobre el hombro:</strong> La pantalla mostrando la terminal con <code>git push</code> y el output. Que se lea el texto.</div>
+          <div class="dir-row"><span class="dir-icon">&#128079;</span> <strong>La reaccion:</strong> Guillermo levanta el puno / sonrie / dice "listo, deployed". Grabar su cara.</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> <strong>Toma bonus:</strong> Guillermo volteando la pantalla del telefono HACIA la camara mostrando el output del deploy</div>
+        </div>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; que hacer</div>
+          <div class="dir-row"><span class="dir-icon">&#128187;</span> En Termius escribir (o dictar): <code style="color:var(--accent);">git add . && git commit -m "feat: race name banner" && git push</code></div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> Alternativa: tener el comando guardado como snippet en Termius y ejecutarlo con un tap</div>
+          <div class="dir-row"><span class="dir-icon">&#128250;</span> Screen recording captura el push &mdash; se usa en edicion</div>
+          <div class="dir-row"><span class="dir-icon">&#128170;</span> Celebrar genuinamente: "listo pa, deployed en produccion"</div>
+        </div>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">35-40s</span>
+          <span class="shot-type type-camera">&#127909; Camara</span>
+        </div>
+        <p class="shot-desc">Guillermo guarda el telefono/laptop, se levanta y vuelve a correr. "De vuelta a la carrera."</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; que grabar</div>
+          <div class="dir-row"><span class="dir-icon">&#128205;</span> Posicion: plano medio-amplio, que se vea a Guillermo levantandose</div>
+          <div class="dir-row"><span class="dir-icon">&#127939;</span> Seguirlo mientras arranca a correr de nuevo &mdash; puede ser desde atras, viendolo alejarse hacia los demas corredores</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> Si usa laptop: grabar el momento de GUARDARLA en la mochila &mdash; mas dramatico</div>
+          <div class="dir-row"><span class="dir-icon">&#127908;</span> Dejar el audio ambiente aqui &mdash; que se escuche la carrera, gente, musica</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 3 -->
+    <div class="act">
+      <div class="act-header">
+        <h3>Acto 3: El Payoff</h3>
+        <span class="act-time">40 - 65 segundos</span>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">40-48s</span>
+          <span class="shot-type type-camera">&#127909; Camara</span>
+        </div>
+        <p class="shot-desc">Montaje de Guillermo terminando la carrera. Cruzando la meta, gente celebrando.</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; que grabar</div>
+          <div class="dir-row"><span class="dir-icon">&#128205;</span> <strong>En la meta:</strong> Posicionarse EN la linea de meta, apuntando hacia los corredores que llegan</div>
+          <div class="dir-row"><span class="dir-icon">&#128248;</span> Grabar a Guillermo cruzando la meta &mdash; idealmente de FRENTE</div>
+          <div class="dir-row"><span class="dir-icon">&#127880;</span> Grabar ambiente: gente celebrando, chocando manos, banderas de La Perla</div>
+          <div class="dir-row"><span class="dir-icon">&#9888;&#65039;</span> Si no pueden estar en la meta, grabar a Guillermo corriendo los ultimos metros desde el lado</div>
+        </div>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">48-55s</span>
+          <span class="shot-type type-mixed">&#127916; Mixto</span>
+        </div>
+        <p class="shot-desc">Guillermo abre la app y muestra los stats finales: mapa GPS con la ruta, splits con colores, pace promedio.</p>
+        <p class="shot-text">Texto overlay: "5K trackeados. Cada kilometro."</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; que grabar</div>
+          <div class="dir-row"><span class="dir-icon">&#128248;</span> <strong>Sobre el hombro:</strong> Guillermo sostiene el telefono, la camara por detras captura la pantalla con el mapa GPS y stats</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> Alternar con toma de la CARA de Guillermo mirando satisfecho los resultados</div>
+        </div>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; que hacer</div>
+          <div class="dir-row"><span class="dir-icon">&#128241;</span> Abrir la app, ir a la sesion de cardio terminada, hacer scroll por los stats</div>
+          <div class="dir-row"><span class="dir-icon">&#128250;</span> Screen recording sigue encendido &mdash; captura todo lo de la pantalla</div>
+        </div>
+      </div>
+
+      <div class="shot key-shot">
+        <div class="shot-top">
+          <span class="shot-time">55-62s</span>
+          <span class="shot-type type-mixed">&#127916; Mixto</span>
+          <strong style="color: var(--accent);">&#10024; EL MOMENTO WOW &#10024;</strong>
+        </div>
+        <p class="shot-desc">Guillermo escribe "La Perla Run" en el campo de nombre de carrera y genera la share card. Aparece la card con el banner verde "LA PERLA RUN" y sus stats reales.</p>
+        <p class="shot-text">Texto overlay: "Y el feature que acabo de codear..."</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; TOMA MAS IMPORTANTE DEL VIDEO</div>
+          <div class="dir-row"><span class="dir-icon">&#128205;</span> <strong>Posicion 1 &mdash; sobre el hombro:</strong> La pantalla del telefono mostrando como Guillermo escribe "La Perla Run" en el input y presiona "Compartir"</div>
+          <div class="dir-row"><span class="dir-icon">&#128205;</span> <strong>Posicion 2 &mdash; de frente:</strong> Guillermo sostiene el telefono hacia la camara mostrando la share card generada. La card llena la pantalla.</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> Grabar AMBAS posiciones &mdash; en edicion se elige la mejor o se combinan</div>
+          <div class="dir-row"><span class="dir-icon">&#9888;&#65039;</span> La share card se ve: fondo negro, banner verde "LA PERLA RUN", distancia grande "5.12", stats debajo</div>
+        </div>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; que hacer</div>
+          <div class="dir-row"><span class="dir-icon">&#128241;</span> En la app: escribir "La Perla Run" en el campo "Nombre del evento" &rarr; presionar "Compartir"</div>
+          <div class="dir-row"><span class="dir-icon">&#128250;</span> Screen recording captura la share card generandose &mdash; esto es lo que se usa como "reveal"</div>
+          <div class="dir-row"><span class="dir-icon">&#128079;</span> Reaccionar a la card: "mira eso", sonreir, mostrar orgullo</div>
+        </div>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">62-65s</span>
+          <span class="shot-type type-screen">&#128241; Pantalla</span>
+        </div>
+        <p class="shot-desc">La share card llena toda la pantalla del video. Zoom lento. Beat drop de la musica.</p>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; nota de edicion</div>
+          <div class="dir-row"><span class="dir-icon">&#9999;&#65039;</span> Esto se arma en CapCut: tomar el screenshot de la share card y ponerlo a pantalla completa con un zoom lento (1.0x &rarr; 1.05x en 3 segundos)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT 4 -->
+    <div class="act">
+      <div class="act-header">
+        <h3>Acto 4: CTA</h3>
+        <span class="act-time">65 - 75 segundos</span>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">65-70s</span>
+          <span class="shot-type type-camera">&#127909; Camara</span>
+        </div>
+        <p class="shot-desc">Guillermo le muestra la share card a otros corredores. Grabar sus reacciones genuinas.</p>
+        <p class="shot-text">Texto overlay: "La app es gratis."</p>
+        <div class="cam-dir">
+          <div class="dir-label">&#127909; Copiloto &mdash; que grabar</div>
+          <div class="dir-row"><span class="dir-icon">&#128205;</span> Posicion: al LADO del grupo, capturando a Guillermo mostrando el telefono y las CARAS de la gente reaccionando</div>
+          <div class="dir-row"><span class="dir-icon">&#128248;</span> Angulo: medio-cerrado, que se vean las expresiones faciales</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> Buscar gente que diga cosas como "que cool", "como hiciste eso", "pasame el link" &mdash; si hay audio bueno, usarlo</div>
+          <div class="dir-row"><span class="dir-icon">&#128525;</span> Grabar 4-5 reacciones diferentes de personas distintas &mdash; cuantas mas, mejor</div>
+          <div class="dir-row"><span class="dir-icon">&#9888;&#65039;</span> SUPER IMPORTANTE: estas reacciones son el cierre del video. Sin ellas pierde impacto.</div>
+        </div>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Guillermo &mdash; que hacer</div>
+          <div class="dir-row"><span class="dir-icon">&#128241;</span> Acercarse a corredores post-carrera: "mira, hice esto durante la carrera" &rarr; mostrar la share card</div>
+          <div class="dir-row"><span class="dir-icon">&#128172;</span> Ser natural, no actuar &mdash; que se sienta como un pana mostrando algo cool</div>
+        </div>
+      </div>
+
+      <div class="shot">
+        <div class="shot-top">
+          <span class="shot-time">70-75s</span>
+          <span class="shot-type type-mixed">&#127916; Mixto</span>
+        </div>
+        <p class="shot-desc">Logo de la app + "Link en bio" + @laperlarunclub. Cierre.</p>
+        <div class="guille-dir">
+          <div class="dir-label">&#128170; Nota de edicion</div>
+          <div class="dir-row"><span class="dir-icon">&#9999;&#65039;</span> Esto se arma en post &mdash; logo de la app centrado, texto "Link en bio", tag de @laperlarunclub</div>
+          <div class="dir-row"><span class="dir-icon">&#128161;</span> OPCIONAL: toma final de Guillermo diciendo a camara "la app es gratis, link en bio" (grabar por si acaso)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. RESUMEN RAPIDO PARA EL COPILOTO -->
+  <section>
+    <h2><span class="section-number">3</span> Resumen rapido para el copiloto (cameraman)</h2>
+
+    <div class="card" style="border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.05);">
+      <p style="color: var(--blue); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">&#127909; Regla #1: Siempre grabar en VERTICAL (9:16)</p>
+      <p style="font-size: 0.85rem; color: var(--text-dim);">Todo el contenido es para Instagram Reels / TikTok. Si grabas horizontal no sirve. Bloquea la rotacion del telefono.</p>
+    </div>
+
+    <h3 style="margin-top: 1.25rem;">Checklist de tomas por momento</h3>
+
+    <div class="card">
+      <p style="color: var(--blue); font-weight: 600; margin-bottom: 0.5rem;">&#127939; Antes y durante la carrera (Km 0-2)</p>
+      <ul class="checklist">
+        <li><span class="icon">&#127909;</span> Guillermo corriendo CON el grupo &mdash; desde el lado, trotando juntos</li>
+        <li><span class="icon">&#127909;</span> Guillermo corriendo &mdash; desde adelante (caminar hacia atras o parar y que el pase)</li>
+        <li><span class="icon">&#127909;</span> Guillermo corriendo &mdash; desde atras (que se vea alejandose con el grupo)</li>
+        <li><span class="icon">&#127909;</span> Guillermo mostrando el telefono a camara con la app trackeando</li>
+        <li><span class="icon">&#127909;</span> Guillermo frenando y saliendose del grupo &mdash; PLANO ABIERTO (que se vean otros corredores seguir)</li>
+      </ul>
+    </div>
+
+    <div class="card" style="border-color: rgba(163,230,53,0.3); background: rgba(163,230,53,0.05);">
+      <p style="color: var(--accent); font-weight: 600; margin-bottom: 0.5rem;">&#129302; Guillermo HABLANDO con la IA (~Km 2) &mdash; LAS TOMAS MAS IMPORTANTES</p>
+      <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.75rem;">Guillermo para, abre la terminal en el telefono, y le HABLA a una IA por voz. La IA escribe el codigo. Esto es lo mas importante del video.</p>
+      <ul class="checklist">
+        <li><span class="icon">1&#65039;&#8419;</span> <strong>Sobre el hombro:</strong> detras de Guillermo, que se vea la TERMINAL en la pantalla + su boca hablando. El texto aparece mientras habla.</li>
+        <li><span class="icon">2&#65039;&#8419;</span> <strong>Perfil hablando:</strong> desde el lado, Guillermo con telefono cerca de la boca, DICTANDO (no escribiendo)</li>
+        <li><span class="icon">3&#65039;&#8419;</span> <strong>Plano abierto:</strong> desde lejos (3-5m), Guillermo hablando al telefono + corredores pasando al fondo. EL shot del absurdo.</li>
+        <li><span class="icon">4&#65039;&#8419;</span> <strong>Detalle pantalla:</strong> MUY CERCA de la pantalla, que se vea la IA generando codigo linea por linea</li>
+        <li><span class="icon">5&#65039;&#8419;</span> <strong>Cara de "funciono":</strong> cuando la IA termina, Guillermo mira la pantalla y sonrie</li>
+        <li><span class="icon">6&#65039;&#8419;</span> <strong>Deploy:</strong> sobre el hombro otra vez, que se vea el <code style="color:var(--accent);">git push</code> en la terminal</li>
+        <li><span class="icon">&#128566;</span> <strong>Bonus:</strong> si alguien mira raro a Guillermo hablando a su telefono &mdash; capturar esas reacciones</li>
+      </ul>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">&#9201;&#65039; Guillermo va a estar ~3 minutos con la IA &mdash; hay mucho tiempo para todas las tomas. No apurarse.</p>
+    </div>
+
+    <div class="card">
+      <p style="color: var(--orange); font-weight: 600; margin-bottom: 0.5rem;">&#127937; La meta y post-carrera</p>
+      <ul class="checklist">
+        <li><span class="icon">&#127909;</span> Guillermo cruzando la meta &mdash; idealmente de FRENTE</li>
+        <li><span class="icon">&#127909;</span> Ambiente de meta: gente celebrando, chocando manos, banderas</li>
+        <li><span class="icon">&#127909;</span> Sobre el hombro: Guillermo mirando stats finales en la app</li>
+        <li><span class="icon">&#127909;</span> Guillermo generando la share card (sobre el hombro &rarr; se ve "LA PERLA RUN" aparecer)</li>
+        <li><span class="icon">&#127909;</span> Guillermo mostrando la share card DE FRENTE a camara (la card llena la pantalla del telefono)</li>
+      </ul>
+    </div>
+
+    <div class="card" style="border-color: rgba(251,146,60,0.3); background: rgba(251,146,60,0.05);">
+      <p style="color: var(--orange); font-weight: 600; margin-bottom: 0.5rem;">&#128525; Reacciones de otros corredores &mdash; VALE ORO</p>
+      <ul class="checklist">
+        <li><span class="icon">&#127909;</span> Guillermo mostrando la share card a corredores &mdash; grabar sus CARAS reaccionando</li>
+        <li><span class="icon">&#127909;</span> Posicion: al LADO del grupo, angulo medio-cerrado para expresiones faciales</li>
+        <li><span class="icon">&#127909;</span> Buscar gente que diga "que cool" o "pasame el link" &mdash; el audio genuino es potente</li>
+        <li><span class="icon">&#127909;</span> Grabar 4-5 reacciones de personas diferentes como minimo</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <p style="color: var(--purple); font-weight: 600; margin-bottom: 0.5rem;">&#127880; Tomas de ambiente (B-roll)</p>
+      <ul class="checklist">
+        <li><span class="icon">&#127909;</span> Banderas de La Perla Run, arco de salida/meta</li>
+        <li><span class="icon">&#127909;</span> Gente corriendo en grupo (toma general)</li>
+        <li><span class="icon">&#127909;</span> Energia del evento: musica, animacion, gente calentando</li>
+        <li><span class="icon">&#127909;</span> Detalles: zapatillas, numeros de corredor, camisetas La Perla</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 4. LO QUE GUILLERMO GRABA -->
+  <section>
+    <h2><span class="section-number">4</span> Lo que Guillermo graba (screen recordings)</h2>
+    <div class="card" style="padding: 0.5rem 1rem;">
+      <ul class="checklist">
+        <li><span class="icon">&#128225;</span> La app trackeando en vivo (ActiveCardioBar con GPS pulsando)</li>
+        <li><span class="icon">&#129302;</span> Termius con Claude Code &mdash; el momento de hablar por voz y que aparezca texto en la terminal</li>
+        <li><span class="icon">&#128187;</span> Claude Code generando codigo (texto verde apareciendo linea por linea)</li>
+        <li><span class="icon">&#128421;</span> La terminal con <code style="color:var(--accent);">git push</code> y el output del deploy</li>
+        <li><span class="icon">&#128200;</span> Los stats finales al terminar la carrera</li>
+        <li><span class="icon">&#10024;</span> La share card generandose con "LA PERLA RUN"</li>
+      </ul>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; padding: 0 0.25rem;">
+        &#128161; <strong>Backup:</strong> la noche anterior, pre-grabar la sesion completa de Claude Code en el PC (screen recording de OBS). Si el internet falla durante la carrera, se usa este video en edicion.
+      </p>
+    </div>
+  </section>
+
+  <!-- 5. EQUIPO -->
+  <section>
+    <h2><span class="section-number">5</span> Equipo necesario</h2>
+    <div class="equip-grid">
+      <div class="equip-item">
+        <div class="e-icon">&#128241;</div>
+        <div class="e-name">Telefono de Guillermo</div>
+        <div class="e-note">App corriendo + Termius + screen recording</div>
+      </div>
+      <div class="equip-item">
+        <div class="e-icon">&#128247;</div>
+        <div class="e-name">Telefono del amigo</div>
+        <div class="e-note">Grabando video (siempre VERTICAL)</div>
+      </div>
+      <div class="equip-item">
+        <div class="e-icon">&#128421;</div>
+        <div class="e-name">PC de escritorio</div>
+        <div class="e-note">tmux + Claude Code CLI + Tailscale + screen recording (OBS)</div>
+      </div>
+      <div class="equip-item">
+        <div class="e-icon">&#128274;</div>
+        <div class="e-name">Tailscale VPN</div>
+        <div class="e-note">Conecta telefono con PC</div>
+      </div>
+      <div class="equip-item">
+        <div class="e-icon">&#127911;</div>
+        <div class="e-name">AirPods</div>
+        <div class="e-note">Para voiceover posterior</div>
+      </div>
+      <div class="equip-item">
+        <div class="e-icon">&#128085;</div>
+        <div class="e-name">Ropa</div>
+        <div class="e-note">La Perla o neutra, que se vea bien</div>
+      </div>
+      <div class="equip-item" style="grid-column: 1 / -1;">
+        <div class="e-icon">&#9999;&#65039;</div>
+        <div class="e-name">Post-produccion: CapCut</div>
+        <div class="e-note">Edicion con cortes rapidos + texto overlay</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. TIPS -->
+  <section>
+    <h2><span class="section-number">6</span> Tips de grabacion</h2>
+    <div class="card" style="padding: 0.5rem 1rem;">
+      <div class="tip">
+        <span class="bullet">&#9679;</span>
+        Grabar SIEMPRE en vertical (9:16)
+      </div>
+      <div class="tip">
+        <span class="bullet">&#9679;</span>
+        Mucha luz natural (evento diurno)
+      </div>
+      <div class="tip">
+        <span class="bullet">&#9679;</span>
+        Audio ambiente es bueno &mdash; capturar musica, gente animando
+      </div>
+      <div class="tip">
+        <span class="bullet">&#9679;</span>
+        <strong style="color: var(--accent);">Las reacciones de otros corredores son ORO</strong> &mdash; grabar muchas
+      </div>
+      <div class="tip">
+        <span class="bullet">&#9679;</span>
+        No sobreproducir &mdash; el formato "iPhone" es mas creible
+      </div>
+      <div class="tip">
+        <span class="bullet">&#9679;</span>
+        Grabar mas de lo necesario &mdash; es mas facil cortar que no tener tomas
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. TIMELINE DEL DIA -->
+  <section>
+    <h2><span class="section-number">7</span> Timeline del dia</h2>
+    <div class="card">
+      <div class="day-timeline">
+        <div class="day-item">
+          <div class="label">Noche anterior</div>
+          <div class="detail">Pre-grabar sesion de Claude Code en el PC (backup). Verificar Tailscale + Termius + tmux. Dejar Claude Code corriendo en tmux.</div>
+        </div>
+        <div class="day-item">
+          <div class="label">Llegar temprano</div>
+          <div class="detail">Grabar ambiente pre-carrera, banderas, gente calentando. Verificar conexion Termius &rarr; PC via Tailscale.</div>
+        </div>
+        <div class="day-item">
+          <div class="label">Antes de arrancar</div>
+          <div class="detail">Iniciar screen recording del telefono + cardio tracking en la app. Confirmar que Termius sigue conectado.</div>
+        </div>
+        <div class="day-item">
+          <div class="label">Km 0 &rarr; 2</div>
+          <div class="detail">Correr normal, amigo graba desde varios angulos (frente, lado, atras)</div>
+        </div>
+        <div class="day-item key">
+          <div class="label" style="color: var(--accent);">~ Km 2: MOMENTO CLAVE</div>
+          <div class="detail">Parar, abrir Termius, hablarle a Claude Code por voz. El amigo graba TODO: sobre el hombro, perfil, plano abierto, corredores pasando. Hacer git push al final.</div>
+        </div>
+        <div class="day-item">
+          <div class="label">Km 2 &rarr; 5</div>
+          <div class="detail">Terminar la carrera, amigo en la meta grabando la llegada</div>
+        </div>
+        <div class="day-item">
+          <div class="label">Post-carrera</div>
+          <div class="detail">Generar share card con "La Perla Run", mostrar a otros corredores, grabar reacciones (4-5 personas minimo)</div>
+        </div>
+        <div class="day-item">
+          <div class="label">Extras</div>
+          <div class="detail">Grabar 2-3 tomas de Guillermo a camara para CTA: "la app es gratis, link en bio"</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. DISTRIBUCION -->
+  <section>
+    <h2><span class="section-number">8</span> Distribucion (donde publicar)</h2>
+    <div class="dist-grid">
+      <div class="dist-item">
+        <div class="platform">&#128248; Instagram Reels</div>
+        <div class="note">Tag @laperlarunclub</div>
+      </div>
+      <div class="dist-item">
+        <div class="platform">&#127926; TikTok</div>
+        <div class="note">Hook mas agresivo</div>
+      </div>
+      <div class="dist-item">
+        <div class="platform">&#128188; LinkedIn</div>
+        <div class="note">"Shippee un feature mientras corria" (donde se viralizo el original)</div>
+      </div>
+      <div class="dist-item">
+        <div class="platform">&#128038; Twitter / X</div>
+        <div class="note">Thread format</div>
+      </div>
+      <div class="dist-item" style="grid-column: 1 / -1;">
+        <div class="platform">&#128172; WhatsApp</div>
+        <div class="note">Share card + referral link a todos los que corrieron</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>La Perla Run x Calistenia App &mdash; Video Promocional</p>
+    <p style="margin-top: 0.25rem;">@laperlarunclub &middot; 57K seguidores</p>
+  </div>
+
+</div>
+</body>
+</html>

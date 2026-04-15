@@ -91,6 +91,14 @@ export function shareReferralInvite(displayName: string, referralCode: string, m
   }, method)
 }
 
+export function shareRace(raceName: string, raceId: string, method?: ShareMethod) {
+  return shareContent({
+    title: raceName,
+    text: `\u00a1\u00danete a la carrera "${raceName}"! \ud83c\udfc3`,
+    url: `${BASE_URL}/race/${raceId}`,
+  }, method)
+}
+
 export function shareApp(method?: ShareMethod) {
   return shareContent({
     title: 'Calistenia App',
