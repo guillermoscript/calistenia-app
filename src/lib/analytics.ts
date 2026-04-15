@@ -2,7 +2,7 @@ import { OpenPanel } from '@openpanel/web'
 
 export const op = new OpenPanel({
   apiUrl: 'https://openpanel.guille.tech/api',
-  clientId: '18cdafce-bf86-444d-8cd8-3490d9ba8dc7',
+  clientId: import.meta.env.VITE_OPENPANEL_CLIENT_ID ?? '95f75c3f-fb38-4c0b-a401-a3a63f8b91f5',
   trackScreenViews: true,
   trackOutgoingLinks: true,
   trackAttributes: true,
