@@ -24,10 +24,8 @@ migrate(
       if (!field) return
       if (field.type === "json") return // already converted
 
-      const existingId = field.id
       collection.fields.removeByName(fieldName)
       collection.fields.add(new Field({
-        id: existingId,
         name: fieldName,
         type: "json",
         required: false,
@@ -119,10 +117,8 @@ migrate(
       if (!field) return
       if (field.type !== "json") return
 
-      const existingId = field.id
       collection.fields.removeByName(fieldName)
       collection.fields.add(new Field({
-        id: existingId,
         name: fieldName,
         type: "text",
         required: false,
