@@ -10,7 +10,7 @@ import { StepGoals, type GoalsValues } from './StepGoals'
 import { StepHealth, type HealthValues } from './StepHealth'
 import { StepTraining, type TrainingValues } from './StepTraining'
 import { StepProgram } from './StepProgram'
-import { StepOrientation } from './StepOrientation'
+import { StepPersonalizing } from './StepPersonalizing'
 
 interface OnboardingFlowProps {
   displayName: string
@@ -51,7 +51,7 @@ export default function OnboardingFlow({
 }: OnboardingFlowProps) {
   // Detect if profile data is missing (e.g. Google OAuth signup or skipped step).
   // Freeze at mount: otherwise saving the profile mid-flow re-numbers the steps
-  // and skips program selection (orientationStep collides with the current step).
+  // and skips program selection (personalizingStep collides with the current step).
   const [needsProfile] = useState(() => !user?.weight && !user?.height && !user?.level)
 
   const [step, setStep] = useState(0)
@@ -68,13 +68,13 @@ export default function OnboardingFlow({
 
   // Step index layout (frozen via needsProfile):
   //   0=welcome, 1=basics, 2=goals, 3=health, 4=training (only if needsProfile),
-  //   then program, then orientation
+  //   then program, then personalizing
   const profileStep = needsProfile ? 1 : -1
   const goalsStep = needsProfile ? 2 : -1
   const healthStep = needsProfile ? 3 : -1
   const trainingStep = needsProfile ? 4 : -1
   const programStep = needsProfile ? 5 : 1
-  const orientationStep = needsProfile ? 6 : 2
+  const personalizingStep = needsProfile ? 6 : 2
   const totalSteps = needsProfile ? 7 : 3
 
   const stepNameFor = (s: number): string => {
@@ -84,7 +84,7 @@ export default function OnboardingFlow({
     if (s === healthStep) return 'health'
     if (s === trainingStep) return 'training'
     if (s === programStep) return 'program'
-    if (s === orientationStep) return 'orientation'
+    if (s === personalizingStep) return 'personalizing'
     return `step_${s}`
   }
 
@@ -269,14 +269,17 @@ export default function OnboardingFlow({
               onCreateProgram()
             }}
             onBack={() => goToStep(needsProfile ? trainingStep : 0)}
-            onContinue={() => goToStep(orientationStep)}
+            onContinue={() => goToStep(personalizingStep)}
           />
         )}
 
-        {step === orientationStep && (
-          <StepOrientation
+        {step === personalizingStep && (
+          <StepPersonalizing
+            currentWeightKg={currentWeightNum}
+            goalWeightKg={goals.goal_weight ? parseFloat(goals.goal_weight) : null}
+            pace={goals.pace}
+            program={programs.find(p => p.id === selectedProgramId) ?? null}
             onFinish={handleFinish}
-            onBack={() => goToStep(programStep)}
           />
         )}
       </div>
