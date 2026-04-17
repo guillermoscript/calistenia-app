@@ -593,21 +593,25 @@ function AuthenticatedApp({
   const { selectProgram } = useWorkoutActions()
   const { getRestForExercise, setRestForExercise } = useRestPreferences(userId ?? null)
 
+  // Recover lost localStorage flag: if the user already has an enrolled
+  // program when we first mount, they clearly completed onboarding — re-mark
+  // and skip. Gated to run exactly once per user: otherwise selecting a
+  // program during the live onboarding flow would re-trigger this and skip
+  // the remaining steps.
+  const recoveryCheckedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!pbReady || !programsReady || !user) return
+    if (recoveryCheckedRef.current === user.id) return
+    recoveryCheckedRef.current = user.id
+    if (!isOnboardingDone(user.id) && activeProgram) {
+      markOnboardingDone(user.id)
+      setOnboardingDone(true)
+    }
+  }, [pbReady, programsReady, user?.id, activeProgram, setOnboardingDone])
+
   if (!pbReady || !programsReady) return <AppLoader />
 
   const displayName = user?.display_name || user?.email?.split('@')[0] || ''
-
-  // Recover lost localStorage flag: if user already has profile or programs server-side,
-  // they are onboarded — re-mark and skip the flow.
-  if (!onboardingDone && user) {
-    const hasProfile = !!(user.weight || user.height || user.level)
-    const hasProgram = programs.length > 0
-    if (hasProfile || hasProgram) {
-      markOnboardingDone(user.id)
-      setOnboardingDone(true)
-      return <AppLoader />
-    }
-  }
 
   if (!onboardingDone && user) {
     return (

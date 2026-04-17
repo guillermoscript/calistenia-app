@@ -309,27 +309,19 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
     }))
     setPrograms(catalog)
 
-    // 2. Find user's current program
+    // 2. Find user's current program — do NOT auto-enroll. New users pick
+    // their program during onboarding; without that, activeProgram stays null
+    // and the Dashboard shows empty states until the user chooses.
     let userProgramRecord: RecordModel | null = null
     try {
       userProgramRecord = await pb.collection('user_programs').getFirstListItem(
         pb.filter('user = {:uid} && is_current = true', { uid })
       )
     } catch {
-      // No current program yet — auto-enroll in first active program if available
-      if (catalog.length > 0) {
-        userProgramRecord = await pb.collection('user_programs').create({
-          user:       uid,
-          program:    catalog[0].id,
-          started_at: nowLocalForPB(),
-          is_current: true,
-          status:     'active',
-        })
-      }
+      // No current program yet — user hasn't picked one. Leave activeProgram null.
     }
 
     if (!userProgramRecord) {
-      // No programs available at all
       return
     }
 

@@ -53,8 +53,10 @@ export default function OnboardingFlow({
 }: OnboardingFlowProps) {
   const { t } = useTranslation()
 
-  // Detect if profile data is missing (e.g. Google OAuth signup or skipped step)
-  const needsProfile = !user?.weight && !user?.height && !user?.level
+  // Detect if profile data is missing (e.g. Google OAuth signup or skipped step).
+  // Freeze at mount: otherwise saving the profile mid-flow re-numbers the steps
+  // and skips program selection (orientationStep collides with the current step).
+  const [needsProfile] = useState(() => !user?.weight && !user?.height && !user?.level)
 
   const LEVELS = [
     { value: 'principiante', label: t('onboarding.beginner'), desc: t('onboarding.beginnerDesc') },

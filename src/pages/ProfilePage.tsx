@@ -20,6 +20,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [displayName, setDisplayName] = useState(user?.display_name || user?.name || '')
   const [weight, setWeight] = useState<string>('')
   const [height, setHeight] = useState<string>('')
+  const [age, setAge] = useState<string>('')
+  const [sex, setSex] = useState<string>('')
   const [level, setLevel] = useState('principiante')
   const [goal, setGoal] = useState('')
   const [saving, setSaving] = useState(false)
@@ -75,6 +77,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           setDisplayName((rec as any).display_name || (rec as any).name || '')
           setWeight((rec as any).weight ? String((rec as any).weight) : '')
           setHeight((rec as any).height ? String((rec as any).height) : '')
+          setAge((rec as any).age ? String((rec as any).age) : '')
+          setSex((rec as any).sex || '')
           setLevel((rec as any).level || 'principiante')
           setGoal((rec as any).goal || '')
           setAvatarUrl(getUserAvatarUrl(rec as any, '200x200'))
@@ -142,6 +146,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           display_name: displayName,
           weight: weight ? parseFloat(weight) : null,
           height: height ? parseFloat(height) : null,
+          age: age ? parseInt(age, 10) : null,
+          sex: sex || '',
           level,
           goal,
           timezone,
@@ -249,7 +255,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label htmlFor="profile-weight" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.weight')}</Label>
                 <Input
@@ -274,6 +280,44 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   placeholder={t('profile.heightPlaceholder')}
                   className="h-10"
                 />
+              </div>
+              <div>
+                <Label htmlFor="profile-age" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.age')}</Label>
+                <Input
+                  id="profile-age"
+                  type="number"
+                  min="13"
+                  max="120"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder={t('profile.agePlaceholder')}
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.sex')}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'male', label: t('profile.male') },
+                  { value: 'female', label: t('profile.female') },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSex(sex === opt.value ? '' : opt.value)}
+                    aria-pressed={sex === opt.value}
+                    className={cn(
+                      'h-10 rounded-md border text-sm transition-colors',
+                      sex === opt.value
+                        ? 'border-lime bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
 
