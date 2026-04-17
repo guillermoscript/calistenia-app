@@ -597,6 +597,18 @@ function AuthenticatedApp({
 
   const displayName = user?.display_name || user?.email?.split('@')[0] || ''
 
+  // Recover lost localStorage flag: if user already has profile or programs server-side,
+  // they are onboarded — re-mark and skip the flow.
+  if (!onboardingDone && user) {
+    const hasProfile = !!(user.weight || user.height || user.level)
+    const hasProgram = programs.length > 0
+    if (hasProfile || hasProgram) {
+      markOnboardingDone(user.id)
+      setOnboardingDone(true)
+      return <AppLoader />
+    }
+  }
+
   if (!onboardingDone && user) {
     return (
       <OnboardingFlow
