@@ -302,7 +302,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       created_by_name: (p.expand as any)?.created_by?.display_name || undefined,
       is_official:    p.is_official || false,
       is_featured:    p.is_featured || false,
-      difficulty:     p.difficulty || 'beginner',
+      difficulty:     p.difficulty || undefined,
       cover_image:    p.cover_image || undefined,
       cover_image_url: p.cover_image ? pb.files.getURL(p, p.cover_image, { thumb: '400x0' }) : undefined,
       discipline:     disciplineByProgram.get(p.id) || 'calistenia',

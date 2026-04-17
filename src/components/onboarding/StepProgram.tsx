@@ -11,11 +11,20 @@ const DIFFICULTY_STYLES: Record<string, string> = {
   advanced: 'text-red-400 border-red-400/30',
 }
 
+// Onboarding level (es) → program difficulty (en) for match scoring.
+const LEVEL_TO_DIFFICULTY: Record<string, string> = {
+  principiante: 'beginner',
+  intermedio: 'intermediate',
+  avanzado: 'advanced',
+}
+
 interface Props {
   programs: ProgramMeta[]
   selectedProgramId: string | null
   selecting: boolean
   userId?: string
+  /** User's training level (principiante | intermedio | avanzado) — drives "FOR YOU" match */
+  userLevel?: string
   onSelectProgram: (programId: string) => void
   onCreateProgram: () => void
   onBack: () => void
@@ -23,12 +32,19 @@ interface Props {
 }
 
 export function StepProgram({
-  programs, selectedProgramId, selecting, userId,
+  programs, selectedProgramId, selecting, userId, userLevel,
   onSelectProgram, onCreateProgram, onBack, onContinue,
 }: Props) {
   const { t } = useTranslation()
 
+  const targetDifficulty = userLevel ? LEVEL_TO_DIFFICULTY[userLevel] : undefined
+  const matchesUser = (p: ProgramMeta) => !!targetDifficulty && p.difficulty === targetDifficulty
+
   const sorted = [...programs].sort((a, b) => {
+    const aForYou = matchesUser(a)
+    const bForYou = matchesUser(b)
+    if (aForYou && !bForYou) return -1
+    if (!aForYou && bForYou) return 1
     if (a.is_featured && !b.is_featured) return -1
     if (!a.is_featured && b.is_featured) return 1
     if (a.is_official && !b.is_official) return -1
@@ -52,6 +68,7 @@ export function StepProgram({
         {sorted.map((program) => {
           const isSelected = selectedProgramId === program.id
           const isOwn = program.created_by === userId
+          const forYou = matchesUser(program)
           return (
             <Card
               key={program.id}
@@ -59,9 +76,11 @@ export function StepProgram({
                 'cursor-pointer transition-all duration-200 border-2',
                 isSelected
                   ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/5'
-                  : program.is_featured
-                    ? 'border-amber-400/20 bg-amber-400/[0.03] hover:border-amber-400/40'
-                    : 'border-transparent hover:border-muted-foreground/20'
+                  : forYou
+                    ? 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/[0.03] hover:border-[hsl(var(--lime))]/50'
+                    : program.is_featured
+                      ? 'border-amber-400/20 bg-amber-400/[0.03] hover:border-amber-400/40'
+                      : 'border-transparent hover:border-muted-foreground/20'
               )}
               onClick={() => onSelectProgram(program.id)}
             >
@@ -73,10 +92,15 @@ export function StepProgram({
                   {isSelected ? '✓' : program.name[0]?.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={cn('font-medium text-sm', isSelected && 'text-[hsl(var(--lime))]')}>
                       {program.name}
                     </span>
+                    {forYou && (
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-[hsl(var(--lime))] border-[hsl(var(--lime))]/50 bg-[hsl(var(--lime))]/10">
+                        {t('onboarding.forYou')}
+                      </Badge>
+                    )}
                     {program.is_featured && (
                       <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-amber-400 border-amber-400/30">
                         {t('onboarding.recommended')}
