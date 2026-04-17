@@ -8,6 +8,7 @@ import { StepWelcome } from './StepWelcome'
 import { StepBasics, type BasicsValues } from './StepBasics'
 import { StepGoals, type GoalsValues } from './StepGoals'
 import { StepHealth, type HealthValues } from './StepHealth'
+import { StepTraining, type TrainingValues } from './StepTraining'
 import { StepProgram } from './StepProgram'
 import { StepOrientation } from './StepOrientation'
 
@@ -23,7 +24,7 @@ interface OnboardingFlowProps {
 }
 
 const EMPTY_BASICS: BasicsValues = {
-  weight: '', height: '', age: '', sex: '', level: 'principiante', goal: '',
+  weight: '', height: '', age: '', sex: '',
 }
 
 const EMPTY_GOALS: GoalsValues = {
@@ -32,6 +33,10 @@ const EMPTY_GOALS: GoalsValues = {
 
 const EMPTY_HEALTH: HealthValues = {
   medical_conditions: [], injuries: [],
+}
+
+const EMPTY_TRAINING: TrainingValues = {
+  level: 'principiante', focus_areas: [], training_days: [], intensity: '', goal: '',
 }
 
 export default function OnboardingFlow({
@@ -53,26 +58,31 @@ export default function OnboardingFlow({
   const [basics, setBasics] = useState<BasicsValues>(EMPTY_BASICS)
   const [goals, setGoals] = useState<GoalsValues>(EMPTY_GOALS)
   const [health, setHealth] = useState<HealthValues>(EMPTY_HEALTH)
+  const [training, setTraining] = useState<TrainingValues>(EMPTY_TRAINING)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingGoals, setSavingGoals] = useState(false)
   const [savingHealth, setSavingHealth] = useState(false)
+  const [savingTraining, setSavingTraining] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
 
   // Step index layout (frozen via needsProfile):
-  //   0=welcome, 1=basics, 2=goals, 3=health (all only if needsProfile), then program, then orientation
+  //   0=welcome, 1=basics, 2=goals, 3=health, 4=training (only if needsProfile),
+  //   then program, then orientation
   const profileStep = needsProfile ? 1 : -1
   const goalsStep = needsProfile ? 2 : -1
   const healthStep = needsProfile ? 3 : -1
-  const programStep = needsProfile ? 4 : 1
-  const orientationStep = needsProfile ? 5 : 2
-  const totalSteps = needsProfile ? 6 : 3
+  const trainingStep = needsProfile ? 4 : -1
+  const programStep = needsProfile ? 5 : 1
+  const orientationStep = needsProfile ? 6 : 2
+  const totalSteps = needsProfile ? 7 : 3
 
   const stepNameFor = (s: number): string => {
     if (s === 0) return 'welcome'
     if (s === profileStep) return 'profile'
     if (s === goalsStep) return 'goals'
     if (s === healthStep) return 'health'
+    if (s === trainingStep) return 'training'
     if (s === programStep) return 'program'
     if (s === orientationStep) return 'orientation'
     return `step_${s}`
@@ -102,8 +112,6 @@ export default function OnboardingFlow({
         height: basics.height ? parseFloat(basics.height) : null,
         age: basics.age ? parseInt(basics.age, 10) : null,
         sex: basics.sex || null,
-        level: basics.level || 'principiante',
-        goal: basics.goal || '',
       })
     } catch (e) {
       console.warn('Failed to save onboarding basics:', e)
@@ -143,23 +151,43 @@ export default function OnboardingFlow({
     goToStep(advanceTo)
   }
 
-  const handleSaveHealth = () => saveHealthAnd(health, programStep)
+  const handleSaveHealth = () => saveHealthAnd(health, trainingStep)
 
   const handleNoIssues = () => {
     const empty: HealthValues = { medical_conditions: [], injuries: [] }
     setHealth(empty)
-    saveHealthAnd(empty, programStep)
+    saveHealthAnd(empty, trainingStep)
+  }
+
+  const handleSaveTraining = async () => {
+    if (!userId) return
+    setSavingTraining(true)
+    try {
+      await pb.collection('users').update(userId, {
+        level: training.level || 'principiante',
+        focus_areas: training.focus_areas,
+        training_days: training.training_days,
+        intensity: training.intensity || '',
+        goal: training.goal || '',
+      })
+    } catch (e) {
+      console.warn('Failed to save onboarding training:', e)
+    }
+    setSavingTraining(false)
+    goToStep(programStep)
   }
 
   const handleFinish = () => {
     markOnboardingDone(userId)
     op.track('onboarding_completed', {
-      level: basics.level || 'unknown',
+      level: training.level || 'unknown',
       has_program: !!selectedProgramId,
       has_goal_weight: !!goals.goal_weight,
       activity_level: goals.activity_level || 'unknown',
       conditions_count: health.medical_conditions.length,
       injuries_count: health.injuries.length,
+      focus_areas_count: training.focus_areas.length,
+      training_days_count: training.training_days.length,
     })
     onComplete()
   }
@@ -218,6 +246,17 @@ export default function OnboardingFlow({
           />
         )}
 
+        {step === trainingStep && (
+          <StepTraining
+            values={training}
+            onChange={setTraining}
+            saving={savingTraining}
+            onBack={() => goToStep(healthStep)}
+            onContinue={handleSaveTraining}
+            onSkip={() => goToStep(programStep)}
+          />
+        )}
+
         {step === programStep && (
           <StepProgram
             programs={programs}
@@ -229,7 +268,7 @@ export default function OnboardingFlow({
               markOnboardingDone(userId)
               onCreateProgram()
             }}
-            onBack={() => goToStep(needsProfile ? healthStep : 0)}
+            onBack={() => goToStep(needsProfile ? trainingStep : 0)}
             onContinue={() => goToStep(orientationStep)}
           />
         )}

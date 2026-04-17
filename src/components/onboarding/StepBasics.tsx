@@ -10,8 +10,6 @@ export interface BasicsValues {
   height: string
   age: string
   sex: string
-  level: string
-  goal: string
 }
 
 interface Props {
@@ -28,11 +26,6 @@ export function StepBasics({ values, onChange, saving, onBack, onContinue, onSki
   const set = <K extends keyof BasicsValues>(key: K, v: BasicsValues[K]) =>
     onChange({ ...values, [key]: v })
 
-  const LEVELS = [
-    { value: 'principiante', label: t('onboarding.beginner'), desc: t('onboarding.beginnerDesc') },
-    { value: 'intermedio', label: t('onboarding.intermediate'), desc: t('onboarding.intermediateDesc') },
-    { value: 'avanzado', label: t('onboarding.advanced'), desc: t('onboarding.advancedDesc') },
-  ]
   const SEX_OPTIONS = [
     { value: 'male', label: t('onboarding.male') },
     { value: 'female', label: t('onboarding.female') },
@@ -86,55 +79,11 @@ export function StepBasics({ values, onChange, saving, onBack, onContinue, onSki
               ))}
             </div>
           </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.level')}</Label>
-            <div className="flex flex-col gap-2">
-              {LEVELS.map(l => (
-                <button
-                  key={l.value}
-                  type="button"
-                  onClick={() => set('level', l.value)}
-                  className={cn(
-                    'flex items-center gap-3 px-3.5 py-2.5 rounded-md border text-left transition-colors',
-                    values.level === l.value
-                      ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/5'
-                      : 'border-border hover:border-foreground/30'
-                  )}
-                >
-                  <div className={cn(
-                    'w-3 h-3 rounded-full border-2 shrink-0',
-                    values.level === l.value ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]' : 'border-muted-foreground/40'
-                  )} />
-                  <div>
-                    <p className={cn('text-sm', values.level === l.value ? 'text-[hsl(var(--lime))]' : 'text-foreground')}>{l.label}</p>
-                    <p className="text-xs text-muted-foreground">{l.desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ob-goal" className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.goal')}</Label>
-            <textarea
-              id="ob-goal"
-              value={values.goal}
-              onChange={(e) => set('goal', e.target.value)}
-              placeholder={t('onboarding.goalPlaceholder')}
-              rows={2}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
-            />
-          </div>
         </CardContent>
       </Card>
 
       <div className="flex gap-3">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="flex-1 h-11 font-mono text-xs tracking-wide"
-        >
+        <Button variant="outline" onClick={onBack} className="flex-1 h-11 font-mono text-xs tracking-wide">
           {t('onboarding.back')}
         </Button>
         <Button
