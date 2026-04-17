@@ -8,7 +8,7 @@ import type { NutritionGoal, NutritionGoalType, ActivityLevel, Sex } from '../..
 
 interface NutritionGoalSetupProps {
   onSave: (goals: NutritionGoal) => void
-  calculateMacros: (weight: number, height: number, age: number, sex: string, activityLevel: string, goal: string) => {
+  calculateMacros: (weight: number, height: number, age: number, sex: string, activityLevel: string, goal: string, pace?: string) => {
     dailyCalories: number
     dailyProtein: number
     dailyCarbs: number
@@ -19,6 +19,10 @@ interface NutritionGoalSetupProps {
   initialHeight?: number
   initialAge?: number
   initialSex?: Sex
+  initialActivityLevel?: ActivityLevel
+  initialGoal?: NutritionGoalType
+  /** From onboarding Goals step — modulates calorie delta magnitude */
+  initialPace?: 'gradual' | 'balanced' | 'aggressive'
 }
 
 const ACTIVITY_LEVELS: { id: ActivityLevel; labelKey: string; descKey: string }[] = [
@@ -36,7 +40,11 @@ const GOALS: { id: NutritionGoalType; labelKey: string; icon: string; descKey: s
   { id: 'maintain', labelKey: 'nutrition.goal.maintain', icon: '✅', descKey: 'nutrition.goal.maintainDesc' },
 ]
 
-export default function NutritionGoalSetup({ onSave, calculateMacros, initialWeight, initialHeight, initialAge, initialSex }: NutritionGoalSetupProps) {
+export default function NutritionGoalSetup({
+  onSave, calculateMacros,
+  initialWeight, initialHeight, initialAge, initialSex,
+  initialActivityLevel, initialGoal, initialPace,
+}: NutritionGoalSetupProps) {
   const { t } = useTranslation()
   const formId = useId()
   const [step, setStep] = useState(0)
@@ -48,8 +56,8 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
 
   // Selections
   const [sex, setSex] = useState<Sex>(initialSex ?? 'male')
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
-  const [goal, setGoal] = useState<NutritionGoalType>('muscle_gain')
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(initialActivityLevel ?? 'moderate')
+  const [goal, setGoal] = useState<NutritionGoalType>(initialGoal ?? 'muscle_gain')
 
   // Calculated / adjustable macros
   const [macros, setMacros] = useState({ dailyCalories: 0, dailyProtein: 0, dailyCarbs: 0, dailyFat: 0 })
@@ -63,7 +71,7 @@ export default function NutritionGoalSetup({ onSave, calculateMacros, initialWei
     if (step === 4) {
       // Calculate macros before showing review
       const result = calculateMacros(
-        parseFloat(weight), parseFloat(height), parseInt(age), sex, activityLevel, goal
+        parseFloat(weight), parseFloat(height), parseInt(age), sex, activityLevel, goal, initialPace
       )
       setMacros(result)
     }

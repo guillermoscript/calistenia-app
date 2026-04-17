@@ -40,6 +40,29 @@ interface UserProfileData {
   height?: number
   age?: number
   sex?: Sex
+  goalWeight?: number
+  activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
+  pace?: 'gradual' | 'balanced' | 'aggressive'
+  goalType?: 'muscle_gain' | 'fat_loss' | 'recomp' | 'maintain'
+}
+
+// Onboarding captures 4 activity values; nutrition uses 5. Map the extra step.
+const ONBOARDING_ACTIVITY_TO_NUTRITION: Record<string, UserProfileData['activityLevel']> = {
+  sedentary: 'sedentary',
+  light: 'light',
+  active: 'moderate',
+  very_active: 'active',
+}
+
+function inferNutritionGoalType(
+  weight?: number,
+  goalWeight?: number,
+): UserProfileData['goalType'] {
+  if (!weight || !goalWeight) return undefined
+  const delta = goalWeight - weight
+  if (delta > 2) return 'muscle_gain'
+  if (delta < -2) return 'fat_loss'
+  return 'maintain'
 }
 
 export default function NutritionPage({ userId, trainingPhase }: NutritionPageProps) {
@@ -71,11 +94,17 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
       if (!available) return
       try {
         const user = await pb.collection('users').getOne(userId)
+        const weight = user.weight || undefined
+        const goalWeight = user.goal_weight || undefined
         setProfileData({
-          weight: user.weight || undefined,
+          weight,
           height: user.height || undefined,
           age: user.age || undefined,
           sex: user.sex || undefined,
+          goalWeight,
+          activityLevel: user.activity_level ? ONBOARDING_ACTIVITY_TO_NUTRITION[user.activity_level] : undefined,
+          pace: user.pace || undefined,
+          goalType: inferNutritionGoalType(weight, goalWeight),
         })
       } catch { /* ignore */ }
     }
@@ -251,10 +280,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   }, [saveGoals])
 
   const handleCalculateMacros = useCallback((
-    weight: number, height: number, age: number, sex: string, activityLevel: string, goal: string
+    weight: number, height: number, age: number, sex: string, activityLevel: string, goal: string, pace?: string,
   ) => {
     const result = calculateMacros(
-      weight, height, age, sex as any, activityLevel as any, goal as any
+      weight, height, age, sex as any, activityLevel as any, goal as any, pace as any
     )
     return {
       dailyCalories: result.dailyCalories,
@@ -391,6 +420,9 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           initialHeight={profileData.height}
           initialAge={profileData.age}
           initialSex={profileData.sex}
+          initialActivityLevel={profileData.activityLevel}
+          initialGoal={profileData.goalType}
+          initialPace={profileData.pace}
         />
       ) : (
         <div className="space-y-8">

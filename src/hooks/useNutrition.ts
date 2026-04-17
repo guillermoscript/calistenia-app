@@ -533,6 +533,7 @@ export function useNutrition(userId: string | null) {
     sex: Sex,
     activityLevel: ActivityLevel,
     goal: NutritionGoalType,
+    pace?: 'gradual' | 'balanced' | 'aggressive',
   ): NutritionGoal => {
     // Mifflin-St Jeor formula
     const bmr = sex === 'male'
@@ -541,11 +542,14 @@ export function useNutrition(userId: string | null) {
 
     const tdee = bmr * ACTIVITY_MULTIPLIERS[activityLevel]
 
+    // Pace scales the calorie delta — balanced = default magnitude.
+    const paceFactor = pace === 'gradual' ? 0.5 : pace === 'aggressive' ? 1.5 : 1.0
+
     // Calorie adjustment based on goal
     let dailyCalories: number
     switch (goal) {
-      case 'muscle_gain': dailyCalories = tdee + 300; break
-      case 'fat_loss':    dailyCalories = tdee - 500; break
+      case 'muscle_gain': dailyCalories = tdee + 300 * paceFactor; break
+      case 'fat_loss':    dailyCalories = tdee - 500 * paceFactor; break
       default:            dailyCalories = tdee; break // recomp, maintain
     }
     dailyCalories = Math.round(dailyCalories)
