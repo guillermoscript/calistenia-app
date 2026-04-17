@@ -9,6 +9,9 @@ import { cn } from '../lib/utils'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr } from '../lib/dateUtils'
+import { CONDITION_IDS, INJURY_IDS, type ConditionId, type InjuryId } from '../components/onboarding/StepHealth'
+import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity } from '../components/onboarding/StepTraining'
+import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
 
 interface ProfilePageProps {
   user: any
@@ -24,6 +27,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [sex, setSex] = useState<string>('')
   const [level, setLevel] = useState('principiante')
   const [goal, setGoal] = useState('')
+  const [goalWeight, setGoalWeight] = useState<string>('')
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | ''>('')
+  const [pace, setPace] = useState<Pace | ''>('')
+  const [medicalConditions, setMedicalConditions] = useState<ConditionId[]>([])
+  const [injuries, setInjuries] = useState<InjuryId[]>([])
+  const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([])
+  const [trainingDays, setTrainingDays] = useState<DayId[]>([])
+  const [intensity, setIntensity] = useState<Intensity | ''>('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -81,6 +92,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           setSex((rec as any).sex || '')
           setLevel((rec as any).level || 'principiante')
           setGoal((rec as any).goal || '')
+          setGoalWeight((rec as any).goal_weight ? String((rec as any).goal_weight) : '')
+          setActivityLevel((rec as any).activity_level || '')
+          setPace((rec as any).pace || '')
+          setMedicalConditions(Array.isArray((rec as any).medical_conditions) ? (rec as any).medical_conditions : [])
+          setInjuries(Array.isArray((rec as any).injuries) ? (rec as any).injuries : [])
+          setFocusAreas(Array.isArray((rec as any).focus_areas) ? (rec as any).focus_areas : [])
+          setTrainingDays(Array.isArray((rec as any).training_days) ? (rec as any).training_days : [])
+          setIntensity((rec as any).intensity || '')
           setAvatarUrl(getUserAvatarUrl(rec as any, '200x200'))
           if ((rec as any).timezone) setTimezone((rec as any).timezone)
         } catch (e) {
@@ -99,6 +118,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     const meters = h / 100
     return (w / (meters * meters)).toFixed(1)
   }, [weight, height])
+
+  const goalBmi = useMemo(() => {
+    const gw = parseFloat(goalWeight)
+    const h = parseFloat(height)
+    if (!gw || !h || h <= 0) return null
+    const meters = h / 100
+    return (gw / (meters * meters)).toFixed(1)
+  }, [goalWeight, height])
 
   const bmiCategory = useMemo(() => {
     if (!bmi) return null
@@ -150,6 +177,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           sex: sex || '',
           level,
           goal,
+          goal_weight: goalWeight ? parseFloat(goalWeight) : null,
+          activity_level: activityLevel || '',
+          pace: pace || '',
+          medical_conditions: medicalConditions,
+          injuries,
+          focus_areas: focusAreas,
+          training_days: trainingDays,
+          intensity: intensity || '',
           timezone,
         })
         setGlobalTimezone(timezone)
@@ -239,10 +274,10 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       </div>
 
       <div className="flex flex-col gap-5">
-        {/* Basic info */}
+        {/* Body & demographics */}
         <Card id="tour-personal-info">
           <CardContent className="p-5 flex flex-col gap-4">
-            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.personalInfo')}</div>
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionBody')}</div>
 
             <div>
               <Label htmlFor="profile-name" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.name')}</Label>
@@ -321,7 +356,6 @@ export default function ProfilePage({ user }: ProfilePageProps) {
               </div>
             </div>
 
-            {/* BMI */}
             {bmi && bmiCategory && (
               <div className="bg-muted/30 rounded-lg p-3 border border-border/60">
                 <div className="flex items-baseline gap-2">
@@ -331,6 +365,149 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 <div className={cn('text-xs mt-0.5', bmiCategory.color)}>{bmiCategory.label}</div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Goals */}
+        <Card>
+          <CardContent className="p-5 flex flex-col gap-4">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionGoals')}</div>
+
+            <div>
+              <Label htmlFor="profile-goal-weight" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.goalWeight')}</Label>
+              <Input
+                id="profile-goal-weight"
+                type="number"
+                step="0.1"
+                min="0"
+                value={goalWeight}
+                onChange={(e) => setGoalWeight(e.target.value)}
+                placeholder={t('profile.goalWeightPlaceholder')}
+                className="h-10"
+              />
+              {goalBmi && (
+                <div className="text-[10px] text-muted-foreground mt-1">
+                  {t('onboarding.bmiGoal', { bmi: goalBmi })}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.activityLevel')}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ['sedentary', 'activitySedentary'],
+                  ['light', 'activityLight'],
+                  ['active', 'activityActive'],
+                  ['very_active', 'activityVeryActive'],
+                ] as const).map(([val, key]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setActivityLevel(activityLevel === val ? '' : val)}
+                    aria-pressed={activityLevel === val}
+                    className={cn(
+                      'h-10 rounded-md border text-sm transition-colors',
+                      activityLevel === val
+                        ? 'border-lime bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    )}
+                  >
+                    {t(`onboarding.${key}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.pace')}</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  ['gradual', 'paceGradual'],
+                  ['balanced', 'paceBalanced'],
+                  ['aggressive', 'paceAggressive'],
+                ] as const).map(([val, key]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setPace(pace === val ? '' : val)}
+                    aria-pressed={pace === val}
+                    className={cn(
+                      'h-10 rounded-md border text-sm transition-colors',
+                      pace === val
+                        ? 'border-lime bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    )}
+                  >
+                    {t(`onboarding.${key}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Health */}
+        <Card>
+          <CardContent className="p-5 flex flex-col gap-4">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionHealth')}</div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.medicalConditions')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {CONDITION_IDS.map(id => {
+                  const active = medicalConditions.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setMedicalConditions(active ? medicalConditions.filter(c => c !== id) : [...medicalConditions, id])}
+                      aria-pressed={active}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.conditions.${id}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.injuriesLabel')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {INJURY_IDS.map(id => {
+                  const active = injuries.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setInjuries(active ? injuries.filter(i => i !== id) : [...injuries, id])}
+                      aria-pressed={active}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.injuries.${id}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Training */}
+        <Card>
+          <CardContent className="p-5 flex flex-col gap-4">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionTraining')}</div>
 
             <div id="tour-level-selector">
               <Label htmlFor="profile-level" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.level')}</Label>
@@ -354,6 +531,82 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </div>
 
             <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.focusAreas')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {FOCUS_AREA_IDS.map(id => {
+                  const active = focusAreas.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setFocusAreas(active ? focusAreas.filter(x => x !== id) : [...focusAreas, id])}
+                      aria-pressed={active}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.focus.${id}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.trainingDays')}</Label>
+              <div className="grid grid-cols-7 gap-1.5">
+                {DAY_IDS.map(d => {
+                  const active = trainingDays.includes(d)
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setTrainingDays(active ? trainingDays.filter(x => x !== d) : [...trainingDays, d])}
+                      aria-pressed={active}
+                      className={cn(
+                        'h-10 rounded-md border text-xs font-medium transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.days.${d}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.intensity')}</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  ['light', 'intensityLight'],
+                  ['moderate', 'intensityModerate'],
+                  ['intense', 'intensityIntense'],
+                ] as const).map(([val, key]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setIntensity(intensity === val ? '' : val)}
+                    aria-pressed={intensity === val}
+                    className={cn(
+                      'h-10 rounded-md border text-sm transition-colors',
+                      intensity === val
+                        ? 'border-lime bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    )}
+                  >
+                    {t(`onboarding.${key}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <Label htmlFor="profile-goal" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.goal')}</Label>
               <textarea
                 id="profile-goal"
@@ -364,7 +617,12 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               />
             </div>
+          </CardContent>
+        </Card>
 
+        {/* Preferences: timezone */}
+        <Card>
+          <CardContent className="p-5">
             <div>
               <Label htmlFor="profile-timezone" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.timezone')}</Label>
               <Input
