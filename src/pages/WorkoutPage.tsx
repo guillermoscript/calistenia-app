@@ -23,7 +23,11 @@ export default function WorkoutPage() {
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, unmarkWorkoutDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { startSession } = useActiveSession()
   const { startCircuit } = useCircuitSession()
-  const { userId, userRole } = useAuthState()
+  const { userId, userRole, user } = useAuthState()
+  const userInjuries = useMemo(
+    () => Array.isArray((user as any)?.injuries) ? (user as any).injuries : [],
+    [user],
+  )
   const { t } = useTranslation()
   const navigate = useNavigate()
   const isAdmin = userRole === 'admin' || userRole === 'editor'
@@ -227,7 +231,7 @@ export default function WorkoutPage() {
             {workout.exercises.map((ex, idx) => (
               <div key={ex.id} {...(idx === 0 ? { id: 'tour-first-exercise' } : {})}>
                 <ExerciseCard exercise={ex} workoutKey={workoutKey!}
-                  onLogSet={onLogSet} onStartRest={(s: number) => { setRestTime(getRestForExercise(ex.id, s)); setRestExerciseId(ex.id) }} logs={getExerciseLogs(ex.id)} isAdmin={isAdmin} isFirst={idx === 0} />
+                  onLogSet={onLogSet} onStartRest={(s: number) => { setRestTime(getRestForExercise(ex.id, s)); setRestExerciseId(ex.id) }} logs={getExerciseLogs(ex.id)} isAdmin={isAdmin} isFirst={idx === 0} userInjuries={userInjuries} />
               </div>
             ))}
           </div>

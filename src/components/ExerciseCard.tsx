@@ -13,6 +13,8 @@ import { Input } from './ui/input'
 import { cn } from '../lib/utils'
 import { PRIORITY_COLORS } from '../lib/style-tokens'
 import type { Exercise, ExerciseLog, SetData, Priority } from '../types'
+import { exerciseInjuryFlags } from '../lib/injuryMatch'
+import type { InjuryId } from './onboarding/StepHealth'
 
 const PRIORITY_LABEL_KEYS: Record<Priority, string> = { high: 'exercise.priorityHigh', med: 'exercise.priorityMed', low: 'exercise.priorityLow' }
 
@@ -24,9 +26,10 @@ interface ExerciseCardProps {
   logs?: ExerciseLog[]
   isAdmin?: boolean
   isFirst?: boolean
+  userInjuries?: InjuryId[]
 }
 
-export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [], isAdmin, isFirst }: ExerciseCardProps) {
+export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRest, logs = [], isAdmin, isFirst, userInjuries = [] }: ExerciseCardProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [showTimer, setShowTimer] = useState<boolean>(false)
@@ -137,6 +140,17 @@ export default function ExerciseCard({ exercise, workoutKey, onLogSet, onStartRe
               </span>
             </div>
             <div className="text-[12px] text-muted-foreground">{exercise.muscles}</div>
+            {(() => {
+              const flags = exerciseInjuryFlags(exercise.name, userInjuries)
+              if (!flags.length) return null
+              const joints = flags.map(f => t(`workout.joint.${f}`)).join(', ')
+              return (
+                <div className="text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/30 rounded px-2 py-1 mt-2 inline-flex items-center gap-1.5">
+                  <span>⚠️</span>
+                  <span>{t('workout.injuryWarning', { joints })}</span>
+                </div>
+              )
+            })()}
           </div>
 
           {/* Sets counter */}
