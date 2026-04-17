@@ -3,7 +3,7 @@
 **Date:** 2026-03-31
 **Priority:** HIGH (entry point for all new users)
 **Effort:** L (new screens, new DB fields, new components, touches auth + profile + program selection)
-**Status:** Draft
+**Status:** Shipped 2026-04-17 — all three phases on main (commits 674ff86..840b3b0)
 
 ---
 
