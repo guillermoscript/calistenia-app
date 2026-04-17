@@ -22,7 +22,8 @@ const INJURY_KEYWORDS: Record<Exclude<InjuryId, 'other'>, string[]> = {
   ],
   elbow: [
     'push-up', 'push up', 'flexión', 'flexion', 'dip', 'pull-up', 'pull up',
-    'dominada', 'curl', 'extension', 'extensión', 'tricep',
+    'dominada', 'muscle-up', 'muscle up', 'muscleup', 'curl', 'extension',
+    'extensión', 'tricep',
   ],
   knee: [
     'squat', 'sentadilla', 'lunge', 'zancada', 'pistol', 'jump', 'salto',
