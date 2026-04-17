@@ -7,6 +7,7 @@ import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
 import { StepBasics, type BasicsValues } from './StepBasics'
 import { StepGoals, type GoalsValues } from './StepGoals'
+import { StepHealth, type HealthValues } from './StepHealth'
 import { StepProgram } from './StepProgram'
 import { StepOrientation } from './StepOrientation'
 
@@ -29,6 +30,10 @@ const EMPTY_GOALS: GoalsValues = {
   goal_weight: '', activity_level: '', pace: '',
 }
 
+const EMPTY_HEALTH: HealthValues = {
+  medical_conditions: [], injuries: [],
+}
+
 export default function OnboardingFlow({
   displayName,
   programs,
@@ -47,23 +52,27 @@ export default function OnboardingFlow({
   const [step, setStep] = useState(0)
   const [basics, setBasics] = useState<BasicsValues>(EMPTY_BASICS)
   const [goals, setGoals] = useState<GoalsValues>(EMPTY_GOALS)
+  const [health, setHealth] = useState<HealthValues>(EMPTY_HEALTH)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingGoals, setSavingGoals] = useState(false)
+  const [savingHealth, setSavingHealth] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
 
   // Step index layout (frozen via needsProfile):
-  //   0=welcome, 1=basics, 2=goals (both only if needsProfile), then program, then orientation
+  //   0=welcome, 1=basics, 2=goals, 3=health (all only if needsProfile), then program, then orientation
   const profileStep = needsProfile ? 1 : -1
   const goalsStep = needsProfile ? 2 : -1
-  const programStep = needsProfile ? 3 : 1
-  const orientationStep = needsProfile ? 4 : 2
-  const totalSteps = needsProfile ? 5 : 3
+  const healthStep = needsProfile ? 3 : -1
+  const programStep = needsProfile ? 4 : 1
+  const orientationStep = needsProfile ? 5 : 2
+  const totalSteps = needsProfile ? 6 : 3
 
   const stepNameFor = (s: number): string => {
     if (s === 0) return 'welcome'
     if (s === profileStep) return 'profile'
     if (s === goalsStep) return 'goals'
+    if (s === healthStep) return 'health'
     if (s === programStep) return 'program'
     if (s === orientationStep) return 'orientation'
     return `step_${s}`
@@ -116,7 +125,30 @@ export default function OnboardingFlow({
       console.warn('Failed to save onboarding goals:', e)
     }
     setSavingGoals(false)
-    goToStep(programStep)
+    goToStep(healthStep)
+  }
+
+  const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
+    if (!userId) return
+    setSavingHealth(true)
+    try {
+      await pb.collection('users').update(userId, {
+        medical_conditions: next.medical_conditions,
+        injuries: next.injuries,
+      })
+    } catch (e) {
+      console.warn('Failed to save onboarding health:', e)
+    }
+    setSavingHealth(false)
+    goToStep(advanceTo)
+  }
+
+  const handleSaveHealth = () => saveHealthAnd(health, programStep)
+
+  const handleNoIssues = () => {
+    const empty: HealthValues = { medical_conditions: [], injuries: [] }
+    setHealth(empty)
+    saveHealthAnd(empty, programStep)
   }
 
   const handleFinish = () => {
@@ -126,6 +158,8 @@ export default function OnboardingFlow({
       has_program: !!selectedProgramId,
       has_goal_weight: !!goals.goal_weight,
       activity_level: goals.activity_level || 'unknown',
+      conditions_count: health.medical_conditions.length,
+      injuries_count: health.injuries.length,
     })
     onComplete()
   }
@@ -169,7 +203,18 @@ export default function OnboardingFlow({
             saving={savingGoals}
             onBack={() => goToStep(profileStep)}
             onContinue={handleSaveGoals}
-            onSkip={() => goToStep(programStep)}
+            onSkip={() => goToStep(healthStep)}
+          />
+        )}
+
+        {step === healthStep && (
+          <StepHealth
+            values={health}
+            onChange={setHealth}
+            saving={savingHealth}
+            onBack={() => goToStep(goalsStep)}
+            onContinue={handleSaveHealth}
+            onSkipAsNone={handleNoIssues}
           />
         )}
 
@@ -184,7 +229,7 @@ export default function OnboardingFlow({
               markOnboardingDone(userId)
               onCreateProgram()
             }}
-            onBack={() => goToStep(needsProfile ? goalsStep : 0)}
+            onBack={() => goToStep(needsProfile ? healthStep : 0)}
             onContinue={() => goToStep(orientationStep)}
           />
         )}
