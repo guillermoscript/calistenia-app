@@ -6,6 +6,7 @@ import { markOnboardingDone } from './state'
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
 import { StepBasics, type BasicsValues } from './StepBasics'
+import { StepGoals, type GoalsValues } from './StepGoals'
 import { StepProgram } from './StepProgram'
 import { StepOrientation } from './StepOrientation'
 
@@ -22,6 +23,10 @@ interface OnboardingFlowProps {
 
 const EMPTY_BASICS: BasicsValues = {
   weight: '', height: '', age: '', sex: '', level: 'principiante', goal: '',
+}
+
+const EMPTY_GOALS: GoalsValues = {
+  goal_weight: '', activity_level: '', pace: '',
 }
 
 export default function OnboardingFlow({
@@ -41,24 +46,31 @@ export default function OnboardingFlow({
 
   const [step, setStep] = useState(0)
   const [basics, setBasics] = useState<BasicsValues>(EMPTY_BASICS)
+  const [goals, setGoals] = useState<GoalsValues>(EMPTY_GOALS)
   const [savingProfile, setSavingProfile] = useState(false)
+  const [savingGoals, setSavingGoals] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
 
   // Step index layout (frozen via needsProfile):
-  //   0=welcome, 1=basics (only if needsProfile), then program, then orientation
+  //   0=welcome, 1=basics, 2=goals (both only if needsProfile), then program, then orientation
   const profileStep = needsProfile ? 1 : -1
-  const programStep = needsProfile ? 2 : 1
-  const orientationStep = needsProfile ? 3 : 2
-  const totalSteps = needsProfile ? 4 : 3
+  const goalsStep = needsProfile ? 2 : -1
+  const programStep = needsProfile ? 3 : 1
+  const orientationStep = needsProfile ? 4 : 2
+  const totalSteps = needsProfile ? 5 : 3
 
-  const STEP_NAMES = ['welcome', 'profile', 'program', 'orientation'] as const
+  const stepNameFor = (s: number): string => {
+    if (s === 0) return 'welcome'
+    if (s === profileStep) return 'profile'
+    if (s === goalsStep) return 'goals'
+    if (s === programStep) return 'program'
+    if (s === orientationStep) return 'orientation'
+    return `step_${s}`
+  }
+
   const goToStep = (s: number) => {
-    const name = s === profileStep ? 'profile'
-      : s === programStep ? 'program'
-      : s === orientationStep ? 'orientation'
-      : STEP_NAMES[s] || `step_${s}`
-    op.track('onboarding_step_viewed', { step: s, step_name: name })
+    op.track('onboarding_step_viewed', { step: s, step_name: stepNameFor(s) })
     setStep(s)
   }
 
@@ -85,9 +97,25 @@ export default function OnboardingFlow({
         goal: basics.goal || '',
       })
     } catch (e) {
-      console.warn('Failed to save onboarding profile:', e)
+      console.warn('Failed to save onboarding basics:', e)
     }
     setSavingProfile(false)
+    goToStep(goalsStep)
+  }
+
+  const handleSaveGoals = async () => {
+    if (!userId) return
+    setSavingGoals(true)
+    try {
+      await pb.collection('users').update(userId, {
+        goal_weight: goals.goal_weight ? parseFloat(goals.goal_weight) : null,
+        activity_level: goals.activity_level || '',
+        pace: goals.pace || '',
+      })
+    } catch (e) {
+      console.warn('Failed to save onboarding goals:', e)
+    }
+    setSavingGoals(false)
     goToStep(programStep)
   }
 
@@ -96,11 +124,15 @@ export default function OnboardingFlow({
     op.track('onboarding_completed', {
       level: basics.level || 'unknown',
       has_program: !!selectedProgramId,
+      has_goal_weight: !!goals.goal_weight,
+      activity_level: goals.activity_level || 'unknown',
     })
     onComplete()
   }
 
   const firstName = displayName?.split(/[\s@]/)[0] || ''
+  const currentWeightNum = basics.weight ? parseFloat(basics.weight) : null
+  const currentHeightNum = basics.height ? parseFloat(basics.height) : null
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -124,6 +156,19 @@ export default function OnboardingFlow({
             saving={savingProfile}
             onBack={() => goToStep(0)}
             onContinue={handleSaveBasics}
+            onSkip={() => goToStep(goalsStep)}
+          />
+        )}
+
+        {step === goalsStep && (
+          <StepGoals
+            values={goals}
+            onChange={setGoals}
+            currentWeightKg={currentWeightNum}
+            currentHeightCm={currentHeightNum}
+            saving={savingGoals}
+            onBack={() => goToStep(profileStep)}
+            onContinue={handleSaveGoals}
             onSkip={() => goToStep(programStep)}
           />
         )}
@@ -139,7 +184,7 @@ export default function OnboardingFlow({
               markOnboardingDone(userId)
               onCreateProgram()
             }}
-            onBack={() => goToStep(needsProfile ? profileStep : 0)}
+            onBack={() => goToStep(needsProfile ? goalsStep : 0)}
             onContinue={() => goToStep(orientationStep)}
           />
         )}
