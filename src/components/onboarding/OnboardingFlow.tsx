@@ -263,7 +263,15 @@ export default function OnboardingFlow({
             selectedProgramId={selectedProgramId}
             selecting={selecting}
             userId={userId}
-            userLevel={training.level || user?.level}
+            user={{
+              level: user?.level,
+              weight: user?.weight,
+              goal_weight: user?.goal_weight,
+              focus_areas: user?.focus_areas,
+              training_days: user?.training_days,
+              injuries: user?.injuries,
+              medical_conditions: user?.medical_conditions,
+            }}
             onSelectProgram={handleSelectProgram}
             onCreateProgram={() => {
               markOnboardingDone(userId)
