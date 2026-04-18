@@ -306,6 +306,12 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
       cover_image:    p.cover_image || undefined,
       cover_image_url: p.cover_image ? pb.files.getURL(p, p.cover_image, { thumb: '400x0' }) : undefined,
       discipline:     disciplineByProgram.get(p.id) || 'calistenia',
+      goal_type:      p.goal_type || undefined,
+      skill:          p.skill || undefined,
+      intensity:      p.intensity || undefined,
+      days_per_week:  typeof p.days_per_week === 'number' ? p.days_per_week : undefined,
+      equipment_required: Array.isArray(p.equipment_required) ? p.equipment_required : undefined,
+      contraindications:  Array.isArray(p.contraindications) ? p.contraindications : undefined,
     }))
     setPrograms(catalog)
 
