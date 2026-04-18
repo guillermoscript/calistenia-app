@@ -374,7 +374,10 @@ export default function ProgramDetailPage({
   }, [])
 
   // Total exercise count
-  const totalExercises = workouts.reduce((sum, w) => sum + w.exercises.length, 0)
+  const totalExerciseCount = useMemo(
+    () => workouts.reduce((sum, w) => sum + w.exercises.length, 0),
+    [workouts]
+  )
 
   // Difficulty level
   const allExercises = useMemo(() => workouts.flatMap(w => w.exercises), [workouts])
@@ -453,6 +456,11 @@ export default function ProgramDetailPage({
           {isSharedView ? t('programDetail.sharedProgram') : t('programDetail.programDetail')}
         </div>
         <h1 className="font-bebas text-4xl md:text-6xl leading-none mb-4 tracking-wide motion-safe:animate-fade-in" style={{ animationDelay: '50ms', animationFillMode: 'both' }}>{program.name}</h1>
+        {totalExerciseCount <= 1 && (
+          <div className="mb-6 rounded-lg border border-amber-400/30 bg-amber-400/5 px-4 py-3 text-sm text-amber-500 motion-safe:animate-fade-in" style={{ animationDelay: '75ms', animationFillMode: 'both' }}>
+            {t('programs.contentComingSoon')}
+          </div>
+        )}
         {program.description && (
           <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-6 motion-safe:animate-fade-in" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>{program.description}</p>
         )}
@@ -474,7 +482,7 @@ export default function ProgramDetailPage({
           </div>
           <div className="w-px h-5 bg-muted" />
           <div className="flex items-center gap-2">
-            <span className="text-lime font-bebas text-xl">{totalExercises}</span>
+            <span className="text-lime font-bebas text-xl">{totalExerciseCount}</span>
             <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">{t('programDetail.exercises')}</span>
           </div>
           {totalDurationMinutes > 0 && (
