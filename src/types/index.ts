@@ -221,6 +221,10 @@ export type UserRole = 'user' | 'editor' | 'admin'
 export type UserTier = 'free' | 'premium'
 export type ProgramDifficulty = 'beginner' | 'intermediate' | 'advanced'
 
+export type ProgramGoalType = 'fat_loss' | 'muscle_gain' | 'maintain' | 'skill'
+export type ProgramSkill = 'pull_up' | 'handstand' | 'muscle_up' | 'planche'
+export type ProgramIntensity = 'light' | 'moderate' | 'intense'
+
 export interface ProgramMeta {
   id: string
   name: string
@@ -235,6 +239,13 @@ export interface ProgramMeta {
   /** Resolved cover image URL (built from PB file service) */
   cover_image_url?: string
   discipline?: 'yoga' | 'calistenia'
+  /** Catalog-matching fields (see specs/2026-04-18-programs-catalog-personas-design.md) */
+  goal_type?: ProgramGoalType
+  skill?: ProgramSkill
+  intensity?: ProgramIntensity
+  days_per_week?: number
+  equipment_required?: string[]
+  contraindications?: string[]
 }
 
 // ─── Nutrition ──────────────────────────────────────────────────────────────
