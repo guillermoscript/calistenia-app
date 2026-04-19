@@ -46,8 +46,8 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
 
   return (
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="max-w-[520px] max-sm:max-w-[95vw]">
-        <DialogHeader>
+      <DialogContent className="max-w-[520px] max-sm:max-w-[95vw] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">CATÁLOGO DE PROGRAMAS</div>
           <DialogTitle className="font-bebas text-[32px] leading-none">SELECCIONA PROGRAMA</DialogTitle>
         </DialogHeader>
@@ -83,7 +83,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2.5 overflow-y-auto flex-1 min-h-0 -mx-1 px-1">
             {programs.map(prog => {
               const isActive = prog.id === activeProgram?.id
               return (
@@ -157,7 +157,7 @@ export default function ProgramSelectorModal({ programs, activeProgram, onSelect
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button
             variant="outline"
             onClick={onClose}
