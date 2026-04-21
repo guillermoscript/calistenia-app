@@ -2,6 +2,40 @@ import type { GpsPoint, KmSplit } from '../types'
 
 const R = 6371000 // Earth radius in meters
 
+/**
+ * 1D Kalman state for GPS lat/lng smoothing. Treats lat/lng independently —
+ * good enough at short distances where the local tangent plane is near-euclidean.
+ */
+export interface KalmanState {
+  lat: number
+  lng: number
+  variance: number // in m²
+  timestamp: number
+}
+
+// Process noise std dev (m/s). Covers running/cycling; bigger = trust measurement more.
+const PROCESS_NOISE_MPS = 4
+
+export function kalmanUpdate(
+  prev: KalmanState | null,
+  lat: number,
+  lng: number,
+  accuracy: number,
+  timestamp: number,
+): KalmanState {
+  const measVar = Math.max(accuracy * accuracy, 1)
+  if (!prev) return { lat, lng, variance: measVar, timestamp }
+  const dt = Math.max(0, (timestamp - prev.timestamp) / 1000)
+  const predVar = prev.variance + (PROCESS_NOISE_MPS * dt) ** 2
+  const k = predVar / (predVar + measVar)
+  return {
+    lat: prev.lat + k * (lat - prev.lat),
+    lng: prev.lng + k * (lng - prev.lng),
+    variance: (1 - k) * predVar,
+    timestamp,
+  }
+}
+
 export function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180
   const dLat = toRad(lat2 - lat1)

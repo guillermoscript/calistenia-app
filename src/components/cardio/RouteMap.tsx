@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type L from 'leaflet'
 import { cn } from '../../lib/utils'
@@ -7,6 +7,8 @@ import type { GpsPoint } from '../../types'
 
 interface RouteMapProps {
   points: GpsPoint[]
+  /** Monotonic counter — bumps when points mutate in place (points array is a ref). */
+  pointsVersion?: number
   height?: string
   className?: string
   /** Show a pulsing marker at the last point (for live tracking) */
@@ -21,6 +23,10 @@ const TILES_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM
 
 const START_COLOR = '#22c55e' // green-500 (start pin — always green)
 const END_COLOR = '#ef4444'   // red-500  (finish pin — always red)
+
+// Throttle live polyline redraws so we don't rebuild layers on every single GPS fix.
+const LIVE_REDRAW_MIN_MS = 1500
+const LIVE_REDRAW_MIN_POINTS = 3
 
 /** Read the --lime CSS variable and convert to a usable hex/hsl string */
 function getLimeColor(): string {
@@ -56,15 +62,20 @@ function injectPulseStyle(color: string) {
   pulseStyleEl.textContent = buildPulseCSS(color)
 }
 
-export default function RouteMap({ points, height = '300px', className, live = false, activityType }: RouteMapProps) {
+function RouteMap({ points, pointsVersion = 0, height = '300px', className, live = false, activityType }: RouteMapProps) {
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layersRef = useRef<L.LayerGroup | null>(null)
+  const liveMarkerRef = useRef<L.Marker | null>(null)
   const [snappedCoords, setSnappedCoords] = useState<[number, number][] | null>(null)
+  const didInitialFitRef = useRef(false)
+  const userPannedRef = useRef(false)
+  const lastDrawRef = useRef<{ version: number; time: number }>({ version: -1, time: 0 })
 
   // Lazy-loaded leaflet reference
   const leafletRef = useRef<typeof L | null>(null)
+  const [mapReady, setMapReady] = useState(false)
 
   // Initialize map once
   useEffect(() => {
@@ -100,8 +111,12 @@ export default function RouteMap({ points, height = '300px', className, live = f
       leaflet.control.attribution({ position: 'bottomright', prefix: false }).addTo(map)
       leaflet.control.zoom({ position: 'bottomright' }).addTo(map)
 
+      // User drag → disable auto-follow so we don't fight their panning
+      map.on('dragstart', () => { userPannedRef.current = true })
+
       layersRef.current = leaflet.layerGroup().addTo(map)
       mapRef.current = map
+      setMapReady(true)
     })()
 
     return () => {
@@ -109,6 +124,7 @@ export default function RouteMap({ points, height = '300px', className, live = f
       mapRef.current?.remove()
       mapRef.current = null
       layersRef.current = null
+      liveMarkerRef.current = null
     }
   }, [])
 
@@ -136,7 +152,24 @@ export default function RouteMap({ points, height = '300px', className, live = f
     const leaflet = leafletRef.current
     if (!map || !layers || !leaflet || points.length === 0) return
 
+    // Throttle live redraws — rebuilding polyline layers every GPS fix is pure waste.
+    if (live) {
+      const now = Date.now()
+      const versionDiff = pointsVersion - lastDrawRef.current.version
+      const timeDiff = now - lastDrawRef.current.time
+      const firstDraw = lastDrawRef.current.version < 0
+      if (!firstDraw && versionDiff < LIVE_REDRAW_MIN_POINTS && timeDiff < LIVE_REDRAW_MIN_MS) {
+        // Still nudge the live marker so the user sees position updates
+        const last = points[points.length - 1]
+        if (liveMarkerRef.current) liveMarkerRef.current.setLatLng([last.lat, last.lng])
+        if (!userPannedRef.current) map.panTo([last.lat, last.lng], { animate: true })
+        return
+      }
+      lastDrawRef.current = { version: pointsVersion, time: now }
+    }
+
     layers.clearLayers()
+    liveMarkerRef.current = null
 
     const routeColor = getLimeColor()
 
@@ -213,7 +246,7 @@ export default function RouteMap({ points, height = '300px', className, live = f
           iconSize: [16, 16],
           iconAnchor: [8, 8],
         })
-        leaflet.marker(lastCoord, { icon }).addTo(layers)
+        liveMarkerRef.current = leaflet.marker(lastCoord, { icon }).addTo(layers)
       } else {
         leaflet.circleMarker(lastCoord, {
           radius: 7,
@@ -225,9 +258,18 @@ export default function RouteMap({ points, height = '300px', className, live = f
       }
     }
 
-    // Fit bounds
-    map.fitBounds(polyline.getBounds(), { padding: [30, 30] })
-  }, [points, snappedCoords, live])
+    // View handling: fit once, then follow (live) or re-fit (post-session)
+    if (live) {
+      if (!didInitialFitRef.current) {
+        map.fitBounds(polyline.getBounds(), { padding: [30, 30] })
+        didInitialFitRef.current = true
+      } else if (!userPannedRef.current && rawCoords.length > 0) {
+        map.panTo(rawCoords[rawCoords.length - 1], { animate: true })
+      }
+    } else {
+      map.fitBounds(polyline.getBounds(), { padding: [30, 30] })
+    }
+  }, [points, pointsVersion, snappedCoords, live, mapReady])
 
   if (points.length === 0) {
     return (
@@ -239,3 +281,5 @@ export default function RouteMap({ points, height = '300px', className, live = f
 
   return <div ref={containerRef} className={cn('rounded-xl overflow-hidden', className)} style={{ height }} />
 }
+
+export default memo(RouteMap)

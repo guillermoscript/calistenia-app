@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { lazy, Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useCardioSessionContext } from '../contexts/CardioSessionContext'
 import { useCardioStats } from '../hooks/useCardioStats'
@@ -6,7 +6,8 @@ import { formatDuration, formatPace, formatSpeed, pointsToGPX, assessTrackQualit
 import { useTranslation } from 'react-i18next'
 import { CARDIO_ACTIVITY } from '../lib/style-tokens'
 import { todayStr } from '../lib/dateUtils'
-import RouteMap from '../components/cardio/RouteMap'
+// Leaflet + RouteMap is ~150kb gzipped — split into its own chunk and preload on idle
+const RouteMap = lazy(() => import('../components/cardio/RouteMap'))
 import CardioHistory from '../components/cardio/CardioHistory'
 import SplitsTable from '../components/cardio/SplitsTable'
 import CardioStats from '../components/cardio/CardioStats'
@@ -70,6 +71,17 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
     getHistory(20).then(setHistory).catch(() => {}).finally(() => setHistoryLoading(false))
     loadStats()
   }, [isIdle, getHistory, loadStats]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Preload RouteMap chunk (+ leaflet) on idle so first map paint is instant
+  // whether the user starts tracking or expands history.
+  useEffect(() => {
+    const preload = () => {
+      void import('../components/cardio/RouteMap')
+    }
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }
+    if (w.requestIdleCallback) w.requestIdleCallback(preload, { timeout: 2000 })
+    else setTimeout(preload, 500)
+  }, [])
 
   const isCycling = (type: CardioActivityType) => type === 'cycling'
 
@@ -349,7 +361,9 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
           {/* Live map — taller for route visibility */}
           {pointsCount > 1 && (
-            <RouteMap points={pointsRef.current} height="220px" live activityType={activityType} />
+            <Suspense fallback={<div className="rounded-xl bg-muted/50 animate-pulse" style={{ height: '220px' }} />}>
+              <RouteMap points={pointsRef.current} pointsVersion={pointsCount} height="220px" live activityType={activityType} />
+            </Suspense>
           )}
 
           {/* Controls — large touch targets for sweaty/gloved hands */}
@@ -437,7 +451,9 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
 
           {/* Map */}
           {pointsCount > 1 && (
-            <RouteMap points={pointsRef.current} height="250px" activityType={activityType} />
+            <Suspense fallback={<div className="rounded-xl bg-muted/50 animate-pulse" style={{ height: '250px' }} />}>
+              <RouteMap points={pointsRef.current} pointsVersion={pointsCount} height="250px" activityType={activityType} />
+            </Suspense>
           )}
 
           {/* Elevation profile */}

@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { formatDuration, formatPace, formatSpeed } from '../../lib/geo'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../lib/i18n'
 import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
-import RouteMap from './RouteMap'
+const RouteMap = lazy(() => import('./RouteMap'))
 import CardioShareCard from './CardioShareCard'
 import ElevationProfile from './ElevationProfile'
 import SplitsTable from './SplitsTable'
@@ -108,7 +108,9 @@ export default function CardioHistory({ sessions, loading, onDelete, referralCod
               <div className="px-4 pb-4 space-y-4 border-t border-border/50 pt-4">
                 {/* Route map */}
                 {session.gps_points.length > 0 && (
-                  <RouteMap points={session.gps_points} height="220px" activityType={session.activity_type} />
+                  <Suspense fallback={<div className="rounded-xl bg-muted/50 animate-pulse" style={{ height: '220px' }} />}>
+                    <RouteMap points={session.gps_points} height="220px" activityType={session.activity_type} />
+                  </Suspense>
                 )}
 
                 {/* Elevation profile */}

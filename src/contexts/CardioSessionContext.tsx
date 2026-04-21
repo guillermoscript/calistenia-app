@@ -4,7 +4,15 @@ import { pb } from '../lib/pocketbase'
 import {
   haversineDistance, calculateElevationGain,
   calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
+  kalmanUpdate, type KalmanState,
 } from '../lib/geo'
+
+// ── Precision tuning ────────────────────────────────────────────────────────
+// Reject GPS fixes with accuracy worse than this (urban ~8-15m, open sky ~5m).
+const MAX_ACCURACY_M = 20
+// Drop points closer than this to the last stored point — GPS jitter at rest
+// inflates distance otherwise.
+const MIN_POINT_DISTANCE_M = 3
 import { estimateCalories } from '../lib/calories'
 import type { GpsPoint, CardioActivityType, CardioSession } from '../types'
 
@@ -155,6 +163,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const lastGpsTimestampRef = useRef<number>(0)
   const lastGpsRestartRef = useRef<number>(0)
   const startTrackingRef = useRef<() => void>(() => {})
+  const kalmanRef = useRef<KalmanState | null>(null)
 
   // ── Persist to localStorage periodically ────────────────────────────────
 
@@ -193,10 +202,12 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
           navigator.geolocation.getCurrentPosition(
             (pos) => {
               const { latitude, longitude, altitude, speed, accuracy } = pos.coords
-              if (accuracy > 30) return
+              if (accuracy > MAX_ACCURACY_M) return
               const pts = pointsRef.current
+              const smoothed = kalmanUpdate(kalmanRef.current, latitude, longitude, accuracy, pos.timestamp)
+              kalmanRef.current = smoothed
               const point: GpsPoint = {
-                lat: latitude, lng: longitude,
+                lat: smoothed.lat, lng: smoothed.lng,
                 alt: altitude ?? undefined,
                 timestamp: pos.timestamp,
                 speed: speed ?? undefined,
@@ -204,10 +215,10 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
               }
               if (pts.length > 0) {
                 const last = pts[pts.length - 1]
-                // Only add if this is actually a new position (>1s newer)
                 if (point.timestamp - last.timestamp < 1000) return
                 const d = haversineDistance(last.lat, last.lng, point.lat, point.lng)
                 const timeDiff = (point.timestamp - last.timestamp) / 1000
+                if (d < MIN_POINT_DISTANCE_M) return
                 if (timeDiff > 0 && d / timeDiff > 14) return
                 distanceRef.current += d / 1000
                 setDistance(distanceRef.current)
@@ -268,28 +279,34 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       (pos) => {
         const { latitude, longitude, altitude, speed, accuracy } = pos.coords
         setGpsAccuracy(accuracy)
-        if (accuracy > 30) return
+        if (accuracy > MAX_ACCURACY_M) return
+
+        const pts = pointsRef.current
+        const prevPt = pts.length > 0 ? pts[pts.length - 1] : null
+        const timeDiff = prevPt ? (pos.timestamp - prevPt.timestamp) / 1000 : 0
+        const isGap = prevPt !== null && timeDiff > 30
+
+        // Reset Kalman filter on gap — predicted variance would be enormous
+        // after a long pause and would bias smoothing back to the pre-gap location.
+        if (isGap) kalmanRef.current = null
+
+        // Smooth lat/lng via 1D Kalman (per-coord). Reduces jitter from poor fixes.
+        const smoothed = kalmanUpdate(kalmanRef.current, latitude, longitude, accuracy, pos.timestamp)
+        kalmanRef.current = smoothed
 
         const point: GpsPoint = {
-          lat: latitude,
-          lng: longitude,
+          lat: smoothed.lat,
+          lng: smoothed.lng,
           alt: altitude ?? undefined,
           timestamp: pos.timestamp,
           speed: speed ?? undefined,
           accuracy,
         }
 
-        const pts = pointsRef.current
-        if (pts.length > 0) {
-          const last = pts[pts.length - 1]
-          const d = haversineDistance(last.lat, last.lng, point.lat, point.lng)
-          const timeDiff = (point.timestamp - last.timestamp) / 1000
-
-          // ── Gap detection: >30s without a GPS point ──
-          const isGap = timeDiff > 30
+        if (prevPt) {
+          const d = haversineDistance(prevPt.lat, prevPt.lng, point.lat, point.lng)
 
           if (isGap) {
-            // Per-activity max speed for plausibility check
             const maxSpeed: Record<CardioActivityType, number> = {
               running: 6, walking: 3, cycling: 14,
             }
@@ -297,17 +314,18 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
             const plausible = timeDiff > 0 && (d / timeDiff) <= limit
 
             if (plausible) {
-              // Add interpolated distance and flag the point
               point.gap = true
               const newDist = distanceRef.current + d / 1000
               distanceRef.current = newDist
               setDistance(newDist)
             } else {
-              // Implausible (e.g., user drove) — push point without distance so tracking continues from new location
               point.gap = true
             }
           } else {
-            // Normal real-time tracking — apply standard speed filter
+            // Jitter filter — when stationary, GPS bounces within accuracy radius.
+            // Skip additions below the noise floor so distance doesn't drift upward.
+            if (d < MIN_POINT_DISTANCE_M) return
+
             if (timeDiff > 0 && d / timeDiff > 14) return
 
             const newDist = distanceRef.current + d / 1000
@@ -408,6 +426,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     maxSpeedRef.current = 0
     lastGpsTimestampRef.current = 0
     lastGpsRestartRef.current = 0
+    kalmanRef.current = null
 
     setState('tracking')
     stateRef.current = 'tracking'
@@ -513,6 +532,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     clearStorage()
     pointsRef.current = []
     distanceRef.current = 0
+    kalmanRef.current = null
     setPointsCount(0)
     setDistance(0)
     setDuration(0)
