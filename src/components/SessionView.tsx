@@ -119,18 +119,18 @@ interface RestScreenProps {
 function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, savedRest, onAdjust }: RestScreenProps) {
   const { t } = useTranslation()
   const initialSeconds = savedRest || defaultSeconds
+  const endAtRef = useRef<number>(Date.now() + initialSeconds * 1000)
   const [remaining, setRemaining] = useState<number>(initialSeconds)
   const [totalSecs, setTotalSecs] = useState<number>(initialSeconds)
   const touchStartX = useRef<number | null>(null)
   const hasPlayedWarning = useRef<boolean>(false)
   const hasNotifiedStart = useRef<boolean>(false)
-
-  useEffect(() => {
-    setRemaining(initialSeconds)
-    setTotalSecs(initialSeconds)
-    hasPlayedWarning.current = false
-    hasNotifiedStart.current = false
-  }, [initialSeconds])
+  const hasFinished = useRef<boolean>(false)
+  const lastRemainingRef = useRef<number>(initialSeconds)
+  const onSkipRef = useRef(onSkip)
+  const nextStepRef = useRef(nextStep)
+  onSkipRef.current = onSkip
+  nextStepRef.current = nextStep
 
   // Play rest-start sound + notification on mount
   useEffect(() => {
@@ -141,31 +141,43 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Timestamp-based countdown — survives tab backgrounding / setInterval throttling
   useEffect(() => {
-    if (remaining <= 0) {
-      sounds.playGetReady()
-      sounds.vibrate([200, 100, 200])
-      if (nextStep) {
-        notif.notifyRestDone(nextStep.exercise.name, nextStep.setNumber, nextStep.totalSets)
+    const tick = () => {
+      const rem = Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000))
+      const prev = lastRemainingRef.current
+      if (rem !== prev) {
+        if (prev > 10 && rem <= 10 && rem > 0 && !hasPlayedWarning.current) {
+          hasPlayedWarning.current = true
+          sounds.playWarning()
+          sounds.vibrate([100])
+          notif.notifyRestEnding(10)
+        }
+        if (rem > 0 && rem <= 3 && prev === rem + 1 && !document.hidden) {
+          sounds.playCountdownTick()
+          sounds.vibrate([50])
+        }
+        lastRemainingRef.current = rem
+        setRemaining(rem)
       }
-      onSkip()
-      return
+      if (rem <= 0 && !hasFinished.current) {
+        hasFinished.current = true
+        sounds.playGetReady()
+        sounds.vibrate([200, 100, 200])
+        const ns = nextStepRef.current
+        if (ns) notif.notifyRestDone(ns.exercise.name, ns.setNumber, ns.totalSets)
+        onSkipRef.current()
+      }
     }
-    // Warning at 10s
-    if (remaining === 10 && !hasPlayedWarning.current) {
-      hasPlayedWarning.current = true
-      sounds.playWarning()
-      sounds.vibrate([100])
-      notif.notifyRestEnding(10)
+
+    const id = setInterval(tick, 250)
+    const onVis = () => { if (!document.hidden) tick() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
     }
-    // Countdown ticks at 3, 2, 1
-    if (remaining <= 3) {
-      sounds.playCountdownTick()
-      sounds.vibrate([50])
-    }
-    const t = setTimeout(() => setRemaining(r => r - 1), 1000)
-    return () => clearTimeout(t)
-  }, [remaining]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTouchStart = (e: React.TouchEvent): void => { touchStartX.current = e.touches[0].clientX }
   const handleTouchEnd   = (e: React.TouchEvent): void => {
@@ -176,7 +188,10 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
   const adjustTime = (delta: number) => {
     const newTotal = Math.max(10, totalSecs + delta)
     setTotalSecs(newTotal)
-    setRemaining(r => Math.max(1, r + delta))
+    endAtRef.current += delta * 1000
+    const rem = Math.max(1, Math.ceil((endAtRef.current - Date.now()) / 1000))
+    lastRemainingRef.current = rem
+    setRemaining(rem)
     if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
   }
 

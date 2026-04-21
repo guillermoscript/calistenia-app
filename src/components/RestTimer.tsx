@@ -17,41 +17,69 @@ export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone, 
   const [s, setS] = useState<number>(startSecs)
   const [totalSecs, setTotalSecs] = useState<number>(startSecs)
   const [running, setRunning] = useState<boolean>(true)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const sRef = useRef<number>(startSecs)
-
-  // Keep ref in sync with state
-  useEffect(() => { sRef.current = s }, [s])
+  const endAtRef = useRef<number>(Date.now() + startSecs * 1000)
+  const pausedRemainingRef = useRef<number>(startSecs)
+  const lastSRef = useRef<number>(startSecs)
+  const hasWarnedRef = useRef<boolean>(false)
+  const hasFinishedRef = useRef<boolean>(false)
+  const onDoneRef = useRef(onDone)
+  onDoneRef.current = onDone
 
   useEffect(() => { playRestStart() }, [])
 
   useEffect(() => {
-    if (!running) return
-    intervalRef.current = setInterval(() => {
-      const prev = sRef.current
-      if (prev <= 1) {
-        clearInterval(intervalRef.current!)
+    if (!running) {
+      pausedRemainingRef.current = Math.max(1, Math.ceil((endAtRef.current - Date.now()) / 1000))
+      return
+    }
+    endAtRef.current = Date.now() + pausedRemainingRef.current * 1000
+
+    const tick = () => {
+      const rem = Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000))
+      const prev = lastSRef.current
+      if (rem !== prev) {
+        if (prev > 10 && rem <= 10 && rem > 0 && !hasWarnedRef.current) {
+          hasWarnedRef.current = true
+          playWarning()
+          vibrate([100])
+        }
+        if (rem > 0 && rem <= 3 && prev === rem + 1 && !document.hidden) {
+          playCountdownTick()
+          vibrate([50])
+        }
+        lastSRef.current = rem
+        setS(rem)
+      }
+      if (rem <= 0 && !hasFinishedRef.current) {
+        hasFinishedRef.current = true
         playGetReady()
         vibrate([200, 100, 200])
-        sRef.current = 0
-        setS(0)
-        onDone?.()
-        return
+        onDoneRef.current?.()
       }
-      if (prev === 11) { playWarning(); vibrate([100]) }
-      if (prev <= 4 && prev > 1) { playCountdownTick(); vibrate([50]) }
-      sRef.current = prev - 1
-      setS(prev - 1)
-    }, 1000)
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [running])
+    }
+    const id = setInterval(tick, 250)
+    const onVis = () => { if (!document.hidden) tick() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [running]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const adjustTime = (delta: number) => {
     const newTotal = Math.max(10, totalSecs + delta)
-    const newS = Math.max(1, sRef.current + delta)
     setTotalSecs(newTotal)
-    sRef.current = newS
-    setS(newS)
+    if (running) {
+      endAtRef.current += delta * 1000
+      const rem = Math.max(1, Math.ceil((endAtRef.current - Date.now()) / 1000))
+      lastSRef.current = rem
+      setS(rem)
+    } else {
+      const rem = Math.max(1, pausedRemainingRef.current + delta)
+      pausedRemainingRef.current = rem
+      lastSRef.current = rem
+      setS(rem)
+    }
     if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
   }
 
@@ -74,7 +102,7 @@ export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone, 
             className="h-6 w-9 px-0 text-[10px] font-mono text-muted-foreground hover:text-foreground">+30</Button>
         </div>
         <Button size="sm" variant="outline"
-          onClick={() => { if (intervalRef.current) clearInterval(intervalRef.current); setRunning(false); onDone?.() }}
+          onClick={() => { setRunning(false); onDone?.() }}
           className="font-mono text-[10px] tracking-wide text-[hsl(var(--lime))] border-[hsl(var(--lime))]/30 hover:bg-[hsl(var(--lime))]/10 hover:text-[hsl(var(--lime))]">
           {t('workout.skip')}
         </Button>
