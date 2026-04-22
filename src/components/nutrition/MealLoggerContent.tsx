@@ -275,6 +275,43 @@ export default function MealLoggerContent({
     setStep('review')
   }
 
+  const handleAnalyzeText = async () => {
+    const text = quickText.trim()
+    if (!text) return
+
+    cancelledRef.current = false
+    abortControllerRef.current = new AbortController()
+    setStep('analyzing')
+    setError(null)
+
+    try {
+      const result = await onAnalyze([], mealType, text)
+      if (cancelledRef.current) return
+      const normalized = (result.foods || []).map(f => {
+        if (!('baseCal100' in f) || !f.baseCal100) {
+          return migrateLegacyFood(f as any)
+        }
+        return f
+      })
+      if (normalized.length === 0) {
+        setError(t('nutrition.logger.noFoodsDetected'))
+        setStep('capture')
+        return
+      }
+      setFoods(normalized)
+      setMealDescription(result.meal_description || '')
+      setAnalysisQuality(result.quality)
+      setQuickText('')
+      setStep('review')
+    } catch {
+      if (cancelledRef.current) return
+      setError(t('nutrition.logger.analyzeImageError'))
+      setStep('capture')
+    } finally {
+      abortControllerRef.current = null
+    }
+  }
+
   const handlePortionChange = (index: number, amount: number, unit: FoodItem['portionUnit'], unitWeight: number) => {
     setFoods(prev => prev.map((f, i) => {
       if (i !== index) return f
@@ -467,27 +504,50 @@ export default function MealLoggerContent({
 
               {/* ── Main input area ── */}
               <div id="tour-meallog-input" className="space-y-3">
-                {/* Quick text input */}
+                {/* AI text input — write meal description, AI fills macros */}
                 <form
-                  onSubmit={e => { e.preventDefault(); handleQuickTextSubmit() }}
-                  className="relative"
+                  onSubmit={e => { e.preventDefault(); handleAnalyzeText() }}
+                  className="space-y-2"
                 >
-                  <input
-                    value={quickText}
-                    onChange={e => setQuickText(e.target.value)}
-                    placeholder={t('nutrition.logger.whatDidYouEat')}
-                    aria-label={t('nutrition.logger.whatDidYouEat')}
-                    maxLength={500}
-                    className="w-full h-12 text-base pl-4 pr-12 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/50 transition-all"
-                  />
+                  <div className="relative">
+                    <textarea
+                      value={quickText}
+                      onChange={e => setQuickText(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                          e.preventDefault()
+                          handleAnalyzeText()
+                        }
+                      }}
+                      placeholder={t('nutrition.logger.aiTextPlaceholder')}
+                      aria-label={t('nutrition.logger.aiTextPlaceholder')}
+                      maxLength={500}
+                      rows={3}
+                      className="w-full text-base px-4 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime-400/40 focus:ring-1 focus:ring-lime-400/20 placeholder:text-muted-foreground/50 transition-all resize-none leading-relaxed"
+                    />
+                    {quickText && (
+                      <div className="absolute bottom-2 right-3 text-[9px] text-muted-foreground/40 tabular-nums">
+                        {quickText.length}/500
+                      </div>
+                    )}
+                  </div>
                   {quickText.trim() && (
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-lg bg-lime-400 text-zinc-900 flex items-center justify-center hover:bg-lime-300 transition-colors"
-                      aria-label={t('nutrition.register')}
-                    >
-                      <ArrowIcon className="size-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="submit"
+                        className="flex-1 h-11 bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas text-sm tracking-widest shadow-lg shadow-lime-400/10"
+                      >
+                        ✨ {t('nutrition.logger.analyzeWithAI')}
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={handleQuickTextSubmit}
+                        className="px-3 h-11 rounded-xl border border-border text-[10px] font-mono tracking-widest text-muted-foreground hover:text-foreground hover:border-lime-400/30 transition-colors"
+                        title={t('nutrition.logger.manualWithoutAI')}
+                      >
+                        {t('nutrition.logger.manual')}
+                      </button>
+                    </div>
                   )}
                 </form>
 
@@ -1208,15 +1268,6 @@ function PencilIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-    </svg>
-  )
-}
-
-function ArrowIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
     </svg>
   )
 }

@@ -550,6 +550,8 @@
   "nutrition.logger.analyzeError": "Error al iniciar el analisis",
   "nutrition.logger.checkConnection": "Revisa tu conexion e intenta de nuevo",
   "nutrition.logger.whatDidYouEat": "¿Qué comiste? ej: pollo, arroz, ensalada",
+  "nutrition.logger.aiTextPlaceholder": "Cuéntale a la IA qué comiste... ej: 200g de pollo a la plancha con arroz integral y un poco de aguacate",
+  "nutrition.logger.manualWithoutAI": "Solo poner los nombres, sin IA",
   "nutrition.logger.camera": "CAMARA",
   "nutrition.logger.gallery": "GALERIA",
   "nutrition.logger.manual": "MANUAL",

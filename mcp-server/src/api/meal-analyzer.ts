@@ -183,13 +183,18 @@ export async function analyzeMealImage({
   const webSearchTools = resolveWebSearchTool(provider);
   const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("meal-analyzer");
 
-  let userText =
-    images.length > 1
-      ? `Analiza estas ${images.length} imagenes de ${mealType}. Las imagenes muestran la misma comida desde diferentes angulos o diferentes platos de la misma comida. Identifica todos los alimentos visibles en todas las imagenes y proporciona el desglose nutricional completo. No dupliques alimentos que aparezcan en varias fotos.`
-      : `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`;
+  let userText: string;
+  if (images.length === 0) {
+    userText = `El usuario registra ${mealType} SIN foto, solo con esta descripcion en texto: "${description}"\n\nIdentifica todos los alimentos mencionados y proporciona el desglose nutricional completo. Si el usuario menciona cantidades especificas (ej: "200g de pollo", "2 huevos"), usa esas cantidades. Si no menciona cantidad, asume una porcion tipica realista para ${mealType}. Incluye ingredientes implicitos pero probables (aceite de coccion, sal, condimentos) si aportan calorias significativas.`;
+  } else {
+    userText =
+      images.length > 1
+        ? `Analiza estas ${images.length} imagenes de ${mealType}. Las imagenes muestran la misma comida desde diferentes angulos o diferentes platos de la misma comida. Identifica todos los alimentos visibles en todas las imagenes y proporciona el desglose nutricional completo. No dupliques alimentos que aparezcan en varias fotos.`
+        : `Analiza esta imagen de ${mealType}. Identifica todos los alimentos visibles y proporciona el desglose nutricional completo.`;
 
-  if (description) {
-    userText += `\n\nEl usuario describe la comida asi: "${description}"\nIMPORTANTE: Si el usuario menciona cantidades especificas (ej: "200g de pollo", "2 huevos"), PRIORIZA esas cantidades sobre tu estimacion visual. Usa la descripcion para identificar ingredientes no visibles en la foto (aceite, condimentos, salsas, etc.) e incluyelos como alimentos separados.`;
+    if (description) {
+      userText += `\n\nEl usuario describe la comida asi: "${description}"\nIMPORTANTE: Si el usuario menciona cantidades especificas (ej: "200g de pollo", "2 huevos"), PRIORIZA esas cantidades sobre tu estimacion visual. Usa la descripcion para identificar ingredientes no visibles en la foto (aceite, condimentos, salsas, etc.) e incluyelos como alimentos separados.`;
+    }
   }
 
   if (userContext) {
@@ -202,6 +207,11 @@ export async function analyzeMealImage({
     mediaType: img.mimeType as any,
   }));
 
+  const userContent =
+    images.length === 0
+      ? userText
+      : [...imageContent, { type: "text" as const, text: userText }];
+
   const { output, steps } = await generateText({
     model,
     output: Output.object({ schema: MealAnalysisSchema }),
@@ -210,14 +220,11 @@ export async function analyzeMealImage({
     experimental_telemetry: {
       isEnabled: true,
       functionId: "meal-analyzer",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
+      metadata: { tier, modelName, mode: images.length === 0 ? "text" : "image", ...(langfusePrompt && { langfusePrompt }) },
     },
     messages: [
       { role: "system", content: systemPrompt },
-      {
-        role: "user",
-        content: [...imageContent, { type: "text", text: userText }],
-      },
+      { role: "user", content: userContent },
     ],
   });
 

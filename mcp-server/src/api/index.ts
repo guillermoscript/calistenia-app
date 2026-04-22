@@ -168,11 +168,11 @@ export function createApiRouter(): Router {
     async (req: any, res: any, next: any) => {
       try {
         const files: Express.Multer.File[] = req.files || [];
-        if (files.length === 0) {
-          return res.status(400).json({ error: "Se requiere al menos una imagen de la comida" });
+        const description = (req.body.description ?? "").trim();
+        if (files.length === 0 && !description) {
+          return res.status(400).json({ error: "Se requiere al menos una imagen o una descripcion de la comida" });
         }
         const mealType = req.body.meal_type ?? "comida";
-        const description = req.body.description ?? "";
         const tier: Tier = req.user?.tier === "pro" || req.user?.tier === "premium" ? "pro" : "free";
 
         const images = files.map((f: Express.Multer.File) => ({

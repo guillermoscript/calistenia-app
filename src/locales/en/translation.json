@@ -550,6 +550,8 @@
   "nutrition.logger.analyzeError": "Error starting analysis",
   "nutrition.logger.checkConnection": "Check your connection and try again",
   "nutrition.logger.whatDidYouEat": "What did you eat? e.g.: chicken, rice, salad",
+  "nutrition.logger.aiTextPlaceholder": "Tell the AI what you ate... e.g.: 200g grilled chicken with brown rice and a bit of avocado",
+  "nutrition.logger.manualWithoutAI": "Just names, no AI",
   "nutrition.logger.camera": "CAMERA",
   "nutrition.logger.gallery": "GALLERY",
   "nutrition.logger.manual": "MANUAL",
