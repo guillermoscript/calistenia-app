@@ -179,8 +179,8 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                       weight === 'medium' && 'hover:bg-card/50',
                     )}>
                       <div className={cn(
-                        'flex items-center gap-3',
-                        weight === 'large' ? 'p-4' : weight === 'medium' ? 'px-3 py-3' : 'px-3 py-2',
+                        'flex items-center gap-2 sm:gap-3',
+                        weight === 'large' ? 'p-3 sm:p-4' : weight === 'medium' ? 'px-2 py-3 sm:px-3' : 'px-2 py-2 sm:px-3',
                       )}>
                         {/* Photo thumbnail */}
                         {entry.photoUrls && entry.photoUrls.length > 0 && (
@@ -211,7 +211,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                           className="flex-1 min-w-0 text-left"
                           aria-expanded={isExpanded}
                         >
-                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
                             <span className={cn(
                               'text-[9px] tracking-widest shrink-0',
                               mealInfo.color,
@@ -231,10 +231,13 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             <span className="text-[10px] text-muted-foreground/60 shrink-0">{formatTime(entry.loggedAt)}</span>
                             <span className={cn(
                               'ml-auto tabular-nums shrink-0',
-                              weight === 'large' ? 'font-bebas text-xl text-foreground' : 'text-xs text-foreground font-medium',
+                              weight === 'large' ? 'font-bebas text-base sm:text-xl text-foreground' : 'text-xs text-foreground font-medium',
                             )}>
                               {Math.round(entry.totalCalories)}
-                              <span className={weight === 'large' ? 'text-sm text-muted-foreground ml-0.5' : 'text-muted-foreground ml-0.5'}>kcal</span>
+                              <span className={cn(
+                                'ml-0.5 text-muted-foreground',
+                                weight === 'large' ? 'text-xs sm:text-sm' : '',
+                              )}>kcal</span>
                             </span>
                           </div>
 
@@ -270,11 +273,11 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
 
                         {/* Actions */}
                         {entry.id && (
-                          <div className="flex gap-0.5 shrink-0 self-start">
+                          <div className="flex gap-0.5 shrink-0 self-start -mr-1">
                             {onDuplicateEntry && (
                               <button
                                 onClick={() => onDuplicateEntry(entry)}
-                                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-lime hover:bg-lime/10 transition-colors"
+                                className="size-7 sm:size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-lime hover:bg-lime/10 transition-colors"
                                 aria-label={t('common.duplicate')}
                               >
                                 <CopyIcon className="size-3.5" />
@@ -283,7 +286,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             {onEditEntry && (
                               <button
                                 onClick={() => setEditingEntry(entry)}
-                                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
+                                className="size-7 sm:size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
                                 aria-label={t('common.edit')}
                               >
                                 <EditIcon className="size-3.5" />
@@ -292,7 +295,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                             {onDeleteEntry && (
                               <button
                                 onClick={() => setDeleteConfirmId(entry.id!)}
-                                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                className="size-7 sm:size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                                 aria-label={t('common.delete')}
                               >
                                 <TrashIcon className="size-3.5" />
