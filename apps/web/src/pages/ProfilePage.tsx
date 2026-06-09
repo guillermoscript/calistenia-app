@@ -1,0 +1,735 @@
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Card, CardContent } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import { cn } from '../lib/utils'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
+import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { CONDITION_IDS, INJURY_IDS, type ConditionId, type InjuryId } from '../components/onboarding/StepHealth'
+import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity } from '../components/onboarding/StepTraining'
+import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
+
+interface ProfilePageProps {
+  user: any
+}
+
+export default function ProfilePage({ user }: ProfilePageProps) {
+  const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
+  const [displayName, setDisplayName] = useState(user?.display_name || user?.name || '')
+  const [weight, setWeight] = useState<string>('')
+  const [height, setHeight] = useState<string>('')
+  const [age, setAge] = useState<string>('')
+  const [sex, setSex] = useState<string>('')
+  const [level, setLevel] = useState('principiante')
+  const [goal, setGoal] = useState('')
+  const [goalWeight, setGoalWeight] = useState<string>('')
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | ''>('')
+  const [pace, setPace] = useState<Pace | ''>('')
+  const [medicalConditions, setMedicalConditions] = useState<ConditionId[]>([])
+  const [injuries, setInjuries] = useState<InjuryId[]>([])
+  const [focusAreas, setFocusAreas] = useState<FocusAreaId[]>([])
+  const [trainingDays, setTrainingDays] = useState<DayId[]>([])
+  const [intensity, setIntensity] = useState<Intensity | ''>('')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [timezone, setTimezone] = useState(() => getTimezone())
+  const [tzSearch, setTzSearch] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
+
+  const LEVELS = [
+    { value: 'principiante', label: t('difficulty.beginner') },
+    { value: 'intermedio', label: t('difficulty.intermediate') },
+    { value: 'avanzado', label: t('difficulty.advanced') },
+  ]
+
+  const profileUrl = `${window.location.origin}/u/${user?.id}`
+
+  function shareWhatsApp() {
+    const msg = `${t('profile.whatsappShare')}\n${profileUrl}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
+  }
+
+  async function copyProfileLink() {
+    try {
+      await navigator.clipboard.writeText(profileUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      const input = document.createElement('input')
+      input.value = profileUrl
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  useEffect(() => {
+    if (!user?.id || loaded) return
+
+    const load = async () => {
+      const available = await isPocketBaseAvailable()
+      if (available) {
+        try {
+          const rec = await pb.collection('users').getOne(user.id)
+          setDisplayName((rec as any).display_name || (rec as any).name || '')
+          setWeight((rec as any).weight ? String((rec as any).weight) : '')
+          setHeight((rec as any).height ? String((rec as any).height) : '')
+          setAge((rec as any).age ? String((rec as any).age) : '')
+          setSex((rec as any).sex || '')
+          setLevel((rec as any).level || 'principiante')
+          setGoal((rec as any).goal || '')
+          setGoalWeight((rec as any).goal_weight ? String((rec as any).goal_weight) : '')
+          setActivityLevel((rec as any).activity_level || '')
+          setPace((rec as any).pace || '')
+          setMedicalConditions(Array.isArray((rec as any).medical_conditions) ? (rec as any).medical_conditions : [])
+          setInjuries(Array.isArray((rec as any).injuries) ? (rec as any).injuries : [])
+          setFocusAreas(Array.isArray((rec as any).focus_areas) ? (rec as any).focus_areas : [])
+          setTrainingDays(Array.isArray((rec as any).training_days) ? (rec as any).training_days : [])
+          setIntensity((rec as any).intensity || '')
+          setAvatarUrl(getUserAvatarUrl(rec as any, '200x200'))
+          if ((rec as any).timezone) setTimezone((rec as any).timezone)
+        } catch (e) {
+          console.warn('Failed to load profile:', e)
+        }
+      }
+      setLoaded(true)
+    }
+    load()
+  }, [user?.id, loaded])
+
+  const bmi = useMemo(() => {
+    const w = parseFloat(weight)
+    const h = parseFloat(height)
+    if (!w || !h || h <= 0) return null
+    const meters = h / 100
+    return (w / (meters * meters)).toFixed(1)
+  }, [weight, height])
+
+  const goalBmi = useMemo(() => {
+    const gw = parseFloat(goalWeight)
+    const h = parseFloat(height)
+    if (!gw || !h || h <= 0) return null
+    const meters = h / 100
+    return (gw / (meters * meters)).toFixed(1)
+  }, [goalWeight, height])
+
+  const bmiCategory = useMemo(() => {
+    if (!bmi) return null
+    const v = parseFloat(bmi)
+    if (v < 18.5) return { label: t('profile.bmiUnderweight'), color: 'text-amber-400' }
+    if (v < 25) return { label: t('profile.bmiNormal'), color: 'text-emerald-500' }
+    if (v < 30) return { label: t('profile.bmiOverweight'), color: 'text-amber-400' }
+    return { label: t('profile.bmiObese'), color: 'text-red-500' }
+  }, [bmi, t])
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user?.id) return
+
+    setUploadingAvatar(true)
+    try {
+      const available = await isPocketBaseAvailable()
+      if (available) {
+        const formData = new FormData()
+        formData.append('avatar', file)
+        const updated = await pb.collection('users').update(user.id, formData)
+        // Add cache-busting param so the browser doesn't show the old cached image
+        const url = getUserAvatarUrl(updated as any, '200x200')
+        setAvatarUrl(url ? `${url}&t=${Date.now()}` : null)
+        // Refresh auth to sync avatar in authStore
+        await pb.collection('users').authRefresh()
+      }
+    } catch (e) {
+      console.warn('Failed to upload avatar:', e)
+    }
+    setUploadingAvatar(false)
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleSave = async () => {
+    if (!user?.id) return
+    setSaving(true)
+    setSaved(false)
+
+    try {
+      const available = await isPocketBaseAvailable()
+      if (available) {
+        await pb.collection('users').update(user.id, {
+          display_name: displayName,
+          weight: weight ? parseFloat(weight) : null,
+          height: height ? parseFloat(height) : null,
+          age: age ? parseInt(age, 10) : null,
+          sex: sex || '',
+          level,
+          goal,
+          goal_weight: goalWeight ? parseFloat(goalWeight) : null,
+          activity_level: activityLevel || '',
+          pace: pace || '',
+          medical_conditions: medicalConditions,
+          injuries,
+          focus_areas: focusAreas,
+          training_days: trainingDays,
+          intensity: intensity || '',
+          timezone,
+        })
+        setGlobalTimezone(timezone)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+    } catch (e) {
+      console.warn('Failed to save profile:', e)
+    }
+
+    setSaving(false)
+  }
+
+  return (
+    <div className="max-w-[600px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      <div className="text-[10px] text-muted-foreground tracking-[3px] mb-2 uppercase">{t('profile.accountLabel')}</div>
+      <div className="font-bebas text-[36px] md:text-[52px] leading-none mb-8">{t('profile.title')}</div>
+
+      {/* Avatar */}
+      <div className="flex flex-col items-center mb-6">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingAvatar}
+          className="relative group size-24 rounded-full overflow-hidden bg-accent border-2 border-border hover:border-lime transition-colors focus:outline-none focus:ring-2 focus:ring-lime"
+        >
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
+          ) : (
+            <span className="flex items-center justify-center size-full text-3xl font-bebas text-foreground">
+              {(displayName || user?.email || '?')[0]?.toUpperCase()}
+            </span>
+          )}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <svg className="size-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </div>
+          {uploadingAvatar && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <div className="size-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleAvatarChange}
+          className="hidden"
+        />
+        <span className="text-[10px] text-muted-foreground mt-2">{t('profile.changePhoto')}</span>
+      </div>
+
+      {/* Share profile */}
+      <div className="mb-6 rounded-xl border border-border bg-card p-4 motion-safe:animate-fade-in">
+        <div className="text-xs text-muted-foreground mb-3">{t('profile.shareProfile')}</div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={shareWhatsApp}
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] tracking-widest h-9 px-4"
+          >
+            <WhatsAppIcon className="size-4 mr-1.5" />
+            WHATSAPP
+          </Button>
+          <Button
+            onClick={copyProfileLink}
+            variant="outline"
+            size="sm"
+            className="text-[10px] tracking-widest h-9 px-4"
+          >
+            {copied ? (
+              <>
+                <svg className="size-3.5 mr-1.5 text-lime" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                {t('profile.copied')}
+              </>
+            ) : (
+              <>
+                <svg className="size-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                {t('profile.copyLink')}
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-5">
+        {/* Body & demographics */}
+        <Card id="tour-personal-info">
+          <CardContent className="p-5 flex flex-col gap-4">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionBody')}</div>
+
+            <div>
+              <Label htmlFor="profile-name" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.name')}</Label>
+              <Input
+                id="profile-name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder={t('profile.namePlaceholder')}
+                className="h-10"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label htmlFor="profile-weight" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.weight')}</Label>
+                <Input
+                  id="profile-weight"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  placeholder={t('profile.weightPlaceholder')}
+                  className="h-10"
+                />
+              </div>
+              <div>
+                <Label htmlFor="profile-height" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.height')}</Label>
+                <Input
+                  id="profile-height"
+                  type="number"
+                  min="0"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  placeholder={t('profile.heightPlaceholder')}
+                  className="h-10"
+                />
+              </div>
+              <div>
+                <Label htmlFor="profile-age" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.age')}</Label>
+                <Input
+                  id="profile-age"
+                  type="number"
+                  min="13"
+                  max="120"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder={t('profile.agePlaceholder')}
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.sex')}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'male', label: t('profile.male') },
+                  { value: 'female', label: t('profile.female') },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSex(sex === opt.value ? '' : opt.value)}
+                    aria-pressed={sex === opt.value}
+                    className={cn(
+                      'h-10 rounded-md border text-sm transition-colors',
+                      sex === opt.value
+                        ? 'border-lime bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {bmi && bmiCategory && (
+              <div className="bg-muted/30 rounded-lg p-3 border border-border/60">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-bebas text-3xl leading-none text-foreground">{bmi}</span>
+                  <span className="text-[10px] text-muted-foreground tracking-wide uppercase">{t('profile.bmiLabel')}</span>
+                </div>
+                <div className={cn('text-xs mt-0.5', bmiCategory.color)}>{bmiCategory.label}</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Goals */}
+        <Card>
+          <CardContent className="p-5 flex flex-col gap-4">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionGoals')}</div>
+
+            <div>
+              <Label htmlFor="profile-goal-weight" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.goalWeight')}</Label>
+              <Input
+                id="profile-goal-weight"
+                type="number"
+                step="0.1"
+                min="0"
+                value={goalWeight}
+                onChange={(e) => setGoalWeight(e.target.value)}
+                placeholder={t('profile.goalWeightPlaceholder')}
+                className="h-10"
+              />
+              {goalBmi && (
+                <div className="text-[10px] text-muted-foreground mt-1">
+                  {t('onboarding.bmiGoal', { bmi: goalBmi })}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.activityLevel')}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ['sedentary', 'activitySedentary'],
+                  ['light', 'activityLight'],
+                  ['active', 'activityActive'],
+                  ['very_active', 'activityVeryActive'],
+                ] as const).map(([val, key]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setActivityLevel(activityLevel === val ? '' : val)}
+                    aria-pressed={activityLevel === val}
+                    className={cn(
+                      'h-10 rounded-md border text-sm transition-colors',
+                      activityLevel === val
+                        ? 'border-lime bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    )}
+                  >
+                    {t(`onboarding.${key}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.pace')}</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  ['gradual', 'paceGradual'],
+                  ['balanced', 'paceBalanced'],
+                  ['aggressive', 'paceAggressive'],
+                ] as const).map(([val, key]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setPace(pace === val ? '' : val)}
+                    aria-pressed={pace === val}
+                    className={cn(
+                      'h-10 rounded-md border text-sm transition-colors',
+                      pace === val
+                        ? 'border-lime bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    )}
+                  >
+                    {t(`onboarding.${key}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Health */}
+        <Card>
+          <CardContent className="p-5 flex flex-col gap-4">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionHealth')}</div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.medicalConditions')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {CONDITION_IDS.map(id => {
+                  const active = medicalConditions.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setMedicalConditions(active ? medicalConditions.filter(c => c !== id) : [...medicalConditions, id])}
+                      aria-pressed={active}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.conditions.${id}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.injuriesLabel')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {INJURY_IDS.map(id => {
+                  const active = injuries.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setInjuries(active ? injuries.filter(i => i !== id) : [...injuries, id])}
+                      aria-pressed={active}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.injuries.${id}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Training */}
+        <Card>
+          <CardContent className="p-5 flex flex-col gap-4">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">{t('profile.sectionTraining')}</div>
+
+            <div id="tour-level-selector">
+              <Label htmlFor="profile-level" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.level')}</Label>
+              <div className="flex gap-2">
+                {LEVELS.map(l => (
+                  <Button
+                    key={l.value}
+                    variant={level === l.value ? 'default' : 'outline'}
+                    size="sm"
+                    aria-pressed={level === l.value}
+                    onClick={() => setLevel(l.value)}
+                    className={level === l.value
+                      ? 'h-8 px-4 text-[11px] bg-lime text-zinc-900 hover:bg-lime/90'
+                      : 'h-8 px-4 text-[11px]'
+                    }
+                  >
+                    {l.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.focusAreas')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {FOCUS_AREA_IDS.map(id => {
+                  const active = focusAreas.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setFocusAreas(active ? focusAreas.filter(x => x !== id) : [...focusAreas, id])}
+                      aria-pressed={active}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full border text-xs transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.focus.${id}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.trainingDays')}</Label>
+              <div className="grid grid-cols-7 gap-1.5">
+                {DAY_IDS.map(d => {
+                  const active = trainingDays.includes(d)
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setTrainingDays(active ? trainingDays.filter(x => x !== d) : [...trainingDays, d])}
+                      aria-pressed={active}
+                      className={cn(
+                        'h-10 rounded-md border text-xs font-medium transition-colors',
+                        active
+                          ? 'border-lime bg-lime/10 text-lime'
+                          : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                      )}
+                    >
+                      {t(`onboarding.days.${d}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">{t('onboarding.intensity')}</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  ['light', 'intensityLight'],
+                  ['moderate', 'intensityModerate'],
+                  ['intense', 'intensityIntense'],
+                ] as const).map(([val, key]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setIntensity(intensity === val ? '' : val)}
+                    aria-pressed={intensity === val}
+                    className={cn(
+                      'h-10 rounded-md border text-sm transition-colors',
+                      intensity === val
+                        ? 'border-lime bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    )}
+                  >
+                    {t(`onboarding.${key}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="profile-goal" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.goal')}</Label>
+              <textarea
+                id="profile-goal"
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                placeholder={t('profile.goalPlaceholder')}
+                rows={3}
+                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preferences: timezone */}
+        <Card>
+          <CardContent className="p-5">
+            <div>
+              <Label htmlFor="profile-timezone" className="text-[11px] text-muted-foreground mb-1.5 block">{t('profile.timezone')}</Label>
+              <Input
+                id="profile-tz-search"
+                value={tzSearch}
+                onChange={(e) => setTzSearch(e.target.value)}
+                placeholder={t('profile.searchTimezone')}
+                className="h-8 text-xs mb-2"
+              />
+              <select
+                id="profile-timezone"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {(() => {
+                  try {
+                    const allTz = (Intl as any).supportedValuesOf('timeZone') as string[]
+                    const filtered = tzSearch
+                      ? allTz.filter(tz => tz.toLowerCase().includes(tzSearch.toLowerCase()))
+                      : allTz
+                    return filtered.map(tz => (
+                      <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+                    ))
+                  } catch {
+                    // Fallback for older browsers
+                    const common = [
+                      'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+                      'America/Bogota', 'America/Lima', 'America/Santiago', 'America/Buenos_Aires',
+                      'America/Mexico_City', 'America/Sao_Paulo',
+                      'Europe/Madrid', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome',
+                      'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Asia/Dubai',
+                      'Australia/Sydney', 'Pacific/Auckland',
+                    ]
+                    return common.map(tz => (
+                      <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+                    ))
+                  }
+                })()}
+              </select>
+              <div className="text-[10px] text-muted-foreground mt-1">
+                {t('profile.currentTimezone')}: {timezone.replace(/_/g, ' ')}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Language */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('profile.language')}</div>
+            <select
+              value={currentLang}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="es">Español</option>
+              <option value="en">English</option>
+            </select>
+          </CardContent>
+        </Card>
+
+        {/* Account info (read-only) */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-3">{t('profile.accountSection')}</div>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-muted-foreground">{t('profile.email')}</span>
+                <span className="text-sm text-foreground">{user?.email || '—'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] text-muted-foreground">{t('profile.memberSince')}</span>
+                <span className="text-sm text-foreground">{user?.created ? utcToLocalDateStr(user.created) : '—'}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Reminders link */}
+        <Card
+          className="cursor-pointer hover:border-lime-400/30 transition-colors"
+          onClick={() => navigate('/reminders')}
+        >
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🔔</span>
+              <div>
+                <div className="text-sm font-medium">{t('profile.reminders')}</div>
+                <div className="text-[10px] text-muted-foreground">{t('profile.remindersDesc')}</div>
+              </div>
+            </div>
+            <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </CardContent>
+        </Card>
+
+        {/* Save button */}
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="h-11 bg-lime text-zinc-900 hover:bg-lime/90 font-bebas text-lg tracking-wide"
+        >
+          {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
+        </Button>
+      </div>
+    </div>
+  )
+}

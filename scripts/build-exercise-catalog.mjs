@@ -401,9 +401,9 @@ async function main() {
 
   // 1. Extract from local files
   console.log('1. Extracting local exercises...')
-  const workoutExercises = extractFromTS('src/data/workouts.ts')
+  const workoutExercises = extractFromTS('packages/core/data/workouts.ts')
   console.log(`   workouts.ts: ${workoutExercises.length} exercises`)
-  const suppExercises = extractFromTS('src/data/supplementary-exercises.ts')
+  const suppExercises = extractFromTS('packages/core/data/supplementary-exercises.ts')
   console.log(`   supplementary-exercises.ts: ${suppExercises.length} exercises`)
 
   // 2. Fetch from wger
@@ -544,8 +544,8 @@ async function main() {
   console.log(`   With images: ${withImages}`)
   console.log(`   With video links: ${withVideos}`)
 
-  writeFileSync('src/data/exercise-catalog.json', JSON.stringify(output, null, 2))
-  console.log('\n   Written to src/data/exercise-catalog.json')
+  writeFileSync('packages/core/data/exercise-catalog.json', JSON.stringify(output, null, 2))
+  console.log('\n   Written to packages/core/data/exercise-catalog.json')
 }
 
 main().catch(console.error)

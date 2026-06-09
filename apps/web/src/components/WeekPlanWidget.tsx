@@ -1,0 +1,95 @@
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { cn } from '../lib/utils'
+import { localDay, todayStr, addDays } from '@calistenia/core/lib/dateUtils'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '@calistenia/core/data/workouts'
+import type { WeekDay } from '@calistenia/core/types'
+
+interface WeekPlanWidgetProps {
+  selectedPhase: number
+  isWorkoutDone: (workoutKey: string, date?: string) => boolean
+  weekDays?: WeekDay[]
+}
+
+export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays: weekDaysProp }: WeekPlanWidgetProps) {
+  const navigate = useNavigate()
+  const { t } = useTranslation()
+  const WEEK_DAYS = weekDaysProp || FALLBACK_WEEK_DAYS
+  const todayId = (['dom','lun','mar','mie','jue','vie','sab'] as const)[localDay()]
+
+  // Map day ids to their Monday-based offset (lun=0 … dom=6)
+  const dayOffset: Record<string, number> = { lun: 0, mar: 1, mie: 2, jue: 3, vie: 4, sab: 5, dom: 6 }
+  const todayMondayOffset = (localDay() + 6) % 7 // convert Sun=0→6, Mon=1→0, etc.
+  const today = todayStr()
+
+  return (
+    <div className="mb-8">
+      <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-3">
+        {t('weekPlan.title', { phase: selectedPhase })}
+      </div>
+      {/* Mobile: horizontal scroll — Desktop: 7-col grid */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 md:grid md:grid-cols-7 md:overflow-visible md:pb-0 snap-x snap-mandatory">
+        {WEEK_DAYS.map(day => {
+          const workoutKey = `p${selectedPhase}_${day.id}`
+          const dateForDay = addDays(today, (dayOffset[day.id] ?? 0) - todayMondayOffset)
+          const done    = day.type !== 'rest' && day.type !== 'cardio' && isWorkoutDone(workoutKey, dateForDay)
+          const isToday = day.id === todayId
+          const isRest  = day.type === 'rest'
+          const isCardio = day.type === 'cardio'
+
+          return (
+            <button
+              key={day.id}
+              onClick={() => !isRest && navigate(isCardio ? `/workout?day=${day.id}` : `/workout?day=${day.id}`)}
+              disabled={isRest && !isCardio}
+              className={cn(
+                'relative rounded-lg border text-center transition-all duration-200',
+                'snap-start shrink-0 w-[48px] py-2.5 px-1',
+                'md:w-auto md:py-3 md:px-1.5',
+                done    && 'border-emerald-500/30 bg-emerald-500/5',
+                isCardio && !done && 'border-emerald-400/30 bg-emerald-400/5',
+                isToday && !done && !isCardio && 'border-[hsl(var(--lime))]/30 bg-[hsl(var(--lime))]/5',
+                !done && !isToday && !isCardio && 'border-border bg-card',
+                isRest && !isCardio
+                  ? 'opacity-45 cursor-default'
+                  : 'cursor-pointer hover:border-[hsl(var(--lime))]/50 hover:bg-[hsl(var(--lime))]/5 active:scale-95',
+              )}
+            >
+              {isToday && (
+                <div className="absolute top-[5px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[hsl(var(--lime))]" />
+              )}
+              <div className={cn(
+                'font-mono text-[10px] tracking-[2px] mb-1.5',
+                isToday ? 'mt-1.5 text-[hsl(var(--lime))]' : isCardio ? 'text-emerald-400' : 'text-muted-foreground',
+              )}>
+                {(day.nameKey ? t(day.nameKey) : day.name).slice(0, 3).toUpperCase()}
+              </div>
+              {isCardio ? (
+                <div className="text-lg text-emerald-400">{CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
+              ) : isRest ? (
+                <div className="text-base text-muted-foreground">—</div>
+              ) : done ? (
+                <div className="text-lg text-emerald-400">✓</div>
+              ) : (
+                <div className={cn(
+                  'w-[18px] h-[18px] rounded mx-auto border',
+                  isToday ? 'border-[hsl(var(--lime))]/40' : 'border-border',
+                )} />
+              )}
+              <div className={cn(
+                'text-[10px] mt-1.5 leading-tight',
+                done           ? 'text-emerald-400' :
+                isCardio       ? 'text-emerald-400' :
+                isToday        ? 'text-[hsl(var(--lime))]' :
+                                 'text-muted-foreground/50',
+              )}>
+                {isCardio ? t(`cardio.${day.cardioConfig?.activityType || 'running'}`) : (day.focusKey ? t(day.focusKey) : day.focus).split(' ')[0]}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}

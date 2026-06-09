@@ -1,7 +1,8 @@
-node_modules
+**/node_modules
 pb_data
 pb_data_local
-dist
+**/dist
 .git
+.claude
 .env*
 *.md
