@@ -4,7 +4,7 @@ import {
 } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
-import { todayStr, toLocalDateStr } from '../../lib/dateUtils'
+import { todayStr, toLocalDateStr } from '@calistenia/core/lib/dateUtils'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

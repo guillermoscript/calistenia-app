@@ -1,4 +1,4 @@
-import { pb } from '../pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { serverNow } from './raceClock'
 import { wrapPbError, RaceNotFoundError } from './errors'
 import type {
@@ -7,7 +7,7 @@ import type {
   RaceMode,
   RaceActivityType,
   RaceGpsPoint,
-} from '../../types/race'
+} from '@calistenia/core/types/race'
 
 const RACE_COUNTDOWN_MS = 7000
 const RACE_WINDOW_HOURS = 3

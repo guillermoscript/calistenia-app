@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useAuthState } from '../../contexts/AuthContext'
-import { pb } from '../../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import type { NutritionGoal, Sex } from '../../types'
+import type { NutritionGoal, Sex } from '@calistenia/core/types'
 
 type Goal = 'fuerza' | 'resistencia' | 'movilidad' | 'mixto' | 'yoga' | 'circuito'
 type Location = 'casa' | 'parque' | 'gimnasio'

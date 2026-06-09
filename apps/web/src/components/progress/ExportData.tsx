@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
-import { todayStr } from '../../lib/dateUtils'
-import type { ProgressMap, ExerciseLog, SetData } from '../../types'
-import type { WeightEntry } from '../../hooks/useWeight'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
+import type { ProgressMap, ExerciseLog, SetData } from '@calistenia/core/types'
+import type { WeightEntry } from '@calistenia/core/hooks/useWeight'
 
 interface ExportDataProps {
   progress: ProgressMap

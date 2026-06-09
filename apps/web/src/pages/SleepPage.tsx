@@ -1,14 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../lib/i18n'
-import { daysAgoStr } from '../lib/dateUtils'
-import { useSleep, type SleepEntryInput } from '../hooks/useSleep'
+import { daysAgoStr } from '@calistenia/core/lib/dateUtils'
+import { useSleep, type SleepEntryInput } from '@calistenia/core/hooks/useSleep'
 import SleepForm, { type SleepFormData } from '../components/sleep/SleepForm'
 import SleepWeekChart from '../components/sleep/SleepWeekChart'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
-import { op } from '../lib/analytics'
+import { op } from '@calistenia/core/lib/analytics'
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
 } from '../components/ui/dialog'
 import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
-import type { SleepEntry } from '../types'
+import type { SleepEntry } from '@calistenia/core/types'
 
 
 // ── Quality helpers ─────────────────────────────────────────────────────────

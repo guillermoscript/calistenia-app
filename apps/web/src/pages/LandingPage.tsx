@@ -1,7 +1,7 @@
 import { useState, useEffect, useId, useRef, useCallback, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { op } from '../lib/analytics'
+import { op } from '@calistenia/core/lib/analytics'
 
 interface LandingPageProps {
   onGetStarted: () => void

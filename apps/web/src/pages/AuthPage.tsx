@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { captureReferralCode } from '@/hooks/useAuth'
+import { captureReferralCode } from '@calistenia/core/hooks/useAuth'
 
 interface AuthPageProps {
   signInWithGoogle: () => Promise<void>

@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { marked } from 'marked'
 import { Plus, Eye, EyeOff, Pencil, Trash2, Send, Save, ArrowLeft } from 'lucide-react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { localize } from '../lib/i18n-db'
-import type { BlogPost } from '../hooks/useBlog'
+import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { localize } from '@calistenia/core/lib/i18n-db'
+import type { BlogPost } from '@calistenia/core/hooks/useBlog'
 
 const CATEGORIES = ['calistenia', 'tutoriales', 'nutricion', 'consejos', 'actualizaciones'] as const
 

@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { todayStr } from '../lib/dateUtils'
@@ -12,10 +13,10 @@ export interface WeightEntry {
 }
 
 const lsGet = (): WeightEntry[] => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] }
+  try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
 }
 const lsSet = (d: WeightEntry[]): void => {
-  localStorage.setItem(LS_KEY, JSON.stringify(d))
+  storage.setItem(LS_KEY, JSON.stringify(d))
 }
 
 interface UseWeightReturn {

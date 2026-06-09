@@ -12,7 +12,7 @@ import isoWeek from 'dayjs/plugin/isoWeek'
 import relativeTimePlugin from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/es'
 import 'dayjs/locale/en'
-import i18n from './i18n'
+import i18n from 'i18next'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)

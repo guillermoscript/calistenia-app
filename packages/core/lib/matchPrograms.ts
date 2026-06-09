@@ -7,7 +7,7 @@
  */
 
 import type { ProgramMeta, ProgramGoalType } from '../types'
-import { FOCUS_AREA_IDS } from '../components/onboarding/StepTraining'
+import { FOCUS_AREA_IDS } from '../types/onboarding'
 
 export const LEVEL_TO_DIFFICULTY: Record<string, string> = {
   principiante: 'beginner',

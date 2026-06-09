@@ -1,4 +1,5 @@
 import "./instrument";              // Sentry — MUST be first import
+import "./lib/init-core";           // Platform adapter de @calistenia/core — MUST be second
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
@@ -8,7 +9,7 @@ import { I18nextProvider } from 'react-i18next'
 import { registerSW } from 'virtual:pwa-register'
 import { toast } from 'sonner'
 import i18n from './lib/i18n'
-import { op } from './lib/analytics'
+import { op } from '@calistenia/core/lib/analytics'
 import App from './App'
 import './index.css'
 

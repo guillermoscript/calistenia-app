@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { shareContent } from '../lib/share'
-import { op } from '../lib/analytics'
+import { op } from '@calistenia/core/lib/analytics'
 
 const MILESTONES = [7, 14, 30, 60, 100] as const
 

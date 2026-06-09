@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
 import i18n from '../lib/i18n'
-import { pb } from '../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import {
   haversineDistance, calculateElevationGain,
   calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
   kalmanUpdate, type KalmanState,
-} from '../lib/geo'
+} from '@calistenia/core/lib/geo'
 
 // ── Precision tuning ────────────────────────────────────────────────────────
 // Reject GPS fixes with accuracy worse than this (urban ~8-15m, open sky ~5m).
@@ -13,8 +13,8 @@ const MAX_ACCURACY_M = 20
 // Drop points closer than this to the last stored point — GPS jitter at rest
 // inflates distance otherwise.
 const MIN_POINT_DISTANCE_M = 3
-import { estimateCalories } from '../lib/calories'
-import type { GpsPoint, CardioActivityType, CardioSession } from '../types'
+import { estimateCalories } from '@calistenia/core/lib/calories'
+import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

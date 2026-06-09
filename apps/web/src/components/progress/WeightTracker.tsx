@@ -5,8 +5,8 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
-import { todayStr } from '../../lib/dateUtils'
-import { useWeight } from '../../hooks/useWeight'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
+import { useWeight } from '@calistenia/core/hooks/useWeight'
 
 interface WeightTrackerProps {
   userId: string | null

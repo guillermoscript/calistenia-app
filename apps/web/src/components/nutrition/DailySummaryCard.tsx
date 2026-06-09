@@ -4,8 +4,8 @@ import i18n from '../../lib/i18n'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
-import { op } from '../../lib/analytics'
-import type { DailyTotals, NutritionGoal } from '../../types'
+import { op } from '@calistenia/core/lib/analytics'
+import type { DailyTotals, NutritionGoal } from '@calistenia/core/types'
 
 interface DailySummaryCardProps {
   date: string

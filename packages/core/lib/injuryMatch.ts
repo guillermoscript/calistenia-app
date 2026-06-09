@@ -8,7 +8,7 @@
  * that the exercise plausibly stresses.
  */
 
-import type { InjuryId } from '../components/onboarding/StepHealth'
+import type { InjuryId } from '../types/onboarding'
 
 const INJURY_KEYWORDS: Record<Exclude<InjuryId, 'other'>, string[]> = {
   shoulder: [

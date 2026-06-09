@@ -2,11 +2,11 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
-import { op } from '../lib/analytics'
-import { todayStr } from '../lib/dateUtils'
+import { op } from '@calistenia/core/lib/analytics'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage, CARD_COLORS } from '../lib/canvas-helpers'
 import i18n from '../lib/i18n'
-import type { PREvent } from '../hooks/useProgress'
+import type { PREvent } from '@calistenia/core/hooks/useProgress'
 
 interface PRShareCardProps {
   prEvent: PREvent

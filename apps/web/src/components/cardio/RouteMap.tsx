@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type L from 'leaflet'
 import { cn } from '../../lib/utils'
 import { snapToRoads } from '../../lib/snapToRoads'
-import type { GpsPoint } from '../../types'
+import type { GpsPoint } from '@calistenia/core/types'
 
 interface RouteMapProps {
   points: GpsPoint[]

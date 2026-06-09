@@ -9,8 +9,8 @@ import {
   DialogTitle,
 } from '../ui/dialog'
 import { detectDayType } from '../../utils/detectDayType'
-import { stretchTemplates } from '../../data/stretch-templates'
-import type { Exercise } from '../../types'
+import { stretchTemplates } from '@calistenia/core/data/stretch-templates'
+import type { Exercise } from '@calistenia/core/types'
 
 // ── Local sub-components ────────────────────────────────────────────────────
 

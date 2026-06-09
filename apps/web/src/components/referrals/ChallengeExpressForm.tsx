@@ -4,9 +4,9 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
-import { pb } from '../../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { shareContent } from '../../lib/share'
-import { localize } from '../../lib/i18n-db'
+import { localize } from '@calistenia/core/lib/i18n-db'
 
 const BASE_URL = 'https://gym.guille.tech'
 

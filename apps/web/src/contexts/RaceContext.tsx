@@ -27,8 +27,8 @@ import { measureOffset, serverNow, msUntil } from '../lib/race/raceClock'
 import { createRaceTracker, type RaceTracker, type RaceTrackerStats } from '../lib/race/raceTracker'
 import { saveRaceSnapshot, loadRaceSnapshot, clearRaceSnapshot } from '../lib/race/raceSnapshot'
 import { RaceAuthError, RaceNotFoundError } from '../lib/race/errors'
-import { op } from '../lib/analytics'
-import type { Race, RaceParticipant } from '../types/race'
+import { op } from '@calistenia/core/lib/analytics'
+import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 

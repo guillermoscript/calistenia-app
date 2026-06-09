@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 
@@ -5,9 +6,9 @@ const LS_KEY = 'calistenia_rest_prefs'
 
 // localStorage fallback
 const lsGet = (): Record<string, number> => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} }
+  try { return JSON.parse(storage.getItem(LS_KEY) || '{}') } catch { return {} }
 }
-const lsSet = (d: Record<string, number>) => localStorage.setItem(LS_KEY, JSON.stringify(d))
+const lsSet = (d: Record<string, number>) => storage.setItem(LS_KEY, JSON.stringify(d))
 
 interface UseRestPreferencesReturn {
   getRestForExercise: (exerciseId: string, defaultRest: number) => number

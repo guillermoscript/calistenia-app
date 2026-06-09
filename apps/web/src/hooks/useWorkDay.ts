@@ -13,8 +13,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import i18n from '../lib/i18n'
-import type { Pause, PauseType, WorkDay } from '../types'
-import { todayStr } from '../lib/dateUtils'
+import type { Pause, PauseType, WorkDay } from '@calistenia/core/types'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 
 const TODAY = (): string => todayStr()
 const LS_KEY = (date: string): string => `calistenia_workday_${date}`

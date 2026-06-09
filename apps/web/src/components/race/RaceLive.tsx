@@ -2,12 +2,12 @@ import { useMemo, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { formatPace, formatDuration } from '../../lib/geo'
+import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { playRankUp, playRankDown, vibrate } from '../../lib/sounds'
 import { serverNow } from '../../lib/race/raceClock'
 import { useRaceContext } from '../../contexts/RaceContext'
 import RaceMap from './RaceMap'
-import type { RaceParticipant } from '../../types/race'
+import type { RaceParticipant } from '@calistenia/core/types/race'
 
 export default function RaceLive() {
   const { t } = useTranslation()

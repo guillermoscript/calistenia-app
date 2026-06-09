@@ -4,7 +4,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
-import type { ExerciseLog } from '../../types'
+import type { ExerciseLog } from '@calistenia/core/types'
 
 // Brzycki formula: 1RM = weight × (36 / (37 - reps))
 function brzycki(weight: number, reps: number): number {

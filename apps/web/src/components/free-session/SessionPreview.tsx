@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useActiveSession } from '../../contexts/ActiveSessionContext'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import type { Exercise, Workout } from '../../types'
-import catalogData from '../../data/exercise-catalog.json'
-import { WORKOUTS } from '../../data/workouts'
-import { SUPPLEMENTARY_EXERCISES } from '../../data/supplementary-exercises'
+import type { Exercise, Workout } from '@calistenia/core/types'
+import catalogData from '@calistenia/core/data/exercise-catalog.json'
+import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
 
 interface AIExercise {
   id: string

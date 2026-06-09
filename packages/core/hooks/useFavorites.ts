@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
 
@@ -5,14 +6,14 @@ const STORAGE_KEY = 'calistenia_exercise_favorites'
 
 function loadLocal(): Set<string> {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = storage.getItem(STORAGE_KEY)
     return raw ? new Set(JSON.parse(raw)) : new Set()
   } catch { return new Set() }
 }
 
 function saveLocal(ids: Set<string>) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]))
+    storage.setItem(STORAGE_KEY, JSON.stringify([...ids]))
   } catch { /* storage full */ }
 }
 

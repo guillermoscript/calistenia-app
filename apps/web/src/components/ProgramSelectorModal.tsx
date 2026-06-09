@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from './ui/dialog'
-import type { ProgramMeta } from '../types'
+import type { ProgramMeta } from '@calistenia/core/types'
 
 interface ProgramSelectorModalProps {
   programs: ProgramMeta[]

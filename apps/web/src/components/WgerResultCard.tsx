@@ -1,5 +1,5 @@
 import { cn } from '../lib/utils'
-import type { WgerSearchSuggestion } from '../lib/wger'
+import type { WgerSearchSuggestion } from '@calistenia/core/lib/wger'
 
 interface WgerResultCardProps {
   suggestion: WgerSearchSuggestion

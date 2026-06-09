@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react'
 import { QualityScoreBadge } from './QualityScoreBadge'
-import { BADGE_DEFINITIONS } from '../../lib/badge-definitions'
-import { MEAL_TYPE_COLORS, SCORE_BAR_COLORS, BADGE_COLORS } from '../../lib/style-tokens'
+import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
+import { MEAL_TYPE_COLORS, SCORE_BAR_COLORS, BADGE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { cn } from '../../lib/utils'
-import type { NutritionEntry, NutritionCoachInsight, NutritionBadge, QualityScore } from '../../types'
+import type { NutritionEntry, NutritionCoachInsight, NutritionBadge, QualityScore } from '@calistenia/core/types'
 
 const SCORE_HEIGHT: Record<QualityScore, string> = {
   A: 'h-10',

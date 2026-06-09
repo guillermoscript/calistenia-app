@@ -6,7 +6,7 @@ import { Button } from '../ui/button'
 import WeeklyPlanHeader from './WeeklyPlanHeader'
 import WeeklyPlanDayView from './WeeklyPlanDayView'
 import { useBackgroundJobs } from '../../hooks/useBackgroundJobs'
-import type { WeeklyMealPlan as WeeklyMealPlanType, WeeklyPlanDay, NutritionGoal, DailyTotals } from '../../types'
+import type { WeeklyMealPlan as WeeklyMealPlanType, WeeklyPlanDay, NutritionGoal, DailyTotals } from '@calistenia/core/types'
 
 interface Props {
   activePlan: WeeklyMealPlanType | null

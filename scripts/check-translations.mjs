@@ -8,7 +8,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const localesDir = resolve(__dirname, '../src/locales')
+const localesDir = resolve(__dirname, '../packages/core/locales')
 
 const es = JSON.parse(readFileSync(resolve(localesDir, 'es/translation.json'), 'utf-8'))
 const en = JSON.parse(readFileSync(resolve(localesDir, 'en/translation.json'), 'utf-8'))

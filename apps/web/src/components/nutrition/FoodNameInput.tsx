@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { Input } from '../ui/input'
-import { useFoodCatalog } from '../../hooks/useFoodCatalog'
-import { isIncompleteFood } from '../../lib/openfoodfacts'
-import type { FoodItem } from '../../types'
+import { useFoodCatalog } from '@calistenia/core/hooks/useFoodCatalog'
+import { isIncompleteFood } from '@calistenia/core/lib/openfoodfacts'
+import type { FoodItem } from '@calistenia/core/types'
 
 interface FoodNameInputProps {
   value: string

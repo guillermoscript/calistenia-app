@@ -1,5 +1,5 @@
-import { pb } from '../pocketbase'
-import type { Race, RaceParticipant } from '../../types/race'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
 export interface RaceRealtimeHandlers {
   onRace: (race: Race) => void

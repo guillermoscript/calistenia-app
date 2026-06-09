@@ -1,4 +1,4 @@
-import type { DayType, Exercise } from '../types'
+import type { DayType, Exercise } from '@calistenia/core/types'
 
 const MUSCLE_MAP: Record<string, DayType> = {
   // Push

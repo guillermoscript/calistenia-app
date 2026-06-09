@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareContent, type ShareMethod } from '../../lib/share'
-import { op } from '../../lib/analytics'
+import { op } from '@calistenia/core/lib/analytics'
 
 const BASE_URL = 'https://gym.guille.tech'
 

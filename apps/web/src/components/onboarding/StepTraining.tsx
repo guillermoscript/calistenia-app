@@ -4,24 +4,10 @@ import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
 
-export const FOCUS_AREA_IDS = [
-  'full_body', 'upper_body', 'core', 'legs',
-  'pull_up', 'handstand', 'planche', 'muscle_up',
-] as const
+import { FOCUS_AREA_IDS, DAY_IDS, type DayId, type FocusAreaId, type Intensity, type TrainingValues } from '@calistenia/core/types/onboarding'
 
-export const DAY_IDS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-export type DayId = typeof DAY_IDS[number]
-
-export type FocusAreaId = typeof FOCUS_AREA_IDS[number]
-export type Intensity = 'light' | 'moderate' | 'intense'
-
-export interface TrainingValues {
-  level: string  // principiante | intermedio | avanzado
-  focus_areas: FocusAreaId[]
-  training_days: DayId[]
-  intensity: Intensity | ''
-  goal: string
-}
+export { FOCUS_AREA_IDS, DAY_IDS }
+export type { DayId, FocusAreaId, Intensity, TrainingValues }
 
 interface Props {
   values: TrainingValues

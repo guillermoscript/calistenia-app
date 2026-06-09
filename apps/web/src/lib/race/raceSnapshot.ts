@@ -1,4 +1,4 @@
-import type { RaceGpsPoint } from '../../types/race'
+import type { RaceGpsPoint } from '@calistenia/core/types/race'
 
 /**
  * Mid-race snapshot persisted to sessionStorage so a page refresh during an

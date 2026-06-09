@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { pb } from '../lib/pocketbase'
 import dayjs from 'dayjs'
-import i18n from '../lib/i18n'
+import i18n from 'i18next'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import tz from 'dayjs/plugin/timezone'
 import utcPlugin from 'dayjs/plugin/utc'

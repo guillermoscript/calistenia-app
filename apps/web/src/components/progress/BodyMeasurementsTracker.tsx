@@ -4,8 +4,8 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
-import { todayStr } from '../../lib/dateUtils'
-import { useBodyMeasurements, type BodyMeasurement } from '../../hooks/useBodyMeasurements'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
+import { useBodyMeasurements, type BodyMeasurement } from '@calistenia/core/hooks/useBodyMeasurements'
 
 const FIELDS: { key: keyof BodyMeasurement; labelKey: string; shortKey: string }[] = [
   { key: 'chest', labelKey: 'progress.bodyMeasurements.chest', shortKey: 'progress.bodyMeasurements.chestShort' },

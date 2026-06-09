@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { cn } from '../lib/utils'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { WORKOUTS } from '../data/workouts'
+import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { Button } from './ui/button'
 import { Loader } from './ui/loader'
 import { Input } from './ui/input'
@@ -14,12 +14,12 @@ import {
   DialogDescription,
 } from './ui/dialog'
 import { useTranslation } from 'react-i18next'
-import { useWgerSearch } from '../hooks/useWgerSearch'
+import { useWgerSearch } from '@calistenia/core/hooks/useWgerSearch'
 import WgerResultCard from './WgerResultCard'
-import type { EditorExercise } from '../hooks/useProgramEditor'
-import type { TranslatableField } from '../lib/i18n-db'
-import { localize } from '../lib/i18n-db'
-import { useLocalize } from '../hooks/useLocalize'
+import type { EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
+import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
+import { localize } from '@calistenia/core/lib/i18n-db'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 
 interface ExerciseCatalogPickerProps {
   onAdd: (exercise: EditorExercise) => void

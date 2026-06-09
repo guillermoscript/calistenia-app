@@ -8,9 +8,9 @@ import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { useWorkoutState } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { localMidnightAsUTC, utcToLocalDateStr } from '../lib/dateUtils'
-import type { SessionDone, WeekDay, CardioSession } from '../types'
+import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import type { SessionDone, WeekDay, CardioSession } from '@calistenia/core/types'
 
 function getMonthDays(year: number, month: number) {
   const first = new Date(year, month, 1)

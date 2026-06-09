@@ -3,8 +3,8 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import { cn } from '../../lib/utils'
-import type { ProgramMeta } from '../../types'
-import { matchUserToPrograms, type MatchUserInput } from '../../lib/matchPrograms'
+import type { ProgramMeta } from '@calistenia/core/types'
+import { matchUserToPrograms, type MatchUserInput } from '@calistenia/core/lib/matchPrograms'
 
 const DIFFICULTY_STYLES: Record<string, string> = {
   beginner: 'text-emerald-400 border-emerald-400/30',

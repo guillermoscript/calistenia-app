@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { pb } from '../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { cn } from '../lib/utils'
 import { ShareButton } from '../components/ShareButton'
 import { shareRoutine } from '../lib/share'
-import { useLocalize } from '../hooks/useLocalize'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 
 interface ProgramPhase {
   id: string

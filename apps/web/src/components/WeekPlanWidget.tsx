@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
-import { localDay, todayStr, addDays } from '../lib/dateUtils'
-import { CARDIO_ACTIVITY } from '../lib/style-tokens'
-import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '../data/workouts'
-import type { WeekDay } from '../types'
+import { localDay, todayStr, addDays } from '@calistenia/core/lib/dateUtils'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import { WEEK_DAYS as FALLBACK_WEEK_DAYS } from '@calistenia/core/data/workouts'
+import type { WeekDay } from '@calistenia/core/types'
 
 interface WeekPlanWidgetProps {
   selectedPhase: number

@@ -9,7 +9,7 @@
  * Automatically re-schedules on visibility change (tab refocus).
  */
 
-import { localDay, localMinutesSinceMidnight } from './dateUtils'
+import { localDay, localMinutesSinceMidnight } from '@calistenia/core/lib/dateUtils'
 import i18n from './i18n'
 
 interface SchedulableReminder {

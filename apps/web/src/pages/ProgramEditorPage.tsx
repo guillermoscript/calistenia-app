@@ -3,9 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { cn } from '../lib/utils'
 import { useTranslation } from 'react-i18next'
-import { CARDIO_ACTIVITY } from '../lib/style-tokens'
-import { useProgramEditor, type EditorExercise, type EditorPhase } from '../hooks/useProgramEditor'
-import type { CardioActivityType } from '../types'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import { useProgramEditor, type EditorExercise, type EditorPhase } from '@calistenia/core/hooks/useProgramEditor'
+import type { CardioActivityType } from '@calistenia/core/types'
 import ExerciseCatalogPicker from '../components/ExerciseCatalogPicker'
 import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { Button } from '../components/ui/button'
@@ -15,7 +15,7 @@ import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 interface ProgramEditorPageProps {
   userId: string
-  userRole?: import('../types').UserRole
+  userRole?: import('@calistenia/core/types').UserRole
 }
 
 const STEP_LABEL_KEYS = ['programEditor.stepInfo', 'programEditor.stepPhases', 'programEditor.stepDays', 'programEditor.stepExercises']

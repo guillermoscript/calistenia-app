@@ -12,8 +12,8 @@ import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
 import RouteDrawer from './RouteDrawer'
 import { createRace } from '../../lib/race/raceApi'
-import { op } from '../../lib/analytics'
-import type { Race, RaceMode, RaceActivityType } from '../../types/race'
+import { op } from '@calistenia/core/lib/analytics'
+import type { Race, RaceMode, RaceActivityType } from '@calistenia/core/types/race'
 
 interface Props {
   open: boolean

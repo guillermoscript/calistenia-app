@@ -13,10 +13,10 @@ import {
   DialogFooter,
 } from '../ui/dialog'
 import { useCircuitSession } from '../../contexts/CircuitSessionContext'
-import { useLocalize } from '../../hooks/useLocalize'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import * as sounds from '../../lib/sounds'
-import type { CircuitDefinition } from '../../types'
-import { getLocalQuote } from '../../lib/quotes'
+import type { CircuitDefinition } from '@calistenia/core/types'
+import { getLocalQuote } from '@calistenia/core/lib/quotes'
 
 // ── Confetti (reused from SessionView pattern) ──────────────────────────────
 

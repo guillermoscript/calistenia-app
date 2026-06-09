@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { op } from '../lib/analytics'
+import { op } from '@calistenia/core/lib/analytics'
 
 const DISMISS_KEY = 'calistenia_install_dismiss'
 const DISMISS_DAYS = 14

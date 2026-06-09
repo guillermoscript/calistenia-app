@@ -1,6 +1,6 @@
-import type { NutritionEntry } from '../../types'
+import type { NutritionEntry } from '@calistenia/core/types'
 import { QualityScoreBadge } from './QualityScoreBadge'
-import { BADGE_COLORS } from '../../lib/style-tokens'
+import { BADGE_COLORS } from '@calistenia/core/lib/style-tokens'
 
 interface QualityBreakdownPanelProps {
   entry: NutritionEntry

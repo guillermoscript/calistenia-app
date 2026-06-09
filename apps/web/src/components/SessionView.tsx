@@ -23,12 +23,12 @@ import WorkoutShareCard from './WorkoutShareCard'
 import PRCelebration from './PRCelebration'
 import ReferralPrompt, { isReferralPromptShown } from './ReferralPrompt'
 import { getCurrentSection } from '../contexts/ActiveSessionContext'
-import type { PREvent } from '../hooks/useProgress'
+import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
-import { PRIORITY_COLORS } from '../lib/style-tokens'
-import type { Exercise, Workout, ExerciseLog, SetData, Priority } from '../types'
-import { getLocalQuote, type Quote } from '../lib/quotes'
+import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
+import type { Exercise, Workout, ExerciseLog, SetData, Priority } from '@calistenia/core/types'
+import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 
 interface Step {
   exercise: Exercise

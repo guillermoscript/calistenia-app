@@ -2,10 +2,10 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
-import { op } from '../../lib/analytics'
-import { formatPace, formatDuration } from '../../lib/geo'
+import { op } from '@calistenia/core/lib/analytics'
+import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { fillRRect, CARD_COLORS } from '../../lib/canvas-helpers'
-import type { Race, RaceParticipant } from '../../types/race'
+import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
 interface RaceShareCardProps {
   race: Race

@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuthState } from '../../contexts/AuthContext'
 import { useRaceContext } from '../../contexts/RaceContext'
-import { pb } from '../../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { formatPace, formatDuration, pointsToGPX } from '../../lib/geo'
+import { formatPace, formatDuration, pointsToGPX } from '@calistenia/core/lib/geo'
 import RaceShareCard from './RaceShareCard'
 
 export default function RaceResults() {

@@ -1,4 +1,4 @@
-import { pb } from './pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || ''
 

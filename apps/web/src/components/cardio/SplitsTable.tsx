@@ -1,5 +1,5 @@
-import { formatPace, formatDuration } from '../../lib/geo'
-import type { KmSplit } from '../../types'
+import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
+import type { KmSplit } from '@calistenia/core/types'
 
 interface SplitsTableProps {
   splits: KmSplit[]

@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import i18n from '../../lib/i18n'
 import { Card, CardContent } from '../ui/card'
-import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
-import type { CardioAggregateStats } from '../../hooks/useCardioStats'
-import type { CardioSession } from '../../types'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import type { CardioAggregateStats } from '@calistenia/core/hooks/useCardioStats'
+import type { CardioSession } from '@calistenia/core/types'
 
 interface CardioWidgetProps {
   weeklyStats: CardioAggregateStats

@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import type { MealType, MealReminder } from '../types'
@@ -13,9 +14,9 @@ function parseDaysOfWeek(raw: unknown): number[] {
 }
 
 const lsGet = (): MealReminder[] => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] }
+  try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
 }
-const lsSet = (d: MealReminder[]) => localStorage.setItem(LS_KEY, JSON.stringify(d))
+const lsSet = (d: MealReminder[]) => storage.setItem(LS_KEY, JSON.stringify(d))
 
 export function useMealReminders(userId: string | null) {
   const [reminders, setReminders] = useState<MealReminder[]>([])

@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocalize } from '../../hooks/useLocalize'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { pb, isPocketBaseAvailable } from '../../lib/pocketbase'
-import { WORKOUTS } from '../../data/workouts'
-import { localize } from '../../lib/i18n-db'
-import type { CircuitDefinition, CircuitExercise } from '../../types'
-import type { TranslatableField } from '../../lib/i18n-db'
+import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { localize } from '@calistenia/core/lib/i18n-db'
+import type { CircuitDefinition, CircuitExercise } from '@calistenia/core/types'
+import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 
 // ── Catalog item (lightweight shape for the picker) ───────────────────────────
 

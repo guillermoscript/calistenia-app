@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { useChallenges } from '../hooks/useChallenges'
-import { useFollows } from '../hooks/useFollows'
+import { useChallenges } from '@calistenia/core/hooks/useChallenges'
+import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
-import { todayStr, toLocalDateStr } from '../lib/dateUtils'
+import { todayStr, toLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
-import type { ChallengeMetric } from '../types'
+import type { ChallengeMetric } from '@calistenia/core/types'
 
 const METRIC_IDS: { id: ChallengeMetric; icon: string }[] = [
   { id: 'most_sessions', icon: '💪' },

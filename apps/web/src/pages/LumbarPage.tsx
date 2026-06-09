@@ -8,8 +8,8 @@ import SleepLumbarSection from '../components/lumbar/SleepLumbarSection'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { cn } from '../lib/utils'
-import { todayStr } from '../lib/dateUtils'
-import type { Protocol, ProtocolExercise, Pause } from '../types'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
+import type { Protocol, ProtocolExercise, Pause } from '@calistenia/core/types'
 import { RecordModel } from 'pocketbase'
 
 // ─── Training protocols ───────────────────────────────────────────────────────

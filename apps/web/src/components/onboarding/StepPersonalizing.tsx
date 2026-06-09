@@ -4,7 +4,7 @@ import dayjs from 'dayjs'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import type { ProgramMeta } from '../../types'
+import type { ProgramMeta } from '@calistenia/core/types'
 import type { Pace } from './StepGoals'
 
 const PHASE_DURATION_MS = 2400  // total loading splash duration

@@ -4,7 +4,7 @@ import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { cn } from '../lib/utils'
-import { useWorkoutReminders } from '../hooks/useWorkoutReminders'
+import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
 
 interface WorkoutReminderWidgetProps {
   userId?: string | null

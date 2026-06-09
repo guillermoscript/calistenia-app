@@ -1,8 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCardioSessionContext } from '../../contexts/CardioSessionContext'
-import { formatDuration, formatPace, formatSpeed } from '../../lib/geo'
-import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
+import { formatDuration, formatPace, formatSpeed } from '@calistenia/core/lib/geo'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import { cn } from '../../lib/utils'
 
 /**

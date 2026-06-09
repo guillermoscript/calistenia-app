@@ -4,9 +4,9 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { pb } from '../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { cn } from '../lib/utils'
-import { todayStr, daysAgoStr, nowLocalForPB } from '../lib/dateUtils'
+import { todayStr, daysAgoStr, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import {
@@ -16,8 +16,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog'
-import { useSleep } from '../hooks/useSleep'
-import type { LumbarCheck } from '../types'
+import { useSleep } from '@calistenia/core/hooks/useSleep'
+import type { LumbarCheck } from '@calistenia/core/types'
 
 const LS_KEY = 'calistenia_lumbar_checks'
 

@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, type
 import { useTranslation } from 'react-i18next'
 import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
-import { useNutrition } from './hooks/useNutrition'
-import { useCardioStats } from './hooks/useCardioStats'
+import { useNutrition } from '@calistenia/core/hooks/useNutrition'
+import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { WorkoutProvider, useWorkoutState, useWorkoutActions } from './contexts/WorkoutContext'
 import { AuthProvider, useAuthState, useAuthActions } from './contexts/AuthContext'
 // Eagerly loaded: core pages the user sees first
@@ -62,19 +62,19 @@ import ActiveSessionBubble from './components/ActiveFreeSessionBubble'
 import { CardioSessionProvider } from './contexts/CardioSessionContext'
 import { CircuitSessionProvider, useCircuitSession } from './contexts/CircuitSessionContext'
 import { ActiveSessionProvider, useActiveSession } from './contexts/ActiveSessionContext'
-import { useRestPreferences } from './hooks/useRestPreferences'
+import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import InstallPrompt from './components/InstallPrompt'
 import { WhatsNewButton } from './components/WhatsNew'
 import OnboardingFlow, { isOnboardingDone, markOnboardingDone } from './components/OnboardingFlow'
 import AppTour, { replayTourForPage } from './components/AppTour'
-import { setupAutoSync } from './lib/offlineQueue'
-import { pb } from './lib/pocketbase'
+import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { cn } from './lib/utils'
 import { Toaster, toast } from 'sonner'
 import { BackgroundJobsProvider } from './contexts/BackgroundJobsContext'
 import { NotificationsProvider, useNotificationsContext } from './contexts/NotificationsContext'
 import { NotificationBadge } from './components/social/NotificationBadge'
-import type { Settings } from './types'
+import type { Settings } from '@calistenia/core/types'
 import {
   SidebarProvider,
   Sidebar,
@@ -264,7 +264,7 @@ interface AppShellProps {
   signOut: () => void
   dark: boolean
   toggleDark: () => void
-  userRole: import('./types').UserRole
+  userRole: import('@calistenia/core/types').UserRole
   children: ReactNode
 }
 
@@ -499,7 +499,7 @@ function AppShell({ settings, displayName, userId, signOut, dark, toggleDark, us
 
 // ── Route wrappers ──────────────────────────────────────────────────────────
 
-function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole: import('./types').UserRole }) {
+function ProgramDetailPageRoute({ userId, userRole }: { userId: string; userRole: import('@calistenia/core/types').UserRole }) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -576,8 +576,8 @@ interface AuthenticatedAppProps {
   onboardingDone: boolean
   setOnboardingDone: (v: boolean) => void
   nutritionGoals: { dailyCalories: number; weight?: number } | null
-  cardioWeeklyStats: import('./hooks/useCardioStats').CardioAggregateStats
-  cardioLastSession: import('./types').CardioSession | null
+  cardioWeeklyStats: import('@calistenia/core/hooks/useCardioStats').CardioAggregateStats
+  cardioLastSession: import('@calistenia/core/types').CardioSession | null
   nutritionTotals: { calories: number; protein: number; carbs: number; fat: number }
 }
 

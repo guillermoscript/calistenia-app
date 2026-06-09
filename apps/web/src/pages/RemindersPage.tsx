@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import { useMealReminders } from '../hooks/useMealReminders'
-import { useWorkoutReminders } from '../hooks/useWorkoutReminders'
+import { useMealReminders } from '@calistenia/core/hooks/useMealReminders'
+import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
 import { subscribeToPush, getSubscriptionStatus, getNotificationSupport, requestNotificationPermission } from '../lib/push-subscription'
 import { scheduleAll, buildSchedulableReminders, setupVisibilityRescheduler } from '../lib/reminder-scheduler'
-import { localMinutesSinceMidnight } from '../lib/dateUtils'
-import type { MealType } from '../types'
+import { localMinutesSinceMidnight } from '@calistenia/core/lib/dateUtils'
+import type { MealType } from '@calistenia/core/types'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 

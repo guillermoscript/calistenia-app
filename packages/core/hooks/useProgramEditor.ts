@@ -11,7 +11,7 @@
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS, WORKOUTS } from '../data/workouts'
-import i18n from '../lib/i18n'
+import i18n from 'i18next'
 import { localize, toTranslatable } from '../lib/i18n-db'
 import { stretchTemplates } from '../data/stretch-templates'
 import type { DayType, Exercise } from '../types'

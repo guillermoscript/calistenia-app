@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import i18n from '../lib/i18n'
+import i18n from 'i18next'
 import { getProductByBarcode, mapOFFToFoodItem, isIncompleteFood } from '../lib/openfoodfacts'
 import type { FoodItem } from '../types'
 

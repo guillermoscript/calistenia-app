@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
-import type { WeeklyPlanDay } from '../../types'
+import type { WeeklyPlanDay } from '@calistenia/core/types'
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 

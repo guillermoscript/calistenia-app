@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
-import type { CircuitDefinition } from '../types'
-import { pb } from '../lib/pocketbase'
-import { op } from '../lib/analytics'
+import type { CircuitDefinition } from '@calistenia/core/types'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import { op } from '@calistenia/core/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

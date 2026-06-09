@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useChallenges, type ChallengeWithMeta } from '../hooks/useChallenges'
+import { useChallenges, type ChallengeWithMeta } from '@calistenia/core/hooks/useChallenges'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import { daysRemaining, getMetricLabel } from '../lib/challenges'
+import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 
 type Filter = 'active' | 'past'
 

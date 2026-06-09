@@ -4,9 +4,9 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
 import { useTranslation } from 'react-i18next'
-import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
+import { MEAL_TYPE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { toast } from 'sonner'
-import type { NutritionEntry, FoodItem, MealType } from '../../types'
+import type { NutritionEntry, FoodItem, MealType } from '@calistenia/core/types'
 
 interface EditMealSheetProps {
   entry: NutritionEntry | null

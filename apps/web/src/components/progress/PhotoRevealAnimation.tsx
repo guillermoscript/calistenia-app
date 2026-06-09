@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
-import { PHASE_COLORS } from '../../lib/style-tokens'
-import type { BodyPhoto } from '../../hooks/useBodyPhotos'
+import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
+import type { BodyPhoto } from '@calistenia/core/hooks/useBodyPhotos'
 
 const FALLBACK_COLORS = PHASE_COLORS[1]
 

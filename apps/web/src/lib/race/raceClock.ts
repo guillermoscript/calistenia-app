@@ -1,4 +1,4 @@
-import { pb } from '../pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 
 let offsetMs = 0
 let measured = false

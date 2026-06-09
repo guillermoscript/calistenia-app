@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
-import type { LeaderboardEntry } from '../../hooks/useLeaderboard'
+import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 
 const MEDALS = ['', '', '']
 

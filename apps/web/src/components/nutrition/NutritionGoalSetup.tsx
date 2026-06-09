@@ -4,7 +4,7 @@ import { cn } from '../../lib/utils'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import type { NutritionGoal, NutritionGoalType, ActivityLevel, Sex } from '../../types'
+import type { NutritionGoal, NutritionGoalType, ActivityLevel, Sex } from '@calistenia/core/types'
 
 interface NutritionGoalSetupProps {
   onSave: (goals: NutritionGoal) => void

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useFollows } from '../hooks/useFollows'
+import { useFollows } from '@calistenia/core/hooks/useFollows'
 
 interface AddFriendPageProps {
   currentUserId: string

@@ -1,5 +1,5 @@
 import { cn } from '../../lib/utils'
-import { REACTION_EMOJIS } from '../../hooks/useReactions'
+import { REACTION_EMOJIS } from '@calistenia/core/hooks/useReactions'
 
 interface EmojiPickerProps {
   reactions: Record<string, { count: number; hasReacted: boolean }>

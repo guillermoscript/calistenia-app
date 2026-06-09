@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
@@ -49,13 +50,13 @@ const computePRBackfill = (sets: any[], currentSettings: Settings): Partial<Sett
 }
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
-const lsGet = (): ProgressMap => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} } }
-const lsSet = (d: ProgressMap): void => { localStorage.setItem(LS_KEY, JSON.stringify(d)) }
+const lsGet = (): ProgressMap => { try { return JSON.parse(storage.getItem(LS_KEY) || '{}') } catch { return {} } }
+const lsSet = (d: ProgressMap): void => { storage.setItem(LS_KEY, JSON.stringify(d)) }
 const lsGetSettings = (): Settings => {
-  try { return JSON.parse(localStorage.getItem(LS_SETTINGS) || '{"phase":1,"startDate":null,"weeklyGoal":5}') }
+  try { return JSON.parse(storage.getItem(LS_SETTINGS) || '{"phase":1,"startDate":null,"weeklyGoal":5}') }
   catch { return { phase: 1, startDate: null, weeklyGoal: 5 } }
 }
-const lsSetSettings = (d: Settings): void => { localStorage.setItem(LS_SETTINGS, JSON.stringify(d)) }
+const lsSetSettings = (d: Settings): void => { storage.setItem(LS_SETTINGS, JSON.stringify(d)) }
 
 interface UseProgressReturn {
   progress: ProgressMap
@@ -82,7 +83,7 @@ interface UseProgressReturn {
  * Recibe `userId` (string | null) y opcionalmente `activeProgramId` (string | null).
  * Cuando PocketBase está disponible y hay un usuario autenticado, toda la
  * persistencia va a PB filtrada por ese userId (y programId cuando aplica).
- * En cualquier otro caso cae al fallback de localStorage.
+ * En cualquier otro caso cae al fallback de storage.
  */
 export function useProgress(userId: string | null = null, activeProgramId: string | null = null): UseProgressReturn {
   const [progress, setProgress] = useState<ProgressMap>({})
@@ -356,8 +357,8 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     // Track first workout in a program as program_started
     if (!isFree && activeProgramId) {
       const psKey = `calistenia_program_started_${activeProgramId}_${userId}`
-      if (!localStorage.getItem(psKey)) {
-        localStorage.setItem(psKey, Date.now().toString())
+      if (!storage.getItem(psKey)) {
+        storage.setItem(psKey, Date.now().toString())
         op.track('program_started', { program_id: activeProgramId })
       }
     }

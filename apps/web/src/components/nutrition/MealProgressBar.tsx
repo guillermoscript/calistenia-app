@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import MacroBar from './MacroBar'
-import type { DailyTotals, NutritionGoal } from '../../types'
+import type { DailyTotals, NutritionGoal } from '@calistenia/core/types'
 
 interface MealProgressBarProps {
   dailyTotals: DailyTotals

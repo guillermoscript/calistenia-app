@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { daysAgoStr, nowLocalForPB } from '../lib/dateUtils'
@@ -6,9 +7,9 @@ import type { SleepEntry } from '../types'
 const LS_KEY = 'calistenia_sleep_entries'
 
 const lsGet = (): SleepEntry[] => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] }
+  try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
 }
-const lsSet = (d: SleepEntry[]) => localStorage.setItem(LS_KEY, JSON.stringify(d))
+const lsSet = (d: SleepEntry[]) => storage.setItem(LS_KEY, JSON.stringify(d))
 
 /**
  * Calculate duration in minutes from bedtime to wake_time, handling midnight crossing.

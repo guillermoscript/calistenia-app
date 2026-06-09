@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import { pb } from '../../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { AI_API_URL } from '../../lib/ai-api'
+import { AI_API_URL } from '@calistenia/core/lib/ai-api'
 import { useTranslation } from 'react-i18next'
-import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
-import { submitMealPlanJob } from '../../lib/ai-jobs-api'
+import { MEAL_TYPE_COLORS } from '@calistenia/core/lib/style-tokens'
+import { submitMealPlanJob } from '@calistenia/core/lib/ai-jobs-api'
 import { useBackgroundJobs } from '../../hooks/useBackgroundJobs'
 
 interface MacroTarget {

@@ -3,7 +3,7 @@ import { Info } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { QualityScoreBadge } from './QualityScoreBadge'
 import { useTranslation } from 'react-i18next'
-import type { QualityScore } from '../../types'
+import type { QualityScore } from '@calistenia/core/types'
 
 const CRITERIA: { score: QualityScore; labelKey: string; exampleKey: string }[] = [
   { score: 'A', labelKey: 'nutrition.criteriaA.label', exampleKey: 'nutrition.criteriaA.example' },

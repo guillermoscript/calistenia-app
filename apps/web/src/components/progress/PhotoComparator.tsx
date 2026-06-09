@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import type { BodyPhoto } from '../../hooks/useBodyPhotos'
+import type { BodyPhoto } from '@calistenia/core/hooks/useBodyPhotos'
 
 interface PhotoComparatorProps {
   photos: BodyPhoto[]

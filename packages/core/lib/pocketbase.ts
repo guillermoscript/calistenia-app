@@ -1,11 +1,14 @@
 import PocketBase, { type RecordModel, type RecordAuthResponse } from 'pocketbase'
+import { getEnv, getPlatform } from '../platform'
 
-const PB_URL: string = import.meta.env.VITE_POCKETBASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8090' : window.location.origin)
+// La URL la resuelve cada plataforma en initCore() (web prod: window.location.origin).
+const PB_URL: string = getEnv().pbUrl
 
-// Singleton — una sola instancia por toda la app
-export const pb = new PocketBase(PB_URL)
+// Singleton — una sola instancia por toda la app.
+// En web el SDK persiste el token en localStorage (authStore default);
+// en mobile la plataforma inyecta un AsyncAuthStore (MMKV/AsyncStorage).
+export const pb = new PocketBase(PB_URL, getPlatform().pbAuthStore)
 
-// El SDK persiste el token en localStorage automáticamente.
 // pb.authStore.isValid chequea la expiración del JWT localmente.
 
 /**

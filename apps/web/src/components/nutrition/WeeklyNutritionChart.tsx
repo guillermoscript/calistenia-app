@@ -4,7 +4,7 @@ import {
 } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
-import { todayStr } from '../../lib/dateUtils'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 
 interface DayData {
   date: string

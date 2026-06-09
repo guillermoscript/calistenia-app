@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { submitWeeklyMealPlanJob, regeneratePlanDay } from '../lib/ai-jobs-api'
@@ -12,14 +13,14 @@ interface CachedPlan {
 
 function lsGet(): CachedPlan {
   try {
-    return JSON.parse(localStorage.getItem(LS_KEY) || '{"plan":null,"days":[]}')
+    return JSON.parse(storage.getItem(LS_KEY) || '{"plan":null,"days":[]}')
   } catch {
     return { plan: null, days: [] }
   }
 }
 
 function lsSet(data: CachedPlan) {
-  localStorage.setItem(LS_KEY, JSON.stringify(data))
+  storage.setItem(LS_KEY, JSON.stringify(data))
 }
 
 function mapPlanRecord(rec: any): WeeklyMealPlan {

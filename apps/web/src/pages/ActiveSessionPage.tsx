@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useActiveSession } from '../contexts/ActiveSessionContext'
 import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
-import { getUserAvatarUrl } from '../lib/pocketbase'
+import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import SessionView from '../components/SessionView'
 
 export default function ActiveSessionPage() {

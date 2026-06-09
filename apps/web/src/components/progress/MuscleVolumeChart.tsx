@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { WORKOUTS } from '../../data/workouts'
+import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
-import { toLocalDateStr } from '../../lib/dateUtils'
-import type { ProgressMap } from '../../types'
+import { toLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import type { ProgressMap } from '@calistenia/core/types'
 
 // Map muscle group keys to keywords for classification
 const MUSCLE_GROUPS: Record<string, string[]> = {

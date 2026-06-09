@@ -1,5 +1,6 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import i18n from '../lib/i18n'
+import i18n from 'i18next'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
 import { op } from '../lib/analytics'
@@ -56,16 +57,16 @@ const LS_GOALS = 'calistenia_nutrition_goals'
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const lsGetEntries = (): NutritionEntry[] => {
-  try { return JSON.parse(localStorage.getItem(LS_ENTRIES) || '[]') } catch { return [] }
+  try { return JSON.parse(storage.getItem(LS_ENTRIES) || '[]') } catch { return [] }
 }
 const lsSetEntries = (d: NutritionEntry[]): void => {
-  localStorage.setItem(LS_ENTRIES, JSON.stringify(d))
+  storage.setItem(LS_ENTRIES, JSON.stringify(d))
 }
 const lsGetGoals = (): NutritionGoal | null => {
-  try { return JSON.parse(localStorage.getItem(LS_GOALS) || 'null') } catch { return null }
+  try { return JSON.parse(storage.getItem(LS_GOALS) || 'null') } catch { return null }
 }
 const lsSetGoals = (d: NutritionGoal | null): void => {
-  localStorage.setItem(LS_GOALS, JSON.stringify(d))
+  storage.setItem(LS_GOALS, JSON.stringify(d))
 }
 
 // todayStr is now imported from ../lib/dateUtils

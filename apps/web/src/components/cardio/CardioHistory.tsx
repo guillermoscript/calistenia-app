@@ -1,8 +1,8 @@
 import { lazy, Suspense, useState } from 'react'
-import { formatDuration, formatPace, formatSpeed } from '../../lib/geo'
+import { formatDuration, formatPace, formatSpeed } from '@calistenia/core/lib/geo'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../lib/i18n'
-import { CARDIO_ACTIVITY } from '../../lib/style-tokens'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 const RouteMap = lazy(() => import('./RouteMap'))
@@ -10,7 +10,7 @@ import CardioShareCard from './CardioShareCard'
 import ElevationProfile from './ElevationProfile'
 import SplitsTable from './SplitsTable'
 import { Input } from '../ui/input'
-import type { CardioSession } from '../../types'
+import type { CardioSession } from '@calistenia/core/types'
 
 interface CardioHistoryProps {
   sessions: CardioSession[]

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import PRShareCard from './PRShareCard'
-import type { PREvent } from '../hooks/useProgress'
+import type { PREvent } from '@calistenia/core/hooks/useProgress'
 
 const PR_KEY_NAMES: Record<string, string> = {
   pr_pullups: 'Pull-ups',

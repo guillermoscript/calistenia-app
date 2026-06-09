@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useId } from 'react'
 import { cn } from '../../lib/utils'
-import type { FoodCategory, PortionUnit } from '../../types'
-import { UNIT_WEIGHT_GRAMS } from '../../types'
+import type { FoodCategory, PortionUnit } from '@calistenia/core/types'
+import { UNIT_WEIGHT_GRAMS } from '@calistenia/core/types'
 
 const UNITS: { value: PortionUnit; label: string }[] = [
   { value: 'g', label: 'g' },

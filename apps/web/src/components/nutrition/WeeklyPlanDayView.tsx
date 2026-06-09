@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import WeeklyPlanMealCard from './WeeklyPlanMealCard'
-import type { WeeklyPlanDay, DailyTotals } from '../../types'
+import type { WeeklyPlanDay, DailyTotals } from '@calistenia/core/types'
 
 interface Props {
   day: WeeklyPlanDay

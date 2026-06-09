@@ -1,11 +1,11 @@
 import { lazy, Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useCardioSessionContext } from '../contexts/CardioSessionContext'
-import { useCardioStats } from '../hooks/useCardioStats'
-import { formatDuration, formatPace, formatSpeed, pointsToGPX, assessTrackQuality } from '../lib/geo'
+import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
+import { formatDuration, formatPace, formatSpeed, pointsToGPX, assessTrackQuality } from '@calistenia/core/lib/geo'
 import { useTranslation } from 'react-i18next'
-import { CARDIO_ACTIVITY } from '../lib/style-tokens'
-import { todayStr } from '../lib/dateUtils'
+import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 // Leaflet + RouteMap is ~150kb gzipped — split into its own chunk and preload on idle
 const RouteMap = lazy(() => import('../components/cardio/RouteMap'))
 import CardioHistory from '../components/cardio/CardioHistory'
@@ -15,13 +15,13 @@ import CardioShareCard from '../components/cardio/CardioShareCard'
 import ElevationProfile from '../components/cardio/ElevationProfile'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
-import { op } from '../lib/analytics'
+import { op } from '@calistenia/core/lib/analytics'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import CreateRaceDialog from '../components/race/CreateRaceDialog'
 import RacePRsPanel from '../components/race/RacePRsPanel'
 import { cn } from '../lib/utils'
 import { useAuthState } from '../contexts/AuthContext'
-import type { CardioActivityType, CardioSession } from '../types'
+import type { CardioActivityType, CardioSession } from '@calistenia/core/types'
 
 const ACTIVITIES: { id: CardioActivityType; labelKey: string; icon: string }[] = [
   { id: 'running', labelKey: 'cardio.running', icon: CARDIO_ACTIVITY.running.icon },

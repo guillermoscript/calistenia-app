@@ -1,22 +1,23 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
-import i18n from '../lib/i18n'
+import i18n from 'i18next'
 import type { UserRole, UserTier } from '../types'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
 
 /** Save referral code from URL to localStorage so it survives the registration flow. */
 export function captureReferralCode(code: string) {
-  localStorage.setItem(REFERRAL_CODE_KEY, code)
+  storage.setItem(REFERRAL_CODE_KEY, code)
 }
 
 /** Get and clear stored referral code. */
 function consumeReferralCode(): string | null {
-  const code = localStorage.getItem(REFERRAL_CODE_KEY)
-  if (code) localStorage.removeItem(REFERRAL_CODE_KEY)
+  const code = storage.getItem(REFERRAL_CODE_KEY)
+  if (code) storage.removeItem(REFERRAL_CODE_KEY)
   return code
 }
 

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Loader } from '../components/ui/loader'
-import { useDiscoverRaces } from '../hooks/useDiscoverRaces'
+import { useDiscoverRaces } from '@calistenia/core/hooks/useDiscoverRaces'
 import { cn } from '../lib/utils'
 
 const ACTIVITY_EMOJI: Record<string, string> = {

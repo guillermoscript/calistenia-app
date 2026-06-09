@@ -4,16 +4,10 @@ import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
 
-export const CONDITION_IDS = ['heart', 'hypertension', 'diabetes', 'asthma', 'joint', 'back', 'other'] as const
-export const INJURY_IDS = ['shoulder', 'wrist', 'elbow', 'knee', 'ankle', 'lower_back', 'other'] as const
+import { CONDITION_IDS, INJURY_IDS, type ConditionId, type InjuryId, type HealthValues } from '@calistenia/core/types/onboarding'
 
-export type ConditionId = typeof CONDITION_IDS[number]
-export type InjuryId = typeof INJURY_IDS[number]
-
-export interface HealthValues {
-  medical_conditions: ConditionId[]
-  injuries: InjuryId[]
-}
+export { CONDITION_IDS, INJURY_IDS }
+export type { ConditionId, InjuryId, HealthValues }
 
 interface Props {
   values: HealthValues

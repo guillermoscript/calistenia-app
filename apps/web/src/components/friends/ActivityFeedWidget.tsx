@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
-import { PHASE_COLORS } from '../../lib/style-tokens'
-import type { FeedItem } from '../../hooks/useActivityFeed'
+import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
+import type { FeedItem } from '@calistenia/core/hooks/useActivityFeed'
 
 function relativeTime(dateStr: string): string {
   const now = Date.now()

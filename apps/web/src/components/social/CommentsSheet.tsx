@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
-import { timeAgo } from '../../lib/dateUtils'
+import { timeAgo } from '@calistenia/core/lib/dateUtils'
 import { Loader } from '../ui/loader'
 import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
-import { REACTION_EMOJIS, type EmojiReactions } from '../../hooks/useReactions'
-import { COMMENT_REACTION_EMOJIS, type CommentEmojiReactions } from '../../hooks/useCommentReactions'
-import type { Comment } from '../../hooks/useComments'
+import { REACTION_EMOJIS, type EmojiReactions } from '@calistenia/core/hooks/useReactions'
+import { COMMENT_REACTION_EMOJIS, type CommentEmojiReactions } from '@calistenia/core/hooks/useCommentReactions'
+import type { Comment } from '@calistenia/core/hooks/useComments'
 
 // ── Reaction color map ──────────────────────────────────────────────────────
 

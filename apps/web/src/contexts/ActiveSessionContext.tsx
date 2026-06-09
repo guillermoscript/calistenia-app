@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from 'react'
-import type { Exercise, Workout } from '../types'
-import { op } from '../lib/analytics'
+import type { Exercise, Workout } from '@calistenia/core/types'
+import { op } from '@calistenia/core/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

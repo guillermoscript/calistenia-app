@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-import { MEAL_TYPE_COLORS } from '../../lib/style-tokens'
-import type { WeeklyPlannedMeal } from '../../types'
+import { MEAL_TYPE_COLORS } from '@calistenia/core/lib/style-tokens'
+import type { WeeklyPlannedMeal } from '@calistenia/core/types'
 
 interface Props {
   meal: WeeklyPlannedMeal

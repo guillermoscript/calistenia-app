@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
 import { cn } from '../lib/utils'
-import type { ExerciseProgression } from '../types'
+import type { ExerciseProgression } from '@calistenia/core/types'
 
 interface ProgressionChainProps {
   chain: ExerciseProgression[]

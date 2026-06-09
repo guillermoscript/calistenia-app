@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
-import { isFreeSession } from '../../lib/progressUtils'
-import type { ExerciseLog, SetData } from '../../types'
+import { isFreeSession } from '@calistenia/core/lib/progressUtils'
+import type { ExerciseLog, SetData } from '@calistenia/core/types'
 
 interface ExerciseChartProps {
   exerciseName: string

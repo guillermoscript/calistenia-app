@@ -2,10 +2,10 @@ import { useCallback } from 'react'
 import i18n from '../lib/i18n'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
-import { op } from '../lib/analytics'
-import { todayStr } from '../lib/dateUtils'
+import { op } from '@calistenia/core/lib/analytics'
+import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage } from '../lib/canvas-helpers'
-import type { Exercise } from '../types'
+import type { Exercise } from '@calistenia/core/types'
 
 interface Quote { q: string; a: string }
 

@@ -2,11 +2,11 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
-import { op } from '../../lib/analytics'
-import { formatPace, formatDuration, formatSpeed } from '../../lib/geo'
+import { op } from '@calistenia/core/lib/analytics'
+import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { fillRRect, drawInitialAvatar, CARD_COLORS } from '../../lib/canvas-helpers'
 import i18n from '../../lib/i18n'
-import type { CardioSession } from '../../types'
+import type { CardioSession } from '@calistenia/core/types'
 
 const ACCENT: Record<string, string> = {
   running: '#a3e635',

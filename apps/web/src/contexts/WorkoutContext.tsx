@@ -1,7 +1,7 @@
 import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react'
-import { useProgress, type PREvent } from '../hooks/useProgress'
-import { usePrograms } from '../hooks/usePrograms'
-import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig } from '../types'
+import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
+import { usePrograms } from '@calistenia/core/hooks/usePrograms'
+import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig } from '@calistenia/core/types'
 
 // ── Context interface (state + actions + meta) ──────────────────────────────
 

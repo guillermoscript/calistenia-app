@@ -1,6 +1,6 @@
 import { Card, CardContent } from '../ui/card'
 import { Progress } from '../ui/progress'
-import type { ReferralStats as ReferralStatsType } from '../../hooks/useReferrals'
+import type { ReferralStats as ReferralStatsType } from '@calistenia/core/hooks/useReferrals'
 
 interface ReferralStatsProps {
   stats: ReferralStatsType

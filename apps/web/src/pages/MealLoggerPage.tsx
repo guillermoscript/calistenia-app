@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import MealLoggerContent from '../components/nutrition/MealLoggerContent'
-import { useNutrition } from '../hooks/useNutrition'
-import { useMealLoggerActions } from '../hooks/useMealLoggerActions'
+import { useNutrition } from '@calistenia/core/hooks/useNutrition'
+import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
-import { submitAnalyzeMealJob, fetchJobStatus } from '../lib/ai-jobs-api'
-import { migrateLegacyFood } from '../lib/macro-calc'
-import type { AnalyzeResult } from '../hooks/useMealLoggerActions'
+import { submitAnalyzeMealJob, fetchJobStatus } from '@calistenia/core/lib/ai-jobs-api'
+import { migrateLegacyFood } from '@calistenia/core/lib/macro-calc'
+import type { AnalyzeResult } from '@calistenia/core/hooks/useMealLoggerActions'
 
 interface MealLoggerPageProps {
   userId: string | null

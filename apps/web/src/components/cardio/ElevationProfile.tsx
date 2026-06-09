@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { haversineDistance } from '../../lib/geo'
-import type { GpsPoint } from '../../types'
+import { haversineDistance } from '@calistenia/core/lib/geo'
+import type { GpsPoint } from '@calistenia/core/types'
 
 interface ElevationProfileProps {
   points: GpsPoint[]

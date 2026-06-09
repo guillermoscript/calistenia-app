@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '../hooks/useLeaderboard'
+import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 import { cn } from '../lib/utils'
-import { op } from '../lib/analytics'
+import { op } from '@calistenia/core/lib/analytics'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 

@@ -1,3 +1,4 @@
+import { storage, getPlatform } from '../platform'
 import type PocketBase from 'pocketbase'
 
 const LS_KEY = 'calistenia_offline_queue'
@@ -22,12 +23,12 @@ export function enqueue(action: Omit<QueuedAction, 'id' | 'timestamp'>): void {
     id: generateId(),
     timestamp: Date.now(),
   })
-  localStorage.setItem(LS_KEY, JSON.stringify(queue))
+  storage.setItem(LS_KEY, JSON.stringify(queue))
 }
 
 export function getQueue(): QueuedAction[] {
   try {
-    return JSON.parse(localStorage.getItem(LS_KEY) || '[]')
+    return JSON.parse(storage.getItem(LS_KEY) || '[]')
   } catch {
     return []
   }
@@ -62,11 +63,11 @@ export async function processQueue(pb: PocketBase): Promise<void> {
     }
   }
 
-  localStorage.setItem(LS_KEY, JSON.stringify(remaining))
+  storage.setItem(LS_KEY, JSON.stringify(remaining))
 }
 
 export function clearQueue(): void {
-  localStorage.removeItem(LS_KEY)
+  storage.removeItem(LS_KEY)
 }
 
 export function setupAutoSync(pb: PocketBase): () => void {
@@ -76,14 +77,13 @@ export function setupAutoSync(pb: PocketBase): () => void {
     )
   }
 
-  window.addEventListener('online', handler)
+  const { connectivity } = getPlatform()
+  const unsubscribe = connectivity.onOnline(handler)
 
   // Also process any pending items right now if we're online
-  if (navigator.onLine) {
+  if (connectivity.isOnline()) {
     handler()
   }
 
-  return () => {
-    window.removeEventListener('online', handler)
-  }
+  return unsubscribe
 }

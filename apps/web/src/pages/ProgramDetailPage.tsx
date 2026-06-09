@@ -1,23 +1,23 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '../lib/utils'
-import { localDay } from '../lib/dateUtils'
-import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
+import { localDay } from '@calistenia/core/lib/dateUtils'
+import { pb, isPocketBaseAvailable, getCurrentUser } from '@calistenia/core/lib/pocketbase'
 import { pbExerciseEditUrl } from '../lib/pocketbase-admin'
-import { calculateWorkoutDuration, formatDuration } from '../lib/duration'
-import { inferDifficulty, DIFFICULTY_COLORS } from '../lib/difficulty'
+import { calculateWorkoutDuration, formatDuration } from '@calistenia/core/lib/duration'
+import { inferDifficulty, DIFFICULTY_COLORS } from '@calistenia/core/lib/difficulty'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
-import { PRIORITY_COLORS, CARDIO_ACTIVITY } from '../lib/style-tokens'
-import type { ProgramMeta, Priority, CardioDayConfig, CardioActivityType } from '../types'
+import { PRIORITY_COLORS, CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import type { ProgramMeta, Priority, CardioDayConfig, CardioActivityType } from '@calistenia/core/types'
 import type { RecordModel } from 'pocketbase'
 import { ShareButton } from '../components/ShareButton'
 import { shareProgram } from '../lib/share'
 import { ArrowLeftIcon, CopyIcon, CheckIcon, EditIcon } from '../components/icons/nav-icons'
 import { useTranslation } from 'react-i18next'
-import { localize } from '../lib/i18n-db'
+import { localize } from '@calistenia/core/lib/i18n-db'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -99,7 +99,7 @@ function ChevronIcon({ className, expanded }: { className?: string; expanded: bo
 interface ProgramDetailPageProps {
   programId: string
   userId?: string
-  userRole?: import('../types').UserRole
+  userRole?: import('@calistenia/core/types').UserRole
   activeProgram?: ProgramMeta | null
   onBack: () => void
   onNavigateToProgram?: (programId: string) => void

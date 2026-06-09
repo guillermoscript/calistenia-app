@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { cn } from '../../lib/utils'
-import { todayStr, localHour } from '../../lib/dateUtils'
+import { todayStr, localHour } from '@calistenia/core/lib/dateUtils'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 import EditMealSheet from './EditMealSheet'
@@ -9,8 +9,8 @@ import { QualityScoreBadge } from './QualityScoreBadge'
 import { QualityBreakdownPanel } from './QualityBreakdownPanel'
 import { ScoreCriteriaDialog } from './ScoreCriteriaDialog'
 import { useTranslation } from 'react-i18next'
-import { MEAL_TYPE_COLORS, BADGE_COLORS, MACRO_COLORS } from '../../lib/style-tokens'
-import type { NutritionEntry, QualityScore } from '../../types'
+import { MEAL_TYPE_COLORS, BADGE_COLORS, MACRO_COLORS } from '@calistenia/core/lib/style-tokens'
+import type { NutritionEntry, QualityScore } from '@calistenia/core/types'
 
 interface NutritionDashboardProps {
   dailyTotals: { calories: number; protein: number; carbs: number; fat: number }

@@ -30,7 +30,7 @@ import {
 import { nowLocalForPB } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
-import i18n from '../lib/i18n'
+import i18n from 'i18next'
 import { localize } from '../lib/i18n-db'
 
 // ─── helpers ────────────────────────────────────────────────────────────────

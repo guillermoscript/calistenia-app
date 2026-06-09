@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useChallengeDetail } from '../hooks/useChallengeDetail'
-import { useFollows } from '../hooks/useFollows'
+import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
+import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import { METRIC_UNITS, daysRemaining, getMetricLabel } from '../lib/challenges'
+import { METRIC_UNITS, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { ShareButton } from '../components/ShareButton'
 import { shareChallenge } from '../lib/share'
-import type { LeaderboardEntry } from '../hooks/useLeaderboard'
+import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import i18n from '../lib/i18n'
+import i18n from 'i18next'
 import { pb } from '../lib/pocketbase'
 import { searchWger, getWgerExerciseInfo, downloadWgerImage } from '../lib/wger'
 import { mapWgerToExerciseCatalog } from '../lib/wger-mappings'

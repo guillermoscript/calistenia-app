@@ -7,9 +7,13 @@
   "dependencies": {
     "dayjs": "^1.11.20",
     "i18next": "^26.0.5",
-    "pocketbase": "^0.26.8"
+    "pocketbase": "^0.26.8",
+    "react-i18next": "^17.0.3"
   },
   "peerDependencies": {
     "react": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14"
   }
 }

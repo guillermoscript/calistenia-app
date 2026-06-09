@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from './ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs'
-import type { Exercise } from '../types'
+import type { Exercise } from '@calistenia/core/types'
 
 interface MediaViewerProps {
   exercise: Exercise

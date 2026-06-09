@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
-import { PHASE_COLORS } from '../../lib/style-tokens'
+import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { Button } from '../ui/button'
-import { useBodyPhotos } from '../../hooks/useBodyPhotos'
+import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
 import PhasePhotoUploadModal from './PhasePhotoUploadModal'
 import PhotoRevealAnimation from './PhotoRevealAnimation'
-import type { BodyPhoto } from '../../hooks/useBodyPhotos'
+import type { BodyPhoto } from '@calistenia/core/hooks/useBodyPhotos'
 
 interface PhasePhotoBannerProps {
   currentPhase: number

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { pb } from '../lib/pocketbase'
-import type { TranslatableField } from '../lib/i18n-db'
-import { useLocalize } from '../hooks/useLocalize'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 
 // ── Types for the PB record ────────────────────────────────────────────────
 

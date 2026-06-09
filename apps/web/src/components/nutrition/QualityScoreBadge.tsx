@@ -1,5 +1,5 @@
-import type { QualityScore } from '../../types'
-import { SCORE_COLORS, SCORE_BORDER_COLORS } from '../../lib/style-tokens'
+import type { QualityScore } from '@calistenia/core/types'
+import { SCORE_COLORS, SCORE_BORDER_COLORS } from '@calistenia/core/lib/style-tokens'
 
 const SCORE_LABELS: Record<QualityScore, string> = {
   A: 'Excelente',

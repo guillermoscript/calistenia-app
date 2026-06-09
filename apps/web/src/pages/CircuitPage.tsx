@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useLocalize } from '../hooks/useLocalize'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { useCircuitSession } from '../contexts/CircuitSessionContext'
-import { CIRCUIT_PRESETS, type CircuitPreset } from '../data/circuit-presets'
+import { CIRCUIT_PRESETS, type CircuitPreset } from '@calistenia/core/data/circuit-presets'
 import CircuitBuilder from '../components/circuit/CircuitBuilder'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
-import type { CircuitDefinition } from '../types'
+import type { CircuitDefinition } from '@calistenia/core/types'
 
 // ── Preset Card ────────────────────────────────────────────────────────────────
 

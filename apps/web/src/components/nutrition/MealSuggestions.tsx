@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '../ui/card'
 import { cn } from '../../lib/utils'
-import { pb } from '../../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 
 interface MealSuggestionsProps {
   remaining: { calories: number; protein: number; carbs: number; fat: number }

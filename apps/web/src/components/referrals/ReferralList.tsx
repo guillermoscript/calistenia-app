@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { getUserAvatarUrl, pb } from '../../lib/pocketbase'
-import { utcToLocalDateStr } from '../../lib/dateUtils'
-import type { Referral } from '../../hooks/useReferrals'
+import { getUserAvatarUrl, pb } from '@calistenia/core/lib/pocketbase'
+import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import type { Referral } from '@calistenia/core/hooks/useReferrals'
 
 interface ReferralListProps {
   referrals: Referral[]

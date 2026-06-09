@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { pb } from '../lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -8,7 +8,7 @@ import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { cn } from '../lib/utils'
 import { PB_ADMIN_URL, pbCollectionUrl } from '../lib/pocketbase-admin'
 import { useWorkoutState } from '../contexts/WorkoutContext'
-import type { UserRole } from '../types'
+import type { UserRole } from '@calistenia/core/types'
 
 type Tab = 'overview' | 'users' | 'programs'
 

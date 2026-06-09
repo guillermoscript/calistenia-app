@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { op } from '../lib/analytics'
@@ -34,11 +35,11 @@ interface UseWaterReturn {
 
 // localStorage helpers
 const lsGet = (): Record<string, DayWater> => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} }
+  try { return JSON.parse(storage.getItem(LS_KEY) || '{}') } catch { return {} }
 }
-const lsSet = (d: Record<string, DayWater>) => localStorage.setItem(LS_KEY, JSON.stringify(d))
+const lsSet = (d: Record<string, DayWater>) => storage.setItem(LS_KEY, JSON.stringify(d))
 const lsGetGoal = (): number => {
-  try { return Number(localStorage.getItem('calistenia_water_goal')) || DEFAULT_GOAL } catch { return DEFAULT_GOAL }
+  try { return Number(storage.getItem('calistenia_water_goal')) || DEFAULT_GOAL } catch { return DEFAULT_GOAL }
 }
 
 export function useWater(userId: string | null = null, selectedDate?: string): UseWaterReturn {
@@ -85,7 +86,7 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
           if (settingsRec && (settingsRec as any).water_goal) {
             const pbGoal = (settingsRec as any).water_goal
             setGoalState(pbGoal)
-            localStorage.setItem('calistenia_water_goal', String(pbGoal))
+            storage.setItem('calistenia_water_goal', String(pbGoal))
           }
         } catch {
           setData(lsGet())
@@ -219,7 +220,7 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
 
   const setGoal = useCallback(async (ml: number) => {
     setGoalState(ml)
-    localStorage.setItem('calistenia_water_goal', String(ml))
+    storage.setItem('calistenia_water_goal', String(ml))
 
     if (usePB && userId) {
       try {

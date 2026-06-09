@@ -1,3 +1,4 @@
+import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 
@@ -24,11 +25,11 @@ export interface WorkoutReminder {
 
 const lsGet = (): WorkoutReminder[] => {
   try {
-    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]')
+    const raw = JSON.parse(storage.getItem(LS_KEY) || '[]')
     return raw.map((r: any) => ({ ...r, reminderType: r.reminderType || 'workout' }))
   } catch { return [] }
 }
-const lsSet = (d: WorkoutReminder[]) => localStorage.setItem(LS_KEY, JSON.stringify(d))
+const lsSet = (d: WorkoutReminder[]) => storage.setItem(LS_KEY, JSON.stringify(d))
 
 export function useWorkoutReminders(userId: string | null = null) {
   const [reminders, setReminders] = useState<WorkoutReminder[]>([])
