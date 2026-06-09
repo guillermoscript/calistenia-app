@@ -43,9 +43,15 @@ export const isPocketBaseAvailable = async (): Promise<boolean> => {
  * OAuth2 con Google (o cualquier provider configurado en PocketBase).
  * After login, if the user has no avatar yet, fetches their Google profile picture
  * and uploads it to PocketBase.
+ *
+ * urlCallback: en web se omite (el SDK abre un popup); en RN la app pasa una
+ * función que abre la URL con expo-web-browser y el SDK completa el flujo via realtime.
  */
-export const loginWithOAuth2 = async (provider: string): Promise<RecordAuthResponse<RecordModel>> => {
-  const result = await pb.collection('users').authWithOAuth2({ provider })
+export const loginWithOAuth2 = async (
+  provider: string,
+  urlCallback?: (url: string) => void | Promise<void>
+): Promise<RecordAuthResponse<RecordModel>> => {
+  const result = await pb.collection('users').authWithOAuth2({ provider, urlCallback })
 
   // Sync display_name and avatar from OAuth provider if missing
   const needsName = !result.record.display_name && result.meta?.name
@@ -56,11 +62,11 @@ export const loginWithOAuth2 = async (provider: string): Promise<RecordAuthRespo
       const formData = new FormData()
 
       if (needsName) {
-        formData.append('display_name', result.meta.name)
+        formData.append('display_name', result.meta!.name)
       }
 
       if (needsAvatar) {
-        const response = await fetch(result.meta.avatarURL)
+        const response = await fetch(result.meta!.avatarURL)
         if (response.ok) {
           const blob = await response.blob()
           const ext = blob.type === 'image/png' ? 'png' : 'jpg'
