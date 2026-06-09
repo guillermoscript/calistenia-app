@@ -42,6 +42,8 @@ export interface CorePlatform {
   connectivity: CoreConnectivity
   /** Solo RN: authStore persistente para el SDK de PocketBase. Web usa el default (localStorage). */
   pbAuthStore?: AsyncAuthStore
+  /** Reporte de errores a monitoreo (web: Sentry browser; RN: @sentry/react-native). */
+  reportError?: (error: unknown) => void
 }
 
 let platform: CorePlatform | null = null

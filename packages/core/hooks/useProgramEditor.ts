@@ -10,6 +10,7 @@
 
 import { useState, useCallback } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { getPlatform } from '../platform'
 import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS, WORKOUTS } from '../data/workouts'
 import i18n from 'i18next'
 import { localize, toTranslatable } from '../lib/i18n-db'
@@ -624,8 +625,8 @@ export function useProgramEditor() {
       const detail = e?.response?.data || e?.data || e?.message || ''
       const msg = detail ? `${i18n.t('programEditor.saveError')} (${JSON.stringify(detail)})` : i18n.t('programEditor.saveError')
       setState(s => ({ ...s, isSaving: false, error: msg }))
-      // Report to Sentry so we can see save failures
-      try { import('@sentry/react').then(Sentry => Sentry.captureException(e)) } catch {}
+      // Report to monitoring (Sentry) so we can see save failures
+      getPlatform().reportError?.(e)
       return null
     }
   }, [state.programId, state.info, state.phases, state.days])

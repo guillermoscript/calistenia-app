@@ -4,6 +4,7 @@
  * DEBE ser de los primeros imports de main.tsx (solo después de Sentry):
  * los módulos de core leen el platform adapter al evaluarse.
  */
+import * as Sentry from '@sentry/react'
 import { OpenPanel } from '@openpanel/web'
 import { initCore } from '@calistenia/core/platform'
 
@@ -38,6 +39,7 @@ initCore({
     identify: (payload) => op.identify(payload as Parameters<typeof op.identify>[0]),
     clear: () => op.clear(),
   },
+  reportError: (e) => Sentry.captureException(e),
   connectivity: {
     isOnline: () => navigator.onLine,
     onOnline: (handler) => {
