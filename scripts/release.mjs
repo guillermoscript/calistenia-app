@@ -16,7 +16,9 @@ import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
-const PKG_PATH = resolve(ROOT, 'package.json')
+// Root + apps/web se mantienen sincronizados; __APP_VERSION__ sale de apps/web.
+const PKG_PATHS = [resolve(ROOT, 'package.json'), resolve(ROOT, 'apps/web/package.json')]
+const PKG_PATH = PKG_PATHS[0]
 
 function run(cmd) {
   console.log(`  $ ${cmd}`)
@@ -28,16 +30,17 @@ function readVersion() {
 }
 
 function bumpVersion(input) {
-  const pkg = JSON.parse(readFileSync(PKG_PATH, 'utf-8'))
-  const [major, minor, patch] = pkg.version.split('.').map(Number)
+  const current = readVersion()
+  const [major, minor, patch] = current.split('.').map(Number)
+  let next
 
   switch (input) {
-    case 'patch': pkg.version = `${major}.${minor}.${patch + 1}`; break
-    case 'minor': pkg.version = `${major}.${minor + 1}.0`; break
-    case 'major': pkg.version = `${major + 1}.0.0`; break
+    case 'patch': next = `${major}.${minor}.${patch + 1}`; break
+    case 'minor': next = `${major}.${minor + 1}.0`; break
+    case 'major': next = `${major + 1}.0.0`; break
     default:
       if (/^\d+\.\d+\.\d+$/.test(input)) {
-        pkg.version = input
+        next = input
       } else {
         console.error(`Invalid version input: ${input}`)
         console.error('Usage: node scripts/release.mjs [patch|minor|major|X.Y.Z]')
@@ -45,8 +48,12 @@ function bumpVersion(input) {
       }
   }
 
-  writeFileSync(PKG_PATH, JSON.stringify(pkg, null, 2) + '\n', 'utf-8')
-  return pkg.version
+  for (const pkgPath of PKG_PATHS) {
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+    pkg.version = next
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8')
+  }
+  return next
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
@@ -68,14 +75,14 @@ run('node scripts/generate-changelog.mjs')
 
 // Stage, commit, tag
 console.log('\nCommitting...')
-run('git add package.json src/data/changelog.json')
+run('git add package.json apps/web/package.json apps/web/src/data/changelog.json')
 run(`git commit -m "release: v${newVersion}"`)
 run(`git tag v${newVersion}`)
 
 // Re-generate so the tag is now included properly
 console.log('\nRe-generating changelog with tag...')
 run('node scripts/generate-changelog.mjs')
-run('git add src/data/changelog.json')
+run('git add apps/web/src/data/changelog.json')
 run(`git commit --amend --no-edit`)
 
 console.log(`\nDone! Released v${newVersion}`)

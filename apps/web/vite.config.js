@@ -25,6 +25,8 @@ function pocketbaseAliasPlugin() {
 }
 
 export default defineConfig({
+  // .env files keep living at the repo root (shared with docker-compose / scripts)
+  envDir: path.resolve(__dirname, '../..'),
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
