@@ -1,0 +1,58 @@
+import { Redirect, Tabs } from 'expo-router'
+import { useTranslation } from 'react-i18next'
+import { Home, ClipboardList, Library, History } from 'lucide-react-native'
+import { useColorScheme } from 'nativewind'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import { NAV_THEME } from '@/lib/theme'
+
+export default function TabsLayout() {
+  const { t } = useTranslation()
+  const { colorScheme } = useColorScheme()
+  const theme = NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']
+
+  if (!pb.authStore.isValid) return <Redirect href="/login" />
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: theme.colors.text,
+        tabBarInactiveTintColor: colorScheme === 'dark' ? 'hsl(0 0% 45%)' : 'hsl(0 0% 55%)',
+        tabBarStyle: {
+          backgroundColor: theme.colors.card,
+          borderTopColor: theme.colors.border,
+        },
+        tabBarLabelStyle: { fontSize: 10 },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: t('nav.home'),
+          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="programs"
+        options={{
+          title: t('nav.programs'),
+          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="library"
+        options={{
+          title: t('nav.exercises'),
+          tabBarIcon: ({ color, size }) => <Library color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: t('nav.progress'),
+          tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
+        }}
+      />
+    </Tabs>
+  )
+}

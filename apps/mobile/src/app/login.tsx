@@ -26,7 +26,7 @@ export default function LoginScreen() {
     setLoading(true)
     try {
       await pb.collection('users').authWithPassword(email.trim(), password)
-      router.replace('/home')
+      router.replace('/(tabs)')
     } catch {
       setError(t('auth.loginError'))
     } finally {
@@ -39,7 +39,7 @@ export default function LoginScreen() {
     setLoading(true)
     try {
       await loginWithGoogle()
-      router.replace('/home')
+      router.replace('/(tabs)')
     } catch {
       setError(t('auth.googleError'))
     } finally {
