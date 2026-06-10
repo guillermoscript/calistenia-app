@@ -14,6 +14,26 @@ let active = false
 let workoutTitle = ''
 let lastState: LiveActivityState | null = null
 
+/** Etiquetas localizadas para el botón de acción de la notificación Android. */
+export interface LiveSessionLabels {
+  work: string
+  rest: string
+  transition: string
+}
+let labels: LiveSessionLabels | null = null
+
+let actionHandler: (() => void) | null = null
+
+/** SessionView (vía useLiveSession) registra aquí cómo avanzar la sesión. */
+export function setLiveSessionActionHandler(handler: (() => void) | null): void {
+  actionHandler = handler
+}
+
+/** Llamado desde los listeners de notifee en index.js al pulsar un botón. */
+export function dispatchLiveSessionAction(pressId: string): void {
+  if (pressId === 'live-next' && active) actionHandler?.()
+}
+
 /** true si el timer en vivo gestiona el aviso de fin de descanso (Android). */
 export function liveSessionHandlesRest(): boolean {
   return active && Platform.OS === 'android'
@@ -34,6 +54,11 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
   const { AndroidImportance } = await import('@notifee/react-native')
   await notifee.createChannel({ id: NOTIF_ID, name: 'Sesión en curso', importance: AndroidImportance.LOW })
   const resting = state.phase === 'rest' && !!state.restEndsAt
+  const actionTitle = !labels
+    ? null
+    : state.phase === 'rest' ? labels.rest
+    : state.setTotal > 0 ? labels.work
+    : labels.transition
   await notifee.displayNotification({
     id: NOTIF_ID,
     title: workoutTitle,
@@ -45,7 +70,17 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
       asForegroundService: true,
       ongoing: true,
       onlyAlertOnce: true,
+      // Lime de marca: tinta icono/acentos; colorized pinta el fondo (estilo
+      // notificación de música) en los launchers que lo soportan
+      color: '#a3e635',
+      colorized: true,
+      ...(state.phase === 'work' && state.setTotal > 0
+        ? { progress: { max: state.setTotal, current: state.setIndex } }
+        : {}),
       pressAction: { id: 'default', launchActivity: 'default' },
+      ...(actionTitle
+        ? { actions: [{ title: actionTitle, pressAction: { id: 'live-next' } }] }
+        : {}),
       ...(resting
         ? { showChronometer: true, chronometerDirection: 'down' as const, timestamp: state.restEndsAt! }
         : {}),
@@ -53,10 +88,11 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
   })
 }
 
-export async function startLiveSession(title: string, state: LiveActivityState): Promise<void> {
+export async function startLiveSession(title: string, state: LiveActivityState, actionLabels?: LiveSessionLabels): Promise<void> {
   try {
     workoutTitle = title
     lastState = state
+    labels = actionLabels ?? null
     if (Platform.OS === 'ios') {
       active = getWidgetBridge()?.startActivity(title, JSON.stringify(state)) ?? false
     } else if (Platform.OS === 'android') {
@@ -96,6 +132,7 @@ export async function endLiveSession(): Promise<void> {
     if (!active) return
     active = false
     lastState = null
+    labels = null
     if (Platform.OS === 'ios') {
       getWidgetBridge()?.endActivity()
     } else if (Platform.OS === 'android') {

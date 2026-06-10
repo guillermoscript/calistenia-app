@@ -276,6 +276,11 @@ function ExerciseTimer({ initialSeconds = 30 }: { initialSeconds?: number }) {
 
 // ─── Exercise screen ──────────────────────────────────────────────────────────
 
+// "8-12" → "8"; "12/lado", "máx" se quedan tal cual
+function quickReps(reps: string): string {
+  return /^\d+-\d+$/.test(reps) ? reps.split('-')[0] : reps
+}
+
 interface ExerciseScreenProps {
   step: Step
   onLogged: (data: { reps: string; note: string; weight?: number; rpe?: number }) => void
@@ -300,10 +305,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
   }, 0) || 0
   const lastBestWeight = lastLog?.sets?.reduce((max: number, s: SetData) => (s.weight || 0) > max ? (s.weight || 0) : max, 0) || 0
 
-  // "8-12" → "8"; "12/lado", "máx" se quedan tal cual
-  const defaultReps = /^\d+-\d+$/.test(exercise.reps)
-    ? exercise.reps.split('-')[0]
-    : exercise.reps
+  const defaultReps = quickReps(exercise.reps)
 
   const doLog = (reps: string | number, note: string = '', weight?: number, rpe?: number): void => {
     sounds.playSetComplete()
@@ -761,6 +763,17 @@ export default function SessionView({
 
   const durationMin = Math.round((Date.now() - sessionStartTime.current) / 60000)
 
+  // Botón de la notificación: misma semántica que el botón rápido de la UI
+  const handleLiveAdvance = useCallback(() => {
+    if (phase === 'exercise' && currentStep) {
+      void handleLogged({ reps: quickReps(currentStep.exercise.reps), note: '' })
+    } else if (phase === 'rest') {
+      handleRestDone()
+    } else if (phase === 'section-transition') {
+      handleSectionContinue()
+    }
+  }, [phase, currentStep, handleLogged, handleRestDone, handleSectionContinue])
+
   // Live Activity / notificación persistente — observa, no muta
   useLiveSession({
     workoutTitle: workout.title,
@@ -770,6 +783,7 @@ export default function SessionView({
       : currentStep?.exercise.name ?? '',
     setNumber: currentStep?.setNumber ?? 0,
     totalSets: currentStep?.totalSets ?? 0,
+    onAdvance: handleLiveAdvance,
   })
 
   return (

@@ -1800,6 +1800,9 @@
 
   "session.resting": "Resting",
   "session.skipRest": "SKIP REST →",
+  "liveSession.logSet": "SET DONE",
+  "liveSession.skipRest": "SKIP REST",
+  "liveSession.continue": "CONTINUE",
   "session.swipeToSkip": "swipe → to skip",
   "session.closeSetEditor": "Close set editor",
   "session.editCustomSet": "Edit custom set",

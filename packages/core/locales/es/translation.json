@@ -1800,6 +1800,9 @@
 
   "session.resting": "Descansando",
   "session.skipRest": "SALTAR DESCANSO →",
+  "liveSession.logSet": "SERIE HECHA",
+  "liveSession.skipRest": "SALTAR DESCANSO",
+  "liveSession.continue": "CONTINUAR",
   "session.swipeToSkip": "desliza → para saltar",
   "session.closeSetEditor": "Cerrar editor de serie",
   "session.editCustomSet": "Editar serie personalizada",

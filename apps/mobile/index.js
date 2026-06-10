@@ -15,7 +15,18 @@ if (Platform.OS === 'android') {
     registerWidgetTaskHandler(widgetTaskHandler)
 
     const notifee = require('@notifee/react-native').default
+    const { EventType } = require('@notifee/react-native')
     // El service vive mientras la notificación ongoing exista
     notifee.registerForegroundService(() => new Promise(() => {}))
+
+    // Botones de la notificación de sesión → avanzar serie / saltar descanso
+    const { dispatchLiveSessionAction } = require('./src/lib/live-session')
+    const onNotifeeEvent = ({ type, detail }) => {
+      if (type === EventType.ACTION_PRESS && detail.pressAction?.id) {
+        dispatchLiveSessionAction(detail.pressAction.id)
+      }
+    }
+    notifee.onForegroundEvent(onNotifeeEvent)
+    notifee.onBackgroundEvent(async (event) => onNotifeeEvent(event))
   } catch { /* Expo Go: lib nativa ausente */ }
 }
