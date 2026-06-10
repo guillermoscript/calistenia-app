@@ -5,6 +5,7 @@ import SwiftUI
 struct CalisteniaWidgetsBundle: WidgetBundle {
   var body: some Widget {
     TodayWidget()
-    // SessionLiveActivity se añade en el Task 9
+    // deploymentTarget del target es 16.2, no hace falta gate de disponibilidad
+    SessionLiveActivity()
   }
 }
