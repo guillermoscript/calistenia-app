@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@calistenia/core": "workspace:*",
+    "@expo-google-fonts/bebas-neue": "^0.4.1",
+    "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@openpanel/react-native": "^1.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "12.0.1",

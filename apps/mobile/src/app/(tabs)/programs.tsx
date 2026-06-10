@@ -24,8 +24,8 @@ export default function ProgramsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="px-4 pb-2 pt-2">
-        <Text className="text-2xl font-bold text-foreground">{t('programs.title')}</Text>
-        <Text className="text-xs text-muted-foreground">
+        <Text className="font-bebas text-4xl leading-none text-foreground">{t('programs.title')}</Text>
+        <Text className="mt-1 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
           {t('programs.available', { count: programs.length })}
         </Text>
       </View>
@@ -66,7 +66,7 @@ function ProgramRow({ program, isActive, onPress }: {
     >
       <View className="flex-1 gap-0.5">
         <View className="flex-row flex-wrap items-center gap-1.5">
-          <Text className="font-semibold text-foreground" numberOfLines={1}>{program.name}</Text>
+          <Text className="font-sans-medium text-foreground" numberOfLines={1}>{program.name}</Text>
           {program.is_official && <BadgeCheck size={14} color="hsl(74 90% 45%)" />}
         </View>
         <Text className="text-xs text-muted-foreground" numberOfLines={2}>
@@ -75,14 +75,14 @@ function ProgramRow({ program, isActive, onPress }: {
         <View className="mt-1 flex-row items-center gap-2">
           {isActive && (
             <View className="rounded-full bg-lime/15 px-2 py-0.5">
-              <Text className="text-[10px] font-bold text-lime">{t('programs.activeBadge')}</Text>
+              <Text className="font-mono text-[9px] uppercase tracking-wide text-lime">{t('programs.activeBadge')}</Text>
             </View>
           )}
-          <Text className="text-[11px] text-muted-foreground">
+          <Text className="font-mono text-[10px] text-muted-foreground">
             {program.duration_weeks} {t('programs.weeks')}
           </Text>
           {program.difficulty && (
-            <Text className="text-[11px] capitalize text-muted-foreground">· {program.difficulty}</Text>
+            <Text className="font-mono text-[10px] capitalize text-muted-foreground">· {program.difficulty}</Text>
           )}
         </View>
       </View>

@@ -33,7 +33,7 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="gap-3 px-4 pb-2 pt-2">
-        <Text className="text-2xl font-bold text-foreground">{t('nav.exercises')}</Text>
+        <Text className="font-bebas text-4xl leading-none text-foreground">{t('nav.exercises')}</Text>
         <Input
           value={query}
           onChangeText={setQuery}
@@ -51,7 +51,7 @@ export default function LibraryScreen() {
                 category === cat ? 'border-lime/40 bg-lime/15' : 'border-border bg-card',
               )}
             >
-              <Text className={cn('text-xs capitalize', category === cat ? 'text-lime' : 'text-muted-foreground')}>
+              <Text className={cn('font-mono text-[10px] uppercase tracking-wide', category === cat ? 'text-lime' : 'text-muted-foreground')}>
                 {cat === 'todos' ? t('common.filter') : cat.replace(/_/g, ' ')}
               </Text>
             </Pressable>
@@ -78,11 +78,11 @@ function ExerciseRow({ ex, locale, onPress }: { ex: CatalogExercise; locale: str
       className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
     >
       <View className="flex-1">
-        <Text className="font-semibold text-foreground" numberOfLines={1}>{localize(ex.name, locale)}</Text>
+        <Text className="font-sans-medium text-foreground" numberOfLines={1}>{localize(ex.name, locale)}</Text>
         <Text className="text-xs text-muted-foreground" numberOfLines={1}>{localize(ex.muscles, locale)}</Text>
         <View className="mt-1 flex-row items-center gap-2">
-          <Text className="text-[10px] uppercase text-muted-foreground/70">{ex.category.replace(/_/g, ' ')}</Text>
-          {ex.difficulty && <Text className="text-[10px] capitalize text-muted-foreground/70">· {ex.difficulty}</Text>}
+          <Text className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground/70">{ex.category.replace(/_/g, ' ')}</Text>
+          {ex.difficulty && <Text className="font-mono text-[9px] capitalize text-muted-foreground/70">· {ex.difficulty}</Text>}
         </View>
       </View>
       <ChevronRight size={16} color="hsl(0 0% 55%)" />

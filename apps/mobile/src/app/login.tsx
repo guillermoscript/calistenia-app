@@ -58,8 +58,8 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View className="mb-8 items-center gap-2">
-            <Text variant="h1">Calistenia</Text>
-            <Text variant="muted">{t('auth.tagline')}</Text>
+            <Text className="font-bebas text-5xl leading-none tracking-[6px] text-foreground">CALISTENIA</Text>
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('auth.tagline')}</Text>
           </View>
 
           <Card>
@@ -93,13 +93,15 @@ export default function LoginScreen() {
 
               {error ? <Text className="text-destructive text-sm">{error}</Text> : null}
 
-              <Button onPress={handleEmailLogin} disabled={loading || !email || !password}>
-                <Text>{loading ? t('auth.connecting') : t('auth.login')}</Text>
+              <Button className="bg-lime active:bg-lime/90" onPress={handleEmailLogin} disabled={loading || !email || !password}>
+                <Text className="font-sans-bold text-sm tracking-wide text-lime-foreground">
+                  {loading ? t('auth.connecting') : t('auth.login')}
+                </Text>
               </Button>
 
               <View className="flex-row items-center gap-3">
                 <View className="bg-border h-px flex-1" />
-                <Text variant="muted">{t('common.or')}</Text>
+                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('common.or')}</Text>
                 <View className="bg-border h-px flex-1" />
               </View>
 

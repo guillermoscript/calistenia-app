@@ -156,7 +156,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
 
   return (
     <View className="flex-1 items-center justify-center gap-7 px-6">
-      <Text className="text-[11px] uppercase tracking-[4px] text-muted-foreground">{t('session.resting')}</Text>
+      <Text className="font-mono text-[11px] uppercase tracking-[4px] text-muted-foreground">{t('session.resting')}</Text>
 
       <View style={{ width: ringSize, height: ringSize }}>
         <Svg width={ringSize} height={ringSize} style={{ transform: [{ rotate: '-90deg' }] }}>
@@ -172,7 +172,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
           />
         </Svg>
         <View className="absolute inset-0 items-center justify-center">
-          <Text className={cn('text-[42px] font-bold tabular-nums', isUrgent ? 'text-destructive' : 'text-foreground')}>
+          <Text className={cn('font-bebas text-[46px] tracking-[2px] tabular-nums leading-none', isUrgent ? 'text-destructive' : 'text-foreground')}>
             {mins}:{secs}
           </Text>
         </View>
@@ -180,24 +180,24 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
 
       {nextStep && (
         <View className="w-full max-w-[340px] rounded-xl border border-border bg-card px-4 py-3.5">
-          <Text className="mb-2 text-[9px] uppercase tracking-[3px] text-muted-foreground">{t('notify.prepareForNext')}</Text>
-          <Text className="mb-1 text-[15px] font-semibold text-foreground">{nextStep.exercise.name}</Text>
-          <Text className="text-xs text-lime">
+          <Text className="mb-2 font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">{t('notify.prepareForNext')}</Text>
+          <Text className="mb-1 font-sans-medium text-[15px] text-foreground">{nextStep.exercise.name}</Text>
+          <Text className="font-mono text-xs text-lime">
             {nextStep.exercise.reps}
-            <Text className="text-[11px] text-muted-foreground">  · {t('session.set')} {nextStep.setNumber}/{nextStep.totalSets}</Text>
+            <Text className="font-mono text-[11px] text-muted-foreground">  · {t('session.set')} {nextStep.setNumber}/{nextStep.totalSets}</Text>
           </Text>
-          <Text className="mt-1 text-xs text-muted-foreground">{nextStep.exercise.muscles}</Text>
+          <Text className="mt-1 font-mono text-[10px] tracking-wide text-muted-foreground">{nextStep.exercise.muscles}</Text>
         </View>
       )}
 
       <View className="flex-row gap-2">
-        <Button variant="outline" size="sm" onPress={() => adjustTime(-15)}><Text className="text-xs">-15s</Text></Button>
-        <Button variant="outline" size="sm" onPress={() => adjustTime(15)}><Text className="text-xs">+15s</Text></Button>
-        <Button variant="outline" size="sm" onPress={() => adjustTime(30)}><Text className="text-xs">+30s</Text></Button>
+        <Button variant="outline" size="sm" onPress={() => adjustTime(-15)}><Text className="font-mono text-[11px] text-muted-foreground">-15s</Text></Button>
+        <Button variant="outline" size="sm" onPress={() => adjustTime(15)}><Text className="font-mono text-[11px] text-muted-foreground">+15s</Text></Button>
+        <Button variant="outline" size="sm" onPress={() => adjustTime(30)}><Text className="font-mono text-[11px] text-muted-foreground">+30s</Text></Button>
       </View>
 
       <Button variant="outline" className="border-lime/25 bg-lime/10 px-8" onPress={handleSkip}>
-        <Text className="text-xs tracking-[2px] text-lime">{t('session.skipRest')}</Text>
+        <Text className="font-mono text-[11px] tracking-[2px] text-lime">{t('session.skipRest')}</Text>
       </Button>
     </View>
   )
@@ -251,7 +251,7 @@ function ExerciseTimer({ initialSeconds = 30 }: { initialSeconds?: number }) {
 
   return (
     <View className="flex-row items-center justify-center gap-4 py-3">
-      <Text className={cn('text-4xl font-bold tabular-nums', remaining === 0 ? 'text-lime' : 'text-foreground')}>
+      <Text className={cn('font-bebas text-[44px] leading-none tracking-[2px] tabular-nums', remaining === 0 ? 'text-lime' : 'text-foreground')}>
         {mins}:{secs}
       </Text>
       <Pressable onPress={toggle} className="size-12 items-center justify-center rounded-full bg-lime/15" accessibilityLabel={running ? 'Pausar' : 'Iniciar'}>
@@ -319,11 +319,11 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
     <ScrollView className="flex-1" contentContainerClassName="flex-grow px-5 pb-6 pt-4">
       {/* Nombre + meta */}
       <View className="mb-2">
-        <Text className="text-4xl font-bold uppercase leading-tight text-foreground">{exercise.name}</Text>
-        <View className="mt-1.5 flex-row flex-wrap items-center gap-x-3 gap-y-1">
-          <Text className="text-[13px] font-semibold text-lime">{exercise.reps}</Text>
-          <Text className="text-[11px] text-muted-foreground">· {t('common.rest')} {exercise.rest}s</Text>
-          <Text className="text-[10px] text-muted-foreground">{exercise.muscles}</Text>
+        <Text className="font-bebas text-[40px] leading-none tracking-[2px] text-foreground">{exercise.name}</Text>
+        <View className="mt-2 flex-row flex-wrap items-center gap-x-3 gap-y-1">
+          <Text className="font-mono text-[13px] tracking-wide text-lime">{exercise.reps}</Text>
+          <Text className="font-mono text-[11px] text-muted-foreground">· {t('common.rest')} {exercise.rest}s</Text>
+          <Text className="font-mono text-[10px] tracking-wide text-muted-foreground">{exercise.muscles}</Text>
         </View>
       </View>
 
@@ -335,31 +335,37 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
             i < setNumber - 1 ? 'bg-lime' : i === setNumber - 1 ? 'bg-lime/40' : 'bg-border',
           )} />
         ))}
-        <Text className="ml-1 text-[10px] text-muted-foreground">{t('session.set').toUpperCase()} {setNumber}/{totalSets}</Text>
+        <Text className="ml-1 font-mono text-[10px] text-muted-foreground">{t('session.set').toUpperCase()} {setNumber}/{totalSets}</Text>
       </View>
 
       {/* Sobrecarga progresiva */}
       {lastLog && lastBestReps > 0 && setNumber === 1 && (
-        <View className="mb-4 rounded-md border-l-[3px] border-amber-400/40 bg-amber-400/10 px-3.5 py-2.5">
-          <Text className="text-xs text-amber-500">
-            {lastBestReps} reps{lastBestWeight > 0 ? ` +${lastBestWeight}kg` : ''} → {lastBestWeight > 0 ? `+${(lastBestWeight + 2.5).toFixed(1)}kg / +1 rep` : `${lastBestReps + 1} reps`}
+        <View className="mb-4 rounded-md border-l-[3px] border-amber-400/30 bg-amber-400/5 px-3.5 py-2.5">
+          <Text className="text-[12px] text-amber-400/80">
+            {t('exercise.lastTime')} <Text className="font-sans-bold text-[12px] text-amber-400">{lastBestReps}</Text> reps
+            {lastBestWeight > 0 ? <Text className="text-[12px] text-amber-400/80"> +<Text className="font-sans-bold text-[12px] text-amber-400">{lastBestWeight}</Text>kg</Text> : null}
+            {' — '}
+            {lastBestWeight > 0 ? `intenta +${(lastBestWeight + 2.5).toFixed(1)}kg o +1 rep` : `intenta ${lastBestReps + 1} reps`}
           </Text>
         </View>
       )}
 
       {/* Nota del ejercicio */}
       {exercise.note ? (
-        <View className="mb-5 rounded-md border-l-[3px] border-lime/30 bg-muted/40 px-3.5 py-2.5">
-          <Text className="text-[13px] italic leading-5 text-muted-foreground">{exercise.note}</Text>
+        <View className="mb-5 rounded-md border-l-[3px] border-lime/20 bg-muted/30 px-3.5 py-2.5">
+          <Text className="font-sans-italic text-[13px] leading-5 text-muted-foreground">{exercise.note}</Text>
         </View>
       ) : null}
 
       {/* Historial reciente */}
       {recentLogs.length > 0 && (
         <View className="mb-5">
+          <Text className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">Últimas sesiones</Text>
           {recentLogs.map((log, i) => (
             <Text key={i} className="mb-0.5 text-xs text-muted-foreground/60" numberOfLines={1}>
-              {log.date}  {log.sets?.map((s: SetData, j: number) =>
+              <Text className="font-mono text-xs text-muted-foreground/30">{log.date}</Text>
+              {'  '}
+              {log.sets?.map((s: SetData, j: number) =>
                 `${j + 1}: ${s.reps}${s.weight ? ` +${s.weight}kg` : ''}`
               ).join('  ')}
             </Text>
@@ -379,7 +385,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           className="items-center rounded-lg bg-lime/15 py-[18px] active:bg-lime/25"
           accessibilityLabel={`${t('session.set')} ${defaultReps}`}
         >
-          <Text className="text-sm font-bold tracking-[1.5px] text-lime">+ {t('session.set').toUpperCase()} — {defaultReps}</Text>
+          <Text className="font-mono-bold text-sm tracking-[1.5px] text-lime">+ {t('session.set').toUpperCase()} — {defaultReps}</Text>
         </Pressable>
 
         <View className="flex-row gap-2">
@@ -390,7 +396,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
               editOpen ? 'border-lime/40 bg-lime/10' : 'border-border',
             )}
           >
-            <Text className={cn('text-[10px] tracking-wide', editOpen ? 'text-lime' : 'text-muted-foreground')}>
+            <Text className={cn('font-mono text-[10px] tracking-wide', editOpen ? 'text-lime' : 'text-muted-foreground')}>
               {t('session.editBtn')}
             </Text>
           </Pressable>
@@ -405,6 +411,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
         {editOpen && (
           <View className="rounded-lg border border-lime/20 bg-lime/5 px-3.5 py-3">
+            <Text className="mb-2.5 font-mono text-[9px] uppercase tracking-[2px] text-lime">Registrar serie personalizada</Text>
             <View className="flex-row gap-2">
               <Input
                 value={customReps}
@@ -438,7 +445,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
                 maxLength={200}
               />
               <Button onPress={handleForm} disabled={!customReps} size="sm" className="h-10 bg-lime px-5 active:bg-lime/90">
-                <Text className="text-[11px] font-bold text-lime-foreground">{t('common.save').toUpperCase()}</Text>
+                <Text className="font-mono-bold text-[11px] text-lime-foreground">{t('common.save').toUpperCase()}</Text>
               </Button>
             </View>
           </View>
@@ -466,13 +473,13 @@ function SectionTransitionScreen({ type, onContinue, onSkip }: {
   return (
     <View className="flex-1 items-center justify-center gap-6 px-8">
       <Text className="text-center text-lg text-muted-foreground">{doneMsg}</Text>
-      <Text className="text-center text-3xl font-bold uppercase text-foreground">{nextSection}</Text>
+      <Text className="text-center font-bebas text-4xl leading-none tracking-[2px] text-foreground">{nextSection}</Text>
       <Button size="lg" className="min-w-[200px] bg-lime active:bg-lime/90" onPress={onContinue}>
-        <Text className="font-bold text-lime-foreground">{t('warmupCooldown.transitions.continue').toUpperCase()}</Text>
+        <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('warmupCooldown.transitions.continue').toUpperCase()}</Text>
       </Button>
       {onSkip && (
         <Button variant="outline" onPress={onSkip}>
-          <Text className="text-xs text-muted-foreground">{t('warmupCooldown.skip.cooldown')}</Text>
+          <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">{t('warmupCooldown.skip.cooldown')}</Text>
         </Button>
       )}
     </View>
@@ -491,13 +498,13 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: {
   const [note, setNote] = useState('')
   return (
     <View className="flex-1 items-center justify-center gap-6 px-5">
-      <Text className="text-center text-4xl font-bold text-emerald-500">¡Último set listo!</Text>
-      <Text className="text-[11px] tracking-[2px] text-muted-foreground">
+      <Text className="text-center font-bebas text-5xl leading-none tracking-[2px] text-emerald-500">¡Último set listo!</Text>
+      <Text className="font-mono text-[11px] tracking-[2px] text-muted-foreground">
         {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
       </Text>
 
       <View className="w-full max-w-[420px] rounded-xl border border-border bg-card px-5 py-5">
-        <Text className="mb-2.5 text-[10px] uppercase tracking-[2px] text-lime">{t('session.note')}</Text>
+        <Text className="mb-2.5 font-mono text-[10px] uppercase tracking-[2px] text-lime">{t('session.note')}</Text>
         <Input
           value={note}
           onChangeText={setNote}
@@ -509,10 +516,10 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: {
         />
         <View className="mt-3 flex-row gap-2.5">
           <Button className="bg-lime px-6 active:bg-lime/90" onPress={() => onSave(note.trim())}>
-            <Text className="font-bold text-lime-foreground">{t('common.save').toUpperCase()}</Text>
+            <Text className="font-bebas text-lg tracking-wide text-lime-foreground">{t('common.save').toUpperCase()}</Text>
           </Button>
           <Button variant="outline" onPress={() => onSave('')}>
-            <Text className="text-[11px] text-muted-foreground">{t('warmupCooldown.skip.remaining').toUpperCase()}</Text>
+            <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">{t('warmupCooldown.skip.remaining').toUpperCase()}</Text>
           </Button>
         </View>
       </View>
@@ -543,23 +550,23 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
       </View>
 
       <View className="items-center">
-        <Text className="text-center text-4xl font-bold tracking-[2px] text-foreground">
+        <Text className="text-center font-bebas text-5xl leading-none tracking-[3px] text-foreground">
           {t('notify.sessionComplete')}
         </Text>
-        <Text className="mt-2 text-[11px] tracking-[2px] text-muted-foreground">
+        <Text className="mt-2.5 font-mono text-[11px] tracking-[2px] text-muted-foreground">
           {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
         </Text>
       </View>
 
       {quote && (
         <View className="max-w-[380px] items-center">
-          <Text className="mb-2.5 text-center text-base italic leading-6 text-foreground/70">"{quote.q}"</Text>
-          <Text className="text-[11px] text-muted-foreground">— {quote.a}</Text>
+          <Text className="mb-2.5 text-center font-sans-italic text-base leading-6 text-foreground/70">"{quote.q}"</Text>
+          <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">— {quote.a}</Text>
         </View>
       )}
 
-      <Button size="lg" className="min-w-[200px] bg-lime active:bg-lime/90" onPress={onDone}>
-        <Text className="font-bold text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
+      <Button size="lg" className="min-w-[200px] bg-lime px-9 active:bg-lime/90" onPress={onDone}>
+        <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
       </Button>
     </Pressable>
   )
@@ -752,13 +759,13 @@ export default function SessionView({
             </Pressable>
 
             <View className="flex-1 items-center px-2">
-              <Text className="text-[10px] tracking-[2px] text-muted-foreground" numberOfLines={1}>
+              <Text className="font-mono text-[10px] tracking-[2px] text-muted-foreground" numberOfLines={1}>
                 {phase === 'exercise' && currentStep ? currentStep.exercise.name.toUpperCase()
                   : phase === 'rest' ? t('session.resting').toUpperCase()
                   : phase === 'note' ? t('warmupCooldown.history.completed').toUpperCase()
                   : ''}
               </Text>
-              <Text className="text-[9px] tabular-nums text-muted-foreground/60">
+              <Text className="font-mono text-[9px] tabular-nums text-muted-foreground/60">
                 {phase === 'note' ? exerciseBoundaries.length : currentExerciseIndex + 1}/{exerciseBoundaries.length} · {phase === 'note' ? steps.length : stepIdx + 1}/{steps.length}
               </Text>
             </View>
@@ -779,12 +786,12 @@ export default function SessionView({
           {/* Saltar sección */}
           {isInWarmup && (
             <Pressable onPress={handleSkipWarmup} className="items-center border-b border-border py-1.5">
-              <Text className="text-[10px] text-muted-foreground">{t('warmupCooldown.skip.warmup')}</Text>
+              <Text className="font-mono text-[10px] tracking-wide text-muted-foreground">{t('warmupCooldown.skip.warmup')}</Text>
             </Pressable>
           )}
           {isInCooldown && (
             <Pressable onPress={handleSkipCooldown} className="items-center border-b border-border py-1.5">
-              <Text className="text-[10px] text-muted-foreground">{t('warmupCooldown.skip.remaining')}</Text>
+              <Text className="font-mono text-[10px] tracking-wide text-muted-foreground">{t('warmupCooldown.skip.remaining')}</Text>
             </Pressable>
           )}
         </View>

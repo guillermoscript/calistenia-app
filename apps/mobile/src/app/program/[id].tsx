@@ -116,7 +116,7 @@ export default function ProgramDetailScreen() {
             <Card>
               <CardContent className="gap-2 py-4">
                 <View className="flex-row flex-wrap items-center gap-2">
-                  <Text className="text-xl font-bold text-foreground">{program.name}</Text>
+                  <Text className="font-bebas text-3xl leading-none text-foreground">{program.name}</Text>
                   {program.is_official && <BadgeCheck size={16} color="hsl(74 90% 45%)" />}
                 </View>
                 <Text className="text-sm leading-5 text-muted-foreground">{program.description}</Text>
@@ -133,7 +133,7 @@ export default function ProgramDetailScreen() {
 
             {/* Semana tipo */}
             <View className="gap-2">
-              <Text className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
                 {t('workout.trainingDay')}
               </Text>
               {days === null ? (
@@ -145,10 +145,10 @@ export default function ProgramDetailScreen() {
                   <View key={day.dayId} className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
                     <View className="size-2.5 rounded-full" style={{ backgroundColor: day.color }} />
                     <View className="flex-1">
-                      <Text className="font-semibold text-foreground">{day.name}</Text>
+                      <Text className="font-sans-medium text-foreground">{day.name}</Text>
                       <Text className="text-xs text-muted-foreground">{day.focus}</Text>
                     </View>
-                    <Text className="text-[10px] uppercase text-muted-foreground">{day.type}</Text>
+                    <Text className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">{day.type}</Text>
                   </View>
                 ))
               )}
@@ -162,7 +162,7 @@ export default function ProgramDetailScreen() {
               </Button>
             ) : (
               <Button size="lg" className={cn('bg-lime active:bg-lime/90')} onPress={handleSelect} disabled={selecting}>
-                <Text className="font-bold text-lime-foreground">
+                <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">
                   {selecting ? t('common.loading') : t('programs.useProgram')}
                 </Text>
               </Button>
@@ -177,7 +177,7 @@ export default function ProgramDetailScreen() {
 function Chip({ label }: { label: string }) {
   return (
     <View className="rounded-full bg-muted px-2.5 py-1">
-      <Text className="text-[11px] capitalize text-muted-foreground">{label}</Text>
+      <Text className="font-mono text-[10px] capitalize tracking-wide text-muted-foreground">{label}</Text>
     </View>
   )
 }

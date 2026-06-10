@@ -16,13 +16,14 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.text,
+        // Acento lime para el tab activo, como el indicador del sidebar web
+        tabBarActiveTintColor: colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)',
         tabBarInactiveTintColor: colorScheme === 'dark' ? 'hsl(0 0% 45%)' : 'hsl(0 0% 55%)',
         tabBarStyle: {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
         },
-        tabBarLabelStyle: { fontSize: 10 },
+        tabBarLabelStyle: { fontSize: 9, fontFamily: 'JetBrainsMono_400Regular', letterSpacing: 0.5, textTransform: 'uppercase' },
       }}
     >
       <Tabs.Screen

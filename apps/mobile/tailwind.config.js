@@ -55,6 +55,19 @@ module.exports = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      // En RN cada peso es una familia aparte (src/lib/fonts.ts) — usar estas
+      // clases en vez de font-bold/font-semibold para que Android no haga
+      // synthetic bold sobre la regular.
+      fontFamily: {
+        bebas: ['BebasNeue_400Regular'],
+        sans: ['DMSans_400Regular'],
+        'sans-italic': ['DMSans_400Regular_Italic'],
+        'sans-medium': ['DMSans_500Medium'],
+        'sans-bold': ['DMSans_700Bold'],
+        mono: ['JetBrainsMono_400Regular'],
+        'mono-semibold': ['JetBrainsMono_600SemiBold'],
+        'mono-bold': ['JetBrainsMono_700Bold'],
+      },
       borderWidth: {
         hairline: hairlineWidth(),
       },

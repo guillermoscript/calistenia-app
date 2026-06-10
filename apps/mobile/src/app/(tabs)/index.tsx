@@ -13,7 +13,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { logout } from '@calistenia/core/lib/pocketbase'
-import { localDay, localHour, todayStr } from '@calistenia/core/lib/dateUtils'
+import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
 import type { DayId, WeekDay } from '@calistenia/core/types'
 
 const DAY_IDS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'] as const
@@ -23,6 +23,8 @@ const DAY_IDS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'] as const
  * cualquier otro tipo (incluido day_type vacío en programas antiguos) es fuerza.
  */
 const NON_STRENGTH_TYPES = new Set(['rest', 'cardio', 'yoga', 'circuit'])
+
+const LIME = 'hsl(74 90% 45%)'
 
 function WeekStrip({ weekDays, todayId, isDone, phase }: {
   weekDays: WeekDay[]
@@ -44,12 +46,12 @@ function WeekStrip({ weekDays, todayId, isDone, phase }: {
               isToday ? 'border-lime/40 bg-lime/10' : 'border-border bg-card',
             )}
           >
-            <Text className={cn('text-[10px] uppercase', isToday ? 'text-lime' : 'text-muted-foreground')}>
-              {t(`day.${day.id}`)}
+            <Text className={cn('font-mono text-[9px] uppercase tracking-[1px]', isToday ? 'text-lime' : 'text-muted-foreground')}>
+              {t(`day.${day.id}`).slice(0, 3)}
             </Text>
             <View className="mt-1 h-4 items-center justify-center">
               {done ? (
-                <Check size={14} color="hsl(74 90% 45%)" />
+                <Check size={14} color={LIME} />
               ) : day.type === 'rest' ? (
                 <Moon size={12} color="#888899" />
               ) : (
@@ -64,7 +66,7 @@ function WeekStrip({ weekDays, todayId, isDone, phase }: {
 }
 
 export default function TodayScreen() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
   const { settings, activeProgram, weekDays, phases, programsReady } = useWorkoutState()
@@ -82,8 +84,18 @@ export default function TodayScreen() {
   const greeting = hour < 12 ? t('dashboard.greeting.morning') : hour < 19 ? t('dashboard.greeting.afternoon') : t('dashboard.greeting.evening')
   const phaseMeta = phases.find(p => p.id === phase)
 
+  const todayFormatted = new Date().toLocaleDateString(i18n.language, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+  const totalWeeks = activeProgram?.duration_weeks || 26
+  const daysElapsed = settings.startDate ? diffDays(todayStr(), settings.startDate) : 0
+  const weekElapsed = Math.min(Math.floor(daysElapsed / 7) + 1, totalWeeks)
+
   const isStrengthDay = !!todayMeta && !NON_STRENGTH_TYPES.has(todayMeta.type)
   const canTrainToday = isStrengthDay && !!workout && workout.exercises.length > 0
+  const isResume = session.isActive && session.workoutKey === workoutKey
 
   const handleStart = () => {
     if (!workout) return
@@ -104,12 +116,16 @@ export default function TodayScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="px-4 pb-8 gap-4">
-        {/* Header */}
-        <View className="flex-row items-center justify-between pt-2">
-          <View>
-            <Text className="text-sm text-muted-foreground">{greeting}</Text>
-            <Text className="text-xl font-bold text-foreground">
-              {user?.display_name || user?.email || ''}
+        {/* ── Welcome header — mismo patrón que DashboardPage web ── */}
+        <View className="flex-row items-start justify-between pt-2">
+          <View className="flex-1 pr-2">
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              {todayFormatted}
+            </Text>
+            <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{greeting}</Text>
+            <Text className="mt-1 text-sm text-muted-foreground">
+              {t('common.week')} <Text className="text-sm font-sans-bold text-foreground">{weekElapsed}</Text> {t('common.of')} {totalWeeks}
+              {activeProgram ? <Text className="text-sm text-lime"> · {activeProgram.name}</Text> : null}
             </Text>
           </View>
           <Pressable onPress={handleLogout} hitSlop={8} accessibilityLabel={t('nav.signOut')} className="p-2">
@@ -122,75 +138,78 @@ export default function TodayScreen() {
           <WeekStrip weekDays={weekDays} todayId={todayId} isDone={isWorkoutDone} phase={phase} />
         )}
 
-        {/* Hero: workout de hoy */}
+        {/* ── Hero: workout de hoy — card clicable como la web ── */}
         {!programsReady ? (
-          <Card><CardContent className="py-10 items-center"><Text className="text-muted-foreground">{t('common.loading')}</Text></CardContent></Card>
+          <Card><CardContent className="items-center py-10"><Text className="text-muted-foreground">{t('common.loading')}</Text></CardContent></Card>
         ) : !activeProgram ? (
           <Card>
             <CardContent className="items-center gap-3 py-8">
-              <Text className="text-center text-base font-semibold text-foreground">{t('programs.chooseToStart')}</Text>
+              <Text className="text-center font-bebas text-2xl text-foreground">{t('programs.chooseToStart')}</Text>
               <Button onPress={() => router.push('/programs')}>
                 <Text>{t('nav.programs')}</Text>
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <Card className={cn(doneToday && 'border-lime/30')}>
-            <CardContent className="gap-3 py-5">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                  {t('dashboard.todayWorkout')}
+          <Pressable
+            onPress={canTrainToday && !doneToday ? handleStart : undefined}
+            className={cn(
+              'rounded-xl border-2 p-5',
+              doneToday
+                ? 'border-emerald-500/30 bg-emerald-500/5'
+                : canTrainToday
+                  ? 'border-lime/30 bg-lime/5 active:scale-[0.99]'
+                  : 'border-border bg-card',
+            )}
+            accessibilityRole={canTrainToday && !doneToday ? 'button' : undefined}
+          >
+            <View className="flex-row items-center justify-between gap-4">
+              <View className="flex-1">
+                <Text className="mb-1 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                  {todayMeta?.type === 'rest' ? t('dashboard.todayRest') : t('dashboard.todayWorkout')}
                 </Text>
-                {phaseMeta && (
-                  <View className="rounded-full bg-muted px-2.5 py-0.5">
-                    <Text className="text-[10px] text-muted-foreground">{t('workout.phaseLabel', { phase })}</Text>
-                  </View>
-                )}
-              </View>
-
-              <View>
-                <Text className="text-2xl font-bold text-foreground">
-                  {workout?.title || todayMeta?.focus || t('dashboard.restDay')}
+                <Text
+                  className={cn(
+                    'font-bebas text-3xl leading-none',
+                    doneToday ? 'text-emerald-500' : canTrainToday ? 'text-lime' : 'text-muted-foreground',
+                  )}
+                >
+                  {doneToday
+                    ? t('dashboard.completed')
+                    : todayMeta?.type === 'rest'
+                      ? t('dashboard.restDay')
+                      : workout?.title || todayMeta?.focus || t('dashboard.train')}
                 </Text>
-                {todayMeta && (
-                  <Text className="mt-0.5 text-sm text-muted-foreground">
-                    {todayMeta.name} · {todayMeta.focus}
-                  </Text>
-                )}
-                {canTrainToday && (
-                  <Text className="mt-1 text-xs text-muted-foreground">
-                    {t('workout.exerciseCount', { count: workout!.exercises.length })}
+                <Text className="mt-1.5 text-xs text-muted-foreground">
+                  {activeProgram.name}{phaseMeta ? ` · ${t('workout.phaseLabel', { phase })}` : ''}
+                  {canTrainToday && !doneToday ? ` · ${t('workout.exerciseCount', { count: workout!.exercises.length })}` : ''}
+                </Text>
+                {isResume && !doneToday && (
+                  <Text className="mt-1 font-mono text-[10px] uppercase tracking-[2px] text-lime">
+                    {t('warmupCooldown.transitions.continue')}
                   </Text>
                 )}
               </View>
 
               {doneToday ? (
-                <View className="flex-row items-center gap-2 rounded-lg bg-lime/10 px-4 py-3">
-                  <Check size={16} color="hsl(74 90% 45%)" />
-                  <Text className="font-semibold text-lime">{t('workout.completedToday')}</Text>
+                <View className="size-12 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                  <Check size={22} color="#10b981" />
                 </View>
-              ) : canTrainToday ? (
-                <Button size="lg" className="bg-lime active:bg-lime/90" onPress={handleStart}>
-                  <View className="flex-row items-center gap-2">
-                    <Play size={16} color="hsl(0 0% 8%)" fill="hsl(0 0% 8%)" />
-                    <Text className="font-bold text-lime-foreground">
-                      {session.isActive && session.workoutKey === workoutKey ? t('warmupCooldown.transitions.continue').toUpperCase() : t('dashboard.train')}
-                    </Text>
-                  </View>
-                </Button>
               ) : todayMeta?.type === 'rest' ? (
-                <View className="rounded-lg bg-muted/50 px-4 py-3">
-                  <Text className="text-sm text-muted-foreground">{t('workout.restDayHint')}</Text>
+                <Text className="text-3xl">😴</Text>
+              ) : canTrainToday ? (
+                <View className="size-12 shrink-0 items-center justify-center rounded-full bg-lime/10">
+                  <Play size={22} color={LIME} fill={LIME} />
                 </View>
-              ) : (
-                <View className="rounded-lg bg-muted/50 px-4 py-3">
-                  <Text className="text-sm text-muted-foreground">
-                    {todayMeta?.focus} — {t('programs.contentComingSoon')}
-                  </Text>
-                </View>
-              )}
-            </CardContent>
-          </Card>
+              ) : null}
+            </View>
+
+            {!doneToday && !canTrainToday && todayMeta?.type !== 'rest' && (
+              <Text className="mt-3 text-sm text-muted-foreground">
+                {todayMeta?.focus} — {t('programs.contentComingSoon')}
+              </Text>
+            )}
+          </Pressable>
         )}
 
         {/* Otro día: entrena el que quieras */}
@@ -205,7 +224,7 @@ export default function TodayScreen() {
           <StatCard label={t('profile.sessions', { defaultValue: 'Sesiones' })} value={String(getTotalSessions())} />
         </View>
 
-        <Text className="text-center text-[10px] text-muted-foreground/50">{todayStr()}</Text>
+        <Text className="text-center font-mono text-[9px] tracking-[2px] text-muted-foreground/50">{todayStr()}</Text>
       </ScrollView>
     </SafeAreaView>
   )
@@ -215,8 +234,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <Card className="flex-1">
       <CardContent className="items-center py-4">
-        <Text className="text-xl font-bold text-foreground">{value}</Text>
-        <Text className="mt-0.5 text-[11px] text-muted-foreground">{label}</Text>
+        <Text className="font-bebas text-2xl leading-none text-foreground">{value}</Text>
+        <Text className="mt-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground" numberOfLines={1}>{label}</Text>
       </CardContent>
     </Card>
   )
@@ -234,7 +253,7 @@ function OtherDays({ phase, todayId, weekDays }: { phase: number; todayId: DayId
 
   return (
     <View className="gap-2">
-      <Text className="text-[11px] uppercase tracking-widest text-muted-foreground">{t('workout.chooseWorkout')}</Text>
+      <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('workout.chooseWorkout')}</Text>
       {trainable.map(day => {
         const w = getWorkout(phase, day.id)
         if (!w || w.exercises.length === 0) return null
@@ -251,12 +270,12 @@ function OtherDays({ phase, todayId, weekDays }: { phase: number; todayId: DayId
             className="flex-row items-center justify-between rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
           >
             <View className="flex-1">
-              <Text className="font-semibold text-foreground">{w.title}</Text>
-              <Text className="text-xs text-muted-foreground">
+              <Text className="font-sans-medium text-foreground">{w.title}</Text>
+              <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
                 {day.name} · {t('workout.exerciseCount', { count: w.exercises.length })}
               </Text>
             </View>
-            {done ? <Check size={16} color="hsl(74 90% 45%)" /> : <Play size={16} color="hsl(0 0% 55%)" />}
+            {done ? <Check size={16} color={LIME} /> : <Play size={16} color="hsl(0 0% 55%)" />}
           </Pressable>
         )
       })}

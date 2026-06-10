@@ -46,8 +46,8 @@ export default function ExerciseDetailScreen() {
           <>
             <Card>
               <CardContent className="gap-3 py-4">
-                <Text className="text-2xl font-bold text-foreground">{localize(ex.name, locale)}</Text>
-                <Text className="text-sm text-muted-foreground">{localize(ex.muscles, locale)}</Text>
+                <Text className="font-bebas text-3xl leading-none text-foreground">{localize(ex.name, locale)}</Text>
+                <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">{localize(ex.muscles, locale)}</Text>
 
                 <View className="flex-row flex-wrap gap-2">
                   <Chip label={ex.category.replace(/_/g, ' ')} />
@@ -66,8 +66,8 @@ export default function ExerciseDetailScreen() {
             {localize(ex.note, locale) ? (
               <Card>
                 <CardContent className="py-4">
-                  <Text className="mb-1.5 text-[10px] uppercase tracking-[2px] text-lime">{t('session.note')}</Text>
-                  <Text className="text-sm italic leading-5 text-muted-foreground">{localize(ex.note, locale)}</Text>
+                  <Text className="mb-1.5 font-mono text-[10px] uppercase tracking-[2px] text-lime">{t('session.note')}</Text>
+                  <Text className="font-sans-italic text-sm leading-5 text-muted-foreground">{localize(ex.note, locale)}</Text>
                 </CardContent>
               </Card>
             ) : null}
@@ -96,7 +96,7 @@ export default function ExerciseDetailScreen() {
 function Chip({ label }: { label: string }) {
   return (
     <View className="rounded-full bg-muted px-2.5 py-1">
-      <Text className="text-[11px] capitalize text-muted-foreground">{label}</Text>
+      <Text className="font-mono text-[10px] capitalize tracking-wide text-muted-foreground">{label}</Text>
     </View>
   )
 }
@@ -104,8 +104,8 @@ function Chip({ label }: { label: string }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-1 items-center">
-      <Text className="text-lg font-bold text-foreground">{value}</Text>
-      <Text className="text-[10px] uppercase text-muted-foreground">{label}</Text>
+      <Text className="font-bebas text-2xl leading-none text-foreground">{value}</Text>
+      <Text className="mt-1 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">{label}</Text>
     </View>
   )
 }

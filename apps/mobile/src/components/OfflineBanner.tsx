@@ -23,7 +23,7 @@ export default function OfflineBanner() {
       style={{ paddingTop: insets.top }}
       pointerEvents="none"
     >
-      <Text className="px-4 py-1.5 text-center text-sm text-amber-400">
+      <Text className="px-4 py-1.5 text-center font-mono text-xs text-amber-400">
         {t('offline.message')}
       </Text>
     </View>

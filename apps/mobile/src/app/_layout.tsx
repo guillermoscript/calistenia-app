@@ -5,6 +5,7 @@ import '../global.css'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Stack, ThemeProvider } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { colorScheme as nwColorScheme, useColorScheme } from 'nativewind'
 import { PortalHost } from '@rn-primitives/portal'
@@ -13,6 +14,7 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 
 import { Sentry } from '@/lib/instrument'
+import { FONTS } from '@/lib/fonts'
 import { pbAuthHydration } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
 import { initI18n } from '@/lib/i18n'
@@ -42,6 +44,8 @@ function Providers({ children }: { children: ReactNode }) {
 function RootLayout() {
   const { colorScheme } = useColorScheme()
   const [ready, setReady] = useState(false)
+  // fontError: seguir sin fuentes custom antes que quedarse en blanco
+  const [fontsLoaded, fontError] = useFonts(FONTS)
 
   // Reintenta acciones encoladas offline al recuperar conexión (igual que web).
   useEffect(() => setupAutoSync(pb), [])
@@ -53,7 +57,6 @@ function RootLayout() {
       await Promise.all([hydrateStorage(), pbAuthHydration])
       initI18n()
       if (!cancelled) setReady(true)
-      SplashScreen.hideAsync()
     }
     boot()
     return () => {
@@ -61,7 +64,12 @@ function RootLayout() {
     }
   }, [])
 
-  if (!ready) return null
+  const fontsReady = fontsLoaded || !!fontError
+  useEffect(() => {
+    if (ready && fontsReady) SplashScreen.hideAsync()
+  }, [ready, fontsReady])
+
+  if (!ready || !fontsReady) return null
 
   return (
     <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>

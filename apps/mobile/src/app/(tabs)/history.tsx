@@ -51,7 +51,7 @@ export default function HistoryScreen() {
         contentContainerClassName="px-4 pb-8 gap-2"
         ListHeaderComponent={
           <View className="gap-4 pb-3 pt-2">
-            <Text className="text-2xl font-bold text-foreground">{t('progress.title')}</Text>
+            <Text className="font-bebas text-4xl leading-none text-foreground">{t('progress.title')}</Text>
 
             {/* Stats */}
             <View className="flex-row gap-3">
@@ -63,7 +63,7 @@ export default function HistoryScreen() {
             {/* Actividad del mes */}
             <Card>
               <CardContent className="py-4">
-                <Text className="mb-2.5 text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                <Text className="mb-2.5 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
                   {t('common.month')}
                 </Text>
                 <View className="flex-row flex-wrap gap-1.5">
@@ -86,7 +86,7 @@ export default function HistoryScreen() {
             </Card>
 
             {sessions.length > 0 && (
-              <Text className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
                 {t('progress.recentSessions')}
               </Text>
             )}
@@ -104,9 +104,9 @@ export default function HistoryScreen() {
               <Check size={15} color="hsl(74 90% 45%)" />
             </View>
             <View className="flex-1">
-              <Text className="font-semibold text-foreground" numberOfLines={1}>{titleFor(item)}</Text>
+              <Text className="font-sans-medium text-foreground" numberOfLines={1}>{titleFor(item)}</Text>
               <Text className="text-xs text-muted-foreground">
-                {relativeDate(item.date)}
+                <Text className="font-mono text-[11px] text-muted-foreground/70">{relativeDate(item.date)}</Text>
                 {item.note ? ` · ${item.note}` : ''}
               </Text>
             </View>
@@ -121,8 +121,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <Card className="flex-1">
       <CardContent className="items-center py-3.5">
-        <Text className="text-xl font-bold text-foreground">{value}</Text>
-        <Text className="mt-0.5 text-center text-[10px] text-muted-foreground" numberOfLines={1}>{label}</Text>
+        <Text className="font-bebas text-2xl leading-none text-foreground">{value}</Text>
+        <Text className="mt-1.5 text-center font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground" numberOfLines={1}>{label}</Text>
       </CardContent>
     </Card>
   )
