@@ -19,11 +19,13 @@ if (Platform.OS === 'android') {
     // El service vive mientras la notificación ongoing exista
     notifee.registerForegroundService(() => new Promise(() => {}))
 
-    // Botones de la notificación de sesión → avanzar serie / saltar descanso
+    // Botones de notificaciones → entreno (avanzar serie) y cardio (pausa/reanudar)
     const { dispatchLiveSessionAction } = require('./src/lib/live-session')
+    const { dispatchCardioLiveAction } = require('./src/lib/cardio-live')
     const onNotifeeEvent = ({ type, detail }) => {
       if (type === EventType.ACTION_PRESS && detail.pressAction?.id) {
         dispatchLiveSessionAction(detail.pressAction.id)
+        dispatchCardioLiveAction(detail.pressAction.id)
       }
     }
     notifee.onForegroundEvent(onNotifeeEvent)
