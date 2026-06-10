@@ -1,3 +1,5 @@
+'use no memo'
+// React Compiler inyecta useMemoCache y rompe el renderer headless de react-native-android-widget
 import React from 'react'
 import { FlexWidget, TextWidget } from 'react-native-android-widget'
 import type { WidgetSnapshot } from '../lib/widget-snapshot'

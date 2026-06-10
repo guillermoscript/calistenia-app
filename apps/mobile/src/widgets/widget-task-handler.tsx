@@ -1,3 +1,5 @@
+'use no memo'
+// React Compiler inyecta useMemoCache y rompe el renderer headless de react-native-android-widget
 import React from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget'
