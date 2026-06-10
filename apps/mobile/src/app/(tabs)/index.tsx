@@ -3,7 +3,7 @@ import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Play, Check, Moon } from 'lucide-react-native'
+import { Play, Check, Moon, MapPin } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -66,7 +66,7 @@ function WeekStrip({ weekDays, todayId, isDone, phase }: {
 export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
-  const { settings, activeProgram, weekDays, phases, programsReady } = useWorkoutState()
+  const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs } = useWorkoutState()
   const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getTotalSessions } = useWorkoutActions()
   const session = useActiveSession()
 
@@ -93,6 +93,21 @@ export default function TodayScreen() {
   const isStrengthDay = !!todayMeta && !NON_STRENGTH_TYPES.has(todayMeta.type)
   const canTrainToday = isStrengthDay && !!workout && workout.exercises.length > 0
   const isResume = session.isActive && session.workoutKey === workoutKey
+
+  // Día de cardio del programa: la card abre /cardio con los targets configurados
+  const isCardioDay = todayMeta?.type === 'cardio'
+  const cardioConfig = cardioDayConfigs[workoutKey]
+  const handleStartCardio = () => {
+    router.push({
+      pathname: '/cardio',
+      params: {
+        ...(activeProgram ? { program: activeProgram.id, dayKey: workoutKey } : {}),
+        ...(cardioConfig?.activityType ? { activity: cardioConfig.activityType } : {}),
+        ...(cardioConfig?.targetDistanceKm ? { targetKm: String(cardioConfig.targetDistanceKm) } : {}),
+        ...(cardioConfig?.targetDurationMin ? { targetMin: String(cardioConfig.targetDurationMin) } : {}),
+      },
+    })
+  }
 
   const handleStart = () => {
     if (!workout) return
@@ -139,16 +154,18 @@ export default function TodayScreen() {
           </Card>
         ) : (
           <Pressable
-            onPress={canTrainToday && !doneToday ? handleStart : undefined}
+            onPress={canTrainToday && !doneToday ? handleStart : isCardioDay ? handleStartCardio : undefined}
             className={cn(
               'rounded-xl border-2 p-5',
               doneToday
                 ? 'border-emerald-500/30 bg-emerald-500/5'
                 : canTrainToday
                   ? 'border-lime/30 bg-lime/5 active:scale-[0.99]'
-                  : 'border-border bg-card',
+                  : isCardioDay
+                    ? 'border-emerald-400/30 bg-emerald-400/5 active:scale-[0.99]'
+                    : 'border-border bg-card',
             )}
-            accessibilityRole={canTrainToday && !doneToday ? 'button' : undefined}
+            accessibilityRole={(canTrainToday || isCardioDay) && !doneToday ? 'button' : undefined}
           >
             <View className="flex-row items-center justify-between gap-4">
               <View className="flex-1">
@@ -158,14 +175,16 @@ export default function TodayScreen() {
                 <Text
                   className={cn(
                     'font-bebas text-3xl leading-none',
-                    doneToday ? 'text-emerald-500' : canTrainToday ? 'text-lime' : 'text-muted-foreground',
+                    doneToday ? 'text-emerald-500' : canTrainToday ? 'text-lime' : isCardioDay ? 'text-emerald-400' : 'text-muted-foreground',
                   )}
                 >
                   {doneToday
                     ? t('dashboard.completed')
                     : todayMeta?.type === 'rest'
                       ? t('dashboard.restDay')
-                      : workout?.title || todayMeta?.focus || t('dashboard.train')}
+                      : isCardioDay
+                        ? `${t('cardio.title')} · ${t(`cardio.${cardioConfig?.activityType ?? 'running'}`)}`
+                        : workout?.title || todayMeta?.focus || t('dashboard.train')}
                 </Text>
                 <Text className="mt-1.5 text-xs text-muted-foreground">
                   {activeProgram.name}{phaseMeta ? ` · ${t('workout.phaseLabel', { phase })}` : ''}
@@ -188,10 +207,23 @@ export default function TodayScreen() {
                 <View className="size-12 shrink-0 items-center justify-center rounded-full bg-lime/10">
                   <Play size={22} color={LIME} fill={LIME} />
                 </View>
+              ) : isCardioDay ? (
+                <View className="size-12 shrink-0 items-center justify-center rounded-full bg-emerald-400/10">
+                  <MapPin size={22} color="#34d399" />
+                </View>
               ) : null}
             </View>
 
-            {!doneToday && !canTrainToday && todayMeta?.type !== 'rest' && (
+            {isCardioDay && !doneToday && (cardioConfig?.targetDistanceKm || cardioConfig?.targetDurationMin) && (
+              <Text className="mt-3 font-mono text-[10px] uppercase tracking-[2px] text-emerald-400">
+                {[
+                  cardioConfig?.targetDistanceKm ? t('cardio.targetKm', { km: cardioConfig.targetDistanceKm }) : null,
+                  cardioConfig?.targetDurationMin ? t('cardio.targetMin', { min: cardioConfig.targetDurationMin }) : null,
+                ].filter(Boolean).join(' · ')}
+              </Text>
+            )}
+
+            {!doneToday && !canTrainToday && !isCardioDay && todayMeta?.type !== 'rest' && (
               <Text className="mt-3 text-sm text-muted-foreground">
                 {todayMeta?.focus} — {t('programs.contentComingSoon')}
               </Text>
@@ -202,6 +234,27 @@ export default function TodayScreen() {
         {/* Otro día: entrena el que quieras */}
         {activeProgram && !doneToday && !canTrainToday && (
           <OtherDays phase={phase} todayId={todayId} weekDays={weekDays} />
+        )}
+
+        {/* Acceso directo a cardio GPS (también fuera de días de cardio del programa) */}
+        {!isCardioDay && (
+          <Pressable
+            onPress={() => router.push('/cardio')}
+            className="flex-row items-center justify-between rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
+          >
+            <View className="flex-row items-center gap-3">
+              <View className="size-9 items-center justify-center rounded-full bg-emerald-400/10">
+                <MapPin size={16} color="#34d399" />
+              </View>
+              <View>
+                <Text className="font-sans-medium text-foreground">{t('cardio.title')}</Text>
+                <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {t('cardio.gpsTracking')}
+                </Text>
+              </View>
+            </View>
+            <Play size={16} color="hsl(0 0% 55%)" />
+          </Pressable>
         )}
 
         {/* Stats */}

@@ -1,9 +1,11 @@
+import { View } from 'react-native'
 import { Redirect, Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Home, ClipboardList, Library, History, User } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { NAV_THEME } from '@/lib/theme'
+import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
 
 export default function TabsLayout() {
   const { t } = useTranslation()
@@ -13,6 +15,7 @@ export default function TabsLayout() {
   if (!pb.authStore.isValid) return <Redirect href="/login" />
 
   return (
+    <View className="flex-1">
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -62,5 +65,8 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+    {/* Sesión de cardio en curso: barra flotante para volver a /cardio */}
+    <ActiveCardioBar />
+    </View>
   )
 }

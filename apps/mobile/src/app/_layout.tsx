@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import { colorScheme as nwColorScheme, useColorScheme } from 'nativewind'
 import { PortalHost } from '@rn-primitives/portal'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
+import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 
@@ -22,6 +23,7 @@ import { NAV_THEME } from '@/lib/theme'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { WorkoutProvider } from '@/contexts/WorkoutContext'
 import { ActiveSessionProvider } from '@/contexts/ActiveSessionContext'
+import { CardioSessionProvider } from '@/contexts/CardioSessionContext'
 import OfflineBanner from '@/components/OfflineBanner'
 
 SplashScreen.preventAutoHideAsync()
@@ -32,10 +34,15 @@ nwColorScheme.set('system')
 function Providers({ children }: { children: ReactNode }) {
   const user = useAuthUser()
   const { getRestForExercise, setRestForExercise } = useRestPreferences(user?.id ?? null)
+  // Peso más reciente para estimar calorías de cardio (igual que la web)
+  const { getWeightHistory } = useWeight(user?.id ?? null)
+  const latestWeight = getWeightHistory(1)[0]?.weight_kg
   return (
     <WorkoutProvider userId={user?.id ?? null}>
       <ActiveSessionProvider getRestForExercise={getRestForExercise} setRestForExercise={setRestForExercise}>
-        {children}
+        <CardioSessionProvider userId={user?.id ?? null} userWeight={latestWeight}>
+          {children}
+        </CardioSessionProvider>
       </ActiveSessionProvider>
     </WorkoutProvider>
   )
