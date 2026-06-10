@@ -64,6 +64,16 @@ const SKELETONS = [
   { slug: 'planche-roadmap', name: i18n('Planche Roadmap', 'Planche Roadmap'),
     description: i18n('Progresión hacia planche. Tuck → straddle → full. Requiere base avanzada.', 'Planche progression. Tuck → straddle → full. Requires advanced baseline.'),
     duration_weeks: 16, difficulty: 'advanced', goal_type: 'skill', skill: 'planche', intensity: 'intense', days_per_week: 4, equipment_required: ['parallel_bars'], contraindications: ['wrist','shoulder','elbow'] },
+  // women-focused (3)
+  { slug: 'mujer-gluteo-tonificacion', name: i18n('Mujer · Glúteo + Tonificación', 'Women · Glutes + Toning'),
+    description: i18n('Programa femenino 4 días/sem. Glúteo, piernas y tonificación de tren superior. Bodyweight + ligas.', '4-day/week program for women. Glutes, legs, and upper-body toning. Bodyweight + bands.'),
+    duration_weeks: 12, difficulty: 'beginner', goal_type: 'fat_loss', intensity: 'moderate', days_per_week: 4, equipment_required: ['bands'], contraindications: [] },
+  { slug: 'mujer-full-body-toning', name: i18n('Mujer · Full Body Toning', 'Women · Full Body Toning'),
+    description: i18n('Tonificación balanceada para mujeres. 4 días/sem, solo peso corporal. Ideal para principiantes.', 'Balanced full-body toning for women. 4 days/week, bodyweight only. Ideal for beginners.'),
+    duration_weeks: 12, difficulty: 'beginner', goal_type: 'maintain', intensity: 'light', days_per_week: 4, equipment_required: [], contraindications: [] },
+  { slug: 'mujer-fuerza-funcional', name: i18n('Mujer · Fuerza Funcional', 'Women · Functional Strength'),
+    description: i18n('Fuerza real para mujeres: dominadas, dips y core fuerte. 4 días/sem. Requiere barra.', 'Real strength for women: pull-ups, dips, strong core. 4 days/week. Requires pull bar.'),
+    duration_weeks: 12, difficulty: 'intermediate', goal_type: 'muscle_gain', intensity: 'moderate', days_per_week: 4, equipment_required: ['pull_bar','bands'], contraindications: [] },
 ]
 
 async function api(path, opts = {}) {

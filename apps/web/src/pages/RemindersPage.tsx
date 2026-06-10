@@ -288,6 +288,11 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       const clampedH = Math.min(23, Math.max(0, h))
       const clampedM = Math.min(59, Math.max(0, m))
 
+      // Ensure notification permission is granted BEFORE saving so the
+      // useEffect → reschedule → scheduleAll chain won't bail out on the
+      // Notification.permission !== 'granted' guard.
+      await setupNotifications()
+
       if (showForm === 'meal') {
         await saveMealReminder(mealType, clampedH, clampedM, days)
       } else if (showForm === 'workout') {
@@ -308,12 +313,11 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
         }
       }
 
-      await setupNotifications()
       setShowForm(null)
-      // Explicitly reschedule after all reminders are created and state has
-      // settled — React 18 batching can delay the useEffect that normally
-      // handles this, causing newly created reminders to miss scheduling.
-      queueMicrotask(reschedule)
+      // Use setTimeout(0) instead of queueMicrotask so the callback runs
+      // after React's synchronous render/commit phase, ensuring the refs
+      // contain the newly created reminders.
+      setTimeout(reschedule, 0)
     } catch {
       setError(t('reminders.saveError'))
     } finally {

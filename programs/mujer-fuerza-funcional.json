@@ -1,0 +1,1568 @@
+{
+  "program": {
+    "name": "Mujer · Fuerza Funcional",
+    "subtitle": "Fortaleza Real: Pull-ups, Core, Potencia",
+    "description": "12 semanas de entrenamiento en calistenia enfocado en fuerza funcional. Dominamos el pull-up, construimos un core de hierro, y ganamos potencia explosiva. Diseñado para mujeres intermedias que buscan fuerza real, no solo tonificación.",
+    "difficulty": "intermediate",
+    "duration_weeks": 12,
+    "days_per_week": 4,
+    "target_equipment": ["pull_bar", "resistance_bands", "parallel_bars_optional"],
+    "color": "#F472B6"
+  },
+  "phases": [
+    {
+      "phase_number": 1,
+      "name": "Base Estructural",
+      "description": "Semanas 1-4: Control escapular, movilidad, fundamentos de tracción. Construimos los cimientos.",
+      "weeks": "1-4",
+      "color": "#F472B6",
+      "focus": "Scapular control, dead hang, band-assisted pull-ups, hollow holds, push-up quality",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Pull + Espalda",
+          "workout_title": "Fuerza de Tirón",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "arm_circles",
+              "name": {
+                "es": "Círculos de Brazos",
+                "en": "Arm Circles"
+              },
+              "sets": 2,
+              "reps": "10 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "shoulders, rotator_cuff",
+              "note": "Movilidad de hombros",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "scapular_activation",
+              "name": {
+                "es": "Activación Escapular",
+                "en": "Scapular Activation"
+              },
+              "sets": 2,
+              "reps": "8",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, scapula",
+              "note": "Preparación para tracción",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "scap_retract",
+              "name": {
+                "es": "Retracción Escapular",
+                "en": "Scapular Retraction"
+              },
+              "sets": 3,
+              "reps": "8",
+              "rest_seconds": 45,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, scapula",
+              "note": "Control escapular en barra muerta",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "neg_pullup",
+              "name": {
+                "es": "Pull-up Negativo",
+                "en": "Negative Pull-up"
+              },
+              "sets": 4,
+              "reps": "3-5 (descenso lento 3-4s)",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, arms",
+              "note": "Construye fuerza de tracción. Usa banda si es necesario.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "australian_pullup",
+              "name": {
+                "es": "Australian Pull-up",
+                "en": "Australian Pull-up"
+              },
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, biceps",
+              "note": "Tracción horizontal. Progresión accesible.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "face_pull",
+              "name": {
+                "es": "Face Pull con Banda",
+                "en": "Face Pull with Band"
+              },
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, shoulders, rear_delts",
+              "note": "Salud de hombros, postura",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "pectoral_stretch",
+              "name": {
+                "es": "Estiramiento de Pectorales",
+                "en": "Pectoral Stretch"
+              },
+              "sets": 2,
+              "reps": "30s cada lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "chest, shoulders",
+              "note": "Enfoque en movilidad",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Push + Core",
+          "workout_title": "Fuerza de Empuje",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "cat_cow",
+              "name": {
+                "es": "Cat-Cow",
+                "en": "Cat-Cow Stretch"
+              },
+              "sets": 2,
+              "reps": "8",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "spine, core, shoulders",
+              "note": "Movilidad espinal",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "shoulder_dislocates",
+              "name": {
+                "es": "Dislocaciones de Hombro",
+                "en": "Shoulder Dislocates"
+              },
+              "sets": 2,
+              "reps": "8",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "shoulders, thoracic",
+              "note": "Preparación de hombros",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "pushup_std",
+              "name": {
+                "es": "Push-up Estándar",
+                "en": "Standard Push-up"
+              },
+              "sets": 4,
+              "reps": "5-8",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "chest, shoulders, triceps, core",
+              "note": "Control y calidad sobre cantidad",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "diamond_pushup",
+              "name": {
+                "es": "Push-up Diamante",
+                "en": "Diamond Push-up"
+              },
+              "sets": 3,
+              "reps": "5-7",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "triceps, chest, core",
+              "note": "Mayor énfasis en tríceps",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "hollow_hold",
+              "name": {
+                "es": "Hollow Hold",
+                "en": "Hollow Hold"
+              },
+              "sets": 3,
+              "reps": "20-30s",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 25,
+              "muscles": "core, anterior_core",
+              "note": "Posición clave para control del cuerpo",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "plank",
+              "name": {
+                "es": "Plank",
+                "en": "Plank Hold"
+              },
+              "sets": 3,
+              "reps": "30-45s",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 35,
+              "muscles": "core, anterior_core, shoulders",
+              "note": "Core fundamental",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "child_pose",
+              "name": {
+                "es": "Postura del Niño",
+                "en": "Child's Pose"
+              },
+              "sets": 1,
+              "reps": "45-60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 50,
+              "muscles": "back, shoulders, hips",
+              "note": "Recuperación",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Piernas + Core Inferior",
+          "workout_title": "Potencia de Piernas",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "leg_swings",
+              "name": {
+                "es": "Oscilaciones de Pierna",
+                "en": "Leg Swings"
+              },
+              "sets": 2,
+              "reps": "10 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "hips, hamstrings, quads",
+              "note": "Movilidad de cadera",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "hip_circles",
+              "name": {
+                "es": "Círculos de Cadera",
+                "en": "Hip Circles"
+              },
+              "sets": 2,
+              "reps": "8 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "hips",
+              "note": "Preparación articular",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "pistol_prog",
+              "name": {
+                "es": "Sentadilla Pistol - Progresión",
+                "en": "Pistol Squat Progression"
+              },
+              "sets": 4,
+              "reps": "3-5 cada pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "quads, glutes, core, balance",
+              "note": "Usa banda o apoyo. Fuerza unilateral.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "squat_pause",
+              "name": {
+                "es": "Sentadilla Pausa",
+                "en": "Pause Squat"
+              },
+              "sets": 3,
+              "reps": "6-8",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "quads, glutes, core",
+              "note": "Pausa de 2s en el fondo",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "glute_bridge_uni",
+              "name": {
+                "es": "Glute Bridge Unilateral",
+                "en": "Single Leg Glute Bridge"
+              },
+              "sets": 3,
+              "reps": "6-8 cada pierna",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "glutes, hamstrings, core",
+              "note": "Fuerza de cadera y glúteos",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "side_plank",
+              "name": {
+                "es": "Side Plank",
+                "en": "Side Plank"
+              },
+              "sets": 2,
+              "reps": "25-35s cada lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "core, obliques, shoulders",
+              "note": "Estabilidad lateral",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "hamstring_stretch",
+              "name": {
+                "es": "Estiramiento de Isquiotibiales",
+                "en": "Hamstring Stretch"
+              },
+              "sets": 2,
+              "reps": "30-40s cada pierna",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 35,
+              "muscles": "hamstrings",
+              "note": "Recuperación",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Cuerpo Completo + Habilidades",
+          "workout_title": "Integración Total",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "jogging",
+              "name": {
+                "es": "Trote Ligero",
+                "en": "Light Jogging"
+              },
+              "sets": 1,
+              "reps": "2-3 min",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 180,
+              "muscles": "cardiovascular",
+              "note": "Elevamos ritmo cardíaco",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "thoracic_rotation",
+              "name": {
+                "es": "Rotación Torácica",
+                "en": "Thoracic Rotation"
+              },
+              "sets": 2,
+              "reps": "8 cada lado",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "thoracic, spine",
+              "note": "Movilidad torácica",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "pullup_strict",
+              "name": {
+                "es": "Pull-up Estricto",
+                "en": "Strict Pull-up"
+              },
+              "sets": 4,
+              "reps": "1-3",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, arms, core",
+              "note": "Test de fuerza. Banda si es necesario.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "dips_chair",
+              "name": {
+                "es": "Dips en Silla",
+                "en": "Chair Dips"
+              },
+              "sets": 3,
+              "reps": "5-8",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "triceps, chest, shoulders",
+              "note": "Progresión accesible de dips",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "lsit_prog",
+              "name": {
+                "es": "L-sit - Progresión",
+                "en": "L-sit Progression"
+              },
+              "sets": 3,
+              "reps": "15-20s",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 17,
+              "muscles": "core, hip_flexors, shoulders",
+              "note": "Flexión de cadera + core",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "mountain_climbers",
+              "name": {
+                "es": "Mountain Climbers",
+                "en": "Mountain Climbers"
+              },
+              "sets": 2,
+              "reps": "20",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "core, cardiovascular, shoulders",
+              "note": "Potencia + core",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "worlds_stretch",
+              "name": {
+                "es": "World's Greatest Stretch",
+                "en": "World's Greatest Stretch"
+              },
+              "sets": 1,
+              "reps": "5 cada lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "full_body",
+              "note": "Movilidad integral",
+              "youtube": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_number": 2,
+      "name": "Construcción de Fuerza",
+      "description": "Semanas 5-8: Negatives avanzados, 1-2 pull-ups reales, dips, core pesado. Ganamos fuerzas explosivas.",
+      "weeks": "5-8",
+      "color": "#EC4899",
+      "focus": "Negative pull-ups avanzados, dips parallel, heavy core (L-sits), hollow rocks, primer pull-up real",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Pull + Espalda Pesado",
+          "workout_title": "Dominio de Tracción",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "arm_circles",
+              "name": {
+                "es": "Círculos de Brazos",
+                "en": "Arm Circles"
+              },
+              "sets": 2,
+              "reps": "12 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "shoulders",
+              "note": "Movilidad",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "scapular_activation",
+              "name": {
+                "es": "Activación Escapular",
+                "en": "Scapular Activation"
+              },
+              "sets": 2,
+              "reps": "10",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, scapula",
+              "note": "Preparación",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "pullup_strict",
+              "name": {
+                "es": "Pull-up Estricto",
+                "en": "Strict Pull-up"
+              },
+              "sets": 4,
+              "reps": "1-3",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, arms, core",
+              "note": "Objetivo: 2-3 reps limpio",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "pullup_neg2",
+              "name": {
+                "es": "Pull-up Negativo Pesado",
+                "en": "Heavy Negative Pull-up"
+              },
+              "sets": 3,
+              "reps": "2-3 (descenso 4-5s)",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, arms",
+              "note": "Excentrético pesado",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "commando_pullup",
+              "name": {
+                "es": "Commando Pull-up",
+                "en": "Commando Pull-up"
+              },
+              "sets": 3,
+              "reps": "3-5",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, triceps, core",
+              "note": "Variación que requiere core",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "bent_high_pulls",
+              "name": {
+                "es": "Tirón Alto Inclinado",
+                "en": "Bent High Pulls"
+              },
+              "sets": 3,
+              "reps": "8-10",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, shoulders, traps",
+              "note": "Espalda media y trapecios",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "lat_stretch",
+              "name": {
+                "es": "Estiramiento de Dorsales",
+                "en": "Lat Stretch"
+              },
+              "sets": 2,
+              "reps": "40-50s cada lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "muscles": "lats, shoulders",
+              "note": "Recuperación",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Push Pesado + Core",
+          "workout_title": "Potencia de Empuje",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "thoracic_mobility",
+              "name": {
+                "es": "Movilidad Torácica",
+                "en": "Thoracic Mobility"
+              },
+              "sets": 2,
+              "reps": "8",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "thoracic, spine",
+              "note": "Preparación",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "shoulder_dislocates",
+              "name": {
+                "es": "Dislocaciones de Hombro",
+                "en": "Shoulder Dislocates"
+              },
+              "sets": 2,
+              "reps": "10",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "shoulders",
+              "note": "Movilidad",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "archer_pushup",
+              "name": {
+                "es": "Archer Push-up",
+                "en": "Archer Push-up"
+              },
+              "sets": 4,
+              "reps": "4-6",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "chest, shoulders, triceps, core",
+              "note": "Asimetría controlada. Progresión hacia HSPU.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "decline_pushup",
+              "name": {
+                "es": "Push-up Declinado",
+                "en": "Decline Push-up"
+              },
+              "sets": 3,
+              "reps": "5-8",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "chest, shoulders, triceps, core",
+              "note": "Mayor dificultad",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "lsit_45",
+              "name": {
+                "es": "L-sit 45 grados",
+                "en": "L-sit 45 degrees"
+              },
+              "sets": 3,
+              "reps": "25-30s",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 27,
+              "muscles": "core, hip_flexors, shoulders",
+              "note": "Core pesado. Progresión de L-sit.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "hollow_rock",
+              "name": {
+                "es": "Hollow Rock",
+                "en": "Hollow Rock"
+              },
+              "sets": 2,
+              "reps": "15-20",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "core, anterior_core",
+              "note": "Patrón de cuerpo hueco",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "pectoral_stretch",
+              "name": {
+                "es": "Estiramiento de Pectorales",
+                "en": "Pectoral Stretch"
+              },
+              "sets": 2,
+              "reps": "40-50s cada lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "muscles": "chest, shoulders",
+              "note": "Recuperación",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Piernas Pesadas + Core Explosivo",
+          "workout_title": "Fuerza de Pierna",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "deep_hip_mobility",
+              "name": {
+                "es": "Movilidad Profunda de Cadera",
+                "en": "Deep Hip Mobility"
+              },
+              "sets": 2,
+              "reps": "30s cada posición",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "hips",
+              "note": "Preparación",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "hip_circles",
+              "name": {
+                "es": "Círculos de Cadera",
+                "en": "Hip Circles"
+              },
+              "sets": 2,
+              "reps": "10 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "hips",
+              "note": "Activación",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "pistol_free",
+              "name": {
+                "es": "Pistol Squat Libre",
+                "en": "Free Pistol Squat"
+              },
+              "sets": 4,
+              "reps": "3-5 cada pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "quads, glutes, core, balance",
+              "note": "Dominio unilateral. Mayor dificultad.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "shrimp_squat",
+              "name": {
+                "es": "Shrimp Squat",
+                "en": "Shrimp Squat"
+              },
+              "sets": 3,
+              "reps": "5-7 cada pierna",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "quads, glutes, hip_flexors, balance",
+              "note": "Fuerza y movilidad",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "glute_bridge_march",
+              "name": {
+                "es": "Glute Bridge Marcha",
+                "en": "Glute Bridge March"
+              },
+              "sets": 3,
+              "reps": "8-10 cada pierna",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "glutes, hamstrings, core",
+              "note": "Glúteos + estabilidad",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "windshield_wipers",
+              "name": {
+                "es": "Windshield Wipers",
+                "en": "Windshield Wipers"
+              },
+              "sets": 2,
+              "reps": "8-12",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "core, obliques",
+              "note": "Core avanzado",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "quad_stretch",
+              "name": {
+                "es": "Estiramiento de Cuádriceps",
+                "en": "Quad Stretch"
+              },
+              "sets": 2,
+              "reps": "40-50s cada pierna",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "muscles": "quads",
+              "note": "Recuperación",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Integración + Habilidades Avanzadas",
+          "workout_title": "Complejidad Total",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "jumping_jacks",
+              "name": {
+                "es": "Jumping Jacks",
+                "en": "Jumping Jacks"
+              },
+              "sets": 2,
+              "reps": "20",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "cardiovascular, full_body",
+              "note": "Calentamiento cardio",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "inchworm",
+              "name": {
+                "es": "Inchworm",
+                "en": "Inchworm"
+              },
+              "sets": 2,
+              "reps": "8",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "shoulders, core, hamstrings",
+              "note": "Movilidad dinámica",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "wide_pullup",
+              "name": {
+                "es": "Wide Grip Pull-up",
+                "en": "Wide Grip Pull-up"
+              },
+              "sets": 3,
+              "reps": "1-2",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, shoulders",
+              "note": "Variación de agarre. Mayor trabajo de lats.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "dips_parallel",
+              "name": {
+                "es": "Dips en Barras Paralelas",
+                "en": "Parallel Bar Dips"
+              },
+              "sets": 3,
+              "reps": "3-6",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "triceps, chest, shoulders, core",
+              "note": "Movimiento compuesto pesado",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "lsit_full",
+              "name": {
+                "es": "L-sit Completo",
+                "en": "Full L-sit"
+              },
+              "sets": 3,
+              "reps": "20-30s",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 25,
+              "muscles": "core, hip_flexors, shoulders",
+              "note": "Dominio de L-sit",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "muscle_up_neg",
+              "name": {
+                "es": "Muscle-up Negativo",
+                "en": "Muscle-up Negative"
+              },
+              "sets": 2,
+              "reps": "2-3 (descenso lento)",
+              "rest_seconds": 90,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, chest, shoulders, triceps, core",
+              "note": "Introducción a muscle-up",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "deep_breathing",
+              "name": {
+                "es": "Respiración Profunda",
+                "en": "Deep Breathing"
+              },
+              "sets": 1,
+              "reps": "10",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "respiratory",
+              "note": "Recuperación y relajación",
+              "youtube": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_number": 3,
+      "name": "Aplicación y Especialización",
+      "description": "Semanas 9-12: Cadenas de pull-up a dip, récords personales, introducción a skill (front lever tuck). Consolidamos fuerza.",
+      "weeks": "9-12",
+      "color": "#BE185D",
+      "focus": "Pull-up + dip chains, strength PRs, tuck front lever intro, weighted work, skill development",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Pull + Especialización de Espalda",
+          "workout_title": "Maestría de Tracción",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "shoulder_dislocates",
+              "name": {
+                "es": "Dislocaciones de Hombro",
+                "en": "Shoulder Dislocates"
+              },
+              "sets": 2,
+              "reps": "10",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "shoulders",
+              "note": "Movilidad",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "scap_retract",
+              "name": {
+                "es": "Retracción Escapular",
+                "en": "Scapular Retraction"
+              },
+              "sets": 2,
+              "reps": "10",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, scapula",
+              "note": "Activación",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "weighted_pullup",
+              "name": {
+                "es": "Pull-up Ponderado",
+                "en": "Weighted Pull-up"
+              },
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, arms, core",
+              "note": "Usa banda o cinturón de peso. Máxima fuerza.",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "close_grip_pullup",
+              "name": {
+                "es": "Close Grip Pull-up",
+                "en": "Close Grip Pull-up"
+              },
+              "sets": 3,
+              "reps": "4-6",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, biceps",
+              "note": "Énfasis en brazos",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "typewriter_pullup",
+              "name": {
+                "es": "Typewriter Pull-up",
+                "en": "Typewriter Pull-up"
+              },
+              "sets": 3,
+              "reps": "3-5",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, core",
+              "note": "Variación asimétrica de força",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "renegade_row",
+              "name": {
+                "es": "Renegade Row",
+                "en": "Renegade Row"
+              },
+              "sets": 2,
+              "reps": "8-10 cada brazo",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, core, shoulders",
+              "note": "Core + espalda",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "lat_stretch",
+              "name": {
+                "es": "Estiramiento de Dorsales",
+                "en": "Lat Stretch"
+              },
+              "sets": 2,
+              "reps": "50-60s cada lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 55,
+              "muscles": "lats",
+              "note": "Recuperación",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Push + Core Pesado Especializado",
+          "workout_title": "Potencia de Empuje Avanzada",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "cat_cow",
+              "name": {
+                "es": "Cat-Cow",
+                "en": "Cat-Cow"
+              },
+              "sets": 2,
+              "reps": "10",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "spine, core",
+              "note": "Movilidad",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "thoracic_rotation",
+              "name": {
+                "es": "Rotación Torácica",
+                "en": "Thoracic Rotation"
+              },
+              "sets": 2,
+              "reps": "10 cada lado",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "thoracic, spine",
+              "note": "Preparación",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "pike_hspu",
+              "name": {
+                "es": "Pike HSPU",
+                "en": "Pike Handstand Push-up"
+              },
+              "sets": 4,
+              "reps": "3-6",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "shoulders, triceps, core",
+              "note": "Introducción a HSPU",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "tiger_bend_pushup",
+              "name": {
+                "es": "Tiger Bend Push-up",
+                "en": "Tiger Bend Push-up"
+              },
+              "sets": 3,
+              "reps": "5-8",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "chest, shoulders, triceps, core",
+              "note": "Movimiento explosivo y control",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "front_lever_tuck",
+              "name": {
+                "es": "Front Lever Tuck",
+                "en": "Front Lever Tuck"
+              },
+              "sets": 3,
+              "reps": "15-25s",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "muscles": "core, back, shoulders, hip_flexors",
+              "note": "Skill de cuerpo hueco avanzado",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "dragon_flag",
+              "name": {
+                "es": "Dragon Flag",
+                "en": "Dragon Flag"
+              },
+              "sets": 2,
+              "reps": "5-8",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "core, anterior_core",
+              "note": "Core extremo",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "triceps_stretch",
+              "name": {
+                "es": "Estiramiento de Tríceps",
+                "en": "Triceps Stretch"
+              },
+              "sets": 2,
+              "reps": "40-50s cada lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 45,
+              "muscles": "triceps, shoulders",
+              "note": "Recuperación",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Piernas Élite + Core Explosivo",
+          "workout_title": "Potencia Extrema de Pierna",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "leg_swings",
+              "name": {
+                "es": "Oscilaciones de Pierna",
+                "en": "Leg Swings"
+              },
+              "sets": 2,
+              "reps": "12 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "hips, hamstrings, quads",
+              "note": "Activación",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "cossack_squat",
+              "name": {
+                "es": "Cossack Squat",
+                "en": "Cossack Squat"
+              },
+              "sets": 2,
+              "reps": "8 cada lado",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "hips, quads, adductors",
+              "note": "Preparación",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "shrimp_full",
+              "name": {
+                "es": "Shrimp Squat Completo",
+                "en": "Full Shrimp Squat"
+              },
+              "sets": 4,
+              "reps": "5-8 cada pierna",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "quads, glutes, balance, core",
+              "note": "Máxima dificultad unilateral",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "nordic_curl",
+              "name": {
+                "es": "Nordic Curl",
+                "en": "Nordic Curl"
+              },
+              "sets": 3,
+              "reps": "4-6",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "hamstrings",
+              "note": "Fortaleza de isquiotibiales extrema",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "single_rdl",
+              "name": {
+                "es": "Single Leg RDL",
+                "en": "Single Leg RDL"
+              },
+              "sets": 3,
+              "reps": "6-8 cada pierna",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "hamstrings, glutes, balance",
+              "note": "Fuerza posterior unilateral",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "v_ups",
+              "name": {
+                "es": "V-ups",
+                "en": "V-ups"
+              },
+              "sets": 2,
+              "reps": "10-15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "core, hip_flexors",
+              "note": "Explosión abdominal",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "hip_flexor_stretch",
+              "name": {
+                "es": "Estiramiento de Flexor de Cadera",
+                "en": "Hip Flexor Stretch"
+              },
+              "sets": 2,
+              "reps": "45-55s cada lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 50,
+              "muscles": "hip_flexors",
+              "note": "Recuperación",
+              "youtube": ""
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Cadena Pull-up → Dip + Habilidades",
+          "workout_title": "Integración Experta",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "exercise_id": "high_knees",
+              "name": {
+                "es": "High Knees",
+                "en": "High Knees"
+              },
+              "sets": 2,
+              "reps": "30",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "cardiovascular, hip_flexors",
+              "note": "Cardio",
+              "youtube": ""
+            },
+            {
+              "sort_order": 2,
+              "exercise_id": "inchworm",
+              "name": {
+                "es": "Inchworm",
+                "en": "Inchworm"
+              },
+              "sets": 2,
+              "reps": "10",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "shoulders, core",
+              "note": "Dinámica",
+              "youtube": ""
+            },
+            {
+              "sort_order": 3,
+              "exercise_id": "pullup_strict",
+              "name": {
+                "es": "Pull-up Estricto",
+                "en": "Strict Pull-up"
+              },
+              "sets": 4,
+              "reps": "3-5",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "back, lats, arms, core",
+              "note": "Máximo esfuerzo de tracción",
+              "youtube": ""
+            },
+            {
+              "sort_order": 4,
+              "exercise_id": "dips_parallel",
+              "name": {
+                "es": "Dips en Barras Paralelas",
+                "en": "Parallel Bar Dips"
+              },
+              "sets": 4,
+              "reps": "5-8",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "triceps, chest, shoulders, core",
+              "note": "Cadena pull-up → dip",
+              "youtube": ""
+            },
+            {
+              "sort_order": 5,
+              "exercise_id": "front_lever_single",
+              "name": {
+                "es": "Front Lever Single Leg",
+                "en": "Front Lever Single Leg"
+              },
+              "sets": 3,
+              "reps": "10-15s",
+              "rest_seconds": 75,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 12,
+              "muscles": "core, back, shoulders",
+              "note": "Avance de skill",
+              "youtube": ""
+            },
+            {
+              "sort_order": 6,
+              "exercise_id": "ring_support",
+              "name": {
+                "es": "Ring Support Hold",
+                "en": "Ring Support Hold"
+              },
+              "sets": 3,
+              "reps": "20-30s",
+              "rest_seconds": 75,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 25,
+              "muscles": "shoulders, triceps, chest, core",
+              "note": "Estabilidad y fuerza",
+              "youtube": ""
+            },
+            {
+              "sort_order": 7,
+              "exercise_id": "forward_fold",
+              "name": {
+                "es": "Forward Fold",
+                "en": "Forward Fold"
+              },
+              "sets": 1,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "hamstrings, spine",
+              "note": "Estiramiento final",
+              "youtube": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

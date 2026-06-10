@@ -1,0 +1,1207 @@
+{
+  "program": {
+    "name": "Mujer · Full Body Toning"
+  },
+  "phases": [
+    {
+      "phase_number": 1,
+      "name": "Iniciación (Semanas 1-4)",
+      "weeks": "1-4",
+      "color": "#A78BFA",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Tren Superior",
+          "workout_title": "Push + Pull Básico",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Arm Circles",
+                "en": "Arm Circles"
+              },
+              "sets": 2,
+              "reps": "15 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, manguito rotador",
+              "note": "Calentamiento básico. Pequeños a grandes."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Push-up Inclinado",
+                "en": "Incline Push-up"
+              },
+              "sets": 2,
+              "reps": "10-12",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Pecho, hombros, tríceps",
+              "note": "Manos en silla/mesa. Mantén cuerpo rígido."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Scapular Retraction",
+                "en": "Scapular Retraction"
+              },
+              "sets": 2,
+              "reps": "10-12",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Romboides, trapecios",
+              "note": "Brazos rectos, solo sube con omóplatos."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Australian Pull-up",
+                "en": "Australian Pull-up"
+              },
+              "sets": 2,
+              "reps": "8-12",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal, bíceps, romboides",
+              "note": "Cuerpo rígido, tira pecho a barra. Usa mesa/silla baja."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Plank",
+                "en": "Plank"
+              },
+              "sets": 2,
+              "reps": "30-45s",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": true,
+              "timer_seconds": 40,
+              "muscles": "Core total",
+              "note": "No dejes caer las caderas. Glúteos apretados."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Child's Pose con Tracción",
+                "en": "Child's Pose with Traction"
+              },
+              "sets": 1,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Lumbar, dorsal, caderas",
+              "note": "Brazos extendidos al frente. Relaja la espalda."
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Tren Inferior + Glúteos",
+          "workout_title": "Piernas Fuertes",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Jumping Jacks",
+                "en": "Jumping Jacks"
+              },
+              "sets": 2,
+              "reps": "30",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Full body, cardio",
+              "note": "Calentamiento cardio ligero. Ritmo constante."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Glute Bridge",
+                "en": "Glute Bridge"
+              },
+              "sets": 3,
+              "reps": "15",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, isquios, lumbar",
+              "note": "Aprieta fuerte arriba, 1s pausa. Esencial para toning."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Bodyweight Squat",
+                "en": "Bodyweight Squat"
+              },
+              "sets": 3,
+              "reps": "12-15",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cuádriceps, glúteos",
+              "note": "Pies a la altura de hombros. Rodillas sobre pies."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Reverse Lunge",
+                "en": "Reverse Lunge"
+              },
+              "sets": 2,
+              "reps": "10/lado",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cuádriceps, glúteos, isquios",
+              "note": "Paso atrás. Más seguro para rodillas."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Glute Bridge March",
+                "en": "Glute Bridge March"
+              },
+              "sets": 2,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, core estabilizador",
+              "note": "Desde bridge, levanta alternando rodillas."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Cossack Squat",
+                "en": "Cossack Squat"
+              },
+              "sets": 2,
+              "reps": "8/lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Aductores, cadera, movilidad",
+              "note": "Sentadilla lateral profunda. Movilidad de cadera."
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Core + Full Body Dinámico",
+          "workout_title": "Core & Movimiento",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Cat-Cow",
+                "en": "Cat-Cow"
+              },
+              "sets": 2,
+              "reps": "12 lentos",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Columna, lumbar",
+              "note": "Lento y controlado. Siente cada vértebra."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Plank Shoulder Taps",
+                "en": "Plank Shoulder Taps"
+              },
+              "sets": 3,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core antirotación",
+              "note": "No muevas las caderas al tocar el hombro opuesto."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Dead Bug",
+                "en": "Dead Bug"
+              },
+              "sets": 3,
+              "reps": "10/lado",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core profundo, TVA",
+              "note": "Lumbar pegada al suelo todo el tiempo."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Mountain Climbers",
+                "en": "Mountain Climbers"
+              },
+              "sets": 3,
+              "reps": "20/lado",
+              "rest_seconds": 45,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core, hombros, cardio",
+              "note": "Posición de push-up, alterna rodillas rápido."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "V-ups",
+                "en": "V-ups"
+              },
+              "sets": 2,
+              "reps": "12-15",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core superior e inferior",
+              "note": "Manos y pies se tocan arriba en V. Controlado."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Side Plank",
+                "en": "Side Plank"
+              },
+              "sets": 2,
+              "reps": "30s/lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 30,
+              "muscles": "Oblicuos, cuadrado lumbar",
+              "note": "Cuerpo recto como tabla."
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Recuperación Activa",
+          "workout_title": "Movilidad y Ligereza",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Arm Circles",
+                "en": "Arm Circles"
+              },
+              "sets": 2,
+              "reps": "15 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, manguito rotador",
+              "note": "Calentamiento ligero."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "High Knees",
+                "en": "High Knees"
+              },
+              "sets": 2,
+              "reps": "20/lado",
+              "rest_seconds": 30,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core, flexores cadera, cardio",
+              "note": "Rodillas al pecho alternando. Ritmo moderado."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Skater Jumps",
+                "en": "Skater Jumps"
+              },
+              "sets": 2,
+              "reps": "12/lado",
+              "rest_seconds": 45,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo medio, equilibrio, cardio",
+              "note": "Salta lateralmente de un pie. Aterrizaje suave."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Superman Hold",
+                "en": "Superman Hold"
+              },
+              "sets": 2,
+              "reps": "10 (3s arriba)",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Erectores, glúteos, lumbar",
+              "note": "Fortalece cadena posterior. Pausa 3s arriba."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Bird-Dog",
+                "en": "Bird-Dog"
+              },
+              "sets": 2,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Lumbar, core, glúteos",
+              "note": "Espalda neutral, mantén 2s arriba."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Child's Pose con Tracción",
+                "en": "Child's Pose with Traction"
+              },
+              "sets": 2,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Lumbar, dorsal, caderas",
+              "note": "Relaja y descomprime."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_number": 2,
+      "name": "Construcción (Semanas 5-8)",
+      "weeks": "5-8",
+      "color": "#F97316",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Tren Superior Potencia",
+          "workout_title": "Push + Pull Avanzado",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Arm Circles",
+                "en": "Arm Circles"
+              },
+              "sets": 2,
+              "reps": "15 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, manguito rotador",
+              "note": "Calentamiento dinámico."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Push-up Estándar",
+                "en": "Standard Push-up"
+              },
+              "sets": 3,
+              "reps": "8-12",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Pecho, hombros, tríceps",
+              "note": "Cuerpo rígido, codos 45°, pecho toca suelo."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Diamond Push-up",
+                "en": "Diamond Push-up"
+              },
+              "sets": 3,
+              "reps": "8-12",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho interno",
+              "note": "Manos en diamante. Codos juntos al bajar."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Inverted Row con Pausa",
+                "en": "Inverted Row with Pause"
+              },
+              "sets": 3,
+              "reps": "10-12",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Romboides, trapecio medio",
+              "note": "2s pausa arriba. Clave para postura."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Pull-up Asistida o Negativas",
+                "en": "Assisted Pull-up or Negatives"
+              },
+              "sets": 3,
+              "reps": "5-8",
+              "rest_seconds": 120,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal, bíceps",
+              "note": "Banda elástica o bajada lenta 5s."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Child's Pose con Tracción",
+                "en": "Child's Pose with Traction"
+              },
+              "sets": 1,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Lumbar, dorsal, caderas",
+              "note": "Relaja tras esfuerzo de tracción."
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Tren Inferior Intenso",
+          "workout_title": "Piernas & Glúteos Volumen",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Jumping Jacks",
+                "en": "Jumping Jacks"
+              },
+              "sets": 2,
+              "reps": "30",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Full body, cardio",
+              "note": "Calentamiento cardio."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Squat con Pausa (3s)",
+                "en": "Pause Squat (3s)"
+              },
+              "sets": 3,
+              "reps": "10",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cuádriceps, glúteos",
+              "note": "Pausa 3s abajo. Elimina rebote, fuerza real."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Glute Bridge con Pausa (3s)",
+                "en": "Glute Bridge with Pause (3s)"
+              },
+              "sets": 3,
+              "reps": "15",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteos, isquios",
+              "note": "Pausa isométrica 3s arriba."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Single Leg RDL",
+                "en": "Single Leg RDL"
+              },
+              "sets": 3,
+              "reps": "10/lado",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Isquios, glúteo, lumbar",
+              "note": "Bisagra de cadera perfecta. Espalda neutral."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Glute Bridge Unilateral",
+                "en": "Unilateral Glute Bridge"
+              },
+              "sets": 2,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo, isquios",
+              "note": "Corrige desequilibrios L/D."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Cossack Squat",
+                "en": "Cossack Squat"
+              },
+              "sets": 2,
+              "reps": "8/lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Aductores, cadera, movilidad",
+              "note": "Movilidad de cadera."
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Core Funcional + Estabilidad",
+          "workout_title": "Core Intermedio",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Cat-Cow",
+                "en": "Cat-Cow"
+              },
+              "sets": 2,
+              "reps": "12 lentos",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Columna, lumbar",
+              "note": "Movilidad de columna."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Hollow Body Hold",
+                "en": "Hollow Body Hold"
+              },
+              "sets": 3,
+              "reps": "20-30s",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 25,
+              "muscles": "Core profundo, TVA",
+              "note": "Lumbar pegada al suelo. Piernas lejos posible."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Dead Bug Avanzado",
+                "en": "Advanced Dead Bug"
+              },
+              "sets": 3,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core, TVA",
+              "note": "Piernas completamente extendidas."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Renegade Row",
+                "en": "Renegade Row"
+              },
+              "sets": 3,
+              "reps": "10/lado",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal, core antirotación",
+              "note": "Desde push-up, jala alternando cada lado."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Bird-Dog",
+                "en": "Bird-Dog"
+              },
+              "sets": 3,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Lumbar, core, glúteos",
+              "note": "Espalda neutral, 2s arriba. PRIORIDAD ALTA."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Child's Pose con Tracción",
+                "en": "Child's Pose with Traction"
+              },
+              "sets": 2,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Lumbar, dorsal, caderas",
+              "note": "Descompresión y relajo."
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Full Body Activo",
+          "workout_title": "Cardio + Fuerza Ligera",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Arm Circles",
+                "en": "Arm Circles"
+              },
+              "sets": 2,
+              "reps": "15 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, manguito rotador",
+              "note": "Calentamiento dinámico."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Bear Crawl",
+                "en": "Bear Crawl"
+              },
+              "sets": 3,
+              "reps": "10m ida/vuelta",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, core, cuádriceps",
+              "note": "Rodillas 5cm del suelo. Coordinación."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Skater Jumps",
+                "en": "Skater Jumps"
+              },
+              "sets": 3,
+              "reps": "12/lado",
+              "rest_seconds": 45,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo medio, equilibrio, cardio",
+              "note": "Salta lateralmente. Aterrizaje controlado."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Pike Push-up",
+                "en": "Pike Push-up"
+              },
+              "sets": 3,
+              "reps": "8-10",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Deltoides, tríceps",
+              "note": "Caderas arriba en V. Cabeza entre brazos al bajar."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Superman Hold",
+                "en": "Superman Hold"
+              },
+              "sets": 2,
+              "reps": "10 (3s arriba)",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Erectores, glúteos, lumbar",
+              "note": "Cadena posterior. Esencial para lumbar."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Child's Pose con Tracción",
+                "en": "Child's Pose with Traction"
+              },
+              "sets": 2,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Lumbar, dorsal, caderas",
+              "note": "Cierre relajante."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_number": 3,
+      "name": "Definición (Semanas 9-12)",
+      "weeks": "9-12",
+      "color": "#EC4899",
+      "days": [
+        {
+          "day_id": "lun",
+          "day_name": "Lunes",
+          "day_focus": "Circuito Push + Pull",
+          "workout_title": "Upper Body Circuit",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Arm Circles",
+                "en": "Arm Circles"
+              },
+              "sets": 2,
+              "reps": "15 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, manguito rotador",
+              "note": "Calentamiento dinámico."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Archer Push-up",
+                "en": "Archer Push-up"
+              },
+              "sets": 3,
+              "reps": "8/lado",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Pecho unilateral",
+              "note": "Progresión hacia one-arm. Brazo guía más extendido."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Dips Paralelas (2 sillas)",
+                "en": "Parallel Dips (2 chairs)"
+              },
+              "sets": 3,
+              "reps": "8-12",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Tríceps, pecho bajo",
+              "note": "Rango completo. Hombros no suben."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Pull-up Estricto",
+                "en": "Strict Pull-up"
+              },
+              "sets": 3,
+              "reps": "máx (obj 8-12)",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Dorsal ancho, bíceps",
+              "note": "Sin kipping. Pausa 1s arriba. Meta: 8-12 reps."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Towel Pull Apart",
+                "en": "Towel Pull Apart"
+              },
+              "sets": 3,
+              "reps": "15-20",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Deltoides posterior",
+              "note": "Movilidad + postura. Toalla en las manos."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Child's Pose con Tracción",
+                "en": "Child's Pose with Traction"
+              },
+              "sets": 1,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Lumbar, dorsal, caderas",
+              "note": "Cierre y relajo."
+            }
+          ]
+        },
+        {
+          "day_id": "mar",
+          "day_name": "Martes",
+          "day_focus": "Circuito Piernas Densidad",
+          "workout_title": "Lower Body Density",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Jumping Jacks",
+                "en": "Jumping Jacks"
+              },
+              "sets": 2,
+              "reps": "30",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Full body, cardio",
+              "note": "Calentamiento cardio intenso."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Pistol Squat Progresión",
+                "en": "Pistol Squat Progression"
+              },
+              "sets": 3,
+              "reps": "8/lado",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Cuádriceps, glúteo, equilibrio",
+              "note": "Sentándose en silla con pierna levantada."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Nordic Curl (Regresión)",
+                "en": "Nordic Curl (Regression)"
+              },
+              "sets": 3,
+              "reps": "5-8",
+              "rest_seconds": 120,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Isquiotibiales",
+              "note": "Anclados bajo sofá. Fortalece cadena posterior."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Step-up Explosivo",
+                "en": "Explosive Step-up"
+              },
+              "sets": 3,
+              "reps": "10/lado",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo, cuádriceps",
+              "note": "Sube fuerte, baja controlado. En escalón/silla."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Glute Bridge Unilateral",
+                "en": "Unilateral Glute Bridge"
+              },
+              "sets": 3,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo, isquios",
+              "note": "Termina con estiramiento de glúteos."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Cossack Squat",
+                "en": "Cossack Squat"
+              },
+              "sets": 2,
+              "reps": "8/lado",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Aductores, cadera, movilidad",
+              "note": "Sentadilla lateral. Movilidad de cadera."
+            }
+          ]
+        },
+        {
+          "day_id": "jue",
+          "day_name": "Jueves",
+          "day_focus": "Core Avanzado + Estabilidad",
+          "workout_title": "Advanced Core",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Cat-Cow",
+                "en": "Cat-Cow"
+              },
+              "sets": 2,
+              "reps": "12 lentos",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Columna, lumbar",
+              "note": "Movilidad de columna."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Hollow Body Rock",
+                "en": "Hollow Body Rock"
+              },
+              "sets": 3,
+              "reps": "15-20",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core profundo",
+              "note": "Evolución del Hollow Hold. Balanceo controlado."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Plank Shoulder Taps",
+                "en": "Plank Shoulder Taps"
+              },
+              "sets": 3,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Core antirotación",
+              "note": "No muevas caderas. Máxima estabilidad."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "L-sit Hold",
+                "en": "L-sit Hold"
+              },
+              "sets": 3,
+              "reps": "15-30s",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "muscles": "Core profundo, flexores cadera",
+              "note": "Piernas estiradas en L. Pecho abierto."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Bird-Dog",
+                "en": "Bird-Dog"
+              },
+              "sets": 3,
+              "reps": "12/lado",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Lumbar, core, glúteos",
+              "note": "Espalda neutral, 2s arriba."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Child's Pose con Tracción",
+                "en": "Child's Pose with Traction"
+              },
+              "sets": 2,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Lumbar, dorsal, caderas",
+              "note": "Cierre relajante y profundo."
+            }
+          ]
+        },
+        {
+          "day_id": "vie",
+          "day_name": "Viernes",
+          "day_focus": "Full Body Power & Endurance",
+          "workout_title": "Total Body Finisher",
+          "exercises": [
+            {
+              "sort_order": 1,
+              "name": {
+                "es": "Arm Circles",
+                "en": "Arm Circles"
+              },
+              "sets": 2,
+              "reps": "15 cada dirección",
+              "rest_seconds": 0,
+              "priority": "warmup",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, manguito rotador",
+              "note": "Calentamiento dinámico."
+            },
+            {
+              "sort_order": 2,
+              "name": {
+                "es": "Bear Crawl",
+                "en": "Bear Crawl"
+              },
+              "sets": 3,
+              "reps": "15m ida/vuelta",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Hombros, core, cuádriceps",
+              "note": "Distancia aumentada. Mantén ritmo constante."
+            },
+            {
+              "sort_order": 3,
+              "name": {
+                "es": "Crow Pose / Frog Stand",
+                "en": "Crow Pose / Frog Stand"
+              },
+              "sets": 3,
+              "reps": "15-30s",
+              "rest_seconds": 90,
+              "priority": "primary",
+              "is_timer": true,
+              "timer_seconds": 20,
+              "muscles": "Hombros, core, equilibrio",
+              "note": "Rodillas en codos, inclínate hacia adelante."
+            },
+            {
+              "sort_order": 4,
+              "name": {
+                "es": "Skater Jumps",
+                "en": "Skater Jumps"
+              },
+              "sets": 3,
+              "reps": "12/lado",
+              "rest_seconds": 45,
+              "priority": "primary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Glúteo medio, equilibrio, cardio",
+              "note": "Aterrizaje suave. Ritmo explosivo."
+            },
+            {
+              "sort_order": 5,
+              "name": {
+                "es": "Superman Hold",
+                "en": "Superman Hold"
+              },
+              "sets": 2,
+              "reps": "10 (3s arriba)",
+              "rest_seconds": 60,
+              "priority": "secondary",
+              "is_timer": false,
+              "timer_seconds": 0,
+              "muscles": "Erectores, glúteos, lumbar",
+              "note": "Cadena posterior. Mantén cuerpo rígido."
+            },
+            {
+              "sort_order": 6,
+              "name": {
+                "es": "Child's Pose con Tracción",
+                "en": "Child's Pose with Traction"
+              },
+              "sets": 2,
+              "reps": "60s",
+              "rest_seconds": 0,
+              "priority": "cooldown",
+              "is_timer": true,
+              "timer_seconds": 60,
+              "muscles": "Lumbar, dorsal, caderas",
+              "note": "Cierre final y recuperación."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { View } from 'react-native'
 import { Redirect, Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Home, ClipboardList, Library, History, User } from 'lucide-react-native'
+import { Home, ClipboardList, Library, History, User, Utensils } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { NAV_THEME } from '@/lib/theme'
@@ -55,6 +55,13 @@ export default function TabsLayout() {
         options={{
           title: t('nav.progress'),
           tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="nutrition"
+        options={{
+          title: t('nav.nutrition'),
+          tabBarIcon: ({ color, size }) => <Utensils color={color} size={size} />,
         }}
       />
       <Tabs.Screen
