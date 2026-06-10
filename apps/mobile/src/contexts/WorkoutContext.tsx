@@ -1,7 +1,9 @@
 // Port 1:1 del WorkoutContext de apps/web — los hooks de core son portables.
-import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useCallback, useEffect, useMemo, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms } from '@calistenia/core/hooks/usePrograms'
+import { syncWidgetSnapshot } from '@/lib/sync-widget-snapshot'
 import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig } from '@calistenia/core/types'
 
 // ── Context interface (state + actions + meta) ──────────────────────────────
@@ -110,6 +112,26 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     getLastSessionDate, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, refreshPrograms,
   ])
+
+  const { i18n } = useTranslation()
+
+  // Snapshot para widgets: en hidratación, al marcar sesiones (progress cambia),
+  // al cambiar de programa/ajustes. writeWidgetSnapshot deduplica por JSON.
+  // Los getters van fuera de deps a propósito — son estables o derivados de
+  // progress, que ya está en deps.
+  useEffect(() => {
+    if (!programsReady) return
+    syncWidgetSnapshot({
+      lang: i18n.language,
+      programName: activeProgram?.name ?? null,
+      settings,
+      weekDays,
+      getWorkout,
+      isWorkoutDone,
+      streak: getLongestStreak(),
+      weeklyDone: getWeeklyDoneCount(),
+    })
+  }, [programsReady, activeProgram, settings, weekDays, progress, i18n.language]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = useMemo(() => ({ state, actions }), [state, actions])
 
