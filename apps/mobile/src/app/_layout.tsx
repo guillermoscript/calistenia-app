@@ -9,7 +9,10 @@ import * as SplashScreen from 'expo-splash-screen'
 import { colorScheme as nwColorScheme, useColorScheme } from 'nativewind'
 import { PortalHost } from '@rn-primitives/portal'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 
+import { Sentry } from '@/lib/instrument'
 import { pbAuthHydration } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
 import { initI18n } from '@/lib/i18n'
@@ -17,6 +20,7 @@ import { NAV_THEME } from '@/lib/theme'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { WorkoutProvider } from '@/contexts/WorkoutContext'
 import { ActiveSessionProvider } from '@/contexts/ActiveSessionContext'
+import OfflineBanner from '@/components/OfflineBanner'
 
 SplashScreen.preventAutoHideAsync()
 // darkMode: 'class' en tailwind.config → NativeWind controla la clase .dark;
@@ -35,9 +39,12 @@ function Providers({ children }: { children: ReactNode }) {
   )
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const { colorScheme } = useColorScheme()
   const [ready, setReady] = useState(false)
+
+  // Reintenta acciones encoladas offline al recuperar conexión (igual que web).
+  useEffect(() => setupAutoSync(pb), [])
 
   useEffect(() => {
     let cancelled = false
@@ -64,7 +71,10 @@ export default function RootLayout() {
           <Stack.Screen name="session" options={{ gestureEnabled: false }} />
         </Stack>
       </Providers>
+      <OfflineBanner />
       <PortalHost />
     </ThemeProvider>
   )
 }
+
+export default Sentry.wrap(RootLayout)

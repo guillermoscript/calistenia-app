@@ -8,8 +8,11 @@ import { AsyncAuthStore } from 'pocketbase'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Constants from 'expo-constants'
 import EventSource from 'react-native-sse'
+import { OpenPanel } from '@openpanel/react-native'
 import { initCore } from '@calistenia/core/platform'
+import { Sentry } from './instrument'
 import { syncStorage } from './storage'
+import { isOnline, onOnline } from './connectivity'
 
 // PocketBase realtime (lo usa el flujo OAuth2 del SDK) necesita EventSource,
 // que no existe en React Native.
@@ -39,6 +42,13 @@ const pbAuthStore = new AsyncAuthStore({
   clear: async () => AsyncStorage.removeItem('pb_auth'),
 })
 
+// Mismo proyecto OpenPanel que la web (los eventos llevan props de dispositivo
+// del SDK RN). En dev solo logueamos para no ensuciar las métricas.
+const op = new OpenPanel({
+  apiUrl: 'https://openpanel.guille.tech/api',
+  clientId: process.env.EXPO_PUBLIC_OPENPANEL_CLIENT_ID || '95f75c3f-fb38-4c0b-a401-a3a63f8b91f5',
+})
+
 initCore({
   storage: syncStorage,
   env: {
@@ -46,20 +56,25 @@ initCore({
     aiApiUrl,
     isDev: __DEV__,
   },
-  // TODO fase 3: @openpanel/react-native. Por ahora solo log en dev.
   analytics: {
     track: (name, properties) => {
-      if (__DEV__) console.log('[analytics]', name, properties ?? '')
+      if (__DEV__) {
+        console.log('[analytics]', name, properties ?? '')
+        return
+      }
+      op.track(name, properties)
     },
-    identify: () => {},
-    clear: () => {},
+    identify: (payload) => {
+      if (!__DEV__) op.identify(payload as Parameters<typeof op.identify>[0])
+    },
+    clear: () => {
+      if (!__DEV__) op.clear()
+    },
   },
-  // TODO fase 3: @sentry/react-native
-  reportError: (e) => console.error('[core]', e),
-  // TODO fase 3: @react-native-community/netinfo para la offline queue
-  connectivity: {
-    isOnline: () => true,
-    onOnline: () => () => {},
+  reportError: (e) => {
+    if (__DEV__) console.error('[core]', e)
+    else Sentry.captureException(e)
   },
+  connectivity: { isOnline, onOnline },
   pbAuthStore,
 })

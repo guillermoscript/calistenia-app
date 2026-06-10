@@ -38,7 +38,9 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-audio",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,

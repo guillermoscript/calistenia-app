@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { requestNotifPermission, scheduleRestEnd, cancelScheduled } from '@/lib/notifications'
+import * as sounds from '@/lib/sounds'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { Exercise, Workout, ExerciseLog, SetData } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
@@ -72,6 +73,8 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
   const nextStepRef = useRef(nextStep)
   nextStepRef.current = nextStep
 
+  useEffect(() => { sounds.playRestStart() }, [])
+
   // Notificación local programada para el fin del descanso (se ve si la app
   // está en background; en foreground el handler la silencia).
   useEffect(() => {
@@ -92,14 +95,19 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
       if (rem !== prev) {
         if (prev > 10 && rem <= 10 && rem > 0 && !hasPlayedWarning.current) {
           hasPlayedWarning.current = true
+          sounds.playWarning()
           haptic.warning()
         }
-        if (rem > 0 && rem <= 3 && prev === rem + 1) haptic.light()
+        if (rem > 0 && rem <= 3 && prev === rem + 1) {
+          sounds.playCountdownTick()
+          haptic.light()
+        }
         lastRemainingRef.current = rem
         setRemaining(rem)
       }
       if (rem <= 0 && !hasFinished.current) {
         hasFinished.current = true
+        sounds.playGetReady()
         haptic.success()
         onSkipRef.current()
       }
@@ -202,13 +210,22 @@ function ExerciseTimer({ initialSeconds = 30 }: { initialSeconds?: number }) {
   const [running, setRunning] = useState(false)
   const endAtRef = useRef<number>(0)
 
+  const lastRemRef = useRef<number>(initialSeconds)
+
   useEffect(() => {
     if (!running) return
     const id = setInterval(() => {
       const rem = Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000))
+      const prev = lastRemRef.current
+      if (rem !== prev) {
+        if (prev > 10 && rem <= 10 && rem > 0) sounds.playWarning()
+        if (rem > 0 && rem <= 3 && prev === rem + 1) sounds.playCountdownTick()
+        lastRemRef.current = rem
+      }
       setRemaining(rem)
       if (rem <= 0) {
         setRunning(false)
+        sounds.playTimerComplete()
         haptic.success()
       }
     }, 250)
@@ -279,6 +296,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
     : exercise.reps
 
   const doLog = (reps: string | number, note: string = '', weight?: number, rpe?: number): void => {
+    sounds.playSetComplete()
     haptic.medium()
     onLogged({ reps: String(reps), note, weight, rpe })
   }
@@ -513,7 +531,10 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
   const { t } = useTranslation()
   const quote = useRef<Quote>(getLocalQuote()).current
 
-  useEffect(() => { haptic.success() }, [])
+  useEffect(() => {
+    sounds.playSessionComplete()
+    haptic.success()
+  }, [])
 
   return (
     <Pressable onPress={onDone} className="flex-1 items-center justify-center gap-7 px-6">

@@ -92,6 +92,21 @@ Web inyecta localStorage/`import.meta.env`/@openpanel-web; mobile inyecta MMKV/`
 2. Haptics en acciones clave; sonidos del timer con expo-audio.
 3. EAS Build → TestFlight / APK interno; Sentry (`@sentry/react-native`).
 
+#### Distribución con EAS (pasos manuales, una sola vez)
+Los perfiles ya están en `apps/mobile/eas.json` (development / preview-APK / production).
+Desde `apps/mobile`:
+1. `pnpm dlx eas-cli login` y `pnpm dlx eas-cli init` — vincula el proyecto a la
+   cuenta de Expo y escribe `extra.eas.projectId` en app.json.
+2. APK interno Android: `pnpm dlx eas-cli build --profile preview --platform android`.
+3. TestFlight: `pnpm dlx eas-cli build --profile production --platform ios` y
+   `eas submit -p ios` (requiere cuenta Apple Developer).
+4. Sourcemaps de Sentry en builds EAS: exportar `SENTRY_AUTH_TOKEN` como secret
+   (`eas env:create`); sin él la build funciona pero los stacktraces van sin simbolizar.
+Notas: el DSN de Sentry es el mismo proyecto que la web (override con
+`EXPO_PUBLIC_SENTRY_DSN`); OpenPanel usa el mismo clientId que web (override con
+`EXPO_PUBLIC_OPENPANEL_CLIENT_ID` si se crea un client móvil propio). Ambos solo
+emiten en builds de producción (`!__DEV__`).
+
 ### Fuera de alcance Parte 1
 Nutrición, cardio/GPS, social/amigos, races, sleep, blog, referidos, admin, AI free session.
 
