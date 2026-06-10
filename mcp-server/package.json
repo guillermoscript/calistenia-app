@@ -23,6 +23,7 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "langfuse": "^3.38.6",
+    "mcp-use": "^1.30.2",
     "multer": "^2.1.1",
     "pocketbase": "^0.26.8",
     "web-push": "^3.6.7",

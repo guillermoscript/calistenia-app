@@ -53,7 +53,7 @@ interface StoredAuthCode {
   expiresAt: number;
 }
 
-interface StoredToken {
+export interface StoredToken {
   clientId: string;
   userId: string;
   pbToken: string;
@@ -93,6 +93,22 @@ setInterval(() => {
 
 function generateToken(): string {
   return randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+}
+
+/**
+ * Verify an access token issued by this OAuth provider against the
+ * in-memory store. Shared by the legacy SDK provider (verifyAccessToken)
+ * and the mcp-use auth bridge (src/mcpuse/auth-bridge.ts).
+ */
+export function verifyStoredAccessToken(token: string): StoredToken {
+  const data = accessTokens.get(token);
+  if (!data) throw new Error("Invalid access token");
+  if (Date.now() > data.expiresAt) {
+    accessTokens.delete(token);
+    if (data.refreshToken) refreshTokens.delete(data.refreshToken);
+    throw new Error("Token expired");
+  }
+  return data;
 }
 
 function escapeHtml(str: string): string {
@@ -404,12 +420,7 @@ export class PocketBaseOAuthProvider implements OAuthServerProvider {
   }
 
   async verifyAccessToken(token: string): Promise<AuthInfo> {
-    const data = accessTokens.get(token);
-    if (!data) throw new Error("Invalid access token");
-    if (Date.now() > data.expiresAt) {
-      accessTokens.delete(token);
-      throw new Error("Token expired");
-    }
+    const data = verifyStoredAccessToken(token);
 
     return {
       token,
