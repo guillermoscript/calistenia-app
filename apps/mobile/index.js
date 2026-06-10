@@ -13,5 +13,9 @@ if (Platform.OS === 'android') {
     const { registerWidgetTaskHandler } = require('react-native-android-widget')
     const { widgetTaskHandler } = require('./src/widgets/widget-task-handler')
     registerWidgetTaskHandler(widgetTaskHandler)
+
+    const notifee = require('@notifee/react-native').default
+    // El service vive mientras la notificación ongoing exista
+    notifee.registerForegroundService(() => new Promise(() => {}))
   } catch { /* Expo Go: lib nativa ausente */ }
 }
