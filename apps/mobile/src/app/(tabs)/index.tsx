@@ -3,16 +3,14 @@ import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { LogOut, Play, Check, Moon } from 'lucide-react-native'
+import { Play, Check, Moon } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
-import { logout } from '@calistenia/core/lib/pocketbase'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
 import type { DayId, WeekDay } from '@calistenia/core/types'
 
@@ -68,7 +66,6 @@ function WeekStrip({ weekDays, todayId, isDone, phase }: {
 export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
-  const user = useAuthUser()
   const { settings, activeProgram, weekDays, phases, programsReady } = useWorkoutState()
   const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getTotalSessions } = useWorkoutActions()
   const session = useActiveSession()
@@ -108,29 +105,19 @@ export default function TodayScreen() {
     router.push('/session')
   }
 
-  const handleLogout = () => {
-    logout()
-    router.replace('/login')
-  }
-
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="px-4 pb-8 gap-4">
         {/* ── Welcome header — mismo patrón que DashboardPage web ── */}
-        <View className="flex-row items-start justify-between pt-2">
-          <View className="flex-1 pr-2">
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
-              {todayFormatted}
-            </Text>
-            <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{greeting}</Text>
-            <Text className="mt-1 text-sm text-muted-foreground">
-              {t('common.week')} <Text className="text-sm font-sans-bold text-foreground">{weekElapsed}</Text> {t('common.of')} {totalWeeks}
-              {activeProgram ? <Text className="text-sm text-lime"> · {activeProgram.name}</Text> : null}
-            </Text>
-          </View>
-          <Pressable onPress={handleLogout} hitSlop={8} accessibilityLabel={t('nav.signOut')} className="p-2">
-            <LogOut size={18} color="hsl(0 0% 55%)" />
-          </Pressable>
+        <View className="pt-2">
+          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            {todayFormatted}
+          </Text>
+          <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{greeting}</Text>
+          <Text className="mt-1 text-sm text-muted-foreground">
+            {t('common.week')} <Text className="text-sm font-sans-bold text-foreground">{weekElapsed}</Text> {t('common.of')} {totalWeeks}
+            {activeProgram ? <Text className="text-sm text-lime"> · {activeProgram.name}</Text> : null}
+          </Text>
         </View>
 
         {/* Plan semanal */}

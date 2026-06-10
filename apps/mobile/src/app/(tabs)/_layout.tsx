@@ -1,6 +1,6 @@
 import { Redirect, Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Home, ClipboardList, Library, History } from 'lucide-react-native'
+import { Home, ClipboardList, Library, History, User } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { NAV_THEME } from '@/lib/theme'
@@ -52,6 +52,13 @@ export default function TabsLayout() {
         options={{
           title: t('nav.progress'),
           tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: t('nav.profile'),
+          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />
     </Tabs>
