@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { requestNotifPermission, scheduleRestEnd, cancelScheduled } from '@/lib/notifications'
+import { useLiveSession } from '@/lib/use-live-session'
+import { updateLiveRest, liveSessionHandlesRest } from '@/lib/live-session'
 import * as sounds from '@/lib/sounds'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { Exercise, Workout, ExerciseLog, SetData } from '@calistenia/core/types'
@@ -79,11 +81,16 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
   // está en background; en foreground el handler la silencia).
   useEffect(() => {
     const ns = nextStepRef.current
-    scheduleRestEnd(
-      Math.ceil((endAtRef.current - Date.now()) / 1000),
-      t('notify.letsGo'),
-      ns ? `${ns.exercise.name} — ${t('notify.setOf', { set: ns.setNumber, total: ns.totalSets })}` : t('notify.prepareForNext'),
-    ).then(id => { notifIdRef.current = id })
+    // En Android nativo el cronómetro de la notificación persistente ya avisa
+    // del fin del descanso — la puntual sería redundante
+    if (!liveSessionHandlesRest()) {
+      scheduleRestEnd(
+        Math.ceil((endAtRef.current - Date.now()) / 1000),
+        t('notify.letsGo'),
+        ns ? `${ns.exercise.name} — ${t('notify.setOf', { set: ns.setNumber, total: ns.totalSets })}` : t('notify.prepareForNext'),
+      ).then(id => { notifIdRef.current = id })
+    }
+    updateLiveRest(endAtRef.current)
     return () => { cancelScheduled(notifIdRef.current) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -131,11 +138,14 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
     // Reprogramar la notificación con el nuevo fin
     cancelScheduled(notifIdRef.current)
     const ns = nextStepRef.current
-    scheduleRestEnd(
-      rem,
-      t('notify.letsGo'),
-      ns ? `${ns.exercise.name} — ${t('notify.setOf', { set: ns.setNumber, total: ns.totalSets })}` : t('notify.prepareForNext'),
-    ).then(id => { notifIdRef.current = id })
+    if (!liveSessionHandlesRest()) {
+      scheduleRestEnd(
+        rem,
+        t('notify.letsGo'),
+        ns ? `${ns.exercise.name} — ${t('notify.setOf', { set: ns.setNumber, total: ns.totalSets })}` : t('notify.prepareForNext'),
+      ).then(id => { notifIdRef.current = id })
+    }
+    updateLiveRest(endAtRef.current)
     if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
   }
 
@@ -750,6 +760,17 @@ export default function SessionView({
   }, [t, setsCount, onExitSession])
 
   const durationMin = Math.round((Date.now() - sessionStartTime.current) / 60000)
+
+  // Live Activity / notificación persistente — observa, no muta
+  useLiveSession({
+    workoutTitle: workout.title,
+    phase,
+    exerciseName: phase === 'section-transition'
+      ? (transitionType === 'warmup-to-main' ? t('warmupCooldown.sections.main') : t('warmupCooldown.sections.cooldown'))
+      : currentStep?.exercise.name ?? '',
+    setNumber: currentStep?.setNumber ?? 0,
+    totalSets: currentStep?.totalSets ?? 0,
+  })
 
   return (
     <SafeAreaView className="flex-1 bg-background">
