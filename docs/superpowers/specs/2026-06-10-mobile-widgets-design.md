@@ -69,9 +69,9 @@ type WidgetSnapshot = {
     type: string                     // strength | rest | cardio | yoga | circuit
     done: boolean
     exerciseCount: number
-    phase: number
+    programPhase: number               // fase del programa; no confundir con phase de la activity
   } | null
-  week: { id: DayId; done: boolean; type: string }[]
+  week: { id: DayId; done: boolean; type: string }[]   // DayId = tipo existente de la app ('dom'…'sab')
   streak: number
   weeklyDone: number
   weeklyGoal: number
@@ -109,6 +109,26 @@ a medianoche para forzar esa transición sin abrir la app.
   phase: 'work' | 'rest'; restEndsAt: string | null }   // ISO date
 ```
 
+**Mapeo desde la máquina de estados de SessionView** (`exercise | rest | note |
+celebrate | section-transition`):
+
+| Fase de la máquina | Activity |
+|---|---|
+| `exercise` | `work` — exerciseName = paso actual (incl. warmup/cooldown); SERIE X/Y solo si el paso tiene series, si no se omite la línea |
+| `rest` | `rest` — countdown con `restEndsAt` |
+| `section-transition` | `work` mostrando el nombre de la sección entrante, sin línea de serie |
+| `note` / `celebrate` | `end()` — el entreno terminó, la activity/notificación se descarta |
+
+**Origen de `restEndsAt` y ajustes de descanso**: el timestamp de fin de descanso vive
+dentro de RestScreen (ref interna) y el usuario puede mutarlo con −15s/+15s/+30s o
+saltar el descanso — eso NO son transiciones de la máquina. El código actual ya
+reprograma la notificación de expo-notifications en cada ajuste (`scheduleRestEnd` /
+`cancelScheduled` en `src/lib/notifications.ts`): la integración se hace **en esos mismos
+puntos** — `useLiveSession()` expone `updateRest(restEndsAt)` / `skipRest()` y se llama
+junto a cada reschedule/cancel existente (los call sites del callback `onAdjust` y del
+skip). Así la activity y el cronómetro Android se resincronizan exactamente cuando ya se
+resincroniza la notificación actual, sin tocar la máquina de estados.
+
 **iOS (ActivityKit)**:
 - Arranca al iniciar sesión; `update` en cada transición; `end` al terminar/abandonar.
 - Lock screen: ejercicio en Bebas + "SERIE X/Y" mono; en `rest`, countdown grande con
@@ -122,6 +142,9 @@ a medianoche para forzar esa transición sin abrir la app.
   en descanso, cronómetro nativo en cuenta atrás (`usesChronometer` + countdown).
 - **Sustituye** la notificación puntual de fin de descanso de expo-notifications
   (queda redundante). Sonidos/haptics in-app no cambian.
+- Si el sistema mata el proceso a mitad de sesión, el foreground service muere con él y
+  Android retira la notificación — no queda notificación zombi (equivalente Android del
+  `staleDate` de iOS).
 
 **Integración**: hook `useLiveSession()` montado junto a SessionView que observa las
 transiciones de la máquina de estados existente (start → set done → rest → work → end)
@@ -141,8 +164,12 @@ y llama al módulo. La máquina no se modifica.
 3. Flujo manual: empezar sesión → activity/notificación aparece → completar serie →
    countdown corre con pantalla bloqueada → fin de descanso → vuelve a `work` →
    terminar sesión → activity muere → widget muestra COMPLETADO.
-4. Widget con snapshot viejo (cambiar fecha del simulador) → estado neutro.
-5. Matar la app a mitad de sesión → activity se descarta vía staleDate.
+4. Ajustar descanso (+30s/−15s) y saltar descanso → el countdown de la activity y del
+   cronómetro Android se resincronizan.
+5. Dynamic Island: estados compact y expanded correctos en `work` y `rest`.
+6. Widget con snapshot viejo (cambiar fecha del simulador) → estado neutro.
+7. Matar la app a mitad de sesión → activity se descarta vía staleDate; en Android el
+   foreground service muere con el proceso y la notificación desaparece.
 
 ## Catálogo futuro (roadmap priorizado)
 
