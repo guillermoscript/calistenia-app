@@ -6,7 +6,6 @@ import { View, ScrollView, Pressable, Alert, AppState, Linking } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import Svg, { Circle } from 'react-native-svg'
-import * as Haptics from 'expo-haptics'
 import { ChevronLeft, ChevronRight, X, Play, Pause, RotateCcw } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
@@ -17,6 +16,7 @@ import { requestNotifPermission, scheduleRestEnd, cancelScheduled } from '@/lib/
 import { useLiveSession } from '@/lib/use-live-session'
 import { updateLiveRest, liveSessionHandlesRest } from '@/lib/live-session'
 import * as sounds from '@/lib/sounds'
+import { haptics as haptic } from '@/lib/haptics'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { Exercise, Workout, ExerciseLog, SetData } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
@@ -37,13 +37,6 @@ function buildSteps(exercises: Exercise[]): Step[] {
     }
   })
   return steps
-}
-
-const haptic = {
-  light: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}),
-  medium: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}),
-  success: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}),
-  warning: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}),
 }
 
 const LIME = 'hsl(74 90% 45%)'

@@ -8,6 +8,7 @@ import { X } from 'lucide-react-native'
 import * as Location from 'expo-location'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
 import { createRace } from '@/lib/race/raceApi'
 import { op } from '@calistenia/core/lib/analytics'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
@@ -57,16 +58,18 @@ export default function RaceCreateScreen() {
         ...origin,
       })
       op.track('race_created', { race_id: race.id, mode, activity_type: activity, platform: 'mobile' })
+      void haptics.success()
       router.replace(`/race/${race.id}`)
     } catch (e) {
       setError((e as Error).message)
+      void haptics.error()
       setBusy(false)
     }
   }
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
-      <ScrollView contentContainerClassName="px-4 pb-10 gap-5" keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerClassName="px-4 pb-10 gap-5" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View className="flex-row items-start justify-between pt-2">
           <Text className="font-bebas text-4xl leading-none text-foreground">{t('race.create')}</Text>
           <Pressable onPress={() => router.back()} className="rounded-full bg-muted/60 p-2 active:opacity-70">
@@ -100,7 +103,10 @@ export default function RaceCreateScreen() {
             {ACTIVITIES.map((a) => (
               <Pressable
                 key={a}
-                onPress={() => setActivity(a)}
+                onPress={() => {
+                  if (a !== activity) void haptics.selection()
+                  setActivity(a)
+                }}
                 className={cn(
                   'flex-1 items-center gap-1 rounded-xl border py-3',
                   activity === a ? 'border-lime/40 bg-lime/5' : 'border-border bg-card',
@@ -122,7 +128,10 @@ export default function RaceCreateScreen() {
             {(['distance', 'time'] as const).map((m) => (
               <Pressable
                 key={m}
-                onPress={() => setMode(m)}
+                onPress={() => {
+                  if (m !== mode) void haptics.selection()
+                  setMode(m)
+                }}
                 className={cn(
                   'flex-1 items-center rounded-xl border py-3',
                   mode === m ? 'border-lime/40 bg-lime/5' : 'border-border bg-card',

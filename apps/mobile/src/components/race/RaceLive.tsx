@@ -2,7 +2,7 @@
  * Carrera en vivo — port móvil del RaceLive web: stats propias, barra de
  * progreso hacia el objetivo, mapa con participantes y leaderboard realtime.
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { View, Pressable, Alert } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Map as MapLibreMap, Camera, GeoJSONSource, Layer } from '@maplibre/maplibre-react-native'
@@ -11,6 +11,8 @@ import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { useRaceContext } from '@/contexts/RaceContext'
 import { msUntil } from '@/lib/race/raceClock'
+import { haptics } from '@/lib/haptics'
+import * as sounds from '@/lib/sounds'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import type { RaceParticipant } from '@calistenia/core/types/race'
 
@@ -49,6 +51,26 @@ export default function RaceLive() {
   const { race, participants, me, myStats, actions, lastError, clearError } = useRaceContext()
 
   const sorted = useMemo(() => sortLeaderboard(participants), [participants])
+
+  // Km completado → misma vibración que en cardio libre (null = aún sin
+  // baseline, para no vibrar al rehidratar una carrera a mitad)
+  const prevKmRef = useRef<number | null>(null)
+  useEffect(() => {
+    const km = Math.floor(myStats?.distance_km ?? 0)
+    if (prevKmRef.current != null && km > prevKmRef.current) void haptics.success()
+    prevKmRef.current = km
+  }, [myStats?.distance_km])
+
+  // Cruzo mi meta (auto-finish por objetivo o botón) → golpe fuerte + triple
+  // beep: el corredor va mirando al frente, no a la pantalla
+  const prevStatusRef = useRef(me?.status)
+  useEffect(() => {
+    if (me?.status === 'finished' && prevStatusRef.current && prevStatusRef.current !== 'finished') {
+      sounds.playTimerComplete()
+      void haptics.heavy()
+    }
+    prevStatusRef.current = me?.status
+  }, [me?.status])
 
   const { markersGeoJSON, center } = useMemo(() => {
     const features: GeoJSON.Feature[] = []

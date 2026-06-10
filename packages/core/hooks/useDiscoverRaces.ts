@@ -7,6 +7,8 @@ export interface DiscoverFilter {
   nearLat?: number | null
   nearLng?: number | null
   radiusKm?: number
+  /** Incrementar para forzar una recarga con el mismo filtro (pull-to-refresh). */
+  reloadToken?: number
 }
 
 export interface DiscoverRace extends Race {
@@ -31,7 +33,7 @@ export function useDiscoverRaces(filter: DiscoverFilter): { races: DiscoverRace[
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { search, nearLat, nearLng, radiusKm = 50 } = filter
+  const { search, nearLat, nearLng, radiusKm = 50, reloadToken = 0 } = filter
 
   useEffect(() => {
     let cancelled = false
@@ -83,7 +85,7 @@ export function useDiscoverRaces(filter: DiscoverFilter): { races: DiscoverRace[
     })
 
     return () => { cancelled = true }
-  }, [search, nearLat, nearLng, radiusKm])
+  }, [search, nearLat, nearLng, radiusKm, reloadToken])
 
   return { races, loading, error }
 }

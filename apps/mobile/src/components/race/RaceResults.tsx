@@ -1,5 +1,5 @@
 /** Resultados de carrera — podio + ranking + guardar como entrenamiento. */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { View, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Trophy } from 'lucide-react-native'
@@ -7,6 +7,8 @@ import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { useRaceContext } from '@/contexts/RaceContext'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { haptics } from '@/lib/haptics'
+import * as sounds from '@/lib/sounds'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { estimateCalories } from '@calistenia/core/lib/calories'
@@ -23,7 +25,7 @@ function sortResults(participants: RaceParticipant[]): RaceParticipant[] {
   })
 }
 
-export default function RaceResults() {
+export default function RaceResults({ celebrate = false }: { celebrate?: boolean }) {
   const { t } = useTranslation()
   const { race, participants, me } = useRaceContext()
   const user = useAuthUser()
@@ -32,6 +34,16 @@ export default function RaceResults() {
 
   const sorted = useMemo(() => sortResults(participants), [participants])
   const winner = sorted[0]?.status === 'finished' ? sorted[0] : null
+
+  // Gané y vengo de correrla (no de abrir una carrera vieja) → fanfarria una vez
+  const celebratedRef = useRef(false)
+  const iWon = !!winner && winner.user === me?.user
+  useEffect(() => {
+    if (!celebrate || !iWon || celebratedRef.current) return
+    celebratedRef.current = true
+    sounds.playSessionComplete()
+    void haptics.success()
+  }, [celebrate, iWon])
 
   if (!race) return null
 
@@ -55,7 +67,10 @@ export default function RaceResults() {
         calories_burned: estimateCalories(race.activity_type, me.duration_seconds),
       })
       setSaved(true)
-    } catch { /* best-effort */ }
+      void haptics.success()
+    } catch {
+      void haptics.error()
+    }
     setSaving(false)
   }
 

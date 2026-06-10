@@ -1,4 +1,5 @@
 /** Pantalla de carrera: enruta por fase (lobby/countdown/live/results). */
+import { useEffect, useRef, useState } from 'react'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
@@ -16,6 +17,15 @@ function RacePhaseRouter({ displayName }: { displayName: string }) {
   const { t } = useTranslation()
   const router = useRouter()
   const { phase } = useRaceContext()
+
+  // Distinguir "acabo de terminar la carrera" de "abro una carrera ya
+  // terminada" — la celebración de resultados solo aplica al primer caso.
+  const [liveFinish, setLiveFinish] = useState(false)
+  const prevPhaseRef = useRef(phase)
+  useEffect(() => {
+    if (prevPhaseRef.current === 'racing' && phase === 'finished') setLiveFinish(true)
+    prevPhaseRef.current = phase
+  }, [phase])
 
   if (phase === 'countdown') return <RaceCountdown />
 
@@ -44,7 +54,7 @@ function RacePhaseRouter({ displayName }: { displayName: string }) {
       )}
       {phase === 'lobby' && <RaceLobby displayName={displayName} />}
       {phase === 'racing' && <RaceLive />}
-      {phase === 'finished' && <RaceResults />}
+      {phase === 'finished' && <RaceResults celebrate={liveFinish} />}
     </ScrollView>
   )
 }

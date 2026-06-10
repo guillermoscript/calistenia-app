@@ -4,7 +4,7 @@
  * + mapa) y finished (resumen + splits + elevación + nota).
  */
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { View, ScrollView, Pressable, TextInput, Alert } from 'react-native'
+import { View, ScrollView, Pressable, TextInput, Alert, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -13,6 +13,7 @@ import { X, MapPin, Check } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
 import RouteMap from '@/components/cardio/RouteMap'
@@ -57,6 +58,7 @@ export default function CardioScreen() {
   const [historyLoading, setHistoryLoading] = useState(true)
   const [savedSession, setSavedSession] = useState<CardioSession | null>(null)
   const [raceLink, setRaceLink] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
 
   const isIdle = state === 'idle'
   useEffect(() => {
@@ -67,6 +69,15 @@ export default function CardioScreen() {
   }, [isIdle, getHistory, loadStats]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isCycling = (type: CardioActivityType) => type === 'cycling'
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await Promise.all([
+      getHistory(20).then(setHistory).catch(() => {}),
+      loadStats(),
+    ])
+    setRefreshing(false)
+  }, [getHistory, loadStats])
 
   const handleStart = async () => {
     op.track('cardio_started', { activity_type: selectedActivity, platform: 'mobile' })
@@ -130,7 +141,16 @@ export default function CardioScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
-      <ScrollView contentContainerClassName="px-4 pb-10 gap-4" keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerClassName="px-4 pb-10 gap-4"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        refreshControl={
+          isIdle && !savedSession
+            ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={LIME} colors={[LIME]} />
+            : undefined
+        }
+      >
         {/* Header */}
         <View className="flex-row items-start justify-between pt-2">
           {!isTracking ? (
@@ -218,7 +238,10 @@ export default function CardioScreen() {
               {ACTIVITIES.map((act) => (
                 <Pressable
                   key={act}
-                  onPress={() => setSelectedActivity(act)}
+                  onPress={() => {
+                    if (act !== selectedActivity) void haptics.selection()
+                    setSelectedActivity(act)
+                  }}
                   className={cn(
                     'flex-1 items-center gap-1 rounded-lg py-4',
                     selectedActivity === act && 'border border-lime/30 bg-background',

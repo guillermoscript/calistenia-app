@@ -1,6 +1,6 @@
 /** Races públicas cerca — port móvil de RacesDiscoverPage (useDiscoverRaces de core). */
-import { useState } from 'react'
-import { View, ScrollView, Pressable, TextInput } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { View, ScrollView, Pressable, TextInput, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +8,7 @@ import { X, MapPin } from 'lucide-react-native'
 import * as Location from 'expo-location'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
 import { useDiscoverRaces } from '@calistenia/core/hooks/useDiscoverRaces'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 
@@ -21,13 +22,29 @@ export default function RacesDiscoverScreen() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [radiusKm, setRadiusKm] = useState(50)
   const [locating, setLocating] = useState(false)
+  const [reloadToken, setReloadToken] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
 
   const { races, loading } = useDiscoverRaces({
     search,
     nearLat: coords?.lat ?? null,
     nearLng: coords?.lng ?? null,
     radiusKm,
+    reloadToken,
   })
+
+  const refreshingRef = useRef(false)
+  const handleRefresh = useCallback(() => {
+    refreshingRef.current = true
+    setRefreshing(true)
+    setReloadToken((n) => n + 1)
+  }, [])
+  useEffect(() => {
+    if (refreshingRef.current && !loading) {
+      refreshingRef.current = false
+      setRefreshing(false)
+    }
+  }, [loading])
 
   const handleUseLocation = async () => {
     setLocating(true)
@@ -43,7 +60,12 @@ export default function RacesDiscoverScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
-      <ScrollView contentContainerClassName="px-4 pb-10 gap-4" keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerClassName="px-4 pb-10 gap-4"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#a3e635" colors={['#a3e635']} />}
+      >
         <View className="flex-row items-start justify-between pt-2">
           <View>
             <Text className="font-bebas text-4xl leading-none text-foreground">{t('race.nearbyTitle')}</Text>
@@ -80,7 +102,10 @@ export default function RacesDiscoverScreen() {
               {RADII.map((r) => (
                 <Pressable
                   key={r}
-                  onPress={() => setRadiusKm(r)}
+                  onPress={() => {
+                    if (r !== radiusKm) void haptics.selection()
+                    setRadiusKm(r)
+                  }}
                   className={cn('flex-1 items-center rounded-lg border py-1.5', radiusKm === r ? 'border-lime/40 bg-lime/10' : 'border-border')}
                 >
                   <Text className={cn('font-mono text-[10px]', radiusKm === r ? 'text-lime' : 'text-muted-foreground')}>{r}km</Text>

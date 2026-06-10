@@ -1,11 +1,12 @@
 /** Sala de espera de la carrera — port móvil del RaceLobby web. */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View, Pressable, Share, Alert } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Share2, Crown } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { useRaceContext } from '@/contexts/RaceContext'
+import { haptics } from '@/lib/haptics'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 
 const WEB_ORIGIN = 'https://gym.guille.tech'
@@ -14,6 +15,16 @@ export default function RaceLobby({ displayName }: { displayName: string }) {
   const { t } = useTranslation()
   const { race, participants, me, isCreator, hasJoined, actions } = useRaceContext()
   const [busy, setBusy] = useState(false)
+
+  // Alguien entró a la sala → toque ligero (esperas sin mirar la pantalla).
+  // null = sin baseline aún, para no vibrar con la carga inicial.
+  const prevCountRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (prevCountRef.current != null && participants.length > prevCountRef.current) {
+      void haptics.light()
+    }
+    prevCountRef.current = participants.length
+  }, [participants.length])
 
   if (!race) return null
 
@@ -27,7 +38,10 @@ export default function RaceLobby({ displayName }: { displayName: string }) {
 
   const handleJoin = async () => {
     setBusy(true)
-    try { await actions.join(displayName) } catch { /* error mostrado por contexto */ }
+    try {
+      await actions.join(displayName)
+      void haptics.medium()
+    } catch { /* error mostrado por contexto */ }
     setBusy(false)
   }
 

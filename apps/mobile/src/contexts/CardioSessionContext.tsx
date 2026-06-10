@@ -22,6 +22,7 @@ import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/co
 
 import { syncStorage } from '@/lib/storage'
 import { onOnline } from '@/lib/connectivity'
+import { haptics } from '@/lib/haptics'
 import {
   setCardioFixListener, startCardioTracking, stopCardioTracking,
   requestCardioPermission, type CardioFix,
@@ -281,6 +282,9 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       if (currentKm > lastSplitKmRef.current) {
         lastSplitKmRef.current = currentKm
         lastSplitTimeRef.current = point.timestamp
+        // Km completado — vibración estilo Strava (el teléfono suele ir en el
+        // bolsillo/brazalete: la háptica es el único feedback que llega)
+        void haptics.success()
       }
       const splitKm = currentKm + 1
       const splitStartTime = lastSplitTimeRef.current || startTimeRef.current
@@ -356,6 +360,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     const granted = await requestCardioPermission()
     if (!granted) {
       setError(i18n.t('cardioSession.geoNotAvailable'))
+      void haptics.error()
       return false
     }
 
@@ -387,6 +392,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
     setState('tracking')
     stateRef.current = 'tracking'
+    void haptics.medium()
     // El FGS (notificación) debe arrancar con la app en foreground y permiso
     // ya concedido — mantiene el GPS vivo al bloquear la pantalla
     await startCardioLive(type, startTimeRef.current)
@@ -399,6 +405,9 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const pause = useCallback(() => {
     setState('paused')
     stateRef.current = 'paused'
+    // En el contexto (no en el botón) para que también vibre al pausar desde
+    // la notificación con el teléfono bloqueado
+    void haptics.medium()
     stopTracking()
     pauseStartRef.current = Date.now()
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
@@ -409,6 +418,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
   const resume = useCallback(() => {
     setState('tracking')
     stateRef.current = 'tracking'
+    void haptics.medium()
     pausedDurationRef.current += Date.now() - pauseStartRef.current
     startTracking()
     void resumeCardioLive(startTimeRef.current + pausedDurationRef.current)
@@ -436,6 +446,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
     setState('finished')
     stateRef.current = 'finished'
+    void haptics.success()
     clearStorage()
 
     const finalDuration = Math.floor((Date.now() - startTimeRef.current - pausedDurationRef.current) / 1000)
@@ -480,6 +491,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         console.warn('Failed to save cardio session, queuing for retry:', e)
         pushUnsaved(saveData)
         setUnsavedCount(loadUnsaved().length)
+        void haptics.warning()
       }
     }
 
