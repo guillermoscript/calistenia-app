@@ -26,7 +26,13 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
+      ]
     },
     "web": {
       "output": "single",
@@ -46,6 +52,15 @@
         }
       ],
       "expo-audio",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos tu ubicación para registrar la ruta, distancia y ritmo de tus sesiones de cardio.",
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "@maplibre/maplibre-react-native",
+      "./plugins/with-notifee-location-fgs.js",
       "@sentry/react-native",
       [
         "expo-font",
@@ -74,6 +89,16 @@
               "name": "TodayWidget",
               "label": "Entrenamiento de hoy",
               "description": "Qué toca hoy, semana y racha",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "CardioWidget",
+              "label": "Cardio",
+              "description": "Km de la semana y última sesión",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
