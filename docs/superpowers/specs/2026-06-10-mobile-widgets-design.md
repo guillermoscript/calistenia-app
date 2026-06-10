@@ -106,7 +106,7 @@ a medianoche para forzar esa transición sin abrir la app.
 
 ```ts
 { exerciseName: string; setIndex: number; setTotal: number;
-  phase: 'work' | 'rest'; restEndsAt: string | null }   // ISO date
+  phase: 'work' | 'rest'; restEndsAt: number | null }   // epoch ms
 ```
 
 **Mapeo desde la máquina de estados de SessionView** (`exercise | rest | note |
