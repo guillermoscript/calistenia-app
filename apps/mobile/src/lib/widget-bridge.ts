@@ -21,9 +21,15 @@ export async function writeWidgetSnapshot(snapshot: WidgetSnapshot): Promise<voi
     if (Platform.OS === 'ios') {
       getWidgetBridge()?.setSnapshot(json)
     } else if (Platform.OS === 'android') {
-      // En este task solo persistimos; el refresh del widget (requestWidgetUpdate)
-      // se añade en el Task 5, que es quien crea TodayWidget.
       await AsyncStorage.setItem(WIDGET_SNAPSHOT_KEY, json)
+      const { requestWidgetUpdate } = await import('react-native-android-widget')
+      const React = await import('react')
+      const { TodayWidget } = await import('../widgets/TodayWidget')
+      await requestWidgetUpdate({
+        widgetName: 'TodayWidget',
+        renderWidget: () => React.createElement(TodayWidget, { snapshot, today: snapshot.date }),
+        widgetNotFound: () => {},
+      })
     }
   } catch (e) {
     Sentry.captureException(e)

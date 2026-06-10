@@ -5,3 +5,13 @@
 import './src/lib/instrument'
 import './src/lib/init-core'
 import 'expo-router/entry'
+
+// Widget Android: el task handler corre también en headless JS (sin UI).
+import { Platform } from 'react-native'
+if (Platform.OS === 'android') {
+  try {
+    const { registerWidgetTaskHandler } = require('react-native-android-widget')
+    const { widgetTaskHandler } = require('./src/widgets/widget-task-handler')
+    registerWidgetTaskHandler(widgetTaskHandler)
+  } catch { /* Expo Go: lib nativa ausente */ }
+}
