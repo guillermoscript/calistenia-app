@@ -32,6 +32,8 @@ import { registerSmartTools } from "./tools/smart.js";
 import { registerGamificationTools } from "./tools/gamification.js";
 import { registerMediaTools } from "./tools/media.js";
 import { registerCircuitTools } from "./tools/circuits.js";
+import { registerResources } from "./resources.js";
+import { registerPrompts } from "./prompts.js";
 
 const PORT = parseInt(process.env.PORT ?? process.env.MCP_SERVER_PORT ?? "3001", 10);
 const HOST = process.env.HOST ?? process.env.MCP_SERVER_HOST ?? "0.0.0.0";
@@ -94,6 +96,10 @@ registerSmartTools(server, PB_URL);
 registerGamificationTools(server, PB_URL);
 registerMediaTools(server, PB_URL);
 registerCircuitTools(server, PB_URL);
+
+// ── Resources (3) + Prompts (3) ───────────────────────────────────────────────
+registerResources(server, PB_URL);
+registerPrompts(server);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 server.app.get("/health", (c) =>

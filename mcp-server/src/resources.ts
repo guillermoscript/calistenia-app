@@ -1,70 +1,86 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { AuthManager } from "./auth.js";
-import { today, daysAgo, startOfWeek } from "./utils.js";
+import type { MCPServer } from "mcp-use/server";
+import { getAuthManager } from "./mcpuse/auth-bridge.js";
+import { today, startOfWeek } from "./utils.js";
 
-export function registerResources(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-
+export function registerResources(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // USER PROFILE RESOURCE
   // ──────────────────────────────────────────────────────────────
-  server.resource("user://profile", "User profile, training settings, and current program summary", async () => {
-    const [settings, userPrograms] = await Promise.all([
-      pb.collection("settings").getFirstListItem(`user = "${userId}"`).catch(() => null),
-      pb.collection("user_programs").getFullList({
-        filter: `user = "${userId}" && is_current = true`,
-        expand: "program",
-      }),
-    ]);
+  server.resource(
+    {
+      name: "user-profile",
+      uri: "user://profile",
+      description: "User profile, training settings, and current program summary",
+      mimeType: "application/json",
+    },
+    async (ctx) => {
+      const auth = getAuthManager(ctx.auth, pbUrl);
+      const pb = auth.getClient();
+      const userId = auth.getUserId();
 
-    const currentProgram = userPrograms[0]?.expand?.program as Record<string, unknown> | undefined;
+      const [settings, userPrograms] = await Promise.all([
+        pb.collection("settings").getFirstListItem(`user = "${userId}"`).catch(() => null),
+        pb.collection("user_programs").getFullList({
+          filter: `user = "${userId}" && is_current = true`,
+          expand: "program",
+        }),
+      ]);
 
-    const profile = {
-      user_id: auth.getUserId(),
-      email: auth.getEmail(),
-      settings: settings
-        ? {
-            phase: settings.phase,
-            start_date: settings.start_date,
-            weekly_goal: settings.weekly_goal,
-            personal_records: {
-              pullups: settings.pr_pullups ?? null,
-              pushups: settings.pr_pushups ?? null,
-              l_sit: settings.pr_lsit ?? null,
-              pistol: settings.pr_pistol ?? null,
-              handstand: settings.pr_handstand ?? null,
-            },
-          }
-        : null,
-      current_program: currentProgram
-        ? {
-            id: currentProgram.id,
-            name: currentProgram.name,
-            duration_weeks: currentProgram.duration_weeks,
-            started_at: userPrograms[0]?.started_at ?? null,
-          }
-        : null,
-    };
+      const currentProgram = userPrograms[0]?.expand?.program as Record<string, unknown> | undefined;
 
-    return {
-      contents: [
-        {
-          uri: "user://profile",
-          mimeType: "application/json",
-          text: JSON.stringify(profile, null, 2),
-        },
-      ],
-    };
-  });
+      const profile = {
+        user_id: auth.getUserId(),
+        email: auth.getEmail(),
+        settings: settings
+          ? {
+              phase: settings.phase,
+              start_date: settings.start_date,
+              weekly_goal: settings.weekly_goal,
+              personal_records: {
+                pullups: settings.pr_pullups ?? null,
+                pushups: settings.pr_pushups ?? null,
+                l_sit: settings.pr_lsit ?? null,
+                pistol: settings.pr_pistol ?? null,
+                handstand: settings.pr_handstand ?? null,
+              },
+            }
+          : null,
+        current_program: currentProgram
+          ? {
+              id: currentProgram.id,
+              name: currentProgram.name,
+              duration_weeks: currentProgram.duration_weeks,
+              started_at: userPrograms[0]?.started_at ?? null,
+            }
+          : null,
+      };
+
+      return {
+        contents: [
+          {
+            uri: "user://profile",
+            mimeType: "application/json",
+            text: JSON.stringify(profile, null, 2),
+          },
+        ],
+      };
+    }
+  );
 
   // ──────────────────────────────────────────────────────────────
   // TODAY'S NUTRITION RESOURCE
   // ──────────────────────────────────────────────────────────────
   server.resource(
-    "nutrition://today",
-    "Today's logged meals and macro totals vs daily goals",
-    async () => {
+    {
+      name: "nutrition-today",
+      uri: "nutrition://today",
+      description: "Today's logged meals and macro totals vs daily goals",
+      mimeType: "application/json",
+    },
+    async (ctx) => {
+      const auth = getAuthManager(ctx.auth, pbUrl);
+      const pb = auth.getClient();
+      const userId = auth.getUserId();
       const todayStr = today();
 
       const [entries, goals] = await Promise.all([
@@ -138,9 +154,16 @@ export function registerResources(server: McpServer, auth: AuthManager) {
   // WEEKLY PROGRESS RESOURCE
   // ──────────────────────────────────────────────────────────────
   server.resource(
-    "progress://weekly",
-    "This week's workout sessions and consistency vs weekly goal",
-    async () => {
+    {
+      name: "progress-weekly",
+      uri: "progress://weekly",
+      description: "This week's workout sessions and consistency vs weekly goal",
+      mimeType: "application/json",
+    },
+    async (ctx) => {
+      const auth = getAuthManager(ctx.auth, pbUrl);
+      const pb = auth.getClient();
+      const userId = auth.getUserId();
       const weekStart = startOfWeek();
       const todayStr = today();
 

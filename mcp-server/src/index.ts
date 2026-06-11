@@ -31,11 +31,8 @@ import {
 // requireBearerAuth not used — we verify tokens directly in mcpAuth to support dual-auth fallback
 import { AuthManager, validateBearerToken } from "./auth.js";
 import { PocketBaseOAuthProvider, createLoginRouter } from "./oauth.js";
-// Tools migrated to mcp-use signatures (Phase 3) — registered in src/server.ts.
-// Legacy /mcp here serves only resources/prompts until cutover (Phases 5-6 keep
-// OAuth flow + REST /api/* alive on this entrypoint).
-import { registerResources } from "./resources.js";
-import { registerPrompts } from "./prompts.js";
+// Resources/prompts migrated to mcp-use signatures (Phase 4) — registered in src/server.ts.
+// Legacy /mcp endpoint stripped; OAuth flow + REST /api/* remain until Phases 5-6 cutover.
 import { createApiRouter } from "./api/index.js";
 
 const PORT = parseInt(process.env.PORT ?? process.env.MCP_SERVER_PORT ?? "3001", 10);
@@ -50,10 +47,6 @@ function createServerWithAuth(auth: AuthManager): McpServer {
     name: "calistenia-mcp-server",
     version: "1.0.0",
   });
-
-  registerResources(server, auth);
-  registerPrompts(server);
-
   return server;
 }
 

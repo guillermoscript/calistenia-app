@@ -75,8 +75,12 @@ Test env notes: local-only changes — enabled `passwordAuth` on `users` collect
 - All 10 registered in `src/server.ts`. Legacy `index.ts` stripped of tool registration (serves resources/prompts + OAuth flow + REST `/api/*` until Phases 5-6); `stdio.ts` + `*:stdio` scripts deleted (Phase 7 decision pulled forward).
 - Verified locally (PB 0.36.8 + tsx, port 3210): `tsc --noEmit` clean; `tools/list` → 72 (71 + `cal_whoami`); `tools/call` OK with PB JWT across health/workouts/circuits/nutrition (`cal_whoami`, `cal_get_water_today`, `cal_list_sessions`, `cal_circuit_stats`, `cal_get_nutrition_summary`). Note: mcp-use sessions are stateful — `initialize` returns `mcp-session-id` header, required on subsequent calls.
 
-### Phase 4 — Resources & prompts
+### Phase 4 — Resources & prompts ✅ DONE
 - 3 resources (`server.resource`) + 3 prompts (`server.prompt`) → mcp-use equivalents, auth from ctx.
+- `src/resources.ts`: `registerResources(server: MCPServer, pbUrl: string)` — each callback does `getAuthManager(ctx.auth, pbUrl)` per request (same pattern as tools).
+- `src/prompts.ts`: `registerPrompts(server: MCPServer)` — `server.prompt({name, description, schema}, cb)` with zod schema.
+- Wired in `src/server.ts` after tools; removed imports+calls from legacy `src/index.ts` (`createServerWithAuth` now returns empty McpServer).
+- Verified locally (PB 0.36.8 + tsx, port 3210): `tsc --noEmit` clean; `resources/list` → 3 URIs; `resources/read user://profile` → real JSON; `prompts/list` → 3; `prompts/get plan_training_week` → message with focus arg interpolated.
 
 ### Phase 5 — OAuth authz-server (DECISION REQUIRED)
 - `mcpAuthRouter` is Express-only and PB isn't a standard OAuth IdP, so mcp-use's `oauthProxy`/`jwksVerifier` don't fit. Two paths:

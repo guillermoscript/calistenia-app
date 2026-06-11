@@ -1,20 +1,23 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
 
-export function registerPrompts(server: McpServer) {
+export function registerPrompts(server: MCPServer) {
   // ──────────────────────────────────────────────────────────────
   // PLAN TRAINING WEEK
   // ──────────────────────────────────────────────────────────────
   server.prompt(
-    "plan_training_week",
-    "Generate a personalized weekly training plan based on the user's current program, phase, progress, and recovery status.",
     {
-      focus: z
-        .string()
-        .optional()
-        .describe("Optional focus or constraint (e.g. 'I have a sore shoulder', 'I want to prioritize pull strength')"),
+      name: "plan_training_week",
+      description:
+        "Generate a personalized weekly training plan based on the user's current program, phase, progress, and recovery status.",
+      schema: z.object({
+        focus: z
+          .string()
+          .optional()
+          .describe("Optional focus or constraint (e.g. 'I have a sore shoulder', 'I want to prioritize pull strength')"),
+      }),
     },
-    ({ focus }) => ({
+    async ({ focus }) => ({
       messages: [
         {
           role: "user",
@@ -48,18 +51,21 @@ export function registerPrompts(server: McpServer) {
   // ANALYZE PROGRESS
   // ──────────────────────────────────────────────────────────────
   server.prompt(
-    "analyze_progress",
-    "Analyze the user's recent training progress and provide actionable insights on consistency, exercise progression, and recovery patterns.",
     {
-      period_days: z
-        .number()
-        .int()
-        .min(7)
-        .max(180)
-        .default(30)
-        .describe("How many days of history to analyze (default 30)"),
+      name: "analyze_progress",
+      description:
+        "Analyze the user's recent training progress and provide actionable insights on consistency, exercise progression, and recovery patterns.",
+      schema: z.object({
+        period_days: z
+          .number()
+          .int()
+          .min(7)
+          .max(180)
+          .default(30)
+          .describe("How many days of history to analyze (default 30)"),
+      }),
     },
-    ({ period_days }) => ({
+    async ({ period_days }) => ({
       messages: [
         {
           role: "user",
@@ -92,18 +98,21 @@ export function registerPrompts(server: McpServer) {
   // NUTRITION ADVICE
   // ──────────────────────────────────────────────────────────────
   server.prompt(
-    "nutrition_advice",
-    "Review the user's recent nutrition data and provide personalized advice aligned with their training and body composition goal.",
     {
-      days: z
-        .number()
-        .int()
-        .min(3)
-        .max(30)
-        .default(7)
-        .describe("Days of nutrition history to review (default 7)"),
+      name: "nutrition_advice",
+      description:
+        "Review the user's recent nutrition data and provide personalized advice aligned with their training and body composition goal.",
+      schema: z.object({
+        days: z
+          .number()
+          .int()
+          .min(3)
+          .max(30)
+          .default(7)
+          .describe("Days of nutrition history to review (default 7)"),
+      }),
     },
-    ({ days }) => ({
+    async ({ days }) => ({
       messages: [
         {
           role: "user",
