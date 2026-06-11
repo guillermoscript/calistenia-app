@@ -1,23 +1,20 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, PaginationSchema } from "../utils.js";
 import { localize, toTranslatable } from "../lib/i18n.js";
 
-export function registerProgramTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-
+export function registerProgramTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST PROGRAMS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_programs",
+  server.tool(
     {
+      name: "cal_list_programs",
       title: "List Training Programs",
       description:
         "List all available training programs. Shows name, description, duration, and whether the user has selected it.",
-      inputSchema: z
+      schema: z
         .object({
           response_format: z
             .nativeEnum(ResponseFormat)
@@ -27,8 +24,11 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ response_format }) => {
+    async ({ response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const [programs, userPrograms] = await Promise.all([
           pb.collection("programs").getFullList({ sort: "name", requestKey: null }),
           pb.collection("user_programs").getFullList({
@@ -79,13 +79,13 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // GET CURRENT PROGRAM
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_current_program",
+  server.tool(
     {
+      name: "cal_get_current_program",
       title: "Get Current Program",
       description:
         "Get detailed information about the user's currently active training program, including all phases and the exercises for each day. Essential context for planning workouts.",
-      inputSchema: z
+      schema: z
         .object({
           response_format: z
             .nativeEnum(ResponseFormat)
@@ -95,8 +95,11 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ response_format }) => {
+    async ({ response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const userPrograms = await pb.collection("user_programs").getFullList({
           filter: pb.filter('user = {:userId} && is_current = true', { userId }),
           expand: "program",
@@ -213,21 +216,24 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // SET CURRENT PROGRAM
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_set_current_program",
+  server.tool(
     {
+      name: "cal_set_current_program",
       title: "Set Current Training Program",
       description:
         "Select or switch to a training program. Deactivates the previous active program. Use cal_list_programs to get program IDs.",
-      inputSchema: z
+      schema: z
         .object({
           program_id: z.string().describe("The program ID to activate"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ program_id }) => {
+    async ({ program_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         // Verify program exists
         const program = await pb.collection("programs").getOne(program_id);
 
@@ -278,13 +284,13 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LIST EXERCISE PROGRESSIONS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_exercise_progressions",
+  server.tool(
     {
+      name: "cal_list_exercise_progressions",
       title: "List Exercise Progressions",
       description:
         "Get the progression chain for exercises in a category (e.g. push, pull, legs). Shows difficulty order and the reps target needed to advance to the next level.",
-      inputSchema: z
+      schema: z
         .object({
           category: z
             .string()
@@ -302,8 +308,10 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ category, exercise_id, response_format }) => {
+    async ({ category, exercise_id, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const conditions: string[] = [];
         const params: Record<string, unknown> = {};
         if (category) {
@@ -371,13 +379,13 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // CREATE PROGRAM
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_create_program",
+  server.tool(
     {
+      name: "cal_create_program",
       title: "Create Training Program",
       description:
         "Create a new training program. After creating, use cal_create_phase and cal_add_program_exercise to populate it, or use cal_build_program to create a complete program in one call.",
-      inputSchema: z
+      schema: z
         .object({
           name: z.string().min(2).describe("Program name"),
           description: z.string().optional().describe("Program description"),
@@ -390,8 +398,11 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const record = await pb.collection("programs").create({
           name: toTranslatable(input.name),
           description: toTranslatable(input.description || ""),
@@ -414,12 +425,12 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // UPDATE PROGRAM
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_update_program",
+  server.tool(
     {
+      name: "cal_update_program",
       title: "Update Training Program",
       description: "Update an existing training program's metadata (name, description, duration, difficulty).",
-      inputSchema: z
+      schema: z
         .object({
           program_id: z.string().describe("Program ID to update"),
           name: z.string().optional().describe("New program name"),
@@ -431,8 +442,10 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
-    async ({ program_id, ...updates }) => {
+    async ({ program_id, ...updates }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const data: Record<string, unknown> = {};
         if (updates.name !== undefined) data.name = toTranslatable(updates.name);
         if (updates.description !== undefined) data.description = toTranslatable(updates.description);
@@ -454,17 +467,19 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // DELETE PROGRAM
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_delete_program",
+  server.tool(
     {
+      name: "cal_delete_program",
       title: "Delete Training Program",
       description:
         "Delete a training program. Phases and exercises are cascade-deleted by PocketBase. Only the program creator can delete.",
-      inputSchema: z.object({ program_id: z.string().describe("Program ID to delete") }).strict(),
+      schema: z.object({ program_id: z.string().describe("Program ID to delete") }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
     },
-    async ({ program_id }) => {
+    async ({ program_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const program = await pb.collection("programs").getOne(program_id);
 
         // Delete user_programs entries first — they have cascadeDelete: false + required,
@@ -495,12 +510,12 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // CREATE PHASE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_create_phase",
+  server.tool(
     {
+      name: "cal_create_phase",
       title: "Create Program Phase",
       description: "Add a training phase to a program (e.g. 'Foundation', 'Strength', 'Advanced').",
-      inputSchema: z
+      schema: z
         .object({
           program_id: z.string().describe("Program ID to add the phase to"),
           phase_number: z.number().int().min(1).describe("Phase number (1, 2, 3...)"),
@@ -512,8 +527,10 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const record = await pb.collection("program_phases").create({
           program: input.program_id,
           phase_number: input.phase_number,
@@ -538,12 +555,12 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // UPDATE PHASE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_update_phase",
+  server.tool(
     {
+      name: "cal_update_phase",
       title: "Update Program Phase",
       description: "Update a phase's name, weeks, or colors.",
-      inputSchema: z
+      schema: z
         .object({
           phase_id: z.string().describe("Phase record ID"),
           name: z.string().optional().describe("New phase name"),
@@ -554,8 +571,10 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
-    async ({ phase_id, ...updates }) => {
+    async ({ phase_id, ...updates }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const data: Record<string, unknown> = {};
         if (updates.name !== undefined) data.name = toTranslatable(updates.name);
         if (updates.weeks !== undefined) data.weeks = updates.weeks;
@@ -575,16 +594,18 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // DELETE PHASE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_delete_phase",
+  server.tool(
     {
+      name: "cal_delete_phase",
       title: "Delete Program Phase",
       description: "Delete a phase from a program. Exercises in this phase are NOT cascade-deleted — remove them first if needed.",
-      inputSchema: z.object({ phase_id: z.string().describe("Phase record ID") }).strict(),
+      schema: z.object({ phase_id: z.string().describe("Phase record ID") }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
     },
-    async ({ phase_id }) => {
+    async ({ phase_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         await pb.collection("program_phases").delete(phase_id);
         return { content: [{ type: "text", text: `Deleted phase ${phase_id}` }] };
       } catch (err) {
@@ -596,13 +617,13 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // ADD PROGRAM EXERCISE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_add_program_exercise",
+  server.tool(
     {
+      name: "cal_add_program_exercise",
       title: "Add Exercise to Program",
       description:
         "Add an exercise to a specific phase and day in a program. Day info (name, focus, title) is stored with each exercise record.",
-      inputSchema: z
+      schema: z
         .object({
           program_id: z.string().describe("Program ID"),
           phase_number: z.number().int().min(1).describe("Phase number"),
@@ -629,8 +650,10 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const record = await pb.collection("program_exercises").create({
           program: input.program_id,
           phase_number: input.phase_number,
@@ -673,12 +696,12 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // UPDATE PROGRAM EXERCISE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_update_program_exercise",
+  server.tool(
     {
+      name: "cal_update_program_exercise",
       title: "Update Exercise in Program",
       description: "Update an exercise's sets, reps, rest, notes, or other properties within a program.",
-      inputSchema: z
+      schema: z
         .object({
           exercise_record_id: z.string().describe("The program_exercises record ID to update"),
           exercise_name: z.string().optional(),
@@ -697,8 +720,10 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
-    async ({ exercise_record_id, ...updates }) => {
+    async ({ exercise_record_id, ...updates }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const translatableKeys = new Set(['exercise_name', 'muscles', 'note']);
         const data: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(updates)) {
@@ -720,16 +745,18 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // REMOVE PROGRAM EXERCISE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_remove_program_exercise",
+  server.tool(
     {
+      name: "cal_remove_program_exercise",
       title: "Remove Exercise from Program",
       description: "Remove an exercise from a program day.",
-      inputSchema: z.object({ exercise_record_id: z.string().describe("The program_exercises record ID") }).strict(),
+      schema: z.object({ exercise_record_id: z.string().describe("The program_exercises record ID") }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
     },
-    async ({ exercise_record_id }) => {
+    async ({ exercise_record_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const record = await pb.collection("program_exercises").getOne(exercise_record_id);
         await pb.collection("program_exercises").delete(exercise_record_id);
         return { content: [{ type: "text", text: `Removed **${localize(record.exercise_name)}** from program` }] };
@@ -779,14 +806,14 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
     days: z.array(DayInput).min(1),
   });
 
-  server.registerTool(
-    "cal_build_program",
+  server.tool(
     {
+      name: "cal_build_program",
       title: "Build Complete Program",
       description:
         "Create a full training program with phases, days, and exercises in one call. " +
         "This is the fastest way to build a program. Phases are numbered automatically starting from 1.",
-      inputSchema: z
+      schema: z
         .object({
           name: z.string().min(2).describe("Program name"),
           description: z.string().optional().describe("Program description"),
@@ -798,8 +825,11 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         // 1. Create program
         const program = await pb.collection("programs").create({
           name: toTranslatable(input.name),
@@ -923,15 +953,15 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // SEED PROGRAM FROM JSON
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_seed_program_from_json",
+  server.tool(
     {
+      name: "cal_seed_program_from_json",
       title: "Seed Program from JSON",
       description:
         "Import a complete program from a JSON object matching the program export format. " +
         "Accepts the same structure as intermedio_balance_total.json: { program: {...}, phases: [{...}] }. " +
         "Creates the program as official. All text is stored with i18n support.",
-      inputSchema: z
+      schema: z
         .object({
           program: z.object({
             name: z.string(),
@@ -980,8 +1010,11 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const dayTypeMap: Record<string, string> = {
           lun: "push", mar: "pull", mie: "lumbar", jue: "legs",
           vie: "full", sab: "rest", dom: "rest",
@@ -1128,13 +1161,13 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // DUPLICATE PROGRAM
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_duplicate_program",
+  server.tool(
     {
+      name: "cal_duplicate_program",
       title: "Duplicate Training Program",
       description:
         "Clone an existing program with all its phases and exercises. Great for creating variations of a program.",
-      inputSchema: z
+      schema: z
         .object({
           program_id: z.string().describe("Program ID to duplicate"),
           new_name: z.string().optional().describe("Name for the copy (defaults to 'Original Name (copy)')"),
@@ -1142,8 +1175,11 @@ export function registerProgramTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async ({ program_id, new_name }) => {
+    async ({ program_id, new_name }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const original = await pb.collection("programs").getOne(program_id);
 
         // Create new program

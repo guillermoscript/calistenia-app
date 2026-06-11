@@ -70,10 +70,10 @@ Implemented via `oauthCustomProvider` (not middleware-state — spike showed `ct
 **Verified locally** (PB 0.36.8 + tsx): boot OK, `/health` OK, no-auth /mcp → 401 + `WWW-Authenticate` + `.well-known` metadata, garbage token → 401, real PB JWT → initialize/tools/call `cal_whoami` returns correct user (`auth_method: "pocketbase"`), `[Auth]` middleware log fires. OAuth-token leg untestable until Phase 5 routes ported (flow lives in legacy Express).
 Test env notes: local-only changes — enabled `passwordAuth` on `users` collection in local pb_data, created `mcptest@example.com` / local superuser `mcptest-admin@example.com`. NOT in prod.
 
-### Phase 3 — Tools (largest mechanical lift)
-- For each of 10 files, change `registerXTools(server, auth)` → register against the mcp-use server, and move `pb/userId/tz` access **inside** each handler reading `ctx.state.auth` (currently captured at register time via closure).
-- Response shape: existing `{ content, structuredContent }` likely still valid, but idiomatically convert to `object()` / `text()` / `error()` helpers (`errorResult` in utils → `error()`).
-- Order by size/risk: health, gamification, media, circuits, workouts, exercises, smart, progress, nutrition, programs.
+### Phase 3 — Tools ✅ DONE (2026-06-11)
+- All 10 files (71 tools) converted in place: `registerXTools(server: MCPServer, pbUrl: string)`; `server.registerTool(name, {inputSchema})` → `server.tool({name, schema})`; handlers gained `ctx` and resolve `getAuthManager(ctx.auth, pbUrl)` → `pb/userId/tz` per request inside the try block. Return shapes (`{content, structuredContent}`) and business logic untouched (per spike: no rewrite needed; `object()`/`error()` helpers deferred as optional polish).
+- All 10 registered in `src/server.ts`. Legacy `index.ts` stripped of tool registration (serves resources/prompts + OAuth flow + REST `/api/*` until Phases 5-6); `stdio.ts` + `*:stdio` scripts deleted (Phase 7 decision pulled forward).
+- Verified locally (PB 0.36.8 + tsx, port 3210): `tsc --noEmit` clean; `tools/list` → 72 (71 + `cal_whoami`); `tools/call` OK with PB JWT across health/workouts/circuits/nutrition (`cal_whoami`, `cal_get_water_today`, `cal_list_sessions`, `cal_circuit_stats`, `cal_get_nutrition_summary`). Note: mcp-use sessions are stateful — `initialize` returns `mcp-session-id` header, required on subsequent calls.
 
 ### Phase 4 — Resources & prompts
 - 3 resources (`server.resource`) + 3 prompts (`server.prompt`) → mcp-use equivalents, auth from ctx.

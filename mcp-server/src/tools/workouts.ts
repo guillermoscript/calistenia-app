@@ -1,23 +1,19 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 
-export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-  const tz = auth.getTimezone();
-
+export function registerWorkoutTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST SESSIONS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_sessions",
+  server.tool(
     {
+      name: "cal_list_sessions",
       title: "List Workout Sessions",
       description:
         "List completed workout sessions for the authenticated user. Filter by date range, phase, or workout day. Returns sessions with date, workout key, and phase info.",
-      inputSchema: z
+      schema: z
         .object({
           ...PaginationSchema,
           from_date: z
@@ -42,8 +38,12 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ limit, offset, from_date, to_date, phase, workout_key, response_format }) => {
+    async ({ limit, offset, from_date, to_date, phase, workout_key, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = from_date ?? daysAgo(30, tz);
         const to = to_date ?? today(tz);
 
@@ -104,13 +104,13 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LOG SESSION
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_log_session",
+  server.tool(
     {
+      name: "cal_log_session",
       title: "Log Workout Session",
       description:
         "Record a completed workout session. The workout_key identifies which workout was done (e.g. 'p1_lun' = Phase 1 Monday, 'free_timestamp' for free sessions). Phase and day are auto-derived from the key if not provided.",
-      inputSchema: z
+      schema: z
         .object({
           workout_key: z
             .string()
@@ -134,8 +134,12 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async ({ workout_key, phase, day, completed_at, note, warmup_completed, warmup_skipped, warmup_duration_seconds, cooldown_completed, cooldown_skipped, cooldown_duration_seconds }) => {
+    async ({ workout_key, phase, day, completed_at, note, warmup_completed, warmup_skipped, warmup_duration_seconds, cooldown_completed, cooldown_skipped, cooldown_duration_seconds }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const data: Record<string, unknown> = {
           user: userId,
           workout_key,
@@ -171,20 +175,23 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // DELETE SESSION
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_delete_session",
+  server.tool(
     {
+      name: "cal_delete_session",
       title: "Delete Workout Session",
       description: "Delete a logged workout session by its ID. Use cal_list_sessions to find the session ID first.",
-      inputSchema: z
+      schema: z
         .object({
           session_id: z.string().describe("The session record ID to delete"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ session_id }) => {
+    async ({ session_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         // Verify ownership before deletion
         const record = await pb.collection("sessions").getOne(session_id);
         if (record.user !== userId) {
@@ -204,13 +211,13 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LIST SETS LOG
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_sets",
+  server.tool(
     {
+      name: "cal_list_sets",
       title: "List Exercise Sets Log",
       description:
         "List logged exercise sets with reps and notes. Filter by exercise, date range, or workout. Useful for tracking personal records and progression.",
-      inputSchema: z
+      schema: z
         .object({
           ...PaginationSchema,
           exercise_id: z
@@ -230,8 +237,12 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ limit, offset, exercise_id, from_date, to_date, workout_key, response_format }) => {
+    async ({ limit, offset, exercise_id, from_date, to_date, workout_key, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = from_date ?? daysAgo(30, tz);
         const to = to_date ?? today(tz);
 
@@ -291,13 +302,13 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LOG SET
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_log_set",
+  server.tool(
     {
+      name: "cal_log_set",
       title: "Log Exercise Set",
       description:
         "Record a completed exercise set with reps. Use this to track your performance for individual exercises within a workout.",
-      inputSchema: z
+      schema: z
         .object({
           exercise_id: z
             .string()
@@ -314,8 +325,11 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async ({ exercise_id, workout_key, reps, note, logged_at }) => {
+    async ({ exercise_id, workout_key, reps, note, logged_at }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const record = await pb.collection("sets_log").create({
           user: userId,
           exercise_id,
@@ -343,13 +357,13 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // GET EXERCISE HISTORY
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_exercise_history",
+  server.tool(
     {
+      name: "cal_get_exercise_history",
       title: "Get Exercise History",
       description:
         "Get full history for a specific exercise — all logged sets grouped by date. Great for spotting progression and personal records over time.",
-      inputSchema: z
+      schema: z
         .object({
           exercise_id: z.string().describe("Exercise identifier (e.g. 'push-up', 'pull-up')"),
           days: z
@@ -367,8 +381,12 @@ export function registerWorkoutTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ exercise_id, days, response_format }) => {
+    async ({ exercise_id, days, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = daysAgo(days, tz);
         const result = await pb.collection("sets_log").getFullList({
           filter: pb.filter('user = {:userId} && exercise_id = {:exercise_id} && logged_at >= {:from}', { userId, exercise_id, from }),

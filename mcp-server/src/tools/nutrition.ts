@@ -1,23 +1,19 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 
-export function registerNutritionTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-  const tz = auth.getTimezone();
-
+export function registerNutritionTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // GET NUTRITION GOALS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_nutrition_goals",
+  server.tool(
     {
+      name: "cal_get_nutrition_goals",
       title: "Get Nutrition Goals",
       description:
         "Get the user's daily macro targets and body composition goal (muscle gain, fat loss, recomp, maintain).",
-      inputSchema: z
+      schema: z
         .object({
           response_format: z
             .nativeEnum(ResponseFormat)
@@ -27,8 +23,11 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ response_format }) => {
+    async ({ response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const goals = await pb
           .collection("nutrition_goals")
           .getFirstListItem(pb.filter('user = {:userId}', { userId }))
@@ -96,13 +95,13 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // UPDATE NUTRITION GOALS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_update_nutrition_goals",
+  server.tool(
     {
+      name: "cal_update_nutrition_goals",
       title: "Update Nutrition Goals",
       description:
         "Set or update daily macro targets and body composition goal. Only provide the fields you want to change.",
-      inputSchema: z
+      schema: z
         .object({
           goal: z
             .enum(["muscle_gain", "fat_loss", "recomp", "maintain"])
@@ -126,8 +125,11 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async (params) => {
+    async (params, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const updates: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(params)) {
           if (v !== undefined) updates[k] = v;
@@ -163,13 +165,13 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LIST NUTRITION ENTRIES
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_nutrition_entries",
+  server.tool(
     {
+      name: "cal_list_nutrition_entries",
       title: "List Nutrition Entries",
       description:
         "List logged meals with macros. Filter by date range or meal type. Returns entries with foods, calories, protein, carbs, and fat.",
-      inputSchema: z
+      schema: z
         .object({
           ...PaginationSchema,
           from_date: z.string().optional().describe("Start date (YYYY-MM-DD). Defaults to today."),
@@ -182,8 +184,12 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ limit, offset, from_date, to_date, meal_type, response_format }) => {
+    async ({ limit, offset, from_date, to_date, meal_type, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = from_date ?? today(tz);
         const to = to_date ?? today(tz);
 
@@ -273,13 +279,13 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // ADD NUTRITION ENTRY (manual)
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_add_nutrition_entry",
+  server.tool(
     {
+      name: "cal_add_nutrition_entry",
       title: "Add Nutrition Entry",
       description:
         "Manually log a meal with foods and macros. For AI-based photo analysis, use the Calistenia app directly.",
-      inputSchema: z
+      schema: z
         .object({
           meal_type: z
             .enum(["desayuno", "almuerzo", "cena", "snack"])
@@ -302,8 +308,11 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async ({ meal_type, foods, logged_at }) => {
+    async ({ meal_type, foods, logged_at }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const totals = foods.reduce(
           (acc, f) => ({
             calories: acc.calories + f.calories,
@@ -348,18 +357,21 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // DELETE NUTRITION ENTRY
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_delete_nutrition_entry",
+  server.tool(
     {
+      name: "cal_delete_nutrition_entry",
       title: "Delete Nutrition Entry",
       description: "Delete a logged meal entry by its ID.",
-      inputSchema: z
+      schema: z
         .object({ entry_id: z.string().describe("The nutrition entry record ID to delete") })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ entry_id }) => {
+    async ({ entry_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const record = await pb.collection("nutrition_entries").getOne(entry_id);
         if (record.user !== userId) {
           return errorResult("Access denied: this entry does not belong to you.");
@@ -375,13 +387,13 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // NUTRITION SUMMARY
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_nutrition_summary",
+  server.tool(
     {
+      name: "cal_get_nutrition_summary",
       title: "Get Nutrition Summary",
       description:
         "Get a nutrition summary for a date range: daily averages vs goals, most-logged meals, and consistency. Great for weekly/monthly nutrition reviews.",
-      inputSchema: z
+      schema: z
         .object({
           from_date: z.string().optional().describe("Start date (YYYY-MM-DD). Defaults to 7 days ago."),
           to_date: z.string().optional().describe("End date (YYYY-MM-DD). Defaults to today."),
@@ -393,8 +405,12 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ from_date, to_date, response_format }) => {
+    async ({ from_date, to_date, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = from_date ?? daysAgo(7, tz);
         const to = to_date ?? today(tz);
 
@@ -476,13 +492,13 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // SAVE MEAL TEMPLATE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_save_meal_template",
+  server.tool(
     {
+      name: "cal_save_meal_template",
       title: "Save Meal Template",
       description:
         "Save a meal as a reusable template so you can quickly log it again later with cal_log_from_template.",
-      inputSchema: z
+      schema: z
         .object({
           name: z.string().min(1).describe("Template name (e.g. 'My usual breakfast')"),
           meal_type: z.enum(["desayuno", "almuerzo", "cena", "snack"]).describe("Meal type"),
@@ -503,8 +519,11 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async ({ name, meal_type, foods }) => {
+    async ({ name, meal_type, foods }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const record = await pb.collection("meal_templates").create({
           user: userId,
           name,
@@ -541,20 +560,23 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LIST MEAL TEMPLATES
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_meal_templates",
+  server.tool(
     {
+      name: "cal_list_meal_templates",
       title: "List Meal Templates",
       description: "List your saved meal templates.",
-      inputSchema: z
+      schema: z
         .object({
           meal_type: z.enum(["desayuno", "almuerzo", "cena", "snack"]).optional().describe("Filter by meal type"),
         })
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
-    async ({ meal_type }) => {
+    async ({ meal_type }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const conditions = ['user = {:userId}'];
         const params: Record<string, unknown> = { userId };
         if (meal_type) {
@@ -604,12 +626,12 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LOG FROM TEMPLATE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_log_from_template",
+  server.tool(
     {
+      name: "cal_log_from_template",
       title: "Log Meal from Template",
       description: "Quickly log a meal using a saved template. Increments the template's usage count.",
-      inputSchema: z
+      schema: z
         .object({
           template_id: z.string().describe("Meal template ID"),
           logged_at: z.string().optional().describe("Log datetime (ISO 8601). Defaults to now."),
@@ -617,8 +639,11 @@ export function registerNutritionTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async ({ template_id, logged_at }) => {
+    async ({ template_id, logged_at }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const template = await pb.collection("meal_templates").getOne(template_id);
         const foods = template.foods as Array<{
           name: string;

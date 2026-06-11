@@ -1,6 +1,6 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
 import { localize } from "../lib/i18n.js";
 import {
@@ -251,27 +251,27 @@ async function checkAchievements(
 
 // ── Tool registration ───────────────────────────────────────────────────────
 
-export function registerGamificationTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-  const tz = auth.getTimezone();
-
+export function registerGamificationTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // SYNC STATS — The core engine
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_sync_stats",
+  server.tool(
     {
+      name: "cal_sync_stats",
       title: "Sync Stats & Achievements",
       description:
         "Recalculate all stats from source data: total sessions, sets, XP, level, streaks, and check achievement progress. " +
         "Call this after logging workouts/meals or to initialize gamification for a new user. " +
         "Also ensures the achievement catalog is seeded in the database.",
-      inputSchema: z.object({}).strict(),
+      schema: z.object({}).strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async () => {
+    async (_input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         // 1. Ensure achievement catalog exists
         await ensureAchievementsCatalog(pb);
 
@@ -344,13 +344,13 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
   // ──────────────────────────────────────────────────────────────
   // GET STATS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_stats",
+  server.tool(
     {
+      name: "cal_get_stats",
       title: "Get Gamification Stats",
       description:
         "Get your current XP, level, streaks, and lifetime stats. If stats haven't been synced yet, run cal_sync_stats first.",
-      inputSchema: z
+      schema: z
         .object({
           response_format: z
             .nativeEnum(ResponseFormat)
@@ -360,8 +360,11 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ response_format }) => {
+    async ({ response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const stats = await pb
           .collection("user_stats")
           .getFirstListItem(pb.filter('user = {:userId}', { userId }))
@@ -442,13 +445,13 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
   // ──────────────────────────────────────────────────────────────
   // GET ACHIEVEMENTS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_achievements",
+  server.tool(
     {
+      name: "cal_get_achievements",
       title: "Get Achievements",
       description:
         "View all achievements with your progress toward each. Filter by category or see only unlocked/locked ones.",
-      inputSchema: z
+      schema: z
         .object({
           category: z
             .enum(["consistency", "strength", "health", "nutrition", "milestone"])
@@ -466,8 +469,11 @@ export function registerGamificationTools(server: McpServer, auth: AuthManager) 
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ category, status, response_format }) => {
+    async ({ category, status, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const achFilter = category ? pb.filter('category = {:category}', { category }) : undefined;
         const allAch = await pb.collection("achievements").getFullList({
           filter: achFilter,

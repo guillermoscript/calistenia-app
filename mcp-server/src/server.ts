@@ -22,6 +22,16 @@ import { shutdownTracing } from "./instrumentation.js";
 import { MCPServer, object, error } from "mcp-use/server";
 import { z } from "zod";
 import { pocketbaseOAuthBridge, getAuthManager } from "./mcpuse/auth-bridge.js";
+import { registerExerciseTools } from "./tools/exercises.js";
+import { registerWorkoutTools } from "./tools/workouts.js";
+import { registerProgramTools } from "./tools/programs.js";
+import { registerProgressTools } from "./tools/progress.js";
+import { registerNutritionTools } from "./tools/nutrition.js";
+import { registerHealthTools } from "./tools/health.js";
+import { registerSmartTools } from "./tools/smart.js";
+import { registerGamificationTools } from "./tools/gamification.js";
+import { registerMediaTools } from "./tools/media.js";
+import { registerCircuitTools } from "./tools/circuits.js";
 
 const PORT = parseInt(process.env.PORT ?? process.env.MCP_SERVER_PORT ?? "3001", 10);
 const HOST = process.env.HOST ?? process.env.MCP_SERVER_HOST ?? "0.0.0.0";
@@ -72,6 +82,18 @@ server.tool(
     }
   }
 );
+
+// ── Tools (71) — auth resolved per request from ctx.auth ─────────────────────
+registerExerciseTools(server, PB_URL);
+registerWorkoutTools(server, PB_URL);
+registerProgramTools(server, PB_URL);
+registerProgressTools(server, PB_URL);
+registerNutritionTools(server, PB_URL);
+registerHealthTools(server, PB_URL);
+registerSmartTools(server, PB_URL);
+registerGamificationTools(server, PB_URL);
+registerMediaTools(server, PB_URL);
+registerCircuitTools(server, PB_URL);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 server.app.get("/health", (c) =>

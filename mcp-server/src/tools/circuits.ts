@@ -1,23 +1,19 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 
-export function registerCircuitTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-  const tz = auth.getTimezone();
-
+export function registerCircuitTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST CIRCUIT SESSIONS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_circuit_sessions",
+  server.tool(
     {
+      name: "cal_list_circuit_sessions",
       title: "List Circuit / HIIT Sessions",
       description:
         "List completed circuit and HIIT workout sessions. Filter by date range or mode (circuit vs timed). Returns session name, mode, rounds, duration, and note.",
-      inputSchema: z
+      schema: z
         .object({
           ...PaginationSchema,
           from_date: z
@@ -36,8 +32,12 @@ export function registerCircuitTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ limit, offset, from_date, to_date, mode, response_format }) => {
+    async ({ limit, offset, from_date, to_date, mode, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = from_date ?? daysAgo(30, tz);
         const to = to_date ?? today(tz);
 
@@ -103,13 +103,13 @@ export function registerCircuitTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // GET CIRCUIT SESSION DETAIL
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_circuit_session",
+  server.tool(
     {
+      name: "cal_get_circuit_session",
       title: "Get Circuit Session Details",
       description:
         "Get full details of a specific circuit session including exercises, timing config, rounds completed, and notes.",
-      inputSchema: z
+      schema: z
         .object({
           session_id: z.string().describe("The circuit session record ID"),
           response_format: z.nativeEnum(ResponseFormat).default(ResponseFormat.MARKDOWN),
@@ -117,8 +117,12 @@ export function registerCircuitTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ session_id, response_format }) => {
+    async ({ session_id, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const s = await pb.collection("circuit_sessions").getOne(session_id);
 
         if (s.user !== userId) {
@@ -192,13 +196,13 @@ export function registerCircuitTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LOG CIRCUIT SESSION
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_log_circuit_session",
+  server.tool(
     {
+      name: "cal_log_circuit_session",
       title: "Log Circuit / HIIT Session",
       description:
         "Record a completed circuit or HIIT workout session. Provide the circuit name, mode, exercises, rounds, and duration.",
-      inputSchema: z
+      schema: z
         .object({
           circuit_name: z.string().describe("Name of the circuit (e.g. 'Upper Body Blast', 'Tabata Cardio')"),
           mode: z.enum(["circuit", "timed"]).describe("'circuit' for rep-based, 'timed' for HIIT/Tabata"),
@@ -224,8 +228,11 @@ export function registerCircuitTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const now = new Date();
         const startedAt = input.started_at ?? new Date(now.getTime() - input.duration_seconds * 1000).toISOString();
         const finishedAt = now.toISOString();
@@ -283,20 +290,23 @@ export function registerCircuitTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // DELETE CIRCUIT SESSION
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_delete_circuit_session",
+  server.tool(
     {
+      name: "cal_delete_circuit_session",
       title: "Delete Circuit Session",
       description: "Delete a completed circuit session by its record ID. Only the owner can delete their sessions.",
-      inputSchema: z
+      schema: z
         .object({
           session_id: z.string().describe("The circuit session record ID to delete"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ session_id }) => {
+    async ({ session_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const record = await pb.collection("circuit_sessions").getOne(session_id);
         if (record.user !== userId) {
           return errorResult("Access denied: this session does not belong to you.");
@@ -313,13 +323,13 @@ export function registerCircuitTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // CIRCUIT STATS SUMMARY
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_circuit_stats",
+  server.tool(
     {
+      name: "cal_circuit_stats",
       title: "Circuit Training Stats",
       description:
         "Get aggregate stats for circuit/HIIT training: total sessions, total time, average duration, most used mode, and recent activity.",
-      inputSchema: z
+      schema: z
         .object({
           from_date: z.string().optional().describe("Start date (YYYY-MM-DD). Defaults to 30 days ago."),
           to_date: z.string().optional().describe("End date (YYYY-MM-DD). Defaults to today."),
@@ -328,8 +338,12 @@ export function registerCircuitTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ from_date, to_date, response_format }) => {
+    async ({ from_date, to_date, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = from_date ?? daysAgo(30, tz);
         const to = to_date ?? today(tz);
 
