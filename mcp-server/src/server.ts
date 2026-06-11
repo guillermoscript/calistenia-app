@@ -22,6 +22,7 @@ import { shutdownTracing } from "./instrumentation.js";
 import { MCPServer, object, error } from "mcp-use/server";
 import { z } from "zod";
 import { pocketbaseOAuthBridge, getAuthManager } from "./mcpuse/auth-bridge.js";
+import { registerOAuthRoutes } from "./mcpuse/oauth-routes.js";
 import { registerExerciseTools } from "./tools/exercises.js";
 import { registerWorkoutTools } from "./tools/workouts.js";
 import { registerProgramTools } from "./tools/programs.js";
@@ -111,6 +112,11 @@ server.app.get("/health", (c) =>
     services: ["api", "mcp"],
   })
 );
+
+// ── OAuth 2.1 authorization-server routes (Phase 5) ─────────────────────────
+// Registered before listen() so they win over mcp-use's built-in (broken for a
+// self-hosted issuer) /authorize, /token and metadata handlers.
+registerOAuthRoutes(server, PB_URL, SERVER_URL);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 await server.listen(PORT);

@@ -173,83 +173,76 @@ function completePendingAuth(
   return redirectUrl.toString();
 }
 
-// ── OAuth Provider ───────────────────────────────────────────────────────────
+// ── Authorize page (framework-agnostic) ──────────────────────────────────────
 
-export class PocketBaseOAuthProvider implements OAuthServerProvider {
-  private clientStore = new InMemoryClientStore();
+/**
+ * Registers a pending auth, fetches PocketBase auth methods, and returns the
+ * login page HTML (Google OAuth button + optional email/password form).
+ *
+ * Shared by the legacy Express provider (`PocketBaseOAuthProvider.authorize`)
+ * and the mcp-use Hono route (`src/mcpuse/oauth-routes.ts`). Returns a string
+ * so each transport can write it however it likes.
+ */
+export async function buildAuthorizePage(
+  client: OAuthClientInformationFull,
+  params: AuthorizationParams,
+  pbUrl: string,
+  serverUrl: string
+): Promise<string> {
+  const authId = randomUUID();
+  pendingAuths.set(authId, { client, params, createdAt: Date.now() });
 
-  constructor(
-    private pbUrl: string,
-    private serverUrl: string
-  ) {}
+  // Fetch available auth methods from PocketBase
+  const pb = new PocketBase(pbUrl);
+  let providers: Array<{
+    name: string;
+    displayName: string;
+    state: string;
+    codeVerifier: string;
+    authURL: string;
+  }> = [];
+  let passwordEnabled = false;
 
-  get clientsStore(): OAuthRegisteredClientsStore {
-    return this.clientStore;
+  try {
+    const methods = await pb.collection("users").listAuthMethods();
+    passwordEnabled = methods.password?.enabled ?? false;
+
+    if (methods.oauth2?.enabled && methods.oauth2.providers) {
+      const callbackUrl = `${serverUrl}/auth/callback`;
+      providers = methods.oauth2.providers.map((p: any) => {
+        // Store PB OAuth state → our authId mapping
+        pbOAuthPendings.set(p.state, {
+          authId,
+          providerName: p.name,
+          codeVerifier: p.codeVerifier,
+        });
+
+        // Build the full auth URL with our callback
+        const authUrl = new URL(p.authURL);
+        authUrl.searchParams.set("redirect_uri", callbackUrl);
+        return {
+          name: p.name,
+          displayName: p.displayName ?? p.name,
+          state: p.state,
+          codeVerifier: p.codeVerifier,
+          authURL: authUrl.toString(),
+        };
+      });
+    }
+  } catch (err) {
+    console.error("[OAuth] Failed to fetch PB auth methods:", err);
   }
 
-  /**
-   * Fetches PocketBase auth methods and renders a login page with
-   * Google OAuth button and optional email/password form.
-   */
-  async authorize(
-    client: OAuthClientInformationFull,
-    params: AuthorizationParams,
-    res: Response
-  ): Promise<void> {
-    const authId = randomUUID();
-    pendingAuths.set(authId, { client, params, createdAt: Date.now() });
+  // Build provider buttons HTML
+  const providerButtons = providers
+    .map(
+      (p) =>
+        `<a href="${escapeHtml(p.authURL)}" class="btn provider-btn">${escapeHtml(p.displayName)}</a>`
+    )
+    .join("\n      ");
 
-    // Fetch available auth methods from PocketBase
-    const pb = new PocketBase(this.pbUrl);
-    let providers: Array<{
-      name: string;
-      displayName: string;
-      state: string;
-      codeVerifier: string;
-      authURL: string;
-    }> = [];
-    let passwordEnabled = false;
-
-    try {
-      const methods = await pb.collection("users").listAuthMethods();
-      passwordEnabled = methods.password?.enabled ?? false;
-
-      if (methods.oauth2?.enabled && methods.oauth2.providers) {
-        const callbackUrl = `${this.serverUrl}/auth/callback`;
-        providers = methods.oauth2.providers.map((p: any) => {
-          // Store PB OAuth state → our authId mapping
-          pbOAuthPendings.set(p.state, {
-            authId,
-            providerName: p.name,
-            codeVerifier: p.codeVerifier,
-          });
-
-          // Build the full auth URL with our callback
-          const authUrl = new URL(p.authURL);
-          authUrl.searchParams.set("redirect_uri", callbackUrl);
-          return {
-            name: p.name,
-            displayName: p.displayName ?? p.name,
-            state: p.state,
-            codeVerifier: p.codeVerifier,
-            authURL: authUrl.toString(),
-          };
-        });
-      }
-    } catch (err) {
-      console.error("[OAuth] Failed to fetch PB auth methods:", err);
-    }
-
-    // Build provider buttons HTML
-    const providerButtons = providers
-      .map(
-        (p) =>
-          `<a href="${escapeHtml(p.authURL)}" class="btn provider-btn">${escapeHtml(p.displayName)}</a>`
-      )
-      .join("\n      ");
-
-    const passwordFormHtml = passwordEnabled
-      ? `
+  const passwordFormHtml = passwordEnabled
+    ? `
       <div class="divider"><span>or</span></div>
       <form id="f">
         <label for="email">Email</label>
@@ -273,9 +266,9 @@ export class PocketBaseOAuthProvider implements OAuthServerProvider {
           }catch{err.textContent="Network error";err.style.display="block";btn.disabled=false;btn.textContent="Sign In with Email"}
         });
       </script>`
-      : "";
+    : "";
 
-    res.type("html").send(`<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en"><head>
   <meta charset="utf-8">
   <title>Calistenia - Sign In</title>
@@ -310,7 +303,59 @@ export class PocketBaseOAuthProvider implements OAuthServerProvider {
     ${passwordFormHtml}
     <p class="info">Requested by: ${escapeHtml(client.client_name ?? client.client_id)}</p>
   </div>
-</body></html>`);
+</body></html>`;
+}
+
+// ── Client store accessors (framework-agnostic, share the `clients` map) ─────
+
+/** Look up a registered OAuth client by id (used by the Hono /authorize, /token routes). */
+export function getRegisteredClient(
+  clientId: string
+): OAuthClientInformationFull | undefined {
+  return clients.get(clientId);
+}
+
+/** Register an OAuth client (Dynamic Client Registration). */
+export function registerClient(
+  client: OAuthClientInformationFull
+): OAuthClientInformationFull {
+  clients.set(client.client_id, client);
+  console.error(
+    `[OAuth] Registered client: ${client.client_name ?? client.client_id}`
+  );
+  return client;
+}
+
+// ── OAuth Provider ───────────────────────────────────────────────────────────
+
+export class PocketBaseOAuthProvider implements OAuthServerProvider {
+  private clientStore = new InMemoryClientStore();
+
+  constructor(
+    private pbUrl: string,
+    private serverUrl: string
+  ) {}
+
+  get clientsStore(): OAuthRegisteredClientsStore {
+    return this.clientStore;
+  }
+
+  /**
+   * Fetches PocketBase auth methods and renders a login page with
+   * Google OAuth button and optional email/password form.
+   */
+  async authorize(
+    client: OAuthClientInformationFull,
+    params: AuthorizationParams,
+    res: Response
+  ): Promise<void> {
+    const html = await buildAuthorizePage(
+      client,
+      params,
+      this.pbUrl,
+      this.serverUrl
+    );
+    res.type("html").send(html);
   }
 
   async challengeForAuthorizationCode(
@@ -455,99 +500,153 @@ export class PocketBaseOAuthProvider implements OAuthServerProvider {
   }
 }
 
-// ── Auth routes ──────────────────────────────────────────────────────────────
+// ── Auth flow handlers (framework-agnostic) ──────────────────────────────────
+
+/** Result of the OAuth provider (Google/PocketBase) callback. */
+export type CallbackResult =
+  | { kind: "redirect"; url: string }
+  | { kind: "error"; status: number; html: string };
+
+/**
+ * Handle the PocketBase OAuth2 provider callback: exchange the provider code
+ * with PocketBase, complete the pending MCP auth, and produce the client
+ * redirect URL (or an error page). Shared by Express + Hono transports.
+ */
+export async function handleOAuthCallback(
+  query: { code?: string; state?: string; error?: string },
+  pbUrl: string,
+  serverUrl: string
+): Promise<CallbackResult> {
+  const { code, state, error } = query;
+
+  if (error) {
+    return {
+      kind: "error",
+      status: 400,
+      html: `<h1>Authorization failed</h1><p>${escapeHtml(error)}</p>`,
+    };
+  }
+
+  if (!state || !code) {
+    return { kind: "error", status: 400, html: "<h1>Missing code or state parameter</h1>" };
+  }
+
+  // Look up PocketBase OAuth pending by state
+  const pbPending = pbOAuthPendings.get(state);
+  if (!pbPending) {
+    return {
+      kind: "error",
+      status: 400,
+      html: "<h1>Invalid or expired OAuth state</h1><p>Please try logging in again.</p>",
+    };
+  }
+
+  pbOAuthPendings.delete(state);
+
+  try {
+    const pb = new PocketBase(pbUrl);
+    const callbackUrl = `${serverUrl}/auth/callback`;
+
+    // Exchange the provider code with PocketBase
+    const authResult = await pb.collection("users").authWithOAuth2Code(
+      pbPending.providerName,
+      code,
+      pbPending.codeVerifier,
+      callbackUrl
+    );
+
+    console.error(`[OAuth] PB OAuth success: ${authResult.record.email} via ${pbPending.providerName}`);
+
+    // Complete the MCP auth flow
+    const redirectUrl = completePendingAuth(
+      pbPending.authId,
+      authResult.record.id,
+      pb.authStore.token,
+      authResult.record.email as string
+    );
+
+    if (!redirectUrl) {
+      return {
+        kind: "error",
+        status: 400,
+        html: "<h1>Authorization session expired</h1><p>Please try again.</p>",
+      };
+    }
+
+    return { kind: "redirect", url: redirectUrl };
+  } catch (err) {
+    console.error("[OAuth] PB OAuth code exchange failed:", err instanceof Error ? err.message : err);
+    return {
+      kind: "error",
+      status: 500,
+      html: "<h1>Authentication failed</h1><p>Could not complete sign-in. Please try again.</p>",
+    };
+  }
+}
+
+/** Result of the email/password login fallback. */
+export type LoginResult = { status: number; body: { redirect: string } | { error: string } };
+
+/**
+ * Handle email/password login: authenticate with PocketBase and complete the
+ * pending MCP auth, returning the client redirect URL. Shared by both transports.
+ */
+export async function handlePasswordLogin(
+  body: { email?: string; password?: string; auth_id?: string },
+  pbUrl: string
+): Promise<LoginResult> {
+  const { email, password, auth_id } = body;
+
+  const pending = auth_id ? pendingAuths.get(auth_id) : undefined;
+  if (!pending || !auth_id) {
+    return { status: 400, body: { error: "Invalid or expired authorization session" } };
+  }
+
+  try {
+    const pb = new PocketBase(pbUrl);
+    const authResult = await pb.collection("users").authWithPassword(email ?? "", password ?? "");
+
+    const redirectUrl = completePendingAuth(
+      auth_id,
+      authResult.record.id,
+      pb.authStore.token,
+      authResult.record.email as string
+    );
+
+    if (!redirectUrl) {
+      return { status: 400, body: { error: "Authorization session expired" } };
+    }
+
+    return { status: 200, body: { redirect: redirectUrl } };
+  } catch (err) {
+    console.error("[OAuth] Login failed:", err instanceof Error ? err.message : err);
+    return { status: 401, body: { error: "Invalid email or password" } };
+  }
+}
+
+// ── Auth routes (legacy Express) ─────────────────────────────────────────────
 
 export function createLoginRouter(pbUrl: string, serverUrl: string): Router {
   const router = Router();
 
   // ── Google/OAuth provider callback ──────────────────────────────────────
   router.get("/auth/callback", async (req: Request, res: Response) => {
-    const { code, state, error } = req.query as Record<string, string>;
-
-    if (error) {
-      res.status(400).send(`<h1>Authorization failed</h1><p>${escapeHtml(error)}</p>`);
-      return;
-    }
-
-    if (!state || !code) {
-      res.status(400).send("<h1>Missing code or state parameter</h1>");
-      return;
-    }
-
-    // Look up PocketBase OAuth pending by state
-    const pbPending = pbOAuthPendings.get(state);
-    if (!pbPending) {
-      res.status(400).send("<h1>Invalid or expired OAuth state</h1><p>Please try logging in again.</p>");
-      return;
-    }
-
-    pbOAuthPendings.delete(state);
-
-    try {
-      const pb = new PocketBase(pbUrl);
-      const callbackUrl = `${serverUrl}/auth/callback`;
-
-      // Exchange the provider code with PocketBase
-      const authResult = await pb.collection("users").authWithOAuth2Code(
-        pbPending.providerName,
-        code,
-        pbPending.codeVerifier,
-        callbackUrl
-      );
-
-      console.error(`[OAuth] PB OAuth success: ${authResult.record.email} via ${pbPending.providerName}`);
-
-      // Complete the MCP auth flow
-      const redirectUrl = completePendingAuth(
-        pbPending.authId,
-        authResult.record.id,
-        pb.authStore.token,
-        authResult.record.email as string
-      );
-
-      if (!redirectUrl) {
-        res.status(400).send("<h1>Authorization session expired</h1><p>Please try again.</p>");
-        return;
-      }
-
-      res.redirect(redirectUrl);
-    } catch (err) {
-      console.error("[OAuth] PB OAuth code exchange failed:", err instanceof Error ? err.message : err);
-      res.status(500).send("<h1>Authentication failed</h1><p>Could not complete sign-in. Please try again.</p>");
+    const result = await handleOAuthCallback(
+      req.query as Record<string, string>,
+      pbUrl,
+      serverUrl
+    );
+    if (result.kind === "redirect") {
+      res.redirect(result.url);
+    } else {
+      res.status(result.status).send(result.html);
     }
   });
 
   // ── Email/password login (fallback) ────────────────────────────────────
   router.post("/auth/login", async (req: Request, res: Response) => {
-    const { email, password, auth_id } = req.body;
-
-    const pending = pendingAuths.get(auth_id);
-    if (!pending) {
-      res.status(400).json({ error: "Invalid or expired authorization session" });
-      return;
-    }
-
-    try {
-      const pb = new PocketBase(pbUrl);
-      const authResult = await pb.collection("users").authWithPassword(email, password);
-
-      const redirectUrl = completePendingAuth(
-        auth_id,
-        authResult.record.id,
-        pb.authStore.token,
-        authResult.record.email as string
-      );
-
-      if (!redirectUrl) {
-        res.status(400).json({ error: "Authorization session expired" });
-        return;
-      }
-
-      res.json({ redirect: redirectUrl });
-    } catch (err) {
-      console.error("[OAuth] Login failed:", err instanceof Error ? err.message : err);
-      res.status(401).json({ error: "Invalid email or password" });
-    }
+    const result = await handlePasswordLogin(req.body, pbUrl);
+    res.status(result.status).json(result.body);
   });
 
   return router;

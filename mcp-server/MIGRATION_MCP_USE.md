@@ -82,10 +82,16 @@ Test env notes: local-only changes — enabled `passwordAuth` on `users` collect
 - Wired in `src/server.ts` after tools; removed imports+calls from legacy `src/index.ts` (`createServerWithAuth` now returns empty McpServer).
 - Verified locally (PB 0.36.8 + tsx, port 3210): `tsc --noEmit` clean; `resources/list` → 3 URIs; `resources/read user://profile` → real JSON; `prompts/list` → 3; `prompts/get plan_training_week` → message with focus arg interpolated.
 
-### Phase 5 — OAuth authz-server (DECISION REQUIRED)
-- `mcpAuthRouter` is Express-only and PB isn't a standard OAuth IdP, so mcp-use's `oauthProxy`/`jwksVerifier` don't fit. Two paths:
-  - **(a) Keep OAuth 2.1 flow**: port `oauth.ts` + login router + `.well-known` routes to Hono custom routes. Most work, preserves Claude Desktop remote-OAuth UX.
-  - **(b) Drop OAuth, PB-token only**: simplest, but remote MCP clients must paste a PB Bearer token (no browser auth flow).
+### Phase 5 — OAuth authz-server ✅ DONE (2026-06-11, option 5a)
+Ported the full PocketBase-backed OAuth 2.1 flow to Hono custom routes on `server.app`.
+
+Key finding: mcp-use's `oauthCustomProvider` is built for an **external** issuer — at `listen()` it mounts `/authorize` (redirects to `authEndpoint`), `/token` (server-side fetch to `tokenEndpoint`) and a metadata handler that fetches `${issuer}/.well-known/...`. For us the issuer **is** this server, so all three self-loop. Fix: mount our own routes on `server.app` **before** `server.listen()` so they win in Hono's registration-ordered chain (our handlers return a Response, never call `next()`); mcp-use's later-registered duplicates never fire. The bearer middleware (only on `/mcp/*` + `/sse*`) and `pocketbaseOAuthBridge.verifyToken` are kept as-is.
+
+- `src/oauth.ts`: extracted framework-agnostic helpers (`buildAuthorizePage`, `handleOAuthCallback`, `handlePasswordLogin`, `getRegisteredClient`, `registerClient`) sharing the same in-memory stores; the legacy Express `PocketBaseOAuthProvider.authorize` + `createLoginRouter` now delegate to them, so `src/index.ts` is unchanged in behavior.
+- `src/mcpuse/oauth-routes.ts` (new): `registerOAuthRoutes(server, pbUrl, serverUrl)` mounts `/authorize`, `/token` (with explicit **PKCE S256** verification — the provider's `exchange*` does NOT check it), `/register` (DCR, public PKCE clients), `/revoke`, `/auth/callback`, `/auth/login`, and overrides the authorization-server + openid-configuration metadata. CORS via `hono/cors`. Reuses `PocketBaseOAuthProvider`'s token methods for code/refresh exchange.
+- `src/server.ts`: calls `registerOAuthRoutes(server, PB_URL, SERVER_URL)` before `listen()`.
+
+**Verified locally** (PB 0.36.8 + tsx, port 3210, `tsc --noEmit` clean): AS metadata override, DCR `/register`, `/authorize` login page (Google button + password form), `/auth/login` → code, `/token` authorization_code + PKCE, `/token` refresh_token, PKCE-failure → `invalid_grant`, `/revoke` (200 → token then 401 on /mcp), `/mcp` with OAuth token → 72 tools + `whoami` `auth_method:"oauth"`, dual-auth direct PB JWT → `auth_method:"pocketbase"`, no-auth → 401 + `WWW-Authenticate`. Untestable locally: `/auth/callback` (Google round-trip) — shares `completePendingAuth` with the verified password path.
 
 ### Phase 6 — REST API (DECISION REQUIRED)
 - 14 Express routes → either:
