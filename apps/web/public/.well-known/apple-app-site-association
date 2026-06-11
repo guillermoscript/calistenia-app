@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TODO_APPLE_TEAM_ID.tech.guille.calistenia",
+        "paths": ["/race/*", "/u/*", "/session/*", "/invite/*"]
+      }
+    ]
+  }
+}

@@ -20,6 +20,12 @@ import { haptics as haptic } from '@/lib/haptics'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { Exercise, Workout, ExerciseLog, SetData } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
+import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { useAuthUser } from '@/lib/use-auth-user'
+import { shareImage, shareWorkoutSession } from '@/lib/share'
+import WorkoutShareCard from '@/components/share/WorkoutShareCard'
+import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
+import PRCelebration from '@/components/share/PRCelebration'
 
 interface Step {
   exercise: Exercise
@@ -535,19 +541,55 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: {
 
 // ─── Celebrate screen ─────────────────────────────────────────────────────────
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }: {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, onDone }: {
   workoutTitle: string
   totalSetsLogged: number
   durationMin: number
+  exercises: Exercise[]
+  workoutKey: string
   onDone: () => void
 }) {
   const { t } = useTranslation()
   const quote = useRef<Quote>(getLocalQuote()).current
+  const user = useAuthUser()
+  const captureRef = useRef<ShareCardCaptureHandle>(null)
+  const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
+  const [sharing, setSharing] = useState(false)
+
+  const userName = (user?.display_name as string) || (user?.name as string) || 'Atleta'
+  const avatarUrl = user ? getUserAvatarUrl(user, '200x200') : null
+  const referralCode = (user?.referral_code as string) || null
 
   useEffect(() => {
     sounds.playSessionComplete()
     haptic.success()
   }, [])
+
+  const handleShare = useCallback(async () => {
+    if (sharing) return
+    setSharing(true)
+    try {
+      // Fonts are loaded by _layout boot; small RAF guards against a blank capture.
+      await new Promise((r) => requestAnimationFrame(() => r(null)))
+      const uri = await captureRef.current?.capture()
+      if (uri) {
+        const { message } = shareWorkoutSession({
+          userName,
+          workoutTitle,
+          totalSets: totalSetsLogged,
+          durationMin,
+          date: today,
+          workoutKey,
+          referralCode,
+        })
+        await shareImage(uri, { message, title: 'Compartir sesión' })
+      }
+    } catch {
+      // User cancelled the share sheet or capture failed — no-op.
+    } finally {
+      setSharing(false)
+    }
+  }, [sharing, userName, workoutTitle, totalSetsLogged, durationMin, today, workoutKey, referralCode])
 
   return (
     <Pressable onPress={onDone} className="flex-1 items-center justify-center gap-7 px-6">
@@ -571,11 +613,31 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, onDone }:
         </View>
       )}
 
-      <Button size="lg" className="min-w-[200px] bg-lime px-9 active:bg-lime/90" onPress={onDone}>
-        <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
-      </Button>
+      <View className="w-full max-w-[280px] gap-2.5">
+        <Button size="lg" className="w-full bg-lime active:bg-lime/90" onPress={onDone}>
+          <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
+        </Button>
+        <Button variant="outline" size="lg" className="w-full" disabled={sharing} onPress={handleShare}>
+          <Text className="font-bebas text-lg tracking-[2px] text-foreground">{sharing ? 'GENERANDO…' : 'COMPARTIR'}</Text>
+        </Button>
+      </View>
 
       <Text className="font-mono text-[11px] tracking-wide text-muted-foreground/50">o toca en cualquier lugar</Text>
+
+      {/* Off-screen share card (captured to PNG on demand) */}
+      <ShareCardCapture ref={captureRef}>
+        <WorkoutShareCard
+          workoutTitle={workoutTitle}
+          totalSets={totalSetsLogged}
+          durationMin={durationMin}
+          date={today}
+          exercises={exercises}
+          quote={quote ? { q: quote.q, a: quote.a } : null}
+          userName={userName}
+          avatarUrl={avatarUrl}
+          referralCode={referralCode}
+        />
+      </ShareCardCapture>
     </Pressable>
   )
 }
@@ -635,6 +697,8 @@ export default function SessionView({
   const [setsCount, setSetsCount] = useState<number>(initialProgress?.setsCount ?? 0)
   const [transitionType, setTransitionType] = useState<'warmup-to-main' | 'main-to-cooldown'>('warmup-to-main')
   const pendingStepIdx = useRef<number | null>(null)
+  const [prCelebration, setPrCelebration] = useState<{ event: PREvent; exerciseName: string } | null>(null)
+  const sessionUser = useAuthUser()
   const sessionStartTime = useRef<number>(startedAt || Date.now())
 
   // Empujar progreso al context (sobrevive navegar fuera y volver)
@@ -677,7 +741,10 @@ export default function SessionView({
   }, [currentExerciseIndex, exerciseBoundaries])
 
   const handleLogged = useCallback(async ({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
-    await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
+    const prEvent = await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
+    if (prEvent) {
+      setPrCelebration({ event: prEvent, exerciseName: currentStep.exercise.name })
+    }
     setSetsCount(c => c + 1)
 
     if (isLastStep) {
@@ -889,7 +956,20 @@ export default function SessionView({
           workoutTitle={workout.title}
           totalSetsLogged={setsCount}
           durationMin={durationMin}
+          exercises={workout.exercises}
+          workoutKey={workoutKey}
           onDone={onGoToDashboard}
+        />
+      )}
+
+      {prCelebration && (
+        <PRCelebration
+          prEvent={prCelebration.event}
+          exerciseName={prCelebration.exerciseName}
+          userName={(sessionUser?.display_name as string) || (sessionUser?.name as string) || 'Atleta'}
+          avatarUrl={sessionUser ? getUserAvatarUrl(sessionUser, '200x200') : null}
+          referralCode={(sessionUser?.referral_code as string) || null}
+          onDismiss={() => setPrCelebration(null)}
         />
       )}
     </SafeAreaView>

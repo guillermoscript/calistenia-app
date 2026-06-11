@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "tech.guille.calistenia",
+      "sha256_cert_fingerprints": ["TODO_ANDROID_CERT_SHA256"]
+    }
+  }
+]

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -11,6 +11,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
+import { useAuthUser } from '@/lib/use-auth-user'
+import StreakMilestone from '@/components/StreakMilestone'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
 import type { DayId, WeekDay } from '@calistenia/core/types'
 
@@ -69,6 +71,8 @@ export default function TodayScreen() {
   const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs } = useWorkoutState()
   const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getTotalSessions } = useWorkoutActions()
   const session = useActiveSession()
+  const milestoneUser = useAuthUser()
+  const [showMilestone, setShowMilestone] = useState(true)
 
   const todayId = DAY_IDS[localDay()]
   const phase = settings.phase || 1
@@ -266,6 +270,16 @@ export default function TodayScreen() {
 
         <Text className="text-center font-mono text-[9px] tracking-[2px] text-muted-foreground/50">{todayStr()}</Text>
       </ScrollView>
+
+      {showMilestone && milestoneUser && getLongestStreak() > 0 && (
+        <StreakMilestone
+          streak={getLongestStreak()}
+          userId={milestoneUser.id}
+          userName={(milestoneUser.display_name as string) || (milestoneUser.name as string) || 'Atleta'}
+          referralCode={(milestoneUser.referral_code as string) || null}
+          onDismiss={() => setShowMilestone(false)}
+        />
+      )}
     </SafeAreaView>
   )
 }

@@ -11,8 +11,11 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "tech.guille.calistenia",
       "supportsTablet": false,
+      "associatedDomains": ["applinks:gym.guille.tech"],
       "entitlements": {
-        "com.apple.security.application-groups": ["group.tech.guille.calistenia"]
+        "com.apple.security.application-groups": [
+          "group.tech.guille.calistenia"
+        ]
       },
       "infoPlist": {
         "NSSupportsLiveActivities": true
@@ -20,6 +23,35 @@
     },
     "android": {
       "package": "tech.guille.calistenia",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/race"
+            },
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/u"
+            },
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/session"
+            },
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/invite"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#0c0a09",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -107,7 +139,8 @@
             }
           ]
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
