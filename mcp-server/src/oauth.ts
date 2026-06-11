@@ -13,10 +13,8 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Router, type Request, type Response } from "express";
 import PocketBase from "pocketbase";
 import type {
-  OAuthServerProvider,
   AuthorizationParams,
 } from "@modelcontextprotocol/sdk/server/auth/provider.js";
 import type { OAuthRegisteredClientsStore } from "@modelcontextprotocol/sdk/server/auth/clients.js";
@@ -328,7 +326,7 @@ export function registerClient(
 
 // ── OAuth Provider ───────────────────────────────────────────────────────────
 
-export class PocketBaseOAuthProvider implements OAuthServerProvider {
+export class PocketBaseOAuthProvider {
   private clientStore = new InMemoryClientStore();
 
   constructor(
@@ -338,24 +336,6 @@ export class PocketBaseOAuthProvider implements OAuthServerProvider {
 
   get clientsStore(): OAuthRegisteredClientsStore {
     return this.clientStore;
-  }
-
-  /**
-   * Fetches PocketBase auth methods and renders a login page with
-   * Google OAuth button and optional email/password form.
-   */
-  async authorize(
-    client: OAuthClientInformationFull,
-    params: AuthorizationParams,
-    res: Response
-  ): Promise<void> {
-    const html = await buildAuthorizePage(
-      client,
-      params,
-      this.pbUrl,
-      this.serverUrl
-    );
-    res.type("html").send(html);
   }
 
   async challengeForAuthorizationCode(
@@ -622,32 +602,4 @@ export async function handlePasswordLogin(
     console.error("[OAuth] Login failed:", err instanceof Error ? err.message : err);
     return { status: 401, body: { error: "Invalid email or password" } };
   }
-}
-
-// ── Auth routes (legacy Express) ─────────────────────────────────────────────
-
-export function createLoginRouter(pbUrl: string, serverUrl: string): Router {
-  const router = Router();
-
-  // ── Google/OAuth provider callback ──────────────────────────────────────
-  router.get("/auth/callback", async (req: Request, res: Response) => {
-    const result = await handleOAuthCallback(
-      req.query as Record<string, string>,
-      pbUrl,
-      serverUrl
-    );
-    if (result.kind === "redirect") {
-      res.redirect(result.url);
-    } else {
-      res.status(result.status).send(result.html);
-    }
-  });
-
-  // ── Email/password login (fallback) ────────────────────────────────────
-  router.post("/auth/login", async (req: Request, res: Response) => {
-    const result = await handlePasswordLogin(req.body, pbUrl);
-    res.status(result.status).json(result.body);
-  });
-
-  return router;
 }
