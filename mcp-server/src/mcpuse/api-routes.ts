@@ -217,14 +217,19 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     const internalKey = process.env.INTERNAL_API_KEY;
     const providedKey = c.req.header("x-internal-key");
     const isInternal = !!(internalKey && providedKey === internalKey);
+    let authUser: Awaited<ReturnType<typeof getAuthUser>> = null;
     if (!isInternal) {
-      const user = await getAuthUser(c, pbUrl);
-      if (!user) return c.json({ error: "Token de autenticación requerido" }, 401);
+      authUser = await getAuthUser(c, pbUrl);
+      if (!authUser) return c.json({ error: "Token de autenticación requerido" }, 401);
     }
     try {
       const body = await c.req.json().catch(() => ({}));
       const { user_id, title, body: notifBody, url } = body ?? {};
       if (!user_id || !title) return c.json({ error: "Se requiere user_id y title" }, 400);
+      // Non-internal callers may only push to their own account (prevent IDOR).
+      if (!isInternal && user_id !== authUser!.id) {
+        return c.json({ error: "Solo puedes enviar notificaciones a tu propia cuenta" }, 403);
+      }
       const result = await sendPushToUser(user_id, { title, body: notifBody, url });
       return c.json(result);
     } catch (err) { return apiError(c, err); }
