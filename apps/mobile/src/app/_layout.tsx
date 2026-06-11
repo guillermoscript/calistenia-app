@@ -8,6 +8,8 @@ import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { colorScheme as nwColorScheme, useColorScheme } from 'nativewind'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalHost } from '@rn-primitives/portal'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
@@ -41,7 +43,7 @@ function Providers({ children }: { children: ReactNode }) {
     <WorkoutProvider userId={user?.id ?? null}>
       <ActiveSessionProvider getRestForExercise={getRestForExercise} setRestForExercise={setRestForExercise}>
         <CardioSessionProvider userId={user?.id ?? null} userWeight={latestWeight}>
-          {children}
+          <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
         </CardioSessionProvider>
       </ActiveSessionProvider>
     </WorkoutProvider>
@@ -79,16 +81,18 @@ function RootLayout() {
   if (!ready || !fontsReady) return null
 
   return (
-    <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>
-      <StatusBar style="auto" />
-      <Providers>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="session" options={{ gestureEnabled: false }} />
-        </Stack>
-      </Providers>
-      <OfflineBanner />
-      <PortalHost />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>
+        <StatusBar style="auto" />
+        <Providers>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="session" options={{ gestureEnabled: false }} />
+          </Stack>
+        </Providers>
+        <OfflineBanner />
+        <PortalHost />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   )
 }
 

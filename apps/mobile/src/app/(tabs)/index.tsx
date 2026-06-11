@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Play, Check, Moon, MapPin } from 'lucide-react-native'
+import { Play, Check, Moon, MapPin, Users, Bell, Trophy, Flag } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,9 @@ import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
+import { NotificationBadge } from '@/components/social/NotificationBadge'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
 import type { DayId, WeekDay } from '@calistenia/core/types'
 
@@ -72,7 +74,12 @@ export default function TodayScreen() {
   const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getTotalSessions } = useWorkoutActions()
   const session = useActiveSession()
   const milestoneUser = useAuthUser()
+  const { unreadCount, loadNotifications } = useNotifications(milestoneUser?.id ?? null)
   const [showMilestone, setShowMilestone] = useState(true)
+
+  useEffect(() => {
+    if (milestoneUser?.id) loadNotifications()
+  }, [milestoneUser?.id, loadNotifications])
 
   const todayId = DAY_IDS[localDay()]
   const phase = settings.phase || 1
@@ -128,15 +135,37 @@ export default function TodayScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="px-4 pb-8 gap-4">
         {/* ── Welcome header — mismo patrón que DashboardPage web ── */}
-        <View className="pt-2">
-          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
-            {todayFormatted}
-          </Text>
-          <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{greeting}</Text>
-          <Text className="mt-1 text-sm text-muted-foreground">
-            {t('common.week')} <Text className="text-sm font-sans-bold text-foreground">{weekElapsed}</Text> {t('common.of')} {totalWeeks}
-            {activeProgram ? <Text className="text-sm text-lime"> · {activeProgram.name}</Text> : null}
-          </Text>
+        <View className="flex-row items-start justify-between pt-2">
+          <View className="flex-1">
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              {todayFormatted}
+            </Text>
+            <Text className="mt-1 font-bebas text-[40px] leading-none text-foreground">{greeting}</Text>
+            <Text className="mt-1 text-sm text-muted-foreground">
+              {t('common.week')} <Text className="text-sm font-sans-bold text-foreground">{weekElapsed}</Text> {t('common.of')} {totalWeeks}
+              {activeProgram ? <Text className="text-sm text-lime"> · {activeProgram.name}</Text> : null}
+            </Text>
+          </View>
+          {/* Accesos sociales */}
+          <View className="flex-row items-center gap-1.5 pt-1">
+            <Pressable
+              onPress={() => router.push('/social')}
+              className="size-10 items-center justify-center rounded-full bg-card border border-border active:opacity-70"
+              accessibilityRole="button"
+              accessibilityLabel="Comunidad"
+            >
+              <Users size={18} color="hsl(0 0% 55%)" />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/notifications')}
+              className="size-10 items-center justify-center rounded-full bg-card border border-border active:opacity-70"
+              accessibilityRole="button"
+              accessibilityLabel="Notificaciones"
+            >
+              <Bell size={18} color="hsl(0 0% 55%)" />
+              <NotificationBadge count={unreadCount} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Plan semanal */}
@@ -268,6 +297,13 @@ export default function TodayScreen() {
           <StatCard label={t('profile.sessions', { defaultValue: 'Sesiones' })} value={String(getTotalSessions())} />
         </View>
 
+        {/* Accesos rápidos comunidad */}
+        <View className="flex-row gap-2">
+          <CommunityPill icon={<Users size={15} color="hsl(0 0% 55%)" />} label="Amigos" onPress={() => router.push('/friends')} />
+          <CommunityPill icon={<Trophy size={15} color="hsl(0 0% 55%)" />} label="Ranking" onPress={() => router.push('/leaderboard')} />
+          <CommunityPill icon={<Flag size={15} color="hsl(0 0% 55%)" />} label="Retos" onPress={() => router.push('/challenges')} />
+        </View>
+
         <Text className="text-center font-mono text-[9px] tracking-[2px] text-muted-foreground/50">{todayStr()}</Text>
       </ScrollView>
 
@@ -281,6 +317,18 @@ export default function TodayScreen() {
         />
       )}
     </SafeAreaView>
+  )
+}
+
+function CommunityPill({ icon, label, onPress }: { icon: ReactNode; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-border bg-card py-2.5 active:opacity-70"
+    >
+      {icon}
+      <Text className="font-mono text-[10px] uppercase tracking-[1px] text-muted-foreground">{label}</Text>
+    </Pressable>
   )
 }
 
