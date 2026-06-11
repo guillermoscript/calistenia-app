@@ -23,6 +23,7 @@ import { MCPServer, object, error } from "mcp-use/server";
 import { z } from "zod";
 import { pocketbaseOAuthBridge, getAuthManager } from "./mcpuse/auth-bridge.js";
 import { registerOAuthRoutes } from "./mcpuse/oauth-routes.js";
+import { registerApiRoutes } from "./mcpuse/api-routes.js";
 import { registerExerciseTools } from "./tools/exercises.js";
 import { registerWorkoutTools } from "./tools/workouts.js";
 import { registerProgramTools } from "./tools/programs.js";
@@ -117,6 +118,9 @@ server.app.get("/health", (c) =>
 // Registered before listen() so they win over mcp-use's built-in (broken for a
 // self-hosted issuer) /authorize, /token and metadata handlers.
 registerOAuthRoutes(server, PB_URL, SERVER_URL);
+
+// ── REST /api/* routes (Phase 6) ──────────────────────────────────────────
+registerApiRoutes(server, PB_URL);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 await server.listen(PORT);
