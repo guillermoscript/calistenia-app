@@ -31,16 +31,9 @@ import {
 // requireBearerAuth not used — we verify tokens directly in mcpAuth to support dual-auth fallback
 import { AuthManager, validateBearerToken } from "./auth.js";
 import { PocketBaseOAuthProvider, createLoginRouter } from "./oauth.js";
-import { registerWorkoutTools } from "./tools/workouts.js";
-import { registerProgramTools } from "./tools/programs.js";
-import { registerProgressTools } from "./tools/progress.js";
-import { registerNutritionTools } from "./tools/nutrition.js";
-import { registerSmartTools } from "./tools/smart.js";
-import { registerGamificationTools } from "./tools/gamification.js";
-import { registerMediaTools } from "./tools/media.js";
-import { registerExerciseTools } from "./tools/exercises.js";
-import { registerHealthTools } from "./tools/health.js";
-import { registerCircuitTools } from "./tools/circuits.js";
+// Tools migrated to mcp-use signatures (Phase 3) — registered in src/server.ts.
+// Legacy /mcp here serves only resources/prompts until cutover (Phases 5-6 keep
+// OAuth flow + REST /api/* alive on this entrypoint).
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
 import { createApiRouter } from "./api/index.js";
@@ -58,16 +51,6 @@ function createServerWithAuth(auth: AuthManager): McpServer {
     version: "1.0.0",
   });
 
-  registerWorkoutTools(server, auth);
-  registerProgramTools(server, auth);
-  registerProgressTools(server, auth);
-  registerNutritionTools(server, auth);
-  registerSmartTools(server, auth);
-  registerGamificationTools(server, auth);
-  registerMediaTools(server, auth);
-  registerExerciseTools(server, auth);
-  registerHealthTools(server, auth);
-  registerCircuitTools(server, auth);
   registerResources(server, auth);
   registerPrompts(server);
 

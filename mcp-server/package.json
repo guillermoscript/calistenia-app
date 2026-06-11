@@ -6,9 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
-    "start:stdio": "node build/stdio.js",
     "dev": "tsx src/index.ts",
-    "dev:stdio": "tsx src/stdio.ts",
     "seed": "node build/seed.js"
   },
   "dependencies": {
