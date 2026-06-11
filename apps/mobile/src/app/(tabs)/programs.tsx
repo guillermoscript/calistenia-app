@@ -2,7 +2,7 @@ import { View, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, BadgeCheck } from 'lucide-react-native'
+import { ChevronRight, BadgeCheck, Dumbbell } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
@@ -29,6 +29,23 @@ export default function ProgramsScreen() {
           {t('programs.available', { count: programs.length })}
         </Text>
       </View>
+      {/* Sesión libre entry card */}
+      <Pressable
+        onPress={() => router.push('/free-session')}
+        className="mx-4 mb-3 flex-row items-center gap-3 rounded-xl border border-lime/40 bg-lime/5 px-4 py-3.5 active:opacity-70"
+      >
+        <View className="h-8 w-8 items-center justify-center rounded-full bg-lime/15">
+          <Dumbbell size={16} color="hsl(74 90% 45%)" />
+        </View>
+        <View className="flex-1">
+          <Text className="font-sans-medium text-foreground">Sesión libre</Text>
+          <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+            Arma tu propio entreno
+          </Text>
+        </View>
+        <ChevronRight size={18} color="hsl(74 90% 45%)" />
+      </Pressable>
+
       <FlatList
         data={sorted}
         keyExtractor={p => p.id}
