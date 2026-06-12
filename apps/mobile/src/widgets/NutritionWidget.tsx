@@ -126,7 +126,7 @@ export function NutritionWidget({ snapshot, today }: { snapshot: NutritionWidget
       style={{
         height: 'match_parent', width: 'match_parent', flexDirection: 'column',
         justifyContent: 'space-between', backgroundColor: BG, borderRadius: 16,
-        borderWidth: 1, borderColor: BORDER, padding: 14,
+        borderWidth: 1, borderColor: BORDER, padding: 12,
       }}
     >
       {/* Header row: calorie number + remaining */}
