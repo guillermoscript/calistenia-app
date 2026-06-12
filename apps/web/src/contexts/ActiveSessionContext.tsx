@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import type { Exercise, Workout } from '@calistenia/core/types'
 import { op } from '@calistenia/core/lib/analytics'
+import type { ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -11,6 +12,8 @@ interface SessionProgress {
   stepIdx: number
   phase: SessionPhase
   setsCount: number
+  /** Serializable timing snapshot — persisted to localStorage so timings survive app restarts */
+  timing?: ExerciseTimingState
 }
 
 export interface WarmupCooldownData {

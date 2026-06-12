@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useProgress, type PREvent } from '@calistenia/core/hooks/useProgress'
 import { usePrograms } from '@calistenia/core/hooks/usePrograms'
 import { syncWidgetSnapshot } from '@/lib/sync-widget-snapshot'
-import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig } from '@calistenia/core/types'
+import type { Settings, ProgressMap, SetData, ExerciseLog, Phase, WeekDay, Workout, ProgramMeta, CardioDayConfig, ExerciseTiming } from '@calistenia/core/types'
 
 // ── Context interface (state + actions + meta) ──────────────────────────────
 
@@ -26,7 +26,7 @@ interface WorkoutState {
 interface WorkoutActions {
   // Progress actions
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => Promise<PREvent | null>
-  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string) => Promise<void>
+  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   // Progress queries

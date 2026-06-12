@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
-import type { Settings, ProgressMap, SetData, ExerciseLog } from '../types'
+import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming } from '../types'
 
 const LS_KEY = 'calistenia_progress'
 const LS_SETTINGS = 'calistenia_settings'
@@ -64,7 +64,7 @@ interface UseProgressReturn {
   usePB: boolean
   pbReady: boolean
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => Promise<void>
-  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string) => Promise<void>
+  markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
   getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
@@ -184,6 +184,9 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           entry.posesCompleted = s.poses_completed ?? undefined
           entry.totalPoses = s.total_poses ?? undefined
         }
+        if (Array.isArray(s.exercise_timings) && s.exercise_timings.length > 0) {
+          entry.exerciseTimings = s.exercise_timings
+        }
         prog[`done_${date}_${s.workout_key}`] = entry
       })
 
@@ -295,7 +298,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   }, [usePB, userId])
 
   // ─── markWorkoutDone ─────────────────────────────────────────────────────
-  const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string) => {
+  const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => {
     const d = date || todayStr()
     const key = `done_${d}_${workoutKey}`
 
@@ -313,6 +316,10 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         entry.durationSeconds = yogaMeta.duration_seconds
         entry.posesCompleted = yogaMeta.poses_completed
         entry.totalPoses = yogaMeta.total_poses
+      }
+      if (timing) {
+        if (timing.durationSeconds != null) entry.durationSeconds = timing.durationSeconds
+        if (timing.exerciseTimings?.length) entry.exerciseTimings = timing.exerciseTimings
       }
       const newProg = { ...prev, [key]: entry }
       lsSet(newProg)
@@ -346,6 +353,11 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           if (yogaMeta.duration_seconds != null) sessionData.duration_seconds = yogaMeta.duration_seconds
           if (yogaMeta.poses_completed != null) sessionData.poses_completed = yogaMeta.poses_completed
           if (yogaMeta.total_poses != null) sessionData.total_poses = yogaMeta.total_poses
+        }
+        // Strength session timing (total + per-exercise)
+        if (timing) {
+          if (timing.durationSeconds != null) sessionData.duration_seconds = timing.durationSeconds
+          if (timing.exerciseTimings?.length) sessionData.exercise_timings = timing.exerciseTimings
         }
         await pb.collection('sessions').create(sessionData)
       } catch (e) { console.warn('PB sessions error:', e) }

@@ -1,7 +1,7 @@
 // Port del SessionView de apps/web a RN. Misma arquitectura: este componente
 // es dueño del estado local (stepIdx/phase/setsCount) y lo empuja al
 // ActiveSessionContext via onProgressChange — nunca lo lee de vuelta.
-import { useState, useEffect, useRef, useCallback, memo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { View, ScrollView, Pressable, Alert, AppState, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
@@ -18,7 +18,8 @@ import { updateLiveRest, liveSessionHandlesRest } from '@/lib/live-session'
 import * as sounds from '@/lib/sounds'
 import { haptics as haptic } from '@/lib/haptics'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
-import type { Exercise, Workout, ExerciseLog, SetData } from '@calistenia/core/types'
+import type { Exercise, Workout, ExerciseLog, SetData, ExerciseTiming } from '@calistenia/core/types'
+import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -541,17 +542,19 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: {
 
 // ─── Celebrate screen ─────────────────────────────────────────────────────────
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, onDone }: {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, onDone }: {
   workoutTitle: string
   totalSetsLogged: number
   durationMin: number
   exercises: Exercise[]
   workoutKey: string
+  timings: ExerciseTiming[]
   onDone: () => void
 }) {
   const { t } = useTranslation()
   const quote = useRef<Quote>(getLocalQuote()).current
   const user = useAuthUser()
+  const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings, 6), [timings])
   const captureRef = useRef<ShareCardCaptureHandle>(null)
   const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
   const [sharing, setSharing] = useState(false)
@@ -606,6 +609,29 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
         </Text>
       </View>
 
+      {timingBreakdown.rows.length > 0 && (
+        <View className="w-full max-w-[360px]">
+          <Text className="mb-2 font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">Tiempo por ejercicio</Text>
+          {timingBreakdown.rows.map(row => (
+            <View key={row.exerciseId} className="mb-1.5">
+              <View className="flex-row items-center justify-between">
+                <Text className="flex-1 font-sans text-[12px] text-foreground/80" numberOfLines={1}>{row.exerciseName}</Text>
+                <Text className="ml-3 font-mono text-[11px] text-muted-foreground">{formatTimingClock(row.seconds)}</Text>
+              </View>
+              <View className="mt-0.5 h-1 w-full rounded-full bg-muted/40">
+                <View
+                  className={row.isMax ? 'h-full rounded-full bg-lime' : 'h-full rounded-full bg-muted'}
+                  style={{ width: `${row.pct}%` }}
+                />
+              </View>
+            </View>
+          ))}
+          {timingBreakdown.overflowCount > 0 && (
+            <Text className="mt-0.5 font-mono text-[10px] text-muted-foreground/50">+{timingBreakdown.overflowCount} más</Text>
+          )}
+        </View>
+      )}
+
       {quote && (
         <View className="max-w-[380px] items-center">
           <Text className="mb-2.5 text-center font-sans-italic text-base leading-6 text-foreground/70">"{quote.q}"</Text>
@@ -650,13 +676,14 @@ interface SessionProgress {
   stepIdx: number
   phase: SessionPhase
   setsCount: number
+  timing?: ExerciseTimingState
 }
 
 interface SessionViewProps {
   workout: Workout
   workoutKey: string
   onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number; rpe?: number }) => Promise<PREvent | null>
-  onMarkDone: (workoutKey: string, note: string) => void
+  onMarkDone: (workoutKey: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => void
   onGoToDashboard: () => void
   onExitSession: () => void
   onBack: () => void
@@ -701,13 +728,39 @@ export default function SessionView({
   const sessionUser = useAuthUser()
   const sessionStartTime = useRef<number>(startedAt || Date.now())
 
-  // Empujar progreso al context (sobrevive navegar fuera y volver)
+  // ── Timing tracker (ref-based, no per-second renders) ────────────────────
+  const timingTracker = useRef(new ExerciseTimingTracker(initialProgress?.timing ?? null))
+  const [finalTimings, setFinalTimings] = useState<ExerciseTiming[] | null>(null)
+  // Ref mirror para que el guard one-shot y handleNoteSaved nunca lean estado obsoleto.
+  const finalTimingsRef = useRef<ExerciseTiming[] | null>(null)
+
+  // Registrar qué ejercicio está activo (wall-clock, sin re-renders extra).
+  // Debe ir ANTES del efecto de persistencia para que el snapshot empujado al
+  // context incluya el intervalo recién abierto (si no, resume tras crash lo pierde).
+  // Guard en === 'exercise' (no solo !== note/celebrate) evita que navegar
+  // prev/next en descanso reasigne el tiempo de descanso al ejercicio equivocado.
   useEffect(() => {
-    onProgressChange?.({ stepIdx, phase, setsCount })
+    if (phase !== 'exercise') return
+    const ex = steps[stepIdx]?.exercise
+    if (ex) timingTracker.current.enterExercise({ id: ex.id, name: ex.name })
+  }, [stepIdx, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Empujar progreso al context (sobrevive navegar fuera y volver), incluyendo estado del tracker
+  useEffect(() => {
+    onProgressChange?.({ stepIdx, phase, setsCount, timing: timingTracker.current.getState() })
   }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Permiso de notificaciones al arrancar la sesión
   useEffect(() => { requestNotifPermission() }, [])
+
+  // Finalizar timings exactamente una vez al llegar a la pantalla de nota
+  useEffect(() => {
+    if (phase === 'note' && finalTimingsRef.current === null) {
+      const result = timingTracker.current.finalize()
+      finalTimingsRef.current = result
+      setFinalTimings(result)
+    }
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentStep = steps[stepIdx]
   const nextStep = steps[stepIdx + 1] || null
@@ -806,7 +859,11 @@ export default function SessionView({
   const isInCooldown = stepSection === 'cooldown' && (phase === 'exercise' || phase === 'rest')
 
   const handleNoteSaved = useCallback((note: string) => {
-    onMarkDone(workoutKey, note)
+    const durationSeconds = Math.round((Date.now() - sessionStartTime.current) / 1000)
+    // Finalize defensivo si la pantalla de nota se alcanzó antes de que el
+    // efecto de finalize commitease; el tracker es idempotente.
+    const timings = finalTimingsRef.current ?? timingTracker.current.finalize()
+    onMarkDone(workoutKey, note, { durationSeconds, exerciseTimings: timings })
     setPhase('celebrate')
   }, [onMarkDone, workoutKey])
 
@@ -958,6 +1015,7 @@ export default function SessionView({
           durationMin={durationMin}
           exercises={workout.exercises}
           workoutKey={workoutKey}
+          timings={finalTimings ?? []}
           onDone={onGoToDashboard}
         />
       )}

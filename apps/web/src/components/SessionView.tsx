@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, memo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -27,8 +27,9 @@ import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
 import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
-import type { Exercise, Workout, ExerciseLog, SetData, Priority } from '@calistenia/core/types'
+import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
+import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 
 interface Step {
   exercise: Exercise
@@ -675,11 +676,13 @@ interface CelebrateScreenProps {
   userId?: string
   referralCode?: string | null
   totalSessions?: number
+  timings: ExerciseTiming[]
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl, userId, referralCode, totalSessions }: CelebrateScreenProps) {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl, userId, referralCode, totalSessions, timings }: CelebrateScreenProps) {
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
   const [showReferral, setShowReferral] = useState(false)
+  const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings), [timings])
 
   useEffect(() => {
     if (userId && referralCode && (totalSessions ?? 0) >= 3 && !isReferralPromptShown(userId)) {
@@ -741,6 +744,36 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
         <div className="h-px mt-6 bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
+      {timingBreakdown.rows.length > 0 && (
+        <div className="w-full max-w-[380px]" style={{ animation: 'fadeUp 0.5s 0.45s ease-out both' }}>
+          <div className="text-[9px] font-mono tracking-[3px] text-muted-foreground uppercase mb-3">TIEMPO POR EJERCICIO</div>
+          <div className="flex flex-col gap-1.5">
+            {timingBreakdown.rows.map(row => (
+              <div key={row.exerciseId} className="flex items-center gap-2">
+                <div className="flex-1 min-w-0 relative">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-sm"
+                    style={{
+                      width: `${row.pct}%`,
+                      background: row.isMax ? 'hsl(var(--lime) / 0.18)' : 'hsl(var(--muted))',
+                    }}
+                  />
+                  <div className="relative px-2 py-1 text-[11px] truncate text-muted-foreground">
+                    {row.exerciseName}
+                  </div>
+                </div>
+                <div className={cn(
+                  'font-mono text-[11px] tabular-nums flex-shrink-0',
+                  row.isMax ? 'text-lime' : 'text-muted-foreground'
+                )}>
+                  {formatTimingClock(row.seconds)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ animation: 'fadeUp 0.5s 0.5s ease-out both' }} className="flex flex-col items-center gap-3">
         <div className="flex gap-3 items-center">
           <Button
@@ -775,13 +808,14 @@ interface SessionProgress {
   stepIdx: number
   phase: SessionPhase
   setsCount: number
+  timing?: ExerciseTimingState
 }
 
 interface SessionViewProps {
   workout: Workout
   workoutKey: string
   onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number; rpe?: number }) => Promise<PREvent | null>
-  onMarkDone: (workoutKey: string, note: string) => void
+  onMarkDone: (workoutKey: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => void
   onGoToDashboard: () => void
   onExitSession: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
@@ -847,9 +881,35 @@ export default function SessionView({
   // Index to advance to after transition
   const pendingStepIdx = useRef<number | null>(null)
 
+  // ── Timing tracker ────────────────────────────────────────────────────────
+  const timingTracker = useRef(new ExerciseTimingTracker(initialProgress?.timing ?? null))
+  const [finalTimings, setFinalTimings] = useState<ExerciseTiming[] | null>(null)
+  // Ref mirror of finalTimings so the one-shot guard and the note-save handler
+  // never read a stale state value (avoids a double-finalize / empty-timings race).
+  const finalTimingsRef = useRef<ExerciseTiming[] | null>(null)
+
+  // An exercise becomes "active" only while it's on screen ('exercise' phase).
+  // Guarding on === 'exercise' (not just !== note/celebrate) keeps rest-screen
+  // prev/next navigation from re-attributing rest time to the wrong exercise.
+  useEffect(() => {
+    if (phase !== 'exercise') return
+    const ex = steps[stepIdx]?.exercise
+    if (!ex) return
+    timingTracker.current.enterExercise({ id: ex.id, name: ex.name })
+  }, [stepIdx, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Finalize exactly once when phase first becomes 'note'.
+  useEffect(() => {
+    if (phase === 'note' && finalTimingsRef.current === null) {
+      const result = timingTracker.current.finalize()
+      finalTimingsRef.current = result
+      setFinalTimings(result)
+    }
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync progress to context so it survives navigation away and back
   useEffect(() => {
-    onProgressChange?.({ stepIdx, phase, setsCount })
+    onProgressChange?.({ stepIdx, phase, setsCount, timing: timingTracker.current.getState() })
   }, [stepIdx, phase, setsCount]) // eslint-disable-line react-hooks/exhaustive-deps
   const sessionStartTime = useRef<number>(startedAt || Date.now())
 
@@ -997,7 +1057,11 @@ export default function SessionView({
   const isInCooldown = stepSection === 'cooldown' && (phase === 'exercise' || phase === 'rest')
 
   const handleNoteSaved = useCallback((note: string) => {
-    onMarkDone(workoutKey, note)
+    const durationSeconds = Math.round((Date.now() - sessionStartTime.current) / 1000)
+    // Finalize defensively in case the note screen was reached without the
+    // finalize effect having committed yet; the tracker is idempotent.
+    const timings = finalTimingsRef.current ?? timingTracker.current.finalize()
+    onMarkDone(workoutKey, note, { durationSeconds, exerciseTimings: timings })
     sounds.playSessionComplete()
     sounds.vibrate([100, 50, 100, 50, 200])
     notif.notifySessionComplete(workout.title, setsCount)
@@ -1198,6 +1262,7 @@ export default function SessionView({
           userId={userId}
           referralCode={referralCode}
           totalSessions={getTotalSessions?.() ?? 0}
+          timings={finalTimings ?? []}
         />
       )}
 

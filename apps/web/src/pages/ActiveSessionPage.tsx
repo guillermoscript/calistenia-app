@@ -34,14 +34,14 @@ export default function ActiveSessionPage() {
     navigate('/', { replace: true })
   }, [endSession, navigate])
 
-  const handleMarkDone = useCallback((key: string, note: string) => {
+  const handleMarkDone = useCallback((key: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: import('@calistenia/core/types').ExerciseTiming[] }) => {
     const wcData = getWarmupCooldownData()
     onMarkDone(key, note, {
       warmupSkipped: wcData.warmupSkipped,
       warmupDurationSeconds: wcData.warmupDurationSeconds,
       cooldownSkipped: wcData.cooldownSkipped,
       cooldownDurationSeconds: wcData.cooldownDurationSeconds,
-    })
+    }, undefined, undefined, timing)
   }, [onMarkDone, getWarmupCooldownData])
 
   if (!isActive || !workout) {

@@ -2,8 +2,10 @@ import { useMemo, useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
+import { Clock } from 'lucide-react'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { useSessionDetail } from '@calistenia/core/hooks/useSessionDetail'
+import { formatTimingClock } from '@calistenia/core/lib/exerciseTiming'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { useWorkoutState } from '../contexts/WorkoutContext'
@@ -60,7 +62,15 @@ function ExerciseSection({ exercise, t }: { exercise: SessionExercise; t: TFunct
   return (
     <div className="py-4">
       <div className="mb-3">
-        <div className="text-sm font-medium text-foreground">{l(exercise.name)}</div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="text-sm font-medium text-foreground">{l(exercise.name)}</div>
+          {exercise.seconds != null && exercise.seconds > 0 && (
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground/70 bg-muted/40 rounded px-1.5 py-0.5">
+              <Clock className="size-3" />
+              {formatTimingClock(exercise.seconds)}
+            </span>
+          )}
+        </div>
         {exercise.muscles && (
           <div className="text-[11px] text-muted-foreground">{l(exercise.muscles)}</div>
         )}
@@ -203,6 +213,12 @@ export default function SessionDetailPage() {
           {!isFreeSession && workoutTitle}
           {exercises.length > 0 && (
             <span>{!isFreeSession && ' · '}{t('progress.exerciseCount', { count: exercises.length })} · {t('common.sets', { count: totalSets })}</span>
+          )}
+          {session.durationSeconds != null && session.durationSeconds > 0 && (
+            <span className="inline-flex items-center gap-1 ml-2 font-mono text-[12px] text-muted-foreground/70">
+              <Clock className="size-3" />
+              {formatTimingClock(session.durationSeconds)}
+            </span>
           )}
         </div>
       </div>

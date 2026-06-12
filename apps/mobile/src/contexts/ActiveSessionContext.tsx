@@ -8,6 +8,7 @@ import { AppState } from 'react-native'
 import { storage } from '@calistenia/core/platform'
 import type { Exercise, Workout } from '@calistenia/core/types'
 import { op } from '@calistenia/core/lib/analytics'
+import type { ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,7 @@ interface SessionProgress {
   stepIdx: number
   phase: SessionPhase
   setsCount: number
+  timing?: ExerciseTimingState
 }
 
 export interface WarmupCooldownData {

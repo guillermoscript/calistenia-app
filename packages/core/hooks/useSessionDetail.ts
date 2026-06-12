@@ -20,6 +20,8 @@ export interface SessionExercise {
   hasWeight: boolean
   hasRpe: boolean
   hasNotes: boolean
+  /** Wall-clock seconds spent on this exercise (only on sessions that tracked it) */
+  seconds?: number
 }
 
 interface SessionDetailResult {
@@ -33,6 +35,7 @@ interface SessionDetailResult {
     cooldownCompleted?: boolean
     cooldownSkipped?: boolean
     cooldownDurationSeconds?: number
+    durationSeconds?: number
   } | null
   exercises: SessionExercise[]
 }
@@ -65,7 +68,12 @@ export function useSessionDetail(
       cooldownCompleted: sessionEntry.cooldownCompleted,
       cooldownSkipped: sessionEntry.cooldownSkipped,
       cooldownDurationSeconds: sessionEntry.cooldownDurationSeconds,
+      durationSeconds: sessionEntry.durationSeconds,
     }
+
+    const timingByExercise = new Map(
+      (sessionEntry.exerciseTimings ?? []).map(t => [t.exerciseId, t.seconds]),
+    )
 
     // 2. Find all exercise logs for this date + workoutKey
     const exerciseMap = new Map<string, SessionSet[]>()
@@ -116,6 +124,7 @@ export function useSessionDetail(
           hasWeight,
           hasRpe,
           hasNotes,
+          seconds: timingByExercise.get(exerciseId),
         }
       },
     )

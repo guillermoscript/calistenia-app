@@ -113,6 +113,13 @@ export interface ExerciseLog {
   exerciseId: string
 }
 
+/** Wall-clock time spent on one exercise within a session (sets + intra-rests) */
+export interface ExerciseTiming {
+  exerciseId: string
+  exerciseName: string
+  seconds: number
+}
+
 export interface SessionDone {
   done: true
   date: string
@@ -128,6 +135,7 @@ export interface SessionDone {
   durationSeconds?: number
   posesCompleted?: number
   totalPoses?: number
+  exerciseTimings?: ExerciseTiming[]
 }
 
 /** The progress map stores both exercise logs and session-done markers */

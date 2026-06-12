@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react'
 import { useRouter } from 'expo-router'
 import { useKeepAwake } from 'expo-keep-awake'
 
+import type { ExerciseTiming } from '@calistenia/core/types'
 import SessionView from '@/components/SessionView'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useWorkoutActions } from '@/contexts/WorkoutContext'
@@ -41,14 +42,14 @@ export default function SessionScreen() {
     goHome()
   }, [endSession, goHome])
 
-  const handleMarkDone = useCallback((key: string, note: string) => {
+  const handleMarkDone = useCallback((key: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => {
     const wcData = getWarmupCooldownData()
     onMarkDone(key, note, {
       warmupSkipped: wcData.warmupSkipped,
       warmupDurationSeconds: wcData.warmupDurationSeconds,
       cooldownSkipped: wcData.cooldownSkipped,
       cooldownDurationSeconds: wcData.cooldownDurationSeconds,
-    })
+    }, undefined, undefined, timing ? { durationSeconds: timing.durationSeconds, exerciseTimings: timing.exerciseTimings } : undefined)
   }, [onMarkDone, getWarmupCooldownData])
 
   if (!isActive || !workout) return null
