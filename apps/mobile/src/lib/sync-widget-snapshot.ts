@@ -1,4 +1,4 @@
-import { localDay, todayStr } from '@calistenia/core/lib/dateUtils'
+import { localDay, todayStr, getTimezone } from '@calistenia/core/lib/dateUtils'
 import { buildWidgetSnapshot } from './widget-snapshot'
 import { writeWidgetSnapshot } from './widget-bridge'
 import type { Settings, WeekDay, Workout } from '@calistenia/core/types'
@@ -22,6 +22,7 @@ export function syncWidgetSnapshot(args: {
 
   void writeWidgetSnapshot(buildWidgetSnapshot({
     today: todayStr(),
+    tz: getTimezone(),
     lang: args.lang.startsWith('en') ? 'en' : 'es',
     programName: args.programName,
     programPhase: phase,

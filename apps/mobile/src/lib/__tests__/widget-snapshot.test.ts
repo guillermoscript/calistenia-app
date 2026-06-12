@@ -3,6 +3,7 @@ import { buildWidgetSnapshot } from '../widget-snapshot'
 
 const baseArgs = {
   today: '2026-06-10',
+  tz: 'America/New_York',
   lang: 'es' as const,
   programName: 'Calistenia 26 semanas',
   programPhase: 2,
@@ -36,6 +37,7 @@ describe('buildWidgetSnapshot', () => {
       title: 'Pull Day', type: 'strength', done: true, exerciseCount: 6, programPhase: 2,
     })
     expect(snap.date).toBe('2026-06-10')
+    expect(snap.tz).toBe('America/New_York')
     expect(snap.streak).toBe(4)
     expect(snap.weeklyDone).toBe(2)
     expect(snap.weeklyGoal).toBe(5)

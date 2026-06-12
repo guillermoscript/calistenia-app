@@ -1,0 +1,473 @@
+/**
+ * useMealLogger — owns the entire MealLogger state machine (capture → analyzing →
+ * review → saving → success), image picking, AI analysis, food editing and save.
+ * The presentational layer (steps/views) consumes the returned model.
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Alert, type TextInput } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import * as ImagePicker from 'expo-image-picker'
+
+import { haptics } from '@/lib/haptics'
+import { localHour, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
+import { createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
+import { useFoodHistory } from '@calistenia/core/hooks/useFoodHistory'
+import type { FoodItem, MealType, NutritionEntry } from '@calistenia/core/types'
+
+import {
+  type AnalysisQuality,
+  type CaptureSubView,
+  type EditingMacro,
+  type ImageAsset,
+  type MacroField,
+  type MealLoggerSheetProps,
+  type Step,
+  MAX_PHOTOS,
+  getDefaultMealType,
+  normalizeEntryFoods,
+} from './meal-logger-shared'
+
+export function useMealLogger({
+  visible,
+  onClose,
+  initialMode,
+  onAnalyze,
+  onSave,
+  userId,
+  dailyTotals,
+  goals,
+  getRecentEntries,
+  editEntry,
+}: MealLoggerSheetProps) {
+  const { t } = useTranslation()
+  const { getRecentFoods, trackFood } = useFoodHistory(userId)
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [step, setStep] = useState<Step>('capture')
+  const [captureSubView, setCaptureSubView] = useState<CaptureSubView>('main')
+  const [imageAssets, setImageAssets] = useState<ImageAsset[]>([])
+  const [mealType, setMealType] = useState<MealType>(getDefaultMealType)
+  const [foods, setFoods] = useState<FoodItem[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [quickText, setQuickText] = useState('')
+  const [imageDescription, setImageDescription] = useState('')
+  const [mealDescription, setMealDescription] = useState('')
+  const [analysisQuality, setAnalysisQuality] = useState<AnalysisQuality | undefined>()
+  const [editingMacro, setEditingMacro] = useState<EditingMacro>(null)
+  const [editingMacroValue, setEditingMacroValue] = useState('')
+
+  // Recent meals state
+  const [recentFoods, setRecentFoods] = useState<FoodItem[]>([])
+  const [recentEntries, setRecentEntries] = useState<NutritionEntry[]>([])
+  const [recentSearch, setRecentSearch] = useState('')
+  const [recentTypeFilter, setRecentTypeFilter] = useState<MealType | ''>('')
+
+  const cancelledRef = useRef(false)
+  const quickTextInputRef = useRef<TextInput>(null)
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const totals = useMemo(
+    () =>
+      foods.reduce(
+        (acc, f) => ({
+          calories: acc.calories + (Number(f.calories) || 0),
+          protein: acc.protein + (Number(f.protein) || 0),
+          carbs: acc.carbs + (Number(f.carbs) || 0),
+          fat: acc.fat + (Number(f.fat) || 0),
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      ),
+    [foods],
+  )
+
+  const filteredRecentEntries = useMemo(() => {
+    let entries = recentEntries
+    if (recentTypeFilter) {
+      entries = entries.filter((e) => e.mealType === recentTypeFilter)
+    }
+    if (recentSearch.trim()) {
+      const q = recentSearch.toLowerCase().trim()
+      entries = entries.filter(
+        (entry) =>
+          entry.foods.some((f) => f.name?.toLowerCase().includes(q)) ||
+          entry.mealType?.toLowerCase().includes(q),
+      )
+    }
+    return entries
+  }, [recentEntries, recentSearch, recentTypeFilter])
+
+  const mealLabel = t(`meal.${mealType}`)
+
+  // ── Reset / prefill ──────────────────────────────────────────────────────────
+  const handleResetForm = () => {
+    setStep('capture')
+    setCaptureSubView('main')
+    setImageAssets([])
+    setMealType(getDefaultMealType())
+    setFoods([])
+    setError(null)
+    setEditingMacro(null)
+    setEditingMacroValue('')
+    setQuickText('')
+    setImageDescription('')
+    setMealDescription('')
+    setAnalysisQuality(undefined)
+    setRecentFoods([])
+    setRecentEntries([])
+    setRecentSearch('')
+    setRecentTypeFilter('')
+  }
+
+  // Pre-fill the review step from an existing entry (edit flow). Skips capture/analyze
+  // and preserves the meal type so an edit updates in place.
+  const loadEntryForEdit = (entry: NutritionEntry) => {
+    handleResetForm()
+    setMealType(entry.mealType)
+    setFoods(normalizeEntryFoods(entry.foods))
+    setStep('review')
+  }
+
+  // ── Image Picker ───────────────────────────────────────────────────────────
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert(
+        t('common.permissionRequired') || 'Permiso requerido',
+        t('common.cameraPermissionMessage') || 'Se necesita acceso a la cámara para tomar fotos.',
+      )
+      return false
+    }
+    return true
+  }
+
+  const requestMediaPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert(
+        t('common.permissionRequired') || 'Permiso requerido',
+        t('common.galleryPermissionMessage') || 'Se necesita acceso a la galería.',
+      )
+      return false
+    }
+    return true
+  }
+
+  const handleCamera = async () => {
+    const ok = await requestCameraPermission()
+    if (!ok) return
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsEditing: false,
+    })
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0]
+      setImageAssets((prev) =>
+        prev.length < MAX_PHOTOS
+          ? [...prev, { uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileName: asset.fileName ?? undefined }]
+          : prev,
+      )
+    }
+  }
+
+  const handleGallery = async () => {
+    const ok = await requestMediaPermission()
+    if (!ok) return
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS - imageAssets.length,
+    })
+    if (!result.canceled && result.assets.length > 0) {
+      const newAssets: ImageAsset[] = result.assets.map((a: ImagePicker.ImagePickerAsset) => ({
+        uri: a.uri,
+        mimeType: a.mimeType ?? 'image/jpeg',
+        fileName: a.fileName ?? undefined,
+      }))
+      setImageAssets((prev) => [...prev, ...newAssets].slice(0, MAX_PHOTOS))
+    }
+  }
+
+  const removePhoto = (index: number) => {
+    setImageAssets((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // ── Analysis ───────────────────────────────────────────────────────────────
+  const handleAnalyzeImages = async () => {
+    if (imageAssets.length === 0) return
+    cancelledRef.current = false
+    setStep('analyzing')
+    setError(null)
+    haptics.medium()
+    try {
+      const result = await onAnalyze(imageAssets, mealType, imageDescription.trim() || undefined)
+      if (cancelledRef.current) return
+      const normalized = normalizeEntryFoods(result.foods || [])
+      if (normalized.length === 0) {
+        setError(t('nutrition.logger.noFoodsDetected'))
+        setStep('capture')
+        return
+      }
+      setFoods(normalized)
+      setMealDescription(result.meal_description || '')
+      setAnalysisQuality(result.quality)
+      setStep('review')
+    } catch {
+      if (cancelledRef.current) return
+      setError(t('nutrition.logger.noFoodsDetected'))
+      setStep('capture')
+    }
+  }
+
+  const handleAnalyzeText = async () => {
+    const text = quickText.trim()
+    if (!text) return
+    cancelledRef.current = false
+    setStep('analyzing')
+    setError(null)
+    haptics.medium()
+    try {
+      const result = await onAnalyze([], mealType, text)
+      if (cancelledRef.current) return
+      const normalized = normalizeEntryFoods(result.foods || [])
+      if (normalized.length === 0) {
+        setError(t('nutrition.logger.noFoodsDetected'))
+        setStep('capture')
+        return
+      }
+      setFoods(normalized)
+      setMealDescription(result.meal_description || '')
+      setAnalysisQuality(result.quality)
+      setQuickText('')
+      setStep('review')
+    } catch {
+      if (cancelledRef.current) return
+      setError(t('nutrition.logger.noFoodsDetected'))
+      setStep('capture')
+    }
+  }
+
+  const cancelAnalysis = () => {
+    cancelledRef.current = true
+    setStep('capture')
+  }
+
+  // ── Food editing ─────────────────────────────────────────────────────────────
+  const updateFood = useCallback((index: number, field: keyof FoodItem, value: string | number) => {
+    setFoods((prev) => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)))
+  }, [])
+
+  const removeFood = useCallback((index: number) => {
+    setFoods((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const addFood = () => {
+    setFoods((prev) => [...prev, createEmptyFood()])
+  }
+
+  const addRecentFood = (food: FoodItem) => {
+    setFoods((prev) => [...prev, { ...food }])
+  }
+
+  const commitMacroEdit = (index: number, field: MacroField, raw: string) => {
+    const isCalories = field === 'calories'
+    const val = isCalories ? parseInt(raw) || 0 : parseFloat(raw) || 0
+    setFoods((prev) =>
+      prev.map((f, i) => {
+        if (i !== index) return f
+        return normalizeToBase100({ ...f, [field]: val })
+      }),
+    )
+    setEditingMacro(null)
+    setEditingMacroValue('')
+  }
+
+  // Manual entry: start blank, or seed from a comma-separated quick-text list.
+  const startManualEntry = () => {
+    setFoods([createEmptyFood()])
+    setStep('review')
+  }
+
+  const createManualFoodsFromText = () => {
+    const names = quickText.split(',').map((s) => s.trim()).filter(Boolean)
+    const newFoods = names.map((name) => {
+      const food = createEmptyFood()
+      food.name = name
+      return food
+    })
+    setFoods(newFoods.length > 0 ? newFoods : [createEmptyFood()])
+    setQuickText('')
+    setStep('review')
+  }
+
+  // ── Meal type ──────────────────────────────────────────────────────────────
+  const selectMealType = (v: MealType) => {
+    setMealType(v)
+    haptics.selection()
+  }
+
+  // ── Repeat meal ────────────────────────────────────────────────────────────
+  const loadRepeatMeal = async () => {
+    setCaptureSubView('repeatMeal')
+    setRecentSearch('')
+    setRecentTypeFilter('')
+    try {
+      setRecentEntries(await getRecentEntries(30))
+    } catch {
+      // ignore
+    }
+  }
+
+  const selectRecentEntry = (entry: NutritionEntry) => {
+    setMealType(entry.mealType)
+    setFoods(normalizeEntryFoods(entry.foods))
+    setCaptureSubView('main')
+    setStep('review')
+    haptics.selection()
+  }
+
+  const backFromRepeat = () => {
+    setCaptureSubView('main')
+    setRecentSearch('')
+    setRecentTypeFilter('')
+  }
+
+  const backFromReview = () => {
+    setStep('capture')
+    setFoods([])
+    setImageAssets([])
+  }
+
+  // ── Save ───────────────────────────────────────────────────────────────────
+  const handleSave = async () => {
+    const validFoods = foods.filter((f) => f.name.trim())
+    if (validFoods.length === 0) {
+      setError(t('nutrition.logger.addFood'))
+      return
+    }
+    setStep('saving')
+    try {
+      await onSave(
+        {
+          mealType,
+          foods: validFoods,
+          totalCalories: totals.calories,
+          totalProtein: totals.protein,
+          totalCarbs: totals.carbs,
+          totalFat: totals.fat,
+          loggedAt: nowLocalForPB(),
+          ...(analysisQuality
+            ? {
+                qualityScore: analysisQuality.score,
+                qualityBreakdown: analysisQuality.breakdown,
+                qualityMessage: analysisQuality.message,
+                qualitySuggestion: analysisQuality.suggestion,
+              }
+            : {}),
+        },
+        imageAssets.length > 0 ? imageAssets.map((a) => a.uri) : undefined,
+      )
+      const hour = localHour()
+      validFoods.forEach((f) => trackFood(f, mealType, hour))
+      haptics.success()
+      setStep('success')
+    } catch {
+      setError(t('nutrition.logger.saveError'))
+      setStep('review')
+      haptics.error()
+    }
+  }
+
+  // ── Effects ────────────────────────────────────────────────────────────────
+  // Reset when modal opens — or pre-fill the review step when editing an entry.
+  useEffect(() => {
+    if (!visible) return
+    if (editEntry) {
+      loadEntryForEdit(editEntry)
+    } else {
+      handleResetForm()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible])
+
+  // Auto-trigger initialMode when modal opens.
+  useEffect(() => {
+    if (!visible || !initialMode) return
+    if (initialMode === 'camera') {
+      const id = setTimeout(() => { handleCamera() }, 300)
+      return () => clearTimeout(id)
+    }
+    if (initialMode === 'text') {
+      const id = setTimeout(() => { quickTextInputRef.current?.focus() }, 300)
+      return () => clearTimeout(id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, initialMode])
+
+  // Load recent foods when review step opens.
+  useEffect(() => {
+    if (step === 'review' && userId) {
+      getRecentFoods(8).then(setRecentFoods).catch(() => {})
+    }
+  }, [step, userId, getRecentFoods])
+
+  return {
+    // pass-through props
+    goals,
+    dailyTotals,
+    onClose,
+    // state
+    step,
+    captureSubView,
+    imageAssets,
+    mealType,
+    foods,
+    error,
+    quickText,
+    imageDescription,
+    mealDescription,
+    editingMacro,
+    editingMacroValue,
+    recentFoods,
+    recentEntries,
+    recentSearch,
+    recentTypeFilter,
+    // setters used directly by the view
+    setQuickText,
+    setImageDescription,
+    setRecentSearch,
+    setRecentTypeFilter,
+    setEditingMacro,
+    setEditingMacroValue,
+    // refs
+    quickTextInputRef,
+    // derived
+    totals,
+    filteredRecentEntries,
+    mealLabel,
+    // handlers
+    selectMealType,
+    handleCamera,
+    handleGallery,
+    removePhoto,
+    handleAnalyzeImages,
+    handleAnalyzeText,
+    cancelAnalysis,
+    createManualFoodsFromText,
+    startManualEntry,
+    loadRepeatMeal,
+    selectRecentEntry,
+    backFromRepeat,
+    backFromReview,
+    updateFood,
+    removeFood,
+    addFood,
+    addRecentFood,
+    commitMacroEdit,
+    handleSave,
+    handleResetForm,
+  }
+}
+
+export type MealLoggerModel = ReturnType<typeof useMealLogger>

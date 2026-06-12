@@ -136,6 +136,26 @@
               "targetCellWidth": 4,
               "targetCellHeight": 2,
               "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "NutritionWidget",
+              "label": "Nutrición",
+              "description": "Calorías y macros de hoy + registro rápido",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "NutritionRingWidget",
+              "label": "Calorías",
+              "description": "Anillo de calorías de hoy",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
             }
           ]
         }

@@ -53,6 +53,19 @@ export function todayStr(): string {
   return now().format('YYYY-MM-DD')
 }
 
+/**
+ * Today as YYYY-MM-DD in an explicit IANA timezone. Used by the headless
+ * widget process, which does not run setTimezone() and so cannot rely on the
+ * module-level `_tz` matching the app process. Falls back to local on bad tz.
+ */
+export function todayStrInTz(tz: string): string {
+  try {
+    return dayjs().tz(tz).format('YYYY-MM-DD')
+  } catch {
+    return dayjs().format('YYYY-MM-DD')
+  }
+}
+
 /** N days ago as YYYY-MM-DD in the user's timezone. */
 export function daysAgoStr(n: number): string {
   return now().subtract(n, 'day').format('YYYY-MM-DD')

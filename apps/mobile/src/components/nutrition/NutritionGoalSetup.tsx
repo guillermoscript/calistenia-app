@@ -466,54 +466,26 @@ export default function NutritionGoalSetup({
 
                 {/* Editable fields */}
                 <View className="gap-3">
-                  <View className="gap-1">
-                    <Text className="font-mono text-xs text-muted-foreground tracking-wider">
-                      {t('nutrition.calories', { defaultValue: 'Calorías' }).toUpperCase()}
-                    </Text>
-                    <Input
-                      keyboardType="numeric"
-                      value={String(macros.dailyCalories)}
-                      onChangeText={v =>
-                        setMacros(m => ({ ...m, dailyCalories: parseInt(v, 10) || 0 }))
-                      }
-                    />
-                  </View>
-                  <View className="gap-1">
-                    <Text className="font-mono text-xs text-muted-foreground tracking-wider">
-                      {t('nutrition.protein', { defaultValue: 'Proteína' }).toUpperCase()} (g)
-                    </Text>
-                    <Input
-                      keyboardType="numeric"
-                      value={String(macros.dailyProtein)}
-                      onChangeText={v =>
-                        setMacros(m => ({ ...m, dailyProtein: parseInt(v, 10) || 0 }))
-                      }
-                    />
-                  </View>
-                  <View className="gap-1">
-                    <Text className="font-mono text-xs text-muted-foreground tracking-wider">
-                      {t('nutrition.carbs', { defaultValue: 'Carbos' }).toUpperCase()} (g)
-                    </Text>
-                    <Input
-                      keyboardType="numeric"
-                      value={String(macros.dailyCarbs)}
-                      onChangeText={v =>
-                        setMacros(m => ({ ...m, dailyCarbs: parseInt(v, 10) || 0 }))
-                      }
-                    />
-                  </View>
-                  <View className="gap-1">
-                    <Text className="font-mono text-xs text-muted-foreground tracking-wider">
-                      {t('nutrition.fat', { defaultValue: 'Grasa' }).toUpperCase()} (g)
-                    </Text>
-                    <Input
-                      keyboardType="numeric"
-                      value={String(macros.dailyFat)}
-                      onChangeText={v =>
-                        setMacros(m => ({ ...m, dailyFat: parseInt(v, 10) || 0 }))
-                      }
-                    />
-                  </View>
+                  {([
+                    { field: 'dailyCalories', label: t('nutrition.calories', { defaultValue: 'Calorías' }).toUpperCase() },
+                    { field: 'dailyProtein', label: `${t('nutrition.protein', { defaultValue: 'Proteína' }).toUpperCase()} (g)` },
+                    { field: 'dailyCarbs', label: `${t('nutrition.carbs', { defaultValue: 'Carbos' }).toUpperCase()} (g)` },
+                    { field: 'dailyFat', label: `${t('nutrition.fat', { defaultValue: 'Grasa' }).toUpperCase()} (g)` },
+                  ] as const).map(({ field, label }) => (
+                    <View key={field} className="gap-1">
+                      <Text className="font-mono text-xs text-muted-foreground tracking-wider">
+                        {label}
+                      </Text>
+                      <Input
+                        keyboardType="number-pad"
+                        value={macros[field] ? String(macros[field]) : ''}
+                        placeholder="0"
+                        onChangeText={v =>
+                          setMacros(m => ({ ...m, [field]: Number(v.replace(/[^0-9]/g, '')) || 0 }))
+                        }
+                      />
+                    </View>
+                  ))}
                 </View>
               </CardContent>
             </Card>

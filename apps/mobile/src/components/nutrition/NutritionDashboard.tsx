@@ -5,7 +5,7 @@
 import { useState, useMemo } from 'react'
 import { View, ScrollView, Pressable, Alert } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Copy, Trash2, ChevronDown, ChevronUp } from 'lucide-react-native'
+import { Copy, Trash2, Pencil, ChevronDown, ChevronUp } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -27,6 +27,7 @@ interface NutritionDashboardProps {
   entries: NutritionEntry[]
   onDeleteEntry?: (id: string) => void
   onDuplicateEntry?: (entry: NutritionEntry) => Promise<void>
+  onEditEntry?: (entry: NutritionEntry) => void
   selectedDate?: string
 }
 
@@ -95,6 +96,7 @@ interface MealCardProps {
   onToggle: () => void
   onDelete?: () => void
   onDuplicate?: () => void
+  onEdit?: () => void
 }
 
 function MealCard({
@@ -104,6 +106,7 @@ function MealCard({
   onToggle,
   onDelete,
   onDuplicate,
+  onEdit,
 }: MealCardProps) {
   const { t } = useTranslation()
 
@@ -253,8 +256,19 @@ function MealCard({
           ))}
 
           {/* Action buttons */}
-          {(onDelete || onDuplicate) && (
+          {(onDelete || onDuplicate || onEdit) && (
             <View className="flex-row justify-end gap-1 pt-1 mt-1 border-t border-border/30">
+              {onEdit && (
+                <Pressable
+                  onPress={onEdit}
+                  className="flex-row items-center gap-1.5 rounded-lg px-3 py-1.5 active:bg-sky-400/10"
+                >
+                  <Pencil size={13} color="#38bdf8" />
+                  <Text className="font-mono text-[10px] text-sky-400 tracking-wider">
+                    {t('common.edit', { defaultValue: 'Editar' }).toUpperCase()}
+                  </Text>
+                </Pressable>
+              )}
               {onDuplicate && (
                 <Pressable
                   onPress={onDuplicate}
@@ -293,6 +307,7 @@ export default function NutritionDashboard({
   entries,
   onDeleteEntry,
   onDuplicateEntry,
+  onEditEntry,
   selectedDate,
 }: NutritionDashboardProps) {
   const { t } = useTranslation()
@@ -425,6 +440,11 @@ export default function NutritionDashboard({
                   onDuplicate={
                     onDuplicateEntry && entry.id
                       ? () => onDuplicateEntry(entry)
+                      : undefined
+                  }
+                  onEdit={
+                    onEditEntry && entry.id
+                      ? () => onEditEntry(entry)
                       : undefined
                   }
                 />

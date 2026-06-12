@@ -33,7 +33,9 @@ import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
 
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { analyzeMealMobile, saveEntryWithPhotos } from '@/lib/nutrition-api'
+import { syncNutritionWidget } from '@/lib/sync-nutrition-widget'
 import NutritionDashboard from '@/components/nutrition/NutritionDashboard'
 import NutritionGoalSetup from '@/components/nutrition/NutritionGoalSetup'
 import MealLoggerSheet from '@/components/nutrition/MealLoggerSheet'
@@ -85,11 +87,14 @@ export default function NutritionTab() {
   const { t } = useTranslation()
   const authUser = useAuthUser()
   const userId = authUser?.id ?? null
+  const router = useRouter()
+  const { action } = useLocalSearchParams<{ action?: string }>()
 
   const [selectedDate, setSelectedDate] = useState(todayStr())
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily')
   const [showCoach, setShowCoach] = useState(false)
   const [loggerVisible, setLoggerVisible] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
   const [profileData, setProfileData] = useState<UserProfileData>({})
   const [phaseChangeBanner, setPhaseChangeBanner] = useState(false)
   const trainingPhaseRef = useRef<number | null>(null)
@@ -176,6 +181,13 @@ export default function NutritionTab() {
     entry: Omit<NutritionEntry, 'id' | 'user'>,
     photoUris?: string[],
   ) => {
+    // Edit flow: update the existing record in place, preserving its original loggedAt.
+    if (editingEntry?.id) {
+      const { loggedAt: _loggedAt, ...patch } = entry
+      await updateEntry(editingEntry.id, patch)
+      setEditingEntry(null)
+      return
+    }
     const saved = await saveEntry({ ...entry, user: userId || undefined })
     if (photoUris && photoUris.length > 0 && saved.id && !saved.id.startsWith('local_')) {
       saveEntryWithPhotos(saved.id, photoUris).catch(() => {})
@@ -204,7 +216,7 @@ export default function NutritionTab() {
         }
       }).catch(() => {})
     }
-  }, [saveEntry, userId, scoreMealQuality, goals, getRemainingMacros, updateEntry])
+  }, [saveEntry, userId, scoreMealQuality, goals, getRemainingMacros, updateEntry, editingEntry])
 
   // ─── Load user profile ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -233,6 +245,14 @@ export default function NutritionTab() {
 
   // ─── Load badges on mount ────────────────────────────────────────────────────
   useEffect(() => { loadBadges() }, [loadBadges])
+
+  // ─── Deep-link quick-add (calistenia://nutrition?action=camera|text) ─────────
+  useEffect(() => {
+    if (action === 'camera' || action === 'text') {
+      setLoggerVisible(true)
+      router.setParams({ action: undefined })
+    }
+  }, [action]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Sync entries for selected date ─────────────────────────────────────────
   useEffect(() => {
@@ -273,6 +293,13 @@ export default function NutritionTab() {
   const entries = useMemo(() => getEntriesForDate(selectedDate), [getEntriesForDate, selectedDate])
   const dailyTotals = useMemo(() => getDailyTotals(selectedDate), [getDailyTotals, selectedDate])
   const weeklyHistory = useMemo(() => getWeeklyHistory(), [getWeeklyHistory])
+
+  // ─── Sync widget snapshot whenever today's totals or goals change ────────────
+  useEffect(() => {
+    if (selectedDate === todayStr()) {
+      void syncNutritionWidget(dailyTotals, goals ?? null)
+    }
+  }, [dailyTotals, goals, selectedDate])
 
   const dailyQualityScore = useMemo((): QualityScore | undefined => {
     const scored = entries.filter(e => e.qualityScore)
@@ -613,6 +640,11 @@ export default function NutritionTab() {
                 loggedAt: nowLocalForPB(),
               })
             }}
+            onEditEntry={(entry) => {
+              haptics.medium()
+              setEditingEntry(entry)
+              setLoggerVisible(true)
+            }}
             selectedDate={selectedDate}
           />
         </View>
@@ -694,13 +726,14 @@ export default function NutritionTab() {
       {/* Meal logger bottom sheet */}
       <MealLoggerSheet
         visible={loggerVisible}
-        onClose={() => setLoggerVisible(false)}
+        onClose={() => { setLoggerVisible(false); setEditingEntry(null) }}
         onAnalyze={handleAnalyze}
         onSave={handleSaveMobileEntry}
         userId={userId}
         dailyTotals={dailyTotals}
         goals={goals}
         getRecentEntries={getRecentEntries}
+        editEntry={editingEntry}
       />
     </SafeAreaView>
   )

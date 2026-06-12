@@ -151,6 +151,20 @@ function MealCard({ meal, dayId, onLog, onDelete }: MealCardProps) {
   )
 }
 
+function SectionHeader() {
+  const { t } = useTranslation()
+  return (
+    <View className="flex-row items-center justify-between">
+      <View className="gap-0.5">
+        <Text className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">IA</Text>
+        <Text className="font-bebas text-2xl leading-none text-foreground">
+          {t('nutrition.weeklyPlan.title', 'PLAN SEMANAL')}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
 export default function WeeklyMealPlan({
   activePlan,
   planDays,
@@ -186,17 +200,6 @@ export default function WeeklyMealPlan({
     try { await onArchive() } finally { setArchiving(false) }
   }, [onArchive])
 
-  // Section header
-  const SectionHeader = () => (
-    <View className="flex-row items-center justify-between">
-      <View className="gap-0.5">
-        <Text className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">IA</Text>
-        <Text className="font-bebas text-2xl leading-none text-foreground">
-          {t('nutrition.weeklyPlan.title', 'PLAN SEMANAL')}
-        </Text>
-      </View>
-    </View>
-  )
 
   // Loading state
   if (isLoading) {

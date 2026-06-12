@@ -5,6 +5,10 @@
  */
 export interface WidgetSnapshot {
   date: string // YYYY-MM-DD local; el widget lo compara con "hoy"
+  /** IANA tz usada por el escritor para calcular `date`. El widget recalcula
+   *  "hoy" en esta misma tz: el proceso headless no corre setTimezone() y su
+   *  reloj local puede diferir de la tz del perfil → mismatch → "stale". */
+  tz: string
   programName: string | null
   workoutToday: {
     title: string
@@ -24,6 +28,7 @@ export const WIDGET_SNAPSHOT_KEY = 'widget_snapshot'
 
 export function buildWidgetSnapshot(args: {
   today: string
+  tz: string
   lang: 'es' | 'en'
   programName: string | null
   programPhase: number
@@ -40,6 +45,7 @@ export function buildWidgetSnapshot(args: {
   const hasProgram = args.programName !== null
   return {
     date: args.today,
+    tz: args.tz,
     programName: args.programName,
     workoutToday: hasProgram
       ? {
