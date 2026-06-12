@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.201",
     "@bacons/apple-targets": "^4.0.7",
     "@calistenia/core": "workspace:*",
     "@expo-google-fonts/bebas-neue": "^0.4.1",
@@ -27,6 +28,7 @@
     "@rn-primitives/portal": "^1.4.0",
     "@rn-primitives/slot": "^1.4.0",
     "@sentry/react-native": "~7.11.0",
+    "ai": "^6.0.199",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "expo": "~56.0.9",

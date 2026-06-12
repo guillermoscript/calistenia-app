@@ -30,3 +30,15 @@ export const NAV_THEME = {
     },
   },
 } as const
+
+/**
+ * Colores en hex para props que no aceptan clases NativeWind (`color` de los
+ * iconos lucide, `placeholderTextColor` de los inputs). Espejo de los tokens
+ * del tema en `global.css`.
+ */
+export const COLORS = {
+  lime: '#a3e635',
+  mutedIcon: '#888899',
+  placeholder: '#71717a',
+  destructive: '#ef4444',
+} as const

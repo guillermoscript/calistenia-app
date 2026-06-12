@@ -5,28 +5,36 @@ import {
   FlatList,
   ScrollView,
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { X, Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react-native'
+import { X, Plus } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { COLORS } from '@/lib/theme'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { catalogToExercise } from '@/lib/catalog-to-exercise'
+import { moveItem, removeAt } from '@/lib/reorder'
+import { useExerciseSearch } from '@/lib/use-exercise-search'
+import { useStartFreeSession } from '@/lib/start-free-session'
 import { WarmupCooldownPrompt } from '@/components/free-session/WarmupCooldownPrompt'
-import { useActiveSession } from '@/contexts/ActiveSessionContext'
+import { ReorderControls } from '@/components/free-session/ReorderControls'
+import { AISessionTab } from '@/components/free-session/AISessionTab'
 import { localize } from '@calistenia/core/lib/i18n-db'
-import type { Exercise, Workout } from '@calistenia/core/types'
+import type { Exercise } from '@calistenia/core/types'
 
 export default function FreeSessionScreen() {
   const router = useRouter()
   const { i18n } = useTranslation()
   const locale = i18n.language || 'es'
-  const { startSession } = useActiveSession()
+  const startFreeSession = useStartFreeSession()
 
+  const [mode, setMode] = useState<'manual' | 'ai'>('manual')
   const [view, setView] = useState<'pick' | 'review'>('pick')
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('todos')
@@ -35,14 +43,11 @@ export default function FreeSessionScreen() {
 
   // ── Filtered catalog ───────────────────────────────────────────────────────
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return CATALOG.filter(ex => {
-      const matchCat = activeCategory === 'todos' || ex.category === activeCategory
-      const matchSearch = q === '' || localize(ex.name, locale).toLowerCase().includes(q)
-      return matchCat && matchSearch
-    })
-  }, [search, activeCategory, locale])
+  const filtered = useExerciseSearch({
+    query: search,
+    locale,
+    category: activeCategory === 'todos' ? undefined : activeCategory,
+  })
 
   // ── Selection helpers ──────────────────────────────────────────────────────
 
@@ -56,45 +61,20 @@ export default function FreeSessionScreen() {
     )
   }
 
-  function moveUp(index: number) {
-    if (index === 0) return
-    setSelected(prev => {
-      const next = [...prev]
-      ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
-      return next
-    })
-  }
-
-  function moveDown(index: number) {
-    setSelected(prev => {
-      if (index >= prev.length - 1) return prev
-      const next = [...prev]
-      ;[next[index], next[index + 1]] = [next[index + 1], next[index]]
-      return next
-    })
-  }
-
-  function removeAt(index: number) {
-    setSelected(prev => prev.filter((_, i) => i !== index))
-  }
+  const moveUp = (index: number) => setSelected(prev => moveItem(prev, index, index - 1))
+  const moveDown = (index: number) => setSelected(prev => moveItem(prev, index, index + 1))
+  const removeSelected = (index: number) => setSelected(prev => removeAt(prev, index))
 
   // ── Session start ──────────────────────────────────────────────────────────
 
   function handleConfirm(warmup: Exercise[], cooldown: Exercise[]) {
     const main = selected.map(c => catalogToExercise(c, locale))
-    const workout: Workout = {
-      phase: 0,
-      day: 'lun',
-      title: 'Sesión libre',
-      exercises: [...warmup, ...main, ...cooldown],
-    }
-    startSession(workout, `free_${Date.now()}`, 'free')
-    router.replace('/session')
+    startFreeSession([...warmup, ...main, ...cooldown], 'Sesión libre')
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const title = view === 'pick' ? 'Sesión libre' : 'Tu sesión'
+  const title = mode === 'ai' ? 'Coach IA' : view === 'pick' ? 'Sesión libre' : 'Tu sesión'
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
@@ -102,26 +82,59 @@ export default function FreeSessionScreen() {
       <View className="flex-row items-start justify-between px-4 pt-2 pb-3">
         <View className="flex-1">
           <Text className="font-bebas text-2xl leading-none text-foreground">{title}</Text>
-          {view === 'pick' && (
+          {mode === 'manual' && view === 'pick' && (
             <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
               {CATALOG.length} ejercicios disponibles
             </Text>
           )}
-          {view === 'review' && (
+          {mode === 'manual' && view === 'review' && (
             <Text className="mt-0.5 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
               {selected.length} seleccionados
             </Text>
           )}
         </View>
         <Pressable
-          onPress={() => view === 'pick' ? router.back() : setView('pick')}
+          onPress={() =>
+            mode === 'manual' && view === 'review' ? setView('pick') : router.back()
+          }
           className="rounded-full bg-muted/60 p-2 active:opacity-70"
         >
-          <X size={18} color="#888899" />
+          <X size={18} color={COLORS.mutedIcon} />
         </Pressable>
       </View>
 
-      {view === 'pick' ? (
+      {/* Manual | IA segmented control */}
+      <View className="mx-4 mb-3 flex-row rounded-xl bg-muted/40 p-1">
+        {(['manual', 'ai'] as const).map(m => (
+          <Pressable
+            key={m}
+            onPress={() => setMode(m)}
+            className={cn(
+              'flex-1 items-center rounded-lg py-2 active:opacity-80',
+              mode === m && 'bg-card',
+            )}
+          >
+            <Text
+              className={cn(
+                'font-mono text-[11px] uppercase tracking-wide',
+                mode === m ? 'text-foreground' : 'text-muted-foreground',
+              )}
+            >
+              {m === 'manual' ? 'Manual' : 'Coach IA'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {mode === 'ai' ? (
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+        >
+          <AISessionTab />
+        </KeyboardAvoidingView>
+      ) : view === 'pick' ? (
         <PickView
           locale={locale}
           search={search}
@@ -140,7 +153,7 @@ export default function FreeSessionScreen() {
           locale={locale}
           onMoveUp={moveUp}
           onMoveDown={moveDown}
-          onRemove={removeAt}
+          onRemove={removeSelected}
           onStart={() => setShowPrompt(true)}
         />
       )}
@@ -191,7 +204,7 @@ function PickView({
           value={search}
           onChangeText={setSearch}
           placeholder="Buscar ejercicio…"
-          placeholderTextColor="#71717a"
+          placeholderTextColor={COLORS.placeholder}
           className="h-11 rounded-xl"
           clearButtonMode="while-editing"
           autoCorrect={false}
@@ -258,7 +271,7 @@ function PickView({
                 {isSelected ? (
                   <Text className="font-mono text-[11px] text-black">{position}</Text>
                 ) : (
-                  <Plus size={14} color="#888899" />
+                  <Plus size={14} color={COLORS.mutedIcon} />
                 )}
               </View>
             </Pressable>
@@ -331,34 +344,13 @@ function ReviewView({
               </Text>
             </View>
             {/* Controls */}
-            <View className="flex-row items-center gap-0.5">
-              <Pressable
-                onPress={() => onMoveUp(index)}
-                disabled={index === 0}
-                className={cn(
-                  'rounded-lg p-1.5',
-                  index === 0 ? 'opacity-30' : 'active:bg-muted/60',
-                )}
-              >
-                <ChevronUp size={16} color="#888899" />
-              </Pressable>
-              <Pressable
-                onPress={() => onMoveDown(index)}
-                disabled={index === selected.length - 1}
-                className={cn(
-                  'rounded-lg p-1.5',
-                  index === selected.length - 1 ? 'opacity-30' : 'active:bg-muted/60',
-                )}
-              >
-                <ChevronDown size={16} color="#888899" />
-              </Pressable>
-              <Pressable
-                onPress={() => onRemove(index)}
-                className="rounded-lg p-1.5 active:bg-destructive/10"
-              >
-                <Trash2 size={16} color="#888899" />
-              </Pressable>
-            </View>
+            <ReorderControls
+              index={index}
+              count={selected.length}
+              onMoveUp={() => onMoveUp(index)}
+              onMoveDown={() => onMoveDown(index)}
+              onRemove={() => onRemove(index)}
+            />
           </View>
         )}
       />
