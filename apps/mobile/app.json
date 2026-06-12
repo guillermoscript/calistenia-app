@@ -142,9 +142,9 @@
               "label": "Nutrición",
               "description": "Calorías y macros de hoy + registro rápido",
               "minWidth": "250dp",
-              "minHeight": "160dp",
+              "minHeight": "210dp",
               "targetCellWidth": 4,
-              "targetCellHeight": 3,
+              "targetCellHeight": 4,
               "updatePeriodMillis": 1800000
             },
             {
