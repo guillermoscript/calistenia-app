@@ -82,10 +82,11 @@ jobs:
 
       - name: Build APK
         working-directory: apps/mobile/android
-        # Sentry sourcemap upload is skipped automatically when SENTRY_AUTH_TOKEN
-        # is unset; the build still succeeds (the release APK is signed with the
-        # Expo-generated debug keystore — fine for sideloaded distribution).
+        # SENTRY_DISABLE_AUTO_UPLOAD skips the sentry-cli sourcemap upload task
+        # (no Sentry configured yet). The release APK is signed with the
+        # Expo-generated debug keystore — fine for sideloaded distribution.
         env:
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: ./gradlew assembleRelease --build-cache --parallel -Dorg.gradle.jvmargs="-Xmx4g -XX:+HeapDumpOnOutOfMemoryError" -Dorg.gradle.workers.max=4
 
