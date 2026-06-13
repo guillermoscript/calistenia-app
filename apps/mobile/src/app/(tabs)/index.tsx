@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCountUp } from '@/lib/use-count-up'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -293,8 +294,8 @@ export default function TodayScreen() {
         {/* Stats */}
         <View className="flex-row gap-3">
           <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
-          <StatCard label={t('profile.streak', { defaultValue: 'Racha' })} value={String(getLongestStreak())} />
-          <StatCard label={t('profile.sessions', { defaultValue: 'Sesiones' })} value={String(getTotalSessions())} />
+          <StatCard label={t('profile.streak', { defaultValue: 'Racha' })} value={getLongestStreak()} />
+          <StatCard label={t('profile.sessions', { defaultValue: 'Sesiones' })} value={getTotalSessions()} />
         </View>
 
         {/* Accesos rápidos comunidad */}
@@ -332,11 +333,14 @@ function CommunityPill({ icon, label, onPress }: { icon: ReactNode; label: strin
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value }: { label: string; value: number | string }) {
+  const numeric = typeof value === 'number' ? value : null
+  const count = useCountUp(numeric ?? 0)
+  const display = numeric !== null ? String(count) : value
   return (
     <Card className="flex-1">
       <CardContent className="items-center py-4">
-        <Text className="font-bebas text-2xl leading-none text-foreground">{value}</Text>
+        <Text className="font-bebas text-2xl leading-none text-foreground">{display}</Text>
         <Text className="mt-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground" numberOfLines={1}>{label}</Text>
       </CardContent>
     </Card>

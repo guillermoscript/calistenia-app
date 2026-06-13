@@ -15,6 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react-native'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import { runOnJS } from 'react-native-reanimated'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -401,9 +403,20 @@ export default function NutritionTab() {
   const isToday = selectedDate === todayStr()
 
   // ─── Date navigation helpers ─────────────────────────────────────────────────
-  const goToPrevDay = () => { haptics.light(); setSelectedDate(d => addDays(d, -1)) }
-  const goToNextDay = () => { haptics.light(); setSelectedDate(d => addDays(d, 1)) }
-  const goToToday = () => { haptics.medium(); setSelectedDate(todayStr()) }
+  const goToPrevDay = useCallback(() => { haptics.light(); setSelectedDate(d => addDays(d, -1)) }, [])
+  const goToNextDay = useCallback(() => { haptics.light(); setSelectedDate(d => addDays(d, 1)) }, [])
+  const goToToday = useCallback(() => { haptics.medium(); setSelectedDate(todayStr()) }, [])
+
+  const swipeGesture = useMemo(() =>
+    Gesture.Pan()
+      .activeOffsetX([-20, 20])
+      .failOffsetY([-15, 15])
+      .onEnd((e) => {
+        if (e.translationX < -60) runOnJS(goToNextDay)()
+        else if (e.translationX > 60) runOnJS(goToPrevDay)()
+      }),
+    [goToNextDay, goToPrevDay]
+  )
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T12:00:00')
@@ -507,34 +520,36 @@ export default function NutritionTab() {
           </View>
         )}
 
-        {/* Date navigator */}
-        <View className="flex-row items-center gap-3 mb-5">
-          <Pressable
-            onPress={goToPrevDay}
-            className="size-9 rounded-lg border border-border items-center justify-center active:bg-muted"
-          >
-            <ChevronLeft size={16} className="text-muted-foreground" />
-          </Pressable>
-          <View className="flex-1">
-            <Text className="text-sm font-sans-medium text-foreground capitalize text-center">
-              {isToday ? t('common.today') : formatDate(selectedDate)}
-            </Text>
+        {/* Date navigator — swipe left/right to change day */}
+        <GestureDetector gesture={swipeGesture}>
+          <View className="flex-row items-center gap-3 mb-5">
+            <Pressable
+              onPress={goToPrevDay}
+              className="size-9 rounded-lg border border-border items-center justify-center active:bg-muted"
+            >
+              <ChevronLeft size={16} className="text-muted-foreground" />
+            </Pressable>
+            <View className="flex-1">
+              <Text className="text-sm font-sans-medium text-foreground capitalize text-center">
+                {isToday ? t('common.today') : formatDate(selectedDate)}
+              </Text>
+              {!isToday && (
+                <Text className="text-[10px] font-mono text-muted-foreground text-center">{selectedDate}</Text>
+              )}
+            </View>
+            <Pressable
+              onPress={goToNextDay}
+              className="size-9 rounded-lg border border-border items-center justify-center active:bg-muted"
+            >
+              <ChevronRight size={16} className="text-muted-foreground" />
+            </Pressable>
             {!isToday && (
-              <Text className="text-[10px] font-mono text-muted-foreground text-center">{selectedDate}</Text>
+              <Pressable onPress={goToToday}>
+                <Text className="font-mono text-[10px] text-lime-400 tracking-widest uppercase">{t('common.today')}</Text>
+              </Pressable>
             )}
           </View>
-          <Pressable
-            onPress={goToNextDay}
-            className="size-9 rounded-lg border border-border items-center justify-center active:bg-muted"
-          >
-            <ChevronRight size={16} className="text-muted-foreground" />
-          </Pressable>
-          {!isToday && (
-            <Pressable onPress={goToToday}>
-              <Text className="font-mono text-[10px] text-lime-400 tracking-widest uppercase">{t('common.today')}</Text>
-            </Pressable>
-          )}
-        </View>
+        </GestureDetector>
 
         {/* Daily / Weekly tab toggle */}
         <View className="flex-row gap-1 mb-5 bg-card border border-border rounded-lg p-1">

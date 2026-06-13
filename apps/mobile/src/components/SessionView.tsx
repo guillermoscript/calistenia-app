@@ -2,7 +2,15 @@
 // es dueño del estado local (stepIdx/phase/setsCount) y lo empuja al
 // ActiveSessionContext via onProgressChange — nunca lo lee de vuelta.
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
-import { View, ScrollView, Pressable, Alert, AppState, Linking } from 'react-native'
+import { View, ScrollView, Pressable, Alert, AppState, Linking, Dimensions } from 'react-native'
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  runOnJS,
+} from 'react-native-reanimated'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import Svg, { Circle } from 'react-native-svg'
@@ -48,6 +56,7 @@ function buildSteps(exercises: Exercise[]): Step[] {
 
 const LIME = 'hsl(74 90% 45%)'
 const MUTED = 'hsl(0 0% 55%)'
+const SCREEN_WIDTH = Dimensions.get('window').width
 
 // ─── Rest screen ──────────────────────────────────────────────────────────────
 
@@ -793,6 +802,73 @@ export default function SessionView({
     setPhase('exercise')
   }, [currentExerciseIndex, exerciseBoundaries])
 
+  // ── Swipe-to-navigate ────────────────────────────────────────────────────────
+  const translateX = useSharedValue(0)
+  const canSwipeLeft = useSharedValue(hasNextExercise)
+  const canSwipeRight = useSharedValue(hasPrevExercise)
+  const swipeDirectionRef = useRef<'next' | 'prev' | null>(null)
+  const prevSwipeStepRef = useRef(stepIdx)
+
+  useEffect(() => {
+    canSwipeLeft.value = hasNextExercise
+    canSwipeRight.value = hasPrevExercise
+  }, [hasNextExercise, hasPrevExercise, canSwipeLeft, canSwipeRight])
+
+  useEffect(() => {
+    if (stepIdx === prevSwipeStepRef.current) return
+    prevSwipeStepRef.current = stepIdx
+    const dir = swipeDirectionRef.current
+    swipeDirectionRef.current = null
+    if (!dir) return
+    // translateX was already snapped to the entry side in the worklet callback
+    translateX.value = withSpring(0, { damping: 20, stiffness: 220 })
+  }, [stepIdx, translateX])
+
+  const handleSwipeToNext = useCallback(() => {
+    swipeDirectionRef.current = 'next'
+    goToNextExercise()
+  }, [goToNextExercise])
+
+  const handleSwipeToPrev = useCallback(() => {
+    swipeDirectionRef.current = 'prev'
+    goToPrevExercise()
+  }, [goToPrevExercise])
+
+  const swipeGesture = useMemo(() =>
+    Gesture.Pan()
+      .activeOffsetX([-25, 25])
+      .failOffsetY([-15, 15])
+      .onUpdate((e) => {
+        if (e.translationX < 0 && !canSwipeLeft.value) return
+        if (e.translationX > 0 && !canSwipeRight.value) return
+        translateX.value = e.translationX * 0.25
+      })
+      .onEnd((e) => {
+        const THRESHOLD = 65
+        if (e.translationX < -THRESHOLD && canSwipeLeft.value) {
+          runOnJS(haptic.selection)()
+          translateX.value = withTiming(-SCREEN_WIDTH, { duration: 180 }, () => {
+            translateX.value = SCREEN_WIDTH
+            runOnJS(handleSwipeToNext)()
+          })
+        } else if (e.translationX > THRESHOLD && canSwipeRight.value) {
+          runOnJS(haptic.selection)()
+          translateX.value = withTiming(SCREEN_WIDTH, { duration: 180 }, () => {
+            translateX.value = -SCREEN_WIDTH
+            runOnJS(handleSwipeToPrev)()
+          })
+        } else {
+          translateX.value = withSpring(0, { damping: 15, stiffness: 200 })
+        }
+      }),
+    [canSwipeLeft, canSwipeRight, handleSwipeToNext, handleSwipeToPrev, translateX]
+  )
+
+  const exerciseAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }))
+  // ────────────────────────────────────────────────────────────────────────────
+
   const handleLogged = useCallback(async ({ reps, note, weight, rpe }: { reps: string; note: string; weight?: number; rpe?: number }) => {
     const prEvent = await onLogSet(currentStep.exercise.id, workoutKey, { reps, note, weight, rpe })
     if (prEvent) {
@@ -953,42 +1029,53 @@ export default function SessionView({
       )}
 
       {(phase === 'exercise' || phase === 'rest') && (
-        <View className="flex-1">
-          {phase === 'exercise' && currentStep ? (
-            <ExerciseScreen
-              key={stepIdx}
-              step={currentStep}
-              onLogged={handleLogged}
-              logs={getExerciseLogs(currentStep.exercise.id)}
-            />
-          ) : (
-            <RestScreen
-              key={`rest-${stepIdx}`}
-              seconds={currentStep?.exercise.rest || 90}
-              exerciseId={currentStep?.exercise.id}
-              nextStep={nextStep}
-              onSkip={handleRestDone}
-              savedRest={currentStep && getRestForExercise ? getRestForExercise(currentStep.exercise.id, currentStep.exercise.rest || 90) : undefined}
-              onAdjust={setRestForExercise ? (id, secs) => { setRestForExercise(id, secs) } : undefined}
-            />
-          )}
+        <GestureDetector gesture={swipeGesture}>
+          <Animated.View className="flex-1" style={exerciseAnimStyle}>
+            {phase === 'exercise' && currentStep ? (
+              <ExerciseScreen
+                key={stepIdx}
+                step={currentStep}
+                onLogged={handleLogged}
+                logs={getExerciseLogs(currentStep.exercise.id)}
+              />
+            ) : (
+              <RestScreen
+                key={`rest-${stepIdx}`}
+                seconds={currentStep?.exercise.rest || 90}
+                exerciseId={currentStep?.exercise.id}
+                nextStep={nextStep}
+                onSkip={handleRestDone}
+                savedRest={currentStep && getRestForExercise ? getRestForExercise(currentStep.exercise.id, currentStep.exercise.rest || 90) : undefined}
+                onAdjust={setRestForExercise ? (id, secs) => { setRestForExercise(id, secs) } : undefined}
+              />
+            )}
 
-          {/* Navegación prev/next ejercicio */}
-          {(hasPrevExercise || hasNextExercise) && (
-            <View className="absolute inset-x-1 top-1/2 -mt-5 flex-row justify-between" pointerEvents="box-none">
-              {hasPrevExercise ? (
-                <Pressable onPress={goToPrevExercise} className="size-10 items-center justify-center rounded-full bg-muted/70 active:opacity-70" accessibilityLabel="Anterior">
-                  <ChevronLeft size={18} color={MUTED} />
-                </Pressable>
-              ) : <View />}
-              {hasNextExercise ? (
-                <Pressable onPress={goToNextExercise} className="size-10 items-center justify-center rounded-full bg-muted/70 active:opacity-70" accessibilityLabel="Siguiente">
-                  <ChevronRight size={18} color={MUTED} />
-                </Pressable>
-              ) : <View />}
-            </View>
-          )}
-        </View>
+            {/* Swipe hint dots — visible when adjacent exercises exist */}
+            {(hasPrevExercise || hasNextExercise) && (
+              <View className="absolute bottom-4 inset-x-0 flex-row items-center justify-center gap-1.5" pointerEvents="none">
+                {hasPrevExercise && <View className="size-1 rounded-full bg-muted-foreground/30" />}
+                <View className="h-1 w-3 rounded-full bg-lime/50" />
+                {hasNextExercise && <View className="size-1 rounded-full bg-muted-foreground/30" />}
+              </View>
+            )}
+
+            {/* Tap targets at edges for accessibility */}
+            {(hasPrevExercise || hasNextExercise) && (
+              <View className="absolute inset-x-1 top-1/2 -mt-5 flex-row justify-between" pointerEvents="box-none">
+                {hasPrevExercise ? (
+                  <Pressable onPress={goToPrevExercise} className="size-10 items-center justify-center rounded-full bg-muted/50 active:opacity-70" accessibilityLabel="Anterior">
+                    <ChevronLeft size={16} color={MUTED} />
+                  </Pressable>
+                ) : <View />}
+                {hasNextExercise ? (
+                  <Pressable onPress={goToNextExercise} className="size-10 items-center justify-center rounded-full bg-muted/50 active:opacity-70" accessibilityLabel="Siguiente">
+                    <ChevronRight size={16} color={MUTED} />
+                  </Pressable>
+                ) : <View />}
+              </View>
+            )}
+          </Animated.View>
+        </GestureDetector>
       )}
 
       {phase === 'section-transition' && (
