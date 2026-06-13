@@ -7,6 +7,7 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY src/ ./src/
+COPY resources/ ./resources/
 RUN npm run build
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
