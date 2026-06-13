@@ -7,12 +7,17 @@ import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: false,
-    shouldShowList: false,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    // Recordatorios (comida/ejercicio/pausa) sí muestran banner en foreground;
+    // el rest timer no (el contador en pantalla basta).
+    const isReminder = notification.request.content.data?.source === 'reminder'
+    return {
+      shouldShowBanner: isReminder,
+      shouldShowList: isReminder,
+      shouldPlaySound: isReminder,
+      shouldSetBadge: false,
+    }
+  },
 })
 
 let permissionAsked = false
