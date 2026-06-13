@@ -13,6 +13,11 @@ RUN npm run build
 # ── Runtime ───────────────────────────────────────────────────────────────────
 FROM node:20-alpine
 
+# Public URL of this server — baked at build time so it's always correct.
+# Override at runtime with -e SERVER_URL=... if needed.
+ARG SERVER_URL=http://localhost:3001
+ENV SERVER_URL=${SERVER_URL}
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./

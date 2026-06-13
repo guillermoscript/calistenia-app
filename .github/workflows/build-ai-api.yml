@@ -60,6 +60,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-ai.outputs.tags }}
           labels: ${{ steps.meta-ai.outputs.labels }}
+          build-args: |
+            SERVER_URL=https://gym-server.guille.tech
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
