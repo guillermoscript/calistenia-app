@@ -17,3 +17,22 @@ export interface NutritionWidgetSnapshot {
 }
 
 export const NUTRITION_WIDGET_SNAPSHOT_KEY = 'nutrition_widget_snapshot'
+
+/**
+ * Rollover de día: si el snapshot es de un día pasado (`s.date < today`), las
+ * metas siguen vigentes pero el consumo se reinicia a 0. Devuelve un snapshot
+ * fresco para hoy sin necesidad de abrir la app. El poll de `updatePeriodMillis`
+ * recalcula "today" en la tz del escritor y, tras medianoche, renderiza el día
+ * nuevo vacío en vez de quedarse pegado en "ABRE LA APP".
+ *
+ * Fechas futuras (`s.date > today`, p.ej. desfase de reloj/tz) se dejan intactas
+ * para no borrar datos legítimos. Puro: testeable sin react-native.
+ */
+export function rolloverSnapshot(
+  s: NutritionWidgetSnapshot | null,
+  today: string,
+): NutritionWidgetSnapshot | null {
+  if (!s) return null
+  if (s.date >= today) return s
+  return { ...s, date: today, calories: 0, protein: 0, carbs: 0, fat: 0 }
+}

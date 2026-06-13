@@ -1,7 +1,9 @@
 /** SVG calorie ring gauge — port of web CalorieGauge. */
-import { View } from 'react-native'
+import { useEffect, useRef } from 'react'
+import { Animated, Easing, View } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
 import { Text } from '@/components/ui/text'
+import { useCountUp } from '@/lib/use-count-up'
 import type { QualityScore } from '@calistenia/core/types'
 
 const RADIUS = 52
@@ -28,13 +30,27 @@ interface MacroRingProps {
   dailyScore?: QualityScore
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AnimatedCircle = Animated.createAnimatedComponent(Circle as any)
+
 export default function MacroRing({ consumed, target, dailyScore }: MacroRingProps) {
   const pct = target > 0 ? Math.min(consumed / target, 1.1) : 0
   const fillPct = Math.min(pct, 1)
   const dashOffset = CIRCUMFERENCE * (1 - fillPct)
   const stroke = ringColor(pct)
-
   const SIZE = (RADIUS + STROKE_WIDTH) * 2
+
+  const animOffset = useRef(new Animated.Value(CIRCUMFERENCE)).current
+  const displayConsumed = useCountUp(Math.round(consumed))
+
+  useEffect(() => {
+    Animated.timing(animOffset, {
+      toValue: dashOffset,
+      duration: 900,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start()
+  }, [animOffset, dashOffset])
 
   return (
     <View className="items-center justify-center">
@@ -48,8 +64,8 @@ export default function MacroRing({ consumed, target, dailyScore }: MacroRingPro
           stroke="#27272a"
           strokeWidth={STROKE_WIDTH}
         />
-        {/* Fill */}
-        <Circle
+        {/* Animated fill */}
+        <AnimatedCircle
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={RADIUS}
@@ -57,7 +73,7 @@ export default function MacroRing({ consumed, target, dailyScore }: MacroRingPro
           stroke={stroke}
           strokeWidth={STROKE_WIDTH}
           strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-          strokeDashoffset={dashOffset}
+          strokeDashoffset={animOffset}
           strokeLinecap="round"
           rotation="-90"
           origin={`${SIZE / 2}, ${SIZE / 2}`}
@@ -70,7 +86,7 @@ export default function MacroRing({ consumed, target, dailyScore }: MacroRingPro
         style={{ width: SIZE, height: SIZE }}
       >
         <Text className="font-bebas text-3xl leading-none text-foreground">
-          {Math.round(consumed)}
+          {displayConsumed}
         </Text>
         <Text className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground">
           / {Math.round(target)} kcal

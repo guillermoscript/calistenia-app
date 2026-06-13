@@ -108,6 +108,7 @@ export function useFreeSessionChat() {
 
   return {
     messages,
+    status,
     error,
     stop,
     isStreaming,

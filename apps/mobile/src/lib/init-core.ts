@@ -24,7 +24,7 @@ import { isOnline, onOnline } from './connectivity'
 // hostUri — usar el hostname del navegador.
 const devHost =
   Constants.expoConfig?.hostUri?.split(':')[0] ??
-  (typeof window !== 'undefined' ? window.location.hostname : undefined)
+  (typeof window !== 'undefined' && window.location != null ? window.location.hostname : undefined)
 
 const pbUrl =
   process.env.EXPO_PUBLIC_PB_URL ||

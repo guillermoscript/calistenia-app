@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router'
 import { X } from 'lucide-react-native'
 import { Pressable } from 'react-native'
 import { Text } from '@/components/ui/text'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
 import { useReactions } from '@calistenia/core/hooks/useReactions'
@@ -127,9 +128,8 @@ export default function SocialScreen() {
         }
         ListEmptyComponent={
           loading ? (
-            <View className="items-center py-16">
-              <ActivityIndicator color="#a3e635" />
-              <Text className="font-mono text-xs text-muted-foreground mt-3">Cargando…</Text>
+            <View className="gap-2.5">
+              {Array.from({ length: 5 }).map((_, i) => <FeedCardSkeleton key={i} />)}
             </View>
           ) : (
             <View className="items-center rounded-xl border border-dashed border-border py-16 gap-3">
@@ -143,8 +143,9 @@ export default function SocialScreen() {
         }
         ListFooterComponent={
           loadingMore ? (
-            <View className="items-center py-6">
-              <ActivityIndicator size="small" color="#a3e635" />
+            <View className="gap-2.5 pt-2.5">
+              <FeedCardSkeleton />
+              <FeedCardSkeleton />
             </View>
           ) : null
         }
@@ -177,5 +178,27 @@ export default function SocialScreen() {
         commentReactions={commentReactions}
       />
     </SafeAreaView>
+  )
+}
+
+function FeedCardSkeleton() {
+  return (
+    <View className="px-4 py-3.5 bg-card border border-border rounded-xl gap-3">
+      {/* Avatar + name */}
+      <View className="flex-row items-center gap-2.5">
+        <Skeleton className="size-9 rounded-full" />
+        <View className="gap-1.5 flex-1">
+          <Skeleton className="h-3 w-28 rounded" />
+          <Skeleton className="h-2.5 w-16 rounded" />
+        </View>
+      </View>
+      {/* Workout block */}
+      <Skeleton className="h-14 rounded-md" />
+      {/* Reactions row */}
+      <View className="flex-row gap-2">
+        <Skeleton className="h-7 w-20 rounded-full" />
+        <Skeleton className="h-7 w-24 rounded-full" />
+      </View>
+    </View>
   )
 }

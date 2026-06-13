@@ -8,7 +8,7 @@
     "scheme": "calistenia",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "tech.guille.calistenia",
       "supportsTablet": false,
       "associatedDomains": ["applinks:gym.guille.tech"],
@@ -77,9 +77,12 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0c0a09",
-          "android": {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "dark": {
+            "backgroundColor": "#0c0a09",
             "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "imageWidth": 200
           }
         }
       ],

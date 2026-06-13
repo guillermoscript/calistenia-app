@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useCountUp } from '@/lib/use-count-up'
 import { View, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
@@ -55,9 +56,9 @@ export default function HistoryScreen() {
 
             {/* Stats */}
             <View className="flex-row gap-3">
-              <StatCard label={t('progress.recentSessions')} value={String(getTotalSessions())} />
+              <StatCard label={t('progress.recentSessions')} value={getTotalSessions()} />
               <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
-              <StatCard label="Racha" value={String(getLongestStreak())} />
+              <StatCard label="Racha" value={getLongestStreak()} />
             </View>
 
             {/* Actividad del mes */}
@@ -117,11 +118,14 @@ export default function HistoryScreen() {
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value }: { label: string; value: number | string }) {
+  const numeric = typeof value === 'number' ? value : null
+  const count = useCountUp(numeric ?? 0)
+  const display = numeric !== null ? String(count) : value
   return (
     <Card className="flex-1">
       <CardContent className="items-center py-3.5">
-        <Text className="font-bebas text-2xl leading-none text-foreground">{value}</Text>
+        <Text className="font-bebas text-2xl leading-none text-foreground">{display}</Text>
         <Text className="mt-1.5 text-center font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground" numberOfLines={1}>{label}</Text>
       </CardContent>
     </Card>

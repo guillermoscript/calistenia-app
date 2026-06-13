@@ -1,7 +1,9 @@
-import { TextClassContext } from '@/components/ui/text';
-import { cn } from '@/lib/utils';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { Platform, Pressable } from 'react-native';
+import { useRef } from 'react'
+import { Animated, Platform, Pressable } from 'react-native'
+import { TextClassContext } from '@/components/ui/text'
+import { haptics } from '@/lib/haptics'
+import { cn } from '@/lib/utils'
+import { cva, type VariantProps } from 'class-variance-authority'
 
 const buttonVariants = cva(
   cn(
@@ -51,7 +53,7 @@ const buttonVariants = cva(
       size: 'default',
     },
   }
-);
+)
 
 const buttonTextVariants = cva(
   cn(
@@ -86,21 +88,48 @@ const buttonTextVariants = cva(
       size: 'default',
     },
   }
-);
+)
 
-type ButtonProps = React.ComponentProps<typeof Pressable> & React.RefAttributes<typeof Pressable> & VariantProps<typeof buttonVariants>;
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
-function Button({ className, variant, size, ...props }: ButtonProps) {
+type ButtonProps = React.ComponentProps<typeof Pressable> &
+  React.RefAttributes<typeof Pressable> &
+  VariantProps<typeof buttonVariants>
+
+function Button({ className, variant, size, onPressIn, onPressOut, disabled, ...props }: ButtonProps) {
+  const scale = useRef(new Animated.Value(1)).current
+  const isLink = variant === 'link'
+
+  const handlePressIn: React.ComponentProps<typeof Pressable>['onPressIn'] = (e) => {
+    if (!disabled && !isLink && Platform.OS !== 'web') {
+      Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, speed: 50, bounciness: 3 }).start()
+      haptics.light()
+    }
+    onPressIn?.(e)
+  }
+
+  const handlePressOut: React.ComponentProps<typeof Pressable>['onPressOut'] = (e) => {
+    if (!isLink && Platform.OS !== 'web') {
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 3 }).start()
+    }
+    onPressOut?.(e)
+  }
+
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
-      <Pressable
-        className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
+      <AnimatedPressable
+        className={cn(disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
         role="button"
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        style={{ transform: [{ scale }] } as any}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
         {...props}
       />
     </TextClassContext.Provider>
-  );
+  )
 }
 
-export { Button, buttonTextVariants, buttonVariants };
-export type { ButtonProps };
+export { Button, buttonTextVariants, buttonVariants }
+export type { ButtonProps }

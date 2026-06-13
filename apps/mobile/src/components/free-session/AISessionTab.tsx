@@ -1,14 +1,24 @@
-/** Coach IA de sesión libre. La lógica de chat (transport `expo/fetch` →
- *  `useChat` v6, parsing de parts y ediciones del preview) vive en
- *  `useFreeSessionChat`; este componente solo renderiza. */
-import { useCallback, useRef, useState } from 'react'
-import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
-import { Bot, User, SendHorizonal, Square, Search, Dumbbell } from 'lucide-react-native'
+/** Coach IA de sesión libre. La lógica de chat vive en `useFreeSessionChat`;
+ *  este componente solo renderiza usando los primitivos ai-elements. */
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+  Loader,
+  Message,
+  MessageContent,
+  MessageResponse,
+  PromptInput,
+  PromptInputBody,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputToolbar,
+  PromptInputTools,
+  Suggestion,
+  Suggestions,
+} from '@/components/ai-elements'
 import { Text } from '@/components/ui/text'
-import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
 import { COLORS } from '@/lib/theme'
-import { useFreeSessionChat } from '@/lib/use-free-session-chat'
 import {
   getMessageText,
   getSearchParts,
@@ -16,6 +26,10 @@ import {
   type FreeSessionUIMessage,
   type SearchPart,
 } from '@/lib/ai-message-parts'
+import { useFreeSessionChat } from '@/lib/use-free-session-chat'
+import { useCallback, useState } from 'react'
+import { ActivityIndicator, View } from 'react-native'
+import { Search } from 'lucide-react-native'
 import { AISessionForm } from './AISessionForm'
 import { AISessionPreview } from './AISessionPreview'
 
@@ -29,20 +43,6 @@ const SEARCH_LABELS: Record<string, string> = {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function Avatar({ role }: { role: 'assistant' | 'user' }) {
-  const Icon = role === 'assistant' ? Bot : User
-  return (
-    <View
-      className={cn(
-        'h-7 w-7 items-center justify-center rounded-full',
-        role === 'assistant' ? 'bg-lime/15' : 'bg-secondary',
-      )}
-    >
-      <Icon size={15} color={role === 'assistant' ? COLORS.lime : COLORS.mutedIcon} />
-    </View>
-  )
-}
-
 function SearchLine({ part }: { part: SearchPart }) {
   const args = part.input ?? {}
   const loading = part.state !== 'output-available'
@@ -50,7 +50,9 @@ function SearchLine({ part }: { part: SearchPart }) {
   const found = part.state === 'output-available' ? part.output?.found : null
   return (
     <View className="flex-row items-center gap-2 py-0.5">
-      {loading ? <ActivityIndicator size="small" color={COLORS.lime} /> : <Search size={12} color={COLORS.lime} />}
+      {loading
+        ? <ActivityIndicator size="small" color={COLORS.lime} />
+        : <Search size={12} color={COLORS.lime} />}
       <Text className="font-mono text-[10px] text-muted-foreground">
         {loading ? 'Buscando' : 'Buscó'} {label}
         {found != null ? ` → ${found}` : ''}
@@ -59,18 +61,15 @@ function SearchLine({ part }: { part: SearchPart }) {
   )
 }
 
-/** Placeholder mientras el asistente aún no emitió texto ni tool-parts. */
-function StreamingShimmer({ messages }: { messages: FreeSessionUIMessage[] }) {
+function StreamingLoader({ messages }: { messages: FreeSessionUIMessage[] }) {
   const last = messages[messages.length - 1]
   if (last?.role === 'assistant' && hasAssistantContent(last.parts)) return null
   return (
-    <View className="flex-row items-center gap-2">
-      <Avatar role="assistant" />
-      <View className="flex-row items-center gap-2 rounded-2xl bg-card px-3 py-2">
-        <Dumbbell size={14} color={COLORS.lime} />
-        <Text className="text-sm text-muted-foreground">Buscando ejercicios…</Text>
-      </View>
-    </View>
+    <Message from="assistant">
+      <MessageContent>
+        <Loader />
+      </MessageContent>
+    </Message>
   )
 }
 
@@ -78,10 +77,10 @@ function StreamingShimmer({ messages }: { messages: FreeSessionUIMessage[] }) {
 
 export function AISessionTab() {
   const [input, setInput] = useState('')
-  const scrollRef = useRef<ScrollView>(null)
 
   const {
     messages,
+    status,
     error,
     stop,
     isStreaming,
@@ -106,7 +105,9 @@ export function AISessionTab() {
     return (
       <View className="flex-1">
         <View className="flex-row items-start gap-3 px-4 pb-3">
-          <Avatar role="assistant" />
+          <View className="h-7 w-7 items-center justify-center rounded-full bg-lime/15">
+            <Text className="text-[11px]">AI</Text>
+          </View>
           <View className="flex-1">
             <Text className="font-sans-medium text-foreground">Coach IA</Text>
             <Text className="mt-0.5 text-sm text-muted-foreground">
@@ -122,114 +123,98 @@ export function AISessionTab() {
   // ── Chat view ──────────────────────────────────────────────────────────────
   return (
     <View className="flex-1">
-      <ScrollView
-        ref={scrollRef}
-        className="flex-1"
-        contentContainerClassName="px-4 pb-4 gap-4"
-        keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-      >
-        {messages.map((message) => {
-          if (message.role === 'user') {
+      <Conversation>
+        <ConversationContent>
+          {messages.map((message) => {
+            if (message.role === 'user') {
+              return (
+                <Message key={message.id} from="user">
+                  <MessageContent>
+                    <MessageResponse>{getMessageText(message.parts)}</MessageResponse>
+                  </MessageContent>
+                </Message>
+              )
+            }
+
+            const searchParts = getSearchParts(message.parts)
+            const text = getMessageText(message.parts)
+            const showPreview = message.id === latestSessionMsgId
+
             return (
-              <View key={message.id} className="flex-row items-start justify-end gap-2">
-                <View className="max-w-[85%] rounded-2xl rounded-tr-sm bg-secondary px-3 py-2">
-                  <Text className="text-sm text-foreground">{getMessageText(message.parts)}</Text>
-                </View>
-                <Avatar role="user" />
+              <View key={message.id} className="gap-2">
+                {searchParts.length > 0 && (
+                  <Message from="assistant">
+                    <MessageContent>
+                      {searchParts.map((p, i) => (
+                        <SearchLine key={p.toolCallId || i} part={p} />
+                      ))}
+                    </MessageContent>
+                  </Message>
+                )}
+
+                {!!text && (
+                  <Message from="assistant">
+                    <MessageContent>
+                      <MessageResponse>{text}</MessageResponse>
+                    </MessageContent>
+                  </Message>
+                )}
+
+                {showPreview && sessionExercises.length > 0 && (
+                  <AISessionPreview
+                    exercises={sessionExercises}
+                    onRemove={removeExercise}
+                    onReorder={reorderExercise}
+                    onAdd={addExercise}
+                  />
+                )}
               </View>
             )
-          }
+          })}
 
-          const searchParts = getSearchParts(message.parts)
-          const text = getMessageText(message.parts)
-          const showPreview = message.id === latestSessionMsgId
+          {isStreaming && <StreamingLoader messages={messages} />}
 
-          return (
-            <View key={message.id} className="gap-2">
-              {searchParts.length > 0 && (
-                <View className="flex-row items-start gap-2">
-                  <Avatar role="assistant" />
-                  <View className="flex-1">
-                    {searchParts.map((p, i) => (
-                      <SearchLine key={p.toolCallId || i} part={p} />
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {!!text && (
-                <View className="flex-row items-start gap-2">
-                  <Avatar role="assistant" />
-                  <View className="max-w-[88%] rounded-2xl rounded-tl-sm bg-card px-3 py-2">
-                    <Text className="text-sm text-foreground">{text}</Text>
-                  </View>
-                </View>
-              )}
-
-              {showPreview && sessionExercises.length > 0 && (
-                <AISessionPreview
-                  exercises={sessionExercises}
-                  onRemove={removeExercise}
-                  onReorder={reorderExercise}
-                  onAdd={addExercise}
-                />
-              )}
+          {error && (
+            <View className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
+              <Text className="text-sm text-destructive">
+                Error generando la sesión. Intenta de nuevo.
+              </Text>
             </View>
-          )
-        })}
-
-        {isStreaming && <StreamingShimmer messages={messages} />}
-
-        {error && (
-          <View className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
-            <Text className="text-sm text-destructive">Error generando la sesión. Intenta de nuevo.</Text>
-          </View>
-        )}
-      </ScrollView>
+          )}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
 
       {/* Bottom bar */}
       <View className="gap-2 border-t border-border px-4 pb-2 pt-2">
         {!isStreaming && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5" keyboardShouldPersistTaps="handled">
+          <Suggestions contentClassName="px-0">
             {SUGGESTIONS.map((s) => (
-              <Pressable
-                key={s}
-                onPress={() => send(s)}
-                className="rounded-full border border-border bg-card px-3 py-1.5 active:opacity-70"
-              >
-                <Text className="font-mono text-[11px] text-muted-foreground">{s}</Text>
-              </Pressable>
+              <Suggestion key={s} suggestion={s} onPress={send} />
             ))}
-          </ScrollView>
+          </Suggestions>
         )}
 
-        <View className="flex-row items-center gap-2">
-          <Input
-            value={input}
-            onChangeText={setInput}
-            placeholder="Pide cambios… (más core, etc.)"
-            placeholderTextColor={COLORS.placeholder}
-            className="h-11 flex-1 rounded-xl"
-            onSubmitEditing={handleSend}
-            returnKeyType="send"
-            editable={!isStreaming}
-          />
-          <Pressable
-            onPress={isStreaming ? stop : handleSend}
-            disabled={!isStreaming && !input.trim()}
-            className={cn(
-              'h-11 w-11 items-center justify-center rounded-xl',
-              isStreaming ? 'bg-destructive/15' : input.trim() ? 'bg-lime/15' : 'bg-muted/40',
-            )}
-          >
-            {isStreaming ? (
-              <Square size={16} color={COLORS.destructive} fill={COLORS.destructive} />
-            ) : (
-              <SendHorizonal size={18} color={input.trim() ? COLORS.lime : COLORS.mutedIcon} />
-            )}
-          </Pressable>
-        </View>
+        <PromptInput>
+          <PromptInputBody>
+            <PromptInputTextarea
+              value={input}
+              onChangeText={setInput}
+              placeholder="Pide cambios… (más core, etc.)"
+              onSubmit={handleSend}
+              editable={!isStreaming}
+            />
+          </PromptInputBody>
+          <PromptInputToolbar>
+            <PromptInputTools />
+            <PromptInputSubmit
+              status={status as 'submitted' | 'streaming' | 'ready' | 'error'}
+              onPress={handleSend}
+              onStop={stop}
+              disabled={!isStreaming && !input.trim()}
+            />
+          </PromptInputToolbar>
+        </PromptInput>
       </View>
     </View>
   )

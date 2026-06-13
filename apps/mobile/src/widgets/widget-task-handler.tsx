@@ -10,7 +10,7 @@ import { NutritionWidget } from './NutritionWidget'
 import { NutritionRingWidget } from './NutritionRingWidget'
 import { WIDGET_SNAPSHOT_KEY, type WidgetSnapshot } from '../lib/widget-snapshot'
 import { CARDIO_WIDGET_SNAPSHOT_KEY, type CardioWidgetSnapshot } from '../lib/cardio-widget-snapshot'
-import { NUTRITION_WIDGET_SNAPSHOT_KEY, type NutritionWidgetSnapshot } from '../lib/nutrition-widget-snapshot'
+import { NUTRITION_WIDGET_SNAPSHOT_KEY, rolloverSnapshot, type NutritionWidgetSnapshot } from '../lib/nutrition-widget-snapshot'
 
 function localToday(): string {
   const d = new Date()
@@ -45,11 +45,13 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
         const snapshot = await readSnapshot<CardioWidgetSnapshot>(CARDIO_WIDGET_SNAPSHOT_KEY)
         props.renderWidget(<CardioWidget snapshot={snapshot} />)
       } else if (props.widgetInfo.widgetName === 'NutritionWidget') {
-        const snapshot = await readSnapshot<NutritionWidgetSnapshot>(NUTRITION_WIDGET_SNAPSHOT_KEY)
-        props.renderWidget(<NutritionWidget snapshot={snapshot} today={todayInTz(snapshot?.tz)} />)
+        const raw = await readSnapshot<NutritionWidgetSnapshot>(NUTRITION_WIDGET_SNAPSHOT_KEY)
+        const today = todayInTz(raw?.tz)
+        props.renderWidget(<NutritionWidget snapshot={rolloverSnapshot(raw, today)} today={today} />)
       } else if (props.widgetInfo.widgetName === 'NutritionRingWidget') {
-        const snapshot = await readSnapshot<NutritionWidgetSnapshot>(NUTRITION_WIDGET_SNAPSHOT_KEY)
-        props.renderWidget(<NutritionRingWidget snapshot={snapshot} today={todayInTz(snapshot?.tz)} />)
+        const raw = await readSnapshot<NutritionWidgetSnapshot>(NUTRITION_WIDGET_SNAPSHOT_KEY)
+        const today = todayInTz(raw?.tz)
+        props.renderWidget(<NutritionRingWidget snapshot={rolloverSnapshot(raw, today)} today={today} />)
       } else {
         const snapshot = await readSnapshot<WidgetSnapshot>(WIDGET_SNAPSHOT_KEY)
         props.renderWidget(<TodayWidget snapshot={snapshot} today={todayInTz(snapshot?.tz)} />)

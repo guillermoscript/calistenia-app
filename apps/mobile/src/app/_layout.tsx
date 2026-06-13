@@ -3,6 +3,7 @@ import '@/lib/init-core'
 import '../global.css'
 
 import { useEffect, useState, type ReactNode } from 'react'
+import { Platform } from 'react-native'
 import { Stack, ThemeProvider } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
@@ -85,8 +86,16 @@ function RootLayout() {
       <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>
         <StatusBar style="auto" />
         <Providers>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="session" options={{ gestureEnabled: false }} />
+          <Stack screenOptions={{
+            headerShown: false,
+            // iOS: native spring-based push (UINavigationController feel)
+            // Android: explicit slide to match iOS instead of the default crossfade
+            animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
+          }}>
+            <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
+            <Stack.Screen name="login" options={{ animation: 'fade' }} />
+            {/* Session slides up like a modal — can't gesture-dismiss mid-workout */}
+            <Stack.Screen name="session" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           </Stack>
         </Providers>
         <OfflineBanner />

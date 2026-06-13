@@ -1,4 +1,4 @@
-import { View } from 'react-native'
+import { View, Easing } from 'react-native'
 import { Redirect, Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Home, ClipboardList, Library, History, User, Utensils } from 'lucide-react-native'
@@ -6,6 +6,7 @@ import { useColorScheme } from 'nativewind'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { NAV_THEME } from '@/lib/theme'
 import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
+import { haptics } from '@/lib/haptics'
 
 export default function TabsLayout() {
   const { t } = useTranslation()
@@ -17,8 +18,15 @@ export default function TabsLayout() {
   return (
     <View className="flex-1">
     <Tabs
+      screenListeners={{ tabPress: () => haptics.selection() }}
       screenOptions={{
         headerShown: false,
+        // Shift slides content in the direction of the tapped tab — native iOS feel
+        animation: 'shift',
+        transitionSpec: {
+          animation: 'timing',
+          config: { duration: 200, easing: Easing.inOut(Easing.ease) },
+        },
         // Acento lime para el tab activo, como el indicador del sidebar web
         tabBarActiveTintColor: colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)',
         tabBarInactiveTintColor: colorScheme === 'dark' ? 'hsl(0 0% 45%)' : 'hsl(0 0% 55%)',
