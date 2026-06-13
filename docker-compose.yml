@@ -49,8 +49,6 @@ services:
       # Optional: rate limit tuning
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-10}
-      # MCP OAuth — public URL of this server (required for correct OAuth metadata)
-      - SERVER_URL=${SERVER_URL:-http://localhost:3001}
       # Push notifications (VAPID + internal auth)
       - VITE_VAPID_PUBLIC_KEY=${VITE_VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
