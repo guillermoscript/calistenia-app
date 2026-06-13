@@ -1,0 +1,740 @@
+/**
+ * NutritionPage (mobile) — port completo de apps/web/src/pages/NutritionPage.tsx
+ * Features: date nav, daily/weekly tabs, goal setup, water, frequent meals,
+ * dashboard + macros, AI daily/weekly plan, coach insights, FAB logger con cámara.
+ */
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import {
+  View,
+  ScrollView,
+  Pressable,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react-native'
+
+import { Text } from '@/components/ui/text'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
+import { useAuthUser } from '@/lib/use-auth-user'
+
+import { todayStr, addDays, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
+import { useNutrition } from '@calistenia/core/hooks/useNutrition'
+import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
+import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
+import { useWater } from '@calistenia/core/hooks/useWater'
+import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
+import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
+import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
+
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { analyzeMealMobile, saveEntryWithPhotos } from '@/lib/nutrition-api'
+import { syncNutritionWidget } from '@/lib/sync-nutrition-widget'
+import NutritionDashboard from '@/components/nutrition/NutritionDashboard'
+import NutritionGoalSetup from '@/components/nutrition/NutritionGoalSetup'
+import MealLoggerSheet from '@/components/nutrition/MealLoggerSheet'
+import WaterTracker from '@/components/nutrition/WaterTracker'
+import WeeklyNutritionChart from '@/components/nutrition/WeeklyNutritionChart'
+import DailyMealPlan from '@/components/nutrition/DailyMealPlan'
+import WeeklyMealPlan from '@/components/nutrition/WeeklyMealPlan'
+import CoachInsights from '@/components/nutrition/CoachInsights'
+
+const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
+
+type PlannedMeal = {
+  meal_type: string
+  label: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  description?: string
+}
+
+interface UserProfileData {
+  weight?: number
+  height?: number
+  age?: number
+  sex?: 'male' | 'female'
+  goalWeight?: number
+  activityLevel?: string
+  pace?: string
+  goalType?: string
+}
+
+const ONBOARDING_ACTIVITY_MAP: Record<string, string> = {
+  sedentary: 'sedentary',
+  light: 'light',
+  active: 'moderate',
+  very_active: 'active',
+}
+
+function inferGoalType(weight?: number, goalWeight?: number): string | undefined {
+  if (!weight || !goalWeight) return undefined
+  const delta = goalWeight - weight
+  if (delta > 2) return 'muscle_gain'
+  if (delta < -2) return 'fat_loss'
+  return 'maintain'
+}
+
+export default function NutritionTab() {
+  const { t } = useTranslation()
+  const authUser = useAuthUser()
+  const userId = authUser?.id ?? null
+  const router = useRouter()
+  const { action } = useLocalSearchParams<{ action?: string }>()
+
+  const [selectedDate, setSelectedDate] = useState(todayStr())
+  const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily')
+  const [showCoach, setShowCoach] = useState(false)
+  const [loggerVisible, setLoggerVisible] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
+  const [profileData, setProfileData] = useState<UserProfileData>({})
+  const [phaseChangeBanner, setPhaseChangeBanner] = useState(false)
+  const trainingPhaseRef = useRef<number | null>(null)
+
+  // ─── Core hooks ─────────────────────────────────────────────────────────────
+  const nutrition = useNutrition(userId)
+  const {
+    goals,
+    entries: allEntries,
+    isReady,
+    saveGoals,
+    saveEntry,
+    deleteEntry,
+    updateEntry,
+    analyzeMeal,
+    calculateMacros,
+    getDailyTotals,
+    getEntriesForDate,
+    fetchEntriesForDate,
+    fetchEntriesForDateRange,
+    getWeeklyHistory,
+    getRecentEntries,
+    scoreMealQuality,
+    getRemainingMacros,
+  } = nutrition
+
+  const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
+
+  const {
+    activePlan: weeklyPlan,
+    planDays: weeklyPlanDays,
+    isLoading: weeklyLoading,
+    generatePlan: generateWeeklyPlan,
+    regenerateDay: regenerateWeeklyDay,
+    logMeal: logWeeklyMeal,
+    deleteMeal: deleteWeeklyMeal,
+    archivePlan: archiveWeeklyPlan,
+    refresh: refreshWeeklyPlan,
+  } = useWeeklyMealPlan(userId)
+
+  const {
+    dailyInsight,
+    weeklyInsight,
+    badges,
+    generatingWeekly,
+    loadBadges,
+    upsertDailyInsight,
+    getWeeklyInsight,
+    generateWeeklyInsight,
+  } = useNutritionCoach(userId)
+
+  const { handleAnalyze: _handleAnalyzeCore, handleSave: handleSaveEntry } = useMealLoggerActions({
+    userId,
+    goals,
+    entries: allEntries,
+    analyzeMeal,
+    scoreMealQuality,
+    saveEntry,
+    updateEntry,
+    getRemainingMacros,
+  })
+
+  // Mobile analyze: uses URI-based API instead of File objects
+  const handleAnalyze = useCallback(async (
+    images: Array<{ uri: string; mimeType?: string; fileName?: string }>,
+    mealType: string,
+    description?: string,
+  ) => {
+    const remaining = getRemainingMacros()
+    const recentScores = allEntries
+      .filter(e => e.qualityScore)
+      .slice(0, 5)
+      .map(e => ({ mealType: e.mealType, score: e.qualityScore!, loggedAt: e.loggedAt }))
+    return analyzeMealMobile(images, mealType, description, {
+      goal: goals?.goal,
+      remainingMacros: remaining,
+      recentScores: recentScores.length > 0 ? recentScores : undefined,
+      logHour: new Date().getHours(),
+    })
+  }, [goals, allEntries, getRemainingMacros])
+
+  // Mobile save: handles photo URIs
+  const handleSaveMobileEntry = useCallback(async (
+    entry: Omit<NutritionEntry, 'id' | 'user'>,
+    photoUris?: string[],
+  ) => {
+    // Edit flow: update the existing record in place, preserving its original loggedAt.
+    if (editingEntry?.id) {
+      const { loggedAt: _loggedAt, ...patch } = entry
+      await updateEntry(editingEntry.id, patch)
+      setEditingEntry(null)
+      return
+    }
+    const saved = await saveEntry({ ...entry, user: userId || undefined })
+    if (photoUris && photoUris.length > 0 && saved.id && !saved.id.startsWith('local_')) {
+      saveEntryWithPhotos(saved.id, photoUris).catch(() => {})
+    }
+    // Async quality scoring for manual entries
+    if (!saved.qualityScore && saved.foods.length > 0) {
+      scoreMealQuality(
+        saved.foods.map(f => ({
+          name: f.name || '?',
+          calories: (f.baseCal100 || 0) * (f.portionAmount || 1),
+          protein: (f.baseProt100 || 0) * (f.portionAmount || 1),
+          carbs: (f.baseCarbs100 || 0) * (f.portionAmount || 1),
+          fat: (f.baseFat100 || 0) * (f.portionAmount || 1),
+        })),
+        { calories: saved.totalCalories, protein: saved.totalProtein, carbs: saved.totalCarbs, fat: saved.totalFat },
+        saved.mealType,
+        goals ? { goal: goals.goal, remainingMacros: getRemainingMacros() } : undefined,
+      ).then(async quality => {
+        if (quality && saved.id && !saved.id.startsWith('local_')) {
+          await updateEntry(saved.id, {
+            qualityScore: quality.score,
+            qualityBreakdown: quality.breakdown,
+            qualityMessage: quality.message,
+            qualitySuggestion: quality.suggestion,
+          }).catch(() => {})
+        }
+      }).catch(() => {})
+    }
+  }, [saveEntry, userId, scoreMealQuality, goals, getRemainingMacros, updateEntry, editingEntry])
+
+  // ─── Load user profile ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return
+    const load = async () => {
+      const available = await isPocketBaseAvailable()
+      if (!available) return
+      try {
+        const user = await pb.collection('users').getOne(userId)
+        const weight = user.weight || undefined
+        const goalWeight = user.goal_weight || undefined
+        setProfileData({
+          weight,
+          height: user.height || undefined,
+          age: user.age || undefined,
+          sex: user.sex || undefined,
+          goalWeight,
+          activityLevel: user.activity_level ? ONBOARDING_ACTIVITY_MAP[user.activity_level] : undefined,
+          pace: user.pace || undefined,
+          goalType: inferGoalType(weight, goalWeight),
+        })
+      } catch { /* ignore */ }
+    }
+    load()
+  }, [userId])
+
+  // ─── Load badges on mount ────────────────────────────────────────────────────
+  useEffect(() => { loadBadges() }, [loadBadges])
+
+  // ─── Deep-link quick-add (calistenia://nutrition?action=camera|text) ─────────
+  useEffect(() => {
+    if (action === 'camera' || action === 'text') {
+      setLoggerVisible(true)
+      router.setParams({ action: undefined })
+    }
+  }, [action]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Sync entries for selected date ─────────────────────────────────────────
+  useEffect(() => {
+    fetchEntriesForDate(selectedDate)
+  }, [selectedDate, fetchEntriesForDate])
+
+  // ─── Preload last 7 days for weekly chart ────────────────────────────────────
+  useEffect(() => {
+    fetchEntriesForDateRange(addDays(todayStr(), -6), todayStr())
+  }, [fetchEntriesForDateRange])
+
+  // ─── Frequent meals (re-log quick-tap) ──────────────────────────────────────
+  const [frequentMeals, setFrequentMeals] = useState<NutritionEntry[]>([])
+  useEffect(() => {
+    if (!isReady || !goals) return
+    const load = async () => {
+      const recent = await getRecentEntries(20)
+      const signature = (e: NutritionEntry) => e.foods.map(f => f.name).sort().join('|')
+      const groups = new Map<string, { entry: NutritionEntry; count: number }>()
+      for (const entry of recent) {
+        const sig = signature(entry)
+        if (!sig) continue
+        const existing = groups.get(sig)
+        if (existing) existing.count++
+        else groups.set(sig, { entry, count: 1 })
+      }
+      const frequent = [...groups.values()]
+        .filter(g => g.count >= 2)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 4)
+        .map(g => g.entry)
+      setFrequentMeals(frequent)
+    }
+    load()
+  }, [isReady, goals, getRecentEntries])
+
+  // ─── Daily quality score + coach badge notifications ─────────────────────────
+  const entries = useMemo(() => getEntriesForDate(selectedDate), [getEntriesForDate, selectedDate])
+  const dailyTotals = useMemo(() => getDailyTotals(selectedDate), [getDailyTotals, selectedDate])
+  const weeklyHistory = useMemo(() => getWeeklyHistory(), [getWeeklyHistory])
+
+  // ─── Sync widget snapshot whenever today's totals or goals change ────────────
+  useEffect(() => {
+    if (selectedDate === todayStr()) {
+      void syncNutritionWidget(dailyTotals, goals ?? null)
+    }
+  }, [dailyTotals, goals, selectedDate])
+
+  const dailyQualityScore = useMemo((): QualityScore | undefined => {
+    const scored = entries.filter(e => e.qualityScore)
+    if (scored.length < 2) return undefined
+    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 }
+    const reverseMap: Record<number, QualityScore> = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'E' }
+    const totalWeight = scored.reduce((s, e) => s + e.totalCalories, 0)
+    if (totalWeight === 0) return undefined
+    const weightedAvg = scored.reduce((s, e) => s + scoreMap[e.qualityScore!] * e.totalCalories, 0) / totalWeight
+    return reverseMap[Math.round(weightedAvg)]
+  }, [entries])
+
+  useEffect(() => {
+    if (!dailyQualityScore || selectedDate !== todayStr()) return
+    upsertDailyInsight(selectedDate, dailyQualityScore, entries).then(({ newBadges }) => {
+      for (const badge of newBadges) {
+        const def = BADGE_DEFINITIONS[badge]
+        if (def) {
+          haptics.success()
+          Alert.alert(`${def.icon} ${def.label}`, def.description)
+        }
+      }
+    }).catch(() => {})
+  }, [dailyQualityScore, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Missed goals alert (US-15) ──────────────────────────────────────────────
+  const missedGoalsAlert = useMemo(() => {
+    if (!goals) return false
+    const last3 = weeklyHistory.slice(3, 6)
+    const missed = last3.filter(d => d.calories > 0 && d.calories < goals.dailyCalories * 0.7)
+    return missed.length >= 2
+  }, [weeklyHistory, goals])
+
+  // ─── Remaining macros ────────────────────────────────────────────────────────
+  const remaining = useMemo(() => {
+    if (!goals) return { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    return {
+      calories: goals.dailyCalories - dailyTotals.calories,
+      protein: goals.dailyProtein - dailyTotals.protein,
+      carbs: goals.dailyCarbs - dailyTotals.carbs,
+      fat: goals.dailyFat - dailyTotals.fat,
+    }
+  }, [goals, dailyTotals])
+
+  const loggedMealTypes = useMemo(
+    () => [...new Set(entries.map(e => e.mealType))],
+    [entries]
+  )
+
+  // ─── Save goals ──────────────────────────────────────────────────────────────
+  const handleSaveGoals = useCallback(async (newGoals: NutritionGoal) => {
+    await saveGoals(newGoals)
+    setPhaseChangeBanner(false)
+  }, [saveGoals])
+
+  const handleCalculateMacros = useCallback((
+    weight: number, height: number, age: number, sex: string,
+    activityLevel: string, goal: string, pace?: string,
+  ) => {
+    const result = calculateMacros(weight, height, age, sex as any, activityLevel as any, goal as any, pace as any)
+    return {
+      dailyCalories: result.dailyCalories,
+      dailyProtein: result.dailyProtein,
+      dailyCarbs: result.dailyCarbs,
+      dailyFat: result.dailyFat,
+    }
+  }, [calculateMacros])
+
+  const handleSavePlannedMeal = useCallback(async (meal: PlannedMeal) => {
+    const food: FoodItem = {
+      name: meal.label,
+      portionAmount: 1,
+      portionUnit: 'unidad',
+      unitWeightInGrams: 0,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      baseCal100: meal.calories,
+      baseProt100: meal.protein,
+      baseCarbs100: meal.carbs,
+      baseFat100: meal.fat,
+      tags: ['plan-ia'],
+    }
+    await saveEntry({
+      user: userId || undefined,
+      mealType: meal.meal_type as any,
+      foods: [food],
+      totalCalories: meal.calories,
+      totalProtein: meal.protein,
+      totalCarbs: meal.carbs,
+      totalFat: meal.fat,
+      aiModel: 'meal-plan',
+      source: 'ai_daily_plan',
+      loggedAt: nowLocalForPB(),
+    })
+  }, [saveEntry, userId])
+
+  const isToday = selectedDate === todayStr()
+
+  // ─── Date navigation helpers ─────────────────────────────────────────────────
+  const goToPrevDay = () => { haptics.light(); setSelectedDate(d => addDays(d, -1)) }
+  const goToNextDay = () => { haptics.light(); setSelectedDate(d => addDays(d, 1)) }
+  const goToToday = () => { haptics.medium(); setSelectedDate(todayStr()) }
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00')
+    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+  }
+
+  // ─── Loading skeleton ────────────────────────────────────────────────────────
+  if (!isReady) {
+    return (
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <View className="px-4 pt-4 pb-2">
+          <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">{t('nutrition.subtitle')}</Text>
+          <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
+        </View>
+        <View className="px-4 gap-3 mt-4">
+          {[1, 2, 3].map(i => (
+            <View key={i} className="h-20 bg-muted rounded-xl opacity-50" />
+          ))}
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  // ─── Goal setup (first run) ──────────────────────────────────────────────────
+  if (!goals) {
+    return (
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <ScrollView contentContainerClassName="px-4 py-6">
+          <NutritionGoalSetup
+            onSave={handleSaveGoals}
+            calculateMacros={handleCalculateMacros}
+            initialWeight={profileData.weight}
+            initialHeight={profileData.height}
+            initialAge={profileData.age}
+            initialSex={profileData.sex}
+            initialActivityLevel={profileData.activityLevel}
+            initialGoal={profileData.goalType}
+            initialPace={profileData.pace}
+          />
+        </ScrollView>
+      </SafeAreaView>
+    )
+  }
+
+  // ─── Main nutrition screen ────────────────────────────────────────────────────
+  return (
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <ScrollView
+        contentContainerClassName="px-4 pb-32"
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View className="pt-4 pb-2">
+          <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">
+            {t('nutrition.subtitle')}
+          </Text>
+          <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
+        </View>
+
+        {/* Phase change banner (US-14) */}
+        {phaseChangeBanner && (
+          <Card className="border-lime-400/30 bg-lime-400/5 mb-4">
+            <CardContent className="p-4">
+              <Text className="text-sm font-sans-medium text-lime-400 mb-1">
+                {t('nutrition.phaseChange', { phase: trainingPhaseRef.current })}
+              </Text>
+              <Text className="text-xs text-muted-foreground mb-3">
+                {t('nutrition.phaseChangeDesc')}
+              </Text>
+              <View className="flex-row gap-2">
+                <Button
+                  variant="outline"
+                  onPress={() => setPhaseChangeBanner(false)}
+                  className="flex-1 h-9"
+                >
+                  <Text className="font-mono text-[10px] tracking-widest uppercase">{t('nutrition.ignore')}</Text>
+                </Button>
+                <Button
+                  onPress={() => {
+                    setPhaseChangeBanner(false)
+                    saveGoals({ ...goals, dailyCalories: -1 })
+                  }}
+                  className="flex-1 h-9 bg-lime-400"
+                >
+                  <Text className="font-mono text-[10px] tracking-widest uppercase text-zinc-900">{t('nutrition.recalculate')}</Text>
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Missed goals alert (US-15) */}
+        {missedGoalsAlert && (
+          <View className="flex-row gap-3 mb-4 px-1">
+            <View className="w-1 shrink-0 rounded-full bg-amber-400/60" />
+            <View className="flex-1">
+              <Text className="text-sm font-sans-medium text-amber-400">{t('nutrition.missedGoalsTitle')}</Text>
+              <Text className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{t('nutrition.missedGoalsDesc')}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Date navigator */}
+        <View className="flex-row items-center gap-3 mb-5">
+          <Pressable
+            onPress={goToPrevDay}
+            className="size-9 rounded-lg border border-border items-center justify-center active:bg-muted"
+          >
+            <ChevronLeft size={16} className="text-muted-foreground" />
+          </Pressable>
+          <View className="flex-1">
+            <Text className="text-sm font-sans-medium text-foreground capitalize text-center">
+              {isToday ? t('common.today') : formatDate(selectedDate)}
+            </Text>
+            {!isToday && (
+              <Text className="text-[10px] font-mono text-muted-foreground text-center">{selectedDate}</Text>
+            )}
+          </View>
+          <Pressable
+            onPress={goToNextDay}
+            className="size-9 rounded-lg border border-border items-center justify-center active:bg-muted"
+          >
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </Pressable>
+          {!isToday && (
+            <Pressable onPress={goToToday}>
+              <Text className="font-mono text-[10px] text-lime-400 tracking-widest uppercase">{t('common.today')}</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* Daily / Weekly tab toggle */}
+        <View className="flex-row gap-1 mb-5 bg-card border border-border rounded-lg p-1">
+          {(['daily', 'weekly'] as const).map(tab => (
+            <Pressable
+              key={tab}
+              onPress={() => { haptics.selection(); setActiveTab(tab) }}
+              className={cn(
+                'flex-1 py-1.5 rounded-md items-center',
+                activeTab === tab
+                  ? 'bg-lime-400/15 border border-lime-400/30'
+                  : '',
+              )}
+            >
+              <Text className={cn(
+                'font-bebas text-sm tracking-widest',
+                activeTab === tab ? 'text-lime-400' : 'text-muted-foreground',
+              )}>
+                {tab === 'daily' ? t('nutrition.tabs.daily') : t('nutrition.tabs.weekly')}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Water tracker */}
+        <View className="mb-5">
+          <WaterTracker
+            todayTotal={waterTotal}
+            goal={waterGoal}
+            onAdd={isToday ? addWater : undefined}
+            onSetGoal={setWaterGoal}
+            adding={waterAdding}
+          />
+        </View>
+
+        {/* Frequent meals quick-tap */}
+        {isToday && frequentMeals.length > 0 && (
+          <View className="mb-5">
+            <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-3">
+              {t('nutrition.frequentMeals')}
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="gap-2.5 px-0.5"
+            >
+              {frequentMeals.map((entry, i) => {
+                const foodNames = entry.foods.map(f => f.name).filter(Boolean)
+                const summary = foodNames.length > 2
+                  ? foodNames.slice(0, 2).join(', ') + ` +${foodNames.length - 2}`
+                  : foodNames.join(', ')
+                return (
+                  <Pressable
+                    key={i}
+                    onPress={async () => {
+                      haptics.medium()
+                      await handleSaveMobileEntry({
+                        mealType: entry.mealType,
+                        foods: entry.foods,
+                        totalCalories: entry.totalCalories,
+                        totalProtein: entry.totalProtein,
+                        totalCarbs: entry.totalCarbs,
+                        totalFat: entry.totalFat,
+                        loggedAt: nowLocalForPB(),
+                      })
+                    }}
+                    className="w-40 p-3 bg-card border border-border rounded-xl active:border-lime-400/40"
+                  >
+                    <Text className="text-xs font-sans-medium text-foreground" numberOfLines={1}>
+                      {summary || t('nutrition.noName')}
+                    </Text>
+                    <Text className="font-mono text-[10px] text-muted-foreground mt-1">
+                      {Math.round(entry.totalCalories)} kcal · {Math.round(entry.totalProtein)}g P
+                    </Text>
+                    <View className="flex-row items-center gap-1 mt-1.5">
+                      <Plus size={10} className="text-lime-400" />
+                      <Text className="font-mono text-[9px] text-lime-400 tracking-widest uppercase">{t('nutrition.register')}</Text>
+                    </View>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Dashboard: calorie ring + macro bars + meal entries */}
+        <View className="mb-5">
+          <NutritionDashboard
+            dailyTotals={dailyTotals}
+            goals={goals}
+            entries={entries}
+            onDeleteEntry={deleteEntry}
+            onDuplicateEntry={async (entry) => {
+              haptics.medium()
+              await saveEntry({
+                user: userId || undefined,
+                mealType: entry.mealType,
+                foods: entry.foods.map(f => ({ ...f })),
+                totalCalories: entry.totalCalories,
+                totalProtein: entry.totalProtein,
+                totalCarbs: entry.totalCarbs,
+                totalFat: entry.totalFat,
+                loggedAt: nowLocalForPB(),
+              })
+            }}
+            onEditEntry={(entry) => {
+              haptics.medium()
+              setEditingEntry(entry)
+              setLoggerVisible(true)
+            }}
+            selectedDate={selectedDate}
+          />
+        </View>
+
+        {/* AI Meal plans — daily or weekly */}
+        {activeTab === 'weekly' ? (
+          <View className="mb-5">
+            <WeeklyMealPlan
+              activePlan={weeklyPlan}
+              planDays={weeklyPlanDays}
+              isLoading={weeklyLoading}
+              goals={goals}
+              getDailyTotals={getDailyTotals}
+              onGenerate={() => generateWeeklyPlan(goals).then(() => {})}
+              onRegenerateDay={regenerateWeeklyDay}
+              onLogMeal={logWeeklyMeal}
+              onDeleteMeal={deleteWeeklyMeal}
+              onArchive={archiveWeeklyPlan}
+              onRefresh={refreshWeeklyPlan}
+            />
+          </View>
+        ) : isToday ? (
+          <View className="mb-5">
+            <DailyMealPlan
+              remaining={remaining}
+              goals={{ calories: goals.dailyCalories, protein: goals.dailyProtein, carbs: goals.dailyCarbs, fat: goals.dailyFat }}
+              loggedMealTypes={loggedMealTypes}
+              onSaveMeal={handleSavePlannedMeal}
+            />
+          </View>
+        ) : null}
+
+        {/* Coach & Insights (collapsible) */}
+        <View className="mb-5">
+          <Pressable
+            onPress={() => { haptics.light(); setShowCoach(v => !v) }}
+            className="flex-row items-center justify-between py-3"
+          >
+            <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground">
+              {entries.some(e => e.qualityScore) ? 'Coach' : t('nutrition.suggestionsAndHistory')}
+            </Text>
+            <ChevronLeft
+              size={16}
+              className={cn('text-muted-foreground transition-transform', showCoach ? '-rotate-90' : 'rotate-90')}
+            />
+          </Pressable>
+
+          {showCoach && (
+            <View className="gap-4">
+              <CoachInsights
+                entries={entries}
+                dailyInsight={dailyInsight}
+                weeklyInsight={weeklyInsight}
+                badges={badges}
+                generatingWeekly={generatingWeekly}
+                activeTab={activeTab}
+                onGenerateWeekly={() => {
+                  generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch(() => {})
+                }}
+              />
+              <WeeklyNutritionChart
+                history={weeklyHistory}
+                calorieGoal={goals.dailyCalories}
+              />
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* FAB: meal logger */}
+      <Pressable
+        onPress={() => { haptics.medium(); setLoggerVisible(true) }}
+        className="absolute bottom-8 right-5 size-14 rounded-full bg-lime-400 items-center justify-center shadow-lg active:bg-lime-300"
+        style={{ shadowColor: 'hsl(74 90% 45%)', shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 }}
+      >
+        <Plus size={28} color="#1a2000" strokeWidth={2.5} />
+      </Pressable>
+
+      {/* Meal logger bottom sheet */}
+      <MealLoggerSheet
+        visible={loggerVisible}
+        onClose={() => { setLoggerVisible(false); setEditingEntry(null) }}
+        onAnalyze={handleAnalyze}
+        onSave={handleSaveMobileEntry}
+        userId={userId}
+        dailyTotals={dailyTotals}
+        goals={goals}
+        getRecentEntries={getRecentEntries}
+        editEntry={editingEntry}
+      />
+    </SafeAreaView>
+  )
+}

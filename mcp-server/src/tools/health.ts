@@ -1,24 +1,20 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
 
-export function registerHealthTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-  const tz = auth.getTimezone();
-
+export function registerHealthTools(server: MCPServer, pbUrl: string) {
   // ══════════════════════════════════════════════════════════════
   //  SLEEP
   // ══════════════════════════════════════════════════════════════
 
-  server.registerTool(
-    "cal_add_sleep",
+  server.tool(
     {
+      name: "cal_add_sleep",
       title: "Log Sleep Entry",
       description:
         "Log a sleep entry with bedtime, wake time, quality, and optional factors (caffeine, screen, stress).",
-      inputSchema: z
+      schema: z
         .object({
           date: z.string().describe("Date for this sleep entry (YYYY-MM-DD)"),
           bedtime: z.string().describe("Bedtime (e.g. '23:30' or '11:30 PM')"),
@@ -35,8 +31,11 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const record = await pb.collection("sleep_entries").create({
           user: userId,
           date: input.date,
@@ -70,12 +69,12 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
     }
   );
 
-  server.registerTool(
-    "cal_list_sleep",
+  server.tool(
     {
+      name: "cal_list_sleep",
       title: "List Sleep Entries",
       description: "View sleep history with averages. Defaults to last 7 days.",
-      inputSchema: z
+      schema: z
         .object({
           days: z.number().int().min(1).max(365).default(7).describe("Number of days to look back"),
           ...PaginationSchema,
@@ -83,8 +82,12 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
-    async ({ days, limit, offset, response_format }) => {
+    async ({ days, limit, offset, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = daysAgo(days, tz);
         const entries = await pb.collection("sleep_entries").getList(offset / limit + 1, limit, {
           filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
@@ -149,20 +152,24 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
   //  WATER
   // ══════════════════════════════════════════════════════════════
 
-  server.registerTool(
-    "cal_add_water",
+  server.tool(
     {
+      name: "cal_add_water",
       title: "Log Water Intake",
       description: "Log water intake in milliliters. Call multiple times throughout the day.",
-      inputSchema: z
+      schema: z
         .object({
           amount_ml: z.number().int().min(1).describe("Amount of water in milliliters (e.g. 250, 500)"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async ({ amount_ml }) => {
+    async ({ amount_ml }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         await pb.collection("water_entries").create({
           user: userId,
           amount_ml,
@@ -191,16 +198,20 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
     }
   );
 
-  server.registerTool(
-    "cal_get_water_today",
+  server.tool(
     {
+      name: "cal_get_water_today",
       title: "Get Today's Water Intake",
       description: "Get total water intake for today.",
-      inputSchema: z.object({}).strict(),
+      schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
-    async () => {
+    async (_input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const todayStr = today(tz);
         const entries = await pb.collection("water_entries").getFullList({
           filter: pb.filter('user = {:userId} && logged_at >= {:todayStr}', { userId, todayStr }),
@@ -230,13 +241,13 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
   //  BODY MEASUREMENTS
   // ══════════════════════════════════════════════════════════════
 
-  server.registerTool(
-    "cal_add_measurement",
+  server.tool(
     {
+      name: "cal_add_measurement",
       title: "Log Body Measurements",
       description:
         "Log body circumference measurements in centimeters. All measurement fields are optional — log whichever ones you take.",
-      inputSchema: z
+      schema: z
         .object({
           date: z.string().optional().describe("Date (YYYY-MM-DD), defaults to today"),
           chest: z.number().min(0).optional().describe("Chest circumference (cm)"),
@@ -251,8 +262,12 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const data: Record<string, unknown> = {
           user: userId,
           date: input.date || today(tz),
@@ -283,12 +298,12 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
     }
   );
 
-  server.registerTool(
-    "cal_list_measurements",
+  server.tool(
     {
+      name: "cal_list_measurements",
       title: "List Body Measurements",
       description: "View body measurement history with trends.",
-      inputSchema: z
+      schema: z
         .object({
           days: z.number().int().min(1).max(365).default(90).describe("Days to look back"),
           ...PaginationSchema,
@@ -296,8 +311,12 @@ export function registerHealthTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
-    async ({ days, limit, offset, response_format }) => {
+    async ({ days, limit, offset, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = daysAgo(days, tz);
         const result = await pb.collection("body_measurements").getList(offset / limit + 1, limit, {
           filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),

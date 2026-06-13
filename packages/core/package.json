@@ -1,0 +1,19 @@
+{
+  "name": "@calistenia/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Código compartido entre web y mobile: types, hooks, lib, data, locales. Sin dependencias de DOM ni React Native — lo específico de cada plataforma se inyecta vía initCore() (ver platform.ts).",
+  "dependencies": {
+    "dayjs": "^1.11.20",
+    "i18next": "^26.0.5",
+    "pocketbase": "^0.26.8",
+    "react-i18next": "^17.0.3"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14"
+  }
+}

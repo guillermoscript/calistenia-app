@@ -1,0 +1,320 @@
+import { useState, useEffect, useMemo } from 'react'
+import { cn } from '../lib/utils'
+import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { Button } from './ui/button'
+import { Loader } from './ui/loader'
+import { Input } from './ui/input'
+import { Badge } from './ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog'
+import { useTranslation } from 'react-i18next'
+import { useWgerSearch } from '@calistenia/core/hooks/useWgerSearch'
+import WgerResultCard from './WgerResultCard'
+import type { EditorExercise } from '@calistenia/core/hooks/useProgramEditor'
+import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
+import { localize } from '@calistenia/core/lib/i18n-db'
+import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+
+interface ExerciseCatalogPickerProps {
+  onAdd: (exercise: EditorExercise) => void
+  onClose: () => void
+}
+
+interface CatalogExercise {
+  exerciseId: string
+  name: TranslatableField
+  sets: number | string
+  reps: string
+  rest: number
+  muscles: TranslatableField
+  note: TranslatableField
+  youtube: string
+  priority: 'high' | 'med' | 'low'
+  isTimer: boolean
+  timerSeconds: number
+  category: string
+  created_by?: string
+  status?: 'official' | 'private' | 'promoted'
+  variant_of?: string
+  promoted_from?: string
+}
+
+const CATEGORIES = [
+  { id: 'all',      label: 'Todos' },
+  { id: 'push',     label: 'Push' },
+  { id: 'pull',     label: 'Pull' },
+  { id: 'legs',     label: 'Legs' },
+  { id: 'core',     label: 'Core' },
+  { id: 'lumbar',   label: 'Lumbar' },
+  { id: 'full',     label: 'Full' },
+  { id: 'mobility', label: 'Movilidad' },
+  { id: 'skill',    label: 'Skill' },
+  { id: 'yoga',     label: 'Yoga' },
+]
+
+const PRIORITY_COLORS: Record<string, string> = {
+  high: 'text-red-400 border-red-400/30',
+  med:  'text-amber-400 border-amber-400/30',
+  low:  'text-emerald-400 border-emerald-400/30',
+}
+
+function inferCategory(muscles: string, name: string): string {
+  const ml = muscles.toLowerCase()
+  const nl = name.toLowerCase()
+  if (ml.includes('lumbar') || ml.includes('columna') || nl.includes('lumbar')) return 'lumbar'
+  if (ml.includes('pecho') || ml.includes('tríceps') || ml.includes('hombro') || ml.includes('deltoid') || nl.includes('push') || nl.includes('dip') || nl.includes('pike')) return 'push'
+  if (ml.includes('dorsal') || ml.includes('bíceps') || ml.includes('romboid') || nl.includes('pull') || nl.includes('chin') || nl.includes('row')) return 'pull'
+  if (ml.includes('cuádriceps') || ml.includes('glúteo') || ml.includes('isquio') || ml.includes('pantorrilla') || nl.includes('squat') || nl.includes('lunge')) return 'legs'
+  if (ml.includes('core') || ml.includes('oblicuo') || ml.includes('abdominal') || nl.includes('plank') || nl.includes('hollow')) return 'core'
+  if (ml.includes('full') || nl.includes('burpee') || nl.includes('full')) return 'full'
+  if (nl.includes('asana') || nl.includes('surya') || nl.includes('namaskar') || nl.includes('pranayama') || nl.includes('savasana') || nl.includes('padma')) return 'yoga'
+  if (nl.includes('stretch') || nl.includes('movilidad') || nl.includes('pose') || nl.includes('fold') || nl.includes('rotation')) return 'mobility'
+  if (nl.includes('l-sit') || nl.includes('handstand') || nl.includes('muscle up') || nl.includes('front lever')) return 'skill'
+  return 'full'
+}
+
+function extractFallbackCatalog(): CatalogExercise[] {
+  const seen = new Set<string>()
+  const catalog: CatalogExercise[] = []
+
+  Object.values(WORKOUTS).forEach(workout => {
+    workout.exercises.forEach(ex => {
+      if (seen.has(ex.id)) return
+      seen.add(ex.id)
+      catalog.push({
+        exerciseId: ex.id,
+        name: ex.name,
+        sets: ex.sets,
+        reps: ex.reps,
+        rest: ex.rest,
+        muscles: ex.muscles,
+        note: ex.note,
+        youtube: ex.youtube,
+        priority: ex.priority,
+        isTimer: ex.isTimer || false,
+        timerSeconds: ex.timerSeconds || 0,
+        category: inferCategory(ex.muscles, ex.name),
+      })
+    })
+  })
+
+  return catalog.sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
+}
+
+export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalogPickerProps) {
+  const { t } = useTranslation()
+  const l = useLocalize()
+  const [catalog, setCatalog] = useState<CatalogExercise[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('all')
+  const [importedIds, setImportedIds] = useState<Set<number>>(new Set())
+
+  const { wgerResults, wgerLoading, wgerError, searchWger: doWgerSearch, importExercise, importing, clearResults } = useWgerSearch()
+
+  useEffect(() => {
+    const load = async () => {
+      const available = await isPocketBaseAvailable()
+      if (available) {
+        try {
+          const res = await pb.collection('exercises_catalog').getList(1, 500, { sort: 'name' })
+          if (res.items.length > 0) {
+            setCatalog(res.items.map(r => ({
+              exerciseId: r.exercise_id || r.id,
+              name: r.name,
+              sets: r.sets ?? 3,
+              reps: r.reps ?? '10',
+              rest: r.rest_seconds ?? 60,
+              muscles: r.muscles ?? '',
+              note: r.note ?? '',
+              youtube: r.youtube ?? '',
+              priority: r.priority ?? 'med',
+              isTimer: r.is_timer ?? false,
+              timerSeconds: r.timer_seconds ?? 0,
+              category: r.category || inferCategory(localize(r.muscles, 'es') || '', localize(r.name, 'es')),
+            })))
+            setLoading(false)
+            return
+          }
+        } catch { /* fall through to fallback */ }
+      }
+      setCatalog(extractFallbackCatalog())
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const filtered = useMemo(() => {
+    let items = catalog
+    if (category !== 'all') {
+      items = items.filter(ex => ex.category === category)
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      items = items.filter(ex =>
+        l(ex.name).toLowerCase().includes(q) ||
+        l(ex.muscles).toLowerCase().includes(q)
+      )
+    }
+    return items
+  }, [catalog, search, category])
+
+  const handleAdd = (ex: CatalogExercise) => {
+    onAdd({
+      exerciseId: ex.exerciseId,
+      name: l(ex.name),
+      sets: ex.sets,
+      reps: ex.reps,
+      rest: ex.rest,
+      muscles: l(ex.muscles),
+      note: l(ex.note),
+      youtube: ex.youtube,
+      priority: ex.priority,
+      isTimer: ex.isTimer,
+      timerSeconds: ex.timerSeconds,
+    })
+  }
+
+  return (
+    <Dialog open onOpenChange={open => { if (!open) onClose() }}>
+      <DialogContent className="max-w-[600px] max-sm:max-w-[95vw] max-h-[85vh] flex flex-col">
+        <DialogHeader>
+          <div className="font-mono text-[10px] text-muted-foreground tracking-[3px] mb-1">{t('exercisePicker.catalogLabel')}</div>
+          <DialogTitle className="font-bebas text-[28px] leading-none">{t('exercisePicker.addExercise')}</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            {t('exercisePicker.description')}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Search */}
+        <Input
+          placeholder={t('exercisePicker.searchPlaceholder')}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="text-sm"
+        />
+
+        {/* Category pills */}
+        <div className="flex gap-1.5 flex-wrap">
+          {CATEGORIES.map(cat => (
+            <Button
+              key={cat.id}
+              variant={category === cat.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setCategory(cat.id)}
+              className={cn(
+                'h-7 px-2.5 text-[10px] tracking-wide',
+                category === cat.id && 'bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90'
+              )}
+            >
+              {cat.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Exercise list */}
+        <div className="flex-1 overflow-y-auto min-h-0 -mx-6 px-6 space-y-1.5">
+          {loading ? (
+            <Loader label={t('exercisePicker.loading')} className="py-12" />
+          ) : filtered.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground mb-4">{t('exercisePicker.noResults')}</p>
+              {search.length >= 3 && wgerResults.length === 0 && (
+                <button
+                  onClick={() => doWgerSearch(search)}
+                  disabled={wgerLoading}
+                  className="px-4 py-2 rounded-lg text-xs font-mono tracking-wide bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 transition-all disabled:opacity-50"
+                >
+                  {wgerLoading ? t('exercisePicker.searching') : t('exercisePicker.searchWger')}
+                </button>
+              )}
+              {wgerError && wgerResults.length === 0 && !wgerLoading && (
+                <p className="text-xs text-muted-foreground/60 mt-2">{wgerError}</p>
+              )}
+            </div>
+          ) : (
+            filtered.map(ex => (
+              <div
+                key={ex.exerciseId}
+                className="flex items-center gap-3 px-3 py-2.5 bg-card border border-border rounded-lg hover:border-[hsl(var(--lime))]/25 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-sm font-medium text-foreground truncate">{l(ex.name)}</span>
+                    <Badge variant="outline" className={cn('text-[9px] shrink-0', PRIORITY_COLORS[ex.priority])}>
+                      {ex.priority.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {l(ex.muscles)} · {ex.sets}×{ex.reps} · {ex.rest}s
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleAdd(ex)}
+                  className="h-7 px-3 text-[10px] tracking-wide bg-[hsl(var(--lime))] text-black hover:bg-[hsl(var(--lime))]/90 shrink-0"
+                >
+                  AGREGAR
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* wger results */}
+        {wgerResults.length > 0 && (
+          <div className="space-y-1.5 -mx-6 px-6 pb-2">
+            <div className="flex items-center justify-between pt-2 pb-1">
+              <span className="text-[10px] font-mono tracking-widest text-sky-400 uppercase">wger ({wgerResults.length})</span>
+              <button onClick={clearResults} className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground">✕</button>
+            </div>
+            {wgerResults.map(suggestion => (
+              <WgerResultCard
+                key={suggestion.data.id}
+                suggestion={suggestion}
+                compact
+                importLabel="IMPORTAR + AGREGAR"
+                onImport={async (wgerId) => {
+                  try {
+                    const recordId = await importExercise(wgerId)
+                    setImportedIds(prev => new Set(prev).add(wgerId))
+                    // Fetch the created record and add to program
+                    const rec = await pb.collection('exercises_catalog').getOne(recordId)
+                    onAdd({
+                      exerciseId: rec.exercise_id || rec.id,
+                      name: l(rec.name),
+                      sets: rec.default_sets ?? 3,
+                      reps: rec.default_reps ?? '8-12',
+                      rest: rec.default_rest_seconds ?? 60,
+                      muscles: l(rec.muscles),
+                      note: l(rec.note) || l(rec.description) || '',
+                      youtube: rec.youtube ?? '',
+                      priority: rec.priority ?? 'med',
+                      isTimer: rec.is_timer ?? false,
+                      timerSeconds: rec.timer_seconds ?? 0,
+                    })
+                  } catch (err) {
+                    console.error('Import failed:', err)
+                  }
+                }}
+                importing={importing.has(suggestion.data.id)}
+                imported={importedIds.has(suggestion.data.id)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Footer count */}
+        <div className="text-[10px] text-muted-foreground text-center pt-1">
+          {filtered.length} ejercicio{filtered.length !== 1 ? 's' : ''}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

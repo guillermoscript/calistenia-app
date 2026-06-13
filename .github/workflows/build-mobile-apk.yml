@@ -1,0 +1,150 @@
+name: Build Mobile APK & Release
+
+on:
+  # Manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release notes'
+        required: false
+        default: 'New build'
+
+  # Auto-trigger on mobile version tags (e.g. mobile-v1.0.0)
+  push:
+    tags:
+      - 'mobile-v*'
+
+permissions:
+  contents: write
+
+# Cancel an in-progress build if a newer one starts for the same ref
+concurrency:
+  group: build-mobile-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle dependencies & build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/build-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create .env file
+        working-directory: apps/mobile
+        run: |
+          cat <<'DOTENV' > .env
+          EXPO_PUBLIC_PB_URL=${{ vars.EXPO_PUBLIC_PB_URL }}
+          EXPO_PUBLIC_AI_API_URL=${{ vars.EXPO_PUBLIC_AI_API_URL }}
+          EXPO_PUBLIC_OPENPANEL_CLIENT_ID=${{ vars.EXPO_PUBLIC_OPENPANEL_CLIENT_ID }}
+          EXPO_PUBLIC_SENTRY_DSN=${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
+          DOTENV
+
+      - name: Generate Android native project
+        working-directory: apps/mobile
+        run: pnpm exec expo prebuild --platform android --clean
+
+      - name: Build APK
+        working-directory: apps/mobile/android
+        # Sentry sourcemap upload is skipped automatically when SENTRY_AUTH_TOKEN
+        # is unset; the build still succeeds (the release APK is signed with the
+        # Expo-generated debug keystore — fine for sideloaded distribution).
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: ./gradlew assembleRelease --build-cache --parallel -Dorg.gradle.jvmargs="-Xmx4g -XX:+HeapDumpOnOutOfMemoryError" -Dorg.gradle.workers.max=4
+
+      - name: Get version info
+        id: version
+        working-directory: apps/mobile
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          DATE=$(date +'%Y%m%d-%H%M')
+          TAG_NAME="${GITHUB_REF_NAME}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG_NAME="mobile-v${VERSION}-build.${DATE}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Rename APK
+        run: |
+          APK_PATH=$(find apps/mobile/android/app/build/outputs/apk/release -name "*.apk" | head -1)
+          cp "$APK_PATH" "Calistenia-${{ steps.version.outputs.version }}.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: calistenia-apk
+          path: Calistenia-${{ steps.version.outputs.version }}.apk
+          retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: calistenia-apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build.outputs.tag_name }}
+          name: Calistenia ${{ needs.build.outputs.tag_name }}
+          body: |
+            ## Calistenia ${{ needs.build.outputs.version }}
+
+            ${{ github.event.inputs.release_notes || 'Automated build' }}
+
+            ### Instalar
+            1. Descarga el archivo APK de abajo
+            2. En tu Android, activa "Instalar apps de fuentes desconocidas" en Ajustes
+            3. Abre el APK descargado para instalar
+
+            ---
+            Build desde el commit: ${{ github.sha }}
+          files: Calistenia-${{ needs.build.outputs.version }}.apk
+          draft: false
+          prerelease: ${{ github.event_name == 'workflow_dispatch' }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

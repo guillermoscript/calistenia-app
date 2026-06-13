@@ -1,0 +1,586 @@
+import type { TranslatableField } from '../lib/i18n-db'
+
+// ─── Workout & Program Data ──────────────────────────────────────────────────
+
+export type DayId = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
+
+export type DayType = 'push' | 'pull' | 'lumbar' | 'legs' | 'full' | 'rest' | 'cardio' | 'yoga' | 'circuit'
+
+export type Priority = 'high' | 'med' | 'low'
+
+export type ExerciseStatus = 'official' | 'private' | 'promoted'
+
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
+
+export interface Exercise {
+  id: string
+  name: string
+  /** Usually a number, but can be a string like "m\u00FAltiples" or "intentos" */
+  sets: number | string
+  reps: string
+  rest: number
+  muscles: string
+  note: string
+  youtube: string
+  priority: Priority
+  isTimer?: boolean
+  timerSeconds?: number
+  pbRecordId?: string
+  demoImages?: string[]
+  demoVideo?: string
+  supersetGroup?: string  // exercises with same group ID are done back-to-back
+  equipment?: string[]
+  created_by?: string
+  status?: ExerciseStatus
+  variant_of?: string
+  promoted_from?: string
+  difficulty?: DifficultyLevel
+  section?: 'warmup' | 'main' | 'cooldown'
+  stretchType?: 'dynamic' | 'static'
+}
+
+export interface Workout {
+  phase: number
+  day: DayId
+  title: string
+  exercises: Exercise[]
+}
+
+/** Keyed as `p${phase}_${day}`, e.g. "p1_lun" */
+export type WorkoutsMap = Record<string, Workout>
+
+export interface Phase {
+  id: number
+  name: string
+  nameKey?: string
+  weeks: string
+  color: string
+  bg: string
+}
+
+export interface CardioDayConfig {
+  activityType: CardioActivityType
+  targetDistanceKm?: number
+  targetDurationMin?: number
+}
+
+export interface CircuitExercise {
+  exerciseId: string
+  name: TranslatableField
+  reps?: string
+  workSecondsOverride?: number
+  restSecondsOverride?: number
+}
+
+export interface CircuitDefinition {
+  id: string
+  name: TranslatableField
+  mode: 'circuit' | 'timed'
+  exercises: CircuitExercise[]
+  rounds: number
+  restBetweenExercises: number
+  restBetweenRounds: number
+  workSeconds?: number
+  restSeconds?: number
+}
+
+export interface WeekDay {
+  id: DayId
+  name: string
+  nameKey?: string
+  focus: string
+  focusKey?: string
+  type: DayType
+  color: string
+  cardioConfig?: CardioDayConfig
+  circuitConfig?: CircuitDefinition
+}
+
+// ─── Progress & Sessions ─────────────────────────────────────────────────────
+
+export interface SetData {
+  reps: string
+  note: string
+  weight?: number
+  rpe?: number  // Rate of Perceived Exertion 1-10
+  timestamp: number
+}
+
+export interface ExerciseLog {
+  sets: SetData[]
+  date: string
+  workoutKey: string
+  exerciseId: string
+}
+
+/** Wall-clock time spent on one exercise within a session (sets + intra-rests) */
+export interface ExerciseTiming {
+  exerciseId: string
+  exerciseName: string
+  seconds: number
+}
+
+export interface SessionDone {
+  done: true
+  date: string
+  workoutKey: string
+  completedAt?: number
+  note: string
+  warmupCompleted?: boolean
+  warmupSkipped?: boolean
+  warmupDurationSeconds?: number
+  cooldownCompleted?: boolean
+  cooldownSkipped?: boolean
+  cooldownDurationSeconds?: number
+  durationSeconds?: number
+  posesCompleted?: number
+  totalPoses?: number
+  exerciseTimings?: ExerciseTiming[]
+}
+
+/** The progress map stores both exercise logs and session-done markers */
+export type ProgressMap = Record<string, ExerciseLog | SessionDone>
+
+export interface Settings {
+  phase: number
+  startDate: string | null
+  weeklyGoal: number
+  pr_pullups?: number
+  pr_pushups?: number
+  pr_lsit?: number
+  pr_pistol?: number
+  pr_handstand?: number
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+/**
+ * PocketBase user record shape.
+ * The exact fields depend on the PB `users` collection schema;
+ * these are the ones used throughout the app.
+ */
+export interface User {
+  id: string
+  email: string
+  name?: string
+  avatar?: string
+  created?: string
+  updated?: string
+}
+
+// ─── Work Day ────────────────────────────────────────────────────────────────
+
+export type PauseType = '25' | '60'
+
+export interface Pause {
+  at: string   // ISO timestamp
+  type: PauseType
+}
+
+export interface WorkDay {
+  workStart: string | null   // ISO timestamp
+  workEnd: string | null     // ISO timestamp
+  pauses: Pause[]
+  date: string               // YYYY-MM-DD
+}
+
+// ─── Lumbar Page ─────────────────────────────────────────────────────────────
+
+export interface ProtocolExercise {
+  name: string
+  time: number | null
+  reps: string
+  note: string
+  youtube: string
+  isTimer?: boolean
+}
+
+export interface Protocol {
+  id: string
+  name: string
+  desc: string
+  accent: string
+  border: string
+  badge: string
+  dot: string
+  duration: string
+  exercises: ProtocolExercise[]
+}
+
+export interface LumbarCheck {
+  date: string
+  lumbar_score: number       // 1-5
+  slept_well?: boolean       // derived from sleep_entries when available
+  sitting_hours: number
+  created_at: string         // ISO timestamp
+}
+
+// ─── Exercise Media ─────────────────────────────────────────────────────────
+
+export interface ExerciseMedia {
+  pbRecordId?: string
+  demoImages?: string[]
+  demoVideo?: string
+}
+
+// ─── Programs ────────────────────────────────────────────────────────────────
+
+export type UserRole = 'user' | 'editor' | 'admin'
+export type UserTier = 'free' | 'premium'
+export type ProgramDifficulty = 'beginner' | 'intermediate' | 'advanced'
+
+export type ProgramGoalType = 'fat_loss' | 'muscle_gain' | 'maintain' | 'skill'
+export type ProgramSkill = 'pull_up' | 'handstand' | 'muscle_up' | 'planche'
+export type ProgramIntensity = 'light' | 'moderate' | 'intense'
+
+export interface ProgramMeta {
+  id: string
+  name: string
+  description: string
+  duration_weeks: number
+  created_by?: string
+  created_by_name?: string
+  is_official?: boolean
+  is_featured?: boolean
+  difficulty?: ProgramDifficulty
+  cover_image?: string
+  /** Resolved cover image URL (built from PB file service) */
+  cover_image_url?: string
+  discipline?: 'yoga' | 'calistenia'
+  /** Catalog-matching fields (see specs/2026-04-18-programs-catalog-personas-design.md) */
+  goal_type?: ProgramGoalType
+  skill?: ProgramSkill
+  intensity?: ProgramIntensity
+  days_per_week?: number
+  equipment_required?: string[]
+  contraindications?: string[]
+}
+
+// ─── Nutrition ──────────────────────────────────────────────────────────────
+
+export type FoodCategory =
+  | 'proteinas'
+  | 'carbohidratos'
+  | 'frutas'
+  | 'verduras'
+  | 'lacteos'
+  | 'grasas'
+  | 'legumbres'
+  | 'bebidas'
+  | 'procesados'
+  | 'otros'
+
+export type PortionUnit = 'g' | 'kg' | 'ml' | 'L' | 'oz' | 'unidad'
+
+export const UNIT_WEIGHT_GRAMS: Record<PortionUnit, number> = {
+  g: 1,
+  kg: 1000,
+  ml: 1,
+  L: 1000,
+  oz: 28.35,
+  unidad: 100,
+}
+
+export interface FoodItem {
+  name: string
+  portionAmount: number
+  portionUnit: PortionUnit
+  unitWeightInGrams: number
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  baseCal100: number
+  baseProt100: number
+  baseCarbs100: number
+  baseFat100: number
+  category?: FoodCategory
+  tags?: string[]
+  portionNote?: string
+}
+
+export type MealType = 'desayuno' | 'almuerzo' | 'cena' | 'snack'
+
+export interface MealTemplate {
+  id?: string
+  user?: string
+  name: string
+  foods: FoodItem[]
+  mealType: MealType
+  usageCount: number
+  lastUsedAt: string
+}
+
+export interface FoodHistoryItem {
+  id?: string
+  user?: string
+  foodData: FoodItem
+  mealType: MealType
+  loggedHour: number
+  usageCount: number
+  lastUsedAt: string
+}
+
+export interface MealReminder {
+  id?: string
+  user?: string
+  mealType: MealType
+  hour: number
+  minute: number
+  enabled: boolean
+  daysOfWeek: number[]
+}
+
+export type NutritionSource = 'manual' | 'ai_weekly_plan' | 'ai_daily_plan'
+
+export type QualityScore = 'A' | 'B' | 'C' | 'D' | 'E'
+
+export interface QualityBreakdown {
+  positives: string[]
+  negatives: string[]
+  summary: string
+}
+
+export interface QualitySuggestion {
+  text: string
+  alternatives: { name: string; portionNote: string }[]
+}
+
+export interface NutritionEntry {
+  id?: string
+  user?: string
+  photoUrls?: string[]
+  mealType: 'desayuno' | 'almuerzo' | 'cena' | 'snack'
+  foods: FoodItem[]
+  totalCalories: number
+  totalProtein: number
+  totalCarbs: number
+  totalFat: number
+  aiModel?: string
+  source?: NutritionSource
+  loggedAt: string
+  qualityScore?: QualityScore
+  qualityBreakdown?: QualityBreakdown
+  qualityMessage?: string
+  qualitySuggestion?: QualitySuggestion | null
+}
+
+export interface NutritionCoachInsight {
+  id?: string
+  user?: string
+  type: 'daily' | 'weekly'
+  periodStart: string
+  overallScore?: QualityScore
+  insights?: { patterns: { type: string; message: string }[]; highlights: string[]; concerns: string[] }
+  coachMessage?: string
+  streaks?: { currentGood: number; bestGood: number; currentBad: number }
+  generatedAt?: string
+}
+
+export type BadgeType = 'first_a' | 'streak_3' | 'streak_7' | 'streak_30' | 'weekly_improvement' | 'no_e_week' | 'balanced_day' | 'comeback'
+
+export interface NutritionBadge {
+  id?: string
+  user?: string
+  badgeType: BadgeType
+  earnedAt?: string
+  metadata?: Record<string, unknown>
+}
+
+export type NutritionGoalType = 'muscle_gain' | 'fat_loss' | 'recomp' | 'maintain'
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
+export type Sex = 'male' | 'female'
+
+export interface NutritionGoal {
+  id?: string
+  user?: string
+  dailyCalories: number
+  dailyProtein: number
+  dailyCarbs: number
+  dailyFat: number
+  goal: NutritionGoalType
+  weight: number
+  height: number
+  age: number
+  sex: Sex
+  activityLevel: ActivityLevel
+}
+
+export interface DailyTotals {
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
+// ─── Exercise Progressions ─────────────────────────────────────────────────
+
+export interface ExerciseProgression {
+  id?: string
+  exerciseId: string
+  exerciseName: string
+  category: string
+  difficultyOrder: number
+  nextExerciseId?: string
+  prevExerciseId?: string
+  targetRepsToAdvance: number
+  sessionsAtTarget: number
+}
+
+// ─── Cardio / GPS ─────────────────────────────────────────────────────────
+export type CardioActivityType = 'running' | 'walking' | 'cycling'
+
+export interface GpsPoint {
+  lat: number
+  lng: number
+  alt?: number
+  timestamp: number
+  speed?: number
+  accuracy?: number
+  /** True when this point is the re-entry after a background gap (>30s without GPS) */
+  gap?: boolean
+}
+
+export interface KmSplit {
+  km: number
+  time_seconds: number
+  pace: number // min/km
+}
+
+export interface CardioSession {
+  id?: string
+  user?: string
+  program?: string
+  program_day_key?: string
+  activity_type: CardioActivityType
+  gps_points: GpsPoint[]
+  distance_km: number
+  duration_seconds: number
+  avg_pace: number
+  elevation_gain: number
+  started_at: string
+  finished_at: string
+  note?: string
+  calories_burned?: number
+  max_pace?: number
+  avg_speed_kmh?: number
+  max_speed_kmh?: number
+  splits?: KmSplit[]
+}
+
+// ─── Challenges ──────────────────────────────────────────────────────────────
+
+export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand' | 'custom'
+export type ChallengeStatus = 'active' | 'ended'
+
+export interface Challenge {
+  id: string
+  creator: string
+  title: string
+  metric: ChallengeMetric
+  custom_metric?: string
+  description?: string
+  goal?: number
+  starts_at: string
+  ends_at: string
+  status: ChallengeStatus
+}
+
+export interface ChallengeParticipant {
+  id: string
+  challenge: string
+  user: string
+}
+
+// ─── Comments ───────────────────────────────────────────────────────────────
+
+export interface CommentRecord {
+  id: string
+  session_id: string
+  author: string
+  text: string
+  parent_id: string | null
+  created: string
+}
+
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_invite' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus'
+
+export interface NotificationRecord {
+  id: string
+  user: string
+  type: NotificationType
+  actor: string
+  reference_id: string
+  reference_type: string
+  read: boolean
+  data?: Record<string, any>
+  created: string
+}
+
+// ─── Sleep Tracking ──────────────────────────────────────────────────────────
+
+export interface SleepEntry {
+  id: string
+  user: string
+  date: string
+  bedtime: string
+  wake_time: string
+  awakenings: number
+  quality: number
+  duration_minutes: number
+  awake_minutes?: number
+  caffeine?: boolean
+  screen_before_bed?: boolean
+  stress_level?: number
+  note?: string
+  created: string
+  updated: string
+}
+// ─── Weekly Meal Plan ───────────────────────────────────────────────────────
+
+export interface WeeklyMealPlan {
+  id: string
+  user: string
+  week_start: string
+  status: 'active' | 'archived'
+  goal_snapshot: DailyTotals
+  ai_model: string
+  created: string
+  updated: string
+}
+
+export interface WeeklyPlannedMeal {
+  id: string
+  meal_type: MealType
+  label: string
+  description: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  logged: boolean
+  logged_entry_id?: string
+}
+
+export interface WeeklyPlanDay {
+  id: string
+  plan: string
+  user: string
+  date: string
+  day_index: number
+  meals: WeeklyPlannedMeal[]
+  notes: string
+}
+
+// ─── Races ──────────────────────────────────────────────────────────────────
+export type {
+  RaceMode,
+  RaceStatus,
+  RaceActivityType,
+  ParticipantStatus,
+  Race,
+  RaceParticipant,
+  RaceGpsPoint,
+} from './race'

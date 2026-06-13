@@ -1,0 +1,170 @@
+{
+  "expo": {
+    "name": "Calistenia",
+    "slug": "calistenia",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "calistenia",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "tech.guille.calistenia",
+      "supportsTablet": false,
+      "associatedDomains": ["applinks:gym.guille.tech"],
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.tech.guille.calistenia"
+        ]
+      },
+      "infoPlist": {
+        "NSSupportsLiveActivities": true
+      }
+    },
+    "android": {
+      "package": "tech.guille.calistenia",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/race"
+            },
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/u"
+            },
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/session"
+            },
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/invite"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#0c0a09",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
+      ]
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0c0a09",
+          "android": {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 76
+          }
+        }
+      ],
+      "expo-audio",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos tu ubicación para registrar la ruta, distancia y ritmo de tus sesiones de cardio.",
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "@maplibre/maplibre-react-native",
+      "./plugins/with-notifee-location-fgs.js",
+      "@sentry/react-native",
+      [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              "./node_modules/@expo-google-fonts/bebas-neue/400Regular/BebasNeue_400Regular.ttf",
+              "./node_modules/@expo-google-fonts/jetbrains-mono/400Regular/JetBrainsMono_400Regular.ttf",
+              "./node_modules/@expo-google-fonts/jetbrains-mono/700Bold/JetBrainsMono_700Bold.ttf",
+              "./node_modules/@expo-google-fonts/dm-sans/500Medium/DMSans_500Medium.ttf"
+            ]
+          }
+        }
+      ],
+      "@bacons/apple-targets",
+      [
+        "react-native-android-widget",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/bebas-neue/400Regular/BebasNeue_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/jetbrains-mono/400Regular/JetBrainsMono_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/jetbrains-mono/700Bold/JetBrainsMono_700Bold.ttf"
+          ],
+          "widgets": [
+            {
+              "name": "TodayWidget",
+              "label": "Entrenamiento de hoy",
+              "description": "Qué toca hoy, semana y racha",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "CardioWidget",
+              "label": "Cardio",
+              "description": "Km de la semana y última sesión",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "NutritionWidget",
+              "label": "Nutrición",
+              "description": "Calorías y macros de hoy + registro rápido",
+              "minWidth": "250dp",
+              "minHeight": "210dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 4,
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "NutritionRingWidget",
+              "label": "Calorías",
+              "description": "Anillo de calorías de hoy",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ],
+      "expo-sharing"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

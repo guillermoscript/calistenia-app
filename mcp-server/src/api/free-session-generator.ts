@@ -312,3 +312,58 @@ export async function handleGenerateFreeSession(req: any, res: any) {
 
   result.pipeUIMessageStreamToResponse(res);
 }
+
+/**
+ * Hono-compatible entry point. Caller validates inputs before calling.
+ * Returns a Web API Response — either SSE stream or error.
+ */
+export async function runFreeSession(
+  messages: any[],
+  userContext: any,
+  user: any
+): Promise<Response> {
+  const tier: Tier = user?.tier === "pro" || user?.tier === "premium" ? "pro" : "free";
+  const { model, name: modelName } = resolveModel(tier);
+  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("free-session-generator");
+
+  const ctx: SessionUserContext = userContext;
+  let system = systemPrompt || SYSTEM_PROMPT_FALLBACK;
+  const contextLines: string[] = [];
+  if (ctx.age) contextLines.push(`- Edad: ${ctx.age} años`);
+  if (ctx.weight) contextLines.push(`- Peso: ${ctx.weight} kg`);
+  if (ctx.height) contextLines.push(`- Altura: ${ctx.height} cm`);
+  if (ctx.sex) contextLines.push(`- Sexo: ${ctx.sex}`);
+  if (ctx.level) contextLines.push(`- Nivel: ${ctx.level}`);
+  if (ctx.goal) contextLines.push(`- Objetivo de la sesión: ${ctx.goal}`);
+  if (ctx.equipment?.length) contextLines.push(`- Equipamiento disponible: ${ctx.equipment.join(", ")}`);
+  if (ctx.location) contextLines.push(`- Ubicación: ${ctx.location}`);
+  if (ctx.availableTime) contextLines.push(`- Tiempo disponible: ${ctx.availableTime} minutos`);
+  if (contextLines.length > 0) {
+    system += `\n\n## Contexto del usuario\n\n${contextLines.join("\n")}`;
+  }
+
+  const truncatedMessages = messages.slice(-10);
+  let modelMessages: any;
+  try {
+    modelMessages = await convertToModelMessages(truncatedMessages);
+  } catch (err) {
+    console.error("[free-session] convertToModelMessages failed:", err, "messages:", JSON.stringify(truncatedMessages).slice(0, 500));
+    return Response.json({ error: "Formato de mensajes inválido" }, { status: 400 });
+  }
+
+  const result = streamText({
+    model,
+    system,
+    messages: modelMessages,
+    tools: { search_exercises: searchExercisesTool, create_session: createSessionTool },
+    maxOutputTokens: 4000,
+    stopWhen: stepCountIs(12),
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "free-session-generator",
+      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
+    },
+  });
+
+  return result.toUIMessageStreamResponse();
+}

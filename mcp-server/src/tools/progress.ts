@@ -1,23 +1,19 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from "../utils.js";
 
-export function registerProgressTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-  const tz = auth.getTimezone();
-
+export function registerProgressTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // GET SETTINGS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_settings",
+  server.tool(
     {
+      name: "cal_get_settings",
       title: "Get User Settings",
       description:
         "Get the user's training settings: current phase, start date, weekly workout goal, and personal records (PR) for key exercises.",
-      inputSchema: z
+      schema: z
         .object({
           response_format: z
             .nativeEnum(ResponseFormat)
@@ -27,8 +23,11 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ response_format }) => {
+    async ({ response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const settings = await pb
           .collection("settings")
           .getFirstListItem(pb.filter('user = {:userId}', { userId }))
@@ -87,13 +86,13 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // UPDATE SETTINGS
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_update_settings",
+  server.tool(
     {
+      name: "cal_update_settings",
       title: "Update Training Settings",
       description:
         "Update training settings: phase, start date, weekly goal, or personal records. Only provide fields you want to change.",
-      inputSchema: z
+      schema: z
         .object({
           phase: z.number().int().min(1).optional().describe("Current training phase (1, 2, 3, ...)"),
           start_date: z.string().optional().describe("Program start date (YYYY-MM-DD)"),
@@ -107,8 +106,11 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ phase, start_date, weekly_goal, pr_pullups, pr_pushups, pr_lsit, pr_pistol, pr_handstand }) => {
+    async ({ phase, start_date, weekly_goal, pr_pullups, pr_pushups, pr_lsit, pr_pistol, pr_handstand }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const updates: Record<string, unknown> = {};
         if (phase !== undefined) updates.phase = phase;
         if (start_date !== undefined) updates.start_date = start_date;
@@ -149,13 +151,13 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // WEIGHT TRACKING
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_weight_entries",
+  server.tool(
     {
+      name: "cal_list_weight_entries",
       title: "List Weight Entries",
       description:
         "List body weight measurements over time. Useful for tracking weight trends and correlating with training.",
-      inputSchema: z
+      schema: z
         .object({
           ...PaginationSchema,
           from_date: z.string().optional().describe("Start date (YYYY-MM-DD). Defaults to 90 days ago."),
@@ -164,8 +166,12 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ limit, offset, from_date, to_date, response_format }) => {
+    async ({ limit, offset, from_date, to_date, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = from_date ?? daysAgo(90, tz);
         const to = to_date ?? today(tz);
 
@@ -219,12 +225,12 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
     }
   );
 
-  server.registerTool(
-    "cal_add_weight_entry",
+  server.tool(
     {
+      name: "cal_add_weight_entry",
       title: "Add Weight Entry",
       description: "Record a body weight measurement.",
-      inputSchema: z
+      schema: z
         .object({
           weight_kg: z.number().min(20).max(300).describe("Body weight in kilograms (e.g. 75.5)"),
           date: z.string().optional().describe("Date of measurement (YYYY-MM-DD). Defaults to today."),
@@ -233,8 +239,12 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async ({ weight_kg, date, note }) => {
+    async ({ weight_kg, date, note }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const record = await pb.collection("weight_entries").create({
           user: userId,
           weight_kg,
@@ -252,18 +262,21 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
     }
   );
 
-  server.registerTool(
-    "cal_delete_weight_entry",
+  server.tool(
     {
+      name: "cal_delete_weight_entry",
       title: "Delete Weight Entry",
       description: "Delete a weight measurement by its ID.",
-      inputSchema: z
+      schema: z
         .object({ entry_id: z.string().describe("The weight entry record ID to delete") })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ entry_id }) => {
+    async ({ entry_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const record = await pb.collection("weight_entries").getOne(entry_id);
         if (record.user !== userId) {
           return errorResult("Access denied: this entry does not belong to you.");
@@ -279,13 +292,13 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LUMBAR HEALTH
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_lumbar_checks",
+  server.tool(
     {
+      name: "cal_list_lumbar_checks",
       title: "List Lumbar Health Checks",
       description:
         "List lumbar health check-ins. Each entry records a daily score (1-5), sleep quality, and hours sitting. Useful for monitoring recovery and injury risk.",
-      inputSchema: z
+      schema: z
         .object({
           ...PaginationSchema,
           from_date: z.string().optional().describe("Start date (YYYY-MM-DD). Defaults to 30 days ago."),
@@ -294,8 +307,12 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ limit, offset, from_date, to_date, response_format }) => {
+    async ({ limit, offset, from_date, to_date, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = from_date ?? daysAgo(30, tz);
         const to = to_date ?? today(tz);
 
@@ -345,13 +362,13 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
     }
   );
 
-  server.registerTool(
-    "cal_add_lumbar_check",
+  server.tool(
     {
+      name: "cal_add_lumbar_check",
       title: "Add Lumbar Health Check",
       description:
         "Record a lumbar health check-in. Score your lower back pain/comfort from 1 (severe pain) to 5 (no pain, full mobility).",
-      inputSchema: z
+      schema: z
         .object({
           lumbar_score: z
             .number()
@@ -370,8 +387,12 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async ({ lumbar_score, slept_well, sitting_hours, date }) => {
+    async ({ lumbar_score, slept_well, sitting_hours, date }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const record = await pb.collection("lumbar_checks").create({
           user: userId,
           date: date ?? today(tz),
@@ -406,13 +427,13 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // PROGRESS SUMMARY
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_progress_summary",
+  server.tool(
     {
+      name: "cal_get_progress_summary",
       title: "Get Progress Summary",
       description:
         "Get an overall progress summary: recent workout sessions, weight trend, lumbar health average, and weekly workout consistency. Great for a quick status overview.",
-      inputSchema: z
+      schema: z
         .object({
           days: z
             .number()
@@ -429,8 +450,12 @@ export function registerProgressTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ days, response_format }) => {
+    async ({ days, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = daysAgo(days, tz);
 
         const [sessions, weightEntries, lumbarChecks, settings] = await Promise.all([

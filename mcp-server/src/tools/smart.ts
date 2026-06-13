@@ -1,25 +1,22 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
 import { localize } from "../lib/i18n.js";
 
-export function registerSmartTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-  const userId = auth.getUserId();
-  const tz = auth.getTimezone();
+export function registerSmartTools(server: MCPServer, pbUrl: string) {
 
   // ──────────────────────────────────────────────────────────────
   // LOG FULL WORKOUT — one call instead of 7+
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_log_full_workout",
+  server.tool(
     {
+      name: "cal_log_full_workout",
       title: "Log Full Workout",
       description:
         "Log a complete workout in one call: creates a session + all exercise sets. Much faster than calling cal_log_session + cal_log_set for each exercise. " +
         "After logging, run `cal_sync_stats` to update XP, streaks, and check for new achievements.",
-      inputSchema: z
+      schema: z
         .object({
           workout_key: z
             .string()
@@ -47,8 +44,11 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async ({ workout_key, phase, day, exercises, completed_at, session_note }) => {
+    async ({ workout_key, phase, day, exercises, completed_at, session_note }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         const now = completed_at ?? new Date().toISOString();
 
         // 1. Create session
@@ -119,18 +119,22 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // READINESS CHECK — Should I train today?
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_readiness_check",
+  server.tool(
     {
+      name: "cal_readiness_check",
       title: "Training Readiness Check",
       description:
         "Holistic readiness assessment: combines lumbar health, sleep, days since last workout, weekly progress vs goal, and weight trend into a single 1-10 score with a recommendation. " +
         "Use this before deciding whether/what to train today.",
-      inputSchema: z.object({}).strict(),
+      schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async () => {
+    async (_input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const weekStart = startOfWeek(tz);
         const todayStr = today(tz);
 
@@ -333,22 +337,26 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // PROGRESSION READINESS — Am I ready to advance?
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_check_progression_readiness",
+  server.tool(
     {
+      name: "cal_check_progression_readiness",
       title: "Check Exercise Progression Readiness",
       description:
         "Evaluates whether you're ready to advance to the next exercise variation based on the progression algorithm. " +
         "Compares your recent performance against the required reps × sessions thresholds defined in exercise_progressions.",
-      inputSchema: z
+      schema: z
         .object({
           exercise_id: z.string().describe("Exercise to check (e.g. 'push-up', 'pull-up')"),
         })
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ exercise_id }) => {
+    async ({ exercise_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         // Get progression chain for this exercise
         const progression = await pb
           .collection("exercise_progressions")
@@ -468,14 +476,14 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // GAP ANALYSIS — What am I neglecting?
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_gap_analysis",
+  server.tool(
     {
+      name: "cal_gap_analysis",
       title: "Training Gap Analysis",
       description:
         "Compares your actual sessions against your program schedule over the last N weeks. " +
         "Identifies which workout days you skip most, muscle group imbalances, and exercises you're neglecting.",
-      inputSchema: z
+      schema: z
         .object({
           weeks: z
             .number()
@@ -492,8 +500,12 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ weeks, response_format }) => {
+    async ({ weeks, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const from = daysAgo(weeks * 7, tz);
 
         // Get current program schedule
@@ -655,14 +667,14 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // COMPARE PERIODS — Am I getting better?
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_compare_periods",
+  server.tool(
     {
+      name: "cal_compare_periods",
       title: "Compare Training Periods",
       description:
         "Compares two time periods side by side: sessions, volume, weight trend, and nutrition averages. " +
         "Great for monthly reviews to see if you're actually progressing.",
-      inputSchema: z
+      schema: z
         .object({
           period_days: z
             .number()
@@ -679,8 +691,12 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ period_days, response_format }) => {
+    async ({ period_days, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const currentFrom = daysAgo(period_days, tz);
         const previousFrom = daysAgo(period_days * 2, tz);
         const previousTo = daysAgo(period_days + 1, tz);
@@ -802,14 +818,14 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // CALCULATE MACROS — TDEE-based, not just storage
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_calculate_macros",
+  server.tool(
     {
+      name: "cal_calculate_macros",
       title: "Calculate Macros (TDEE-based)",
       description:
         "Calculates daily calorie and macro targets using the Mifflin-St Jeor equation based on your body stats, activity level, and goal. " +
         "Automatically saves the calculated values to your nutrition goals.",
-      inputSchema: z
+      schema: z
         .object({
           weight_kg: z.number().min(30).max(300).describe("Current body weight in kg"),
           height_cm: z.number().min(100).max(250).describe("Height in cm"),
@@ -827,8 +843,11 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ weight_kg, height_cm, age, sex, activity_level, goal }) => {
+    async ({ weight_kg, height_cm, age, sex, activity_level, goal }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
         // 1. BMR (Mifflin-St Jeor)
         let bmr: number;
         if (sex === "male") {
@@ -955,18 +974,22 @@ export function registerSmartTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // TODAY'S WORKOUT — What should I do today?
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_todays_workout",
+  server.tool(
     {
+      name: "cal_todays_workout",
       title: "Get Today's Workout",
       description:
         "Shows what workout you should do today based on your current program and what you've done this week. " +
         "Identifies the next unfinished workout day in the schedule.",
-      inputSchema: z.object({}).strict(),
+      schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
-    async () => {
+    async (_input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         // Get current program
         const userPrograms = await pb.collection("user_programs").getFullList({
           filter: pb.filter('user = {:userId} && is_current = true', { userId }),

@@ -4,11 +4,9 @@
   "description": "Unified server for Calistenia App — REST API + MCP tools for Claude",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "start": "node build/index.js",
-    "start:stdio": "node build/stdio.js",
-    "dev": "tsx src/index.ts",
-    "dev:stdio": "tsx src/stdio.ts",
+    "build": "rm -rf build && tsc",
+    "start": "node build/server.js",
+    "dev": "tsx src/server.ts",
     "seed": "node build/seed.js"
   },
   "dependencies": {
@@ -19,19 +17,14 @@
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@opentelemetry/sdk-node": "^0.213.0",
     "ai": "^6.0.116",
-    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "express": "^5.2.1",
     "langfuse": "^3.38.6",
-    "multer": "^2.1.1",
+    "mcp-use": "^1.30.2",
     "pocketbase": "^0.26.8",
     "web-push": "^3.6.7",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/multer": "^2.1.0",
     "@types/node": "^25.5.0",
     "@types/web-push": "^3.6.4",
     "tsx": "^4.21.0",

@@ -1,6 +1,6 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat } from "../utils.js";
 import { searchWger, getWgerExerciseInfo, downloadWgerImage } from "../lib/wger.js";
 import { mapWgerToExerciseCatalog } from "../lib/wger-mappings.js";
@@ -15,19 +15,17 @@ function slugify(name: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-export function registerExerciseTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-
+export function registerExerciseTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // SEARCH WGER
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_search_wger",
+  server.tool(
     {
+      name: "cal_search_wger",
       title: "Search wger Exercise Database",
       description:
         "Search the wger open-source exercise database for exercises by name. Returns exercise names, categories, and IDs that can be imported into the local catalog.",
-      inputSchema: z
+      schema: z
         .object({
           term: z
             .string()
@@ -76,13 +74,13 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // IMPORT WGER EXERCISE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_import_wger_exercise",
+  server.tool(
     {
+      name: "cal_import_wger_exercise",
       title: "Import Exercise from wger",
       description:
         "Import an exercise from the wger database into the local PocketBase catalog. Idempotent: if the exercise (by wger_id) already exists, returns the existing record.",
-      inputSchema: z
+      schema: z
         .object({
           wger_id: z
             .number()
@@ -97,8 +95,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
-    async ({ wger_id, language }) => {
+    async ({ wger_id, language }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         // Check deduplication
         try {
           const existing = await pb.collection("exercises_catalog").getFirstListItem(pb.filter('wger_id = {:wger_id}', { wger_id }));
@@ -179,21 +179,23 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // CHECK EXERCISE DUPLICATE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_check_exercise_duplicate",
+  server.tool(
     {
+      name: "cal_check_exercise_duplicate",
       title: "Check Exercise Duplicate",
       description:
         "Check if an exercise name already exists in the catalog. Returns exact slug matches and fuzzy name matches from official/promoted exercises. Use before creating a new exercise.",
-      inputSchema: z
+      schema: z
         .object({
           name: z.string().min(2).describe("Exercise name to check for duplicates"),
         })
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ name }) => {
+    async ({ name }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const slug = slugify(name);
 
         // Exact slug match across all statuses
@@ -256,13 +258,13 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // LIST CATALOG
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_catalog",
+  server.tool(
     {
+      name: "cal_list_catalog",
       title: "List Exercise Catalog",
       description:
         "List or search exercises in the local PocketBase catalog. Filter by name, category, equipment, status, or creator.",
-      inputSchema: z
+      schema: z
         .object({
           ...PaginationSchema,
           search: z
@@ -289,8 +291,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ limit, offset, search, category, equipment, status, created_by, response_format }) => {
+    async ({ limit, offset, search, category, equipment, status, created_by, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const conditions: string[] = [];
         const params: Record<string, unknown> = {};
 
@@ -378,13 +382,13 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // CREATE EXERCISE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_create_exercise",
+  server.tool(
     {
+      name: "cal_create_exercise",
       title: "Create Custom Exercise",
       description:
         "Create a new exercise in the local catalog. Use this to add custom exercises that can then be used in programs.",
-      inputSchema: z
+      schema: z
         .object({
           name: z.string().min(2).describe("Exercise name"),
           category: z
@@ -419,8 +423,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    async (input) => {
+    async (input, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const slug = slugify(input.name);
         const status = input.created_by ? "private" : "official";
 
@@ -518,13 +524,13 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // PROMOTE EXERCISE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_promote_exercise",
+  server.tool(
     {
+      name: "cal_promote_exercise",
       title: "Promote Exercise",
       description:
         "Admin-only. Promote a private exercise to 'promoted' status, making it visible to all users. Optionally override fields during promotion.",
-      inputSchema: z
+      schema: z
         .object({
           exercise_id: z.string().describe("ID of the private exercise to promote"),
           name: z.string().optional().describe("Override exercise name"),
@@ -541,8 +547,10 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ exercise_id, ...overrides }) => {
+    async ({ exercise_id, ...overrides }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const exercise = await pb.collection("exercises_catalog").getOne(exercise_id);
 
         if (exercise.status !== "private") {
@@ -585,21 +593,23 @@ export function registerExerciseTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // DEMOTE EXERCISE
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_demote_exercise",
+  server.tool(
     {
+      name: "cal_demote_exercise",
       title: "Demote Exercise",
       description:
         "Admin-only. Revert a promoted exercise back to private status. The exercise will only be visible to its creator.",
-      inputSchema: z
+      schema: z
         .object({
           exercise_id: z.string().describe("ID of the promoted exercise to demote"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ exercise_id }) => {
+    async ({ exercise_id }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const exercise = await pb.collection("exercises_catalog").getOne(exercise_id);
 
         if (exercise.status !== "promoted") {

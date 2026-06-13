@@ -3,12 +3,18 @@
 # ─────────────────────────────────────────────
 FROM node:20-alpine AS frontend-builder
 
+# pnpm via corepack — version pinned in root package.json ("packageManager")
+RUN corepack enable
+
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json apps/web/
+COPY packages/core/package.json packages/core/
+RUN pnpm install --frozen-lockfile
 
-COPY . .
+COPY apps/web/ apps/web/
+COPY packages/core/ packages/core/
 
 # Empty → pocketbase.js falls back to window.location.origin
 ARG VITE_POCKETBASE_URL=""
@@ -22,7 +28,7 @@ ENV VITE_AI_API_URL=$VITE_AI_API_URL
 ARG VITE_VAPID_PUBLIC_KEY=""
 ENV VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
 
-RUN npm run build
+RUN pnpm --filter @calistenia/web build
 
 # ─────────────────────────────────────────────
 # Stage 2: Download PocketBase
@@ -52,7 +58,7 @@ WORKDIR /app
 COPY --from=pb-downloader /tmp/pb/pocketbase ./pocketbase
 COPY pb_migrations/ ./pb_migrations/
 COPY pb_hooks/ ./pb_hooks/
-COPY --from=frontend-builder /app/dist ./pb_public
+COPY --from=frontend-builder /app/apps/web/dist ./pb_public
 
 RUN mkdir -p /app/pb_data && chown -R pbuser:pbuser /app
 

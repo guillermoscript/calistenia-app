@@ -2,7 +2,7 @@
 /**
  * Report exercises missing English translations.
  *
- * Reads src/data/exercise-catalog.json and checks translatable fields
+ * Reads packages/core/data/exercise-catalog.json and checks translatable fields
  * (name, muscles, note, description) for missing "en" keys.
  *
  * Usage: node scripts/translate-exercises.mjs
@@ -12,7 +12,7 @@ import { readFileSync } from 'fs'
 
 const TRANSLATABLE_FIELDS = ['name', 'muscles', 'note', 'description']
 
-const raw = readFileSync('src/data/exercise-catalog.json', 'utf8')
+const raw = readFileSync('packages/core/data/exercise-catalog.json', 'utf8')
 const catalog = JSON.parse(raw)
 
 let totalExercises = 0

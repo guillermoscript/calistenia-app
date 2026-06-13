@@ -1,22 +1,20 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
-import { AuthManager } from "../auth.js";
+import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat } from "../utils.js";
 import { localize } from "../lib/i18n.js";
 
-export function registerMediaTools(server: McpServer, auth: AuthManager) {
-  const pb = auth.getClient();
-
+export function registerMediaTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST EXERCISE MEDIA
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_list_exercise_media",
+  server.tool(
     {
+      name: "cal_list_exercise_media",
       title: "List Exercise Media",
       description:
         "List all media (images and videos) attached to exercises in a program, or to a specific exercise in the catalog. Returns file URLs.",
-      inputSchema: z
+      schema: z
         .object({
           program_id: z
             .string()
@@ -43,8 +41,10 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
         openWorldHint: false,
       },
     },
-    async ({ program_id, exercise_record_id, catalog_exercise_id, response_format }) => {
+    async ({ program_id, exercise_record_id, catalog_exercise_id, response_format }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const results: Array<{
           id: string;
           collection: string;
@@ -142,13 +142,13 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // UPLOAD EXERCISE MEDIA
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_upload_exercise_media",
+  server.tool(
     {
+      name: "cal_upload_exercise_media",
       title: "Upload Exercise Media",
       description:
         "Upload images or video to an exercise. Supports program_exercises (demo_images/demo_video) and exercises_catalog (default_images/default_video). Pass image data as base64.",
-      inputSchema: z
+      schema: z
         .object({
           record_id: z.string().describe("The record ID to upload media to"),
           collection: z
@@ -172,8 +172,10 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
         openWorldHint: false,
       },
     },
-    async ({ record_id, collection, field, file_name, base64_data }) => {
+    async ({ record_id, collection, field, file_name, base64_data }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         // Decode base64 to buffer
         const buffer = Buffer.from(base64_data, "base64");
 
@@ -228,13 +230,13 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // DELETE EXERCISE MEDIA
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_delete_exercise_media",
+  server.tool(
     {
+      name: "cal_delete_exercise_media",
       title: "Delete Exercise Media",
       description:
         "Remove a specific media file from an exercise. Pass the file name to remove from the images array, or clear the video field.",
-      inputSchema: z
+      schema: z
         .object({
           record_id: z.string().describe("The record ID to remove media from"),
           collection: z
@@ -256,8 +258,10 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
         openWorldHint: false,
       },
     },
-    async ({ record_id, collection, field, file_name }) => {
+    async ({ record_id, collection, field, file_name }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const fieldName =
           collection === "program_exercises"
             ? field === "images"
@@ -311,13 +315,13 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
   // ──────────────────────────────────────────────────────────────
   // GET EXERCISE MEDIA URL
   // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "cal_get_media_url",
+  server.tool(
     {
+      name: "cal_get_media_url",
       title: "Get Exercise Media URL",
       description:
         "Get the direct download URL for a specific media file. Useful for displaying or sharing exercise media.",
-      inputSchema: z
+      schema: z
         .object({
           record_id: z.string().describe("The record ID"),
           collection: z
@@ -337,8 +341,10 @@ export function registerMediaTools(server: McpServer, auth: AuthManager) {
         openWorldHint: false,
       },
     },
-    async ({ record_id, collection, file_name, thumb }) => {
+    async ({ record_id, collection, file_name, thumb }, ctx) => {
       try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
         const rec = await pb.collection(collection).getOne(record_id);
         const url = pb.files.getUrl(rec, file_name, thumb ? { thumb } : undefined);
 

@@ -1,0 +1,8 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 10 blocks postinstall scripts by default; these need theirs to run.
+onlyBuiltDependencies:
+  - esbuild
+  - '@sentry/cli'
