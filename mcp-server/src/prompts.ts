@@ -1,6 +1,13 @@
 import type { MCPServer } from "mcp-use/server";
 import { z } from "zod";
 
+const MEAL_LABELS: Record<string, string> = {
+  desayuno: "Desayuno",
+  almuerzo: "Almuerzo",
+  cena: "Cena",
+  snack: "Snack",
+};
+
 export function registerPrompts(server: MCPServer) {
   // ──────────────────────────────────────────────────────────────
   // PLAN TRAINING WEEK
@@ -87,6 +94,50 @@ export function registerPrompts(server: MCPServer) {
               "- **Progression**: Based on my session frequency, am I ready to advance phases?",
               "- **Body composition**: How is my weight trending relative to my training?",
               "- **Top 3 recommendations**: Specific actions to improve over the next 4 weeks",
+            ].join("\n"),
+          },
+        },
+      ],
+    })
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // LOG FOOD FROM IMAGE
+  // ──────────────────────────────────────────────────────────────
+  server.prompt(
+    {
+      name: "log_food_from_image",
+      description:
+        "Analyze a food photo and log it automatically. Attach the image to the conversation first, then invoke this prompt. The AI reads the image natively, extracts macros, and calls cal_add_nutrition_entry — no manual input needed.",
+      schema: z.object({
+        meal_type: z
+          .enum(["desayuno", "almuerzo", "cena", "snack"])
+          .describe("Meal type: desayuno=breakfast, almuerzo=lunch, cena=dinner, snack=snack"),
+      }),
+    },
+    async ({ meal_type }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: [
+              `Analyze the food image I just shared and log it as **${MEAL_LABELS[meal_type]}**.`,
+              "",
+              "Steps:",
+              "1. Identify each distinct food item visible in the image",
+              "2. Estimate portion size as accurately as possible:",
+              "   - Use grams when you can judge from plate size, hand size, or visual cues",
+              "   - Otherwise use common measures: '1 cup', '2 pieces', '1 medium bowl'",
+              "3. Calculate macros (calories, protein, carbs, fat) for each item using standard nutritional data",
+              `4. Call \`cal_add_nutrition_entry\` with meal_type="${meal_type}" and all the items`,
+              "",
+              "Naming rules:",
+              "- Be specific: 'Arroz blanco cocido' not 'rice', 'Pechuga de pollo a la plancha' not 'chicken'",
+              "- If a mixed dish, list the main ingredients separately",
+              "- If uncertain about quantity, estimate conservatively",
+              "",
+              "After calling the tool, the widget will show what was saved. If the user says the macros are wrong, update with cal_add_nutrition_entry using the corrected values and delete the old entry with cal_delete_nutrition_entry.",
             ].join("\n"),
           },
         },

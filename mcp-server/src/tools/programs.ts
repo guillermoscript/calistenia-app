@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import { widget, text } from "mcp-use/server";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, PaginationSchema } from "../utils.js";
@@ -812,7 +813,9 @@ export function registerProgramTools(server: MCPServer, pbUrl: string) {
       title: "Build Complete Program",
       description:
         "Create a full training program with phases, days, and exercises in one call. " +
-        "This is the fastest way to build a program. Phases are numbered automatically starting from 1.",
+        "This is the fastest way to build a program. Phases are numbered automatically starting from 1. " +
+        "Returns a visual program card with phase breakdown and an activation button.",
+      widget: { name: "program-view", invoking: "Building program…", invoked: "Program ready" },
       schema: z
         .object({
           name: z.string().min(2).describe("Program name"),
@@ -924,26 +927,39 @@ export function registerProgramTools(server: MCPServer, pbUrl: string) {
           return `  Phase ${i + 1}: ${p.name} — ${dayCount} days, ${exCount} exercises`;
         });
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: [
-                `Created program **${input.name}** (ID: ${program.id})`,
-                `${input.phases.length} phases, ${totalExercises} total exercises`,
-                ...summary,
-                input.set_as_current ? "\nSet as your current program." : "",
-              ].join("\n"),
-            },
-          ],
-          structuredContent: {
+        const fallbackText = [
+          `Created program **${input.name}** (ID: ${program.id})`,
+          `${input.phases.length} phases, ${totalExercises} total exercises`,
+          ...summary,
+          input.set_as_current ? "\nSet as your current program." : "",
+        ].join("\n");
+
+        return widget({
+          props: {
             id: program.id,
             name: input.name,
-            phases: input.phases.length,
-            total_exercises: totalExercises,
+            difficulty: input.difficulty ?? "",
+            duration_weeks: input.duration_weeks ?? 0,
             is_current: input.set_as_current,
+            phases_count: input.phases.length,
+            total_exercises: totalExercises,
+            phases: input.phases.map((p) => ({
+              name: p.name,
+              days: p.days.map((d) => ({
+                day_name: d.day_name,
+                day_focus: d.day_focus ?? "",
+                exercises: d.exercises.map((e) => ({
+                  name: e.name,
+                  sets: e.sets,
+                  reps: e.reps,
+                  rest_seconds: e.rest_seconds,
+                  muscles: e.muscles ?? "",
+                })),
+              })),
+            })),
           },
-        };
+          output: text(fallbackText),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

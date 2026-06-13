@@ -4,9 +4,11 @@
   "description": "Unified server for Calistenia App — REST API + MCP tools for Claude",
   "type": "module",
   "scripts": {
-    "build": "rm -rf build && tsc",
+    "build": "mcp-use build --path . --entry src/server.ts --widgets-dir resources",
+    "build:server": "rm -rf build && tsc",
     "start": "node build/server.js",
-    "dev": "tsx src/server.ts",
+    "dev": "mcp-use dev --path . --entry src/server.ts --widgets-dir resources --no-open",
+    "dev:simple": "tsx src/server.ts",
     "seed": "node build/seed.js"
   },
   "dependencies": {
