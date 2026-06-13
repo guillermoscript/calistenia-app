@@ -1,6 +1,8 @@
 // init-core DEBE evaluarse antes que cualquier módulo de @calistenia/core.
 import '@/lib/init-core'
 import '../global.css'
+// Registra setNotificationHandler app-wide (rest timer + recordatorios) al boot.
+import '@/lib/notifications'
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { Platform } from 'react-native'

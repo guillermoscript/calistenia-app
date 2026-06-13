@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
-import { LogOut } from 'lucide-react-native'
+import { LogOut, Bell, ChevronRight } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -108,6 +108,24 @@ export default function ProfileScreen() {
           <StatCard label={t('profile.streak', { defaultValue: 'Racha' })} value={String(getLongestStreak())} />
           <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
         </View>
+
+        {/* Recordatorios */}
+        <Pressable onPress={() => router.push('/reminders')}>
+          <Card>
+            <CardContent className="flex-row items-center gap-3 py-4">
+              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+                <Bell size={18} color="hsl(74 90% 57%)" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground">{t('profile.reminders')}</Text>
+                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                  {t('profile.remindersDesc')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="hsl(0 0% 45%)" />
+            </CardContent>
+          </Card>
+        </Pressable>
 
         {/* Idioma */}
         <Card>

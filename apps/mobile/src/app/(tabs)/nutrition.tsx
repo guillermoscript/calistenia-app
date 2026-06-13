@@ -525,9 +525,9 @@ export default function NutritionTab() {
           <View className="flex-row items-center gap-3 mb-5">
             <Pressable
               onPress={goToPrevDay}
-              className="size-9 rounded-lg border border-border items-center justify-center active:bg-muted"
+              className="size-9 rounded-full bg-muted/60 items-center justify-center active:bg-muted"
             >
-              <ChevronLeft size={16} className="text-muted-foreground" />
+              <ChevronLeft size={18} color="rgba(255,255,255,0.6)" strokeWidth={2} />
             </Pressable>
             <View className="flex-1">
               <Text className="text-sm font-sans-medium text-foreground capitalize text-center">
@@ -539,9 +539,9 @@ export default function NutritionTab() {
             </View>
             <Pressable
               onPress={goToNextDay}
-              className="size-9 rounded-lg border border-border items-center justify-center active:bg-muted"
+              className="size-9 rounded-full bg-muted/60 items-center justify-center active:bg-muted"
             >
-              <ChevronRight size={16} className="text-muted-foreground" />
+              <ChevronRight size={18} color="rgba(255,255,255,0.6)" strokeWidth={2} />
             </Pressable>
             {!isToday && (
               <Pressable onPress={goToToday}>
@@ -703,7 +703,8 @@ export default function NutritionTab() {
             </Text>
             <ChevronLeft
               size={16}
-              className={cn('text-muted-foreground transition-transform', showCoach ? '-rotate-90' : 'rotate-90')}
+              color="rgba(255,255,255,0.45)"
+              style={{ transform: [{ rotate: showCoach ? '-90deg' : '90deg' }] }}
             />
           </Pressable>
 
