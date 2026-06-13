@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import { widget, text } from "mcp-use/server";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
@@ -284,7 +285,12 @@ export function registerNutritionTools(server: MCPServer, pbUrl: string) {
       name: "cal_add_nutrition_entry",
       title: "Add Nutrition Entry",
       description:
-        "Manually log a meal with foods and macros. For AI-based photo analysis, use the Calistenia app directly.",
+        "Log a meal with foods and macros. Use after analyzing a food image or when the user describes what they ate. Returns a visual widget showing the logged meal and today's macro progress.",
+      widget: {
+        name: "nutrition-log-result",
+        invoking: "Logging meal…",
+        invoked: "Meal logged",
+      },
       schema: z
         .object({
           meal_type: z
@@ -313,6 +319,7 @@ export function registerNutritionTools(server: MCPServer, pbUrl: string) {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
+        const tz = auth.getTimezone();
         const totals = foods.reduce(
           (acc, f) => ({
             calories: acc.calories + f.calories,
@@ -323,31 +330,70 @@ export function registerNutritionTools(server: MCPServer, pbUrl: string) {
           { calories: 0, protein: 0, carbs: 0, fat: 0 }
         );
 
-        const record = await pb.collection("nutrition_entries").create({
-          user: userId,
-          meal_type,
-          foods,
-          total_calories: Math.round(totals.calories),
-          total_protein: Math.round(totals.protein * 10) / 10,
-          total_carbs: Math.round(totals.carbs * 10) / 10,
-          total_fat: Math.round(totals.fat * 10) / 10,
-          ai_model: "manual",
-          logged_at: logged_at ?? new Date().toISOString(),
-        });
+        const todayStr = today(tz);
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: [
-                `Meal logged: **${meal_type}**`,
-                `${foods.map((f) => `${f.name} (${f.portion})`).join(", ")}`,
-                `**${totals.calories} kcal** | P: ${totals.protein.toFixed(1)}g | C: ${totals.carbs.toFixed(1)}g | F: ${totals.fat.toFixed(1)}g`,
-              ].join("\n"),
+        // Save meal + fetch today's entries + goals in parallel
+        const [record, todayEntries, goals] = await Promise.all([
+          pb.collection("nutrition_entries").create({
+            user: userId,
+            meal_type,
+            foods,
+            total_calories: Math.round(totals.calories),
+            total_protein: Math.round(totals.protein * 10) / 10,
+            total_carbs: Math.round(totals.carbs * 10) / 10,
+            total_fat: Math.round(totals.fat * 10) / 10,
+            ai_model: "manual",
+            logged_at: logged_at ?? new Date().toISOString(),
+          }),
+          pb.collection("nutrition_entries").getFullList({
+            filter: pb.filter("user = {:userId} && logged_at >= {:from}", { userId, from: `${todayStr} 00:00:00` }),
+            requestKey: null,
+          }),
+          pb.collection("nutrition_goals").getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null }).catch(() => null),
+        ]);
+
+        // today_totals includes the just-saved entry (it's in todayEntries since we awaited after create)
+        const today_totals = todayEntries.reduce(
+          (acc, e) => ({
+            calories: acc.calories + (e.total_calories as number),
+            protein: acc.protein + (e.total_protein as number),
+            carbs: acc.carbs + (e.total_carbs as number),
+            fat: acc.fat + (e.total_fat as number),
+          }),
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+
+        const goalData = goals
+          ? { calories: goals.daily_calories as number, protein: goals.daily_protein as number, carbs: goals.daily_carbs as number, fat: goals.daily_fat as number }
+          : null;
+
+        const fallbackText = [
+          `Comida registrada: **${meal_type}**`,
+          `${foods.map((f) => `${f.name} (${f.portion})`).join(", ")}`,
+          `**${Math.round(totals.calories)} kcal** | P: ${totals.protein.toFixed(1)}g | C: ${totals.carbs.toFixed(1)}g | G: ${totals.fat.toFixed(1)}g`,
+        ].join("\n");
+
+        return widget({
+          props: {
+            entry_id: record.id,
+            meal_type,
+            foods,
+            totals: {
+              calories: Math.round(totals.calories),
+              protein: Math.round(totals.protein * 10) / 10,
+              carbs: Math.round(totals.carbs * 10) / 10,
+              fat: Math.round(totals.fat * 10) / 10,
             },
-          ],
-          structuredContent: { id: record.id, meal_type, foods, totals },
-        };
+            today_totals: {
+              calories: Math.round(today_totals.calories),
+              protein: Math.round(today_totals.protein * 10) / 10,
+              carbs: Math.round(today_totals.carbs * 10) / 10,
+              fat: Math.round(today_totals.fat * 10) / 10,
+            },
+            goals: goalData,
+          },
+          output: text(fallbackText),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import { widget, text } from "mcp-use/server";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
@@ -980,7 +981,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
       title: "Get Today's Workout",
       description:
         "Shows what workout you should do today based on your current program and what you've done this week. " +
-        "Identifies the next unfinished workout day in the schedule.",
+        "Identifies the next unfinished workout day in the schedule. Returns an interactive session tracker widget.",
+      widget: { name: "session-tracker", invoking: "Loading workout…", invoked: "Workout ready" },
       schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
@@ -1081,18 +1083,179 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
 
         lines.push(`\nTo log this workout use \`cal_log_full_workout\` with workout_key \`p${currentPhase}_${dayId}\``);
 
-        return {
-          content: [{ type: "text", text: lines.join("\n") }],
-          structuredContent: {
+        return widget({
+          props: {
             day_id: dayId,
             day_name: day.name,
             day_focus: day.focus,
             phase: currentPhase,
+            program_name: programName,
             workout_key: `p${currentPhase}_${dayId}`,
             exercises: day.exercises,
             week_progress: { completed: completedDays.size, total: allDays.length },
           },
-        };
+          output: text(lines.join("\n")),
+        });
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // TODAY DASHBOARD — single-call snapshot for chat apps
+  // ──────────────────────────────────────────────────────────────
+  server.tool(
+    {
+      name: "cal_get_today_dashboard",
+      title: "Today's Dashboard",
+      description:
+        "One-call snapshot of today: nutrition progress vs goals, today's workout from active program, readiness score, and training streak. " +
+        "Returns a visual dashboard widget. Use this when the user asks 'how's my day?', 'what should I do today?', or opens the chat without a specific request.",
+      widget: { name: "today-dashboard", invoking: "Loading your day…", invoked: "Dashboard ready" },
+      schema: z.object({}).strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async (_input, ctx) => {
+      try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
+        const todayStr = today(tz);
+        const weekStart = startOfWeek(tz);
+
+        // Parallel: nutrition + sessions + lumbar + settings + active program
+        const [nutritionEntries, nutritionGoals, weekSessions, lastLumbar, settings, userPrograms] = await Promise.all([
+          pb.collection("nutrition_entries").getFullList({
+            filter: pb.filter("user = {:userId} && logged_at >= {:from}", { userId, from: `${todayStr} 00:00:00` }),
+            requestKey: null,
+          }),
+          pb.collection("nutrition_goals").getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null }).catch(() => null),
+          pb.collection("sessions").getFullList({
+            filter: pb.filter("user = {:userId} && completed_at >= {:weekStart}", { userId, weekStart }),
+            fields: "id,workout_key,phase,day,completed_at",
+            requestKey: null,
+          }),
+          pb.collection("lumbar_checks").getFirstListItem(pb.filter("user = {:userId}", { userId }), { sort: "-date", requestKey: null }).catch(() => null),
+          pb.collection("settings").getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null }).catch(() => null),
+          pb.collection("user_programs").getFullList({
+            filter: pb.filter("user = {:userId} && is_current = true", { userId }),
+            expand: "program",
+            requestKey: null,
+          }),
+        ]);
+
+        // Nutrition totals
+        const nutrition = nutritionEntries.reduce(
+          (acc, e) => ({
+            calories: acc.calories + (e.total_calories as number),
+            protein: acc.protein + (e.total_protein as number),
+            carbs: acc.carbs + (e.total_carbs as number),
+            fat: acc.fat + (e.total_fat as number),
+          }),
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+        const goals = nutritionGoals
+          ? { calories: nutritionGoals.daily_calories as number, protein: nutritionGoals.daily_protein as number, carbs: nutritionGoals.daily_carbs as number, fat: nutritionGoals.daily_fat as number }
+          : null;
+
+        // Readiness score
+        let readinessScore = 10;
+        const readinessFactors: string[] = [];
+        const lumbarScore = lastLumbar?.lumbar_score as number | undefined;
+        const lumbarDate = lastLumbar?.date as string | undefined;
+        const lumbarRecent = lumbarDate === todayStr || lumbarDate === daysAgo(1, tz);
+        if (lumbarScore !== undefined && lumbarRecent) {
+          if (lumbarScore <= 2) { readinessScore -= 3; readinessFactors.push("🔴 Lumbar bajo"); }
+          else if (lumbarScore === 3) { readinessScore -= 1; readinessFactors.push("🟡 Lumbar medio"); }
+          else { readinessFactors.push("🟢 Lumbar OK"); }
+        }
+        const weeklyGoal = (settings?.weekly_sessions_goal as number) ?? 4;
+        const sessionsDone = weekSessions.length;
+        if (sessionsDone >= weeklyGoal) { readinessFactors.push("✅ Meta semanal cumplida"); }
+        else { readinessFactors.push(`📅 ${sessionsDone}/${weeklyGoal} sesiones esta semana`); }
+        const readinessLabel = readinessScore >= 8 ? "Listo para entrenar" : readinessScore >= 5 ? "Entrena con cuidado" : "Considera descansar";
+
+        // Today's workout
+        let workoutData: {
+          has_workout: boolean; day_name: string; day_focus: string; program_name: string;
+          exercises: Array<{ name: string; sets: number; reps: string; rest: number }>;
+          week_progress: { completed: number; total: number }; workout_key: string;
+        } | null = null;
+
+        if (userPrograms.length > 0) {
+          const program = userPrograms[0].expand?.program as Record<string, unknown>;
+          const programId = program?.id as string;
+          const programName = localize(program?.name as string);
+          const currentPhase = (settings?.phase as number) ?? 1;
+
+          const programExercises = await pb.collection("program_exercises").getFullList({
+            filter: pb.filter("program = {:programId} && phase_number = {:phase}", { programId, phase: currentPhase }),
+            sort: "day_id,sort_order",
+            requestKey: null,
+          });
+
+          const dayMap = new Map<string, { name: string; focus: string; exercises: Array<{ name: string; sets: number; reps: string; rest: number }> }>();
+          for (const ex of programExercises) {
+            const dayId = ex.day_id as string;
+            if (!dayMap.has(dayId)) dayMap.set(dayId, { name: localize(ex.day_name), focus: localize(ex.day_focus), exercises: [] });
+            dayMap.get(dayId)!.exercises.push({ name: localize(ex.exercise_name), sets: ex.sets as number, reps: ex.reps as string, rest: ex.rest_seconds as number });
+          }
+
+          const completedDays = new Set(weekSessions.map((s) => s.day as string));
+          const allDays = [...dayMap.entries()];
+          const nextDay = allDays.find(([dayId]) => !completedDays.has(dayId));
+
+          if (nextDay) {
+            const [dayId, day] = nextDay;
+            workoutData = {
+              has_workout: true,
+              day_name: day.name,
+              day_focus: day.focus,
+              program_name: programName,
+              exercises: day.exercises,
+              week_progress: { completed: completedDays.size, total: allDays.length },
+              workout_key: `p${currentPhase}_${dayId}`,
+            };
+          } else {
+            workoutData = {
+              has_workout: false,
+              day_name: "Semana completa",
+              day_focus: "Descanso activo",
+              program_name: programName,
+              exercises: [],
+              week_progress: { completed: completedDays.size, total: allDays.length },
+              workout_key: "",
+            };
+          }
+        }
+
+        const streak = (settings?.sessions_streak as number) ?? 0;
+
+        return widget({
+          props: {
+            readiness: { score: readinessScore, label: readinessLabel, factors: readinessFactors },
+            workout: workoutData,
+            nutrition: {
+              calories: { consumed: Math.round(nutrition.calories), goal: goals?.calories ?? 0 },
+              protein: { consumed: Math.round(nutrition.protein * 10) / 10, goal: goals?.protein ?? 0 },
+              carbs: { consumed: Math.round(nutrition.carbs * 10) / 10, goal: goals?.carbs ?? 0 },
+              fat: { consumed: Math.round(nutrition.fat * 10) / 10, goal: goals?.fat ?? 0 },
+              meals_logged: nutritionEntries.length,
+            },
+            streak,
+          },
+          output: text(
+            [
+              `# Tu día — ${todayStr}`,
+              `Readiness: ${readinessScore}/10 — ${readinessLabel}`,
+              goals ? `Calorías: ${Math.round(nutrition.calories)}/${goals.calories} kcal` : `Calorías hoy: ${Math.round(nutrition.calories)} kcal`,
+              workoutData?.has_workout ? `Entrenamiento: ${workoutData.day_name} — ${workoutData.day_focus} (${workoutData.exercises.length} ejercicios)` : "Sin entrenamiento programado hoy",
+              streak > 0 ? `Racha: ${streak} días 🔥` : "",
+            ].filter(Boolean).join("\n")
+          ),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
