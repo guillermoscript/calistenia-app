@@ -1,239 +1,127 @@
-# Calistenia App
+<div align="center">
 
-A full-featured calisthenics training web app built for a 6-month progressive program. Track workouts session by session, log sets with reps and notes, watch form videos inline, and follow your progress through four structured phases — all from the browser.
+# 🏋️ Calistenia
+
+### Your AI calisthenics & fitness coach — workouts, nutrition, and progress in one app.
+
+Train with a structured calisthenics program, log every set, track your nutrition, run cardio with live GPS, and let an AI coach adapt the plan to you. Free, open source, and self-hostable.
+
+**[📱 Download the Android app](https://gym.guille.tech/download)** &nbsp;·&nbsp; **[🌐 Try the web app](https://gym.guille.tech)** &nbsp;·&nbsp; **[⭐ Star this repo](https://github.com/guillermoscript/calistenia-app)**
+
+![React Native](https://img.shields.io/badge/React_Native-Expo-000?logo=expo)
+![React](https://img.shields.io/badge/Web-React_+_Vite-61DAFB?logo=react&logoColor=000)
+![PocketBase](https://img.shields.io/badge/Backend-PocketBase-b8dbe4?logo=pocketbase&logoColor=000)
+![License: MIT](https://img.shields.io/badge/License-MIT-green)
+
+</div>
+
+---
+
+## Why Calistenia?
+
+Most fitness apps are paywalled, bloated, or cloud-locked. Calistenia is the opposite:
+
+- **🤖 AI coach built in** — get a personalized plan, ask questions, and let the app adjust your training and nutrition.
+- **🏃 One app for everything** — strength, calisthenics skills, cardio with GPS, nutrition, and habits, instead of five separate apps.
+- **📵 Works offline** — all your data writes fall back to local storage when you're off the grid. Nothing is lost.
+- **🔓 Free & open source (MIT)** — no subscription, no ads. Self-host it on a cheap VPS and own your data.
+- **📲 Real native app + web PWA** — install the Android APK or use it in any browser.
+
+> **Get it now:** [gym.guille.tech/download](https://gym.guille.tech/download) (Android) or [gym.guille.tech](https://gym.guille.tech) (web).
 
 ## Features
 
-- **6-month structured program** — 4 phases (Base, Strength, Intensity, Peak), each with 5 workout days and 2 rest days per week
-- **Session tracking** — start any workout, step through exercises one by one, log sets with reps and an optional note
-- **Rest timer** — auto-starts between sets with configurable duration, plus a full-screen rest screen with progress ring
-- **Isometric timer** — holds and static exercises use a countdown timer with audio cue instead of rep counting
-- **YouTube integration** — tap any exercise name to watch an embedded tutorial video in a modal without leaving the app
-- **Lumbar protocol** — dedicated Wednesday routine for lower-back health with extra coaching notes and priority indicators
-- **Progress page** — view logged sets grouped by workout, total session count, streaks, and per-exercise history
-- **Week plan widget** — overview card on the dashboard showing the 7-day split for the current phase
-- **Program selector** — switch between phases and set a custom start date; the app derives your current week automatically
-- **Offline-first fallback** — all data writes fall back to `localStorage` if PocketBase is unavailable
-- **Light / dark mode** — toggle in the header; light mode is the default
-- **Responsive layout** — works on mobile and desktop; day selector and phase tabs scroll horizontally on small screens
+### 💪 Training
+- **Structured 6-month program** — 4 progressive phases (Base → Strength → Intensity → Peak) with daily workouts.
+- **Session tracking** — step through exercises one by one, log sets, reps, and notes.
+- **Rest & isometric timers** — auto-start rest countdowns and hold timers with audio + haptic cues.
+- **Form videos inline** — tap any exercise to watch a tutorial without leaving the app.
+- **Circuits & HIIT** — timed circuit/interval workouts with round tracking.
+
+### 🥗 Nutrition
+- **Food & macro logging** — track calories and macros, snap photos, and hit daily targets.
+- **AI nutrition scoring** — quality feedback on what you eat, not just calorie counting.
+
+### 🏃 Cardio
+- **Live GPS sessions** — track route, distance, and pace on a map (MapLibre), with a foreground service so it keeps running in your pocket.
+- **Races & challenges** — set distance goals and compete.
+
+### 🎮 Engagement
+- **Gamification** — streaks, badges, and achievements to keep you coming back.
+- **Social** — comments and reactions on sessions, with push notifications.
+- **Reminders** — local notifications so you never skip a workout.
+- **Home-screen widgets** — today's workout, weekly cardio km, and a calories ring, right on your Android home screen.
 
 ## Tech stack
 
-| Layer | Choice |
+A pnpm monorepo with shared business logic across native and web.
+
+| Part | Stack |
 |---|---|
-| Frontend | React 18, Vite 5 |
-| Styling | Tailwind CSS v3, shadcn/ui components |
-| Backend | PocketBase (SQLite, self-hosted) |
-| Icons | Lucide React |
-| Testing | Playwright |
+| **Mobile** (`apps/mobile`) | React Native + Expo, expo-router, MapLibre, Notifee, Sentry, Android widgets |
+| **Web** (`apps/web`) | React + Vite, Tailwind CSS, shadcn/ui, PWA |
+| **Shared core** (`packages/core`) | Cross-platform hooks, data layer, i18n (EN/ES) |
+| **AI / MCP** (`mcp-server`) | MCP server + AI API for the coach and smart tools |
+| **Backend** | PocketBase (SQLite, self-hosted) — 30+ collections, migration-driven |
+| **Testing** | Playwright |
+
+## Repo layout
+
+```
+calistenia-app/
+├── apps/
+│   ├── mobile/      # Expo React Native app (Android APK + iOS)
+│   └── web/         # React + Vite PWA
+├── packages/
+│   └── core/        # Shared hooks, data, locales
+├── mcp-server/      # AI coach + MCP tools
+├── pb_migrations/   # PocketBase schema migrations
+└── pocketbase       # PocketBase binary
+```
 
 ## Getting started
 
-### 1. Install dependencies
+Requires **Node 20+** and **pnpm 10+**.
 
 ```bash
-npm install
+# 1. Install deps (whole monorepo)
+pnpm install
+
+# 2. Start PocketBase (backend + API)
+pnpm pb:serve
+# Admin UI: http://127.0.0.1:8090/_/  (create admin on first run)
+
+# 3a. Run the web app
+pnpm --filter @calistenia/web dev      # http://localhost:5173
+
+# 3b. Run the mobile app
+cd apps/mobile && pnpm start           # Expo dev server
 ```
 
-### 2. Start PocketBase
+Migrations in `pb_migrations/` apply automatically on PocketBase start.
 
-A PocketBase binary is included at the project root. Start it with:
+### Mobile build (Android APK)
+
+A GitHub Action (`.github/workflows/build-mobile-apk.yml`) builds the release APK and publishes it as a GitHub Release. The web download page fetches the latest release automatically.
 
 ```bash
-npm run pb:serve
-# or: ./pocketbase serve
-# Admin UI: http://127.0.0.1:8090/_/
+# Trigger a release: bump version in apps/mobile/app.json, then
+git tag mobile-v1.0.1 && git push origin mobile-v1.0.1
 ```
 
-Create an admin account on first run, then create the following collections:
+## Deployment
 
-**sessions**
-| Field | Type |
-|---|---|
-| `workout_key` | text |
-| `phase` | number |
-| `day` | text |
-| `title` | text |
-| `completed_at` | date |
-
-**sets_log**
-| Field | Type |
-|---|---|
-| `exercise_id` | text |
-| `workout_key` | text |
-| `reps` | text |
-| `note` | text |
-| `logged_at` | date |
-
-**settings**
-| Field | Type |
-|---|---|
-| `user_key` | text |
-| `phase` | number |
-| `start_date` | date |
-| `weekly_goal` | number |
-
-Enable email/password authentication on the built-in `users` collection.
-
-### 3. Configure environment
+The web app + PocketBase ship as a single Docker image (multi-stage build) and deploy via Dokploy + GitHub Actions on push to `main`. PocketBase serves both the API (`/_/`) and the static frontend from one port (`8090`). See `Dockerfile` and `docker-compose.yml`.
 
 ```bash
-cp .env.example .env
+# Local smoke test
+docker compose up --build      # http://localhost:8090
 ```
 
-The only variable is:
+## Contributing
 
-```
-VITE_POCKETBASE_URL=http://127.0.0.1:8090
-```
-
-### 4. Run the dev server
-
-```bash
-npm run dev
-```
-
-The app runs at `http://localhost:5173` by default.
-
-## Available scripts
-
-| Script | Description |
-|---|---|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Serve the production build locally |
-| `npm run pb:serve` | Start PocketBase on port 8090 |
-| `npm run pb:migrate` | Run PocketBase migration script |
-
-## Program structure
-
-The 6-month plan is defined in `src/data/workouts.js`.
-
-| Phase | Weeks | Focus |
-|---|---|---|
-| 1 — Base & Activation | 1–6 | Fundamentals, posture, lumbar rehab |
-| 2 — Fundamental Strength | 7–13 | Pull-ups, dips, squat progressions |
-| 3 — Intensity & Skills | 14–20 | Muscle-ups, pistol squats, L-sit, handstand |
-| 4 — Peak & Consolidation | 21–26 | One-arm progressions, front lever, free handstand |
-
-Each week day has a fixed focus:
-
-| Day | Focus |
-|---|---|
-| Monday | Push + Core |
-| Tuesday | Pull + Mobility |
-| Wednesday | Lumbar + Stretching |
-| Thursday | Legs + Glutes |
-| Friday | Full Body + Core |
-| Saturday | Active walk |
-| Sunday | Full rest |
-
-## Project structure
-
-```
-src/
-  pages/
-    AuthPage.jsx          # Login / register
-    DashboardPage.jsx     # Home with week overview and stats
-    WorkoutPage.jsx       # Day selector and session launcher
-    ProgressPage.jsx      # Logged sets and session history
-    LumbarPage.jsx        # Lumbar-specific exercise reference
-  components/
-    SessionView.jsx       # Step-by-step workout session UI
-    ExerciseCard.jsx      # Single exercise card with log form
-    RestTimer.jsx         # Full-screen rest countdown
-    Timer.jsx             # Countdown timer for isometric holds
-    WeekPlanWidget.jsx    # 7-day plan summary card
-    LumbarCheckModal.jsx  # Pre-session lumbar check dialog
-    ProgramSelectorModal.jsx  # Phase + start date picker
-    YoutubeModal.jsx      # Embedded YouTube tutorial dialog
-    ui/                   # shadcn/ui component primitives
-  data/
-    workouts.js           # All exercises, phases, and week days
-  hooks/
-    useAuth.js            # PocketBase auth state hook
-  lib/
-    pocketbase.js         # PocketBase client singleton
-  index.css               # CSS variables, light + dark theme tokens
-  App.jsx                 # Root with routing and theme toggle
-```
-
-## Deployment (Dokploy + GitHub Actions)
-
-### How it works
-
-The included `Dockerfile` is a three-stage build:
-
-1. **`frontend-builder`** — installs Node deps and runs `vite build`. The compiled assets land in `dist/`.
-2. **`pb-downloader`** — downloads the PocketBase `linux/amd64` binary from GitHub Releases.
-3. **Runtime** — copies the binary + `dist/` (mounted as `pb_public`) into a minimal Debian image. PocketBase starts and serves both the API (`/_/`) and the static frontend from a single port (`8090`).
-
-Migrations in `pb_migrations/` are auto-applied on every container start.
-
-### 1. GitHub Actions setup
-
-The workflow at `.github/workflows/docker.yml` triggers on every push to `main` (and on version tags). It:
-
-- Builds the Docker image for `linux/amd64`
-- Pushes it to **GitHub Container Registry** (`ghcr.io/<owner>/<repo>:main`)
-- Uses layer caching so rebuilds are fast
-
-**Required secret** — add this in your GitHub repo under *Settings → Secrets and variables → Actions*:
-
-| Secret | Value |
-|---|---|
-| `VITE_POCKETBASE_URL` | Your public app URL, e.g. `https://calistenia.example.com` |
-
-This is baked into the Vite build so the browser JS knows where to call the API.
-
-### 2. Dokploy setup
-
-In your Dokploy dashboard, create a new **App** and configure it as follows:
-
-**Source**
-- Type: Docker image
-- Image: `ghcr.io/<your-github-username>/calistenia-app:main`
-- Registry: GitHub Container Registry (add your GHCR token in Dokploy's registry settings)
-
-**Port**
-- Container port: `8090`
-- Expose via Traefik/reverse-proxy on `443` (HTTPS)
-
-**Volumes (bind mount)**
-- Host path: `/opt/calistenia-app/pb_data` (or any path you control on the server)
-- Container path: `/app/pb_data`
-
-**Domain**
-- Set your domain (e.g. `calistenia.example.com`) — make sure it matches the `VITE_POCKETBASE_URL` secret
-
-**Redeploy trigger**
-- Enable "Deploy webhook" in Dokploy and paste the URL into your GitHub repo under *Settings → Webhooks*, or use the Dokploy GitHub integration for automatic redeploys on push.
-
-### 3. First boot
-
-On first run, PocketBase will:
-1. Create `pb_data/data.db` (SQLite)
-2. Apply all migrations automatically
-3. Prompt you to create an admin account at `https://your-domain/_/`
-
-Visit `https://your-domain/_/` to finish setup and create your admin credentials.
-
-### Local smoke-test with Docker Compose
-
-```bash
-docker compose up --build
-# App + API: http://localhost:8090
-# Admin UI:  http://localhost:8090/_/
-```
-
-Data is stored in `./pb_data_local/` (git-ignored).
-
-## Notes
-
-- If PocketBase is not running, the app automatically falls back to `localStorage` for all reads and writes. No data is lost.
-- The `pb_migrations/` directory contains migration scripts that can be run with `npm run pb:migrate` to recreate collections programmatically.
-- Playwright end-to-end tests live in `tests/`. Run them with `npx playwright test` after starting both the dev server and PocketBase.
+Issues and PRs welcome. If Calistenia helps you train, a ⭐ on the repo goes a long way and helps others discover it.
 
 ## License
 
-See `LICENSE.md`.
+MIT — see [`LICENSE.md`](./LICENSE.md). Use it, fork it, self-host it.
