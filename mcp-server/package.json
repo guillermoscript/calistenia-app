@@ -20,6 +20,7 @@
     "@opentelemetry/sdk-node": "^0.213.0",
     "ai": "^6.0.116",
     "dotenv": "^17.3.1",
+    "expo-server-sdk": "^3.15.0",
     "langfuse": "^3.38.6",
     "mcp-use": "^1.30.2",
     "pocketbase": "^0.26.8",

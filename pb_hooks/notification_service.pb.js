@@ -162,7 +162,7 @@ onRecordAfterCreateSuccess(function(e) {
     var authorId = e.record.getString("author")
     var sessionId = e.record.getString("session_id")
     var parentId = e.record.getString("parent_id")
-    var commentBody = e.record.getString("body") || ""
+    var commentBody = e.record.getString("text") || ""
     var preview = commentBody.length > 60 ? commentBody.substring(0, 60) + "..." : commentBody
 
     if (!authorId || !sessionId) return
@@ -228,6 +228,48 @@ onRecordAfterCreateSuccess(function(e) {
     console.log("[notif] comment hook error:", err)
   }
 }, "comments")
+
+// ── Comment reaction notifications ──────────────────────────────────────────
+
+onRecordAfterCreateSuccess(function(e) {
+  try {
+    const reactorId = e.record.getString("reactor")
+    const commentId = e.record.getString("comment_id")
+    const emoji = e.record.getString("emoji") || "❤️"
+
+    if (!reactorId || !commentId) return
+
+    let authorId = ""
+    try {
+      const comment = $app.findRecordById("comments", commentId)
+      authorId = comment.getString("author")
+    } catch (err) {
+      return
+    }
+
+    if (!authorId || authorId === reactorId) return
+
+    const reactorName = getUserName(reactorId)
+
+    createNotification(
+      authorId,
+      "reaction",
+      reactorId,
+      commentId,
+      "comment",
+      { emoji: emoji, reactorName: reactorName }
+    )
+
+    sendPush(
+      authorId,
+      (reactorName || "Alguien") + " " + emoji,
+      "Reaccionó a tu comentario",
+      "/feed"
+    )
+  } catch (err) {
+    console.log("[notif] comment_reaction hook error:", err)
+  }
+}, "comment_reactions")
 
 // ── Challenge join + invite notifications ────────────────────────────────────
 
