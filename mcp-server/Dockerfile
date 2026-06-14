@@ -13,10 +13,10 @@ RUN npm run build
 # ── Runtime ───────────────────────────────────────────────────────────────────
 FROM node:20-alpine
 
-# Public URL of this server — baked at build time so it's always correct.
-# Override at runtime with -e SERVER_URL=... if needed.
-ARG SERVER_URL=http://localhost:3001
-ENV SERVER_URL=${SERVER_URL}
+# Public origin (SERVER_URL) is read at RUNTIME from the environment — supply it
+# via Dokploy env vars (prod) or docker-compose/.env (local). Not baked into the
+# image: keeping it out of the build avoids shipping an env-specific URL and the
+# localhost default that silently breaks OAuth discovery when left unset.
 
 WORKDIR /app
 

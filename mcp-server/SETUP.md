@@ -18,26 +18,54 @@ The server validates your **PocketBase JWT token** on every request. The token i
 
 ---
 
-## Option A: stdio mode (Claude Desktop)
+## Option A: Connector (recommended — deployed server, OAuth login)
 
-### 1. Copy env
+The deployed server (`https://gym-server.guille.tech`) supports OAuth 2.1 with
+dynamic client registration, so Claude Desktop can connect as a native
+**Connector** — no token pasting, no JSON editing.
+
+### 1. Add the connector
+Claude Desktop → **Settings → Connectors → Add custom connector** → paste:
+
+```
+https://gym-server.guille.tech/mcp
+```
+
+Claude reads the discovery docs, opens a browser to log in via PocketBase, and
+stores the token automatically.
+
+> **Requires** the `SERVER_URL` env var to be set to the public origin on the
+> deployed server (in Dokploy env vars), otherwise OAuth metadata advertises
+> `localhost` and the flow fails. It is read at runtime — no rebuild needed,
+> just set it and restart. Verify after deploy with:
+> ```bash
+> curl -s https://gym-server.guille.tech/.well-known/oauth-authorization-server
+> # issuer / authorization_endpoint / token_endpoint must show the public domain
+> ```
+
+---
+
+## Option B: stdio mode (local subprocess, manual token)
+
+### 1. Build + copy env
 ```bash
 cd mcp-server
+npm install && npm run build
 cp .env.example .env
 # Edit .env: set POCKETBASE_URL and PB_TOKEN
 ```
 
 ### 2. Add to Claude Desktop config
-File: `~/.claude/claude_desktop_config.json`
+File (macOS): `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "calistenia": {
       "command": "node",
-      "args": ["/Users/YOUR_NAME/Documents/ejercicios/calistenia-app/mcp-server/build/stdio.js"],
+      "args": ["/Users/YOUR_NAME/Documents/ejercicios/calistenia-app/mcp-server/build/server.js"],
       "env": {
-        "POCKETBASE_URL": "http://127.0.0.1:8090",
+        "POCKETBASE_URL": "https://gym.guille.tech",
         "PB_TOKEN": "YOUR_POCKETBASE_JWT_TOKEN_HERE"
       }
     }
@@ -49,32 +77,29 @@ File: `~/.claude/claude_desktop_config.json`
 
 ---
 
-## Option B: HTTP server mode (remote / multi-user)
+## Option C: remote HTTP via mcp-remote (manual token, no OAuth)
 
-### 1. Start the server
-```bash
-cd mcp-server
-cp .env.example .env
-# Set POCKETBASE_URL in .env
-npm start
-# → Listening on http://127.0.0.1:3002
-```
+Useful if you want to hit the deployed server but skip the OAuth flow.
 
-### 2. Connect from Claude Desktop
 ```json
 {
   "mcpServers": {
     "calistenia": {
-      "url": "http://127.0.0.1:3002/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_POCKETBASE_JWT_TOKEN"
-      }
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://gym-server.guille.tech/mcp",
+        "--header", "Authorization: Bearer YOUR_POCKETBASE_JWT_TOKEN"
+      ]
     }
   }
 }
 ```
 
-Each user provides their own token — the server validates it against PocketBase on every request.
+The server validates the token against PocketBase on every request.
+
+After connecting via any option, ask Claude to run **`cal_whoami`** to confirm
+auth works.
 
 ---
 
