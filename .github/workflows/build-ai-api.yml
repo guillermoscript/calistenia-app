@@ -61,7 +61,7 @@ jobs:
           tags: ${{ steps.meta-ai.outputs.tags }}
           labels: ${{ steps.meta-ai.outputs.labels }}
           build-args: |
-            SERVER_URL=https://gym-server.guille.tech
+            SERVER_URL=${{ vars.SERVER_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

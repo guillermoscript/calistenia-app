@@ -13,10 +13,13 @@ RUN npm run build
 # ── Runtime ───────────────────────────────────────────────────────────────────
 FROM node:20-alpine
 
-# Public origin (SERVER_URL) is read at RUNTIME from the environment — supply it
-# via Dokploy env vars (prod) or docker-compose/.env (local). Not baked into the
-# image: keeping it out of the build avoids shipping an env-specific URL and the
-# localhost default that silently breaks OAuth discovery when left unset.
+# Public origin of this server, baked at build time. CI supplies the real value
+# via --build-arg SERVER_URL=${{ vars.SERVER_URL }} (see build-ai-api.yml); the
+# localhost default only applies to a bare `docker build` with no arg. Required
+# so OAuth discovery metadata advertises the public domain. A runtime
+# `-e SERVER_URL=...` still overrides this if needed.
+ARG SERVER_URL=http://localhost:3001
+ENV SERVER_URL=${SERVER_URL}
 
 WORKDIR /app
 
