@@ -21,12 +21,20 @@ FROM node:20-alpine
 ARG SERVER_URL=http://localhost:3001
 ENV SERVER_URL=${SERVER_URL}
 
+# Run mcp-use in production mode. Without this it mounts widgets in DEV mode,
+# which tries to `mkdir /app/resources` as the non-root user and crashes the
+# container on boot (EACCES) — leaving the old container serving stale config.
+ENV NODE_ENV=production
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci --production
 
 COPY --from=builder /app/build ./build
+# Prebuilt widgets + manifest read by mcp-use production mode (dist/mcp-use.json,
+# dist/resources/widgets/*). Required or no interactive widgets are served.
+COPY --from=builder /app/dist ./dist
 COPY data/ ./data/
 
 RUN adduser -D -u 1001 apiuser
