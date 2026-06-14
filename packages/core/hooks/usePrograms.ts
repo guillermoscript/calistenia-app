@@ -250,11 +250,27 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         return
       }
 
-      try {
-        await loadFromPB(userId)
-      } catch (e: any) {
-        if (e?.code === 0) return // auto-cancelled, ignore
-        console.error('usePrograms: PB load error, falling back', e)
+      // Reintento ante fallos transitorios (status 0 = red/DNS/timeout/abort,
+      // 429, 5xx). En cold-start la conexión TLS aún no está caliente y la
+      // primera carga puede fallar; sin reintento caíamos a localStorage vacío
+      // toda la sesión ("no me carga el programa"). El timeout global acota cada
+      // intento, así que esto no se cuelga indefinidamente.
+      let lastErr: any = null
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          await loadFromPB(userId)
+          lastErr = null
+          break
+        } catch (e: any) {
+          lastErr = e
+          const status = e?.status
+          const transient = status === 0 || status === 429 || (typeof status === 'number' && status >= 500)
+          if (!transient) break
+          await new Promise(r => setTimeout(r, 400 * (attempt + 1)))
+        }
+      }
+      if (lastErr) {
+        console.error('usePrograms: PB load error, falling back', lastErr)
         // fallback values already set
       }
       setProgramsReady(true)

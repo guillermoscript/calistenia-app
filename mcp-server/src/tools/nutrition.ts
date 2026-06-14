@@ -439,6 +439,11 @@ export function registerNutritionTools(server: MCPServer, pbUrl: string) {
       title: "Get Nutrition Summary",
       description:
         "Get a nutrition summary for a date range: daily averages vs goals, most-logged meals, and consistency. Great for weekly/monthly nutrition reviews.",
+      widget: {
+        name: "nutrition-summary",
+        invoking: "Calculando resumen…",
+        invoked: "Resumen listo",
+      },
       schema: z
         .object({
           from_date: z.string().optional().describe("Start date (YYYY-MM-DD). Defaults to 7 days ago."),
@@ -470,7 +475,7 @@ export function registerNutritionTools(server: MCPServer, pbUrl: string) {
         ]);
 
         if (entries.length === 0) {
-          return { content: [{ type: "text", text: `No nutrition entries found between ${from} and ${to}.` }] };
+          return { content: [{ type: "text", text: `No se encontraron registros de nutrición entre ${from} y ${to}.` }] };
         }
 
         // Group by day
@@ -492,43 +497,93 @@ export function registerNutritionTools(server: MCPServer, pbUrl: string) {
         const avgCarbs = Math.round((totalCarbs / daysLogged) * 10) / 10;
         const avgFat = Math.round((totalFat / daysLogged) * 10) / 10;
 
-        const output = {
-          period: { from, to, days_with_data: daysLogged, total_entries: entries.length },
-          daily_averages: { calories: avgCalories, protein_g: avgProtein, carbs_g: avgCarbs, fat_g: avgFat },
-          goals: goals
-            ? {
-                calories: goals.daily_calories,
-                protein_g: goals.daily_protein,
-                carbs_g: goals.daily_carbs,
-                fat_g: goals.daily_fat,
-              }
-            : null,
-        };
+        // Compute overall adherence (average of per-macro adherence capped at 100%) when goals exist
+        const goalData = goals
+          ? {
+              calories: goals.daily_calories as number,
+              protein: goals.daily_protein as number,
+              carbs: goals.daily_carbs as number,
+              fat: goals.daily_fat as number,
+            }
+          : null;
 
-        let text: string;
-        if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(output, null, 2);
-        } else {
-          const pct = (actual: number, goal: number) => {
-            const p = Math.round((actual / goal) * 100);
-            return `${p}% of goal`;
-          };
-
-          const lines = [
-            `# Nutrition Summary (${from} → ${to})`,
-            `**${daysLogged} days** tracked | **${entries.length}** total meals\n`,
-            `## Daily Averages`,
-            `| Macro | Avg | ${goals ? "Goal | %" : ""} |`,
-            `|-------|-----|${goals ? "------|---|" : ""}`,
-            `| Calories | ${avgCalories} kcal | ${goals ? `${goals.daily_calories} kcal | ${pct(avgCalories, goals.daily_calories)} |` : ""}`,
-            `| Protein | ${avgProtein}g | ${goals ? `${goals.daily_protein}g | ${pct(avgProtein, goals.daily_protein)} |` : ""}`,
-            `| Carbs | ${avgCarbs}g | ${goals ? `${goals.daily_carbs}g | ${pct(avgCarbs, goals.daily_carbs)} |` : ""}`,
-            `| Fat | ${avgFat}g | ${goals ? `${goals.daily_fat}g | ${pct(avgFat, goals.daily_fat)} |` : ""}`,
+        let adherence_pct: number | null = null;
+        if (goalData) {
+          const macroAdherences = [
+            Math.min((avgCalories / goalData.calories) * 100, 100),
+            Math.min((avgProtein / goalData.protein) * 100, 100),
+            Math.min((avgCarbs / goalData.carbs) * 100, 100),
+            Math.min((avgFat / goalData.fat) * 100, 100),
           ];
-          text = lines.join("\n");
+          adherence_pct = Math.round(macroAdherences.reduce((a, b) => a + b, 0) / macroAdherences.length);
         }
 
-        return { content: [{ type: "text", text }], structuredContent: output };
+        // Most logged meals: count food names across all entries
+        const foodCounts: Record<string, number> = {};
+        for (const e of entries) {
+          const foods = e.foods as Array<{ name: string }> | null;
+          if (Array.isArray(foods)) {
+            for (const f of foods) {
+              if (f.name) {
+                const key = f.name.trim();
+                foodCounts[key] = (foodCounts[key] ?? 0) + 1;
+              }
+            }
+          }
+        }
+        const most_logged_meals = Object.entries(foodCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6)
+          .map(([name, count]) => ({ name, count }));
+
+        const widgetProps = {
+          from,
+          to,
+          days_logged: daysLogged,
+          total_entries: entries.length,
+          adherence_pct,
+          daily_avg: {
+            calories: avgCalories,
+            protein: avgProtein,
+            carbs: avgCarbs,
+            fat: avgFat,
+          },
+          goals: goalData,
+          most_logged_meals,
+        };
+
+        const pct = (actual: number, goal: number) => {
+          const p = Math.round((actual / goal) * 100);
+          return `${p}% de la meta`;
+        };
+
+        let summaryText: string;
+        if (response_format === ResponseFormat.JSON) {
+          summaryText = JSON.stringify(widgetProps, null, 2);
+        } else {
+          const lines = [
+            `# Resumen de nutrición (${from} → ${to})`,
+            `**${daysLogged} día${daysLogged !== 1 ? "s" : ""}** registrado${daysLogged !== 1 ? "s" : ""} | **${entries.length}** comidas totales`,
+            adherence_pct !== null ? `**Adherencia general: ${adherence_pct}%**\n` : "",
+            `## Promedio diario`,
+            `| Macro | Promedio | ${goalData ? "Meta | %" : ""} |`,
+            `|-------|---------|${goalData ? "------|---|" : ""}`,
+            `| Calorías | ${avgCalories} kcal | ${goalData ? `${goalData.calories} kcal | ${pct(avgCalories, goalData.calories)} |` : ""}`,
+            `| Proteína | ${avgProtein}g | ${goalData ? `${goalData.protein}g | ${pct(avgProtein, goalData.protein)} |` : ""}`,
+            `| Carbos | ${avgCarbs}g | ${goalData ? `${goalData.carbs}g | ${pct(avgCarbs, goalData.carbs)} |` : ""}`,
+            `| Grasa | ${avgFat}g | ${goalData ? `${goalData.fat}g | ${pct(avgFat, goalData.fat)} |` : ""}`,
+          ];
+          if (most_logged_meals.length > 0) {
+            lines.push(`\n## Más registrados`);
+            lines.push(most_logged_meals.map((m) => `- ${m.name} (×${m.count})`).join("\n"));
+          }
+          summaryText = lines.filter(Boolean).join("\n");
+        }
+
+        return widget({
+          props: widgetProps,
+          output: text(summaryText),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

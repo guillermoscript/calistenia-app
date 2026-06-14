@@ -12,6 +12,8 @@ import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { colorScheme as nwColorScheme, useColorScheme } from 'nativewind'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalHost } from '@rn-primitives/portal'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
@@ -85,7 +87,9 @@ function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <KeyboardProvider>
+        <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>
         <StatusBar style="auto" />
         <Providers>
           <Stack screenOptions={{
@@ -102,7 +106,9 @@ function RootLayout() {
         </Providers>
         <OfflineBanner />
         <PortalHost />
-      </ThemeProvider>
+        </ThemeProvider>
+      </KeyboardProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   )
 }

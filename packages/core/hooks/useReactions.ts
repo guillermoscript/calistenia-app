@@ -16,15 +16,14 @@ export function useReactions(userId: string | null) {
     if (!available) return
 
     try {
+      // pb.filter() pre-sustituye los placeholders {:sidN}; pasarlos como
+      // opciones sueltas NO funciona (el SDK no las sustituye) y devolvía 400.
       const allReactions = await pb.collection('feed_reactions').getFullList({
-        filter: sessionIds.map((_, i) => `session_id = {:sid${i}}`).join(' || '),
-        ...Object.fromEntries(sessionIds.map((id, i) => [`sid${i}`, id])),
+        filter: pb.filter(
+          sessionIds.map((_, i) => `session_id = {:sid${i}}`).join(' || '),
+          Object.fromEntries(sessionIds.map((id, i) => [`sid${i}`, id])),
+        ),
         $autoCancel: false,
-      }).catch(() => {
-        return pb.collection('feed_reactions').getFullList({
-          filter: sessionIds.map(id => `session_id = '${id}'`).join(' || '),
-          $autoCancel: false,
-        })
       }).catch(() => [] as any[])
 
       const map: ReactionsMap = {}

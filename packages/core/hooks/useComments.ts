@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl, getCurrentUser } from '../lib/pocketbase'
 
 export interface Comment {
   id: string
@@ -173,17 +173,43 @@ export function useComments(userId: string | null) {
     if (!available) return false
 
     try {
-      await pb.collection('comments').create({
+      const rec = await pb.collection('comments').create({
         session_id: sessionId,
         author: userId,
         text: text.trim(),
         parent_id: parentId || null,
       })
 
-      // Invalidate cache for this session
-      delete cacheTimestamps.current[sessionId]
       // Update count
       setCommentCounts(prev => ({ ...prev, [sessionId]: (prev[sessionId] || 0) + 1 }))
+
+      // Optimistic insert: mostramos el comentario al instante con los datos
+      // del usuario actual, sin esperar el reload completo del hilo (que hacía
+      // 2-3 round-trips extra y tardaba segundos). El reconcile va en background.
+      const me = getCurrentUser()
+      const optimistic: Comment = {
+        id: rec.id,
+        sessionId,
+        authorId: userId,
+        authorName: (me as any)?.display_name || (me as any)?.email?.split('@')[0] || '?',
+        authorAvatarUrl: me ? getUserAvatarUrl(me as any, '100x100') : null,
+        text: text.trim(),
+        parentId: parentId || null,
+        created: (rec as any).created || new Date().toISOString(),
+        replies: [],
+      }
+      setCommentsBySession(prev => {
+        const existing = prev[sessionId] || []
+        if (parentId) {
+          return {
+            ...prev,
+            [sessionId]: existing.map(c =>
+              c.id === parentId ? { ...c, replies: [...c.replies, optimistic] } : c,
+            ),
+          }
+        }
+        return { ...prev, [sessionId]: [...existing, optimistic] }
+      })
 
       // Create notification for session owner (or parent comment author for replies)
       if (sessionOwnerId && sessionOwnerId !== userId) {
@@ -198,8 +224,10 @@ export function useComments(userId: string | null) {
         }).catch(() => {})
       }
 
-      // Reload comments
-      await getComments(sessionId)
+      // Reconcile con el servidor en background (threading real, otros comentarios).
+      // NO bloquea el retorno: la UI ya muestra el comentario.
+      delete cacheTimestamps.current[sessionId]
+      void getComments(sessionId)
       return true
     } catch {
       return false

@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import { widget, text } from "mcp-use/server";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
@@ -75,9 +76,9 @@ export function registerCircuitTools(server: MCPServer, pbUrl: string) {
 
         const output = { total: result.totalItems, count: sessions.length, from_date: from, to_date: to, sessions };
 
-        let text: string;
+        let listText: string;
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(output, null, 2);
+          listText = JSON.stringify(output, null, 2);
         } else {
           const lines = [
             `# Circuit Sessions (${from} → ${to})`,
@@ -90,10 +91,10 @@ export function registerCircuitTools(server: MCPServer, pbUrl: string) {
             lines.push(`- **${toDateStr(s.started_at, tz)}** — ${s.name} [${modeLabel}] — ${s.rounds_completed}/${s.rounds_target} rounds — ${mins}m${secs}s`);
             if (s.note) lines.push(`  > ${s.note}`);
           }
-          text = lines.join("\n");
+          listText = lines.join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: output };
+        return { content: [{ type: "text", text: listText }], structuredContent: output };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -109,6 +110,7 @@ export function registerCircuitTools(server: MCPServer, pbUrl: string) {
       title: "Get Circuit Session Details",
       description:
         "Get full details of a specific circuit session including exercises, timing config, rounds completed, and notes.",
+      widget: { name: "circuit-result", invoking: "Cargando circuito…", invoked: "Circuito listo" },
       schema: z
         .object({
           session_id: z.string().describe("The circuit session record ID"),
@@ -155,13 +157,14 @@ export function registerCircuitTools(server: MCPServer, pbUrl: string) {
           } : null,
         };
 
-        let text: string;
+        const mins = Math.floor(output.duration_seconds / 60);
+        const secs = output.duration_seconds % 60;
+        const modeLabel = output.mode === "timed" ? "HIIT/Timed" : "Circuit";
+
+        let summaryText: string;
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(output, null, 2);
+          summaryText = JSON.stringify(output, null, 2);
         } else {
-          const mins = Math.floor(output.duration_seconds / 60);
-          const secs = output.duration_seconds % 60;
-          const modeLabel = output.mode === "timed" ? "HIIT/Timed" : "Circuit";
           const lines = [
             `# ${output.name}`,
             `**Mode:** ${modeLabel}`,
@@ -183,10 +186,24 @@ export function registerCircuitTools(server: MCPServer, pbUrl: string) {
             const repsStr = ex.reps ? ` — ${ex.reps}` : "";
             lines.push(`${i + 1}. ${ex.name}${repsStr}`);
           }
-          text = lines.join("\n");
+          summaryText = lines.join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: output };
+        return widget({
+          props: {
+            circuit_name: output.name,
+            mode: output.mode,
+            rounds_completed: output.rounds_completed,
+            rounds_target: output.rounds_target,
+            duration_seconds: output.duration_seconds,
+            started_at: output.started_at,
+            finished_at: output.finished_at,
+            note: output.note,
+            exercises: output.exercises,
+            config: output.config,
+          },
+          output: text(summaryText),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -384,13 +401,13 @@ export function registerCircuitTools(server: MCPServer, pbUrl: string) {
           completion_rate_percent: completionRate,
         };
 
-        let text: string;
+        let statsText: string;
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(output, null, 2);
+          statsText = JSON.stringify(output, null, 2);
         } else {
           const totalMins = Math.round(totalSeconds / 60);
           const avgMins = Math.round(avgSeconds / 60);
-          text = [
+          statsText = [
             `# Circuit Training Stats (${from} → ${to})`,
             "",
             `| Metric | Value |`,
@@ -405,7 +422,7 @@ export function registerCircuitTools(server: MCPServer, pbUrl: string) {
           ].join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: output };
+        return { content: [{ type: "text", text: statsText }], structuredContent: output };
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

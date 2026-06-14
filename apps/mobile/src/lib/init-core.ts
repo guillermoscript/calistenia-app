@@ -74,7 +74,9 @@ const pbUrl =
   process.env.EXPO_PUBLIC_PB_URL ||
   (__DEV__ && devHost ? `http://${devHost}:8090` : 'https://gym.guille.tech')
 
-const aiApiUrl = process.env.EXPO_PUBLIC_AI_API_URL || 'https://test.guille.tech'
+const aiApiUrl =
+  process.env.EXPO_PUBLIC_AI_API_URL ||
+  (__DEV__ && devHost ? `http://${devHost}:3001` : 'https://gym-server.guille.tech')
 
 // Promesa exportada para que el bootstrap espere la sesión persistida
 // antes de decidir login vs home.

@@ -30,7 +30,7 @@ initCore({
     // Vacío en prod → la web se sirve desde el propio PocketBase
     pbUrl: import.meta.env.VITE_POCKETBASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8090' : window.location.origin),
     // Vacío en dev → el proxy de Vite maneja /api/*
-    aiApiUrl: import.meta.env.VITE_AI_API_URL || (import.meta.env.DEV ? '' : 'https://test.guille.tech'),
+    aiApiUrl: import.meta.env.VITE_AI_API_URL || (import.meta.env.DEV ? '' : 'https://gym-server.guille.tech'),
     isDev: import.meta.env.DEV,
   },
   analytics: {

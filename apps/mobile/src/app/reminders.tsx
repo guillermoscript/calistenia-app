@@ -112,6 +112,210 @@ function clampMinute(val: string): string {
   return String(Math.min(59, Math.max(0, n))).padStart(2, '0')
 }
 
+// ── Shared sub-components (module-level so TextInput identity stays stable) ──────
+
+interface DayLabel { id: number; label: string; full: string }
+
+/** Hour : Minute number inputs with quick-time preset chips */
+function TimeAndDays({
+  quickTimes,
+  hour,
+  minute,
+  setHour,
+  setMinute,
+  days,
+  toggleDay,
+  dayLabels,
+  lime,
+}: {
+  quickTimes: string[][]
+  hour: string
+  minute: string
+  setHour: (v: string) => void
+  setMinute: (v: string) => void
+  days: number[]
+  toggleDay: (id: number) => void
+  dayLabels: DayLabel[]
+  lime: string
+}) {
+  return (
+    <View>
+      {/* HH:MM inputs */}
+      <View className="flex-row items-center mb-3">
+        <TextInput
+          value={hour}
+          onChangeText={setHour}
+          onBlur={() => setHour(clampHour(hour))}
+          keyboardType="number-pad"
+          maxLength={2}
+          accessibilityLabel="Hora"
+          className="w-16 h-14 text-center text-foreground bg-muted/30 rounded-xl border-0 font-bebas text-3xl"
+          style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: 'white', textAlign: 'center' }}
+        />
+        <Text className="font-bebas text-3xl text-muted-foreground mx-1" style={{ opacity: 0.4 }}>:</Text>
+        <TextInput
+          value={minute}
+          onChangeText={setMinute}
+          onBlur={() => setMinute(clampMinute(minute))}
+          keyboardType="number-pad"
+          maxLength={2}
+          accessibilityLabel="Minutos"
+          className="w-16 h-14 text-center text-foreground bg-muted/30 rounded-xl border-0 font-bebas text-3xl"
+          style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: 'white', textAlign: 'center' }}
+        />
+      </View>
+
+      {/* Quick-time presets */}
+      <View className="flex-row gap-1.5 mb-4">
+        {quickTimes.map(([h, m]) => {
+          const active = hour === h && minute === m
+          return (
+            <Pressable
+              key={`${h}${m}`}
+              onPress={() => { haptics.selection(); setHour(h); setMinute(m) }}
+              className={cn(
+                'flex-1 py-2 rounded-xl items-center',
+                active ? 'bg-lime/15' : 'bg-muted/20',
+              )}
+            >
+              <Text
+                className="font-mono text-[11px]"
+                style={{ color: active ? lime : 'rgba(255,255,255,0.35)' }}
+              >
+                {h}:{m}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+
+      {/* Days selector */}
+      <View className="flex-row gap-1 mb-4">
+        {dayLabels.map((d) => {
+          const active = days.includes(d.id)
+          return (
+            <Pressable
+              key={d.id}
+              onPress={() => toggleDay(d.id)}
+              accessibilityRole="button"
+              accessibilityLabel={d.full}
+              className={cn(
+                'flex-1 h-9 rounded-xl items-center justify-center',
+                active ? 'bg-lime/10 border border-lime/20' : 'bg-muted/20',
+              )}
+            >
+              <Text
+                className="font-mono text-[11px]"
+                style={{ color: active ? lime : 'rgba(255,255,255,0.3)' }}
+              >
+                {d.label}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+    </View>
+  )
+}
+
+/** Inline edit form rendered inside the timeline for an existing item */
+function EditForm({
+  item,
+  t,
+  onCancel,
+  onSave,
+  saving,
+  error,
+  hour,
+  minute,
+  setHour,
+  setMinute,
+  days,
+  toggleDay,
+  dayLabels,
+  lime,
+}: {
+  item: TimelineItem
+  t: (k: string) => string
+  onCancel: () => void
+  onSave: () => void
+  saving: boolean
+  error: string | null
+  hour: string
+  minute: string
+  setHour: (v: string) => void
+  setMinute: (v: string) => void
+  days: number[]
+  toggleDay: (id: number) => void
+  dayLabels: DayLabel[]
+  lime: string
+}) {
+  const acc = ACCENT[item.type]
+  return (
+    <View
+      className="mx-0 p-4 rounded-xl mb-1"
+      style={{ backgroundColor: acc.bg, borderWidth: 1, borderColor: acc.border }}
+    >
+      {/* Header */}
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center gap-2">
+          {item.subLabel ? <Text className="text-sm">{item.subLabel}</Text> : null}
+          <Text className="text-sm font-sans-medium text-foreground">{item.label}</Text>
+          <Text className="font-mono text-[10px] tracking-widest uppercase" style={{ color: acc.text }}>
+            {item.type === 'meal'
+              ? t('reminders.mealType')
+              : item.type === 'workout'
+              ? t('reminders.workoutType')
+              : t('reminders.pauseType')}
+          </Text>
+        </View>
+        <Pressable
+          onPress={onCancel}
+          className="size-8 items-center justify-center rounded-lg"
+          accessibilityLabel={t('common.cancel')}
+        >
+          <X size={14} color="rgba(255,255,255,0.4)" />
+        </Pressable>
+      </View>
+
+      <TimeAndDays
+        quickTimes={item.type === 'meal' ? MEAL_QUICK_TIMES : WORKOUT_QUICK_TIMES}
+        hour={hour}
+        minute={minute}
+        setHour={setHour}
+        setMinute={setMinute}
+        days={days}
+        toggleDay={toggleDay}
+        dayLabels={dayLabels}
+        lime={lime}
+      />
+
+      {error ? (
+        <Text className="text-[11px] text-red-400 mb-3">{error}</Text>
+      ) : null}
+
+      <View className="flex-row gap-2">
+        <Pressable
+          onPress={onSave}
+          disabled={saving || days.length === 0}
+          className="flex-1 h-10 rounded-xl items-center justify-center bg-lime"
+          style={{ opacity: saving || days.length === 0 ? 0.5 : 1 }}
+        >
+          <Text className="font-bebas text-base tracking-widest text-zinc-900">
+            {saving ? t('common.loading') : t('common.save').toUpperCase()}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={onCancel}
+          className="h-10 px-4 rounded-xl items-center justify-center bg-muted/20"
+        >
+          <Text className="font-mono text-[11px] text-muted-foreground">{t('common.cancel')}</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function RemindersScreen() {
@@ -401,146 +605,6 @@ export default function RemindersScreen() {
     }
   }
 
-  // ── Shared sub-components ─────────────────────────────────────────────────────
-
-  /** Hour : Minute number inputs with quick-time preset chips */
-  const TimeAndDays = ({ quickTimes }: { quickTimes: string[][] }) => (
-    <View>
-      {/* HH:MM inputs */}
-      <View className="flex-row items-center mb-3">
-        <TextInput
-          value={hour}
-          onChangeText={setHour}
-          onBlur={() => setHour(clampHour(hour))}
-          keyboardType="number-pad"
-          maxLength={2}
-          accessibilityLabel="Hora"
-          className="w-16 h-14 text-center text-foreground bg-muted/30 rounded-xl border-0 font-bebas text-3xl"
-          style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: 'white', textAlign: 'center' }}
-        />
-        <Text className="font-bebas text-3xl text-muted-foreground mx-1" style={{ opacity: 0.4 }}>:</Text>
-        <TextInput
-          value={minute}
-          onChangeText={setMinute}
-          onBlur={() => setMinute(clampMinute(minute))}
-          keyboardType="number-pad"
-          maxLength={2}
-          accessibilityLabel="Minutos"
-          className="w-16 h-14 text-center text-foreground bg-muted/30 rounded-xl border-0 font-bebas text-3xl"
-          style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: 'white', textAlign: 'center' }}
-        />
-      </View>
-
-      {/* Quick-time presets */}
-      <View className="flex-row gap-1.5 mb-4">
-        {quickTimes.map(([h, m]) => {
-          const active = hour === h && minute === m
-          return (
-            <Pressable
-              key={`${h}${m}`}
-              onPress={() => { haptics.selection(); setHour(h); setMinute(m) }}
-              className={cn(
-                'flex-1 py-2 rounded-xl items-center',
-                active ? 'bg-lime/15' : 'bg-muted/20',
-              )}
-            >
-              <Text
-                className="font-mono text-[11px]"
-                style={{ color: active ? LIME : 'rgba(255,255,255,0.35)' }}
-              >
-                {h}:{m}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
-
-      {/* Days selector */}
-      <View className="flex-row gap-1 mb-4">
-        {DAY_LABELS.map((d) => {
-          const active = days.includes(d.id)
-          return (
-            <Pressable
-              key={d.id}
-              onPress={() => toggleDay(d.id)}
-              accessibilityRole="button"
-              accessibilityLabel={d.full}
-              className={cn(
-                'flex-1 h-9 rounded-xl items-center justify-center',
-                active ? 'bg-lime/10 border border-lime/20' : 'bg-muted/20',
-              )}
-            >
-              <Text
-                className="font-mono text-[11px]"
-                style={{ color: active ? LIME : 'rgba(255,255,255,0.3)' }}
-              >
-                {d.label}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
-    </View>
-  )
-
-  /** Inline edit form rendered inside the timeline for an existing item */
-  const EditForm = ({ item }: { item: TimelineItem }) => {
-    const acc = ACCENT[item.type]
-    return (
-      <View
-        className="mx-0 p-4 rounded-xl mb-1"
-        style={{ backgroundColor: acc.bg, borderWidth: 1, borderColor: acc.border }}
-      >
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center gap-2">
-            {item.subLabel ? <Text className="text-sm">{item.subLabel}</Text> : null}
-            <Text className="text-sm font-sans-medium text-foreground">{item.label}</Text>
-            <Text className="font-mono text-[10px] tracking-widest uppercase" style={{ color: acc.text }}>
-              {item.type === 'meal'
-                ? t('reminders.mealType')
-                : item.type === 'workout'
-                ? t('reminders.workoutType')
-                : t('reminders.pauseType')}
-            </Text>
-          </View>
-          <Pressable
-            onPress={cancelEdit}
-            className="size-8 items-center justify-center rounded-lg"
-            accessibilityLabel={t('common.cancel')}
-          >
-            <X size={14} color="rgba(255,255,255,0.4)" />
-          </Pressable>
-        </View>
-
-        <TimeAndDays quickTimes={item.type === 'meal' ? MEAL_QUICK_TIMES : WORKOUT_QUICK_TIMES} />
-
-        {error ? (
-          <Text className="text-[11px] text-red-400 mb-3">{error}</Text>
-        ) : null}
-
-        <View className="flex-row gap-2">
-          <Pressable
-            onPress={handleEditSave}
-            disabled={saving || days.length === 0}
-            className="flex-1 h-10 rounded-xl items-center justify-center bg-lime"
-            style={{ opacity: saving || days.length === 0 ? 0.5 : 1 }}
-          >
-            <Text className="font-bebas text-base tracking-widest text-zinc-900">
-              {saving ? t('common.loading') : t('common.save').toUpperCase()}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={cancelEdit}
-            className="h-10 px-4 rounded-xl items-center justify-center bg-muted/20"
-          >
-            <Text className="font-mono text-[11px] text-muted-foreground">{t('common.cancel')}</Text>
-          </Pressable>
-        </View>
-      </View>
-    )
-  }
-
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
@@ -692,7 +756,17 @@ export default function RemindersScreen() {
 
             {/* Time + days (meal / workout) */}
             {showForm !== 'pause' ? (
-              <TimeAndDays quickTimes={showForm === 'meal' ? MEAL_QUICK_TIMES : WORKOUT_QUICK_TIMES} />
+              <TimeAndDays
+                quickTimes={showForm === 'meal' ? MEAL_QUICK_TIMES : WORKOUT_QUICK_TIMES}
+                hour={hour}
+                minute={minute}
+                setHour={setHour}
+                setMinute={setMinute}
+                days={days}
+                toggleDay={toggleDay}
+                dayLabels={DAY_LABELS}
+                lime={LIME}
+              />
             ) : (
               /* Pause form: interval + work-hour range */
               <View className="mb-4">
@@ -879,7 +953,22 @@ export default function RemindersScreen() {
                 if (isEditing) {
                   return (
                     <View key={item.id} className="ml-14">
-                      <EditForm item={item} />
+                      <EditForm
+                        item={item}
+                        t={t}
+                        onCancel={cancelEdit}
+                        onSave={handleEditSave}
+                        saving={saving}
+                        error={error}
+                        hour={hour}
+                        minute={minute}
+                        setHour={setHour}
+                        setMinute={setMinute}
+                        days={days}
+                        toggleDay={toggleDay}
+                        dayLabels={DAY_LABELS}
+                        lime={LIME}
+                      />
                     </View>
                   )
                 }

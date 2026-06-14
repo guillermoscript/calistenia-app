@@ -127,6 +127,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
       description:
         "Holistic readiness assessment: combines lumbar health, sleep, days since last workout, weekly progress vs goal, and weight trend into a single 1-10 score with a recommendation. " +
         "Use this before deciding whether/what to train today.",
+      widget: { name: "readiness-check", invoking: "Evaluando tu estado…", invoked: "Listo" },
       schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
@@ -288,21 +289,9 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
           recommendation = "Rest day recommended. Focus on recovery, sleep, and nutrition.";
         }
 
-        const output = {
-          readiness_score: score,
-          recommendation,
-          factors,
-          today: todayStr,
-          sessions_this_week: sessionsThisWeek,
-          weekly_goal: weeklyGoal,
-          already_trained_today: alreadyDoneToday,
-          days_since_last_workout: daysSinceLastWorkout === 999 ? null : daysSinceLastWorkout,
-          scheduled_workout: scheduledWorkout,
-        };
-
         const scoreBar = "🟩".repeat(score) + "⬜".repeat(10 - score);
 
-        let text = [
+        let summaryText = [
           `# Readiness: ${score}/10`,
           scoreBar,
           `*${recommendation}*\n`,
@@ -318,7 +307,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
           .join("\n");
 
         if (scheduledWorkout && !alreadyDoneToday) {
-          text += [
+          summaryText += [
             `\n## Scheduled: ${scheduledWorkout.workout_title}`,
             `*${scheduledWorkout.day_focus}* — ${scheduledWorkout.exercise_count} exercises`,
             ...scheduledWorkout.exercises.map((e) => `- ${e.name}: ${e.sets} × ${e.reps}`),
@@ -328,7 +317,21 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             .join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: output };
+        const scoreLabel = score >= 8 ? "Listo" : score >= 5 ? "Con cuidado" : "Descansa";
+
+        return widget({
+          props: {
+            score,
+            label: scoreLabel,
+            factors,
+            recommendations: [recommendation],
+            sessions_this_week: sessionsThisWeek,
+            weekly_goal: weeklyGoal,
+            already_trained_today: alreadyDoneToday,
+            days_since_last_workout: daysSinceLastWorkout === 999 ? null : daysSinceLastWorkout,
+          },
+          output: text(summaryText),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -484,6 +487,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
       description:
         "Compares your actual sessions against your program schedule over the last N weeks. " +
         "Identifies which workout days you skip most, muscle group imbalances, and exercises you're neglecting.",
+      widget: { name: "gap-analysis", invoking: "Analizando constancia…", invoked: "Análisis listo" },
       schema: z
         .object({
           weeks: z
@@ -620,9 +624,9 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
           total_actual_sessions: sessions.length,
         };
 
-        let text: string;
+        let gapSummaryText: string;
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(output, null, 2);
+          gapSummaryText = JSON.stringify(output, null, 2);
         } else {
           const lines = [
             `# Training Gap Analysis (last ${weeks} weeks)`,
@@ -655,10 +659,25 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             }
           }
 
-          text = lines.join("\n");
+          gapSummaryText = lines.join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: output };
+        const totalScheduled = scheduledDays.size * weeks;
+        const totalCompleted = sessions.length;
+        const completionPct = totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
+
+        return widget({
+          props: {
+            weeks,
+            scheduled: totalScheduled,
+            completed: totalCompleted,
+            completion_pct: completionPct,
+            day_completion: dayGaps,
+            neglected_exercises: neglectedExercises,
+            muscle_volume: sortedMuscles.map(([muscle, sets]) => ({ muscle, total_sets: sets })),
+          },
+          output: text(gapSummaryText),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -810,6 +829,117 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         }
 
         return { content: [{ type: "text", text }], structuredContent: output };
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // GET TRENDS — time-series charts: weight line + weekly volume bars
+  // ──────────────────────────────────────────────────────────────
+  server.tool(
+    {
+      name: "cal_get_trends",
+      title: "Training Trends Chart",
+      description:
+        "Visual time-series of body weight, training volume (sets), and sessions over time. " +
+        "Returns an interactive chart widget. Use this when the user asks 'show my progress', 'how's my weight trending', " +
+        "'am I training more?', or wants to see graphs of their data.",
+      widget: { name: "trends-chart", invoking: "Crunching your numbers…", invoked: "Trends ready" },
+      schema: z
+        .object({
+          period_days: z
+            .number()
+            .int()
+            .min(14)
+            .max(365)
+            .default(90)
+            .describe("How many days back to chart (default 90). Weight shows daily points; volume/sessions bucket by week."),
+        })
+        .strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async ({ period_days }, ctx) => {
+      try {
+        const auth = getAuthManager(ctx.auth, pbUrl);
+        const pb = auth.getClient();
+        const userId = auth.getUserId();
+        const tz = auth.getTimezone();
+        const fromStr = daysAgo(period_days, tz);
+        const todayStr = today(tz);
+        const todayEnd = `${todayStr} 23:59:59`;
+
+        const [weightEntries, sets, sessions] = await Promise.all([
+          pb.collection("weight_entries").getFullList({
+            filter: pb.filter("user = {:userId} && date >= {:from} && date <= {:to}", { userId, from: fromStr, to: todayStr }),
+            sort: "date",
+            fields: "id,weight_kg,date",
+            requestKey: null,
+          }),
+          pb.collection("sets_log").getFullList({
+            filter: pb.filter("user = {:userId} && logged_at >= {:from} && logged_at <= {:to}", { userId, from: fromStr, to: todayEnd }),
+            fields: "id,logged_at",
+            requestKey: null,
+          }),
+          pb.collection("sessions").getFullList({
+            filter: pb.filter("user = {:userId} && completed_at >= {:from} && completed_at <= {:to}", { userId, from: fromStr, to: todayEnd }),
+            fields: "id,completed_at",
+            requestKey: null,
+          }),
+        ]);
+
+        // Weight points (one per logged date, in kg)
+        const weightPoints = weightEntries.map((e) => ({ date: toDateStr(e.date as string, tz), kg: e.weight_kg as number }));
+        const kgs = weightPoints.map((p) => p.kg);
+        const firstKg = kgs.length ? kgs[0] : null;
+        const lastKg = kgs.length ? kgs[kgs.length - 1] : null;
+        const r1 = (n: number) => Math.round(n * 10) / 10;
+
+        // Weekly buckets for volume + sessions
+        const weeks = Math.ceil(period_days / 7);
+        const startMs = new Date(`${fromStr}T00:00:00`).getTime();
+        const bucketOf = (dateStr: string) => {
+          const ms = new Date(`${toDateStr(dateStr, tz)}T00:00:00`).getTime();
+          const b = Math.floor((ms - startMs) / (7 * 86400000));
+          return Math.min(Math.max(b, 0), weeks - 1);
+        };
+        const weekly = Array.from({ length: weeks }, (_, i) => {
+          const startDay = new Date(startMs + i * 7 * 86400000);
+          const label = `${String(startDay.getDate()).padStart(2, "0")}/${String(startDay.getMonth() + 1).padStart(2, "0")}`;
+          return { label, sets: 0, sessions: 0 };
+        });
+        for (const s of sets) weekly[bucketOf(s.logged_at as string)].sets += 1;
+        for (const s of sessions) weekly[bucketOf(s.completed_at as string)].sessions += 1;
+
+        const props = {
+          period_days,
+          weight: {
+            points: weightPoints,
+            first: firstKg !== null ? r1(firstKg) : null,
+            last: lastKg !== null ? r1(lastKg) : null,
+            delta: firstKg !== null && lastKg !== null ? r1(lastKg - firstKg) : null,
+            min: kgs.length ? r1(Math.min(...kgs)) : 0,
+            max: kgs.length ? r1(Math.max(...kgs)) : 0,
+          },
+          weekly,
+          totals: { sets: sets.length, sessions: sessions.length },
+        };
+
+        const weightLine = props.weight.delta !== null
+          ? `Peso: ${props.weight.first} → ${props.weight.last} kg (${props.weight.delta >= 0 ? "+" : ""}${props.weight.delta} kg en ${period_days} días)`
+          : "Peso: sin registros en el periodo";
+
+        return widget({
+          props,
+          output: text(
+            [
+              `# Tendencias — últimos ${period_days} días`,
+              weightLine,
+              `Volumen total: ${props.totals.sets} series en ${props.totals.sessions} sesiones`,
+            ].join("\n")
+          ),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

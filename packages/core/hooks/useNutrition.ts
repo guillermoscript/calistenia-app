@@ -125,7 +125,7 @@ export function useNutrition(userId: string | null) {
 
   // ─── Carga desde PocketBase ────────────────────────────────────────────────
   const loadFromPB = async (uid: string): Promise<void> => {
-    try {
+    const fetchOnce = async (): Promise<void> => {
       const todayStart = localMidnightAsUTC()
       const [entriesRes, goalsRes] = await Promise.all([
         pb.collection('nutrition_entries').getList(1, 200, {
@@ -180,11 +180,25 @@ export function useNutrition(userId: string | null) {
         const lsGoal = lsGetGoals()
         setGoals(lsGoal)
       }
-    } catch (e: any) {
-      if (e?.code === 0) return // auto-cancelled, ignore
-      console.error('PocketBase nutrition load error, falling back to localStorage', e)
-      loadFromLS()
     }
+
+    // Reintento ante fallos transitorios (status 0 = red/DNS/timeout/abort, 429,
+    // 5xx) antes de caer a localStorage. El timeout global acota cada intento.
+    let lastErr: any = null
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await fetchOnce()
+        return
+      } catch (e: any) {
+        lastErr = e
+        const status = e?.status
+        const transient = status === 0 || status === 429 || (typeof status === 'number' && status >= 500)
+        if (!transient) break
+        await new Promise(r => setTimeout(r, 400 * (attempt + 1)))
+      }
+    }
+    console.error('PocketBase nutrition load error, falling back to localStorage', lastErr)
+    loadFromLS()
   }
 
   // ─── On-demand fetch for a specific date ──────────────────────────────────

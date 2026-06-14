@@ -1,23 +1,29 @@
 /**
- * Hoja de comentarios — gorhom BottomSheetModal con lista de comentarios,
- * reacciones del post, respuestas 1-nivel y compositor de texto.
+ * Hoja de comentarios estilo Instagram.
  *
- * Cambios vs. versión anterior:
- *  - keyboardBehavior="interactive" + keyboardBlurBehavior="restore" +
- *    android_keyboardInputMode="adjustResize" → compositor siempre visible
- *  - BottomSheetTextInput con fontFamily DM Sans (DMSans_400Regular)
- *  - Visual polish: burbujas, avatares, cabecera, reacciones del post,
- *    pills de reacción, threading y compositor redesñados
+ * Implementación: <Modal> NATIVO (recomendado por las guías RN) en vez de un
+ * bottom-sheet JS. Ventajas decisivas en Android:
+ *  - Al NO ser navigationBarTranslucent, la ventana del Modal se dispone POR
+ *    ENCIMA de la barra de navegación → el compositor nunca colisiona con los
+ *    botones de Android (sin cálculos de insets, que en MIUI edge-to-edge
+ *    llegan a 0).
+ *  - KeyboardProvider + KeyboardAvoidingView (react-native-keyboard-controller)
+ *    dentro del Modal mantienen el input SIEMPRE sobre el teclado y la lista
+ *    scrollable encima — el flujo de comentarios real de Instagram.
  */
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react'
-import { View, Pressable, ActivityIndicator, Platform } from 'react-native'
-import { useColorScheme } from 'nativewind'
+import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import {
-  BottomSheetModal,
-  BottomSheetFlatList,
-  BottomSheetTextInput,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet'
+  View,
+  Pressable,
+  ActivityIndicator,
+  Platform,
+  FlatList,
+  TextInput,
+  StyleSheet,
+  Modal,
+} from 'react-native'
+import { useColorScheme } from 'nativewind'
+import { KeyboardProvider, KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { timeAgo } from '@calistenia/core/lib/dateUtils'
@@ -78,8 +84,6 @@ function authorHue(name: string): number {
   return Array.from(name).reduce((h, ch) => h + ch.charCodeAt(0), 0) % 360
 }
 
-const SNAP_POINTS = ['75%']
-
 // DM Sans font family names como están declaradas en tailwind.config.js
 const FONT_REGULAR = 'DMSans_400Regular'
 const FONT_MEDIUM = 'DMSans_500Medium'
@@ -100,39 +104,48 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
     },
     ref,
   ) {
-    const modalRef = useRef<BottomSheetModal>(null)
     const { colorScheme } = useColorScheme()
     const isDark = colorScheme === 'dark'
 
-    // Colores semánticos (coindicen con las variables CSS del tema)
+    // Colores semánticos (coinciden con las variables CSS del tema)
     const sheetBg = isDark ? 'hsl(0 0% 3.9%)' : 'hsl(60 6% 97%)'
 
+    const [visible, setVisible] = useState(false)
     const [sessionId, setSessionId] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const [text, setText] = useState('')
     const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null)
     const [sending, setSending] = useState(false)
 
+    const close = useCallback(() => {
+      setVisible(false)
+      setText('')
+      setReplyTo(null)
+    }, [])
+
     useImperativeHandle(ref, () => ({
       open(sid: string) {
         setSessionId(sid)
         setText('')
         setReplyTo(null)
-        modalRef.current?.present()
+        setVisible(true)
       },
       dismiss() {
-        modalRef.current?.dismiss()
+        close()
       },
     }))
 
     const comments: Comment[] = sessionId ? (commentsBySession[sessionId] ?? []) : []
 
-    // Cargar comentarios cuando cambia sessionId
+    // Total incluyendo respuestas anidadas (no solo los comentarios de nivel superior)
+    const totalComments = comments.reduce((sum, c) => sum + 1 + c.replies.length, 0)
+
+    // Cargar comentarios al abrir / cambiar sessionId
     useEffect(() => {
-      if (!sessionId) return
+      if (!sessionId || !visible) return
       setLoading(true)
       onLoadComments(sessionId).finally(() => setLoading(false))
-    }, [sessionId, onLoadComments])
+    }, [sessionId, visible, onLoadComments])
 
     // Cargar reacciones de comentarios cuando llegan nuevos comentarios
     useEffect(() => {
@@ -155,12 +168,6 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
       }
     }, [sessionId, text, sending, onAddComment, replyTo])
 
-    const handleDismiss = useCallback(() => {
-      setSessionId(null)
-      setText('')
-      setReplyTo(null)
-    }, [])
-
     const totalReactions = Object.values(reactions).reduce((sum, r) => sum + r.count, 0)
 
     // Colores condicionales para el TextInput (no soporta clases Tailwind directas)
@@ -170,245 +177,283 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
     const inputPlaceholder = isDark ? '#71717a' : '#a1a1aa'
 
     return (
-      <BottomSheetModal
-        ref={modalRef}
-        snapPoints={SNAP_POINTS}
-        onDismiss={handleDismiss}
-        enablePanDownToClose
-        // ── Keyboard handling ─────────────────────────────────────────────
-        keyboardBehavior="interactive"
-        keyboardBlurBehavior="restore"
-        android_keyboardInputMode="adjustResize"
-        // ─────────────────────────────────────────────────────────────────
-        handleIndicatorStyle={{
-          backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)',
-          width: 36,
-          height: 4,
-          borderRadius: 2,
-        }}
-        backgroundStyle={{ backgroundColor: sheetBg }}
+      <Modal
+        visible={visible}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        // navigationBarTranslucent NO → la ventana queda sobre la barra de
+        // navegación de Android, así el compositor nunca colisiona con ella.
+        onRequestClose={close}
       >
-        <BottomSheetView className="flex-1">
-
-          {/* ── Cabecera ─────────────────────────────────────────────────── */}
-          <View className="flex-row items-center justify-between px-5 pt-1 pb-3">
-            <View className="flex-row items-center gap-2">
-              <Text className="font-bebas text-lg tracking-wide text-foreground">
-                Comentarios
-              </Text>
-              {comments.length > 0 && (
-                <View className="rounded-full bg-muted/60 px-1.5 py-0.5">
-                  <Text className="font-mono text-[10px] text-muted-foreground">
-                    {String(comments.length)}
-                  </Text>
-                </View>
-              )}
-            </View>
+        {/* KeyboardProvider DENTRO del Modal: el Modal es otra ventana nativa,
+            necesita su propio provider para que KeyboardAvoidingView funcione. */}
+        <KeyboardProvider>
+          <View style={{ flex: 1 }} pointerEvents="box-none">
+            {/* Backdrop */}
             <Pressable
-              onPress={() => modalRef.current?.dismiss()}
-              className="size-7 items-center justify-center rounded-full bg-muted/50 active:opacity-60"
-              hitSlop={8}
+              onPress={close}
+              style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]}
+            />
+
+            {/* Hoja anclada abajo; KeyboardAvoidingView la sube con el teclado */}
+            <KeyboardAvoidingView
+              behavior="padding"
+              style={{ flex: 1, justifyContent: 'flex-end' }}
+              pointerEvents="box-none"
             >
-              <Text className="font-mono text-xs text-muted-foreground">✕</Text>
-            </Pressable>
-          </View>
-
-          {/* ── Barra de reacciones del post ──────────────────────────────── */}
-          <View className="px-5 pb-3">
-            <View className="flex-row items-center gap-1.5 flex-wrap">
-              {REACTION_EMOJIS.map((emoji) => {
-                const data = reactions[emoji]
-                const active = data?.hasReacted || false
-                const count = data?.count || 0
-                const styles = EMOJI_STYLES[emoji]
-                return (
-                  <Pressable
-                    key={emoji}
-                    onPress={() => onReact(emoji)}
-                    className={cn(
-                      'flex-row items-center gap-1 rounded-full px-2.5 py-1.5 border active:opacity-65',
-                      active && styles
-                        ? cn(styles, 'border-transparent')
-                        : 'border-border/50 bg-muted/20',
-                    )}
-                    hitSlop={4}
-                  >
-                    <Text className="text-[15px] leading-none">{emoji}</Text>
-                    {count > 0 && (
-                      <Text className="font-mono text-[11px] text-muted-foreground">
-                        {String(count)}
-                      </Text>
-                    )}
-                  </Pressable>
-                )
-              })}
-              {totalReactions > 0 && (
-                <View className="ml-auto flex-row items-center gap-1">
-                  <Text className="font-mono text-[10px] text-muted-foreground/50">
-                    {String(totalReactions)}
-                  </Text>
-                  <Text className="font-mono text-[10px] text-muted-foreground/30">total</Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          <View className="mx-5 h-px bg-border/40 rounded-full mb-1" />
-
-          {/* ── Lista de comentarios ─────────────────────────────────────── */}
-          {loading ? (
-            <View className="flex-1 items-center justify-center py-12 gap-2">
-              <ActivityIndicator color="#a3e635" size="small" />
-              <Text className="font-mono text-xs text-muted-foreground/60">
-                Cargando…
-              </Text>
-            </View>
-          ) : (
-            <BottomSheetFlatList
-              data={comments}
-              keyExtractor={(c) => c.id}
-              contentContainerStyle={{
-                paddingHorizontal: 20,
-                paddingTop: 12,
-                paddingBottom: 8,
-                gap: 18,
-              }}
-              ListEmptyComponent={
-                <View className="items-center justify-center py-14 gap-3">
-                  <Text className="font-mono text-4xl opacity-40">💬</Text>
-                  <Text className="font-sans text-sm text-muted-foreground/60">
-                    Sé el primero en comentar
-                  </Text>
-                </View>
-              }
-              renderItem={({ item: comment }) => (
-                <View>
-                  <CommentBubble
-                    comment={comment}
-                    currentUserId={currentUserId}
-                    onReply={() =>
-                      setReplyTo({ id: comment.id, name: comment.authorName })
-                    }
-                    onDelete={() =>
-                      sessionId
-                        ? onDeleteComment(comment.id, sessionId)
-                        : Promise.resolve(false)
-                    }
-                    commentReactions={commentReactions}
+              <View
+                style={{
+                  height: '92%',
+                  backgroundColor: sheetBg,
+                  borderTopLeftRadius: 22,
+                  borderTopRightRadius: 22,
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Indicador de arrastre */}
+                <View className="items-center pt-2.5 pb-1">
+                  <View
+                    style={{
+                      width: 36,
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)',
+                    }}
                   />
-                  {/* Respuestas anidadas (1 nivel) */}
-                  {comment.replies.length > 0 && (
-                    <View className="ml-10 mt-2.5 pl-3 border-l-2 border-lime/10 gap-3">
-                      {comment.replies.map((reply) => (
+                </View>
+
+                {/* ── Cabecera ───────────────────────────────────────────── */}
+                <View className="flex-row items-center justify-between px-5 pt-1 pb-3">
+                  <View className="flex-row items-center gap-2">
+                    <Text className="font-bebas text-lg tracking-wide text-foreground">
+                      Comentarios
+                    </Text>
+                    {totalComments > 0 && (
+                      <View className="rounded-full bg-muted/60 px-1.5 py-0.5">
+                        <Text className="font-mono text-[10px] text-muted-foreground">
+                          {String(totalComments)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Pressable
+                    onPress={close}
+                    className="size-7 items-center justify-center rounded-full bg-muted/50 active:opacity-60"
+                    hitSlop={8}
+                  >
+                    <Text className="font-mono text-xs text-muted-foreground">✕</Text>
+                  </Pressable>
+                </View>
+
+                {/* ── Barra de reacciones del post ───────────────────────── */}
+                <View className="px-5 pb-3">
+                  <View className="flex-row items-center gap-1.5 flex-wrap">
+                    {REACTION_EMOJIS.map((emoji) => {
+                      const data = reactions[emoji]
+                      const active = data?.hasReacted || false
+                      const count = data?.count || 0
+                      const styles = EMOJI_STYLES[emoji]
+                      return (
+                        <Pressable
+                          key={emoji}
+                          onPress={() => onReact(emoji)}
+                          className={cn(
+                            'flex-row items-center gap-1 rounded-full px-2.5 py-1.5 border active:opacity-65',
+                            active && styles
+                              ? cn(styles, 'border-transparent')
+                              : 'border-border/50 bg-muted/20',
+                          )}
+                          hitSlop={4}
+                        >
+                          <Text className="text-[15px] leading-none">{emoji}</Text>
+                          {count > 0 && (
+                            <Text className="font-mono text-[11px] text-muted-foreground">
+                              {String(count)}
+                            </Text>
+                          )}
+                        </Pressable>
+                      )
+                    })}
+                    {totalReactions > 0 && (
+                      <View className="ml-auto flex-row items-center gap-1">
+                        <Text className="font-mono text-[10px] text-muted-foreground/50">
+                          {String(totalReactions)}
+                        </Text>
+                        <Text className="font-mono text-[10px] text-muted-foreground/30">total</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                <View className="mx-5 h-px bg-border/40 rounded-full mb-1" />
+
+                {/* ── Lista de comentarios ───────────────────────────────── */}
+                {loading ? (
+                  <View className="flex-1 items-center justify-center py-12 gap-2">
+                    <ActivityIndicator color="#a3e635" size="small" />
+                    <Text className="font-mono text-xs text-muted-foreground/60">Cargando…</Text>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={comments}
+                    keyExtractor={(c) => c.id}
+                    style={{ flex: 1 }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    contentContainerStyle={{
+                      paddingHorizontal: 20,
+                      paddingTop: 12,
+                      paddingBottom: 12,
+                      gap: 18,
+                      flexGrow: 1,
+                    }}
+                    ListEmptyComponent={
+                      <View className="flex-1 items-center justify-center py-14 gap-3">
+                        <Text className="font-mono text-4xl opacity-40">💬</Text>
+                        <Text className="font-sans text-sm text-muted-foreground/60">
+                          Sé el primero en comentar
+                        </Text>
+                      </View>
+                    }
+                    renderItem={({ item: comment }) => (
+                      <View>
                         <CommentBubble
-                          key={reply.id}
-                          comment={reply}
+                          comment={comment}
                           currentUserId={currentUserId}
-                          onReply={() =>
-                            setReplyTo({ id: comment.id, name: reply.authorName })
-                          }
+                          onReply={() => setReplyTo({ id: comment.id, name: comment.authorName })}
                           onDelete={() =>
                             sessionId
-                              ? onDeleteComment(reply.id, sessionId)
+                              ? onDeleteComment(comment.id, sessionId)
                               : Promise.resolve(false)
                           }
                           commentReactions={commentReactions}
-                          isReply
                         />
-                      ))}
+                        {/* Respuestas anidadas (1 nivel) */}
+                        {comment.replies.length > 0 && (
+                          <View className="ml-10 mt-2.5 pl-3 border-l-2 border-lime/10 gap-3">
+                            {comment.replies.map((reply) => (
+                              <CommentBubble
+                                key={reply.id}
+                                comment={reply}
+                                currentUserId={currentUserId}
+                                onReply={() =>
+                                  setReplyTo({ id: comment.id, name: reply.authorName })
+                                }
+                                onDelete={() =>
+                                  sessionId
+                                    ? onDeleteComment(reply.id, sessionId)
+                                    : Promise.resolve(false)
+                                }
+                                commentReactions={commentReactions}
+                                isReply
+                              />
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  />
+                )}
+
+                {/* ── Compositor ─────────────────────────────────────────── */}
+                <View
+                  className="border-t border-border/40 px-4 pt-3"
+                  style={{
+                    backgroundColor: sheetBg,
+                    // Espacio extra abajo para que el botón de enviar no colisione
+                    // con la barra de navegación de Android (insets = 0 en MIUI).
+                    paddingBottom: Platform.OS === 'android' ? 28 : 14,
+                  }}
+                >
+                  {/* Indicador de respuesta */}
+                  {replyTo && (
+                    <View className="flex-row items-center gap-2 mb-2.5 bg-muted/30 rounded-lg px-3 py-2">
+                      <View className="w-0.5 h-4 bg-lime rounded-full" />
+                      <Text
+                        className="font-sans text-xs text-muted-foreground flex-1"
+                        numberOfLines={1}
+                      >
+                        Respondiendo a{' '}
+                        <Text className="font-sans-medium text-foreground/80">{replyTo.name}</Text>
+                      </Text>
+                      <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                        <Text className="font-mono text-xs text-muted-foreground/50">✕</Text>
+                      </Pressable>
                     </View>
                   )}
-                </View>
-              )}
-            />
-          )}
 
-          {/* ── Compositor ───────────────────────────────────────────────── */}
-          <View
-            className="border-t border-border/40 px-4 pt-3"
-            style={{ paddingBottom: Platform.OS === 'ios' ? 28 : 16 }}
-          >
-            {/* Indicador de respuesta */}
-            {replyTo && (
-              <View className="flex-row items-center gap-2 mb-2.5 bg-muted/30 rounded-lg px-3 py-2">
-                <View className="w-0.5 h-4 bg-lime rounded-full" />
-                <Text className="font-sans text-xs text-muted-foreground flex-1" numberOfLines={1}>
-                  Respondiendo a{' '}
-                  <Text className="font-sans-medium text-foreground/80">{replyTo.name}</Text>
-                </Text>
-                <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
-                  <Text className="font-mono text-xs text-muted-foreground/50">✕</Text>
-                </Pressable>
-              </View>
-            )}
+                  <View className="flex-row items-end gap-2">
+                    {/* Input */}
+                    <View className="flex-1 relative">
+                      <TextInput
+                        value={text}
+                        onChangeText={(val) => setText(val.slice(0, 500))}
+                        placeholder="Escribe un comentario…"
+                        placeholderTextColor={inputPlaceholder}
+                        maxLength={500}
+                        editable={!sending}
+                        multiline={false}
+                        returnKeyType="send"
+                        onSubmitEditing={handleSend}
+                        style={{
+                          backgroundColor: inputBg,
+                          borderRadius: 20,
+                          paddingHorizontal: 16,
+                          paddingVertical: 0,
+                          height: 42,
+                          fontSize: 14,
+                          lineHeight: 20,
+                          color: inputColor,
+                          borderWidth: 1,
+                          borderColor: inputBorder,
+                          fontFamily: FONT_REGULAR,
+                        }}
+                      />
+                      {/* Contador de caracteres restantes (cerca del límite) */}
+                      {text.length > 400 && (
+                        <View
+                          className="absolute right-3 top-2.5 rounded-full bg-muted/60 px-1"
+                          pointerEvents="none"
+                        >
+                          <Text className="font-mono text-[9px] text-muted-foreground/70">
+                            {String(500 - text.length)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
 
-            <View className="flex-row items-end gap-2">
-              {/* Input */}
-              <View className="flex-1 relative">
-                <BottomSheetTextInput
-                  value={text}
-                  onChangeText={(val) => setText(val.slice(0, 500))}
-                  placeholder="Escribe un comentario…"
-                  placeholderTextColor={inputPlaceholder}
-                  maxLength={500}
-                  editable={!sending}
-                  multiline={false}
-                  style={{
-                    backgroundColor: inputBg,
-                    borderRadius: 20,
-                    paddingHorizontal: 16,
-                    paddingVertical: 0,
-                    height: 42,
-                    fontSize: 14,
-                    lineHeight: 20,
-                    color: inputColor,
-                    borderWidth: 1,
-                    borderColor: inputBorder,
-                    fontFamily: FONT_REGULAR,
-                  }}
-                />
-                {/* Contador de caracteres restantes (visible al acercarse al límite) */}
-                {text.length > 400 && (
-                  <View
-                    className="absolute right-3 top-2.5 rounded-full bg-muted/60 px-1"
-                    pointerEvents="none"
-                  >
-                    <Text className="font-mono text-[9px] text-muted-foreground/70">
-                      {String(500 - text.length)}
-                    </Text>
+                    {/* Botón de enviar */}
+                    <Pressable
+                      onPress={handleSend}
+                      disabled={!text.trim() || sending}
+                      className={cn(
+                        'size-[42px] items-center justify-center rounded-full',
+                        text.trim() && !sending ? 'bg-lime active:opacity-65' : 'bg-muted/40',
+                      )}
+                    >
+                      {sending ? (
+                        <ActivityIndicator size="small" color={isDark ? '#18181b' : '#3f3f46'} />
+                      ) : (
+                        <Text
+                          className={cn(
+                            'text-base leading-none',
+                            text.trim() ? 'text-black' : 'text-muted-foreground/30',
+                          )}
+                          style={{ fontFamily: FONT_MEDIUM }}
+                        >
+                          ↑
+                        </Text>
+                      )}
+                    </Pressable>
                   </View>
-                )}
+                </View>
               </View>
-
-              {/* Botón de enviar */}
-              <Pressable
-                onPress={handleSend}
-                disabled={!text.trim() || sending}
-                className={cn(
-                  'size-[42px] items-center justify-center rounded-full',
-                  text.trim() && !sending
-                    ? 'bg-lime active:opacity-65'
-                    : 'bg-muted/40',
-                )}
-              >
-                {sending ? (
-                  <ActivityIndicator size="small" color={isDark ? '#18181b' : '#3f3f46'} />
-                ) : (
-                  <Text
-                    className={cn(
-                      'text-base leading-none',
-                      text.trim() ? 'text-black' : 'text-muted-foreground/30',
-                    )}
-                    style={{ fontFamily: FONT_MEDIUM }}
-                  >
-                    ↑
-                  </Text>
-                )}
-              </Pressable>
-            </View>
+            </KeyboardAvoidingView>
           </View>
-        </BottomSheetView>
-      </BottomSheetModal>
+        </KeyboardProvider>
+      </Modal>
     )
   },
 )
@@ -451,10 +496,7 @@ function CommentBubble({
         style={{ backgroundColor: `oklch(0.32 0.07 ${hue})` }}
       >
         <Text
-          className={cn(
-            'uppercase',
-            isReply ? 'text-[9px]' : 'text-[11px]',
-          )}
+          className={cn('uppercase', isReply ? 'text-[9px]' : 'text-[11px]')}
           style={{
             color: `oklch(0.88 0.10 ${hue})`,
             fontFamily: FONT_MEDIUM,
@@ -532,17 +574,12 @@ function CommentBubble({
         <View className="flex-row items-center gap-3 mt-1.5">
           {!isReply && (
             <Pressable onPress={onReply} hitSlop={6}>
-              <Text className="font-sans text-[11px] text-muted-foreground/50">
-                Responder
-              </Text>
+              <Text className="font-sans text-[11px] text-muted-foreground/50">Responder</Text>
             </Pressable>
           )}
 
           {/* Botón reacción + picker inline */}
-          <Pressable
-            onPress={() => setShowPicker((p) => !p)}
-            hitSlop={6}
-          >
+          <Pressable onPress={() => setShowPicker((p) => !p)} hitSlop={6}>
             <Text className="font-sans text-[11px] text-muted-foreground/50">
               {hasAnyReaction ? '😊 Reaccionar' : '+ Reaccionar'}
             </Text>
@@ -550,9 +587,7 @@ function CommentBubble({
 
           {isOwn && (
             <Pressable onPress={onDelete} hitSlop={6}>
-              <Text className="font-sans text-[11px] text-muted-foreground/35">
-                Eliminar
-              </Text>
+              <Text className="font-sans text-[11px] text-muted-foreground/35">Eliminar</Text>
             </Pressable>
           )}
         </View>
