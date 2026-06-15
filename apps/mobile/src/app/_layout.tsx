@@ -16,6 +16,8 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalHost } from '@rn-primitives/portal'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb } from '@calistenia/core/lib/pocketbase'
@@ -34,6 +36,12 @@ import { CardioSessionProvider } from '@/contexts/CardioSessionContext'
 import OfflineBanner from '@/components/OfflineBanner'
 
 SplashScreen.preventAutoHideAsync()
+
+// Singletons a nivel módulo: un único QueryClient/persister por vida de la app.
+// init-core ya corrió (primer import del archivo), así que el adapter está listo.
+setupOnlineManager()
+const queryClient = createQueryClient()
+const persister = createCorePersister()
 // darkMode: 'class' en tailwind.config → NativeWind controla la clase .dark;
 // 'system' sigue el modo del dispositivo (igual que el default de la web).
 nwColorScheme.set('system')
@@ -87,6 +95,10 @@ function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister, maxAge: PERSIST_MAX_AGE }}
+      >
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <KeyboardProvider>
         <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>
@@ -109,6 +121,7 @@ function RootLayout() {
         </ThemeProvider>
       </KeyboardProvider>
       </SafeAreaProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
   )
 }

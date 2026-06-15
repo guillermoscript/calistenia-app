@@ -12,7 +12,7 @@ import { OpenPanel } from '@openpanel/react-native'
 import { initCore } from '@calistenia/core/platform'
 import { Sentry } from './instrument'
 import { syncStorage } from './storage'
-import { isOnline, onOnline } from './connectivity'
+import { isOnline, onOnline, onConnectivityChange } from './connectivity'
 import { registerPushTokenAsync } from './push-registration'
 
 // PocketBase realtime (lo usa el flujo OAuth2 del SDK) necesita EventSource,
@@ -121,7 +121,7 @@ initCore({
     if (__DEV__) console.error('[core]', e)
     else Sentry.captureException(e)
   },
-  connectivity: { isOnline, onOnline },
+  connectivity: { isOnline, onOnline, onChange: onConnectivityChange },
   pbAuthStore,
 })
 

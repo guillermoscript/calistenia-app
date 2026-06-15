@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { pb } from '../lib/pocketbase'
+import { qk } from '../lib/query-keys'
 import type { ExerciseProgression, ExerciseLog } from '../types'
 
 // ─── PB → frontend field mapping ───────────────────────────────────────────
@@ -28,55 +30,44 @@ interface UseProgressionsReturn {
   shouldSuggestProgression: (exerciseId: string, logs: ExerciseLog[]) => boolean
 }
 
+/**
+ * Progresiones de ejercicios. Datos estáticos globales — se cargan una sola
+ * vez y no expiran (staleTime: Infinity). Sin userId; cualquier usuario ve el
+ * mismo catálogo. Forma pública estable:
+ * { chains, allProgressions, loading, getChainForExercise, shouldSuggestProgression }.
+ */
 export function useProgressions(): UseProgressionsReturn {
-  const [allProgressions, setAllProgressions] = useState<ExerciseProgression[]>([])
-  const [chains, setChains] = useState<ProgressionChains>({})
-  const [loading, setLoading] = useState(true)
-  const initialized = useRef(false)
+  const { data, isLoading } = useQuery({
+    queryKey: qk.progressions,
+    // Datos de catálogo: nunca se vuelven stale en memoria — el servidor rara vez
+    // los cambia, y el gcTime del QueryClient persiste el caché entre montajes.
+    staleTime: Infinity,
+    queryFn: async () => {
+      const res = await pb.collection('exercise_progressions').getList(1, 200, {
+        sort: 'category,difficulty_order',
+      })
 
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+      const mapped = res.items.map(mapRecord)
 
-    const load = async () => {
-      try {
-        const available = await isPocketBaseAvailable()
-        if (!available) {
-          setLoading(false)
-          return
-        }
-
-        const res = await pb.collection('exercise_progressions').getList(1, 200, {
-          sort: 'category,difficulty_order',
-        })
-
-        const mapped = res.items.map(mapRecord)
-        setAllProgressions(mapped)
-
-        // Group by category
-        const grouped: ProgressionChains = {}
-        for (const prog of mapped) {
-          if (!grouped[prog.category]) grouped[prog.category] = []
-          grouped[prog.category].push(prog)
-        }
-        // Ensure each chain is sorted by difficulty_order
-        for (const cat of Object.keys(grouped)) {
-          grouped[cat].sort((a, b) => a.difficultyOrder - b.difficultyOrder)
-        }
-        setChains(grouped)
-      } catch (e) {
-        console.warn('Failed to load exercise progressions:', e)
-        // Graceful fallback: empty chains
-      } finally {
-        setLoading(false)
+      // Agrupar por categoría y ordenar por difficulty_order dentro de cada cadena
+      const grouped: ProgressionChains = {}
+      for (const prog of mapped) {
+        if (!grouped[prog.category]) grouped[prog.category] = []
+        grouped[prog.category].push(prog)
       }
-    }
+      for (const cat of Object.keys(grouped)) {
+        grouped[cat].sort((a, b) => a.difficultyOrder - b.difficultyOrder)
+      }
 
-    load()
-  }, [])
+      return { allProgressions: mapped, chains: grouped }
+    },
+  })
+
+  const allProgressions = data?.allProgressions ?? []
+  const chains = data?.chains ?? {}
 
   const getChainForExercise = useCallback((exerciseId: string): ExerciseProgression[] => {
-    // Find which category this exercise belongs to
+    // Busca la categoría del ejercicio y devuelve su cadena completa
     const prog = allProgressions.find(p => p.exerciseId === exerciseId)
     if (!prog) return []
     return chains[prog.category] || []
@@ -88,7 +79,7 @@ export function useProgressions(): UseProgressionsReturn {
 
     const { targetRepsToAdvance, sessionsAtTarget } = prog
 
-    // Get the most recent N session logs for this exercise, sorted newest first
+    // Últimas N sesiones con sets, ordenadas de más reciente a más antigua
     const sortedLogs = [...logs]
       .filter(l => l.exerciseId === exerciseId && l.sets?.length > 0)
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
@@ -96,7 +87,7 @@ export function useProgressions(): UseProgressionsReturn {
 
     if (sortedLogs.length < sessionsAtTarget) return false
 
-    // Check that every session had at least one set meeting the target reps
+    // Todas las sesiones deben tener al menos un set con reps >= target
     return sortedLogs.every(log => {
       return log.sets.some(s => {
         const reps = parseInt(s.reps, 10)
@@ -108,7 +99,7 @@ export function useProgressions(): UseProgressionsReturn {
   return {
     chains,
     allProgressions,
-    loading,
+    loading: isLoading,
     getChainForExercise,
     shouldSuggestProgression,
   }

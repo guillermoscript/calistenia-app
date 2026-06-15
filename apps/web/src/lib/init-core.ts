@@ -46,5 +46,15 @@ initCore({
       window.addEventListener('online', handler)
       return () => window.removeEventListener('online', handler)
     },
+    onChange: (handler) => {
+      const on = () => handler(true)
+      const off = () => handler(false)
+      window.addEventListener('online', on)
+      window.addEventListener('offline', off)
+      return () => {
+        window.removeEventListener('online', on)
+        window.removeEventListener('offline', off)
+      }
+    },
   },
 })
