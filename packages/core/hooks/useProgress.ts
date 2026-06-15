@@ -1,5 +1,5 @@
 import { storage } from '../platform'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
@@ -350,42 +350,90 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     }
   }, [usePB, userId, patchProgress])
 
+  // ─── Estructuras derivadas (se recomputan solo cuando progress cambia) ────
+  const derivedProgress = useMemo(() => {
+    // Índice de ejercicios: exerciseId → logs ordenados desc por fecha
+    const exerciseLogsByIdMap = new Map<string, any[]>()
+    // Conjunto de fechas con sesión completada (presencia): 'YYYY-MM-DD'
+    const doneDateSet = new Set<string>()
+    // Conteo de claves done_ por fecha: varios workouts el mismo día cuentan por separado
+    const doneCountByDate = new Map<string, number>()
+    // Conteo total de claves done_ para getTotalSessions
+    let totalSessions = 0
+
+    for (const [k, v] of Object.entries(progress)) {
+      if (k.startsWith('done_')) {
+        totalSessions++
+        const date = k.split('_')[1]
+        if (date) {
+          doneDateSet.add(date)
+          doneCountByDate.set(date, (doneCountByDate.get(date) ?? 0) + 1)
+        }
+      } else if ((v as any)?.exerciseId && (v as any)?.sets) {
+        const exId: string = (v as any).exerciseId
+        if (!exerciseLogsByIdMap.has(exId)) exerciseLogsByIdMap.set(exId, [])
+        exerciseLogsByIdMap.get(exId)!.push(v)
+      }
+    }
+
+    // Ordenar cada lista de logs desc por fecha (una vez, no en cada llamada)
+    for (const [, logs] of exerciseLogsByIdMap) {
+      logs.sort((a: any, b: any) => b.date?.localeCompare(a.date))
+    }
+
+    // Racha más larga calculada una sola vez al derivar
+    const sortedDoneDates = [...doneDateSet].sort()
+    let longestStreak = sortedDoneDates.length > 0 ? 1 : 0
+    let currentStreak = longestStreak
+    for (let i = 1; i < sortedDoneDates.length; i++) {
+      if (diffDays(sortedDoneDates[i], sortedDoneDates[i - 1]) === 1) {
+        currentStreak++
+        longestStreak = Math.max(longestStreak, currentStreak)
+      } else {
+        currentStreak = 1
+      }
+    }
+
+    // Última fecha de sesión
+    const lastSessionDate = sortedDoneDates.length > 0 ? sortedDoneDates[sortedDoneDates.length - 1] : null
+
+    return { exerciseLogsByIdMap, doneDateSet, doneCountByDate, totalSessions, longestStreak, lastSessionDate, sortedDoneDates }
+  }, [progress])
+
   // ─── Selectores ──────────────────────────────────────────────────────────
   const isWorkoutDone = useCallback((workoutKey: string, date?: string): boolean => {
     const d = date || todayStr()
     return !!progress[`done_${d}_${workoutKey}`]
   }, [progress])
 
-  const getExerciseLogs = useCallback((exerciseId: string, limit: number = 10): ExerciseLog[] =>
-    (Object.values(progress) as any[])
-      .filter((v: any) => v.exerciseId === exerciseId && v.sets)
-      .sort((a: any, b: any) => b.date?.localeCompare(a.date))
-      .slice(0, limit),
-  [progress])
+  // Lee del índice precalculado: O(1) lookup + O(k) slice en lugar de O(n) scan
+  const getExerciseLogs = useCallback((exerciseId: string, limit: number = 10): ExerciseLog[] => {
+    const logs = derivedProgress.exerciseLogsByIdMap.get(exerciseId) ?? []
+    return logs.slice(0, limit) as ExerciseLog[]
+  }, [derivedProgress])
 
+  // Suma sesiones por clave de la semana (varios workouts el mismo día cuentan
+  // por separado, igual que el original). O(7) leyendo del conteo precalculado.
   const getWeeklyDoneCount = useCallback((): number => {
     const monday = startOfWeekStr()
-    const dates: string[] = []
-    for (let i = 0; i < 7; i++) dates.push(addDays(monday, i))
-    return Object.keys(progress).filter(k => k.startsWith('done_') && dates.some(d => k.includes(d))).length
-  }, [progress])
-
-  const getTotalSessions = useCallback((): number =>
-    Object.keys(progress).filter(k => k.startsWith('done_')).length,
-  [progress])
-
-  const getLongestStreak = useCallback((): number => {
-    const doneDates = [...new Set(
-      Object.keys(progress).filter(k => k.startsWith('done_')).map(k => k.split('_')[1])
-    )].sort()
-    if (doneDates.length === 0) return 0
-    let max = 1, streak = 1
-    for (let i = 1; i < doneDates.length; i++) {
-      if (diffDays(doneDates[i], doneDates[i-1]) === 1) { streak++; max = Math.max(max, streak) } else streak = 1
+    let count = 0
+    for (let i = 0; i < 7; i++) {
+      count += derivedProgress.doneCountByDate.get(addDays(monday, i)) ?? 0
     }
-    return max
-  }, [progress])
+    return count
+  }, [derivedProgress])
 
+  // Lectura directa del valor precalculado: O(1)
+  const getTotalSessions = useCallback((): number =>
+    derivedProgress.totalSessions,
+  [derivedProgress])
+
+  // Lectura directa del valor precalculado: O(1)
+  const getLongestStreak = useCallback((): number =>
+    derivedProgress.longestStreak,
+  [derivedProgress])
+
+  // Construye el mapa mes-actual con lookup O(1) en el Set de fechas
   const getMonthActivity = useCallback((): Record<string, boolean> => {
     const today = todayStr()
     const year = today.slice(0, 4)
@@ -394,19 +442,15 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     const activity: Record<string, boolean> = {}
     for (let dd = 1; dd <= daysInMonth; dd++) {
       const ds = `${year}-${month}-${String(dd).padStart(2, '0')}`
-      activity[ds] = Object.keys(progress).some(k => k.startsWith('done_') && k.includes(ds))
+      activity[ds] = derivedProgress.doneDateSet.has(ds)
     }
     return activity
-  }, [progress])
+  }, [derivedProgress])
 
-  const getLastSessionDate = useCallback((): string | null => {
-    const doneDates = Object.keys(progress)
-      .filter(k => k.startsWith('done_'))
-      .map(k => k.split('_')[1])
-      .filter(Boolean)
-      .sort()
-    return doneDates.length > 0 ? doneDates[doneDates.length - 1] : null
-  }, [progress])
+  // Lectura directa del valor precalculado: O(1)
+  const getLastSessionDate = useCallback((): string | null =>
+    derivedProgress.lastSessionDate,
+  [derivedProgress])
 
   const updateSettings = useCallback(async (newSettings: Partial<Settings>) => {
     const updated = patchSettings(prev => ({ ...prev, ...newSettings }))
