@@ -291,19 +291,21 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
   })
 
   // — Wrappers de API pública (misma forma que el hook original) —
+  // .catch silencioso: onError revierte el optimista; sin esto un fallo offline
+  // queda como unhandled rejection (ClientResponseError 0).
   const saveSleepEntry = useCallback(
-    (input: SleepEntryInput) => saveMutation.mutateAsync(input).then(() => {}),
+    (input: SleepEntryInput) => saveMutation.mutateAsync(input).then(() => {}).catch(() => {}),
     [saveMutation],
   )
 
   const updateSleepEntry = useCallback(
     (id: string, input: Partial<SleepEntryInput>) =>
-      updateMutation.mutateAsync({ id, input }).then(() => {}),
+      updateMutation.mutateAsync({ id, input }).then(() => {}).catch(() => {}),
     [updateMutation],
   )
 
   const deleteSleepEntry = useCallback(
-    (id: string) => deleteMutation.mutateAsync(id).then(() => {}),
+    (id: string) => deleteMutation.mutateAsync(id).then(() => {}).catch(() => {}),
     [deleteMutation],
   )
 

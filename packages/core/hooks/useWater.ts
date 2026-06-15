@@ -228,13 +228,15 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
   })
 
   // — Wrappers de API pública (misma forma que el hook original) —
+  // .catch silencioso: onError ya revierte el optimista y la cola offline
+  // reintenta; sin esto, un fallo (p.ej. offline) queda como unhandled rejection.
   const addWater = useCallback(
-    (ml: number) => addMutation.mutateAsync(ml).then(() => {}),
+    (ml: number) => addMutation.mutateAsync(ml).then(() => {}).catch(() => {}),
     [addMutation],
   )
 
   const removeEntry = useCallback(
-    (id: string) => removeMutation.mutateAsync(id).then(() => {}),
+    (id: string) => removeMutation.mutateAsync(id).then(() => {}).catch(() => {}),
     [removeMutation],
   )
 
@@ -253,6 +255,9 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
     addWater,
     removeEntry,
     isReady,
-    adding: addMutation.isPending,
+    // Offline RQ pausa la mutación pero `isPending` sigue true → el spinner del
+    // botón quedaría colgado para siempre. `!isPaused` la trata como resuelta:
+    // la escritura está encolada y el update optimista ya refleja el cambio.
+    adding: addMutation.isPending && !addMutation.isPaused,
   }
 }

@@ -420,7 +420,9 @@ export function useNutritionCoach(userId: string | null) {
     dailyInsight,
     weeklyInsight,
     badges,
-    generatingWeekly: generateWeeklyMutation.isPending,
+    // !isPaused: offline RQ pausa la mutación con isPending=true → el spinner
+    // quedaría colgado. Tratamos la mutación pausada como no-activa.
+    generatingWeekly: generateWeeklyMutation.isPending && !generateWeeklyMutation.isPaused,
 
     loadBadges,
     getDailyInsight,
