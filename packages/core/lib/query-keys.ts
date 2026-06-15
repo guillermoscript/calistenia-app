@@ -71,6 +71,8 @@ export const qk = {
   restPreferences: (userId: string | null) =>
     ['restPreferences', userId] as const,
   favorites: (userId: string | null) => ['favorites', userId] as const,
+  workoutReminders: (userId: string | null) =>
+    ['workout_reminders', userId] as const,
 
   // — Stats / leaderboard / perfil —
   leaderboard: (userId: string | null, weekStart: string, monthStart: string) =>
@@ -120,6 +122,8 @@ export const qk = {
     search: (query: string) => ['foods', 'search', query] as const,
     barcode: (barcode: string) => ['foods', 'barcode', barcode] as const,
   },
+  wgerSearch: (term: string, language: string) =>
+    ['wger', 'search', term, language] as const,
   foodHistory: {
     recent: (userId: string | null, limit: number) =>
       ['food_history', 'recent', userId, limit] as const,

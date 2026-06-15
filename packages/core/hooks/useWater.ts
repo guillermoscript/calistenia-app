@@ -1,8 +1,10 @@
 import { storage } from '../platform'
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { pb } from '../lib/pocketbase'
 import { op } from '../lib/analytics'
 import { todayStr, addDays, localMidnightAsUTC, nowLocalForPB } from '../lib/dateUtils'
+import { qk } from '../lib/query-keys'
 
 const LS_KEY = 'calistenia_water'
 const DEFAULT_GOAL = 2500 // ml
@@ -33,7 +35,7 @@ interface UseWaterReturn {
   adding: boolean
 }
 
-// localStorage helpers
+// — Helpers de localStorage para datos por día —
 const lsGet = (): Record<string, DayWater> => {
   try { return JSON.parse(storage.getItem(LS_KEY) || '{}') } catch { return {} }
 }
@@ -41,214 +43,219 @@ const lsSet = (d: Record<string, DayWater>) => storage.setItem(LS_KEY, JSON.stri
 const lsGetGoal = (): number => {
   try { return Number(storage.getItem('calistenia_water_goal')) || DEFAULT_GOAL } catch { return DEFAULT_GOAL }
 }
+const lsSetGoal = (ml: number) => storage.setItem('calistenia_water_goal', String(ml))
 
+// Helper: extrae DayWater para una fecha desde el mapa de localStorage
+const lsGetDay = (date: string): DayWater =>
+  lsGet()[date] ?? { entries: [], total: 0 }
+
+// Helper: sobreescribe una fecha en el mapa de localStorage
+const lsSetDay = (date: string, day: DayWater) => {
+  const all = lsGet()
+  all[date] = day
+  lsSet(all)
+}
+
+/**
+ * Agua diaria. Offline-first con keying por fecha: cada día tiene su propia
+ * query (qk.water.day) y la meta su propia query (qk.water.goal).
+ * addWater/removeEntry/setGoal son mutaciones optimistas con write-through a
+ * localStorage en onMutate y rollback en onError.
+ * Forma pública estable: UseWaterReturn (incluyendo aliases deprecados).
+ */
 export function useWater(userId: string | null = null, selectedDate?: string): UseWaterReturn {
-  const [data, setData] = useState<Record<string, DayWater>>({})
-  const [goal, setGoalState] = useState(lsGetGoal)
-  const [usePB, setUsePB] = useState(false)
-  const [isReady, setIsReady] = useState(false)
-  const [adding, setAdding] = useState(false)
-  const initialized = useRef(false)
-  const loadedDates = useRef<Set<string>>(new Set())
-
+  const qc = useQueryClient()
   const today = todayStr()
   const activeDate = selectedDate || today
 
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+  const dayKey = qk.water.day(userId, activeDate)
+  const goalKey = qk.water.goal(userId)
 
-    const init = async () => {
-      const available = userId ? await isPocketBaseAvailable() : false
-      setUsePB(available && !!userId)
+  // — Query: entradas del día activo —
+  const { data: dayData, isFetched: dayFetched } = useQuery<DayWater>({
+    queryKey: dayKey,
+    // initialData desde localStorage → disponible aun offline
+    initialData: () => lsGetDay(activeDate),
+    initialDataUpdatedAt: 0, // fuerza refetch al montar para fusionar con PB
+    enabled: !!userId,
+    staleTime: 2 * 60 * 1000,
+    queryFn: async () => {
+      const dayStart = localMidnightAsUTC(activeDate)
+      const dayEnd = localMidnightAsUTC(addDays(activeDate, 1))
+      const res = await pb.collection('water_entries').getList(1, 100, {
+        filter: pb.filter(
+          'user = {:uid} && logged_at >= {:start} && logged_at < {:end}',
+          { uid: userId!, start: dayStart, end: dayEnd },
+        ),
+        sort: '-logged_at',
+        $autoCancel: false,
+      })
+      const entries: WaterEntry[] = res.items.map((r: any) => ({
+        id: r.id,
+        amount_ml: Number(r.amount_ml) || 0,
+        logged_at: r.logged_at || r.created,
+      }))
+      const total = entries.reduce((s, e) => s + e.amount_ml, 0)
+      const day: DayWater = { entries, total }
+      // Write-through a localStorage para caché offline actualizado
+      lsSetDay(activeDate, day)
+      return day
+    },
+  })
 
-      if (available && userId) {
-        try {
-          const startOfDay = localMidnightAsUTC(today)
-          const [res, settingsRec] = await Promise.all([
-            pb.collection('water_entries').getList(1, 100, {
-              filter: pb.filter('user = {:uid} && logged_at >= {:start}', { uid: userId, start: startOfDay }),
-              sort: '-logged_at',
-            }),
-            pb.collection('settings').getList(1, 1, {
-              filter: pb.filter('user = {:uid}', { uid: userId }),
-              $autoCancel: false,
-            }).then(r => r.items[0] || null).catch(() => null),
-          ])
-          const entries: WaterEntry[] = res.items.map((r: any) => ({
-            id: r.id,
-            amount_ml: Number(r.amount_ml) || 0,
-            logged_at: r.logged_at || r.created,
-          }))
-          const total = entries.reduce((s, e) => s + e.amount_ml, 0)
-          setData({ [today]: { entries, total } })
-          loadedDates.current.add(today)
-          if (settingsRec && (settingsRec as any).water_goal) {
-            const pbGoal = (settingsRec as any).water_goal
-            setGoalState(pbGoal)
-            storage.setItem('calistenia_water_goal', String(pbGoal))
-          }
-        } catch {
-          setData(lsGet())
-        }
+  // — Query: meta de agua —
+  const { data: goal = DEFAULT_GOAL, isFetched: goalFetched } = useQuery<number>({
+    queryKey: goalKey,
+    // initialData desde localStorage → disponible aun offline
+    initialData: lsGetGoal,
+    initialDataUpdatedAt: 0,
+    enabled: !!userId,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const settingsRes = await pb.collection('settings').getList(1, 1, {
+        filter: pb.filter('user = {:uid}', { uid: userId! }),
+        $autoCancel: false,
+      })
+      const settingsRec = settingsRes.items[0] || null
+      if (settingsRec && (settingsRec as any).water_goal) {
+        const pbGoal = (settingsRec as any).water_goal as number
+        lsSetGoal(pbGoal)
+        return pbGoal
+      }
+      return lsGetGoal()
+    },
+  })
+
+  const currentDay: DayWater = dayData ?? { entries: [], total: 0 }
+  const isReady = !userId ? true : (dayFetched || currentDay.entries.length > 0) && goalFetched
+
+  // — Mutación: agregar entrada de agua (optimista) —
+  const addMutation = useMutation({
+    mutationFn: async (ml: number) => {
+      if (!userId) return null
+      const rec = await pb.collection('water_entries').create({
+        user: userId,
+        amount_ml: ml,
+      })
+      return rec
+    },
+    onMutate: async (ml: number) => {
+      await qc.cancelQueries({ queryKey: dayKey })
+      const prev = qc.getQueryData<DayWater>(dayKey) ?? lsGetDay(today)
+      // Guardia local_: id temporal hasta confirmar con PB
+      const localId = `local_${Date.now()}`
+      const entry: WaterEntry = { id: localId, amount_ml: ml, logged_at: nowLocalForPB() }
+      const next: DayWater = {
+        entries: [entry, ...prev.entries],
+        total: prev.total + ml,
+      }
+      lsSetDay(today, next)
+      qc.setQueryData(dayKey, next)
+      op.track('water_logged', { amount_ml: ml })
+      return { prev, localId }
+    },
+    onError: (_err, _ml, ctx) => {
+      if (ctx?.prev) {
+        lsSetDay(today, ctx.prev)
+        qc.setQueryData(dayKey, ctx.prev)
+      }
+    },
+    onSuccess: (rec, _ml, ctx) => {
+      if (!rec || !ctx) return
+      // Reemplazar el id local_ con el id real de PB
+      qc.setQueryData(dayKey, (old: DayWater = { entries: [], total: 0 }) => {
+        const entries = old.entries.map(e =>
+          e.id === ctx.localId ? { ...e, id: rec.id } : e
+        )
+        const updated: DayWater = { ...old, entries }
+        lsSetDay(today, updated)
+        return updated
+      })
+    },
+  })
+
+  // — Mutación: eliminar entrada de agua (optimista) —
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // Guardia local_: no borrar en PB si es id temporal
+      if (!userId || id.startsWith('local_')) return
+      await pb.collection('water_entries').delete(id)
+    },
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: dayKey })
+      const prev = qc.getQueryData<DayWater>(dayKey) ?? lsGetDay(today)
+      const removedEntry = prev.entries.find(e => e.id === id)
+      const next: DayWater = {
+        entries: prev.entries.filter(e => e.id !== id),
+        total: prev.total - (removedEntry?.amount_ml || 0),
+      }
+      lsSetDay(today, next)
+      qc.setQueryData(dayKey, next)
+      return { prev }
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) {
+        lsSetDay(today, ctx.prev)
+        qc.setQueryData(dayKey, ctx.prev)
+      }
+    },
+  })
+
+  // — Mutación: actualizar meta de agua (optimista) —
+  const goalMutation = useMutation({
+    mutationFn: async (ml: number) => {
+      if (!userId) return
+      const existingRes = await pb.collection('settings').getList(1, 1, {
+        filter: pb.filter('user = {:uid}', { uid: userId }),
+        $autoCancel: false,
+      })
+      if (existingRes.items.length > 0) {
+        await pb.collection('settings').update(existingRes.items[0].id, { water_goal: ml })
       } else {
-        setData(lsGet())
+        await pb.collection('settings').create({ user: userId, water_goal: ml })
       }
-      setIsReady(true)
-    }
-    init()
-  }, [userId, today])
-
-  // On-demand fetch for selected date
-  useEffect(() => {
-    if (!usePB || !userId || !activeDate) return
-    if (loadedDates.current.has(activeDate)) return
-    loadedDates.current.add(activeDate)
-
-    const fetchDay = async () => {
-      try {
-        const dayStart = localMidnightAsUTC(activeDate)
-        const dayEnd = localMidnightAsUTC(addDays(activeDate, 1))
-        const res = await pb.collection('water_entries').getList(1, 100, {
-          filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
-            uid: userId, start: dayStart, end: dayEnd,
-          }),
-          sort: '-logged_at',
-          $autoCancel: false,
-        })
-        const entries: WaterEntry[] = res.items.map((r: any) => ({
-          id: r.id,
-          amount_ml: Number(r.amount_ml) || 0,
-          logged_at: r.logged_at || r.created,
-        }))
-        const total = entries.reduce((s, e) => s + e.amount_ml, 0)
-        setData(prev => {
-          const updated = { ...prev, [activeDate]: { entries, total } }
-          lsSet(updated)
-          return updated
-        })
-      } catch {
-        loadedDates.current.delete(activeDate)
+    },
+    onMutate: async (ml: number) => {
+      await qc.cancelQueries({ queryKey: goalKey })
+      const prev = qc.getQueryData<number>(goalKey) ?? lsGetGoal()
+      lsSetGoal(ml)
+      qc.setQueryData(goalKey, ml)
+      return { prev }
+    },
+    onError: (_err, _ml, ctx) => {
+      if (ctx?.prev !== undefined) {
+        lsSetGoal(ctx.prev)
+        qc.setQueryData(goalKey, ctx.prev)
       }
-    }
-    fetchDay()
-  }, [usePB, userId, activeDate])
+    },
+  })
 
-  const dayData = data[activeDate] || { entries: [], total: 0 }
+  // — Wrappers de API pública (misma forma que el hook original) —
+  const addWater = useCallback(
+    (ml: number) => addMutation.mutateAsync(ml).then(() => {}),
+    [addMutation],
+  )
 
-  const addWater = useCallback(async (ml: number) => {
-    if (adding) return // prevent rapid double-clicks
-    setAdding(true)
-    op.track('water_logged', { amount_ml: ml })
-    const localId = `local_${Date.now()}`
-    const entry: WaterEntry = { id: localId, amount_ml: ml, logged_at: nowLocalForPB() }
+  const removeEntry = useCallback(
+    (id: string) => removeMutation.mutateAsync(id).then(() => {}),
+    [removeMutation],
+  )
 
-    // Optimistic update
-    setData(prev => {
-      const day = prev[today] || { entries: [], total: 0 }
-      const updated = {
-        ...prev,
-        [today]: { entries: [entry, ...day.entries], total: day.total + ml },
-      }
-      lsSet(updated)
-      return updated
-    })
-
-    if (usePB && userId) {
-      try {
-        const rec = await pb.collection('water_entries').create({
-          user: userId,
-          amount_ml: ml,
-        })
-        // Replace local id with real id
-        setData(prev => {
-          const day = prev[today]
-          if (!day) return prev
-          const entries = day.entries.map(e => e.id === localId ? { ...e, id: rec.id } : e)
-          const updated = { ...prev, [today]: { ...day, entries } }
-          lsSet(updated)
-          return updated
-        })
-      } catch {
-        // Rollback optimistic update on failure
-        setData(prev => {
-          const day = prev[today]
-          if (!day) return prev
-          const entries = day.entries.filter(e => e.id !== localId)
-          const updated = { ...prev, [today]: { entries, total: day.total - ml } }
-          lsSet(updated)
-          return updated
-        })
-      }
-    }
-    setAdding(false)
-  }, [usePB, userId, today, adding])
-
-  const removeEntry = useCallback(async (id: string) => {
-    // Snapshot for rollback
-    let removedEntry: WaterEntry | undefined
-
-    setData(prev => {
-      const day = prev[today]
-      if (!day) return prev
-      removedEntry = day.entries.find(e => e.id === id)
-      const entries = day.entries.filter(e => e.id !== id)
-      const updated = { ...prev, [today]: { entries, total: day.total - (removedEntry?.amount_ml || 0) } }
-      lsSet(updated)
-      return updated
-    })
-
-    if (usePB && userId && !id.startsWith('local_')) {
-      try {
-        await pb.collection('water_entries').delete(id)
-      } catch {
-        // Rollback: restore entry
-        if (removedEntry) {
-          setData(prev => {
-            const day = prev[today] || { entries: [], total: 0 }
-            const updated = {
-              ...prev,
-              [today]: { entries: [removedEntry!, ...day.entries], total: day.total + removedEntry!.amount_ml },
-            }
-            lsSet(updated)
-            return updated
-          })
-        }
-      }
-    }
-  }, [usePB, userId, today])
-
-  const setGoal = useCallback(async (ml: number) => {
-    setGoalState(ml)
-    storage.setItem('calistenia_water_goal', String(ml))
-
-    if (usePB && userId) {
-      try {
-        const existingRes = await pb.collection('settings').getList(1, 1, {
-          filter: pb.filter('user = {:uid}', { uid: userId }),
-          $autoCancel: false,
-        })
-        if (existingRes.items.length > 0) {
-          await pb.collection('settings').update(existingRes.items[0].id, { water_goal: ml })
-        } else {
-          await pb.collection('settings').create({ user: userId, water_goal: ml })
-        }
-      } catch {
-        // PB not available, goal saved to localStorage above
-      }
-    }
-  }, [usePB, userId])
+  const setGoal = useCallback(
+    (ml: number) => { goalMutation.mutate(ml) },
+    [goalMutation],
+  )
 
   return {
-    dayTotal: dayData.total,
-    dayEntries: dayData.entries,
-    todayTotal: dayData.total,
-    todayEntries: dayData.entries,
+    dayTotal: currentDay.total,
+    dayEntries: currentDay.entries,
+    todayTotal: currentDay.total,    // @deprecated: alias de dayTotal
+    todayEntries: currentDay.entries, // @deprecated: alias de dayEntries
     goal,
     setGoal,
     addWater,
     removeEntry,
     isReady,
-    adding,
+    adding: addMutation.isPending,
   }
 }

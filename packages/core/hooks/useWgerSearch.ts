@@ -5,10 +5,7 @@ import { pb } from '../lib/pocketbase'
 import { searchWger, getWgerExerciseInfo, downloadWgerImage } from '../lib/wger'
 import { mapWgerToExerciseCatalog } from '../lib/wger-mappings'
 import type { WgerSearchSuggestion } from '../lib/wger'
-
-// TODO: mover a qk — key para búsquedas en la API externa de wger (ejercicios)
-const wgerSearchKey = (term: string, language: string) =>
-  ['wger', 'search', term, language] as const
+import { qk } from '../lib/query-keys'
 
 export function useWgerSearch() {
   // Término activo que dispara la query; cadena vacía deshabilita la búsqueda
@@ -25,7 +22,7 @@ export function useWgerSearch() {
     data: wgerResults = [],
     isFetching: wgerLoading,
   } = useQuery({
-    queryKey: wgerSearchKey(searchTerm, searchLanguage),
+    queryKey: qk.wgerSearch(searchTerm, searchLanguage),
     enabled: searchTerm.length >= 2,
     staleTime: 5 * 60 * 1000, // resultados de búsqueda válidos 5 min
     queryFn: async () => {
@@ -105,7 +102,7 @@ export function useWgerSearch() {
 
       // Eliminar del cache de resultados tras importación exitosa
       qc.setQueryData(
-        wgerSearchKey(searchTerm, searchLanguage),
+        qk.wgerSearch(searchTerm, searchLanguage),
         (prev: WgerSearchSuggestion[] | undefined) =>
           (prev ?? []).filter(r => r.data.id !== wgerId),
       )

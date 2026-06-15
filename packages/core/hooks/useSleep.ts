@@ -1,19 +1,22 @@
 import { storage } from '../platform'
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { useCallback, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { pb } from '../lib/pocketbase'
 import { daysAgoStr, nowLocalForPB } from '../lib/dateUtils'
+import { qk } from '../lib/query-keys'
 import type { SleepEntry } from '../types'
 
 const LS_KEY = 'calistenia_sleep_entries'
 
+// — Helpers de localStorage —
 const lsGet = (): SleepEntry[] => {
   try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
 }
 const lsSet = (d: SleepEntry[]) => storage.setItem(LS_KEY, JSON.stringify(d))
 
 /**
- * Calculate duration in minutes from bedtime to wake_time, handling midnight crossing.
- * Both times are "HH:MM" strings.
+ * Calcula la duración en minutos desde bedtime hasta wake_time, manejando
+ * el cruce de medianoche. Ambos tiempos son strings "HH:MM".
  */
 export const calculateDurationMinutes = (bedtime: string, wakeTime: string): number => {
   const [bH, bM] = bedtime.split(':').map(Number)
@@ -21,15 +24,15 @@ export const calculateDurationMinutes = (bedtime: string, wakeTime: string): num
   let bedMin = bH * 60 + bM
   let wakeMin = wH * 60 + wM
   if (wakeMin <= bedMin) {
-    // midnight crossing: e.g. 23:30 -> 07:15
+    // cruce de medianoche: ej. 23:30 -> 07:15
     wakeMin += 24 * 60
   }
   return wakeMin - bedMin
 }
 
 /**
- * Returns true if the user "slept well" on the given date (quality >= 3).
- * Returns null if no entry exists for that date.
+ * Retorna true si el usuario "durmió bien" en la fecha dada (quality >= 3).
+ * Retorna null si no hay entrada para esa fecha.
  */
 export const didSleepWell = (entries: SleepEntry[], date: string): boolean | null => {
   const entry = entries.find(e => e.date === date)
@@ -42,7 +45,7 @@ export interface SleepStats {
   avgQuality: number
   avgAwakenings: number
   avgAwakeMinutes: number
-  scheduleRegularity: number // std deviation of bedtime in minutes
+  scheduleRegularity: number // desviación estándar del horario de dormir en minutos
   entryCount: number
 }
 
@@ -56,16 +59,16 @@ const computeStats = (entries: SleepEntry[]): SleepStats => {
   const avgQuality = entries.reduce((s, e) => s + e.quality, 0) / n
   const avgAwakenings = entries.reduce((s, e) => s + e.awakenings, 0) / n
 
-  // Avg awake minutes — only over entries that have the field
+  // Promedio de minutos despierto — solo sobre entradas que tienen el campo
   const awakeEntries = entries.filter(e => e.awake_minutes && e.awake_minutes > 0)
   const avgAwakeMinutes = awakeEntries.length > 0
     ? awakeEntries.reduce((s, e) => s + (e.awake_minutes ?? 0), 0) / awakeEntries.length
     : 0
 
-  // Schedule regularity: std deviation of bedtime (in minutes from midnight)
+  // Regularidad del horario: desviación estándar del bedtime (en minutos desde medianoche)
   const bedtimeMinutes = entries.map(e => {
     const [h, m] = e.bedtime.split(':').map(Number)
-    // Normalize: times before 12:00 are "next day" (e.g. 01:00 = 25*60)
+    // Normalizar: tiempos antes de 12:00 son "día siguiente" (ej. 01:00 = 25*60)
     return h < 12 ? (h + 24) * 60 + m : h * 60 + m
   })
   const meanBedtime = bedtimeMinutes.reduce((s, v) => s + v, 0) / n
@@ -94,134 +97,157 @@ interface UseSleepReturn {
   didSleepWell: (date: string) => boolean | null
 }
 
+/**
+ * Entradas de sueño. Offline-first: localStorage es la fuente inmediata
+ * (initialData), PocketBase es autoritativo y se fusiona al cargar.
+ * Las mutaciones son optimistas y escriben a localStorage en onMutate;
+ * PB se sincroniza en segundo plano. Forma pública estable: UseSleepReturn.
+ */
 export function useSleep(userId: string | null = null): UseSleepReturn {
-  const [entries, setEntries] = useState<SleepEntry[]>([])
-  const [isReady, setIsReady] = useState(false)
-  const [usePB, setUsePB] = useState(false)
-  const initialized = useRef(false)
-  const entriesRef = useRef(entries)
-  entriesRef.current = entries
+  const qc = useQueryClient()
+  const key = qk.sleep(userId)
 
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+  // — Query principal: initialData desde localStorage, refetch desde PB —
+  const { data: entries = [], isFetched } = useQuery<SleepEntry[]>({
+    queryKey: key,
+    // initialData desde localStorage → disponible aun offline / sin sesión
+    initialData: lsGet,
+    initialDataUpdatedAt: 0, // fuerza refetch al montar para fusionar con PB
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const res = await pb.collection('sleep_entries').getList(1, 500, {
+        filter: pb.filter('user = {:uid}', { uid: userId! }),
+        sort: '-date',
+      })
+      const items: SleepEntry[] = res.items.map((r: any) => ({
+        id: r.id,
+        user: r.user,
+        // Normalizar fecha: PB devuelve 'YYYY-MM-DD 00:00:00', tomamos solo la parte de fecha
+        date: r.date?.split(' ')[0] || r.date,
+        bedtime: r.bedtime,
+        wake_time: r.wake_time,
+        awakenings: r.awakenings,
+        quality: r.quality,
+        duration_minutes: r.duration_minutes,
+        awake_minutes: r.awake_minutes || undefined,
+        caffeine: r.caffeine ?? undefined,
+        screen_before_bed: r.screen_before_bed ?? undefined,
+        stress_level: r.stress_level || undefined,
+        note: r.note || undefined,
+        created: r.created,
+        updated: r.updated,
+      }))
+      // Escribir a localStorage para tener caché offline actualizado
+      lsSet(items)
+      return items
+    },
+  })
 
-    const init = async () => {
-      const available = userId ? await isPocketBaseAvailable() : false
-      setUsePB(available && !!userId)
+  // isReady: true cuando ya corrió al menos el initialData o el fetch completó
+  const isReady = !userId ? true : isFetched || entries.length > 0
 
-      if (available && userId) {
-        try {
-          const res = await pb.collection('sleep_entries').getList(1, 500, {
-            filter: pb.filter('user = {:uid}', { uid: userId }),
-            sort: '-date',
-          })
-          const items: SleepEntry[] = res.items.map((r: any) => ({
-            id: r.id,
-            user: r.user,
-            date: r.date?.split(' ')[0] || r.date,
-            bedtime: r.bedtime,
-            wake_time: r.wake_time,
-            awakenings: r.awakenings,
-            quality: r.quality,
-            duration_minutes: r.duration_minutes,
-            awake_minutes: r.awake_minutes || undefined,
-            caffeine: r.caffeine ?? undefined,
-            screen_before_bed: r.screen_before_bed ?? undefined,
-            stress_level: r.stress_level || undefined,
-            note: r.note || undefined,
-            created: r.created,
-            updated: r.updated,
-          }))
-          setEntries(items)
-          lsSet(items)
-        } catch (e) {
-          console.warn('PB sleep_entries load error, using localStorage', e)
-          setEntries(lsGet())
-        }
-      } else {
-        setEntries(lsGet())
-      }
-      setIsReady(true)
-    }
-    init()
-  }, [userId])
-
-  // Weekly stats: last 7 days
+  // — Stats semanales: últimos 7 días —
   const weeklyStats = useMemo(() => {
     const cutoff = daysAgoStr(7)
     const recent = entries.filter(e => e.date >= cutoff)
     return computeStats(recent)
   }, [entries])
 
-  const saveSleepEntry = useCallback(async (input: SleepEntryInput) => {
-    const totalInBed = calculateDurationMinutes(input.bedtime, input.wake_time)
-    const duration_minutes = Math.max(0, totalInBed - (input.awake_minutes ?? 0))
-    const now = nowLocalForPB()
-    const entry: SleepEntry = {
-      ...input,
-      id: `local_${Date.now()}`,
-      user: userId || '',
-      duration_minutes,
-      created: now,
-      updated: now,
-    }
-
-    if (usePB && userId) {
-      try {
-        const rec = await pb.collection('sleep_entries').create({
-          user: userId,
-          date: input.date + ' 00:00:00',
-          bedtime: input.bedtime,
-          wake_time: input.wake_time,
-          awakenings: input.awakenings,
-          quality: input.quality,
-          duration_minutes,
-          awake_minutes: input.awake_minutes ?? 0,
-          caffeine: input.caffeine ?? null,
-          screen_before_bed: input.screen_before_bed ?? null,
-          stress_level: input.stress_level ?? null,
-          note: input.note || '',
-        })
-        entry.id = rec.id
-        entry.created = rec.created
-        entry.updated = rec.updated
-      } catch (e) {
-        console.warn('PB sleep create error:', e)
+  // — Mutación: guardar nueva entrada (optimista) —
+  const saveMutation = useMutation({
+    mutationFn: async (input: SleepEntryInput) => {
+      if (!userId) return
+      const totalInBed = calculateDurationMinutes(input.bedtime, input.wake_time)
+      const duration_minutes = Math.max(0, totalInBed - (input.awake_minutes ?? 0))
+      const rec = await pb.collection('sleep_entries').create({
+        user: userId,
+        // Normalizar fecha a 'YYYY-MM-DD 00:00:00' para PocketBase
+        date: input.date + ' 00:00:00',
+        bedtime: input.bedtime,
+        wake_time: input.wake_time,
+        awakenings: input.awakenings,
+        quality: input.quality,
+        duration_minutes,
+        awake_minutes: input.awake_minutes ?? 0,
+        caffeine: input.caffeine ?? null,
+        screen_before_bed: input.screen_before_bed ?? null,
+        stress_level: input.stress_level ?? null,
+        note: input.note || '',
+      })
+      return rec
+    },
+    onMutate: async (input: SleepEntryInput) => {
+      await qc.cancelQueries({ queryKey: key })
+      const prev = qc.getQueryData<SleepEntry[]>(key) ?? lsGet()
+      const totalInBed = calculateDurationMinutes(input.bedtime, input.wake_time)
+      const duration_minutes = Math.max(0, totalInBed - (input.awake_minutes ?? 0))
+      const now = nowLocalForPB()
+      // Guardia local_: id temporal hasta confirmar con PB
+      const optimistic: SleepEntry = {
+        ...input,
+        id: `local_${Date.now()}`,
+        user: userId || '',
+        duration_minutes,
+        created: now,
+        updated: now,
       }
-    }
-
-    setEntries(prev => {
-      const updated = [entry, ...prev].sort((a, b) => b.date.localeCompare(a.date))
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB, userId])
-
-  const updateSleepEntry = useCallback(async (id: string, input: Partial<SleepEntryInput>) => {
-    if (usePB && userId && !id.startsWith('local_')) {
-      try {
-        const data: Record<string, any> = { ...input }
-        if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
-          const existing = entriesRef.current.find(e => e.id === id)
-          if (existing) {
-            const bedtime = input.bedtime ?? existing.bedtime
-            const wake_time = input.wake_time ?? existing.wake_time
-            const awakeMin = input.awake_minutes ?? existing.awake_minutes ?? 0
-            data.duration_minutes = Math.max(0, calculateDurationMinutes(bedtime, wake_time) - awakeMin)
-          }
-        }
-        if (input.date) {
-          data.date = input.date + ' 00:00:00'
-        }
-        await pb.collection('sleep_entries').update(id, data)
-      } catch (e) {
-        console.warn('PB sleep update error:', e)
+      const next = [optimistic, ...prev].sort((a, b) => b.date.localeCompare(a.date))
+      lsSet(next)
+      qc.setQueryData(key, next)
+      return { prev }
+    },
+    onError: (_err, _input, ctx) => {
+      if (ctx?.prev) {
+        lsSet(ctx.prev)
+        qc.setQueryData(key, ctx.prev)
       }
-    }
+    },
+    onSuccess: (rec, input) => {
+      if (!rec) return
+      // Reemplazar el id local_ con el id real de PB
+      qc.setQueryData(key, (old: SleepEntry[] = []) => {
+        const updated = old.map(e =>
+          e.id.startsWith('local_') && e.date === input.date
+            ? {
+                ...e,
+                id: rec.id,
+                created: rec.created,
+                updated: rec.updated,
+              }
+            : e
+        )
+        lsSet(updated)
+        return updated
+      })
+    },
+  })
 
-    setEntries(prev => {
-      const updated = prev.map(entry => {
+  // — Mutación: actualizar entrada existente (optimista) —
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: Partial<SleepEntryInput> }) => {
+      if (!userId || id.startsWith('local_')) return
+      const data: Record<string, any> = { ...input }
+      // Recalcular duration_minutes si cambian bedtime, wake_time o awake_minutes
+      if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
+        const current = (qc.getQueryData<SleepEntry[]>(key) ?? []).find(e => e.id === id)
+        if (current) {
+          const bedtime = input.bedtime ?? current.bedtime
+          const wake_time = input.wake_time ?? current.wake_time
+          const awakeMin = input.awake_minutes ?? current.awake_minutes ?? 0
+          data.duration_minutes = Math.max(0, calculateDurationMinutes(bedtime, wake_time) - awakeMin)
+        }
+      }
+      if (input.date) {
+        // Normalizar fecha a 'YYYY-MM-DD 00:00:00' para PocketBase
+        data.date = input.date + ' 00:00:00'
+      }
+      await pb.collection('sleep_entries').update(id, data)
+    },
+    onMutate: async ({ id, input }: { id: string; input: Partial<SleepEntryInput> }) => {
+      await qc.cancelQueries({ queryKey: key })
+      const prev = qc.getQueryData<SleepEntry[]>(key) ?? lsGet()
+      const next = prev.map(entry => {
         if (entry.id !== id) return entry
         const merged = { ...entry, ...input, updated: nowLocalForPB() }
         if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
@@ -230,25 +256,62 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
         }
         return merged
       }).sort((a, b) => b.date.localeCompare(a.date))
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB, userId])
+      lsSet(next)
+      qc.setQueryData(key, next)
+      return { prev }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) {
+        lsSet(ctx.prev)
+        qc.setQueryData(key, ctx.prev)
+      }
+    },
+  })
 
-  const deleteSleepEntry = useCallback(async (id: string) => {
-    if (usePB && !id.startsWith('local_')) {
-      try { await pb.collection('sleep_entries').delete(id) } catch {}
-    }
-    setEntries(prev => {
-      const updated = prev.filter(e => e.id !== id)
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB])
+  // — Mutación: borrar entrada (optimista) —
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // Guardia local_: no intentar borrar en PB si es id temporal
+      if (id.startsWith('local_')) return
+      await pb.collection('sleep_entries').delete(id)
+    },
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: key })
+      const prev = qc.getQueryData<SleepEntry[]>(key) ?? lsGet()
+      const next = prev.filter(e => e.id !== id)
+      lsSet(next)
+      qc.setQueryData(key, next)
+      return { prev }
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) {
+        lsSet(ctx.prev)
+        qc.setQueryData(key, ctx.prev)
+      }
+    },
+  })
 
-  const checkSleepWell = useCallback((date: string): boolean | null => {
-    return didSleepWell(entries, date)
-  }, [entries])
+  // — Wrappers de API pública (misma forma que el hook original) —
+  const saveSleepEntry = useCallback(
+    (input: SleepEntryInput) => saveMutation.mutateAsync(input).then(() => {}),
+    [saveMutation],
+  )
+
+  const updateSleepEntry = useCallback(
+    (id: string, input: Partial<SleepEntryInput>) =>
+      updateMutation.mutateAsync({ id, input }).then(() => {}),
+    [updateMutation],
+  )
+
+  const deleteSleepEntry = useCallback(
+    (id: string) => deleteMutation.mutateAsync(id).then(() => {}),
+    [deleteMutation],
+  )
+
+  const checkSleepWell = useCallback(
+    (date: string): boolean | null => didSleepWell(entries, date),
+    [entries],
+  )
 
   return {
     entries,
