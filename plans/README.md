@@ -12,7 +12,7 @@ These plans came from a read-only static audit (4 parallel reviewers + vetting a
 | Plan | Title | Priority | Effort | Risk | Depends on | Status |
 |------|-------|----------|--------|------|------------|--------|
 | 001 | signOut localStorage cross-user leak | P1 | S | MED | — | DONE |
-| 002 | useWater wrong-day persistence (`today` vs `activeDate`) | P2 | S | LOW | — | TODO |
+| 002 | useWater wrong-day persistence (`today` vs `activeDate`) | P2 | S | LOW | — | DONE |
 | 003 | useMealReminders silent rollback (swallowed PB errors) | P2 | S | LOW | — | TODO |
 | 004 | useWeeklyMealPlan.logMeal nutrition invalidation | P2 | S | LOW | — | TODO |
 | 005 | Guard `lsSet` (useWeight/useWorkoutReminders/useSleep) | P2 | S | LOW | — | TODO |

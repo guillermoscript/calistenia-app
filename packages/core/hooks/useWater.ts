@@ -141,7 +141,7 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
     },
     onMutate: async (ml: number) => {
       await qc.cancelQueries({ queryKey: dayKey })
-      const prev = qc.getQueryData<DayWater>(dayKey) ?? lsGetDay(today)
+      const prev = qc.getQueryData<DayWater>(dayKey) ?? lsGetDay(activeDate)
       // Guardia local_: id temporal hasta confirmar con PB
       const localId = `local_${Date.now()}`
       const entry: WaterEntry = { id: localId, amount_ml: ml, logged_at: nowLocalForPB() }
@@ -149,14 +149,14 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
         entries: [entry, ...prev.entries],
         total: prev.total + ml,
       }
-      lsSetDay(today, next)
+      lsSetDay(activeDate, next)
       qc.setQueryData(dayKey, next)
       op.track('water_logged', { amount_ml: ml })
       return { prev, localId }
     },
     onError: (_err, _ml, ctx) => {
       if (ctx?.prev) {
-        lsSetDay(today, ctx.prev)
+        lsSetDay(activeDate, ctx.prev)
         qc.setQueryData(dayKey, ctx.prev)
       }
     },
@@ -168,7 +168,7 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
           e.id === ctx.localId ? { ...e, id: rec.id } : e
         )
         const updated: DayWater = { ...old, entries }
-        lsSetDay(today, updated)
+        lsSetDay(activeDate, updated)
         return updated
       })
     },
@@ -183,19 +183,19 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
     },
     onMutate: async (id: string) => {
       await qc.cancelQueries({ queryKey: dayKey })
-      const prev = qc.getQueryData<DayWater>(dayKey) ?? lsGetDay(today)
+      const prev = qc.getQueryData<DayWater>(dayKey) ?? lsGetDay(activeDate)
       const removedEntry = prev.entries.find(e => e.id === id)
       const next: DayWater = {
         entries: prev.entries.filter(e => e.id !== id),
         total: prev.total - (removedEntry?.amount_ml || 0),
       }
-      lsSetDay(today, next)
+      lsSetDay(activeDate, next)
       qc.setQueryData(dayKey, next)
       return { prev }
     },
     onError: (_err, _id, ctx) => {
       if (ctx?.prev) {
-        lsSetDay(today, ctx.prev)
+        lsSetDay(activeDate, ctx.prev)
         qc.setQueryData(dayKey, ctx.prev)
       }
     },
