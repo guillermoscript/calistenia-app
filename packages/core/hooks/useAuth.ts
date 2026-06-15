@@ -5,6 +5,7 @@ import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
+import { clearUserStorage } from '../lib/storage-keys'
 import i18n from 'i18next'
 import type { UserRole, UserTier } from '../types'
 
@@ -209,6 +210,8 @@ export function useAuth(): UseAuthReturn {
     // Limpia toda la caché de queries: evita que datos del usuario anterior
     // (nutrición, progreso, social…) persistan tras logout / cambio de cuenta.
     qc.clear()
+    // Elimina las entradas de localStorage del usuario (offline-first hooks).
+    clearUserStorage()
     // onChange listener limpia `user` automáticamente
   }, [qc])
 
