@@ -19,6 +19,7 @@ export const qk = {
   follows: (userId: string | null) => ['follows', userId] as const,
   feed: {
     all: ['feed'] as const,
+    meta: (userId: string | null) => ['feed', 'meta', userId] as const,
     sessions: (userId: string | null, followedIds: string[]) =>
       ['feed', 'sessions', userId, followedIds] as const,
     users: (userIds: string[]) => ['feed', 'users', userIds] as const,

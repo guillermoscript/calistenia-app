@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl, getCurrentUser } from '../lib/pocketbase'
+import { qk } from '../lib/query-keys'
 
 export interface Comment {
   id: string
@@ -15,156 +17,145 @@ export interface Comment {
 
 const CACHE_TTL = 30_000
 
+/** Carga + thread del hilo de un sessionId desde PB (lógica original intacta). */
+async function fetchThread(sessionId: string): Promise<Comment[]> {
+  let records: any[] = []
+  const attempts: Array<{ expand?: string }> = [{ expand: 'author' }, {}]
+  let lastError: any = null
+  for (const attempt of attempts) {
+    try {
+      records = await pb.collection('comments').getFullList({
+        filter: `session_id = '${sessionId}'`,
+        ...(attempt.expand ? { expand: attempt.expand } : {}),
+        $autoCancel: false,
+      })
+      lastError = null
+      break
+    } catch (error: any) {
+      lastError = error
+      if (error?.status !== 400) break
+    }
+  }
+  if (lastError) throw lastError
+
+  records = [...records].sort((a: any, b: any) => {
+    const aTime = new Date((a?.created || a?.updated || '') as string).getTime()
+    const bTime = new Date((b?.created || b?.updated || '') as string).getTime()
+    if (!Number.isNaN(aTime) && !Number.isNaN(bTime)) return aTime - bTime
+    if (!Number.isNaN(aTime)) return 1
+    if (!Number.isNaN(bTime)) return -1
+    return String(a?.id || '').localeCompare(String(b?.id || ''))
+  })
+
+  const authorInfoById = new Map<string, { name: string; avatarUrl: string | null }>()
+  const authorIds = Array.from(new Set(records.map((r: any) => r.author).filter(Boolean))) as string[]
+  if (authorIds.length > 0) {
+    try {
+      const users = await pb.collection('users').getFullList({
+        filter: authorIds.map(id => `id = '${id}'`).join(' || '),
+        fields: 'id,display_name,email,avatar,collectionId,collectionName',
+        $autoCancel: false,
+      })
+      for (const u of users as any[]) {
+        authorInfoById.set(u.id, {
+          name: u.display_name || u.email?.split('@')[0] || '?',
+          avatarUrl: getUserAvatarUrl(u, '100x100'),
+        })
+      }
+    } catch { /* non-critical */ }
+  }
+
+  const flat: Comment[] = records.map((r: any) => {
+    const info = authorInfoById.get(r.author)
+    const expandAuthor = r.expand?.author
+    return {
+      id: r.id,
+      sessionId: r.session_id,
+      authorId: r.author,
+      authorName: expandAuthor?.display_name || expandAuthor?.email?.split('@')[0] || info?.name || '?',
+      authorAvatarUrl: expandAuthor ? getUserAvatarUrl(expandAuthor, '100x100') : (info?.avatarUrl || null),
+      text: r.text,
+      parentId: r.parent_id || null,
+      created: r.created || r.updated || new Date().toISOString(),
+      replies: [],
+    }
+  })
+
+  const topLevel: Comment[] = []
+  const replyMap = new Map<string, Comment[]>()
+  for (const c of flat) {
+    if (c.parentId) {
+      if (!replyMap.has(c.parentId)) replyMap.set(c.parentId, [])
+      replyMap.get(c.parentId)!.push(c)
+    } else {
+      topLevel.push(c)
+    }
+  }
+  for (const c of topLevel) c.replies = replyMap.get(c.id) || []
+  return topLevel
+}
+
+/**
+ * Comentarios por sesión. Migrado a TanStack Query: las lecturas pasan por
+ * qc.fetchQuery (dedup + staleTime 30s reemplazan el TTL manual y el caché por
+ * ref). Se mantiene `commentsBySession`/`commentCounts` como estado reactivo
+ * porque forman parte de la API pública. Forma pública estable:
+ * { getComments, loadCommentCounts, addComment, deleteComment, getCommentCount, commentsBySession }.
+ */
 export function useComments(userId: string | null) {
+  const qc = useQueryClient()
   const [commentsBySession, setCommentsBySession] = useState<Record<string, Comment[]>>({})
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({})
-  const cacheTimestamps = useRef<Record<string, number>>({})
-  const commentsRef = useRef<Record<string, Comment[]>>({})
   const lastCommentTime = useRef<number>(0)
-
-  // Keep ref in sync with state
-  commentsRef.current = commentsBySession
 
   const getComments = useCallback(async (sessionId: string): Promise<Comment[]> => {
     if (!userId) return []
     const available = await isPocketBaseAvailable()
     if (!available) return []
-
-    // Check cache
-    const cached = cacheTimestamps.current[sessionId]
-    if (cached && Date.now() - cached < CACHE_TTL && commentsRef.current[sessionId]) {
-      return commentsRef.current[sessionId]
-    }
-
     try {
-      let records: any[] = []
-
-      // PocketBase instances can differ on expand support for relation fields.
-      // Try expanded records first and gracefully fallback to plain records.
-      const attempts: Array<{ expand?: string }> = [
-        { expand: 'author' },
-        {},
-      ]
-
-      let lastError: any = null
-      for (const attempt of attempts) {
-        try {
-          records = await pb.collection('comments').getFullList({
-            filter: `session_id = '${sessionId}'`,
-            ...(attempt.expand ? { expand: attempt.expand } : {}),
-            $autoCancel: false,
-          })
-          lastError = null
-          break
-        } catch (error: any) {
-          lastError = error
-          if (error?.status !== 400) break
-        }
-      }
-
-      if (lastError) throw lastError
-
-      // If backend didn't sort, sort client-side when possible.
-      records = [...records].sort((a: any, b: any) => {
-        const aTime = new Date((a?.created || a?.updated || '') as string).getTime()
-        const bTime = new Date((b?.created || b?.updated || '') as string).getTime()
-
-        if (!Number.isNaN(aTime) && !Number.isNaN(bTime)) return aTime - bTime
-        if (!Number.isNaN(aTime)) return 1
-        if (!Number.isNaN(bTime)) return -1
-        return String(a?.id || '').localeCompare(String(b?.id || ''))
+      const topLevel = await qc.fetchQuery({
+        queryKey: qk.comments.list(sessionId, userId),
+        staleTime: CACHE_TTL,
+        queryFn: () => fetchThread(sessionId),
       })
-
-      const authorInfoById = new Map<string, { name: string; avatarUrl: string | null }>()
-      const authorIds = Array.from(new Set(records.map((r: any) => r.author).filter(Boolean))) as string[]
-
-      if (authorIds.length > 0) {
-        try {
-          const users = await pb.collection('users').getFullList({
-            filter: authorIds.map(id => `id = '${id}'`).join(' || '),
-            fields: 'id,display_name,email,avatar,collectionId,collectionName',
-            $autoCancel: false,
-          })
-
-          for (const u of users as any[]) {
-            authorInfoById.set(u.id, {
-              name: u.display_name || u.email?.split('@')[0] || '?',
-              avatarUrl: getUserAvatarUrl(u, '100x100'),
-            })
-          }
-        } catch {
-          // non-critical: fallback to expand data or '?'
-        }
-      }
-
-      // Build flat list
-      const flat: Comment[] = records.map((r: any) => {
-        const info = authorInfoById.get(r.author)
-        const expandAuthor = r.expand?.author
-        return {
-          id: r.id,
-          sessionId: r.session_id,
-          authorId: r.author,
-          authorName: expandAuthor?.display_name || expandAuthor?.email?.split('@')[0] || info?.name || '?',
-          authorAvatarUrl: expandAuthor ? getUserAvatarUrl(expandAuthor, '100x100') : (info?.avatarUrl || null),
-          text: r.text,
-          parentId: r.parent_id || null,
-          created: r.created || r.updated || new Date().toISOString(),
-          replies: [],
-        }
-      })
-
-      // Thread: group replies under parents (1 level max)
-      const topLevel: Comment[] = []
-      const replyMap = new Map<string, Comment[]>()
-
-      for (const c of flat) {
-        if (c.parentId) {
-          if (!replyMap.has(c.parentId)) replyMap.set(c.parentId, [])
-          replyMap.get(c.parentId)!.push(c)
-        } else {
-          topLevel.push(c)
-        }
-      }
-
-      for (const c of topLevel) {
-        c.replies = replyMap.get(c.id) || []
-      }
-
       setCommentsBySession(prev => ({ ...prev, [sessionId]: topLevel }))
-      cacheTimestamps.current[sessionId] = Date.now()
       return topLevel
     } catch {
       return []
     }
-  }, [userId])
+  }, [userId, qc])
 
   const loadCommentCounts = useCallback(async (sessionIds: string[]) => {
     if (!userId || sessionIds.length === 0) return
     const available = await isPocketBaseAvailable()
     if (!available) return
-
+    const sorted = [...sessionIds].sort()
     try {
-      const allComments = await pb.collection('comments').getFullList({
-        filter: sessionIds.map(id => `session_id = '${id}'`).join(' || '),
-        fields: 'session_id',
-        $autoCancel: false,
+      const counts = await qc.fetchQuery({
+        queryKey: qk.comments.counts(sorted, userId),
+        staleTime: CACHE_TTL,
+        queryFn: async (): Promise<Record<string, number>> => {
+          const allComments = await pb.collection('comments').getFullList({
+            filter: sorted.map(id => `session_id = '${id}'`).join(' || '),
+            fields: 'session_id',
+            $autoCancel: false,
+          })
+          const c: Record<string, number> = {}
+          for (const id of sorted) c[id] = 0
+          for (const r of allComments) {
+            const sid = (r as any).session_id
+            c[sid] = (c[sid] || 0) + 1
+          }
+          return c
+        },
       })
-
-      const counts: Record<string, number> = {}
-      for (const id of sessionIds) counts[id] = 0
-      for (const r of allComments) {
-        const sid = (r as any).session_id
-        counts[sid] = (counts[sid] || 0) + 1
-      }
       setCommentCounts(counts)
     } catch { /* silent */ }
-  }, [userId])
+  }, [userId, qc])
 
   const addComment = useCallback(async (sessionId: string, text: string, parentId?: string, sessionOwnerId?: string): Promise<boolean> => {
     if (!userId) return false
-
-    // Rate limit: 5 seconds between comments
+    // Rate limit: 5s entre comentarios.
     const now = Date.now()
     if (now - lastCommentTime.current < 5000) return false
     lastCommentTime.current = now
@@ -180,12 +171,9 @@ export function useComments(userId: string | null) {
         parent_id: parentId || null,
       })
 
-      // Update count
       setCommentCounts(prev => ({ ...prev, [sessionId]: (prev[sessionId] || 0) + 1 }))
 
-      // Optimistic insert: mostramos el comentario al instante con los datos
-      // del usuario actual, sin esperar el reload completo del hilo (que hacía
-      // 2-3 round-trips extra y tardaba segundos). El reconcile va en background.
+      // Inserción optimista: mostramos el comentario al instante.
       const me = getCurrentUser()
       const optimistic: Comment = {
         id: rec.id,
@@ -211,7 +199,7 @@ export function useComments(userId: string | null) {
         return { ...prev, [sessionId]: [...existing, optimistic] }
       })
 
-      // Create notification for session owner (or parent comment author for replies)
+      // Notificación al dueño de la sesión (o autor del comentario padre).
       if (sessionOwnerId && sessionOwnerId !== userId) {
         pb.collection('notifications').create({
           user: sessionOwnerId,
@@ -224,31 +212,29 @@ export function useComments(userId: string | null) {
         }).catch(() => {})
       }
 
-      // Reconcile con el servidor en background (threading real, otros comentarios).
-      // NO bloquea el retorno: la UI ya muestra el comentario.
-      delete cacheTimestamps.current[sessionId]
+      // Reconcile en background: invalidamos la caché RQ y recargamos el hilo.
+      qc.invalidateQueries({ queryKey: qk.comments.list(sessionId, userId) })
       void getComments(sessionId)
       return true
     } catch {
       return false
     }
-  }, [userId, getComments])
+  }, [userId, qc, getComments])
 
   const deleteComment = useCallback(async (commentId: string, sessionId: string): Promise<boolean> => {
     if (!userId) return false
     const available = await isPocketBaseAvailable()
     if (!available) return false
-
     try {
       await pb.collection('comments').delete(commentId)
-      delete cacheTimestamps.current[sessionId]
+      qc.invalidateQueries({ queryKey: qk.comments.list(sessionId, userId) })
       setCommentCounts(prev => ({ ...prev, [sessionId]: Math.max(0, (prev[sessionId] || 0) - 1) }))
       await getComments(sessionId)
       return true
     } catch {
       return false
     }
-  }, [userId, getComments])
+  }, [userId, qc, getComments])
 
   const getCommentCount = useCallback((sessionId: string): number => {
     return commentCounts[sessionId] || 0

@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { useState, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { startOfWeekStr, localMidnightAsUTC, todayStr } from '../lib/dateUtils'
-import dayjs from 'dayjs'
+import { qk } from '../lib/query-keys'
 
 export interface LeaderboardEntry {
   userId: string
@@ -19,53 +20,47 @@ export interface LeaderboardData {
   error: string | null
 }
 
-const CACHE_TTL = 30_000 // 30 seconds
+type Entries = Record<LeaderboardCategory, LeaderboardEntry[]>
 
+const EMPTY_ENTRIES: Entries = {
+  sessions_week: [], sessions_month: [], streak: [], streak_best: [],
+  total_sessions: [], xp: [], total_sets: [],
+  pr_pullups: [], pr_pushups: [], pr_lsit: [], pr_handstand: [],
+}
+
+/**
+ * Leaderboard entre seguidos. Migrado a TanStack Query conservando la forma
+ * pública { entries, loading, error, load }. Es LAZY: la query (9×N llamadas a
+ * PB) no corre hasta que se llama `load()` la primera vez — `load` habilita la
+ * query y, si ya estaba activa, fuerza refetch. staleTime 30s reemplaza el TTL
+ * manual previo.
+ */
 export function useLeaderboard(userId: string | null) {
-  const [entries, setEntries] = useState<Record<LeaderboardCategory, LeaderboardEntry[]>>({
-    sessions_week: [], sessions_month: [], streak: [], streak_best: [],
-    total_sessions: [], xp: [], total_sets: [],
-    pr_pullups: [], pr_pushups: [], pr_lsit: [], pr_handstand: [],
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const cacheRef = useRef<{ data: typeof entries; timestamp: number } | null>(null)
+  const qc = useQueryClient()
+  const [enabled, setEnabled] = useState(false)
 
-  const load = useCallback(async () => {
-    if (!userId) return
-    const available = await isPocketBaseAvailable()
-    if (!available) return
+  const weekStartStr = localMidnightAsUTC(startOfWeekStr())
+  const today = todayStr()
+  const monthStartStr = localMidnightAsUTC(`${today.slice(0, 7)}-01`)
+  const key = qk.leaderboard(userId, weekStartStr, monthStartStr)
 
-    // Check cache
-    if (cacheRef.current && Date.now() - cacheRef.current.timestamp < CACHE_TTL) {
-      setEntries(cacheRef.current.data)
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      // 1. Get who I follow
+  const query = useQuery({
+    queryKey: key,
+    enabled: !!userId && enabled,
+    staleTime: 30_000,
+    queryFn: async (): Promise<Entries> => {
+      // 1. A quién sigo
       const followsRes = await pb.collection('follows').getFullList({
-        filter: pb.filter('follower = {:uid}', { uid: userId }),
+        filter: pb.filter('follower = {:uid}', { uid: userId! }),
         $autoCancel: false,
       })
       const followedIds = followsRes.map((r: any) => r.following as string)
-      const allUserIds = [...new Set([userId, ...followedIds])]
+      const allUserIds = [...new Set([userId!, ...followedIds])]
 
-      if (allUserIds.length <= 1 && followedIds.length === 0) {
-        // Not following anyone
-        setLoading(false)
-        return
-      }
+      // No sigo a nadie → leaderboard vacío.
+      if (allUserIds.length <= 1 && followedIds.length === 0) return EMPTY_ENTRIES
 
-      // 2. Fetch stats, settings, and session counts for all users
-      const weekStartStr = localMidnightAsUTC(startOfWeekStr())
-      const today = todayStr()
-      const monthStartStr = localMidnightAsUTC(`${today.slice(0, 7)}-01`)
-
-      // Parallel fetch for each user
+      // 2. Stats + settings + conteos de sesiones por usuario (en paralelo).
       const userDataPromises = allUserIds.map(async (uid) => {
         const [
           userRes, statsRes, settingsRes,
@@ -140,19 +135,19 @@ export function useLeaderboard(userId: string | null) {
 
       const userData = await Promise.all(userDataPromises)
 
-      // 3. Build sorted leaderboards per category
-      const build = (key: string): LeaderboardEntry[] =>
+      // 3. Leaderboards ordenados por categoría.
+      const build = (k: string): LeaderboardEntry[] =>
         userData
           .map(u => ({
             userId: u.userId,
             displayName: u.displayName,
             avatarUrl: u.avatarUrl,
-            value: (u as any)[key] as number,
+            value: (u as any)[k] as number,
             isCurrentUser: u.isCurrentUser,
           }))
           .sort((a, b) => b.value - a.value)
 
-      const result: Record<LeaderboardCategory, LeaderboardEntry[]> = {
+      return {
         sessions_week: build('sessionsWeek'),
         sessions_month: build('sessionsMonth'),
         streak: build('streak'),
@@ -165,20 +160,21 @@ export function useLeaderboard(userId: string | null) {
         pr_lsit: build('pr_lsit'),
         pr_handstand: build('pr_handstand'),
       }
+    },
+  })
 
-      setEntries(result)
-      cacheRef.current = { data: result, timestamp: Date.now() }
-    } catch (e: any) {
-      // If follows collection doesn't exist or no data, just show empty — not an error
-      if (e?.status === 404 || e?.status === 0) {
-        // Collection not found or network error — silently return empty
-      } else {
-        console.warn('Leaderboard load error:', e)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [userId])
+  const load = useCallback(async () => {
+    if (!userId) return
+    setEnabled((prev) => {
+      if (prev) qc.invalidateQueries({ queryKey: key })
+      return true
+    })
+  }, [userId, qc, key])
 
-  return { entries, loading, error, load }
+  return {
+    entries: query.data ?? EMPTY_ENTRIES,
+    loading: query.isFetching,
+    error: query.error ? String((query.error as any)?.message ?? query.error) : null,
+    load,
+  }
 }
