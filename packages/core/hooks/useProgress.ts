@@ -1,8 +1,10 @@
 import { storage } from '../platform'
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { pb } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
+import { qk } from '../lib/query-keys'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -58,6 +60,15 @@ const lsGetSettings = (): Settings => {
 }
 const lsSetSettings = (d: Settings): void => { storage.setItem(LS_SETTINGS, JSON.stringify(d)) }
 
+/** Garantiza startDate en settings local (igual que loadFromLS previo). */
+const ensureStartDate = (s: Settings): Settings => {
+  if (!s.startDate) { s.startDate = todayStr(); lsSetSettings(s) }
+  return s
+}
+
+/** Shape de la query combinada: progreso + settings derivados de PB/LS. */
+interface ProgressData { progress: ProgressMap; settings: Settings }
+
 interface UseProgressReturn {
   progress: ProgressMap
   settings: Settings
@@ -78,231 +89,179 @@ interface UseProgressReturn {
 }
 
 /**
- * useProgress — gestiona el progreso de entrenamiento.
+ * useProgress — progreso de entrenamiento. Migrado a TanStack Query conservando
+ * la API pública completa.
  *
- * Recibe `userId` (string | null) y opcionalmente `activeProgramId` (string | null).
- * Cuando PocketBase está disponible y hay un usuario autenticado, toda la
- * persistencia va a PB filtrada por ese userId (y programId cuando aplica).
- * En cualquier otro caso cae al fallback de storage.
+ * Una sola query (qk.sessions(userId, activeProgramId)) mantiene { progress,
+ * settings } derivados de PB (sessions + sets_log + settings), con initialData
+ * desde localStorage para arranque offline-first. La key incluye userId y
+ * activeProgramId: login/logout y cambio de programa refetchan solos. Las
+ * mutaciones escriben optimistamente a la caché + localStorage (autoritativo) y
+ * sincronizan a PB en segundo plano. Los selectores leen de la query.
  */
 export function useProgress(userId: string | null = null, activeProgramId: string | null = null): UseProgressReturn {
-  const [progress, setProgress] = useState<ProgressMap>({})
-  const [settings, setSettingsState] = useState<Settings>({ ...DEFAULT_SETTINGS })
-  const [usePB, setUsePB] = useState(false)
-  const [pbReady, setPbReady] = useState(false)
-  const initialized = useRef(false)
-  const lastUserId = useRef<string | null>(null)
-  const settingsRef = useRef(settings)
-  settingsRef.current = settings
+  const qc = useQueryClient()
+  const key = qk.sessions(userId, activeProgramId)
 
-  // ─── Init / re-init cuando cambia el userId o el programa activo ─────────
-  useEffect(() => {
-    // Si el userId cambia (login / logout) reseteamos el estado
-    if (lastUserId.current !== userId) {
-      lastUserId.current = userId
-      initialized.current = false
-      setProgress({})
-      setSettingsState({ ...DEFAULT_SETTINGS })
-      setPbReady(false)
-    }
+  // ─── Carga desde PocketBase → ProgressData ────────────────────────────────
+  const loadFromPB = useCallback(async (uid: string): Promise<ProgressData> => {
+    const sessionFilter = activeProgramId
+      ? pb.filter('user = {:uid} && (program = {:pid} || program = "")', { uid, pid: activeProgramId })
+      : pb.filter('user = {:uid}', { uid })
 
-    if (initialized.current) return
-    initialized.current = true
+    const [sessionsRes, setsRes] = await Promise.all([
+      pb.collection('sessions').getList(1, 500, { filter: sessionFilter, sort: '-completed_at', $autoCancel: false }),
+      pb.collection('sets_log').getList(1, 1000, { filter: pb.filter('user = {:uid}', { uid }), sort: '-logged_at', $autoCancel: false }),
+    ])
 
-    const init = async () => {
-      const available = userId ? await isPocketBaseAvailable() : false
-      setUsePB(available && !!userId)
-      if (available && userId) {
-        await loadFromPB(userId)
-      } else {
-        loadFromLS()
+    const prog: ProgressMap = {}
+    sessionsRes.items.forEach((s: any) => {
+      const date = utcToLocalDateStr(s.completed_at || s.created)
+      const entry: import('../types').SessionDone = { done: true, date, workoutKey: s.workout_key, note: s.note || '' }
+      if (s.warmup_skipped || s.warmup_completed || s.warmup_duration_seconds) {
+        entry.warmupCompleted = !!s.warmup_completed
+        entry.warmupSkipped = !!s.warmup_skipped
+        entry.warmupDurationSeconds = s.warmup_duration_seconds || 0
       }
-      setPbReady(true)
-    }
-    init()
-  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── Re-load from PB when the active program changes ─────────────────────
-  // (userId is already initialized at this point; just reload sessions)
-  useEffect(() => {
-    if (!usePB || !userId || !activeProgramId) return
-    loadFromPB(userId)
-  }, [activeProgramId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── Carga desde localStorage ────────────────────────────────────────────
-  const loadFromLS = (): void => {
-    const data = lsGet()
-    setProgress(data)
-    const s = lsGetSettings()
-    if (!s.startDate) { s.startDate = todayStr(); lsSetSettings(s) }
-    setSettingsState(s)
-  }
-
-  // ─── Carga desde PocketBase ──────────────────────────────────────────────
-  const loadFromPB = async (uid: string): Promise<void> => {
-    try {
-      // Filter sessions by program if one is active
-      // Include both program sessions and free sessions (program = '')
-      const sessionFilter = activeProgramId
-        ? pb.filter('user = {:uid} && (program = {:pid} || program = "")', { uid, pid: activeProgramId })
-        : pb.filter('user = {:uid}', { uid })
-
-      const [sessionsRes, setsRes] = await Promise.all([
-        pb.collection('sessions').getList(1, 500, {
-          filter: sessionFilter,
-          sort: '-completed_at',
-          $autoCancel: false,
-        }),
-        pb.collection('sets_log').getList(1, 1000, {
-          filter: pb.filter('user = {:uid}', { uid }),
-          sort: '-logged_at',
-          $autoCancel: false,
-        }),
-      ])
-
-      const prog: ProgressMap = {}
-
-      sessionsRes.items.forEach((s: any) => {
-        const date = utcToLocalDateStr(s.completed_at || s.created)
-        const entry: import('../types').SessionDone = {
-          done: true, date, workoutKey: s.workout_key,
-          note: s.note || '',
-        }
-        // Include warmup/cooldown data if present
-        if (s.warmup_skipped || s.warmup_completed || s.warmup_duration_seconds) {
-          entry.warmupCompleted = !!s.warmup_completed
-          entry.warmupSkipped = !!s.warmup_skipped
-          entry.warmupDurationSeconds = s.warmup_duration_seconds || 0
-        }
-        if (s.cooldown_skipped || s.cooldown_completed || s.cooldown_duration_seconds) {
-          entry.cooldownCompleted = !!s.cooldown_completed
-          entry.cooldownSkipped = !!s.cooldown_skipped
-          entry.cooldownDurationSeconds = s.cooldown_duration_seconds || 0
-        }
-        if (s.duration_seconds != null || s.poses_completed != null || s.total_poses != null) {
-          entry.durationSeconds = s.duration_seconds ?? undefined
-          entry.posesCompleted = s.poses_completed ?? undefined
-          entry.totalPoses = s.total_poses ?? undefined
-        }
-        if (Array.isArray(s.exercise_timings) && s.exercise_timings.length > 0) {
-          entry.exerciseTimings = s.exercise_timings
-        }
-        prog[`done_${date}_${s.workout_key}`] = entry
-      })
-
-      setsRes.items.forEach((s: any) => {
-        const date = utcToLocalDateStr(s.logged_at || s.created)
-        const key = `${date}_${s.workout_key}_${s.exercise_id}`
-        if (!prog[key]) prog[key] = { sets: [], date, workoutKey: s.workout_key, exerciseId: s.exercise_id }
-        const entry = prog[key] as ExerciseLog
-        entry.sets.push({
-          reps: s.reps,
-          note: s.note,
-          weight: s.weight_kg || undefined,
-          rpe: s.rpe || undefined,
-          timestamp: new Date(s.logged_at || s.created).getTime(),
-        })
-      })
-
-      setProgress(prog)
-      lsSet(prog) // Sincronizar cache local
-
-      // Cargar settings del usuario
-      try {
-        const settingsRes = await pb.collection('settings').getList(1, 1, {
-          filter: pb.filter('user = {:uid}', { uid }),
-          $autoCancel: false,
-        })
-        if (settingsRes.items.length > 0) {
-          const settingsRec: any = settingsRes.items[0]
-          const s: Settings = {
-            phase: settingsRec.phase,
-            startDate: settingsRec.start_date?.split(' ')[0] || null,
-            weeklyGoal: settingsRec.weekly_goal || 5,
-            pr_pullups:   settingsRec.pr_pullups   || 0,
-            pr_pushups:   settingsRec.pr_pushups   || 0,
-            pr_lsit:      settingsRec.pr_lsit      || 0,
-            pr_pistol:    settingsRec.pr_pistol     || 0,
-            pr_handstand: settingsRec.pr_handstand  || 0,
-          }
-          // Backfill PRs from logged sets
-          const prUpdates = computePRBackfill(setsRes.items, s)
-          if (prUpdates) {
-            Object.assign(s, prUpdates)
-            pb.collection('settings').update(settingsRec.id, prUpdates).catch(() => {})
-          }
-          setSettingsState(s)
-          lsSetSettings(s)
-        } else {
-          // No hay settings en PB aún, usar localStorage o defaults
-          const s = lsGetSettings()
-          if (!s.startDate) { s.startDate = todayStr(); lsSetSettings(s) }
-          setSettingsState(s)
-          // Crear registro de settings en PB para este usuario
-          if (uid) {
-            pb.collection('settings').create({
-              user: uid,
-              phase: s.phase,
-              start_date: s.startDate,
-              weekly_goal: s.weeklyGoal,
-            }).then((rec: any) => {
-              const prUpdates = computePRBackfill(setsRes.items, s)
-              if (prUpdates) {
-                pb.collection('settings').update(rec.id, prUpdates).catch(() => {})
-                setSettingsState(prev => ({ ...prev, ...prUpdates }))
-              }
-            }).catch(() => {}) // No bloquear si falla
-          }
-        }
-      } catch {
-        // Network/PB error, use localStorage
-        const s = lsGetSettings()
-        setSettingsState(s)
+      if (s.cooldown_skipped || s.cooldown_completed || s.cooldown_duration_seconds) {
+        entry.cooldownCompleted = !!s.cooldown_completed
+        entry.cooldownSkipped = !!s.cooldown_skipped
+        entry.cooldownDurationSeconds = s.cooldown_duration_seconds || 0
       }
-    } catch (e: any) {
-      if (e?.code === 0) return // auto-cancelled, ignore
-      console.error('PocketBase load error, falling back to localStorage', e)
-      loadFromLS()
-    }
-  }
-
-  // ─── logSet ──────────────────────────────────────────────────────────────
-  const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => {
-    const d = date || todayStr()
-    const key = `${d}_${workoutKey}_${exerciseId}`
-
-    // Siempre guardar en localStorage (cache inmediato)
-    setProgress(prev => {
-      const existing = prev[key] as ExerciseLog | undefined || { sets: [], date: d, workoutKey, exerciseId }
-      const updated = { ...existing, sets: [...existing.sets, { ...setData, timestamp: setData.timestamp ?? Date.now() }] } as ExerciseLog
-      const newProg = { ...prev, [key]: updated }
-      lsSet(newProg)
-      return newProg
+      if (s.duration_seconds != null || s.poses_completed != null || s.total_poses != null) {
+        entry.durationSeconds = s.duration_seconds ?? undefined
+        entry.posesCompleted = s.poses_completed ?? undefined
+        entry.totalPoses = s.total_poses ?? undefined
+      }
+      if (Array.isArray(s.exercise_timings) && s.exercise_timings.length > 0) {
+        entry.exerciseTimings = s.exercise_timings
+      }
+      prog[`done_${date}_${s.workout_key}`] = entry
     })
 
-    // Guardar en PocketBase si hay usuario autenticado
+    setsRes.items.forEach((s: any) => {
+      const date = utcToLocalDateStr(s.logged_at || s.created)
+      const k = `${date}_${s.workout_key}_${s.exercise_id}`
+      if (!prog[k]) prog[k] = { sets: [], date, workoutKey: s.workout_key, exerciseId: s.exercise_id }
+      const entry = prog[k] as ExerciseLog
+      entry.sets.push({
+        reps: s.reps,
+        note: s.note,
+        weight: s.weight_kg || undefined,
+        rpe: s.rpe || undefined,
+        timestamp: new Date(s.logged_at || s.created).getTime(),
+      })
+    })
+
+    lsSet(prog) // sincronizar cache local
+
+    // Settings del usuario (+ backfill de PRs desde los sets).
+    let settings: Settings = ensureStartDate(lsGetSettings())
+    try {
+      const settingsRes = await pb.collection('settings').getList(1, 1, {
+        filter: pb.filter('user = {:uid}', { uid }), $autoCancel: false,
+      })
+      if (settingsRes.items.length > 0) {
+        const settingsRec: any = settingsRes.items[0]
+        const s: Settings = {
+          phase: settingsRec.phase,
+          startDate: settingsRec.start_date?.split(' ')[0] || null,
+          weeklyGoal: settingsRec.weekly_goal || 5,
+          pr_pullups: settingsRec.pr_pullups || 0,
+          pr_pushups: settingsRec.pr_pushups || 0,
+          pr_lsit: settingsRec.pr_lsit || 0,
+          pr_pistol: settingsRec.pr_pistol || 0,
+          pr_handstand: settingsRec.pr_handstand || 0,
+        }
+        const prUpdates = computePRBackfill(setsRes.items, s)
+        if (prUpdates) {
+          Object.assign(s, prUpdates)
+          pb.collection('settings').update(settingsRec.id, prUpdates).catch(() => {})
+        }
+        settings = s
+        lsSetSettings(s)
+      } else {
+        const s = ensureStartDate(lsGetSettings())
+        settings = s
+        // Crear settings en PB; aplicar PRs al caché cuando confirme.
+        pb.collection('settings').create({
+          user: uid, phase: s.phase, start_date: s.startDate, weekly_goal: s.weeklyGoal,
+        }).then((rec: any) => {
+          const prUpdates = computePRBackfill(setsRes.items, s)
+          if (prUpdates) {
+            pb.collection('settings').update(rec.id, prUpdates).catch(() => {})
+            qc.setQueryData<ProgressData>(key, (old) => old ? { ...old, settings: { ...old.settings, ...prUpdates } } : old)
+          }
+        }).catch(() => {})
+      }
+    } catch {
+      settings = lsGetSettings()
+    }
+
+    return { progress: prog, settings }
+  }, [activeProgramId, qc, key])
+
+  const query = useQuery<ProgressData>({
+    queryKey: key,
+    enabled: !!userId,
+    initialData: () => ({ progress: lsGet(), settings: ensureStartDate(lsGetSettings()) }),
+    initialDataUpdatedAt: 0, // fuerza refetch al montar para fusionar con PB
+    staleTime: 30_000,
+    queryFn: () => loadFromPB(userId!),
+  })
+
+  const progress = query.data?.progress ?? {}
+  const settings = query.data?.settings ?? { ...DEFAULT_SETTINGS }
+  const usePB = !!userId
+  const pbReady = !userId || query.isFetched
+
+  // ─── Helpers de escritura sobre la caché + LS ─────────────────────────────
+  const patchProgress = useCallback((updater: (prev: ProgressMap) => ProgressMap) => {
+    qc.setQueryData<ProgressData>(key, (old) => {
+      const prevProg = old?.progress ?? lsGet()
+      const newProg = updater(prevProg)
+      lsSet(newProg)
+      return { progress: newProg, settings: old?.settings ?? lsGetSettings() }
+    })
+  }, [qc, key])
+
+  const patchSettings = useCallback((updater: (prev: Settings) => Settings): Settings => {
+    let updated!: Settings
+    qc.setQueryData<ProgressData>(key, (old) => {
+      const prev = old?.settings ?? lsGetSettings()
+      updated = updater(prev)
+      lsSetSettings(updated)
+      return { progress: old?.progress ?? lsGet(), settings: updated }
+    })
+    return updated
+  }, [qc, key])
+
+  // ─── logSet ────────────────────────────────────────────────────────────────
+  const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => {
+    const d = date || todayStr()
+    const k = `${d}_${workoutKey}_${exerciseId}`
+    patchProgress(prev => {
+      const existing = prev[k] as ExerciseLog | undefined || { sets: [], date: d, workoutKey, exerciseId }
+      const updated = { ...existing, sets: [...existing.sets, { ...setData, timestamp: setData.timestamp ?? Date.now() }] } as ExerciseLog
+      return { ...prev, [k]: updated }
+    })
     if (usePB && userId) {
       try {
         await pb.collection('sets_log').create({
-          user: userId,
-          exercise_id: exerciseId,
-          workout_key: workoutKey,
-          reps: setData.reps || '',
-          note: setData.note || '',
-          weight_kg: setData.weight ?? null,
-          rpe: setData.rpe ?? null,
+          user: userId, exercise_id: exerciseId, workout_key: workoutKey,
+          reps: setData.reps || '', note: setData.note || '',
+          weight_kg: setData.weight ?? null, rpe: setData.rpe ?? null,
           logged_at: date ? localDateForPB(date) : nowLocalForPB(),
         })
       } catch (e) { console.warn('PB sets_log error:', e) }
     }
-  }, [usePB, userId])
+  }, [usePB, userId, patchProgress])
 
   // ─── markWorkoutDone ─────────────────────────────────────────────────────
   const markWorkoutDone = useCallback(async (workoutKey: string, note: string = '', warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => {
     const d = date || todayStr()
-    const key = `done_${d}_${workoutKey}`
-
-    setProgress(prev => {
+    const k = `done_${d}_${workoutKey}`
+    patchProgress(prev => {
       const entry: import('../types').SessionDone = { done: true as const, date: d, workoutKey, completedAt: Date.now(), note }
       if (warmupCooldown) {
         entry.warmupCompleted = !(warmupCooldown.warmupSkipped ?? false) && (warmupCooldown.warmupDurationSeconds ?? 0) > 0
@@ -321,9 +280,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         if (timing.durationSeconds != null) entry.durationSeconds = timing.durationSeconds
         if (timing.exerciseTimings?.length) entry.exerciseTimings = timing.exerciseTimings
       }
-      const newProg = { ...prev, [key]: entry }
-      lsSet(newProg)
-      return newProg
+      return { ...prev, [k]: entry }
     })
 
     if (usePB && userId) {
@@ -331,15 +288,13 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         const isFreeSession = workoutKey.startsWith('free_') || workoutKey.startsWith('manual_')
         const [phaseStr, day] = workoutKey.split('_')
         const sessionData: Record<string, any> = {
-          user: userId,
-          workout_key: workoutKey,
+          user: userId, workout_key: workoutKey,
           phase: isFreeSession ? -1 : parseInt(phaseStr.replace('p', '')),
           day: isFreeSession ? 'free' : day,
           completed_at: date ? localDateForPB(date) : nowLocalForPB(),
           note: note || '',
         }
         if (!isFreeSession && activeProgramId) sessionData.program = activeProgramId
-        // Warmup/cooldown tracking
         if (warmupCooldown) {
           sessionData.warmup_completed = !(warmupCooldown.warmupSkipped ?? false) && (warmupCooldown.warmupDurationSeconds ?? 0) > 0
           sessionData.warmup_skipped = warmupCooldown.warmupSkipped ?? false
@@ -348,13 +303,11 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           sessionData.cooldown_skipped = warmupCooldown.cooldownSkipped ?? false
           sessionData.cooldown_duration_seconds = warmupCooldown.cooldownDurationSeconds ?? 0
         }
-        // Yoga session metadata
         if (yogaMeta) {
           if (yogaMeta.duration_seconds != null) sessionData.duration_seconds = yogaMeta.duration_seconds
           if (yogaMeta.poses_completed != null) sessionData.poses_completed = yogaMeta.poses_completed
           if (yogaMeta.total_poses != null) sessionData.total_poses = yogaMeta.total_poses
         }
-        // Strength session timing (total + per-exercise)
         if (timing) {
           if (timing.durationSeconds != null) sessionData.duration_seconds = timing.durationSeconds
           if (timing.exerciseTimings?.length) sessionData.exercise_timings = timing.exerciseTimings
@@ -366,7 +319,6 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     const isFree = workoutKey.startsWith('free_') || workoutKey.startsWith('manual_')
     op.track('workout_completed', { workout_key: workoutKey, is_free_session: isFree })
 
-    // Track first workout in a program as program_started
     if (!isFree && activeProgramId) {
       const psKey = `calistenia_program_started_${activeProgramId}_${userId}`
       if (!storage.getItem(psKey)) {
@@ -374,19 +326,13 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         op.track('program_started', { program_id: activeProgramId })
       }
     }
-  }, [usePB, userId, activeProgramId])
+  }, [usePB, userId, activeProgramId, patchProgress])
 
   // ─── unmarkWorkoutDone ───────────────────────────────────────────────────
   const unmarkWorkoutDone = useCallback(async (workoutKey: string, date?: string) => {
     const d = date || todayStr()
-    const key = `done_${d}_${workoutKey}`
-
-    setProgress(prev => {
-      const newProg = { ...prev }
-      delete newProg[key]
-      lsSet(newProg)
-      return newProg
-    })
+    const k = `done_${d}_${workoutKey}`
+    patchProgress(prev => { const next = { ...prev }; delete next[k]; return next })
 
     if (usePB && userId) {
       try {
@@ -401,9 +347,9 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         }
       } catch (e) { console.warn('PB unmark session error:', e) }
     }
-  }, [usePB, userId])
+  }, [usePB, userId, patchProgress])
 
-  // ─── Helpers de consulta ─────────────────────────────────────────────────
+  // ─── Selectores ──────────────────────────────────────────────────────────
   const isWorkoutDone = useCallback((workoutKey: string, date?: string): boolean => {
     const d = date || todayStr()
     return !!progress[`done_${d}_${workoutKey}`]
@@ -445,8 +391,8 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     const month = today.slice(5, 7)
     const daysInMonth = new Date(Number(year), Number(month), 0).getDate()
     const activity: Record<string, boolean> = {}
-    for (let d = 1; d <= daysInMonth; d++) {
-      const ds = `${year}-${month}-${String(d).padStart(2, '0')}`
+    for (let dd = 1; dd <= daysInMonth; dd++) {
+      const ds = `${year}-${month}-${String(dd).padStart(2, '0')}`
       activity[ds] = Object.keys(progress).some(k => k.startsWith('done_') && k.includes(ds))
     }
     return activity
@@ -462,28 +408,17 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   }, [progress])
 
   const updateSettings = useCallback(async (newSettings: Partial<Settings>) => {
-    let updated!: Settings
-    setSettingsState(prev => {
-      updated = { ...prev, ...newSettings }
-      lsSetSettings(updated)
-      return updated
-    })
-
+    const updated = patchSettings(prev => ({ ...prev, ...newSettings }))
     if (usePB && userId) {
       try {
         const existingRes = await pb.collection('settings').getList(1, 1, {
-          filter: pb.filter('user = {:uid}', { uid: userId }),
-          $autoCancel: false,
+          filter: pb.filter('user = {:uid}', { uid: userId }), $autoCancel: false,
         })
         const data = {
-          phase: updated.phase,
-          start_date: updated.startDate,
-          weekly_goal: updated.weeklyGoal,
-          pr_pullups:   updated.pr_pullups   ?? null,
-          pr_pushups:   updated.pr_pushups   ?? null,
-          pr_lsit:      updated.pr_lsit      ?? null,
-          pr_pistol:    updated.pr_pistol     ?? null,
-          pr_handstand: updated.pr_handstand  ?? null,
+          phase: updated.phase, start_date: updated.startDate, weekly_goal: updated.weeklyGoal,
+          pr_pullups: updated.pr_pullups ?? null, pr_pushups: updated.pr_pushups ?? null,
+          pr_lsit: updated.pr_lsit ?? null, pr_pistol: updated.pr_pistol ?? null,
+          pr_handstand: updated.pr_handstand ?? null,
         }
         if (existingRes.items.length > 0) {
           await pb.collection('settings').update(existingRes.items[0].id, data)
@@ -492,19 +427,14 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         }
       } catch {
         pb.collection('settings').create({
-          user: userId,
-          phase: updated.phase,
-          start_date: updated.startDate,
-          weekly_goal: updated.weeklyGoal,
-          pr_pullups:   updated.pr_pullups   ?? null,
-          pr_pushups:   updated.pr_pushups   ?? null,
-          pr_lsit:      updated.pr_lsit      ?? null,
-          pr_pistol:    updated.pr_pistol     ?? null,
-          pr_handstand: updated.pr_handstand  ?? null,
+          user: userId, phase: updated.phase, start_date: updated.startDate, weekly_goal: updated.weeklyGoal,
+          pr_pullups: updated.pr_pullups ?? null, pr_pushups: updated.pr_pushups ?? null,
+          pr_lsit: updated.pr_lsit ?? null, pr_pistol: updated.pr_pistol ?? null,
+          pr_handstand: updated.pr_handstand ?? null,
         }).catch((e: any) => console.warn('PB settings create error:', e))
       }
     }
-  }, [usePB, userId])
+  }, [usePB, userId, patchSettings])
 
   // ─── Auto-detect PRs ─────────────────────────────────────────────────────
   const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string): Promise<PREvent | null> => {
@@ -513,14 +443,15 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     const match = PR_PATTERNS.find(p => p.test(exerciseId))
     if (!match) return null
     const prKey = match.key
-    const current = (settingsRef.current as unknown as Record<string, number>)[prKey] || 0
+    const cur = qc.getQueryData<ProgressData>(key)?.settings ?? settings
+    const current = (cur as unknown as Record<string, number>)[prKey] || 0
     if (repsNum > current) {
       await updateSettings({ [prKey]: repsNum } as Partial<Settings>)
       op.track('pr_achieved', { exercise_id: exerciseId, pr_key: String(prKey), old_value: current, new_value: repsNum })
       return { exerciseId, prKey: String(prKey), oldValue: current, newValue: repsNum }
     }
     return null
-  }, [updateSettings])
+  }, [updateSettings, qc, key, settings])
 
   return {
     progress, settings, usePB, pbReady,
