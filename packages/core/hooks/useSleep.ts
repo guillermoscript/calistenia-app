@@ -118,11 +118,12 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const res = await pb.collection('sleep_entries').getList(1, 500, {
+      // getFullList elimina el límite implícito de 500: obtiene todas las entradas del usuario
+      const res = await pb.collection('sleep_entries').getFullList({
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-date',
       })
-      const items: SleepEntry[] = res.items.map((r: any) => ({
+      const items: SleepEntry[] = res.map((r: any) => ({
         id: r.id,
         user: r.user,
         // Normalizar fecha: PB devuelve 'YYYY-MM-DD 00:00:00', tomamos solo la parte de fecha

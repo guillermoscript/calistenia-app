@@ -52,11 +52,12 @@ export function useWeight(userId: string | null = null): UseWeightReturn {
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const res = await pb.collection('weight_entries').getList(1, 500, {
+      // getFullList elimina el límite implícito de 500: obtiene todos los registros del usuario
+      const res = await pb.collection('weight_entries').getFullList({
         filter: pb.filter('user = {:uid}', { uid: userId! }),
         sort: '-date',
       })
-      const entries: WeightEntry[] = res.items.map((r: any) => ({
+      const entries: WeightEntry[] = res.map((r: any) => ({
         id: r.id,
         weight_kg: r.weight_kg,
         date: r.date?.split(' ')[0] || r.date,

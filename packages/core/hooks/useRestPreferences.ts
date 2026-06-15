@@ -47,12 +47,13 @@ export function useRestPreferences(userId: string | null = null): UseRestPrefere
         return { prefs: lsGet(), pbIds: {} }
       }
       try {
-        const res = await pb.collection('rest_preferences').getList(1, 500, {
+        // getFullList elimina el límite implícito de 500: obtiene todas las preferencias del usuario
+        const res = await pb.collection('rest_preferences').getFullList({
           filter: pb.filter('user = {:uid}', { uid: userId }),
         })
         const prefs: Record<string, number> = {}
         const pbIds: Record<string, string> = {}
-        res.items.forEach((r: any) => {
+        res.forEach((r: any) => {
           prefs[r.exercise_id] = r.rest_seconds
           pbIds[r.exercise_id] = r.id
         })

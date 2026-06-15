@@ -17,7 +17,7 @@ These plans came from a read-only static audit (4 parallel reviewers + vetting a
 | 004 | useWeeklyMealPlan.logMeal nutrition invalidation | P2 | S | LOW | — | DONE |
 | 005 | Guard `lsSet` (useWeight/useWorkoutReminders/useSleep) | P2 | S | LOW | — | DONE |
 | 006 | deleteProgram enrollment fallback (not global catalog) | P2 | S | MED | — | DONE |
-| 007 | Unbounded fetch limits (sessions/sets_log/etc.) | P2 | M | MED | — | TODO |
+| 007 | Unbounded fetch limits (sessions/sets_log/etc.) | P2 | M | MED | — | DONE |
 | 008 | useProgress selector memoization | P3 | M | LOW | — | TODO |
 | 009 | useNutrition weekly-getter memoization | P3 | S | LOW | — | TODO |
 | 010 | Extract optimistic-mutation helper | P3 | M/L | LOW | 002, 003, 005 | TODO |

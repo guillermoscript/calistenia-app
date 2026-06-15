@@ -110,12 +110,13 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       : pb.filter('user = {:uid}', { uid })
 
     const [sessionsRes, setsRes] = await Promise.all([
-      pb.collection('sessions').getList(1, 500, { filter: sessionFilter, sort: '-completed_at', $autoCancel: false }),
-      pb.collection('sets_log').getList(1, 1000, { filter: pb.filter('user = {:uid}', { uid }), sort: '-logged_at', $autoCancel: false }),
+      // getFullList elimina el límite implícito (500/1000): obtiene todos los registros del usuario
+      pb.collection('sessions').getFullList({ filter: sessionFilter, sort: '-completed_at', $autoCancel: false }),
+      pb.collection('sets_log').getFullList({ filter: pb.filter('user = {:uid}', { uid }), sort: '-logged_at', $autoCancel: false }),
     ])
 
     const prog: ProgressMap = {}
-    sessionsRes.items.forEach((s: any) => {
+    sessionsRes.forEach((s: any) => {
       const date = utcToLocalDateStr(s.completed_at || s.created)
       const entry: import('../types').SessionDone = { done: true, date, workoutKey: s.workout_key, note: s.note || '' }
       if (s.warmup_skipped || s.warmup_completed || s.warmup_duration_seconds) {
@@ -139,7 +140,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       prog[`done_${date}_${s.workout_key}`] = entry
     })
 
-    setsRes.items.forEach((s: any) => {
+    setsRes.forEach((s: any) => {
       const date = utcToLocalDateStr(s.logged_at || s.created)
       const k = `${date}_${s.workout_key}_${s.exercise_id}`
       if (!prog[k]) prog[k] = { sets: [], date, workoutKey: s.workout_key, exerciseId: s.exercise_id }
@@ -173,7 +174,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           pr_pistol: settingsRec.pr_pistol || 0,
           pr_handstand: settingsRec.pr_handstand || 0,
         }
-        const prUpdates = computePRBackfill(setsRes.items, s)
+        const prUpdates = computePRBackfill(setsRes, s)
         if (prUpdates) {
           Object.assign(s, prUpdates)
           pb.collection('settings').update(settingsRec.id, prUpdates).catch(() => {})
@@ -187,7 +188,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         pb.collection('settings').create({
           user: uid, phase: s.phase, start_date: s.startDate, weekly_goal: s.weeklyGoal,
         }).then((rec: any) => {
-          const prUpdates = computePRBackfill(setsRes.items, s)
+          const prUpdates = computePRBackfill(setsRes, s)
           if (prUpdates) {
             pb.collection('settings').update(rec.id, prUpdates).catch(() => {})
             qc.setQueryData<ProgressData>(key, (old) => old ? { ...old, settings: { ...old.settings, ...prUpdates } } : old)

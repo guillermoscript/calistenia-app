@@ -54,12 +54,13 @@ function aggregate(sessions: CardioSession[]): CardioAggregateStats {
  */
 async function fetchCardioSessions(userId: string): Promise<CardioSession[]> {
   try {
-    const res = await pb.collection('cardio_sessions').getList(1, 500, {
+    // getFullList elimina el límite implícito de 500: obtiene todas las sesiones del usuario
+    const res = await pb.collection('cardio_sessions').getFullList({
       filter: pb.filter('user = {:userId}', { userId }),
       sort: '-started_at',
       fields: 'id,activity_type,distance_km,duration_seconds,avg_pace,elevation_gain,started_at,finished_at,note,calories_burned,max_pace,avg_speed_kmh,max_speed_kmh,splits',
     })
-    return res.items.map((r: any) => ({
+    return res.map((r: any) => ({
       id: r.id,
       user: userId,
       activity_type: r.activity_type,
