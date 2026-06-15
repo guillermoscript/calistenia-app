@@ -42,6 +42,20 @@ const updateSW = registerSW({
   },
 })
 
+// Stale-chunk recovery after a deploy: users still on the old index.html request
+// chunk hashes that no longer exist on the server. Vite wraps every lazy() import
+// in __vitePreload and dispatches `vite:preloadError` on a failed fetch (Sentry
+// "Failed to fetch dynamically imported module"). Reload once to pull the fresh
+// index + chunks. The 10s window breaks a reload loop if the chunk is truly gone.
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault() // stop Vite from re-throwing into the app
+  const KEY = 'vite-preload-reload-at'
+  const last = Number(sessionStorage.getItem(KEY) || 0)
+  if (Date.now() - last < 10_000) return
+  sessionStorage.setItem(KEY, String(Date.now()))
+  window.location.reload()
+})
+
 // Track push notification clicks forwarded from the service worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
