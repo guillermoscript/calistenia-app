@@ -189,7 +189,9 @@ export function useNotifications(userId: string | null) {
   return {
     notifications,
     unreadCount,
-    loading: listQuery.isFetching,
+    // loading = primera carga únicamente; refreshing = refetch de fondo
+    loading: listQuery.isPending,
+    refreshing: listQuery.isFetching && !listQuery.isPending,
     loadNotifications,
     refreshUnreadCount,
     markAsRead,

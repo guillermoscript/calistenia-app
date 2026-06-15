@@ -42,7 +42,7 @@ export function useProfileCompare() {
 
   const queryKey = qk.profileCompare(userId, weekStartStr, monthYYYYMM)
 
-  const { data, isFetching, refetch } = useQuery<CompareStats>({
+  const { data, isFetching, isPending, refetch } = useQuery<CompareStats>({
     queryKey,
     enabled: !!userId,
     // 5 min: los stats de comparación no cambian frecuentemente dentro de una sesión
@@ -156,7 +156,9 @@ export function useProfileCompare() {
 
   return {
     stats: data ?? EMPTY_STATS,
-    loading: isFetching,
+    // loading = primera carga únicamente; refreshing = refetch de fondo
+    loading: isPending,
+    refreshing: isFetching && !isPending,
     load,
   }
 }

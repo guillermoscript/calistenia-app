@@ -24,6 +24,7 @@ interface UseFollowsReturn {
   followingCount: number
   followersCount: number
   loading: boolean
+  refreshing: boolean
   follow: (targetUserId: string) => Promise<boolean>
   unfollow: (targetUserId: string) => Promise<boolean>
   isFollowing: (targetUserId: string) => boolean
@@ -44,7 +45,7 @@ export function useFollows(userId: string | null): UseFollowsReturn {
   const pendingRef = useRef<Set<string>>(new Set())
 
   // — Query principal: colapsa los 2 reads en uno —
-  const { data, isFetching, refetch } = useQuery<FollowsData>({
+  const { data, isFetching, isPending, refetch } = useQuery<FollowsData>({
     queryKey: key,
     enabled: !!userId,
     staleTime: 30_000,
@@ -207,7 +208,9 @@ export function useFollows(userId: string | null): UseFollowsReturn {
     followingIds,
     followingCount: following.length,
     followersCount: followers.length,
-    loading: isFetching,
+    // loading = primera carga únicamente; refreshing = refetch de fondo
+    loading: isPending,
+    refreshing: isFetching && !isPending,
     follow,
     unfollow,
     isFollowing,

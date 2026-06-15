@@ -17,6 +17,7 @@ export type LeaderboardCategory = 'sessions_week' | 'sessions_month' | 'streak' 
 export interface LeaderboardData {
   entries: Record<LeaderboardCategory, LeaderboardEntry[]>
   loading: boolean
+  refreshing: boolean
   error: string | null
 }
 
@@ -173,7 +174,9 @@ export function useLeaderboard(userId: string | null) {
 
   return {
     entries: query.data ?? EMPTY_ENTRIES,
-    loading: query.isFetching,
+    // loading = primera carga únicamente; refreshing = refetch de fondo
+    loading: query.isPending,
+    refreshing: query.isFetching && !query.isPending,
     error: query.error ? String((query.error as any)?.message ?? query.error) : null,
     load,
   }

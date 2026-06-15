@@ -109,6 +109,10 @@ export function useDiscoverRaces(filter: DiscoverFilter): {
 
   // Mapear el estado de RQ a la forma pública original
   const races = data ?? []
+  // EXCEPCIÓN DOCUMENTADA: loading usa isFetching (no isPending) porque la pantalla
+  // de descubrimiento muestra un overlay activo mientras el usuario cambia filtros;
+  // el refetch de fondo debe verse reflejado en la UI inmediatamente.
+  // Ver plans/011-unify-loading-semantics.md para la convención general.
   const loading = isFetching
   const error = rqError ? (rqError as Error).message : null
 

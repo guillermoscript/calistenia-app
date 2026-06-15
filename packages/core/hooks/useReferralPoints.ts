@@ -151,7 +151,9 @@ export function useReferralPoints(userId: string | null) {
     // Estado derivado de las queries — forma idéntica a la versión anterior
     balance: balanceQuery.data ?? 0,
     transactions: transactionsQuery.data ?? [],
-    loading: transactionsQuery.isFetching,
+    // loading = primera carga únicamente; refreshing = refetch de fondo
+    loading: transactionsQuery.isPending,
+    refreshing: transactionsQuery.isFetching && !transactionsQuery.isPending,
 
     // Funciones de la API pública
     getBalance,

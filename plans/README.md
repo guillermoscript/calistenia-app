@@ -21,7 +21,7 @@ These plans came from a read-only static audit (4 parallel reviewers + vetting a
 | 008 | useProgress selector memoization | P3 | M | LOW | — | DONE |
 | 009 | useNutrition weekly-getter memoization | P3 | S | LOW | — | DONE |
 | 010 | Extract optimistic-mutation helper | P3 | M/L | LOW | 002, 003, 005 | DONE |
-| 011 | Unify `loading` semantics (isPending vs isFetching) | P3 | M | MED | — | TODO |
+| 011 | Unify `loading` semantics (isPending vs isFetching) | P3 | M | MED | — | PARTIAL — useNotifications/useLeaderboard/useFollows/useReferralPoints/useProfileCompare DONE; useActivityFeed DEFERRED (mobile social.tsx usa loading para detectar fin de pull-to-refresh en línea 68; requiere migrar consumer a campo refreshing) |
 | 012 | Stabilize array query keys (sort `allUserIds`) | P3 | S | LOW | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale)
