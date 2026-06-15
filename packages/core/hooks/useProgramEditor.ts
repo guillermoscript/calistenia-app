@@ -9,7 +9,9 @@
  */
 
 import { useState, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { qk } from '../lib/query-keys'
 import { getPlatform } from '../platform'
 import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS, WORKOUTS } from '../data/workouts'
 import i18n from 'i18next'
@@ -152,6 +154,10 @@ function genId(): string {
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 export function useProgramEditor() {
+  const qc = useQueryClient()
+  // El estado del editor es estado de FORMULARIO local (no caché de servidor):
+  // permanece en useState. TanStack Query solo se usa para cachear la lectura
+  // one-shot de loadProgram y para invalidar el catálogo al guardar.
   const [state, setState] = useState<ProgramEditorState>(createInitialState)
 
   // ── Step navigation ────────────────────────────────────────────────────────
@@ -332,28 +338,29 @@ export function useProgramEditor() {
     if (!available) return
 
     try {
-      const program = await pb.collection('programs').getOne(programId, { $autoCancel: false })
-      const filter = pb.filter('program = {:pid}', { pid: programId })
-      const [phasesRes, exercisesRes, dayConfigRes] = await Promise.all([
-        pb.collection('program_phases').getList(1, 20, {
-          filter,
-          sort: 'sort_order',
-          $autoCancel: false,
-        }),
-        pb.collection('program_exercises').getList(1, 2000, {
-          filter,
-          sort: 'phase_number,sort_order',
-          $autoCancel: false,
-        }),
-        pb.collection('program_day_config').getList(1, 200, {
-          filter,
-          sort: 'phase_number,sort_order',
-          $autoCancel: false,
-        }).catch((e: any) => {
-          if (e?.status !== 404) console.warn('useProgramEditor: day config fetch failed', e)
-          return { items: [] }
-        }),
-      ])
+      // Lectura cacheada (dedup si se reabre el mismo programa). staleTime
+      // Infinity: el editor siembra estado local; no queremos refetch en vivo.
+      const { program, phaseItems, exerciseItems, dayConfigItems } = await qc.fetchQuery({
+        queryKey: qk.programEditor(programId),
+        staleTime: Infinity,
+        queryFn: async () => {
+          const prog = await pb.collection('programs').getOne(programId, { $autoCancel: false })
+          const filter = pb.filter('program = {:pid}', { pid: programId })
+          const [phasesRes, exercisesRes, dayConfigRes] = await Promise.all([
+            pb.collection('program_phases').getList(1, 20, { filter, sort: 'sort_order', $autoCancel: false }),
+            pb.collection('program_exercises').getList(1, 2000, { filter, sort: 'phase_number,sort_order', $autoCancel: false }),
+            pb.collection('program_day_config').getList(1, 200, { filter, sort: 'phase_number,sort_order', $autoCancel: false })
+              .catch((e: any) => {
+                if (e?.status !== 404) console.warn('useProgramEditor: day config fetch failed', e)
+                return { items: [] }
+              }),
+          ])
+          return { program: prog, phaseItems: phasesRes.items, exerciseItems: exercisesRes.items, dayConfigItems: dayConfigRes.items }
+        },
+      })
+      const phasesRes = { items: phaseItems }
+      const exercisesRes = { items: exerciseItems }
+      const dayConfigRes = { items: dayConfigItems }
 
       const locale = i18n.language
       const loadedPhases: EditorPhase[] = phasesRes.items
@@ -459,7 +466,7 @@ export function useProgramEditor() {
       console.error('useProgramEditor: loadProgram error', e)
       setState(s => ({ ...s, error: i18n.t('programEditor.loadError') }))
     }
-  }, [])
+  }, [qc])
 
   // ── Save program to PB ─────────────────────────────────────────────────────
   const saveProgram = useCallback(async (userId: string): Promise<string | null> => {
@@ -619,6 +626,10 @@ export function useProgramEditor() {
       }
 
       setState(s => ({ ...s, programId, isSaving: false, isDirty: false }))
+      // Refresca catálogo/detalle de usePrograms y la caché de edición.
+      qc.invalidateQueries({ queryKey: qk.programs.catalog })
+      qc.invalidateQueries({ queryKey: ['programs', 'detail'] })
+      if (programId) qc.invalidateQueries({ queryKey: qk.programEditor(programId) })
       return programId
     } catch (e: any) {
       console.error('useProgramEditor: saveProgram error', e)
@@ -629,7 +640,7 @@ export function useProgramEditor() {
       getPlatform().reportError?.(e)
       return null
     }
-  }, [state.programId, state.info, state.phases, state.days])
+  }, [state.programId, state.info, state.phases, state.days, qc])
 
   // ── Reset ──────────────────────────────────────────────────────────────────
   const resetEditor = useCallback(() => {
