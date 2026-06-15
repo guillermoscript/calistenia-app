@@ -1,5 +1,5 @@
 import { storage } from '../platform'
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import i18n from 'i18next'
 import { pb } from '../lib/pocketbase'
@@ -448,20 +448,27 @@ export function useNutrition(userId: string | null) {
     return { dailyCalories, dailyProtein, dailyCarbs, dailyFat, goal, weight, height, age, sex, activityLevel }
   }, [])
 
+  // ─── Índice de totales diarios (se recomputa solo cuando entries cambia) ───
+  const dailyTotalsMap = useMemo((): Map<string, DailyTotals> => {
+    const map = new Map<string, DailyTotals>()
+    for (const e of entries) {
+      const dateStr = utcToLocalDateStr(e.loggedAt)
+      const prev = map.get(dateStr) ?? { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      map.set(dateStr, {
+        calories: prev.calories + e.totalCalories,
+        protein: prev.protein + e.totalProtein,
+        carbs:   prev.carbs   + e.totalCarbs,
+        fat:     prev.fat     + e.totalFat,
+      })
+    }
+    return map
+  }, [entries])
+
   // ─── Selectores derivados ─────────────────────────────────────────────────
   const getDailyTotals = useCallback((date?: string): DailyTotals => {
     const target = date || todayStr()
-    const dayEntries = entries.filter(e => utcToLocalDateStr(e.loggedAt) === target)
-    return dayEntries.reduce<DailyTotals>(
-      (acc, e) => ({
-        calories: acc.calories + e.totalCalories,
-        protein: acc.protein + e.totalProtein,
-        carbs: acc.carbs + e.totalCarbs,
-        fat: acc.fat + e.totalFat,
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 },
-    )
-  }, [entries])
+    return dailyTotalsMap.get(target) ?? { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  }, [dailyTotalsMap])
 
   const getWeeklyAverages = useCallback((): DailyTotals => {
     const totals: DailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 }
