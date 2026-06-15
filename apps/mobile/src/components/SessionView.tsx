@@ -521,10 +521,10 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: {
     <View className="flex-1 items-center justify-center gap-6 px-5">
       <Text className="text-center font-bebas text-5xl leading-none tracking-[2px] text-emerald-500">¡Último set listo!</Text>
       <Text className="font-mono text-[11px] tracking-[2px] text-muted-foreground">
-        {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
+        {workoutTitle.trim() ? `${workoutTitle.toUpperCase()} · ` : ''}{totalSetsLogged} SERIES · {durationMin} MIN
       </Text>
 
-      <View className="w-full max-w-[420px] rounded-xl border border-border bg-card px-6 py-5">
+      <View className="w-full max-w-[420px] shrink-0 rounded-xl border border-border bg-card px-6 py-5">
         <Text className="mb-2.5 font-mono text-[10px] uppercase tracking-[2px] text-lime">Nota de sesión</Text>
         <Text className="mb-3 text-[13px] text-muted-foreground">¿Cómo fue? ¿Algo que destacar?</Text>
         <Input
@@ -536,11 +536,11 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: {
           className="min-h-[72px] text-[13px]"
           textAlignVertical="top"
         />
-        <View className="mt-3 flex-row gap-2.5">
-          <Button className="h-11 flex-1 bg-lime active:bg-lime/90" onPress={() => onSave(note.trim())}>
+        <View className="mt-3 flex-row items-stretch gap-2.5">
+          <Button className="h-12 flex-1 bg-lime active:bg-lime/90" onPress={() => onSave(note.trim())}>
             <Text className="font-bebas text-lg tracking-wide text-lime-foreground">GUARDAR</Text>
           </Button>
-          <Button variant="outline" className="h-11 px-5" onPress={() => onSave('')}>
+          <Button variant="outline" className="h-12 px-5" onPress={() => onSave('')}>
             <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">SALTAR</Text>
           </Button>
         </View>
