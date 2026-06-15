@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr } from '../lib/dateUtils'
+import { makeOptimisticListHandlers, type OptimisticContext } from '../lib/optimistic'
 
 const LS_KEY = 'calistenia_weight_entries'
 
@@ -75,7 +76,17 @@ export function useWeight(userId: string | null = null): UseWeightReturn {
 
   // ── Mutación: logWeight ───────────────────────────────────────────────────
 
-  const logMutation = useMutation<WeightEntry, Error, { weightKg: number; date: string; note: string }>({
+  // Tipo del contexto de logMutation: prev para rollback + optimistic para swap de id en onSuccess.
+  // NOTA: logMutation NO usa makeOptimisticListHandlers porque su onSuccess necesita ctx.optimistic
+  // (swap de id local_ → id real de PB). El helper no expone ese campo.
+  type LogMutationContext = { prev: WeightEntry[]; optimistic: WeightEntry }
+
+  const logMutation = useMutation<
+    WeightEntry,
+    Error,
+    { weightKg: number; date: string; note: string },
+    LogMutationContext
+  >({
     mutationFn: async ({ weightKg, date, note }) => {
       // Optimismo ya aplicado; intentamos persistir en PB.
       if (!userId) throw new Error('sin sesión')
@@ -108,7 +119,7 @@ export function useWeight(userId: string | null = null): UseWeightReturn {
       qc.setQueryData(key, next)
       return { prev, optimistic }
     },
-    onSuccess: (confirmed, _, ctx: any) => {
+    onSuccess: (confirmed, _, ctx) => {
       // Reemplaza el id local_ por el id real de PB.
       const current = qc.getQueryData<WeightEntry[]>(key) ?? []
       const next = current.map(w =>
@@ -117,7 +128,7 @@ export function useWeight(userId: string | null = null): UseWeightReturn {
       lsSet(next)
       qc.setQueryData(key, next)
     },
-    onError: (_err, _vars, ctx: any) => {
+    onError: (_err, _vars, ctx) => {
       // Revierte al estado previo si PB falla (ej. offline sin userId).
       if (ctx?.prev) {
         lsSet(ctx.prev)
@@ -128,26 +139,22 @@ export function useWeight(userId: string | null = null): UseWeightReturn {
 
   // ── Mutación: deleteWeight ────────────────────────────────────────────────
 
-  const deleteMutation = useMutation<void, Error, string>({
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const deleteHandlers = makeOptimisticListHandlers<WeightEntry[], string>(
+    qc,
+    () => key,
+    lsGet,
+    (prev, id) => prev.filter(w => w.id !== id),
+    lsSet,
+  )
+
+  const deleteMutation = useMutation<void, Error, string, OptimisticContext<WeightEntry[]>>({
     mutationFn: async (id) => {
       // Los ids local_ nunca llegaron a PB; solo los que tienen id real.
       if (!userId || id.startsWith('local_')) return
       await pb.collection('weight_entries').delete(id)
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: key })
-      const prev = qc.getQueryData<WeightEntry[]>(key) ?? lsGet()
-      const next = prev.filter(w => w.id !== id)
-      lsSet(next)
-      qc.setQueryData(key, next)
-      return { prev }
-    },
-    onError: (_err, _id, ctx: any) => {
-      if (ctx?.prev) {
-        lsSet(ctx.prev)
-        qc.setQueryData(key, ctx.prev)
-      }
-    },
+    ...deleteHandlers,
   })
 
   // ── Interfaz pública (idéntica al hook anterior) ──────────────────────────

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { daysAgoStr, nowLocalForPB } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
+import { makeOptimisticListHandlers } from '../lib/optimistic'
 import type { SleepEntry } from '../types'
 
 const LS_KEY = 'calistenia_sleep_entries'
@@ -158,6 +159,29 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
   }, [entries])
 
   // — Mutación: guardar nueva entrada (optimista) —
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const saveHandlers = makeOptimisticListHandlers<SleepEntry[], SleepEntryInput>(
+    qc,
+    () => key,
+    lsGet,
+    (prev, input) => {
+      const totalInBed = calculateDurationMinutes(input.bedtime, input.wake_time)
+      const duration_minutes = Math.max(0, totalInBed - (input.awake_minutes ?? 0))
+      const now = nowLocalForPB()
+      // Guardia local_: id temporal hasta confirmar con PB
+      const optimistic: SleepEntry = {
+        ...input,
+        id: `local_${Date.now()}`,
+        user: userId || '',
+        duration_minutes,
+        created: now,
+        updated: now,
+      }
+      return [optimistic, ...prev].sort((a, b) => b.date.localeCompare(a.date))
+    },
+    lsSet,
+  )
+
   const saveMutation = useMutation({
     mutationFn: async (input: SleepEntryInput) => {
       if (!userId) return
@@ -180,32 +204,7 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
       })
       return rec
     },
-    onMutate: async (input: SleepEntryInput) => {
-      await qc.cancelQueries({ queryKey: key })
-      const prev = qc.getQueryData<SleepEntry[]>(key) ?? lsGet()
-      const totalInBed = calculateDurationMinutes(input.bedtime, input.wake_time)
-      const duration_minutes = Math.max(0, totalInBed - (input.awake_minutes ?? 0))
-      const now = nowLocalForPB()
-      // Guardia local_: id temporal hasta confirmar con PB
-      const optimistic: SleepEntry = {
-        ...input,
-        id: `local_${Date.now()}`,
-        user: userId || '',
-        duration_minutes,
-        created: now,
-        updated: now,
-      }
-      const next = [optimistic, ...prev].sort((a, b) => b.date.localeCompare(a.date))
-      lsSet(next)
-      qc.setQueryData(key, next)
-      return { prev }
-    },
-    onError: (_err, _input, ctx) => {
-      if (ctx?.prev) {
-        lsSet(ctx.prev)
-        qc.setQueryData(key, ctx.prev)
-      }
-    },
+    ...saveHandlers,
     onSuccess: (rec, input) => {
       if (!rec) return
       // Reemplazar el id local_ con el id real de PB
@@ -227,6 +226,28 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
   })
 
   // — Mutación: actualizar entrada existente (optimista) —
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const updateHandlers = makeOptimisticListHandlers<
+    SleepEntry[],
+    { id: string; input: Partial<SleepEntryInput> }
+  >(
+    qc,
+    () => key,
+    lsGet,
+    (prev, { id, input }) => {
+      return prev.map(entry => {
+        if (entry.id !== id) return entry
+        const merged = { ...entry, ...input, updated: nowLocalForPB() }
+        if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
+          const totalInBed = calculateDurationMinutes(merged.bedtime, merged.wake_time)
+          merged.duration_minutes = Math.max(0, totalInBed - (merged.awake_minutes ?? 0))
+        }
+        return merged
+      }).sort((a, b) => b.date.localeCompare(a.date))
+    },
+    lsSet,
+  )
+
   const updateMutation = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: Partial<SleepEntryInput> }) => {
       if (!userId || id.startsWith('local_')) return
@@ -247,51 +268,26 @@ export function useSleep(userId: string | null = null): UseSleepReturn {
       }
       await pb.collection('sleep_entries').update(id, data)
     },
-    onMutate: async ({ id, input }: { id: string; input: Partial<SleepEntryInput> }) => {
-      await qc.cancelQueries({ queryKey: key })
-      const prev = qc.getQueryData<SleepEntry[]>(key) ?? lsGet()
-      const next = prev.map(entry => {
-        if (entry.id !== id) return entry
-        const merged = { ...entry, ...input, updated: nowLocalForPB() }
-        if (input.bedtime || input.wake_time || input.awake_minutes !== undefined) {
-          const totalInBed = calculateDurationMinutes(merged.bedtime, merged.wake_time)
-          merged.duration_minutes = Math.max(0, totalInBed - (merged.awake_minutes ?? 0))
-        }
-        return merged
-      }).sort((a, b) => b.date.localeCompare(a.date))
-      lsSet(next)
-      qc.setQueryData(key, next)
-      return { prev }
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) {
-        lsSet(ctx.prev)
-        qc.setQueryData(key, ctx.prev)
-      }
-    },
+    ...updateHandlers,
   })
 
   // — Mutación: borrar entrada (optimista) —
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const deleteHandlers = makeOptimisticListHandlers<SleepEntry[], string>(
+    qc,
+    () => key,
+    lsGet,
+    (prev, id) => prev.filter(e => e.id !== id),
+    lsSet,
+  )
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       // Guardia local_: no intentar borrar en PB si es id temporal
       if (id.startsWith('local_')) return
       await pb.collection('sleep_entries').delete(id)
     },
-    onMutate: async (id: string) => {
-      await qc.cancelQueries({ queryKey: key })
-      const prev = qc.getQueryData<SleepEntry[]>(key) ?? lsGet()
-      const next = prev.filter(e => e.id !== id)
-      lsSet(next)
-      qc.setQueryData(key, next)
-      return { prev }
-    },
-    onError: (_err, _id, ctx) => {
-      if (ctx?.prev) {
-        lsSet(ctx.prev)
-        qc.setQueryData(key, ctx.prev)
-      }
-    },
+    ...deleteHandlers,
   })
 
   // — Wrappers de API pública (misma forma que el hook original) —

@@ -5,6 +5,7 @@ import { pb } from '../lib/pocketbase'
 import { op } from '../lib/analytics'
 import { todayStr, addDays, localMidnightAsUTC, nowLocalForPB } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
+import { makeOptimisticListHandlers } from '../lib/optimistic'
 
 const LS_KEY = 'calistenia_water'
 const DEFAULT_GOAL = 2500 // ml
@@ -175,33 +176,41 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
   })
 
   // — Mutación: eliminar entrada de agua (optimista) —
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  // NOTA: addMutation NO usa el helper porque su onSuccess necesita ctx.localId (swap de id optimista).
+  const removeHandlers = makeOptimisticListHandlers<DayWater, string>(
+    qc,
+    () => dayKey,
+    () => lsGetDay(activeDate),
+    (prev, id) => {
+      const removedEntry = prev.entries.find(e => e.id === id)
+      return {
+        entries: prev.entries.filter(e => e.id !== id),
+        total: prev.total - (removedEntry?.amount_ml || 0),
+      }
+    },
+    (next) => lsSetDay(activeDate, next),
+  )
+
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
       // Guardia local_: no borrar en PB si es id temporal
       if (!userId || id.startsWith('local_')) return
       await pb.collection('water_entries').delete(id)
     },
-    onMutate: async (id: string) => {
-      await qc.cancelQueries({ queryKey: dayKey })
-      const prev = qc.getQueryData<DayWater>(dayKey) ?? lsGetDay(activeDate)
-      const removedEntry = prev.entries.find(e => e.id === id)
-      const next: DayWater = {
-        entries: prev.entries.filter(e => e.id !== id),
-        total: prev.total - (removedEntry?.amount_ml || 0),
-      }
-      lsSetDay(activeDate, next)
-      qc.setQueryData(dayKey, next)
-      return { prev }
-    },
-    onError: (_err, _id, ctx) => {
-      if (ctx?.prev) {
-        lsSetDay(activeDate, ctx.prev)
-        qc.setQueryData(dayKey, ctx.prev)
-      }
-    },
+    ...removeHandlers,
   })
 
   // — Mutación: actualizar meta de agua (optimista) —
+  // Handlers generados por el helper: T = number (valor escalar), key diferente goalKey.
+  const goalHandlers = makeOptimisticListHandlers<number, number>(
+    qc,
+    () => goalKey,
+    lsGetGoal,
+    (_prev, ml) => ml,
+    lsSetGoal,
+  )
+
   const goalMutation = useMutation({
     mutationFn: async (ml: number) => {
       if (!userId) return
@@ -215,19 +224,7 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
         await pb.collection('settings').create({ user: userId, water_goal: ml })
       }
     },
-    onMutate: async (ml: number) => {
-      await qc.cancelQueries({ queryKey: goalKey })
-      const prev = qc.getQueryData<number>(goalKey) ?? lsGetGoal()
-      lsSetGoal(ml)
-      qc.setQueryData(goalKey, ml)
-      return { prev }
-    },
-    onError: (_err, _ml, ctx) => {
-      if (ctx?.prev !== undefined) {
-        lsSetGoal(ctx.prev)
-        qc.setQueryData(goalKey, ctx.prev)
-      }
-    },
+    ...goalHandlers,
   })
 
   // — Wrappers de API pública (misma forma que el hook original) —

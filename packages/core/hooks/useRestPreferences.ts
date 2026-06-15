@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
+import { makeOptimisticListHandlers, type OptimisticContext } from '../lib/optimistic'
 
 const LS_KEY = 'calistenia_rest_prefs'
 
@@ -71,7 +72,23 @@ export function useRestPreferences(userId: string | null = null): UseRestPrefere
   const pbIds = data?.pbIds ?? {}
 
   // — Mutación optimista: actualiza caché + localStorage de inmediato —
-  const mutation = useMutation<void, Error, { exerciseId: string; seconds: number }, { prev: RestPrefsCache }>({
+  // Handlers generados por el helper: T = RestPrefsCache, lsWrite escribe solo el sub-objeto prefs.
+  const prefHandlers = makeOptimisticListHandlers<
+    RestPrefsCache,
+    { exerciseId: string; seconds: number }
+  >(
+    qc,
+    () => key,
+    () => ({ prefs: lsGet(), pbIds: {} }),
+    (prev, { exerciseId, seconds }) => ({
+      ...prev,
+      prefs: { ...prev.prefs, [exerciseId]: seconds },
+    }),
+    // lsWrite escribe solo el mapa de prefs (no pbIds) en localStorage
+    (cache) => lsSet(cache.prefs),
+  )
+
+  const mutation = useMutation<void, Error, { exerciseId: string; seconds: number }, OptimisticContext<RestPrefsCache>>({
     mutationFn: async ({ exerciseId, seconds }) => {
       // Solo persiste en PB si hay userId y PB disponible
       if (!userId) return
@@ -97,25 +114,7 @@ export function useRestPreferences(userId: string | null = null): UseRestPrefere
         })
       }
     },
-    onMutate: async ({ exerciseId, seconds }) => {
-      // Cancelamos cualquier refetch en vuelo para no sobreescribir el optimismo
-      await qc.cancelQueries({ queryKey: key })
-      const prev = qc.getQueryData<RestPrefsCache>(key) ?? { prefs: lsGet(), pbIds: {} }
-
-      // Aplicamos el cambio optimista en caché y en localStorage
-      const nextPrefs = { ...prev.prefs, [exerciseId]: seconds }
-      lsSet(nextPrefs)
-      qc.setQueryData<RestPrefsCache>(key, { ...prev, prefs: nextPrefs })
-
-      return { prev }
-    },
-    onError: (_err, _vars, ctx) => {
-      // Rollback: restauramos el snapshot anterior en caché y en localStorage
-      if (ctx?.prev) {
-        lsSet(ctx.prev.prefs)
-        qc.setQueryData(key, ctx.prev)
-      }
-    },
+    ...prefHandlers,
   })
 
   // — Forma pública — firmas idénticas a la versión anterior —

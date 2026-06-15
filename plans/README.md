@@ -20,7 +20,7 @@ These plans came from a read-only static audit (4 parallel reviewers + vetting a
 | 007 | Unbounded fetch limits (sessions/sets_log/etc.) | P2 | M | MED | — | DONE |
 | 008 | useProgress selector memoization | P3 | M | LOW | — | DONE |
 | 009 | useNutrition weekly-getter memoization | P3 | S | LOW | — | DONE |
-| 010 | Extract optimistic-mutation helper | P3 | M/L | LOW | 002, 003, 005 | TODO |
+| 010 | Extract optimistic-mutation helper | P3 | M/L | LOW | 002, 003, 005 | DONE |
 | 011 | Unify `loading` semantics (isPending vs isFetching) | P3 | M | MED | — | TODO |
 | 012 | Stabilize array query keys (sort `allUserIds`) | P3 | S | LOW | — | DONE |
 

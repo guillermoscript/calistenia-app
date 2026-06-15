@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
+import { makeOptimisticListHandlers } from '../lib/optimistic'
 import type { MealType, MealReminder } from '../types'
 
 // ─── Persistencia local ───────────────────────────────────────────────────────
@@ -98,14 +99,37 @@ export function useMealReminders(userId: string | null) {
   })
 
   // ── Mutación: crear recordatorio ───────────────────────────────────────────
+  // Tipo de payload para crear recordatorio con id temporal
+  type SavePayload = {
+    mealType: MealType
+    hour: number
+    minute: number
+    daysOfWeek: number[]
+    tempId: string
+  }
+
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const saveHandlers = makeOptimisticListHandlers<MealReminder[], SavePayload>(
+    qc,
+    () => remindersKey,
+    lsGet,
+    (prev, payload) => {
+      // Recordatorio optimista con id temporal `mr_`
+      const optimistic: MealReminder = {
+        id: payload.tempId,
+        mealType: payload.mealType,
+        hour: payload.hour,
+        minute: payload.minute,
+        enabled: true,
+        daysOfWeek: payload.daysOfWeek,
+      }
+      return [...prev, optimistic]
+    },
+    lsSet,
+  )
+
   const saveMutation = useMutation({
-    mutationFn: async (payload: {
-      mealType: MealType
-      hour: number
-      minute: number
-      daysOfWeek: number[]
-      tempId: string
-    }) => {
+    mutationFn: async (payload: SavePayload) => {
       if (!usePB || !userId) return null // sin PB, todo queda en LS (onMutate ya lo hizo)
       try {
         const rec = await pb.collection('meal_reminders').create({
@@ -122,31 +146,7 @@ export function useMealReminders(userId: string | null) {
         return null
       }
     },
-    onMutate: async (payload) => {
-      await qc.cancelQueries({ queryKey: remindersKey })
-      const prev = qc.getQueryData<MealReminder[]>(remindersKey) ?? lsGet()
-
-      // Recordatorio optimista con id temporal `mr_`
-      const optimistic: MealReminder = {
-        id: payload.tempId,
-        mealType: payload.mealType,
-        hour: payload.hour,
-        minute: payload.minute,
-        enabled: true,
-        daysOfWeek: payload.daysOfWeek,
-      }
-      const next = [...prev, optimistic]
-      lsSet(next)
-      qc.setQueryData(remindersKey, next)
-      return { prev }
-    },
-    onError: (_err, _vars, ctx) => {
-      // Revertir optimismo
-      if (ctx?.prev) {
-        lsSet(ctx.prev)
-        qc.setQueryData(remindersKey, ctx.prev)
-      }
-    },
+    ...saveHandlers,
     onSuccess: (result) => {
       if (!result) return
       // Reemplazar el id temporal `mr_` por el id real de PB
@@ -161,6 +161,23 @@ export function useMealReminders(userId: string | null) {
   })
 
   // ── Mutación: actualizar recordatorio ──────────────────────────────────────
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const updateHandlers = makeOptimisticListHandlers<
+    MealReminder[],
+    { id: string; hour: number; minute: number; daysOfWeek: number[] }
+  >(
+    qc,
+    () => remindersKey,
+    lsGet,
+    (prev, payload) =>
+      prev.map(r =>
+        r.id === payload.id
+          ? { ...r, hour: payload.hour, minute: payload.minute, daysOfWeek: payload.daysOfWeek }
+          : r,
+      ),
+    lsSet,
+  )
+
   const updateMutation = useMutation({
     mutationFn: async (payload: { id: string; hour: number; minute: number; daysOfWeek: number[] }) => {
       // Guard `mr_`: IDs locales no existen en PB — solo actualizar si tiene id real
@@ -172,25 +189,23 @@ export function useMealReminders(userId: string | null) {
         })
       }
     },
-    onMutate: async (payload) => {
-      await qc.cancelQueries({ queryKey: remindersKey })
-      const prev = qc.getQueryData<MealReminder[]>(remindersKey) ?? lsGet()
-      const next = prev.map(r =>
-        r.id === payload.id ? { ...r, hour: payload.hour, minute: payload.minute, daysOfWeek: payload.daysOfWeek } : r,
-      )
-      lsSet(next)
-      qc.setQueryData(remindersKey, next)
-      return { prev }
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) {
-        lsSet(ctx.prev)
-        qc.setQueryData(remindersKey, ctx.prev)
-      }
-    },
+    ...updateHandlers,
   })
 
   // ── Mutación: activar/desactivar recordatorio ──────────────────────────────
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const toggleHandlers = makeOptimisticListHandlers<
+    MealReminder[],
+    { id: string; enabled: boolean }
+  >(
+    qc,
+    () => remindersKey,
+    lsGet,
+    (prev, payload) =>
+      prev.map(r => (r.id === payload.id ? { ...r, enabled: payload.enabled } : r)),
+    lsSet,
+  )
+
   const toggleMutation = useMutation({
     mutationFn: async (payload: { id: string; enabled: boolean }) => {
       // Guard `mr_`: solo sincronizar con PB si el id es real
@@ -198,25 +213,19 @@ export function useMealReminders(userId: string | null) {
         await pb.collection('meal_reminders').update(payload.id, { enabled: payload.enabled })
       }
     },
-    onMutate: async (payload) => {
-      await qc.cancelQueries({ queryKey: remindersKey })
-      const prev = qc.getQueryData<MealReminder[]>(remindersKey) ?? lsGet()
-      const next = prev.map(r =>
-        r.id === payload.id ? { ...r, enabled: payload.enabled } : r,
-      )
-      lsSet(next)
-      qc.setQueryData(remindersKey, next)
-      return { prev }
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) {
-        lsSet(ctx.prev)
-        qc.setQueryData(remindersKey, ctx.prev)
-      }
-    },
+    ...toggleHandlers,
   })
 
   // ── Mutación: eliminar recordatorio ───────────────────────────────────────
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const deleteHandlers = makeOptimisticListHandlers<MealReminder[], string>(
+    qc,
+    () => remindersKey,
+    lsGet,
+    (prev, id) => prev.filter(r => r.id !== id),
+    lsSet,
+  )
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       // Guard `mr_`: solo borrar en PB si el id es real
@@ -224,20 +233,7 @@ export function useMealReminders(userId: string | null) {
         await pb.collection('meal_reminders').delete(id)
       }
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: remindersKey })
-      const prev = qc.getQueryData<MealReminder[]>(remindersKey) ?? lsGet()
-      const next = prev.filter(r => r.id !== id)
-      lsSet(next)
-      qc.setQueryData(remindersKey, next)
-      return { prev }
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) {
-        lsSet(ctx.prev)
-        qc.setQueryData(remindersKey, ctx.prev)
-      }
-    },
+    ...deleteHandlers,
   })
 
   // ── API pública (forma idéntica a la versión useState) ────────────────────

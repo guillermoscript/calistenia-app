@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
+import { makeOptimisticListHandlers } from '../lib/optimistic'
 
 const LS_KEY = 'calistenia_body_measurements'
 
@@ -113,23 +114,23 @@ export function useBodyMeasurements(userId: string | null = null): UseBodyMeasur
     },
   })
 
-  const deleteMutation = useMutation<void, Error, string, { prev?: BodyMeasurement[] }>({
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  // NOTA: saveMutation NO usa el helper porque su onSuccess necesita ctx.optimisticId (swap de id).
+  const deleteHandlers = makeOptimisticListHandlers<BodyMeasurement[], string>(
+    qc,
+    () => key,
+    lsGet,
+    (prev, id) => prev.filter((m) => m.id !== id),
+    lsSet,
+  )
+
+  const deleteMutation = useMutation<void, Error, string>({
     mutationFn: async (id) => {
       if (userId && !id.startsWith('local_')) {
         await pb.collection('body_measurements').delete(id).catch(() => {})
       }
     },
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: key })
-      const prev = qc.getQueryData<BodyMeasurement[]>(key) ?? lsGet()
-      const next = prev.filter((m) => m.id !== id)
-      lsSet(next)
-      qc.setQueryData(key, next)
-      return { prev }
-    },
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) { lsSet(ctx.prev); qc.setQueryData(key, ctx.prev) }
-    },
+    ...deleteHandlers,
   })
 
   const saveMeasurement = useCallback(
