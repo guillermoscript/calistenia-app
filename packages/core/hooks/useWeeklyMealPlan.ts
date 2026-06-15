@@ -146,7 +146,10 @@ export function useWeeklyMealPlan(userId: string | null) {
     )
     await pb.collection('weekly_plan_days').update(dayId, { meals: updatedMeals })
     patch(prev => ({ plan: prev.plan, days: prev.days.map(d => d.id === dayId ? { ...d, meals: updatedMeals } : d) }))
-  }, [userId, planDays, patch])
+    // Invalida el acumulador de nutrición para que los totales del día
+    // reflejen la comida recién registrada sin esperar el staleTime de 30s.
+    void qc.invalidateQueries({ queryKey: qk.nutrition.today(userId) })
+  }, [userId, planDays, patch, qc])
 
   const deleteMeal = useCallback(async (dayId: string, mealId: string) => {
     const day = planDays.find(d => d.id === dayId)
