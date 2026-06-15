@@ -585,17 +585,32 @@ function checkReferralBonus(userId) {
   }
 }
 
+// try/catch igual que el resto de hooks (commit b0d987a): si el handler lanza
+// (p.ej. helper fuera de scope en el runtime aislado del JSVM) sin atrapar,
+// PocketBase devuelve 400 aunque el registro ya se guardó (afterCreateSuccess).
 onRecordAfterCreateSuccess(function(e) {
-  var userId = e.record.getString("user")
-  if (userId) checkReferralBonus(userId)
+  try {
+    var userId = e.record.getString("user")
+    if (userId) checkReferralBonus(userId)
+  } catch (err) {
+    console.log("[notif] session referral hook error:", err)
+  }
 }, "sessions")
 
 onRecordAfterCreateSuccess(function(e) {
-  var userId = e.record.getString("user")
-  if (userId) checkReferralBonus(userId)
+  try {
+    var userId = e.record.getString("user")
+    if (userId) checkReferralBonus(userId)
+  } catch (err) {
+    console.log("[notif] circuit referral hook error:", err)
+  }
 }, "circuit_sessions")
 
 onRecordAfterCreateSuccess(function(e) {
-  var userId = e.record.getString("user")
-  if (userId) checkReferralBonus(userId)
+  try {
+    var userId = e.record.getString("user")
+    if (userId) checkReferralBonus(userId)
+  } catch (err) {
+    console.log("[notif] cardio referral hook error:", err)
+  }
 }, "cardio_sessions")
