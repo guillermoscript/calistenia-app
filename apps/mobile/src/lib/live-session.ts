@@ -51,7 +51,7 @@ async function getNotifee() {
 async function displayAndroid(state: LiveActivityState): Promise<void> {
   const notifee = await getNotifee()
   if (!notifee) return
-  const { AndroidImportance } = await import('@notifee/react-native')
+  const { AndroidImportance, AndroidForegroundServiceType } = await import('@notifee/react-native')
   await notifee.createChannel({ id: NOTIF_ID, name: 'Sesión en curso', importance: AndroidImportance.LOW })
   const resting = state.phase === 'rest' && !!state.restEndsAt
   const actionTitle = !labels
@@ -68,6 +68,10 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
     android: {
       channelId: NOTIF_ID,
       asForegroundService: true,
+      // FGS de entreno = dataSync (no location). El service de notifee es
+      // compartido y su tipo de manifest incluye location; sin especificar tipo
+      // acá, notifee arrancaría con location y crashea sin permiso de ubicación.
+      foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_DATA_SYNC],
       ongoing: true,
       onlyAlertOnce: true,
       // Lime de marca: tinta icono/acentos; colorized pinta el fondo (estilo
