@@ -127,7 +127,9 @@ export function useActivityFeed(userId: string | null) {
 
   return {
     items,
-    loading: metaQuery.isFetching || feedQuery.isLoading,
+    // loading = primera carga únicamente; refreshing = refetch de fondo (para pull-to-refresh)
+    loading: metaQuery.isPending || feedQuery.isPending,
+    refreshing: (metaQuery.isFetching && !metaQuery.isPending) || (feedQuery.isFetching && !feedQuery.isPending),
     loadingMore: feedQuery.isFetchingNextPage,
     // Antes de la primera carga hasMore es true (igual que el hook previo).
     hasMore: !enabled || !meta ? true : (feedQuery.hasNextPage ?? false),
