@@ -23,8 +23,15 @@ These plans came from a read-only static audit (4 parallel reviewers + vetting a
 | 010 | Extract optimistic-mutation helper | P3 | M/L | LOW | 002, 003, 005 | DONE |
 | 011 | Unify `loading` semantics (isPending vs isFetching) | P3 | M | MED | — | DONE — 6 hooks (useNotifications/useLeaderboard/useFollows/useReferralPoints/useProfileCompare/useActivityFeed) usan isPending; useActivityFeed expone `refreshing` y mobile social.tsx migró su pull-to-refresh a ese campo (línea 68). Falta runtime test en dispositivo |
 | 012 | Stabilize array query keys (sort `allUserIds`) | P3 | S | LOW | — | DONE |
+| 013 | Mobile nutrition meal-type tap crash ("Couldn't find a navigation context") — patch css-interop dev warning | P1 | S | LOW | — | DONE — executed + reviewed (commit `b92572a`, worktree branch `advisor/013-navcontext-crash`). Patch applies, mobile typecheck exit 0, scope clean (patch file + pnpm-workspace.yaml + lock). Deviation: pnpm 10 stores `patchedDependencies` in pnpm-workspace.yaml not package.json (correct). Worktree based off `main` not feat/mobile-data-perf. **Runtime device test still OWED** (tap meal chips → no red crash). Not yet applied to user's branch. |
+
+| 014 | Apply patch 013 onto `feat/mobile-data-perf` + device-verify the fix | P1 | S | LOW | 013 | DONE (apply) — landed on feat/mobile-data-perf, commit `e39362a`. Patch applies, mobile typecheck exit 0, only 3 in-scope files committed. **Device tap-test still OWED** (Nutrition → + → tap meal chips → confirm no crash). |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale)
+
+> **Note on 013/014**: 013 produced + reviewed the fix in a disposable worktree off `main`; 014 lands the same patch on the working branch and runs the on-device check. 014 inlines the full patch content, so it stands alone even after the 013 worktree is cleaned up. Do NOT cherry-pick 013's commit (divergent lockfile) — 014 re-applies and lets `pnpm install` regenerate the lock.
+
+> **Note on 013**: unrelated to the React Query migration above. It is a standalone NativeWind/`react-native-css-interop` dev-only crash, planned against commit `186f071`. Fix is a `pnpm patch`, not an app-source edit. Do the drift check in the plan, not the `4659cd6` one used by 001–012.
 
 ## Recommended order
 
