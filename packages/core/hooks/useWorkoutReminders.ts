@@ -33,7 +33,9 @@ const lsGet = (): WorkoutReminder[] => {
     return raw.map((r: any) => ({ ...r, reminderType: r.reminderType || 'workout' }))
   } catch { return [] }
 }
-const lsSet = (d: WorkoutReminder[]) => storage.setItem(LS_KEY, JSON.stringify(d))
+const lsSet = (d: WorkoutReminder[]) => {
+  try { storage.setItem(LS_KEY, JSON.stringify(d)) } catch { /* storage lleno */ }
+}
 
 /**
  * Recordatorios de entrenamiento (workout + pause). Offline-first: localStorage

@@ -20,7 +20,7 @@ const lsGet = (): WeightEntry[] => {
   try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
 }
 const lsSet = (d: WeightEntry[]): void => {
-  storage.setItem(LS_KEY, JSON.stringify(d))
+  try { storage.setItem(LS_KEY, JSON.stringify(d)) } catch { /* storage lleno */ }
 }
 
 interface UseWeightReturn {

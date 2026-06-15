@@ -12,7 +12,9 @@ const LS_KEY = 'calistenia_sleep_entries'
 const lsGet = (): SleepEntry[] => {
   try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
 }
-const lsSet = (d: SleepEntry[]) => storage.setItem(LS_KEY, JSON.stringify(d))
+const lsSet = (d: SleepEntry[]) => {
+  try { storage.setItem(LS_KEY, JSON.stringify(d)) } catch { /* storage lleno */ }
+}
 
 /**
  * Calcula la duración en minutos desde bedtime hasta wake_time, manejando
