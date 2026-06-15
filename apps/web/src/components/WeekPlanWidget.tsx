@@ -63,7 +63,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
                 'font-mono text-[10px] tracking-[2px] mb-1.5',
                 isToday ? 'mt-1.5 text-[hsl(var(--lime))]' : isCardio ? 'text-emerald-400' : 'text-muted-foreground',
               )}>
-                {(day.nameKey ? t(day.nameKey) : day.name).slice(0, 3).toUpperCase()}
+                {((day.nameKey ? t(day.nameKey) : day.name) ?? '').slice(0, 3).toUpperCase()}
               </div>
               {isCardio ? (
                 <div className="text-lg text-emerald-400">{CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
@@ -84,7 +84,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
                 isToday        ? 'text-[hsl(var(--lime))]' :
                                  'text-muted-foreground/50',
               )}>
-                {isCardio ? t(`cardio.${day.cardioConfig?.activityType || 'running'}`) : (day.focusKey ? t(day.focusKey) : day.focus).split(' ')[0]}
+                {isCardio ? t(`cardio.${day.cardioConfig?.activityType || 'running'}`) : ((day.focusKey ? t(day.focusKey) : day.focus) ?? '').split(' ')[0]}
               </div>
             </button>
           )

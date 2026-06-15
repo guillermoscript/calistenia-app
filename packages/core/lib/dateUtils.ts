@@ -25,12 +25,23 @@ i18n.on('languageChanged', (lng: string) => {
   dayjs.locale(lng)
 })
 
+/** Validate an IANA timezone; fall back to UTC if invalid (e.g. Android's "Etc/Unknown"). */
+function sanitizeTz(tz: string | undefined | null): string {
+  try {
+    if (!tz) return 'UTC'
+    Intl.DateTimeFormat(undefined, { timeZone: tz })
+    return tz
+  } catch {
+    return 'UTC'
+  }
+}
+
 // Module-level timezone — defaults to browser detection, overridden on login.
-let _tz: string = Intl.DateTimeFormat().resolvedOptions().timeZone
+let _tz: string = sanitizeTz(Intl.DateTimeFormat().resolvedOptions().timeZone)
 
 /** Set the active timezone (call on login / profile save). */
 export function setTimezone(tz: string): void {
-  _tz = tz
+  _tz = sanitizeTz(tz)
 }
 
 /** Get the active timezone. */
