@@ -63,7 +63,8 @@ export function useActivityFeed(userId: string | null) {
         $autoCancel: false,
       })
       const followedIds = followsRes.map((r: any) => r.following as string)
-      const allUserIds = [...new Set([userId!, ...followedIds])]
+      // Ordenar para estabilizar la query key: mismo conjunto → misma key, sin cache thrash.
+      const allUserIds = [...new Set([userId!, ...followedIds])].sort()
 
       const usersRes = await pb.collection('users').getList(1, allUserIds.length, {
         filter: allUserIds.map(uid => pb.filter('id = {:uid}', { uid })).join(' || '),
