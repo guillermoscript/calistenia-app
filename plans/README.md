@@ -16,7 +16,7 @@ These plans came from a read-only static audit (4 parallel reviewers + vetting a
 | 003 | useMealReminders silent rollback (swallowed PB errors) | P2 | S | LOW | — | DONE |
 | 004 | useWeeklyMealPlan.logMeal nutrition invalidation | P2 | S | LOW | — | DONE |
 | 005 | Guard `lsSet` (useWeight/useWorkoutReminders/useSleep) | P2 | S | LOW | — | DONE |
-| 006 | deleteProgram enrollment fallback (not global catalog) | P2 | S | MED | — | TODO |
+| 006 | deleteProgram enrollment fallback (not global catalog) | P2 | S | MED | — | DONE |
 | 007 | Unbounded fetch limits (sessions/sets_log/etc.) | P2 | M | MED | — | TODO |
 | 008 | useProgress selector memoization | P3 | M | LOW | — | TODO |
 | 009 | useNutrition weekly-getter memoization | P3 | S | LOW | — | TODO |

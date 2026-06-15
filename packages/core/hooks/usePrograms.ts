@@ -476,31 +476,37 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
       await pb.collection('programs').delete(programId)
 
-      const remaining = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).filter(p => p.id !== programId)
-      qc.setQueryData(qk.programs.catalog, remaining)
+      // Actualiza el catálogo en caché eliminando el programa borrado.
+      const catalogNow = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).filter(p => p.id !== programId)
+      qc.setQueryData(qk.programs.catalog, catalogNow)
 
       if (activeProgramId === programId) {
-        if (remaining.length > 0) {
-          const fallback = remaining[0]
+        // Busca una inscripción activa del usuario en cualquier otro programa
+        // (no en el catálogo global — el usuario podría no estar inscrito en esos).
+        let nextEnrollmentProgramId: string | null = null
+        try {
+          const userEnrollments = await pb.collection('user_programs').getList(1, 1, {
+            filter: pb.filter('user = {:uid} && program != {:pid} && status = "active"', { uid: userId, pid: programId }),
+            sort: '-started_at',
+          })
+          if (userEnrollments.items.length > 0) {
+            nextEnrollmentProgramId = userEnrollments.items[0].program
+          }
+        } catch { /* sin inscripciones activas restantes */ }
+
+        if (nextEnrollmentProgramId) {
           try {
-            let fbExisting: RecordModel | null = null
-            try {
-              fbExisting = await pb.collection('user_programs').getFirstListItem(
-                pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: fallback.id }),
-              )
-            } catch { /* not found */ }
-            if (fbExisting) {
-              await pb.collection('user_programs').update(fbExisting.id, { is_current: true, status: 'active', ended_at: '' })
-            } else {
-              await pb.collection('user_programs').create({
-                user: userId, program: fallback.id, started_at: nowLocalForPB(), is_current: true, status: 'active',
-              })
-            }
-            qc.setQueryData(qk.programs.activeEnrollment(userId), fallback.id)
+            // Marcar esa inscripción como current en PB.
+            const nextEnrollment = await pb.collection('user_programs').getFirstListItem(
+              pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: nextEnrollmentProgramId }),
+            )
+            await pb.collection('user_programs').update(nextEnrollment.id, { is_current: true, status: 'active', ended_at: '' })
+            qc.setQueryData(qk.programs.activeEnrollment(userId), nextEnrollmentProgramId)
           } catch (e) {
-            console.warn('usePrograms: fallback selection after delete failed', e)
+            console.warn('usePrograms: fallback de inscripción tras delete falló', e)
           }
         } else {
+          // Sin inscripciones activas restantes: limpiar el programa activo.
           qc.setQueryData(qk.programs.activeEnrollment(userId), null)
         }
       }
