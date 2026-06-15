@@ -195,9 +195,7 @@ export function useMealReminders(userId: string | null) {
     mutationFn: async (payload: { id: string; enabled: boolean }) => {
       // Guard `mr_`: solo sincronizar con PB si el id es real
       if (usePB && !payload.id.startsWith('mr_')) {
-        try {
-          await pb.collection('meal_reminders').update(payload.id, { enabled: payload.enabled })
-        } catch { /* fallo silencioso — el estado local ya se actualizó */ }
+        await pb.collection('meal_reminders').update(payload.id, { enabled: payload.enabled })
       }
     },
     onMutate: async (payload) => {
@@ -223,9 +221,7 @@ export function useMealReminders(userId: string | null) {
     mutationFn: async (id: string) => {
       // Guard `mr_`: solo borrar en PB si el id es real
       if (usePB && !id.startsWith('mr_')) {
-        try {
-          await pb.collection('meal_reminders').delete(id)
-        } catch { /* fallo silencioso — LS ya lo eliminó */ }
+        await pb.collection('meal_reminders').delete(id)
       }
     },
     onMutate: async (id) => {
