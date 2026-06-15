@@ -429,8 +429,10 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                       onPress={handleSend}
                       disabled={!text.trim() || sending}
                       className={cn(
-                        'size-[42px] items-center justify-center rounded-full',
-                        text.trim() && !sending ? 'bg-lime active:opacity-65' : 'bg-muted/40',
+                        // active: estático para evitar el upgrade View→Pressable de
+                        // css-interop (su warning de dev crashea en NavigationContext).
+                        'size-[42px] items-center justify-center rounded-full active:opacity-65',
+                        text.trim() && !sending ? 'bg-lime' : 'bg-muted/40',
                       )}
                     >
                       {sending ? (

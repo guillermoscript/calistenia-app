@@ -31,8 +31,12 @@ export function MealTypeSelector({
           key={opt.id}
           onPress={() => onChange(opt.id)}
           className={cn(
-            'flex-1 items-center gap-0.5 py-2 rounded-lg',
-            value === opt.id ? 'bg-background shadow-sm' : 'active:bg-background/50',
+            // active: estático (presente desde el render inicial) — si se añade
+            // tras el primer render, css-interop "upgradea" View→Pressable y su
+            // warning de dev hace stringify(props) que crashea al tocar el getter
+            // de NavigationContext. Constante = sin upgrade, sin remount.
+            'flex-1 items-center gap-0.5 py-2 rounded-lg active:bg-background/50',
+            value === opt.id ? 'bg-background shadow-sm' : '',
           )}
         >
           <Text className="text-base leading-none">{opt.icon}</Text>

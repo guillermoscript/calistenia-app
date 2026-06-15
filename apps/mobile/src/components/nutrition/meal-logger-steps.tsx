@@ -216,8 +216,9 @@ export function ReviewStep({ model }: StepProps) {
               key={opt.id}
               onPress={() => model.selectMealType(opt.id)}
               className={cn(
-                'size-9 rounded-lg items-center justify-center',
-                model.mealType === opt.id ? 'bg-lime-400/10 ring-1 ring-lime-400/30' : 'active:bg-muted',
+                // active: estático — ver nota en MealTypeSelector (meal-logger-views).
+                'size-9 rounded-lg items-center justify-center active:bg-muted',
+                model.mealType === opt.id ? 'bg-lime-400/10 ring-1 ring-lime-400/30' : '',
               )}
             >
               <Text className="text-base">{opt.icon}</Text>
