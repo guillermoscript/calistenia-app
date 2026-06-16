@@ -96,7 +96,14 @@
       ],
       "@maplibre/maplibre-react-native",
       "./plugins/with-notifee-location-fgs.js",
-      "@sentry/react-native",
+      [
+        "@sentry/react-native",
+        {
+          "url": "https://sentry.io/",
+          "organization": "guillermoscript",
+          "project": "calistenia-app"
+        }
+      ],
       [
         "expo-font",
         {

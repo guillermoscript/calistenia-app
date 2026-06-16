@@ -6,7 +6,7 @@ import '@/lib/notifications'
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { Platform } from 'react-native'
-import { Stack, ThemeProvider } from 'expo-router'
+import { Stack, ThemeProvider, usePathname, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
@@ -21,7 +21,7 @@ import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
-import { pbAuthHydration } from '@/lib/init-core'
+import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
 import { initI18n } from '@/lib/i18n'
 import { NAV_THEME } from '@/lib/theme'
@@ -59,8 +59,17 @@ function RootLayout() {
   // fontError: seguir sin fuentes custom antes que quedarse en blanco
   const [fontsLoaded, fontError] = useFonts(FONTS)
 
+  // OpenPanel screen views (la web los auto-trackea; en RN es manual).
+  const pathname = usePathname()
+  const segments = useSegments()
+  useEffect(() => {
+    trackScreen(pathname, { segments: segments.join('/'), platform: 'mobile' })
+  }, [pathname, segments])
+
   // Reintenta acciones encoladas offline al recuperar conexión (igual que web).
-  useEffect(() => setupAutoSync(pb), [])
+  // Tras vaciar la cola, invalida queries para reconciliar ids optimistas (local_)
+  // con los reales del server.
+  useEffect(() => setupAutoSync(pb, () => queryClient.invalidateQueries()), [])
 
   useEffect(() => {
     let cancelled = false

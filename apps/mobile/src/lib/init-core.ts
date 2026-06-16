@@ -6,6 +6,7 @@
  */
 import { AsyncAuthStore } from 'pocketbase'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import NetInfo from '@react-native-community/netinfo'
 import Constants from 'expo-constants'
 import EventSource from 'react-native-sse'
 import { OpenPanel } from '@openpanel/react-native'
@@ -42,12 +43,32 @@ const pbAuthStore = new AsyncAuthStore({
   clear: async () => AsyncStorage.removeItem('pb_auth'),
 })
 
-// Mismo proyecto OpenPanel que la web (los eventos llevan props de dispositivo
-// del SDK RN). En dev solo logueamos para no ensuciar las métricas.
+// Mismo proyecto OpenPanel que la web: OpenPanel identifica por profileId (el id
+// de usuario de PocketBase, idéntico en web y móvil) → un único perfil por
+// persona y funnels cross-platform intactos. Los eventos llevan platform:'mobile'
+// para segmentar dentro del mismo proyecto. clientSecret NO se usa (solo eventos
+// server-side; además un secreto en el bundle no es secreto). En dev solo
+// logueamos para no ensuciar las métricas.
+// storage + networkInfo = buffering offline: los eventos se persisten en disco y
+// se reenvían al recuperar conexión (clave para un gym sin señal).
 const op = new OpenPanel({
   apiUrl: 'https://openpanel.guille.tech/api',
   clientId: process.env.EXPO_PUBLIC_OPENPANEL_CLIENT_ID || '95f75c3f-fb38-4c0b-a401-a3a63f8b91f5',
+  storage: AsyncStorage,
+  networkInfo: NetInfo,
 })
+
+/**
+ * Screen view de OpenPanel respetando el gating de __DEV__ (igual que track).
+ * La web auto-trackea screen views; en RN hay que llamarlo a mano desde el layout.
+ */
+export function trackScreen(route: string, properties?: Record<string, unknown>) {
+  if (__DEV__) {
+    console.log('[analytics] screen_view', route, properties ?? '')
+    return
+  }
+  op.screenView(route, properties)
+}
 
 initCore({
   storage: syncStorage,
