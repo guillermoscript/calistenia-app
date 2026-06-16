@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Redirigiendo…</title>
+    <style>
+      html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+      body { display: flex; align-items: center; justify-content: center; background: #0a0a0a; color: #e5e5e5; }
+      .box { text-align: center; padding: 24px; }
+      a { color: #a3e635; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <p>Redirigiendo a la app…</p>
+      <p><a id="fallback" href="#">Si no se abre, toca aquí.</a></p>
+    </div>
+    <!--
+      Bridge de OAuth para la app nativa (Honor/MagicOS fix).
+
+      Google redirige aquí (esta URL https debe estar registrada como "Authorized
+      redirect URI" en el cliente OAuth de Google y servirse en pb_public). Reenvía
+      el ?code=...&state=... al esquema de la app, que vuelve por deep-link en vez
+      del socket SSE realtime (que MagicOS congela en background).
+
+      El destino DEBE coincidir con APP_RETURN_URL en apps/mobile/src/lib/auth.ts.
+    -->
+    <script>
+      (function () {
+        var APP_URL = 'calistenia://oauthredirect';
+        var target = APP_URL + (window.location.search || '');
+        var link = document.getElementById('fallback');
+        if (link) link.setAttribute('href', target);
+        window.location.replace(target);
+      })();
+    </script>
+  </body>
+</html>

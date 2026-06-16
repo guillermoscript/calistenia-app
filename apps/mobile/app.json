@@ -23,7 +23,7 @@
     },
     "android": {
       "package": "tech.guille.calistenia",
-      "versionCode": 2,
+      "versionCode": 3,
       "intentFilters": [
         {
           "action": "VIEW",

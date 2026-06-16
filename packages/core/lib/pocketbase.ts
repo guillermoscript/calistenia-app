@@ -40,47 +40,95 @@ export const isPocketBaseAvailable = async (): Promise<boolean> => {
 }
 
 /**
- * OAuth2 con Google (o cualquier provider configurado en PocketBase).
+ * Sincroniza display_name y avatar desde el provider OAuth si faltan.
+ * Compartido por el flujo realtime (web) y el flujo code/deep-link (mobile).
+ */
+const syncOAuthProfile = async (result: RecordAuthResponse<RecordModel>): Promise<void> => {
+  const needsName = !result.record.display_name && result.meta?.name
+  const needsAvatar = !result.record.avatar && result.meta?.avatarURL
+  if (!needsName && !needsAvatar) return
+
+  try {
+    const formData = new FormData()
+
+    if (needsName) {
+      formData.append('display_name', result.meta!.name)
+    }
+
+    if (needsAvatar) {
+      const response = await fetch(result.meta!.avatarURL)
+      if (response.ok) {
+        const blob = await response.blob()
+        const ext = blob.type === 'image/png' ? 'png' : 'jpg'
+        formData.append('avatar', new File([blob], `google-avatar.${ext}`, { type: blob.type }))
+      }
+    }
+
+    await pb.collection('users').update(result.record.id, formData)
+    await pb.collection('users').authRefresh()
+  } catch (e) {
+    console.warn('Failed to sync OAuth profile:', e)
+  }
+}
+
+/**
+ * OAuth2 con Google via flujo realtime del SDK (lo usa la WEB: popup + SSE).
  * After login, if the user has no avatar yet, fetches their Google profile picture
  * and uploads it to PocketBase.
  *
- * urlCallback: en web se omite (el SDK abre un popup); en RN la app pasa una
- * función que abre la URL con expo-web-browser y el SDK completa el flujo via realtime.
+ * urlCallback: en web se omite (el SDK abre un popup).
+ * requestKey: permite cancelar el flujo desde fuera con pb.cancelRequest(requestKey).
+ *
+ * NO usar en mobile: el flujo realtime espera el código OAuth por un socket SSE que
+ * algunos Android agresivos (Honor/MagicOS) congelan al pasar la app a background al
+ * abrir el navegador → login colgado para siempre. En mobile usar loginWithOAuth2Code.
  */
 export const loginWithOAuth2 = async (
   provider: string,
-  urlCallback?: (url: string) => void | Promise<void>
+  urlCallback?: (url: string) => void | Promise<void>,
+  requestKey?: string
 ): Promise<RecordAuthResponse<RecordModel>> => {
-  const result = await pb.collection('users').authWithOAuth2({ provider, urlCallback })
+  const result = await pb.collection('users').authWithOAuth2({
+    provider,
+    urlCallback,
+    ...(requestKey ? { requestKey } : {}),
+  })
+  await syncOAuthProfile(result)
+  return result
+}
 
-  // Sync display_name and avatar from OAuth provider if missing
-  const needsName = !result.record.display_name && result.meta?.name
-  const needsAvatar = !result.record.avatar && result.meta?.avatarURL
+/**
+ * OAuth2 con flujo de código (deep-link), SIN depender del SSE realtime — para mobile.
+ *
+ * A diferencia de loginWithOAuth2, el código no llega por un socket SSE de larga vida
+ * (que MagicOS/Honor congela en background) sino por un redirect/deep-link de un solo
+ * uso, inmune a ese freeze.
+ *
+ * @param redirectUrl URL https registrada como "Authorized redirect URI" en el cliente
+ *   OAuth de Google y servida en pb_public; su única función es reenviar el code+state
+ *   al esquema de la app (calistenia://). Debe ser IDÉNTICA en la request de
+ *   autorización y en el intercambio del código (Google lo exige).
+ * @param getCode abre authUrl en el navegador y devuelve el code+state del redirect.
+ */
+export const loginWithOAuth2Code = async (
+  provider: string,
+  redirectUrl: string,
+  getCode: (authUrl: string) => Promise<{ code: string; state: string }>
+): Promise<RecordAuthResponse<RecordModel>> => {
+  const methods = await pb.collection('users').listAuthMethods()
+  const cfg = methods.oauth2.providers.find((p) => p.name === provider)
+  if (!cfg) throw new Error(`OAuth provider "${provider}" no disponible`)
 
-  if (needsName || needsAvatar) {
-    try {
-      const formData = new FormData()
+  // PB devuelve authURL terminando en `redirect_uri=`; se le concatena el redirect.
+  const authUrl = cfg.authURL + encodeURIComponent(redirectUrl)
+  const { code, state } = await getCode(authUrl)
 
-      if (needsName) {
-        formData.append('display_name', result.meta!.name)
-      }
+  if (!code) throw new Error('oauth_no_code')
+  // CSRF: el state devuelto debe coincidir con el que generó PB.
+  if (cfg.state && state !== cfg.state) throw new Error('oauth_state_mismatch')
 
-      if (needsAvatar) {
-        const response = await fetch(result.meta!.avatarURL)
-        if (response.ok) {
-          const blob = await response.blob()
-          const ext = blob.type === 'image/png' ? 'png' : 'jpg'
-          formData.append('avatar', new File([blob], `google-avatar.${ext}`, { type: blob.type }))
-        }
-      }
-
-      await pb.collection('users').update(result.record.id, formData)
-      await pb.collection('users').authRefresh()
-    } catch (e) {
-      console.warn('Failed to sync OAuth profile:', e)
-    }
-  }
-
+  const result = await pb.collection('users').authWithOAuth2Code(provider, code, cfg.codeVerifier, redirectUrl)
+  await syncOAuthProfile(result)
   return result
 }
 

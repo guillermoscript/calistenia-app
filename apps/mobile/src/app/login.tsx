@@ -6,12 +6,13 @@ import { useTranslation } from 'react-i18next'
 
 import { pb } from '@calistenia/core/lib/pocketbase'
 
+import { Sentry } from '@/lib/instrument'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
-import { loginWithGoogle } from '@/lib/auth'
+import { loginWithGoogle, isAuthCancelled } from '@/lib/auth'
 
 export default function LoginScreen() {
   const { t } = useTranslation()
@@ -27,7 +28,8 @@ export default function LoginScreen() {
     try {
       await pb.collection('users').authWithPassword(email.trim(), password)
       router.replace('/(tabs)')
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { flow: 'email_login' } })
       setError(t('auth.loginError'))
     } finally {
       setLoading(false)
@@ -40,7 +42,12 @@ export default function LoginScreen() {
     try {
       await loginWithGoogle()
       router.replace('/(tabs)')
-    } catch {
+    } catch (e) {
+      // Cancelación del usuario (cerró el navegador): no es un fallo, no reportar.
+      if (isAuthCancelled(e)) return
+      // Antes era `catch {}`: tragaba el error y nada llegaba a Sentry. Por eso
+      // el cuelgue en el Honor era invisible. Ahora lo reportamos.
+      Sentry.captureException(e, { tags: { flow: 'google_login' } })
       setError(t('auth.googleError'))
     } finally {
       setLoading(false)
