@@ -1,9 +1,11 @@
 import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
+import { clearUserStorage } from '../lib/storage-keys'
 import i18n from 'i18next'
 import type { UserRole, UserTier } from '../types'
 
@@ -49,6 +51,7 @@ interface UseAuthReturn {
  *   signOut()
  */
 export function useAuth(): UseAuthReturn {
+  const qc = useQueryClient()
   const [user, setUser] = useState<RecordModel | null>(getCurrentUser)
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
@@ -204,8 +207,13 @@ export function useAuth(): UseAuthReturn {
   const signOut = useCallback(() => {
     op.clear()
     logout()
+    // Limpia toda la caché de queries: evita que datos del usuario anterior
+    // (nutrición, progreso, social…) persistan tras logout / cambio de cuenta.
+    qc.clear()
+    // Elimina las entradas de localStorage del usuario (offline-first hooks).
+    clearUserStorage()
     // onChange listener limpia `user` automáticamente
-  }, [])
+  }, [qc])
 
   const userRole: UserRole = (user?.role as UserRole) || 'user'
   const userTier: UserTier = (user?.tier as UserTier) || 'free'

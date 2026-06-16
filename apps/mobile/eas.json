@@ -11,13 +11,19 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_AI_API_URL": "https://gym-server.guille.tech"
+      },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_AI_API_URL": "https://gym-server.guille.tech"
+      }
     }
   },
   "submit": {

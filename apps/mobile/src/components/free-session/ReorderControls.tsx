@@ -34,14 +34,14 @@ export function ReorderControls({
       <Pressable
         onPress={onMoveUp}
         disabled={isFirst}
-        className={cn('rounded-lg p-1.5', isFirst ? 'opacity-30' : 'active:bg-muted/60')}
+        className={cn('rounded-lg p-1.5 active:bg-muted/60', isFirst ? 'opacity-30' : '')}
       >
         <ChevronUp size={size} color={COLORS.mutedIcon} />
       </Pressable>
       <Pressable
         onPress={onMoveDown}
         disabled={isLast}
-        className={cn('rounded-lg p-1.5', isLast ? 'opacity-30' : 'active:bg-muted/60')}
+        className={cn('rounded-lg p-1.5 active:bg-muted/60', isLast ? 'opacity-30' : '')}
       >
         <ChevronDown size={size} color={COLORS.mutedIcon} />
       </Pressable>

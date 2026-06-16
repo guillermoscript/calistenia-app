@@ -11,9 +11,15 @@
     "react-i18next": "^17.0.3"
   },
   "peerDependencies": {
+    "@tanstack/query-sync-storage-persister": "^5",
+    "@tanstack/react-query": "^5",
+    "@tanstack/react-query-persist-client": "^5",
     "react": ">=18"
   },
   "devDependencies": {
+    "@tanstack/query-sync-storage-persister": "^5.66.0",
+    "@tanstack/react-query": "^5.66.0",
+    "@tanstack/react-query-persist-client": "^5.66.0",
     "@types/react": "^19.2.14"
   }
 }

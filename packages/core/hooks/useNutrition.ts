@@ -1,10 +1,12 @@
 import { storage } from '../platform'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import i18n from 'i18next'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { pb } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
 import { op } from '../lib/analytics'
-import { todayStr, toLocalDateStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
+import { qk } from '../lib/query-keys'
+import { todayStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
 import type {
   NutritionEntry,
   NutritionSource,
@@ -69,7 +71,8 @@ const lsSetGoals = (d: NutritionGoal | null): void => {
   storage.setItem(LS_GOALS, JSON.stringify(d))
 }
 
-// todayStr is now imported from ../lib/dateUtils
+const sortByLoggedDesc = (a: NutritionEntry, b: NutritionEntry) =>
+  new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
 
 // ─── Activity-level multipliers (Mifflin-St Jeor) ───────────────────────────
 const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
@@ -80,158 +83,131 @@ const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   very_active: 1.9,
 }
 
-export function useNutrition(userId: string | null) {
-  const [entries, setEntries] = useState<NutritionEntry[]>([])
-  const [goals, setGoals] = useState<NutritionGoal | null>(null)
-  const [isReady, setIsReady] = useState(false)
-  const [usePB, setUsePB] = useState(false)
+const isTransient = (e: any) => {
+  const status = e?.status
+  return status === 0 || status === 429 || (typeof status === 'number' && status >= 500)
+}
 
-  const initialized = useRef(false)
-  const lastUserId = useRef<string | null>(null)
+/**
+ * useNutrition — registro de nutrición. Migrado a TanStack Query conservando la
+ * API pública completa.
+ *
+ * `entries` es un acumulador (hoy + fechas/ranges cargados a demanda) respaldado
+ * por la query qk.nutrition.today(userId); fetchEntriesForDate/Range añaden a la
+ * caché vía setQueryData (dedup por id) + localStorage. `goals` es una query
+ * aparte. Las mutaciones escriben a caché + LS y sincronizan a PB. Las funciones
+ * de IA y los selectores derivados quedan iguales.
+ */
+export function useNutrition(userId: string | null) {
+  const qc = useQueryClient()
+  const usePB = !!userId
+  const entriesKey = qk.nutrition.today(userId)
+  const goalsKey = qk.nutrition.goals(userId)
   const loadedDates = useRef<Set<string>>(new Set())
 
-  // ─── Init / re-init cuando cambia el userId ─────────────────────────────
-  useEffect(() => {
-    if (lastUserId.current !== userId) {
-      lastUserId.current = userId
-      initialized.current = false
-      loadedDates.current = new Set()
-      setEntries([])
-      setGoals(null)
-      setIsReady(false)
-    }
-
-    if (initialized.current) return
-    initialized.current = true
-
-    const init = async () => {
-      const available = userId ? await isPocketBaseAvailable() : false
-      setUsePB(available && !!userId)
-      if (available && userId) {
-        await loadFromPB(userId)
-      } else {
-        loadFromLS()
-      }
-      setIsReady(true)
-    }
-    init()
-  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── Carga desde localStorage ──────────────────────────────────────────────
-  const loadFromLS = (): void => {
-    setEntries(lsGetEntries())
-    setGoals(lsGetGoals())
-  }
-
-  // ─── Carga desde PocketBase ────────────────────────────────────────────────
-  const loadFromPB = async (uid: string): Promise<void> => {
-    try {
+  // ─── Query: entries (acumulador, arranca con merge hoy+LS) ────────────────
+  const entriesQuery = useQuery<NutritionEntry[]>({
+    queryKey: entriesKey,
+    enabled: !!userId,
+    initialData: lsGetEntries,
+    initialDataUpdatedAt: 0,
+    staleTime: 30_000,
+    retry: (n, e) => isTransient(e) && n < 3,
+    retryDelay: (n) => 400 * (n + 1),
+    queryFn: async (): Promise<NutritionEntry[]> => {
       const todayStart = localMidnightAsUTC()
-      const [entriesRes, goalsRes] = await Promise.all([
-        pb.collection('nutrition_entries').getList(1, 200, {
-          filter: pb.filter('user = {:uid} && logged_at >= {:start}', {
-            uid,
-            start: todayStart,
-          }),
-          sort: '-logged_at',
-          $autoCancel: false,
-        }),
-        pb.collection('nutrition_goals').getList(1, 1, {
-          filter: pb.filter('user = {:uid}', { uid }),
-          $autoCancel: false,
-        }),
-      ])
-
-      const mapped: NutritionEntry[] = entriesRes.items.map(mapPBToEntry)
-
-      // Merge with cached entries from other days instead of replacing
+      const entriesRes = await pb.collection('nutrition_entries').getList(1, 200, {
+        filter: pb.filter('user = {:uid} && logged_at >= {:start}', { uid: userId!, start: todayStart }),
+        sort: '-logged_at',
+        $autoCancel: false,
+      })
+      const mapped = entriesRes.items.map(mapPBToEntry)
+      // Merge con entradas cacheadas de OTROS días (no reemplazar el acumulador).
       const cachedEntries = lsGetEntries()
       const todayIds = new Set(mapped.map(e => e.id))
       const todayDateStr = todayStr()
       const otherDayEntries = cachedEntries.filter(
-        e => !todayIds.has(e.id) && utcToLocalDateStr(e.loggedAt) !== todayDateStr
+        e => !todayIds.has(e.id) && utcToLocalDateStr(e.loggedAt) !== todayDateStr,
       )
-      const merged = [...mapped, ...otherDayEntries].sort(
-        (a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
-      )
-      setEntries(merged)
+      const merged = [...mapped, ...otherDayEntries].sort(sortByLoggedDesc)
       lsSetEntries(merged)
       loadedDates.current.add(todayDateStr)
+      return merged
+    },
+  })
 
+  // ─── Query: goals ──────────────────────────────────────────────────────────
+  const goalsQuery = useQuery<NutritionGoal | null>({
+    queryKey: goalsKey,
+    enabled: !!userId,
+    initialData: lsGetGoals,
+    initialDataUpdatedAt: 0,
+    staleTime: 5 * 60 * 1000,
+    retry: (n, e) => isTransient(e) && n < 3,
+    queryFn: async (): Promise<NutritionGoal | null> => {
+      const goalsRes = await pb.collection('nutrition_goals').getList(1, 1, {
+        filter: pb.filter('user = {:uid}', { uid: userId! }), $autoCancel: false,
+      })
       if (goalsRes.items.length > 0) {
         const g: any = goalsRes.items[0]
         const goalObj: NutritionGoal = {
-          id: g.id,
-          user: g.user,
-          dailyCalories: g.daily_calories,
-          dailyProtein: g.daily_protein,
-          dailyCarbs: g.daily_carbs,
-          dailyFat: g.daily_fat,
-          goal: g.goal,
-          weight: g.weight,
-          height: g.height,
-          age: g.age,
-          sex: g.sex,
-          activityLevel: g.activity_level,
+          id: g.id, user: g.user,
+          dailyCalories: g.daily_calories, dailyProtein: g.daily_protein,
+          dailyCarbs: g.daily_carbs, dailyFat: g.daily_fat,
+          goal: g.goal, weight: g.weight, height: g.height, age: g.age,
+          sex: g.sex, activityLevel: g.activity_level,
         }
-        setGoals(goalObj)
         lsSetGoals(goalObj)
-      } else {
-        const lsGoal = lsGetGoals()
-        setGoals(lsGoal)
+        return goalObj
       }
-    } catch (e: any) {
-      if (e?.code === 0) return // auto-cancelled, ignore
-      console.error('PocketBase nutrition load error, falling back to localStorage', e)
-      loadFromLS()
-    }
-  }
+      return lsGetGoals()
+    },
+  })
 
-  // ─── On-demand fetch for a specific date ──────────────────────────────────
-  // No shared AbortController — concurrent fetches for different dates must all complete.
-  // loadedDates.current prevents duplicate requests for the same date.
+  const entries = entriesQuery.data ?? []
+  const goals = goalsQuery.data ?? null
+  const isReady = !userId || entriesQuery.isFetched
+
+  // ─── Helpers de escritura sobre la caché + LS ─────────────────────────────
+  const patchEntries = useCallback((updater: (prev: NutritionEntry[]) => NutritionEntry[]) => {
+    qc.setQueryData<NutritionEntry[]>(entriesKey, (prev) => {
+      const next = updater(prev ?? lsGetEntries())
+      lsSetEntries(next)
+      return next
+    })
+  }, [qc, entriesKey])
+
+  const appendEntries = useCallback((mapped: NutritionEntry[]) => {
+    patchEntries(prev => {
+      const existingIds = new Set(prev.map(e => e.id))
+      const fresh = mapped.filter(e => !existingIds.has(e.id))
+      if (fresh.length === 0) return prev
+      return [...prev, ...fresh].sort(sortByLoggedDesc)
+    })
+  }, [patchEntries])
+
+  // ─── On-demand fetch para una fecha ───────────────────────────────────────
   const fetchEntriesForDate = useCallback(async (date: string): Promise<void> => {
     if (loadedDates.current.has(date)) return
     if (!usePB || !userId) return
-    loadedDates.current.add(date) // mark early to prevent duplicate requests
-
+    loadedDates.current.add(date)
     try {
       const dayStart = localMidnightAsUTC(date)
       const dayEnd = localMidnightAsUTC(addDays(date, 1))
       const res = await pb.collection('nutrition_entries').getList(1, 200, {
-        filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
-          uid: userId,
-          start: dayStart,
-          end: dayEnd,
-        }),
-        sort: '-logged_at',
-        $autoCancel: false,
+        filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', { uid: userId, start: dayStart, end: dayEnd }),
+        sort: '-logged_at', $autoCancel: false,
       })
-
       if (res.items.length === 0) return
-
-      const mapped: NutritionEntry[] = res.items.map(mapPBToEntry)
-
-      setEntries(prev => {
-        const existingIds = new Set(prev.map(e => e.id))
-        const newEntries = mapped.filter(e => !existingIds.has(e.id))
-        if (newEntries.length === 0) return prev
-        const updated = [...prev, ...newEntries].sort(
-          (a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
-        )
-        lsSetEntries(updated)
-        return updated
-      })
+      appendEntries(res.items.map(mapPBToEntry))
     } catch {
-      loadedDates.current.delete(date) // allow retry on error
+      loadedDates.current.delete(date)
     }
-  }, [usePB, userId])
+  }, [usePB, userId, appendEntries])
 
-  // ─── Batch fetch for a date range (single API call) ───────────────────────
+  // ─── Batch fetch para un rango ────────────────────────────────────────────
   const fetchEntriesForDateRange = useCallback(async (startDate: string, endDate: string): Promise<void> => {
     if (!usePB || !userId) return
-
-    // Collect dates that still need fetching
     const needsFetch: string[] = []
     let d = startDate
     while (d <= endDate) {
@@ -239,44 +215,22 @@ export function useNutrition(userId: string | null) {
       d = addDays(d, 1)
     }
     if (needsFetch.length === 0) return
-
-    // Mark all as loading to prevent duplicate requests
     for (const dt of needsFetch) loadedDates.current.add(dt)
-
     try {
       const rangeStart = localMidnightAsUTC(needsFetch[0])
       const rangeEnd = localMidnightAsUTC(addDays(needsFetch[needsFetch.length - 1], 1))
       const res = await pb.collection('nutrition_entries').getList(1, 500, {
-        filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
-          uid: userId,
-          start: rangeStart,
-          end: rangeEnd,
-        }),
-        sort: '-logged_at',
-        $autoCancel: false,
+        filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', { uid: userId, start: rangeStart, end: rangeEnd }),
+        sort: '-logged_at', $autoCancel: false,
       })
-
       if (res.items.length === 0) return
-
-      const mapped: NutritionEntry[] = res.items.map(mapPBToEntry)
-
-      setEntries(prev => {
-        const existingIds = new Set(prev.map(e => e.id))
-        const newEntries = mapped.filter(e => !existingIds.has(e.id))
-        if (newEntries.length === 0) return prev
-        const updated = [...prev, ...newEntries].sort(
-          (a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
-        )
-        lsSetEntries(updated)
-        return updated
-      })
+      appendEntries(res.items.map(mapPBToEntry))
     } catch {
-      // Allow retry on error
       for (const dt of needsFetch) loadedDates.current.delete(dt)
     }
-  }, [usePB, userId])
+  }, [usePB, userId, appendEntries])
 
-  // ─── AI analysis ──────────────────────────────────────────────────────────
+  // ─── AI analysis (sin estado — igual que antes) ───────────────────────────
   const analyzeMeal = useCallback(async (
     imageFiles: File | File[],
     mealType: string,
@@ -285,13 +239,9 @@ export function useNutrition(userId: string | null) {
   ): Promise<{ foods: FoodItem[]; totals: DailyTotals; meal_description: string; ai_model: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }> => {
     const formData = new FormData()
     const files = Array.isArray(imageFiles) ? imageFiles : [imageFiles]
-    for (const file of files) {
-      formData.append('images', file)
-    }
+    for (const file of files) formData.append('images', file)
     formData.append('meal_type', mealType)
     if (description) formData.append('description', description)
-
-    // Append user context for quality scoring
     if (userContext) {
       if (userContext.goal) formData.append('goal', userContext.goal)
       if (userContext.logHour != null) formData.append('log_hour', String(userContext.logHour))
@@ -304,18 +254,9 @@ export function useNutrition(userId: string | null) {
       if (userContext.recentScores) formData.append('recent_scores', JSON.stringify(userContext.recentScores))
       if (userContext.topFoods) formData.append('top_foods', JSON.stringify(userContext.topFoods))
     }
-
     const headers: Record<string, string> = {}
-    if (pb.authStore.token) {
-      headers['Authorization'] = `Bearer ${pb.authStore.token}`
-    }
-
-    const res = await fetch(`${AI_API_URL}/api/analyze-meal`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    })
-
+    if (pb.authStore.token) headers['Authorization'] = `Bearer ${pb.authStore.token}`
+    const res = await fetch(`${AI_API_URL}/api/analyze-meal`, { method: 'POST', headers, body: formData })
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}))
       throw new Error(errBody.error || `Analyze meal failed: ${res.status}`)
@@ -332,7 +273,6 @@ export function useNutrition(userId: string | null) {
     }
   }, [])
 
-  // ─── Text-only quality scoring (for manual/barcode entries) ──────────────
   const scoreMealQuality = useCallback(async (
     foods: { name: string; calories: number; protein: number; carbs: number; fat: number }[],
     totals: DailyTotals,
@@ -341,16 +281,11 @@ export function useNutrition(userId: string | null) {
   ): Promise<{ score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } | null> => {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (pb.authStore.token) {
-        headers['Authorization'] = `Bearer ${pb.authStore.token}`
-      }
+      if (pb.authStore.token) headers['Authorization'] = `Bearer ${pb.authStore.token}`
       const res = await fetch(`${AI_API_URL}/api/score-meal-quality`, {
-        method: 'POST',
-        headers,
+        method: 'POST', headers,
         body: JSON.stringify({
-          foods,
-          totals,
-          meal_type: mealType,
+          foods, totals, meal_type: mealType,
           ...(userContext?.goal && { goal: userContext.goal }),
           ...(userContext?.logHour != null && { log_hour: userContext.logHour }),
           ...(userContext?.remainingMacros && { remaining_macros: userContext.remainingMacros }),
@@ -372,12 +307,10 @@ export function useNutrition(userId: string | null) {
     photoFiles?: File[],
   ): Promise<NutritionEntry> => {
     let saved: NutritionEntry = { ...entry, id: `local_${Date.now()}`, loggedAt: entry.loggedAt || nowLocalForPB() }
-
     if (usePB && userId) {
       try {
         let body: FormData | Record<string, any>
         if (photoFiles && photoFiles.length > 0) {
-          // Use FormData when there are photos to upload
           const formData = new FormData()
           formData.append('user', userId)
           formData.append('meal_type', entry.mealType)
@@ -388,26 +321,17 @@ export function useNutrition(userId: string | null) {
           formData.append('total_fat', String(entry.totalFat || 0))
           if (entry.aiModel) formData.append('ai_model', entry.aiModel)
           if (entry.source) formData.append('source', entry.source)
-          for (const file of photoFiles) {
-            formData.append('photos', file)
-          }
+          for (const file of photoFiles) formData.append('photos', file)
           body = formData
         } else {
-          // Use JSON for non-photo entries — PB treats "0" as blank in FormData
           body = {
-            user: userId,
-            meal_type: entry.mealType,
-            foods: entry.foods,
-            total_calories: entry.totalCalories || 0,
-            total_protein: entry.totalProtein || 0,
-            total_carbs: entry.totalCarbs || 0,
-            total_fat: entry.totalFat || 0,
+            user: userId, meal_type: entry.mealType, foods: entry.foods,
+            total_calories: entry.totalCalories || 0, total_protein: entry.totalProtein || 0,
+            total_carbs: entry.totalCarbs || 0, total_fat: entry.totalFat || 0,
             ...(entry.aiModel ? { ai_model: entry.aiModel } : {}),
             ...(entry.source ? { source: entry.source } : {}),
           }
         }
-
-        // Write quality fields if present
         if (entry.qualityScore) {
           if (body instanceof FormData) {
             body.append('quality_score', entry.qualityScore)
@@ -421,41 +345,25 @@ export function useNutrition(userId: string | null) {
             if (entry.qualitySuggestion !== undefined) body.quality_suggestion = entry.qualitySuggestion
           }
         }
-
         const created: any = await pb.collection('nutrition_entries').create(body)
-        // Re-fetch to ensure file fields are fully populated
         const rec: any = await pb.collection('nutrition_entries').getOne(created.id, { $autoCancel: false })
         saved = mapPBToEntry(rec)
       } catch (e) {
         console.warn('PB nutrition_entries create error:', e)
       }
     }
-
-    setEntries(prev => {
-      const updated = [saved, ...prev]
-      lsSetEntries(updated)
-      return updated
-    })
-
+    patchEntries(prev => [saved, ...prev])
     return saved
-  }, [usePB, userId])
+  }, [usePB, userId, patchEntries])
 
   // ─── CRUD: deleteEntry ────────────────────────────────────────────────────
   const deleteEntry = useCallback(async (entryId: string): Promise<void> => {
     if (usePB && userId && !entryId.startsWith('local_')) {
-      try {
-        await pb.collection('nutrition_entries').delete(entryId)
-      } catch (e) {
-        console.warn('PB nutrition_entries delete error:', e)
-      }
+      try { await pb.collection('nutrition_entries').delete(entryId) }
+      catch (e) { console.warn('PB nutrition_entries delete error:', e) }
     }
-
-    setEntries(prev => {
-      const updated = prev.filter(e => e.id !== entryId)
-      lsSetEntries(updated)
-      return updated
-    })
-  }, [usePB, userId])
+    patchEntries(prev => prev.filter(e => e.id !== entryId))
+  }, [usePB, userId, patchEntries])
 
   // ─── CRUD: updateEntry ────────────────────────────────────────────────────
   const updateEntry = useCallback(async (entryId: string, data: Partial<NutritionEntry>): Promise<void> => {
@@ -475,43 +383,26 @@ export function useNutrition(userId: string | null) {
       if (data.qualitySuggestion !== undefined) pbData.quality_suggestion = data.qualitySuggestion
       await pb.collection('nutrition_entries').update(entryId, pbData)
     }
-
-    setEntries(prev => {
-      const updated = prev.map(e => e.id === entryId ? { ...e, ...data } : e)
-      lsSetEntries(updated)
-      return updated
-    })
-  }, [usePB, userId])
+    patchEntries(prev => prev.map(e => e.id === entryId ? { ...e, ...data } : e))
+  }, [usePB, userId, patchEntries])
 
   // ─── Goals: saveGoals ─────────────────────────────────────────────────────
   const saveGoals = useCallback(async (goalsData: Omit<NutritionGoal, 'id' | 'user'>): Promise<void> => {
     const newGoal: NutritionGoal = { ...goalsData, user: userId || undefined }
-
     if (usePB && userId) {
       try {
         const pbData = {
           user: userId,
-          daily_calories: goalsData.dailyCalories,
-          daily_protein: goalsData.dailyProtein,
-          daily_carbs: goalsData.dailyCarbs,
-          daily_fat: goalsData.dailyFat,
-          goal: goalsData.goal,
-          weight: goalsData.weight,
-          height: goalsData.height,
-          age: goalsData.age,
-          sex: goalsData.sex,
-          activity_level: goalsData.activityLevel,
+          daily_calories: goalsData.dailyCalories, daily_protein: goalsData.dailyProtein,
+          daily_carbs: goalsData.dailyCarbs, daily_fat: goalsData.dailyFat,
+          goal: goalsData.goal, weight: goalsData.weight, height: goalsData.height,
+          age: goalsData.age, sex: goalsData.sex, activity_level: goalsData.activityLevel,
         }
-
         try {
-          // Try to find existing record and update
-          const existing = await pb.collection('nutrition_goals').getFirstListItem(
-            pb.filter('user = {:uid}', { uid: userId })
-          )
+          const existing = await pb.collection('nutrition_goals').getFirstListItem(pb.filter('user = {:uid}', { uid: userId }))
           const rec: any = await pb.collection('nutrition_goals').update(existing.id, pbData)
           newGoal.id = rec.id
         } catch {
-          // No existing record, create new
           const rec: any = await pb.collection('nutrition_goals').create(pbData)
           newGoal.id = rec.id
         }
@@ -521,41 +412,28 @@ export function useNutrition(userId: string | null) {
     } else {
       newGoal.id = `local_${Date.now()}`
     }
-
-    setGoals(newGoal)
+    qc.setQueryData<NutritionGoal | null>(goalsKey, newGoal)
     lsSetGoals(newGoal)
-  }, [usePB, userId])
+  }, [usePB, userId, qc, goalsKey])
 
-  // ─── calculateMacros ─────────────────────────────────────────────────────
+  // ─── calculateMacros (puro) ───────────────────────────────────────────────
   const calculateMacros = useCallback((
-    weight: number,
-    height: number,
-    age: number,
-    sex: Sex,
-    activityLevel: ActivityLevel,
-    goal: NutritionGoalType,
+    weight: number, height: number, age: number, sex: Sex,
+    activityLevel: ActivityLevel, goal: NutritionGoalType,
     pace?: 'gradual' | 'balanced' | 'aggressive',
   ): NutritionGoal => {
-    // Mifflin-St Jeor formula
     const bmr = sex === 'male'
       ? 10 * weight + 6.25 * height - 5 * age + 5
       : 10 * weight + 6.25 * height - 5 * age - 161
-
     const tdee = bmr * ACTIVITY_MULTIPLIERS[activityLevel]
-
-    // Pace scales the calorie delta — balanced = default magnitude.
     const paceFactor = pace === 'gradual' ? 0.5 : pace === 'aggressive' ? 1.5 : 1.0
-
-    // Calorie adjustment based on goal
     let dailyCalories: number
     switch (goal) {
       case 'muscle_gain': dailyCalories = tdee + 300 * paceFactor; break
       case 'fat_loss':    dailyCalories = tdee - 500 * paceFactor; break
-      default:            dailyCalories = tdee; break // recomp, maintain
+      default:            dailyCalories = tdee; break
     }
     dailyCalories = Math.round(dailyCalories)
-
-    // Protein: g/kg based on goal
     let proteinPerKg: number
     switch (goal) {
       case 'muscle_gain': proteinPerKg = 2.0; break
@@ -563,49 +441,38 @@ export function useNutrition(userId: string | null) {
       default:            proteinPerKg = 1.8; break
     }
     const dailyProtein = Math.round(proteinPerKg * weight)
-
-    // Fat: 25% of calories (9 cal/g)
     const dailyFat = Math.round((dailyCalories * 0.25) / 9)
-
-    // Carbs: remainder (4 cal/g)
     const proteinCals = dailyProtein * 4
     const fatCals = dailyFat * 9
     const dailyCarbs = Math.round((dailyCalories - proteinCals - fatCals) / 4)
-
-    return {
-      dailyCalories,
-      dailyProtein,
-      dailyCarbs,
-      dailyFat,
-      goal,
-      weight,
-      height,
-      age,
-      sex,
-      activityLevel,
-    }
+    return { dailyCalories, dailyProtein, dailyCarbs, dailyFat, goal, weight, height, age, sex, activityLevel }
   }, [])
 
-  // ─── Computed: getDailyTotals ─────────────────────────────────────────────
-  const getDailyTotals = useCallback((date?: string): DailyTotals => {
-    const target = date || todayStr()
-    const dayEntries = entries.filter(e => utcToLocalDateStr(e.loggedAt) === target)
-    return dayEntries.reduce<DailyTotals>(
-      (acc, e) => ({
-        calories: acc.calories + e.totalCalories,
-        protein: acc.protein + e.totalProtein,
-        carbs: acc.carbs + e.totalCarbs,
-        fat: acc.fat + e.totalFat,
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 },
-    )
+  // ─── Índice de totales diarios (se recomputa solo cuando entries cambia) ───
+  const dailyTotalsMap = useMemo((): Map<string, DailyTotals> => {
+    const map = new Map<string, DailyTotals>()
+    for (const e of entries) {
+      const dateStr = utcToLocalDateStr(e.loggedAt)
+      const prev = map.get(dateStr) ?? { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      map.set(dateStr, {
+        calories: prev.calories + e.totalCalories,
+        protein: prev.protein + e.totalProtein,
+        carbs:   prev.carbs   + e.totalCarbs,
+        fat:     prev.fat     + e.totalFat,
+      })
+    }
+    return map
   }, [entries])
 
-  // ─── Computed: getWeeklyAverages ──────────────────────────────────────────
+  // ─── Selectores derivados ─────────────────────────────────────────────────
+  const getDailyTotals = useCallback((date?: string): DailyTotals => {
+    const target = date || todayStr()
+    return dailyTotalsMap.get(target) ?? { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  }, [dailyTotalsMap])
+
   const getWeeklyAverages = useCallback((): DailyTotals => {
     const totals: DailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 }
     let daysWithEntries = 0
-
     for (let i = 0; i < 7; i++) {
       const dateStr = daysAgoStr(i)
       const dayTotals = getDailyTotals(dateStr)
@@ -617,9 +484,7 @@ export function useNutrition(userId: string | null) {
         daysWithEntries++
       }
     }
-
     if (daysWithEntries === 0) return { calories: 0, protein: 0, carbs: 0, fat: 0 }
-
     return {
       calories: Math.round(totals.calories / daysWithEntries),
       protein: Math.round(totals.protein / daysWithEntries),
@@ -628,19 +493,12 @@ export function useNutrition(userId: string | null) {
     }
   }, [getDailyTotals])
 
-  // ─── Computed: getEntriesForDate ──────────────────────────────────────────
   const getEntriesForDate = useCallback((date: string): NutritionEntry[] => {
     return entries.filter(e => utcToLocalDateStr(e.loggedAt) === date)
   }, [entries])
 
-  // ─── Computed: getWeeklyHistory ──────────────────────────────────────────
   const getWeeklyHistory = useCallback((): Array<{
-    date: string
-    dayLabel: string
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
+    date: string; dayLabel: string; calories: number; protein: number; carbs: number; fat: number
   }> => {
     const dayKeys = ['day.shortSun', 'day.shortMon', 'day.shortTue', 'day.shortWed', 'day.shortThu', 'day.shortFri', 'day.shortSat']
     const days = dayKeys.map(k => i18n.t(k))
@@ -661,7 +519,6 @@ export function useNutrition(userId: string | null) {
     return result
   }, [getDailyTotals])
 
-  // ─── getRecentEntries ────────────────────────────────────────────────────
   const getRecentEntries = useCallback(async (limit = 10): Promise<NutritionEntry[]> => {
     if (usePB && userId) {
       try {
@@ -677,7 +534,6 @@ export function useNutrition(userId: string | null) {
     return entries.slice(0, limit)
   }, [usePB, userId, entries])
 
-  // ─── Computed: getRemainingMacros ─────────────────────────────────────────
   const getRemainingMacros = useCallback((date?: string): DailyTotals => {
     const totals = getDailyTotals(date)
     if (!goals) return { calories: 0, protein: 0, carbs: 0, fat: 0 }

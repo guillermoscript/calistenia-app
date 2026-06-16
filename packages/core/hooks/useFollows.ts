@@ -1,12 +1,20 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { op } from '../lib/analytics'
+import { qk } from '../lib/query-keys'
 
 export interface FollowUser {
   id: string
   displayName: string
   username: string
   avatarUrl: string | null
+}
+
+/** Forma del caché para esta query: ambas listas en un solo objeto. */
+interface FollowsData {
+  following: FollowUser[]
+  followers: FollowUser[]
 }
 
 interface UseFollowsReturn {
@@ -16,41 +24,43 @@ interface UseFollowsReturn {
   followingCount: number
   followersCount: number
   loading: boolean
+  refreshing: boolean
   follow: (targetUserId: string) => Promise<boolean>
   unfollow: (targetUserId: string) => Promise<boolean>
   isFollowing: (targetUserId: string) => boolean
   reload: () => Promise<void>
 }
 
+/**
+ * Follows del usuario: seguidores + seguidos en una única query TanStack.
+ * Las mutaciones follow/unfollow son OPTIMISTAS — onMutate actualiza el caché,
+ * onError restaura el snapshot anterior.
+ * Forma pública estable: { following, followers, followingIds, follow, unfollow, … }.
+ */
 export function useFollows(userId: string | null): UseFollowsReturn {
-  const [following, setFollowing] = useState<FollowUser[]>([])
-  const [followers, setFollowers] = useState<FollowUser[]>([])
-  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set())
-  const [loading, setLoading] = useState(false)
-  const initialized = useRef(false)
+  const qc = useQueryClient()
+  const key = qk.follows(userId)
 
-  // Ref mirror of followingIds — always current, no stale closures
-  const followingIdsRef = useRef(followingIds)
-  followingIdsRef.current = followingIds
-
-  // Track in-flight actions to prevent double-clicks
+  // Track in-flight actions to prevent double-clicks (se conserva del original)
   const pendingRef = useRef<Set<string>>(new Set())
 
-  const load = useCallback(async () => {
-    if (!userId) return
-    const available = await isPocketBaseAvailable()
-    if (!available) return
+  // — Query principal: colapsa los 2 reads en uno —
+  const { data, isFetching, isPending, refetch } = useQuery<FollowsData>({
+    queryKey: key,
+    enabled: !!userId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const available = await isPocketBaseAvailable()
+      if (!available) return { following: [], followers: [] }
 
-    setLoading(true)
-    try {
       const [followingRes, followersRes] = await Promise.all([
         pb.collection('follows').getFullList({
-          filter: pb.filter('follower = {:uid}', { uid: userId }),
+          filter: pb.filter('follower = {:uid}', { uid: userId! }),
           expand: 'following',
           $autoCancel: false,
         }),
         pb.collection('follows').getFullList({
-          filter: pb.filter('following = {:uid}', { uid: userId }),
+          filter: pb.filter('following = {:uid}', { uid: userId! }),
           expand: 'follower',
           $autoCancel: false,
         }),
@@ -76,86 +86,121 @@ export function useFollows(userId: string | null): UseFollowsReturn {
         }
       })
 
-      setFollowing(followingUsers)
-      setFollowers(followerUsers)
-      setFollowingIds(new Set(followingUsers.map(u => u.id)))
-    } catch (e) {
-      console.warn('Failed to load follows:', e)
-    } finally {
-      setLoading(false)
-    }
-  }, [userId])
+      return { following: followingUsers, followers: followerUsers }
+    },
+  })
 
-  useEffect(() => {
-    if (!initialized.current && userId) {
-      initialized.current = true
-      load()
-    }
-  }, [userId, load])
+  const following = data?.following ?? []
+  const followers = data?.followers ?? []
 
-  const follow = useCallback(async (targetUserId: string): Promise<boolean> => {
-    if (!userId) return false
-    // Guard: already following or action in flight
-    if (followingIdsRef.current.has(targetUserId)) return true
-    if (pendingRef.current.has(targetUserId)) return false
-    pendingRef.current.add(targetUserId)
+  // Ref mirror de followingIds — siempre actual, sin closures obsoletos
+  const followingIds = useMemo(
+    () => new Set(following.map(u => u.id)),
+    [following],
+  )
+  const followingIdsRef = useRef(followingIds)
+  followingIdsRef.current = followingIds
 
-    // Optimistic update — instant UI
-    setFollowingIds(prev => new Set([...prev, targetUserId]))
-    try {
+  // — Mutación OPTIMISTA: follow —
+  const followMutation = useMutation({
+    mutationFn: async (targetUserId: string) => {
       await pb.collection('follows').create({
         follower: pb.authStore.record?.id ?? userId,
         following: targetUserId,
       })
       op.track('user_followed', { target_id: targetUserId })
-      return true
-    } catch (e: any) {
-      // Revert optimistic update
-      setFollowingIds(prev => {
-        const next = new Set(prev)
-        next.delete(targetUserId)
-        return next
+    },
+    onMutate: async (targetUserId: string) => {
+      await qc.cancelQueries({ queryKey: key })
+      const prev = qc.getQueryData<FollowsData>(key) ?? { following: [], followers: [] }
+      // Usuario optimista mínimo — la query real traerá el perfil completo
+      const optimisticUser: FollowUser = {
+        id: targetUserId,
+        displayName: '?',
+        username: '',
+        avatarUrl: null,
+      }
+      qc.setQueryData<FollowsData>(key, {
+        ...prev,
+        following: [...prev.following, optimisticUser],
       })
-      console.warn('Follow error:', e?.status, JSON.stringify(e?.response), e?.message)
-      return false
-    } finally {
-      pendingRef.current.delete(targetUserId)
-    }
-  }, [userId])
+      return { prev }
+    },
+    onError: (_err, _targetUserId, ctx) => {
+      if (ctx?.prev) qc.setQueryData(key, ctx.prev)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: key })
+    },
+  })
 
-  const unfollow = useCallback(async (targetUserId: string): Promise<boolean> => {
-    if (!userId) return false
-    // Guard: already not following or action in flight
-    if (!followingIdsRef.current.has(targetUserId)) return true
-    if (pendingRef.current.has(targetUserId)) return false
-    pendingRef.current.add(targetUserId)
-
-    // Optimistic update — instant UI
-    setFollowingIds(prev => {
-      const next = new Set(prev)
-      next.delete(targetUserId)
-      return next
-    })
-    try {
+  // — Mutación OPTIMISTA: unfollow —
+  const unfollowMutation = useMutation({
+    mutationFn: async (targetUserId: string) => {
       const record = await pb.collection('follows').getFirstListItem(
         pb.filter('follower = {:me} && following = {:them}', { me: userId, them: targetUserId }),
         { $autoCancel: false },
       )
       await pb.collection('follows').delete(record.id)
+    },
+    onMutate: async (targetUserId: string) => {
+      await qc.cancelQueries({ queryKey: key })
+      const prev = qc.getQueryData<FollowsData>(key) ?? { following: [], followers: [] }
+      qc.setQueryData<FollowsData>(key, {
+        ...prev,
+        following: prev.following.filter(u => u.id !== targetUserId),
+      })
+      return { prev }
+    },
+    onError: (_err, _targetUserId, ctx) => {
+      if (ctx?.prev) qc.setQueryData(key, ctx.prev)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: key })
+    },
+  })
+
+  // — Wrappers públicos que conservan la firma original (Promise<boolean>) —
+  const follow = useCallback(async (targetUserId: string): Promise<boolean> => {
+    if (!userId) return false
+    if (followingIdsRef.current.has(targetUserId)) return true
+    if (pendingRef.current.has(targetUserId)) return false
+    pendingRef.current.add(targetUserId)
+    try {
+      await followMutation.mutateAsync(targetUserId)
       return true
-    } catch (e) {
-      // Revert optimistic update
-      setFollowingIds(prev => new Set([...prev, targetUserId]))
+    } catch (e: any) {
+      console.warn('Follow error:', e?.status, JSON.stringify(e?.response), e?.message)
+      return false
+    } finally {
+      pendingRef.current.delete(targetUserId)
+    }
+  }, [userId, followMutation])
+
+  const unfollow = useCallback(async (targetUserId: string): Promise<boolean> => {
+    if (!userId) return false
+    if (!followingIdsRef.current.has(targetUserId)) return true
+    if (pendingRef.current.has(targetUserId)) return false
+    pendingRef.current.add(targetUserId)
+    try {
+      await unfollowMutation.mutateAsync(targetUserId)
+      return true
+    } catch (e: any) {
       console.warn('Unfollow error:', e)
       return false
     } finally {
       pendingRef.current.delete(targetUserId)
     }
-  }, [userId])
+  }, [userId, unfollowMutation])
 
-  const isFollowing = useCallback((targetUserId: string): boolean => {
-    return followingIds.has(targetUserId)
-  }, [followingIds])
+  const isFollowing = useCallback(
+    (targetUserId: string): boolean => followingIds.has(targetUserId),
+    [followingIds],
+  )
+
+  const reload = useCallback(async () => {
+    await refetch()
+  }, [refetch])
 
   return {
     following,
@@ -163,10 +208,12 @@ export function useFollows(userId: string | null): UseFollowsReturn {
     followingIds,
     followingCount: following.length,
     followersCount: followers.length,
-    loading,
+    // loading = primera carga únicamente; refreshing = refetch de fondo
+    loading: isPending,
+    refreshing: isFetching && !isPending,
     follow,
     unfollow,
     isFollowing,
-    reload: load,
+    reload,
   }
 }

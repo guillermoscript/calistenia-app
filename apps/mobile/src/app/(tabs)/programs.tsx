@@ -67,6 +67,13 @@ export default function ProgramsScreen() {
   )
 }
 
+// Estilos de badge por dificultad: fácil (azul) · medio (naranja) · difícil (rojo)
+const DIFFICULTY_BADGE: Record<string, { box: string; text: string }> = {
+  beginner: { box: 'bg-blue-500/15 border-blue-500/30', text: 'text-blue-300' },
+  intermediate: { box: 'bg-orange-500/15 border-orange-500/30', text: 'text-orange-300' },
+  advanced: { box: 'bg-red-500/15 border-red-500/30', text: 'text-red-300' },
+}
+
 function ProgramRow({ program, isActive, onPress }: {
   program: ProgramMeta
   isActive: boolean
@@ -99,7 +106,21 @@ function ProgramRow({ program, isActive, onPress }: {
             {program.duration_weeks} {t('programs.weeks')}
           </Text>
           {program.difficulty && (
-            <Text className="font-mono text-[10px] capitalize text-muted-foreground">· {program.difficulty}</Text>
+            <View
+              className={cn(
+                'rounded-full border px-2 py-0.5',
+                DIFFICULTY_BADGE[program.difficulty]?.box ?? 'border-border',
+              )}
+            >
+              <Text
+                className={cn(
+                  'font-mono text-[9px] uppercase tracking-wide',
+                  DIFFICULTY_BADGE[program.difficulty]?.text ?? 'text-muted-foreground',
+                )}
+              >
+                {t(`difficulty.${program.difficulty}`)}
+              </Text>
+            </View>
           )}
         </View>
       </View>

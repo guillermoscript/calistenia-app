@@ -1,0 +1,21 @@
+diff --git a/dist/runtime/native/render-component.js b/dist/runtime/native/render-component.js
+--- a/dist/runtime/native/render-component.js
++++ b/dist/runtime/native/render-component.js
+@@ -118,7 +118,16 @@ function createAnimatedComponent(Component) {
+     return AnimatedComponent;
+ }
+ function printUpgradeWarning(warning, originalProps) {
+-    console.log(`CssInterop upgrade warning.\n\n${warning}.\n\nThis warning was caused by a component with the props:\n${stringify(originalProps)}\n\nIf adding or removing sibling components caused this warning you should add a unique "key" prop to your components. https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key\n`);
++    let propsString;
++    try {
++        propsString = stringify(originalProps);
++    } catch {
++        // Some props expose throwing getters (e.g. expo-router's default
++        // NavigationStateContext value). Serializing them must never crash a
++        // dev-only warning. Fall back to a safe placeholder.
++        propsString = "[props omitted: serialization threw]";
++    }
++    console.log(`CssInterop upgrade warning.\n\n${warning}.\n\nThis warning was caused by a component with the props:\n${propsString}\n\nIf adding or removing sibling components caused this warning you should add a unique "key" prop to your components. https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key\n`);
+ }
+ function stringify(object) {
+     const seen = new WeakSet();

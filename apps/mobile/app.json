@@ -2,7 +2,7 @@
   "expo": {
     "name": "Calistenia",
     "slug": "calistenia",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "calistenia",
@@ -23,6 +23,7 @@
     },
     "android": {
       "package": "tech.guille.calistenia",
+      "versionCode": 2,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -63,7 +64,8 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
       ]
     },
     "web": {
@@ -96,7 +98,14 @@
       ],
       "@maplibre/maplibre-react-native",
       "./plugins/with-notifee-location-fgs.js",
-      "@sentry/react-native",
+      [
+        "@sentry/react-native",
+        {
+          "url": "https://sentry.io/",
+          "organization": "guillermoscript",
+          "project": "calistenia-app"
+        }
+      ],
       [
         "expo-font",
         {

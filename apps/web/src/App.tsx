@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense, type
 import { useTranslation } from 'react-i18next'
 import { Loader } from './components/ui/loader'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Link } from 'react-router-dom'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { WorkoutProvider, useWorkoutState, useWorkoutActions } from './contexts/WorkoutContext'
@@ -805,10 +807,20 @@ function AppInner() {
   )
 }
 
+// Singletons a nivel módulo: un único QueryClient/persister por vida de la app.
+setupOnlineManager()
+const queryClient = createQueryClient()
+const persister = createCorePersister()
+
 export default function App() {
   return (
-    <AuthProvider>
-      <AppInner />
-    </AuthProvider>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister, maxAge: PERSIST_MAX_AGE }}
+    >
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </PersistQueryClientProvider>
   )
 }

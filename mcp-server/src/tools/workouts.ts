@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import { widget, text } from "mcp-use/server";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
@@ -363,6 +364,7 @@ export function registerWorkoutTools(server: MCPServer, pbUrl: string) {
       title: "Get Exercise History",
       description:
         "Get full history for a specific exercise — all logged sets grouped by date. Great for spotting progression and personal records over time.",
+      widget: { name: "exercise-history", invoking: "Cargando historial…", invoked: "Historial listo" },
       schema: z
         .object({
           exercise_id: z.string().describe("Exercise identifier (e.g. 'push-up', 'pull-up')"),
@@ -396,40 +398,47 @@ export function registerWorkoutTools(server: MCPServer, pbUrl: string) {
 
         if (result.length === 0) {
           return {
-            content: [{ type: "text", text: `No history found for exercise '${exercise_id}' in the last ${days} days.` }],
+            content: [{ type: "text", text: `No se encontró historial para '${exercise_id}' en los últimos ${days} días.` }],
           };
         }
 
-        // Group by date
-        const byDate: Record<string, string[]> = {};
+        // Group by date — keep reps and note separate for the widget
+        const byDate: Record<string, Array<{ reps: string; note?: string }>> = {};
         for (const s of result) {
           const date = toDateStr(s.logged_at, tz);
           if (!byDate[date]) byDate[date] = [];
-          byDate[date].push(s.reps + (s.note ? ` (${s.note})` : ""));
+          byDate[date].push({ reps: s.reps as string, ...(s.note ? { note: s.note as string } : {}) });
         }
 
-        const output = {
-          exercise_id,
-          days_looked_back: days,
-          total_sets: result.length,
-          sessions: Object.entries(byDate).map(([date, sets]) => ({ date, sets })),
-        };
+        const sessions = Object.entries(byDate).map(([date, sets]) => ({ date, sets }));
 
-        let text: string;
+        // Readable summary for non-widget clients
+        const summaryLines = [
+          `# ${exercise_id} — últimos ${days} días`,
+          `**${result.length} series** en **${sessions.length} sesiones**\n`,
+        ];
+        for (const { date, sets } of sessions) {
+          const setsStr = sets.map((s) => s.reps + (s.note ? ` (${s.note})` : "")).join(", ");
+          summaryLines.push(`**${date}**: ${setsStr}`);
+        }
+        const summaryText = summaryLines.join("\n");
+
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(output, null, 2);
-        } else {
-          const lines = [
-            `# ${exercise_id} History (last ${days} days)`,
-            `**${result.length} total sets** across **${Object.keys(byDate).length} sessions**\n`,
-          ];
-          for (const [date, sets] of Object.entries(byDate)) {
-            lines.push(`**${date}**: ${sets.join(", ")}`);
-          }
-          text = lines.join("\n");
+          return {
+            content: [{ type: "text", text: JSON.stringify({ exercise_id, days_looked_back: days, total_sets: result.length, sessions }, null, 2) }],
+            structuredContent: { exercise_id, days_looked_back: days, total_sets: result.length, sessions },
+          };
         }
 
-        return { content: [{ type: "text", text }], structuredContent: output };
+        return widget({
+          props: {
+            exercise_id,
+            days,
+            total_sets: result.length,
+            sessions,
+          },
+          output: text(summaryText),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

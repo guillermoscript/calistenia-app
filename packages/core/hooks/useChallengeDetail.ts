@@ -1,103 +1,164 @@
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { op } from '../lib/analytics'
 import { localMidnightAsUTC, addDays, utcToLocalDateStr } from '../lib/dateUtils'
+import { qk } from '../lib/query-keys'
 import type { Challenge, ChallengeMetric } from '../types'
 import type { LeaderboardEntry } from './useLeaderboard'
 
+// ── queryFn: detalle del reto ─────────────────────────────────────────────────
+
+async function fetchChallenge(challengeId: string): Promise<Challenge> {
+  const available = await isPocketBaseAvailable()
+  if (!available) throw new Error('PocketBase no disponible')
+
+  const ch = await pb.collection('challenges').getOne(challengeId, { $autoCancel: false })
+  return {
+    id: ch.id,
+    creator: ch.creator,
+    title: ch.title,
+    metric: ch.metric as ChallengeMetric,
+    custom_metric: ch.custom_metric || '',
+    description: ch.description || '',
+    goal: ch.goal || 0,
+    starts_at: ch.starts_at,
+    ends_at: ch.ends_at,
+    status: ch.status as any,
+  }
+}
+
+// ── queryFn: leaderboard (dependiente del reto) ────────────────────────────────
+
+interface LeaderboardQueryResult {
+  entries: LeaderboardEntry[]
+  participantIds: Set<string>
+}
+
+async function fetchLeaderboard(
+  challengeId: string,
+  challenge: Challenge,
+  currentUserId: string,
+): Promise<LeaderboardQueryResult> {
+  const available = await isPocketBaseAvailable()
+  if (!available) return { entries: [], participantIds: new Set() }
+
+  // Obtener participantes con usuario expandido
+  const participants = await pb.collection('challenge_participants').getFullList({
+    filter: pb.filter('challenge = {:cid}', { cid: challengeId }),
+    expand: 'user',
+    $autoCancel: false,
+  })
+
+  const participantIds = new Set(participants.map((p: any) => p.user as string))
+
+  // Calcular scores en paralelo (N+1 intencional, se mantiene como en el original)
+  const startStr = localMidnightAsUTC(challenge.starts_at)
+  const endStr = localMidnightAsUTC(addDays(challenge.ends_at, 1))
+
+  const entries = await Promise.all(
+    participants.map(async (p: any) => {
+      const user = p.expand?.user
+      const uid = p.user as string
+      const displayName = user?.display_name || user?.email?.split('@')[0] || '?'
+
+      let value = 0
+      try {
+        value = await getScore(uid, challenge.metric, startStr, endStr)
+      } catch { /* valor por defecto 0 */ }
+
+      return {
+        userId: uid,
+        displayName,
+        avatarUrl: user ? getUserAvatarUrl(user, '100x100') : null,
+        value,
+        isCurrentUser: uid === currentUserId,
+      } satisfies LeaderboardEntry
+    })
+  )
+
+  return {
+    entries: entries.sort((a, b) => b.value - a.value),
+    participantIds,
+  }
+}
+
+// ── Hook principal ────────────────────────────────────────────────────────────
+
 export function useChallengeDetail(challengeId: string | null, currentUserId: string | null) {
-  const [challenge, setChallenge] = useState<Challenge | null>(null)
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(false)
-  const [participantIds, setParticipantIds] = useState<Set<string>>(new Set())
+  const qc = useQueryClient()
 
-  const load = useCallback(async () => {
-    if (!challengeId || !currentUserId) return
-    const available = await isPocketBaseAvailable()
-    if (!available) return
+  // ── Query 1: datos del reto ────────────────────────────────────────────────
+  const challengeQuery = useQuery({
+    queryKey: qk.challenge(challengeId ?? ''),
+    enabled: !!challengeId,
+    queryFn: () => fetchChallenge(challengeId!),
+    staleTime: 30_000,
+  })
 
-    setLoading(true)
-    try {
-      // 1. Fetch challenge
-      const ch = await pb.collection('challenges').getOne(challengeId, { $autoCancel: false })
-      const challengeData: Challenge = {
-        id: ch.id,
-        creator: ch.creator,
-        title: ch.title,
-        metric: ch.metric as ChallengeMetric,
-        custom_metric: ch.custom_metric || '',
-        description: ch.description || '',
-        goal: ch.goal || 0,
-        starts_at: ch.starts_at,
-        ends_at: ch.ends_at,
-        status: ch.status as any,
-      }
-      setChallenge(challengeData)
+  const challenge = challengeQuery.data ?? null
 
-      // 2. Fetch participants with expanded user
-      const participants = await pb.collection('challenge_participants').getFullList({
-        filter: pb.filter('challenge = {:cid}', { cid: challengeId }),
-        expand: 'user',
-        $autoCancel: false,
-      })
+  // ── Query 2: leaderboard (dependiente del reto) ────────────────────────────
+  // Solo se activa cuando el reto ya está cargado y hay usuario actual
+  const leaderboardQuery = useQuery({
+    queryKey: qk.challengeLeaderboard(challengeId ?? '', currentUserId),
+    enabled: !!challengeId && !!currentUserId && !!challenge,
+    queryFn: () => fetchLeaderboard(challengeId!, challenge!, currentUserId!),
+    staleTime: 30_000,
+  })
 
-      const pIds = new Set(participants.map((p: any) => p.user as string))
-      setParticipantIds(pIds)
+  const leaderboard = leaderboardQuery.data?.entries ?? []
+  const participantIds = leaderboardQuery.data?.participantIds ?? new Set<string>()
 
-      // 3. Calculate scores per participant
-      const startStr = localMidnightAsUTC(challengeData.starts_at)
-      const endStr = localMidnightAsUTC(addDays(challengeData.ends_at, 1))
+  // loading = true mientras cualquiera de las dos queries esté en vuelo
+  const loading = challengeQuery.isLoading || leaderboardQuery.isLoading
 
-      const entries = await Promise.all(
-        participants.map(async (p: any) => {
-          const user = p.expand?.user
-          const uid = p.user as string
-          const displayName = user?.display_name || user?.email?.split('@')[0] || '?'
-
-          let value = 0
-          try {
-            value = await getScore(uid, challengeData.metric, startStr, endStr)
-          } catch { /* default 0 */ }
-
-          return {
-            userId: uid,
-            displayName,
-            avatarUrl: user ? getUserAvatarUrl(user, '100x100') : null,
-            value,
-            isCurrentUser: uid === currentUserId,
-          }
-        })
-      )
-
-      setLeaderboard(entries.sort((a, b) => b.value - a.value))
-    } catch (e: any) {
-      if (e?.status !== 404 && e?.status !== 0) {
-        console.warn('Challenge detail load error:', e)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [challengeId, currentUserId])
-
-  const inviteUser = useCallback(async (targetUserId: string): Promise<boolean> => {
-    if (!challengeId) return false
-    try {
+  // ── Mutación: invitar usuario ──────────────────────────────────────────────
+  const inviteMutation = useMutation({
+    mutationFn: async (targetUserId: string): Promise<void> => {
+      if (!challengeId) throw new Error('challengeId requerido')
       await pb.collection('challenge_participants').create({
         challenge: challengeId,
         user: targetUserId,
       })
       op.track('challenge_joined', { challenge_id: challengeId })
-      await load()
+    },
+    onSuccess: () => {
+      // Invalidar el leaderboard para que aparezca el nuevo participante
+      qc.invalidateQueries({ queryKey: qk.challengeLeaderboard(challengeId ?? '', currentUserId) })
+    },
+  })
+
+  // ── API pública (forma idéntica al hook original) ──────────────────────────
+
+  /** Equivale al `load` del hook original; fuerza refetch manual de ambas queries. */
+  const load = useCallback(() => {
+    if (!challengeId) return
+    qc.invalidateQueries({ queryKey: qk.challenge(challengeId) })
+    qc.invalidateQueries({ queryKey: qk.challengeLeaderboard(challengeId, currentUserId) })
+  }, [qc, challengeId, currentUserId])
+
+  /** Invita a un usuario y devuelve true/false (API original). */
+  const inviteUser = useCallback(async (targetUserId: string): Promise<boolean> => {
+    try {
+      await inviteMutation.mutateAsync(targetUserId)
       return true
     } catch {
       return false
     }
-  }, [challengeId, load])
+  }, [inviteMutation])
 
-  return { challenge, leaderboard, loading, participantIds, load, inviteUser }
+  return {
+    challenge,
+    leaderboard,
+    loading,
+    participantIds,
+    load,
+    inviteUser,
+  }
 }
 
-// ── Score calculation ────────────────────────────────────────────────────────
+// ── Cálculo de score por métrica ──────────────────────────────────────────────
 
 async function getScore(uid: string, metric: ChallengeMetric, startStr: string, endStr: string): Promise<number> {
   switch (metric) {

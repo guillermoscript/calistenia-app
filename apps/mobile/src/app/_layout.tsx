@@ -6,14 +6,18 @@ import '@/lib/notifications'
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { Platform } from 'react-native'
-import { Stack, ThemeProvider } from 'expo-router'
+import { Stack, ThemeProvider, usePathname, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { colorScheme as nwColorScheme, useColorScheme } from 'nativewind'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalHost } from '@rn-primitives/portal'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb } from '@calistenia/core/lib/pocketbase'
@@ -21,7 +25,7 @@ import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
-import { pbAuthHydration } from '@/lib/init-core'
+import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
 import { initI18n } from '@/lib/i18n'
 import { NAV_THEME } from '@/lib/theme'
@@ -32,6 +36,12 @@ import { CardioSessionProvider } from '@/contexts/CardioSessionContext'
 import OfflineBanner from '@/components/OfflineBanner'
 
 SplashScreen.preventAutoHideAsync()
+
+// Singletons a nivel módulo: un único QueryClient/persister por vida de la app.
+// init-core ya corrió (primer import del archivo), así que el adapter está listo.
+setupOnlineManager()
+const queryClient = createQueryClient()
+const persister = createCorePersister()
 // darkMode: 'class' en tailwind.config → NativeWind controla la clase .dark;
 // 'system' sigue el modo del dispositivo (igual que el default de la web).
 nwColorScheme.set('system')
@@ -59,8 +69,17 @@ function RootLayout() {
   // fontError: seguir sin fuentes custom antes que quedarse en blanco
   const [fontsLoaded, fontError] = useFonts(FONTS)
 
+  // OpenPanel screen views (la web los auto-trackea; en RN es manual).
+  const pathname = usePathname()
+  const segments = useSegments()
+  useEffect(() => {
+    trackScreen(pathname, { segments: segments.join('/'), platform: 'mobile' })
+  }, [pathname, segments])
+
   // Reintenta acciones encoladas offline al recuperar conexión (igual que web).
-  useEffect(() => setupAutoSync(pb), [])
+  // Tras vaciar la cola, invalida queries para reconciliar ids optimistas (local_)
+  // con los reales del server.
+  useEffect(() => setupAutoSync(pb, () => queryClient.invalidateQueries()), [])
 
   useEffect(() => {
     let cancelled = false
@@ -85,7 +104,13 @@ function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister, maxAge: PERSIST_MAX_AGE }}
+      >
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <KeyboardProvider>
+        <ThemeProvider value={NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']}>
         <StatusBar style="auto" />
         <Providers>
           <Stack screenOptions={{
@@ -102,7 +127,10 @@ function RootLayout() {
         </Providers>
         <OfflineBanner />
         <PortalHost />
-      </ThemeProvider>
+        </ThemeProvider>
+      </KeyboardProvider>
+      </SafeAreaProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
   )
 }

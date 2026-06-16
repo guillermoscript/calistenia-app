@@ -230,8 +230,9 @@ export default function WeeklyMealPlan({
             onPress={handleGenerate}
             disabled={generating}
             className={cn(
-              'rounded-lg border border-lime-400/30 px-4 py-2',
-              generating ? 'opacity-50' : 'active:bg-lime-400/10',
+              // active: estático — evita el upgrade View→Pressable de css-interop.
+              'rounded-lg border border-lime-400/30 px-4 py-2 active:bg-lime-400/10',
+              generating ? 'opacity-50' : '',
             )}
           >
             {generating ? (

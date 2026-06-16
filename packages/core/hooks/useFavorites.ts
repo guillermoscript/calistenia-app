@@ -1,6 +1,8 @@
 import { storage } from '../platform'
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { pb, isPocketBaseAvailable, getCurrentUser } from '../lib/pocketbase'
+import { useCallback, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { pb, getCurrentUser } from '../lib/pocketbase'
+import { qk } from '../lib/query-keys'
 
 const STORAGE_KEY = 'calistenia_exercise_favorites'
 
@@ -17,75 +19,74 @@ function saveLocal(ids: Set<string>) {
   } catch { /* storage full */ }
 }
 
+/**
+ * Favoritos de ejercicios. Offline-first: el Set local es la fuente inmediata
+ * (initialData), PocketBase es autoritativo y se fusiona al cargar. Las
+ * mutaciones son optimistas y escriben a local en onMutate; PB se sincroniza en
+ * segundo plano. Forma pública estable: { favoriteIds, toggleFavorite, isFavorite, count }.
+ */
 export function useFavorites() {
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(loadLocal)
-  const [pbReady, setPbReady] = useState(false)
+  const qc = useQueryClient()
+  const user = getCurrentUser()
+  const uid = user?.id ?? null
+  const key = qk.favorites(uid)
 
-  // Sync from PB on mount
-  useEffect(() => {
-    let cancelled = false
-    const sync = async () => {
-      try {
-        const available = await isPocketBaseAvailable()
-        const user = getCurrentUser()
-        if (!available || !user || cancelled) return
-        setPbReady(true)
-        const res = await pb.collection('exercise_favorites').getFullList({
-          filter: pb.filter('user = {:uid}', { uid: user.id }),
-          fields: 'exercise_id',
-        })
-        if (!cancelled && res.length > 0) {
-          const pbIds = new Set(res.map(r => r.exercise_id as string))
-          // Merge with local
-          const local = loadLocal()
-          const merged = new Set([...local, ...pbIds])
-          setFavoriteIds(merged)
-          saveLocal(merged)
-        }
-      } catch { /* PB not available */ }
-    }
-    sync()
-    return () => { cancelled = true }
-  }, [])
+  const { data: favoriteIds = new Set<string>() } = useQuery({
+    queryKey: key,
+    // initialData = local → disponible aun offline / sin sesión.
+    initialData: loadLocal,
+    initialDataUpdatedAt: 0, // fuerza refetch al montar para fusionar con PB
+    enabled: !!uid,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const res = await pb.collection('exercise_favorites').getFullList({
+        filter: pb.filter('user = {:uid}', { uid: uid! }),
+        fields: 'exercise_id',
+      })
+      const pbIds = new Set(res.map(r => r.exercise_id as string))
+      const merged = new Set<string>([...loadLocal(), ...pbIds])
+      saveLocal(merged)
+      return merged
+    },
+  })
 
-  const toggleFavorite = useCallback(async (exerciseId: string) => {
-    setFavoriteIds(prev => {
+  const toggle = useMutation({
+    mutationFn: async (exerciseId: string) => {
+      if (!uid) return
+      // El estado optimista ya volteó la pertenencia; consultamos PB por la real.
+      const existing = await pb.collection('exercise_favorites').getFullList({
+        filter: pb.filter('user = {:uid} && exercise_id = {:eid}', { uid, eid: exerciseId }),
+      })
+      if (existing.length > 0) {
+        for (const r of existing) await pb.collection('exercise_favorites').delete(r.id)
+      } else {
+        await pb.collection('exercise_favorites').create({ user: uid, exercise_id: exerciseId })
+      }
+    },
+    onMutate: async (exerciseId: string) => {
+      await qc.cancelQueries({ queryKey: key })
+      const prev = qc.getQueryData<Set<string>>(key) ?? new Set<string>()
       const next = new Set(prev)
-      if (next.has(exerciseId)) {
-        next.delete(exerciseId)
-      } else {
-        next.add(exerciseId)
-      }
+      if (next.has(exerciseId)) next.delete(exerciseId)
+      else next.add(exerciseId)
       saveLocal(next)
-      return next
-    })
-
-    // Sync to PB
-    try {
-      const user = getCurrentUser()
-      if (!pbReady || !user) return
-
-      const isFav = favoriteIds.has(exerciseId)
-      if (isFav) {
-        // Remove
-        const res = await pb.collection('exercise_favorites').getFullList({
-          filter: pb.filter('user = {:uid} && exercise_id = {:eid}', { uid: user.id, eid: exerciseId }),
-        })
-        for (const r of res) {
-          await pb.collection('exercise_favorites').delete(r.id)
-        }
-      } else {
-        // Add
-        await pb.collection('exercise_favorites').create({
-          user: user.id,
-          exercise_id: exerciseId,
-        })
+      qc.setQueryData(key, next)
+      return { prev }
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) {
+        saveLocal(ctx.prev)
+        qc.setQueryData(key, ctx.prev)
       }
-    } catch { /* silent fail, local state is source of truth */ }
-  }, [pbReady, favoriteIds])
+    },
+  })
+
+  const toggleFavorite = useCallback(
+    (exerciseId: string) => toggle.mutateAsync(exerciseId).catch(() => {}),
+    [toggle],
+  )
 
   const isFavorite = useCallback((exerciseId: string) => favoriteIds.has(exerciseId), [favoriteIds])
-
   const count = useMemo(() => favoriteIds.size, [favoriteIds])
 
   return { favoriteIds, toggleFavorite, isFavorite, count }

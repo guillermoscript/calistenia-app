@@ -33,6 +33,12 @@ export interface CoreConnectivity {
   isOnline(): boolean
   /** Suscribe un handler a "volvimos a estar online". Retorna el unsubscribe. */
   onOnline(handler: () => void): () => void
+  /**
+   * Suscribe a CADA transición online/offline (ambas direcciones). Opcional:
+   * si falta, React Query cae a onOnline (solo detecta reconexión). Lo usa
+   * onlineManager para pausar queries/mutations cuando se pierde la red.
+   */
+  onChange?(handler: (online: boolean) => void): () => void
 }
 
 export interface CorePlatform {

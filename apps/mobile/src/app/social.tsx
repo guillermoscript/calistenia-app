@@ -24,7 +24,7 @@ export default function SocialScreen() {
   const user = useAuthUser()
   const userId = user?.id ?? null
 
-  const { items, loading, loadingMore, hasMore, load, loadMore } = useActivityFeed(userId)
+  const { items, loading, refreshing: feedRefreshing, loadingMore, hasMore, load, loadMore } = useActivityFeed(userId)
   const { loadForSessions, toggleReaction, getReactions } = useReactions(userId)
   const {
     getComments,
@@ -64,12 +64,14 @@ export default function SocialScreen() {
     load()
   }, [load])
 
+  // El hook expone `refreshing` (refetch de fondo); `loading` ahora es solo primera
+  // carga, por lo que el pull-to-refresh debe seguir el ciclo de `feedRefreshing`.
   useEffect(() => {
-    if (refreshingRef.current && !loading) {
+    if (refreshingRef.current && !feedRefreshing) {
       refreshingRef.current = false
       setRefreshing(false)
     }
-  }, [loading])
+  }, [feedRefreshing])
 
   // Infinite scroll
   const handleEndReached = useCallback(() => {

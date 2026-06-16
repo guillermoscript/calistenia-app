@@ -1,9 +1,23 @@
 import { storage } from '../platform'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { qk } from '../lib/query-keys'
+import { makeOptimisticListHandlers } from '../lib/optimistic'
 import type { MealType, MealReminder } from '../types'
 
+// ─── Persistencia local ───────────────────────────────────────────────────────
+
 const LS_KEY = 'calistenia_meal_reminders'
+
+const lsGet = (): MealReminder[] => {
+  try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
+}
+const lsSet = (d: MealReminder[]) => {
+  try { storage.setItem(LS_KEY, JSON.stringify(d)) } catch { /* storage lleno */ }
+}
+
+// ─── Parser de días de la semana (PB puede devolver JSON string) ──────────────
 
 function parseDaysOfWeek(raw: unknown): number[] {
   if (Array.isArray(raw)) return raw
@@ -13,50 +27,216 @@ function parseDaysOfWeek(raw: unknown): number[] {
   return [1, 2, 3, 4, 5]
 }
 
-const lsGet = (): MealReminder[] => {
-  try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
-}
-const lsSet = (d: MealReminder[]) => storage.setItem(LS_KEY, JSON.stringify(d))
+// ─── useMealReminders ─────────────────────────────────────────────────────────
 
+/**
+ * Recordatorios de comidas. Offline-first con TanStack Query:
+ *
+ * - `qk.pbAvailable` (staleTime 30s): sonda de disponibilidad de PocketBase;
+ *   compartida/deduplicada entre todos los hooks que la usen.
+ * - `qk.mealReminders(userId)`: lista de recordatorios; initialData desde LS
+ *   para disponibilidad inmediata offline.
+ * - Las 4 mutaciones (save/update/toggle/delete) son optimistas: en `onMutate`
+ *   actualizan caché + LS; `onError` revierte ambos; `onSuccess` invalida para
+ *   re-sincronizar con PB.
+ * - Guarda `mr_` en IDs locales temporales (saveReminder offline). El guard
+ *   `!id.startsWith('mr_')` impide intentar operaciones PB sobre IDs locales.
+ *
+ * Forma pública estable: { reminders, saveReminder, updateReminder, toggleReminder, deleteReminder }
+ */
 export function useMealReminders(userId: string | null) {
-  const [reminders, setReminders] = useState<MealReminder[]>([])
-  const [usePB, setUsePB] = useState(false)
-  const initialized = useRef(false)
+  const qc = useQueryClient()
 
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+  // ── Sonda de disponibilidad de PocketBase ──────────────────────────────────
+  // Key compartida `qk.pbAvailable` — si otro hook ya la consultó, se reutiliza.
+  const { data: pbAvailable = false } = useQuery({
+    queryKey: qk.pbAvailable,
+    queryFn: () => isPocketBaseAvailable(),
+    staleTime: 30_000,
+    enabled: !!userId,
+  })
 
-    const init = async () => {
-      const available = userId ? await isPocketBaseAvailable() : false
-      setUsePB(available && !!userId)
+  // usePB = PB disponible Y hay sesión
+  const usePB = pbAvailable && !!userId
 
-      if (available && userId) {
-        try {
-          const res = await pb.collection('meal_reminders').getList(1, 50, {
-            filter: pb.filter('user = {:uid}', { uid: userId }),
-            sort: 'hour,minute',
-          })
-          const loaded: MealReminder[] = res.items.map((r: any) => ({
-            id: r.id,
-            user: r.user,
-            mealType: r.meal_type as MealType,
-            hour: r.hour,
-            minute: r.minute,
-            enabled: r.enabled,
-            daysOfWeek: parseDaysOfWeek(r.days_of_week),
-          }))
-          setReminders(loaded)
-          lsSet(loaded)
-        } catch {
-          setReminders(lsGet())
-        }
-      } else {
-        setReminders(lsGet())
+  // ── Query principal de recordatorios ───────────────────────────────────────
+  const remindersKey = qk.mealReminders(userId)
+
+  const { data: reminders = [] } = useQuery<MealReminder[]>({
+    queryKey: remindersKey,
+    // initialData desde LS — disponible offline / sin sesión desde el primer render
+    initialData: lsGet,
+    initialDataUpdatedAt: 0, // fuerza refetch al montar para fusionar con PB
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      // Si PB no está disponible, devolvemos lo que hay en LS
+      const available = await isPocketBaseAvailable()
+      if (!available || !userId) return lsGet()
+
+      try {
+        const res = await pb.collection('meal_reminders').getList(1, 50, {
+          filter: pb.filter('user = {:uid}', { uid: userId }),
+          sort: 'hour,minute',
+        })
+        const loaded: MealReminder[] = res.items.map((r: any) => ({
+          id: r.id,
+          user: r.user,
+          mealType: r.meal_type as MealType,
+          hour: r.hour,
+          minute: r.minute,
+          enabled: r.enabled,
+          daysOfWeek: parseDaysOfWeek(r.days_of_week),
+        }))
+        // Sincronizar LS con la fuente autoritativa de PB
+        lsSet(loaded)
+        return loaded
+      } catch {
+        // PB falló: caemos a LS como respaldo
+        return lsGet()
       }
-    }
-    init()
-  }, [userId])
+    },
+  })
+
+  // ── Mutación: crear recordatorio ───────────────────────────────────────────
+  // Tipo de payload para crear recordatorio con id temporal
+  type SavePayload = {
+    mealType: MealType
+    hour: number
+    minute: number
+    daysOfWeek: number[]
+    tempId: string
+  }
+
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const saveHandlers = makeOptimisticListHandlers<MealReminder[], SavePayload>(
+    qc,
+    () => remindersKey,
+    lsGet,
+    (prev, payload) => {
+      // Recordatorio optimista con id temporal `mr_`
+      const optimistic: MealReminder = {
+        id: payload.tempId,
+        mealType: payload.mealType,
+        hour: payload.hour,
+        minute: payload.minute,
+        enabled: true,
+        daysOfWeek: payload.daysOfWeek,
+      }
+      return [...prev, optimistic]
+    },
+    lsSet,
+  )
+
+  const saveMutation = useMutation({
+    mutationFn: async (payload: SavePayload) => {
+      if (!usePB || !userId) return null // sin PB, todo queda en LS (onMutate ya lo hizo)
+      try {
+        const rec = await pb.collection('meal_reminders').create({
+          user: userId,
+          meal_type: payload.mealType,
+          hour: payload.hour,
+          minute: payload.minute,
+          enabled: true,
+          days_of_week: payload.daysOfWeek,
+        })
+        return { pbId: rec.id, tempId: payload.tempId }
+      } catch (e) {
+        console.warn('PB meal_reminders create error:', e)
+        return null
+      }
+    },
+    ...saveHandlers,
+    onSuccess: (result) => {
+      if (!result) return
+      // Reemplazar el id temporal `mr_` por el id real de PB
+      qc.setQueryData<MealReminder[]>(remindersKey, (old = []) => {
+        const updated = old.map(r =>
+          r.id === result.tempId ? { ...r, id: result.pbId } : r,
+        )
+        lsSet(updated)
+        return updated
+      })
+    },
+  })
+
+  // ── Mutación: actualizar recordatorio ──────────────────────────────────────
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const updateHandlers = makeOptimisticListHandlers<
+    MealReminder[],
+    { id: string; hour: number; minute: number; daysOfWeek: number[] }
+  >(
+    qc,
+    () => remindersKey,
+    lsGet,
+    (prev, payload) =>
+      prev.map(r =>
+        r.id === payload.id
+          ? { ...r, hour: payload.hour, minute: payload.minute, daysOfWeek: payload.daysOfWeek }
+          : r,
+      ),
+    lsSet,
+  )
+
+  const updateMutation = useMutation({
+    mutationFn: async (payload: { id: string; hour: number; minute: number; daysOfWeek: number[] }) => {
+      // Guard `mr_`: IDs locales no existen en PB — solo actualizar si tiene id real
+      if (usePB && !payload.id.startsWith('mr_')) {
+        await pb.collection('meal_reminders').update(payload.id, {
+          hour: payload.hour,
+          minute: payload.minute,
+          days_of_week: payload.daysOfWeek,
+        })
+      }
+    },
+    ...updateHandlers,
+  })
+
+  // ── Mutación: activar/desactivar recordatorio ──────────────────────────────
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const toggleHandlers = makeOptimisticListHandlers<
+    MealReminder[],
+    { id: string; enabled: boolean }
+  >(
+    qc,
+    () => remindersKey,
+    lsGet,
+    (prev, payload) =>
+      prev.map(r => (r.id === payload.id ? { ...r, enabled: payload.enabled } : r)),
+    lsSet,
+  )
+
+  const toggleMutation = useMutation({
+    mutationFn: async (payload: { id: string; enabled: boolean }) => {
+      // Guard `mr_`: solo sincronizar con PB si el id es real
+      if (usePB && !payload.id.startsWith('mr_')) {
+        await pb.collection('meal_reminders').update(payload.id, { enabled: payload.enabled })
+      }
+    },
+    ...toggleHandlers,
+  })
+
+  // ── Mutación: eliminar recordatorio ───────────────────────────────────────
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const deleteHandlers = makeOptimisticListHandlers<MealReminder[], string>(
+    qc,
+    () => remindersKey,
+    lsGet,
+    (prev, id) => prev.filter(r => r.id !== id),
+    lsSet,
+  )
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // Guard `mr_`: solo borrar en PB si el id es real
+      if (usePB && !id.startsWith('mr_')) {
+        await pb.collection('meal_reminders').delete(id)
+      }
+    },
+    ...deleteHandlers,
+  })
+
+  // ── API pública (forma idéntica a la versión useState) ────────────────────
 
   const saveReminder = useCallback(async (
     mealType: MealType,
@@ -64,71 +244,30 @@ export function useMealReminders(userId: string | null) {
     minute: number,
     daysOfWeek: number[] = [1, 2, 3, 4, 5],
   ): Promise<void> => {
-    const reminder: MealReminder = {
-      id: `mr_${Date.now()}`,
-      mealType,
-      hour,
-      minute,
-      enabled: true,
-      daysOfWeek,
-    }
+    // `mr_` como prefijo del id temporal para identificar recordatorios locales
+    const tempId = `mr_${Date.now()}`
+    await saveMutation.mutateAsync({ mealType, hour, minute, daysOfWeek, tempId })
+  }, [saveMutation])
 
-    if (usePB && userId) {
-      try {
-        const rec = await pb.collection('meal_reminders').create({
-          user: userId,
-          meal_type: mealType,
-          hour,
-          minute,
-          enabled: true,
-          days_of_week: daysOfWeek,
-        })
-        reminder.id = rec.id
-      } catch (e) { console.warn('PB meal_reminders create error:', e) }
-    }
+  const updateReminder = useCallback(async (
+    id: string,
+    hour: number,
+    minute: number,
+    daysOfWeek: number[],
+  ): Promise<void> => {
+    await updateMutation.mutateAsync({ id, hour, minute, daysOfWeek })
+  }, [updateMutation])
 
-    setReminders(prev => {
-      const updated = [...prev, reminder]
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB, userId])
-
-  const updateReminder = useCallback(async (id: string, hour: number, minute: number, daysOfWeek: number[]): Promise<void> => {
-    if (usePB && !id.startsWith('mr_')) {
-      await pb.collection('meal_reminders').update(id, { hour, minute, days_of_week: daysOfWeek })
-    }
-
-    setReminders(prev => {
-      const updated = prev.map(r => r.id === id ? { ...r, hour, minute, daysOfWeek } : r)
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB])
-
-  const toggleReminder = useCallback(async (id: string, enabled: boolean): Promise<void> => {
-    if (usePB && !id.startsWith('mr_')) {
-      try { await pb.collection('meal_reminders').update(id, { enabled }) } catch {}
-    }
-
-    setReminders(prev => {
-      const updated = prev.map(r => r.id === id ? { ...r, enabled } : r)
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB])
+  const toggleReminder = useCallback(async (
+    id: string,
+    enabled: boolean,
+  ): Promise<void> => {
+    await toggleMutation.mutateAsync({ id, enabled })
+  }, [toggleMutation])
 
   const deleteReminder = useCallback(async (id: string): Promise<void> => {
-    if (usePB && !id.startsWith('mr_')) {
-      try { await pb.collection('meal_reminders').delete(id) } catch {}
-    }
-
-    setReminders(prev => {
-      const updated = prev.filter(r => r.id !== id)
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB])
+    await deleteMutation.mutateAsync(id)
+  }, [deleteMutation])
 
   return { reminders, saveReminder, updateReminder, toggleReminder, deleteReminder }
 }

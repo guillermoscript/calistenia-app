@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import { widget, text } from "mcp-use/server";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
@@ -451,6 +452,7 @@ export function registerGamificationTools(server: MCPServer, pbUrl: string) {
       title: "Get Achievements",
       description:
         "View all achievements with your progress toward each. Filter by category or see only unlocked/locked ones.",
+      widget: { name: "achievements-grid", invoking: "Cargando logros…", invoked: "Logros listos" },
       schema: z
         .object({
           category: z
@@ -475,24 +477,31 @@ export function registerGamificationTools(server: MCPServer, pbUrl: string) {
         const pb = auth.getClient();
         const userId = auth.getUserId();
         const achFilter = category ? pb.filter('category = {:category}', { category }) : undefined;
-        const allAch = await pb.collection("achievements").getFullList({
-          filter: achFilter,
-          sort: "sort_order",
-        });
 
-        const userAch = await pb.collection("user_achievements").getFullList({
-          filter: pb.filter('user = {:userId}', { userId }),
-        });
+        const [allAch, userAch, userStats] = await Promise.all([
+          pb.collection("achievements").getFullList({
+            filter: achFilter,
+            sort: "sort_order",
+          }),
+          pb.collection("user_achievements").getFullList({
+            filter: pb.filter('user = {:userId}', { userId }),
+          }),
+          pb.collection("user_stats")
+            .getFirstListItem(pb.filter('user = {:userId}', { userId }))
+            .catch(() => null),
+        ]);
+
         const progressMap = new Map(
           userAch.map((ua) => [
             ua.achievement as string,
-            { progress: ua.progress as number, unlocked: ua.unlocked as boolean, unlocked_at: ua.unlocked_at },
+            { progress: ua.progress as number, unlocked: ua.unlocked as boolean, unlocked_at: ua.unlocked_at as string | null },
           ])
         );
 
         let achievements = allAch.map((a) => {
           const ua = progressMap.get(a.id);
           return {
+            id: a.id as string,
             key: a.key as string,
             name: localize(a.name),
             description: localize(a.description),
@@ -500,7 +509,7 @@ export function registerGamificationTools(server: MCPServer, pbUrl: string) {
             icon: a.icon as string,
             tier: a.tier as string,
             xp_reward: a.xp_reward as number,
-            progress: ua?.progress ?? 0,
+            progress_pct: ua?.progress ?? 0,
             unlocked: ua?.unlocked ?? false,
             unlocked_at: ua?.unlocked_at ?? null,
           };
@@ -509,17 +518,31 @@ export function registerGamificationTools(server: MCPServer, pbUrl: string) {
         if (status === "unlocked") achievements = achievements.filter((a) => a.unlocked);
         if (status === "locked") achievements = achievements.filter((a) => !a.unlocked);
 
+        const totalUnlocked = achievements.filter((a) => a.unlocked).length;
+
+        // XP / level from user_stats (optional — may not exist if cal_sync_stats never ran)
+        const xp = userStats ? (userStats.xp as number) : undefined;
+        const level = userStats ? (userStats.level as number) : undefined;
+        let xpToNextLevel: number | undefined;
+        let levelProgressPct: number | undefined;
+        if (userStats && level !== undefined && xp !== undefined) {
+          const nextLevelXp = xpForLevel(level + 1);
+          const thisLevelXp = xpForLevel(level);
+          xpToNextLevel = nextLevelXp - xp;
+          levelProgressPct = Math.round(((xp - thisLevelXp) / (nextLevelXp - thisLevelXp)) * 100);
+        }
+
         const output = {
           total: achievements.length,
-          unlocked: achievements.filter((a) => a.unlocked).length,
+          unlocked: totalUnlocked,
           achievements,
         };
 
-        let text: string;
+        let summaryText: string;
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(output, null, 2);
+          summaryText = JSON.stringify(output, null, 2);
         } else {
-          const tierColors: Record<string, string> = {
+          const tierIcons: Record<string, string> = {
             bronze: "🥉",
             silver: "🥈",
             gold: "🥇",
@@ -540,21 +563,40 @@ export function registerGamificationTools(server: MCPServer, pbUrl: string) {
             lines.push(`## ${cat.charAt(0).toUpperCase() + cat.slice(1)}\n`);
             for (const a of achs) {
               const lock = a.unlocked ? "✅" : "🔒";
-              const tier = tierColors[a.tier] ?? "";
-              const progressBar =
-                a.progress < 100
-                  ? ` [${a.progress}%]`
-                  : "";
+              const tier = tierIcons[a.tier] ?? "";
+              const progressBar = a.progress_pct < 100 ? ` [${a.progress_pct}%]` : "";
               lines.push(
                 `${lock} ${a.icon} **${a.name}** ${tier}${progressBar} — ${a.description}${a.xp_reward > 0 ? ` (+${a.xp_reward} XP)` : ""}`
               );
             }
             lines.push("");
           }
-          text = lines.join("\n");
+          summaryText = lines.join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: output };
+        return widget({
+          props: {
+            total_unlocked: totalUnlocked,
+            total: achievements.length,
+            xp,
+            level,
+            xp_to_next_level: xpToNextLevel,
+            level_progress_pct: levelProgressPct,
+            achievements: achievements.map((a) => ({
+              id: a.id,
+              name: a.name,
+              icon: a.icon,
+              description: a.description,
+              category: a.category,
+              tier: a.tier,
+              xp_reward: a.xp_reward,
+              unlocked: a.unlocked,
+              progress_pct: a.progress_pct,
+              unlocked_at: a.unlocked_at,
+            })),
+          },
+          output: text(summaryText),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

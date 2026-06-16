@@ -1,8 +1,10 @@
 import { storage } from '../platform'
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { pb } from '../lib/pocketbase'
 import { submitWeeklyMealPlanJob, regeneratePlanDay } from '../lib/ai-jobs-api'
-import type { WeeklyMealPlan, WeeklyPlanDay, WeeklyPlannedMeal, NutritionGoal, FoodItem } from '../types'
+import { qk } from '../lib/query-keys'
+import type { WeeklyMealPlan, WeeklyPlanDay, NutritionGoal, FoodItem } from '../types'
 
 const LS_KEY = 'calistenia_weekly_plan'
 
@@ -29,9 +31,7 @@ function mapPlanRecord(rec: any): WeeklyMealPlan {
     user: rec.user,
     week_start: rec.week_start,
     status: rec.status,
-    goal_snapshot: typeof rec.goal_snapshot === 'string'
-      ? JSON.parse(rec.goal_snapshot)
-      : rec.goal_snapshot,
+    goal_snapshot: typeof rec.goal_snapshot === 'string' ? JSON.parse(rec.goal_snapshot) : rec.goal_snapshot,
     ai_model: rec.ai_model ?? '',
     created: rec.created,
     updated: rec.updated,
@@ -50,183 +50,121 @@ function mapDayRecord(rec: any): WeeklyPlanDay {
   }
 }
 
+/** Carga el plan activo + sus días desde PB (cae a caché local en error). */
+async function fetchActivePlan(uid: string): Promise<CachedPlan> {
+  try {
+    const planRec = await pb.collection('weekly_meal_plans').getFirstListItem(
+      pb.filter('user = {:uid} && status = "active"', { uid }),
+    )
+    const plan = mapPlanRecord(planRec)
+    const dayRecs = await pb.collection('weekly_plan_days').getFullList({
+      filter: pb.filter('plan = {:pid}', { pid: plan.id }), sort: 'day_index',
+    })
+    const days = dayRecs.map(mapDayRecord)
+    const result = { plan, days }
+    lsSet(result)
+    return result
+  } catch {
+    return lsGet()
+  }
+}
+
+/**
+ * Plan semanal de comidas. Migrado a TanStack Query: una query
+ * (qk.weeklyMealPlan.active) mantiene { plan, days } con initialData desde
+ * localStorage. Las mutaciones parchean la caché + LS. Forma pública estable.
+ */
 export function useWeeklyMealPlan(userId: string | null) {
-  const [activePlan, setActivePlan] = useState<WeeklyMealPlan | null>(null)
-  const [planDays, setPlanDays] = useState<WeeklyPlanDay[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const initialized = useRef(false)
+  const qc = useQueryClient()
+  const key = qk.weeklyMealPlan.active(userId)
 
-  // Load active plan + days
-  useEffect(() => {
-    if (!userId || initialized.current) return
-    initialized.current = true
+  const query = useQuery<CachedPlan>({
+    queryKey: key,
+    enabled: !!userId,
+    initialData: lsGet,
+    initialDataUpdatedAt: 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: () => fetchActivePlan(userId!),
+  })
 
-    const load = async () => {
-      const available = await isPocketBaseAvailable()
-      if (available) {
-        try {
-          const planRec = await pb.collection('weekly_meal_plans').getFirstListItem(
-            pb.filter('user = {:uid} && status = "active"', { uid: userId })
-          )
-          const plan = mapPlanRecord(planRec)
-          const dayRecs = await pb.collection('weekly_plan_days').getFullList({
-            filter: pb.filter('plan = {:pid}', { pid: plan.id }),
-            sort: 'day_index',
-          })
-          const days = dayRecs.map(mapDayRecord)
-          setActivePlan(plan)
-          setPlanDays(days)
-          lsSet({ plan, days })
-        } catch {
-          // No active plan — try localStorage cache
-          const cached = lsGet()
-          if (cached.plan) {
-            setActivePlan(cached.plan)
-            setPlanDays(cached.days)
-          }
-        }
-      } else {
-        const cached = lsGet()
-        if (cached.plan) {
-          setActivePlan(cached.plan)
-          setPlanDays(cached.days)
-        }
-      }
-      setIsLoading(false)
-    }
+  const activePlan = query.data?.plan ?? null
+  const planDays = query.data?.days ?? []
+  const isLoading = !!userId && !query.isFetched
 
-    load()
-  }, [userId])
+  const patch = useCallback((updater: (prev: CachedPlan) => CachedPlan) => {
+    qc.setQueryData<CachedPlan>(key, (prev) => {
+      const next = updater(prev ?? lsGet())
+      lsSet(next)
+      return next
+    })
+  }, [qc, key])
 
-  // Refresh from PB (used after job completion)
   const refresh = useCallback(async () => {
     if (!userId) return
-    try {
-      const planRec = await pb.collection('weekly_meal_plans').getFirstListItem(
-        pb.filter('user = {:uid} && status = "active"', { uid: userId })
-      )
-      const plan = mapPlanRecord(planRec)
-      const dayRecs = await pb.collection('weekly_plan_days').getFullList({
-        filter: pb.filter('plan = {:pid}', { pid: plan.id }),
-        sort: 'day_index',
-      })
-      const days = dayRecs.map(mapDayRecord)
-      setActivePlan(plan)
-      setPlanDays(days)
-      lsSet({ plan, days })
-    } catch {
-      setActivePlan(null)
-      setPlanDays([])
-      lsSet({ plan: null, days: [] })
-    }
-  }, [userId])
+    await query.refetch()
+  }, [userId, query])
 
-  // Generate a new weekly plan (returns job ID for polling)
   const generatePlan = useCallback(async (goals: NutritionGoal): Promise<string> => {
-    const jobId = await submitWeeklyMealPlanJob({
+    return submitWeeklyMealPlanJob({
       daily_calories: goals.dailyCalories,
       daily_protein: goals.dailyProtein,
       daily_carbs: goals.dailyCarbs,
       daily_fat: goals.dailyFat,
       goal: goals.goal,
     })
-    return jobId
   }, [])
 
-  // Regenerate a single day
   const regenerateDay = useCallback(async (dayId: string) => {
     const result = await regeneratePlanDay(dayId)
-    setPlanDays(prev => {
-      const updated = prev.map(d =>
-        d.id === dayId ? { ...d, meals: result.meals, notes: result.notes } : d
-      )
-      const plan = activePlan
-      lsSet({ plan, days: updated })
-      return updated
-    })
-  }, [activePlan])
+    patch(prev => ({
+      plan: prev.plan,
+      days: prev.days.map(d => d.id === dayId ? { ...d, meals: result.meals, notes: result.notes } : d),
+    }))
+  }, [patch])
 
-  // Log a planned meal (creates nutrition_entry + marks as logged)
   const logMeal = useCallback(async (dayId: string, mealId: string) => {
     const day = planDays.find(d => d.id === dayId)
     if (!day) return
     const meal = day.meals.find(m => m.id === mealId)
     if (!meal || meal.logged) return
 
-    // Create a nutrition entry from the planned meal
     const food: FoodItem = {
-      name: meal.label,
-      portionAmount: 1,
-      portionUnit: 'unidad',
-      unitWeightInGrams: 100,
-      calories: meal.calories,
-      protein: meal.protein,
-      carbs: meal.carbs,
-      fat: meal.fat,
-      baseCal100: meal.calories,
-      baseProt100: meal.protein,
-      baseCarbs100: meal.carbs,
-      baseFat100: meal.fat,
+      name: meal.label, portionAmount: 1, portionUnit: 'unidad', unitWeightInGrams: 100,
+      calories: meal.calories, protein: meal.protein, carbs: meal.carbs, fat: meal.fat,
+      baseCal100: meal.calories, baseProt100: meal.protein, baseCarbs100: meal.carbs, baseFat100: meal.fat,
     }
-
     const entryData = {
-      user: userId,
-      meal_type: meal.meal_type,
-      foods: [food],
-      total_calories: meal.calories,
-      total_protein: meal.protein,
-      total_carbs: meal.carbs,
-      total_fat: meal.fat,
-      ai_model: 'weekly-plan',
-      source: 'ai_weekly_plan',
-      logged_at: new Date().toISOString(),
+      user: userId, meal_type: meal.meal_type, foods: [food],
+      total_calories: meal.calories, total_protein: meal.protein,
+      total_carbs: meal.carbs, total_fat: meal.fat,
+      ai_model: 'weekly-plan', source: 'ai_weekly_plan', logged_at: new Date().toISOString(),
     }
-
     const entryRecord = await pb.collection('nutrition_entries').create(entryData)
 
-    // Update the meal as logged in the day record
     const updatedMeals = day.meals.map(m =>
-      m.id === mealId ? { ...m, logged: true, logged_entry_id: entryRecord.id } : m
+      m.id === mealId ? { ...m, logged: true, logged_entry_id: entryRecord.id } : m,
     )
-
     await pb.collection('weekly_plan_days').update(dayId, { meals: updatedMeals })
+    patch(prev => ({ plan: prev.plan, days: prev.days.map(d => d.id === dayId ? { ...d, meals: updatedMeals } : d) }))
+    // Invalida el acumulador de nutrición para que los totales del día
+    // reflejen la comida recién registrada sin esperar el staleTime de 30s.
+    void qc.invalidateQueries({ queryKey: qk.nutrition.today(userId) })
+  }, [userId, planDays, patch, qc])
 
-    setPlanDays(prev => {
-      const updated = prev.map(d =>
-        d.id === dayId ? { ...d, meals: updatedMeals } : d
-      )
-      lsSet({ plan: activePlan, days: updated })
-      return updated
-    })
-  }, [userId, planDays, activePlan])
-
-  // Delete a meal from a day
   const deleteMeal = useCallback(async (dayId: string, mealId: string) => {
     const day = planDays.find(d => d.id === dayId)
     if (!day) return
-
     const updatedMeals = day.meals.filter(m => m.id !== mealId)
     await pb.collection('weekly_plan_days').update(dayId, { meals: updatedMeals })
+    patch(prev => ({ plan: prev.plan, days: prev.days.map(d => d.id === dayId ? { ...d, meals: updatedMeals } : d) }))
+  }, [planDays, patch])
 
-    setPlanDays(prev => {
-      const updated = prev.map(d =>
-        d.id === dayId ? { ...d, meals: updatedMeals } : d
-      )
-      lsSet({ plan: activePlan, days: updated })
-      return updated
-    })
-  }, [planDays, activePlan])
-
-  // Archive the current plan
   const archivePlan = useCallback(async () => {
     if (!activePlan) return
     await pb.collection('weekly_meal_plans').update(activePlan.id, { status: 'archived' })
-    setActivePlan(null)
-    setPlanDays([])
-    lsSet({ plan: null, days: [] })
-  }, [activePlan])
+    patch(() => ({ plan: null, days: [] }))
+  }, [activePlan, patch])
 
-  // Get a specific day by date string (YYYY-MM-DD)
   const getDayByDate = useCallback((date: string): WeeklyPlanDay | undefined => {
     return planDays.find(d => d.date.startsWith(date))
   }, [planDays])

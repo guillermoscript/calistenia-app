@@ -1,7 +1,10 @@
 import { storage } from '../platform'
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { pb } from '../lib/pocketbase'
+import { qk } from '../lib/query-keys'
 import { todayStr } from '../lib/dateUtils'
+import { makeOptimisticListHandlers, type OptimisticContext } from '../lib/optimistic'
 
 const LS_KEY = 'calistenia_weight_entries'
 
@@ -12,11 +15,13 @@ export interface WeightEntry {
   note: string
 }
 
+// ── localStorage helpers ──────────────────────────────────────────────────────
+
 const lsGet = (): WeightEntry[] => {
   try { return JSON.parse(storage.getItem(LS_KEY) || '[]') } catch { return [] }
 }
 const lsSet = (d: WeightEntry[]): void => {
-  storage.setItem(LS_KEY, JSON.stringify(d))
+  try { storage.setItem(LS_KEY, JSON.stringify(d)) } catch { /* storage lleno */ }
 }
 
 interface UseWeightReturn {
@@ -27,95 +32,170 @@ interface UseWeightReturn {
   deleteWeight: (id: string) => Promise<void>
 }
 
+/**
+ * Historial de peso corporal. Offline-first: localStorage es la fuente
+ * inmediata (initialData), PocketBase es autoritativo y sobreescribe al cargar.
+ * Las mutaciones son optimistas y escriben a local en onMutate; PB se
+ * sincroniza en segundo plano. Forma pública estable idéntica al hook previo:
+ * { weights, isReady, logWeight, getWeightHistory, deleteWeight }.
+ */
 export function useWeight(userId: string | null = null): UseWeightReturn {
-  const [weights, setWeights] = useState<WeightEntry[]>([])
-  const [isReady, setIsReady] = useState(false)
-  const [usePB, setUsePB] = useState(false)
-  const initialized = useRef(false)
+  const qc = useQueryClient()
+  const key = qk.weight(userId)
 
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+  // ── Query principal ───────────────────────────────────────────────────────
 
-    const init = async () => {
-      const available = userId ? await isPocketBaseAvailable() : false
-      setUsePB(available && !!userId)
+  const { data: weights = [], isSuccess } = useQuery<WeightEntry[]>({
+    queryKey: key,
+    // initialData = local → disponible aun offline / sin sesión.
+    initialData: lsGet,
+    initialDataUpdatedAt: 0, // fuerza refetch al montar para fusionar con PB
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      // getFullList elimina el límite implícito de 500: obtiene todos los registros del usuario
+      const res = await pb.collection('weight_entries').getFullList({
+        filter: pb.filter('user = {:uid}', { uid: userId! }),
+        sort: '-date',
+      })
+      const entries: WeightEntry[] = res.map((r: any) => ({
+        id: r.id,
+        weight_kg: r.weight_kg,
+        date: r.date?.split(' ')[0] || r.date,
+        note: r.note || '',
+      }))
+      // Escribe PB→local para que la próxima carga offline arranque fresco.
+      lsSet(entries)
+      return entries
+    },
+  })
 
-      if (available && userId) {
-        try {
-          const res = await pb.collection('weight_entries').getList(1, 500, {
-            filter: pb.filter('user = {:uid}', { uid: userId }),
-            sort: '-date',
-          })
-          const entries: WeightEntry[] = res.items.map((r: any) => ({
-            id: r.id,
-            weight_kg: r.weight_kg,
-            date: r.date?.split(' ')[0] || r.date,
-            note: r.note || '',
-          }))
-          setWeights(entries)
-          lsSet(entries)
-        } catch (e) {
-          console.warn('PB weight_entries load error, using localStorage', e)
-          setWeights(lsGet())
-        }
-      } else {
-        setWeights(lsGet())
+  // isReady: true en cuanto hay datos (local o PB). Sin userId usamos el local
+  // directamente, así que siempre está listo.
+  const isReady = !userId ? true : isSuccess || weights.length > 0
+
+  // ── Mutación: logWeight ───────────────────────────────────────────────────
+
+  // Tipo del contexto de logMutation: prev para rollback + optimistic para swap de id en onSuccess.
+  // NOTA: logMutation NO usa makeOptimisticListHandlers porque su onSuccess necesita ctx.optimistic
+  // (swap de id local_ → id real de PB). El helper no expone ese campo.
+  type LogMutationContext = { prev: WeightEntry[]; optimistic: WeightEntry }
+
+  const logMutation = useMutation<
+    WeightEntry,
+    Error,
+    { weightKg: number; date: string; note: string },
+    LogMutationContext
+  >({
+    mutationFn: async ({ weightKg, date, note }) => {
+      // Optimismo ya aplicado; intentamos persistir en PB.
+      if (!userId) throw new Error('sin sesión')
+      const rec = await pb.collection('weight_entries').create({
+        user: userId,
+        weight_kg: weightKg,
+        date: date + ' 00:00:00',
+        note: note || '',
+      })
+      return {
+        id: rec.id,
+        weight_kg: weightKg,
+        date,
+        note: note || '',
       }
-      setIsReady(true)
-    }
-    init()
-  }, [userId])
+    },
+    onMutate: async ({ weightKg, date, note }) => {
+      await qc.cancelQueries({ queryKey: key })
+      const prev = qc.getQueryData<WeightEntry[]>(key) ?? lsGet()
 
-  const logWeight = useCallback(async (weightKg: number, date?: string, note?: string) => {
-    const d = date || todayStr()
-    const entry: WeightEntry = {
-      id: `local_${Date.now()}`,
-      weight_kg: weightKg,
-      date: d,
-      note: note || '',
-    }
+      // Entrada optimista con id local_ mientras PB no confirma.
+      const optimistic: WeightEntry = {
+        id: `local_${Date.now()}`,
+        weight_kg: weightKg,
+        date,
+        note: note || '',
+      }
+      const next = [optimistic, ...prev].sort((a, b) => b.date.localeCompare(a.date))
+      lsSet(next)
+      qc.setQueryData(key, next)
+      return { prev, optimistic }
+    },
+    onSuccess: (confirmed, _, ctx) => {
+      // Reemplaza el id local_ por el id real de PB.
+      const current = qc.getQueryData<WeightEntry[]>(key) ?? []
+      const next = current.map(w =>
+        w.id === ctx?.optimistic?.id ? confirmed : w,
+      )
+      lsSet(next)
+      qc.setQueryData(key, next)
+    },
+    onError: (_err, _vars, ctx) => {
+      // Revierte al estado previo si PB falla (ej. offline sin userId).
+      if (ctx?.prev) {
+        lsSet(ctx.prev)
+        qc.setQueryData(key, ctx.prev)
+      }
+    },
+  })
 
-    if (usePB && userId) {
-      try {
-        const rec = await pb.collection('weight_entries').create({
-          user: userId,
-          weight_kg: weightKg,
-          date: d + ' 00:00:00',
-          note: note || '',
+  // ── Mutación: deleteWeight ────────────────────────────────────────────────
+
+  // Handlers generados por el helper: onMutate captura resolvedKey para rollback seguro.
+  const deleteHandlers = makeOptimisticListHandlers<WeightEntry[], string>(
+    qc,
+    () => key,
+    lsGet,
+    (prev, id) => prev.filter(w => w.id !== id),
+    lsSet,
+  )
+
+  const deleteMutation = useMutation<void, Error, string, OptimisticContext<WeightEntry[]>>({
+    mutationFn: async (id) => {
+      // Los ids local_ nunca llegaron a PB; solo los que tienen id real.
+      if (!userId || id.startsWith('local_')) return
+      await pb.collection('weight_entries').delete(id)
+    },
+    ...deleteHandlers,
+  })
+
+  // ── Interfaz pública (idéntica al hook anterior) ──────────────────────────
+
+  const logWeight = useCallback(
+    async (weightKg: number, date?: string, note?: string) => {
+      const d = date || todayStr()
+      if (userId) {
+        await logMutation.mutateAsync({ weightKg, date: d, note: note || '' }).catch(() => {
+          // Error ya gestionado en onError; entrada optimista persiste offline.
         })
-        entry.id = rec.id
-      } catch (e) {
-        console.warn('PB weight create error:', e)
+      } else {
+        // Sin sesión: solo local, sin pasar por mutationFn.
+        const entry: WeightEntry = {
+          id: `local_${Date.now()}`,
+          weight_kg: weightKg,
+          date: d,
+          note: note || '',
+        }
+        qc.setQueryData<WeightEntry[]>(key, (prev = []) => {
+          const next = [entry, ...prev].sort((a, b) => b.date.localeCompare(a.date))
+          lsSet(next)
+          return next
+        })
       }
-    }
+    },
+    [userId, logMutation, qc, key],
+  )
 
-    setWeights(prev => {
-      const updated = [entry, ...prev].sort((a, b) => b.date.localeCompare(a.date))
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB, userId])
+  const deleteWeight = useCallback(
+    async (id: string) => {
+      await deleteMutation.mutateAsync(id).catch(() => {})
+    },
+    [deleteMutation],
+  )
 
-  const deleteWeight = useCallback(async (id: string) => {
-    if (usePB && userId && !id.startsWith('local_')) {
-      try {
-        await pb.collection('weight_entries').delete(id)
-      } catch (e) {
-        console.warn('PB weight delete error:', e)
-      }
-    }
-
-    setWeights(prev => {
-      const updated = prev.filter(w => w.id !== id)
-      lsSet(updated)
-      return updated
-    })
-  }, [usePB, userId])
-
-  const getWeightHistory = useCallback((limit: number = 100): WeightEntry[] => {
-    return weights.slice(0, limit)
-  }, [weights])
+  // getWeightHistory(n): selector sobre query.data — firma idéntica al hook previo.
+  const getWeightHistory = useCallback(
+    (limit: number = 100): WeightEntry[] => weights.slice(0, limit),
+    [weights],
+  )
 
   return { weights, isReady, logWeight, getWeightHistory, deleteWeight }
 }

@@ -2,8 +2,9 @@
  * reminder-scheduler.ts
  *
  * Programa recordatorios OS-level de comidas y entrenamientos usando
- * expo-notifications con triggers de calendario (CALENDAR). Reemplaza
- * el setTimeout/ServiceWorker scheduler de la web, que no funciona en RN.
+ * expo-notifications con triggers semanales (WEEKLY), soportados en iOS y
+ * Android. Reemplaza el setTimeout/ServiceWorker scheduler de la web, que no
+ * funciona en RN.
  *
  * Limitación iOS: el SO solo permite 64 notificaciones locales programadas
  * por app. Para no silenciar silenciosamente las últimas, limitamos a 60
@@ -198,12 +199,15 @@ export async function syncReminders(
               id: entry.reminderId,
             },
           },
+          // WEEKLY repite semanalmente en weekday/hour/minute y está soportado
+          // tanto en iOS como en Android. El trigger CALENDAR (repeats:true) solo
+          // funciona en iOS; en Android lanza "Trigger of type: calendar is not
+          // supported" y la notificación nunca se programa.
           trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
             weekday: entry.jsDay + 1,
             hour: entry.hour,
             minute: entry.minute,
-            repeats: true,
             channelId: Platform.OS === 'android' ? CHANNEL_ID : undefined,
           },
         }).catch((err) => {

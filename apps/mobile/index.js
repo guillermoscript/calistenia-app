@@ -4,6 +4,7 @@
 // en el _layout raíz no basta.
 import './src/lib/instrument'
 import './src/lib/init-core'
+
 import 'expo-router/entry'
 
 // Widget Android: el task handler corre también en headless JS (sin UI).

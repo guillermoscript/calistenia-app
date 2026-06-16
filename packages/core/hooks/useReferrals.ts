@@ -1,5 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
+import { qk } from '../lib/query-keys'
 
 export interface Referral {
   id: string
@@ -18,92 +20,139 @@ export interface ReferralStats {
   totalEarned: number
 }
 
-export function useReferrals(userId: string | null) {
-  const [referrals, setReferrals] = useState<Referral[]>([])
-  const [stats, setStats] = useState<ReferralStats>({ totalReferred: 0, pointsBalance: 0, totalEarned: 0 })
-  const [loading, setLoading] = useState(false)
+const EMPTY_STATS: ReferralStats = { totalReferred: 0, pointsBalance: 0, totalEarned: 0 }
 
+// — Fetchers ——————————————————————————————————————————————————————————————————
+
+async function fetchReferrals(userId: string): Promise<Referral[]> {
+  const available = await isPocketBaseAvailable()
+  if (!available) return []
+
+  try {
+    const res = await pb.collection('referrals').getFullList({
+      filter: pb.filter('referrer = {:uid}', { uid: userId }),
+      sort: '-created',
+      expand: 'referred',
+      $autoCancel: false,
+    })
+
+    return res.map((r: any) => ({
+      id: r.id,
+      referrer: r.referrer,
+      referred: r.referred,
+      referredName:
+        r.expand?.referred?.display_name ||
+        r.expand?.referred?.email?.split('@')[0] ||
+        '?',
+      referredAvatar: r.expand?.referred?.avatar || '',
+      source: r.source,
+      challengeId: r.challenge_id || null,
+      created: r.created,
+    }))
+  } catch (e: any) {
+    if (e?.status !== 404 && e?.status !== 0) {
+      console.warn('Referrals load error:', e)
+    }
+    return []
+  }
+}
+
+async function fetchReferralStats(userId: string): Promise<ReferralStats> {
+  const available = await isPocketBaseAvailable()
+  if (!available) return EMPTY_STATS
+
+  try {
+    // Total de referidos
+    const referralRes = await pb.collection('referrals').getList(1, 1, {
+      filter: pb.filter('referrer = {:uid}', { uid: userId }),
+      $autoCancel: false,
+    })
+
+    // Suma transacciones de puntos para balance y total ganado
+    const transactions = await pb.collection('point_transactions').getFullList({
+      filter: pb.filter('user = {:uid}', { uid: userId }),
+      $autoCancel: false,
+    })
+
+    let totalEarned = 0
+    let totalSpent = 0
+    for (const t of transactions) {
+      const amount = (t as any).amount || 0
+      if (amount > 0) totalEarned += amount
+      else totalSpent += Math.abs(amount)
+    }
+
+    return {
+      totalReferred: referralRes.totalItems,
+      pointsBalance: totalEarned - totalSpent,
+      totalEarned,
+    }
+  } catch {
+    return EMPTY_STATS
+  }
+}
+
+// — Hook ——————————————————————————————————————————————————————————————————————
+
+/**
+ * Referidos del usuario. Migrado a TanStack Query: dos queries independientes
+ * (list y stats) + dos mutaciones (trackReferral / generateReferralCode).
+ * La forma pública es idéntica al hook original para no romper consumidores.
+ */
+export function useReferrals(userId: string | null) {
+  const qc = useQueryClient()
+
+  // — Query: lista de referidos —
+  const {
+    data: referrals = [],
+    isFetching: fetchingList,
+    refetch: refetchList,
+  } = useQuery({
+    queryKey: qk.referrals.list(userId),
+    queryFn: () => fetchReferrals(userId!),
+    enabled: !!userId,
+  })
+
+  // — Query: estadísticas de referidos —
+  const {
+    data: stats = EMPTY_STATS,
+    isFetching: fetchingStats,
+    refetch: refetchStats,
+  } = useQuery({
+    queryKey: qk.referrals.stats(userId),
+    queryFn: () => fetchReferralStats(userId!),
+    enabled: !!userId,
+  })
+
+  // loading = true mientras cualquiera de las dos queries está en vuelo
+  const loading = fetchingList || fetchingStats
+
+  // — API imperativa (preserva contrato público) —
+
+  /** Dispara un refetch de la lista de referidos (sin devolver valor, igual que antes). */
   const getReferrals = useCallback(async () => {
     if (!userId) return
-    const available = await isPocketBaseAvailable()
-    if (!available) return
+    await refetchList()
+  }, [userId, refetchList])
 
-    setLoading(true)
-    try {
-      const res = await pb.collection('referrals').getFullList({
-        filter: pb.filter('referrer = {:uid}', { uid: userId }),
-        sort: '-created',
-        expand: 'referred',
-        $autoCancel: false,
-      })
-
-      const items: Referral[] = res.map((r: any) => ({
-        id: r.id,
-        referrer: r.referrer,
-        referred: r.referred,
-        referredName: r.expand?.referred?.display_name || r.expand?.referred?.email?.split('@')[0] || '?',
-        referredAvatar: r.expand?.referred?.avatar || '',
-        source: r.source,
-        challengeId: r.challenge_id || null,
-        created: r.created,
-      }))
-
-      setReferrals(items)
-    } catch (e: any) {
-      if (e?.status !== 404 && e?.status !== 0) {
-        console.warn('Referrals load error:', e)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [userId])
-
+  /**
+   * Dispara un refetch de las estadísticas y devuelve el resultado,
+   * tal como hacía el hook original.
+   */
   const getReferralStats = useCallback(async (): Promise<ReferralStats> => {
-    if (!userId) return { totalReferred: 0, pointsBalance: 0, totalEarned: 0 }
-    const available = await isPocketBaseAvailable()
-    if (!available) return { totalReferred: 0, pointsBalance: 0, totalEarned: 0 }
+    if (!userId) return EMPTY_STATS
+    const result = await refetchStats()
+    return result.data ?? EMPTY_STATS
+  }, [userId, refetchStats])
 
-    try {
-      // Count referrals
-      const referralRes = await pb.collection('referrals').getList(1, 1, {
-        filter: pb.filter('referrer = {:uid}', { uid: userId }),
-        $autoCancel: false,
-      })
+  // — Mutación: registrar referido —
+  const trackReferralMutation = useMutation({
+    mutationFn: async (referrerCode: string): Promise<boolean> => {
+      if (!userId) return false
+      const available = await isPocketBaseAvailable()
+      if (!available) return false
 
-      // Sum point transactions for balance and total earned
-      const transactions = await pb.collection('point_transactions').getFullList({
-        filter: pb.filter('user = {:uid}', { uid: userId }),
-        $autoCancel: false,
-      })
-
-      let totalEarned = 0
-      let totalSpent = 0
-      for (const t of transactions) {
-        const amount = (t as any).amount || 0
-        if (amount > 0) totalEarned += amount
-        else totalSpent += Math.abs(amount)
-      }
-
-      const result: ReferralStats = {
-        totalReferred: referralRes.totalItems,
-        pointsBalance: totalEarned - totalSpent,
-        totalEarned,
-      }
-
-      setStats(result)
-      return result
-    } catch {
-      return { totalReferred: 0, pointsBalance: 0, totalEarned: 0 }
-    }
-  }, [userId])
-
-  const trackReferral = useCallback(async (referrerCode: string): Promise<boolean> => {
-    if (!userId) return false
-    const available = await isPocketBaseAvailable()
-    if (!available) return false
-
-    try {
-      // Look up the referrer by their referral_code
+      // Buscar al referidor por su referral_code
       const referrerUsers = await pb.collection('users').getList(1, 1, {
         filter: pb.filter('referral_code = {:code}', { code: referrerCode }),
         $autoCancel: false,
@@ -113,10 +162,10 @@ export function useReferrals(userId: string | null) {
 
       const referrer = referrerUsers.items[0]
 
-      // Block self-referral
+      // Bloquear auto-referido
       if (referrer.id === userId) return false
 
-      // Create referral record — server hook handles points, follows, and notifications
+      // El hook del servidor maneja puntos, follows y notificaciones
       await pb.collection('referrals').create({
         referrer: referrer.id,
         referred: userId,
@@ -124,22 +173,40 @@ export function useReferrals(userId: string | null) {
       })
 
       return true
-    } catch (e: any) {
-      console.warn('Track referral error:', e)
-      return false
-    }
-  }, [userId])
+    },
+    onSettled: () => {
+      // Invalidar ambas queries al terminar (éxito o error)
+      qc.invalidateQueries({ queryKey: qk.referrals.list(userId) })
+      qc.invalidateQueries({ queryKey: qk.referrals.stats(userId) })
+    },
+    onError: (_err, _code) => {
+      console.warn('Track referral error:', _err)
+    },
+  })
 
-  const generateReferralCode = useCallback(async (displayName: string): Promise<string | null> => {
-    if (!userId) return null
-    const available = await isPocketBaseAvailable()
-    if (!available) return null
+  /** Registra un referido dado un código. Devuelve true si tuvo éxito. */
+  const trackReferral = useCallback(
+    async (referrerCode: string): Promise<boolean> => {
+      try {
+        return await trackReferralMutation.mutateAsync(referrerCode)
+      } catch {
+        return false
+      }
+    },
+    [trackReferralMutation],
+  )
 
-    try {
-      // Sanitize: uppercase, ASCII-only, max 10 chars, spaces → hyphens
+  // — Mutación: generar código de referido —
+  const generateReferralCodeMutation = useMutation({
+    mutationFn: async (displayName: string): Promise<string | null> => {
+      if (!userId) return null
+      const available = await isPocketBaseAvailable()
+      if (!available) return null
+
+      // Sanitizar: mayúsculas, solo ASCII, máx 10 chars, espacios → guiones
       const sanitized = displayName
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // strip diacritics
+        .replace(/[̀-ͯ]/g, '') // quitar diacríticos
         .replace(/[^a-zA-Z0-9\s]/g, '')
         .replace(/\s+/g, '-')
         .toUpperCase()
@@ -147,7 +214,7 @@ export function useReferrals(userId: string | null) {
 
       const prefix = sanitized || 'USER'
 
-      // Try up to 5 times to find a unique code
+      // Hasta 5 intentos para encontrar un código único
       for (let attempt = 0; attempt < 5; attempt++) {
         const hash = Array.from(crypto.getRandomValues(new Uint8Array(4)))
           .map(b => b.toString(36).toUpperCase())
@@ -156,7 +223,7 @@ export function useReferrals(userId: string | null) {
 
         const code = `${prefix}-${hash}`
 
-        // Check uniqueness
+        // Verificar unicidad
         try {
           const existing = await pb.collection('users').getList(1, 1, {
             filter: pb.filter('referral_code = {:code}', { code }),
@@ -164,21 +231,36 @@ export function useReferrals(userId: string | null) {
           })
           if (existing.items.length > 0) continue
         } catch {
-          // If check fails, try next
           continue
         }
 
-        // Save to user
+        // Guardar en el usuario
         await pb.collection('users').update(userId, { referral_code: code })
         return code
       }
 
       return null
-    } catch (e: any) {
-      console.warn('Generate referral code error:', e)
-      return null
-    }
-  }, [userId])
+    },
+    onSettled: () => {
+      // El código vive en el perfil del usuario; invalidar stats por si acaso
+      qc.invalidateQueries({ queryKey: qk.referrals.stats(userId) })
+    },
+    onError: (_err) => {
+      console.warn('Generate referral code error:', _err)
+    },
+  })
+
+  /** Genera y persiste un código de referido único. Devuelve el código o null. */
+  const generateReferralCode = useCallback(
+    async (displayName: string): Promise<string | null> => {
+      try {
+        return await generateReferralCodeMutation.mutateAsync(displayName)
+      } catch {
+        return null
+      }
+    },
+    [generateReferralCodeMutation],
+  )
 
   return {
     referrals,

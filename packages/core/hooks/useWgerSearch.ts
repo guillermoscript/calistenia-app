@@ -1,41 +1,60 @@
 import { useState, useCallback } from 'react'
 import i18n from 'i18next'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { searchWger, getWgerExerciseInfo, downloadWgerImage } from '../lib/wger'
 import { mapWgerToExerciseCatalog } from '../lib/wger-mappings'
 import type { WgerSearchSuggestion } from '../lib/wger'
+import { qk } from '../lib/query-keys'
 
 export function useWgerSearch() {
-  const [wgerResults, setWgerResults] = useState<WgerSearchSuggestion[]>([])
-  const [wgerLoading, setWgerLoading] = useState(false)
+  // Término activo que dispara la query; cadena vacía deshabilita la búsqueda
+  const [searchTerm, setSearchTerm] = useState('')
+  const [searchLanguage, setSearchLanguage] = useState('es')
   const [wgerError, setWgerError] = useState<string | null>(null)
   const [importing, setImporting] = useState<Set<number>>(new Set())
 
+  const qc = useQueryClient()
+
+  // Búsqueda en la API externa de wger vía TanStack Query.
+  // enabled cuando el término tiene al menos 2 caracteres.
+  const {
+    data: wgerResults = [],
+    isFetching: wgerLoading,
+  } = useQuery({
+    queryKey: qk.wgerSearch(searchTerm, searchLanguage),
+    enabled: searchTerm.length >= 2,
+    staleTime: 5 * 60 * 1000, // resultados de búsqueda válidos 5 min
+    queryFn: async () => {
+      const results = await searchWger(searchTerm, searchLanguage)
+      if (results.length === 0) {
+        // Sin resultados no es un error de red; se expone vía wgerError (estado local)
+        setWgerError(i18n.t('wger.noResults'))
+      } else {
+        setWgerError(null)
+      }
+      return results
+    },
+  })
+
+  // doSearch actualiza el término que dispara la query reactiva.
+  // El debounce queda en manos del llamador si hace falta (la API de wger lo tolera).
   const doSearch = useCallback(async (term: string, language = 'es') => {
     if (term.length < 2) return
-    setWgerLoading(true)
     setWgerError(null)
-    try {
-      const results = await searchWger(term, language)
-      setWgerResults(results)
-      if (results.length === 0) {
-        setWgerError(i18n.t('wger.noResults'))
-      }
-    } catch {
-      setWgerError(i18n.t('wger.searchError'))
-      setWgerResults([])
-    } finally {
-      setWgerLoading(false)
-    }
+    setSearchLanguage(language)
+    setSearchTerm(term)
   }, [])
 
+  // importExercise escribe en PocketBase; permanece como función async directa
+  // para mantener la firma pública original (devuelve Promise<string>).
   const importExercise = useCallback(async (wgerId: number, language = 'es'): Promise<string> => {
-    // Check deduplication
+    // Deduplicación: si ya existe en catálogo local, devolver su id
     try {
       const existing = await pb.collection('exercises_catalog').getFirstListItem(`wger_id = ${wgerId}`)
       if (existing) return existing.id
     } catch {
-      // Not found — proceed with import
+      // No encontrado — continuar con la importación
     }
 
     setImporting(prev => new Set(prev).add(wgerId))
@@ -45,7 +64,7 @@ export function useWgerSearch() {
 
       const mapped = mapWgerToExerciseCatalog(info, language)
 
-      // Download up to 2 images
+      // Descargar hasta 2 imágenes (la principal primero)
       const imageBlobs: { blob: Blob; name: string }[] = []
       const mainImages = info.images
         .sort((a, b) => (b.is_main ? 1 : 0) - (a.is_main ? 1 : 0))
@@ -59,7 +78,7 @@ export function useWgerSearch() {
         }
       }
 
-      // Build FormData for PocketBase
+      // Construir FormData para PocketBase
       const formData = new FormData()
       formData.append('name', JSON.stringify(mapped.name))
       formData.append('slug', mapped.slug)
@@ -81,8 +100,12 @@ export function useWgerSearch() {
 
       const record = await pb.collection('exercises_catalog').create(formData)
 
-      // Remove from wger results after successful import
-      setWgerResults(prev => prev.filter(r => r.data.id !== wgerId))
+      // Eliminar del cache de resultados tras importación exitosa
+      qc.setQueryData(
+        qk.wgerSearch(searchTerm, searchLanguage),
+        (prev: WgerSearchSuggestion[] | undefined) =>
+          (prev ?? []).filter(r => r.data.id !== wgerId),
+      )
 
       return record.id
     } finally {
@@ -92,10 +115,10 @@ export function useWgerSearch() {
         return next
       })
     }
-  }, [])
+  }, [qc, searchTerm, searchLanguage])
 
   const clearResults = useCallback(() => {
-    setWgerResults([])
+    setSearchTerm('')
     setWgerError(null)
   }, [])
 
