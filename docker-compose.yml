@@ -49,8 +49,12 @@ services:
       # Optional: rate limit tuning
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-10}
-      # MCP OAuth — set SERVER_URL=https://your-domain.com in Dokploy env vars
-      - SERVER_URL
+      # MCP OAuth public origin — must be this server's public URL so OAuth
+      # discovery metadata (issuer / authorize / token / protected-resource)
+      # resolves for remote clients like Claude Desktop Connectors.
+      # Set the real value in Dokploy env vars (prod) or .env (local).
+      # Falls back to localhost for a bare `docker compose up`.
+      - SERVER_URL=${SERVER_URL:-http://localhost:3001}
       # Push notifications (VAPID + internal auth)
       - VITE_VAPID_PUBLIC_KEY=${VITE_VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
