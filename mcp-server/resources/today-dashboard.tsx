@@ -1,5 +1,7 @@
-import { McpUseProvider, useWidget, useWidgetTheme, type WidgetMetadata } from "mcp-use/react";
+import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
+import { useAppColors, FONT } from "./lib/theme";
+import { WidgetLoading } from "./lib/ui";
 
 const macroSchema = z.object({ consumed: z.number(), goal: z.number() });
 
@@ -55,7 +57,7 @@ function Ring({ value, max, color, label, unit = "", size = 64 }: { value: numbe
 }
 
 function ReadinessBadge({ score }: { score: number }) {
-  const color = score >= 8 ? "#22c55e" : score >= 5 ? "#f59e0b" : "#ef4444";
+  const color = score >= 8 ? "#22c55e" : score >= 5 ? "#f59e0b" : "#ef4444"; // semantic traffic-light
   const size = 52;
   const r = (size - 8) / 2;
   const circ = 2 * Math.PI * r;
@@ -76,24 +78,23 @@ function ReadinessBadge({ score }: { score: number }) {
 
 export default function TodayDashboard() {
   const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
-  const theme = useWidgetTheme();
-  const dark = theme === "dark";
+  const c = useAppColors();
 
   if (isPending) {
-    return <McpUseProvider autoSize><div style={{ padding: 16, color: dark ? "#e0e0e0" : "#333" }}>Cargando tu día…</div></McpUseProvider>;
+    return <WidgetLoading text="Cargando tu día…" />;
   }
 
-  const bg = dark ? "#1a1a1a" : "#ffffff";
-  const card = dark ? "#242424" : "#f8f8f8";
-  const border = dark ? "#333" : "#e8e8e8";
-  const textColor = dark ? "#e0e0e0" : "#1a1a1a";
-  const sub = dark ? "#888" : "#666";
-  const accent = "#6366f1";
+  const bg = c.bg;
+  const card = c.card;
+  const border = c.border;
+  const textColor = c.text;
+  const sub = c.sub;
+  const accent = c.lime;
   const { readiness, workout, nutrition, streak } = props;
 
   return (
     <McpUseProvider autoSize>
-      <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: "system-ui, sans-serif", maxWidth: 480 }}>
+      <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: FONT, maxWidth: 480 }}>
 
         {/* Top row: readiness + streak */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -121,10 +122,10 @@ export default function TodayDashboard() {
             Nutrición hoy · {nutrition.meals_logged} comida{nutrition.meals_logged !== 1 ? "s" : ""}
           </div>
           <div style={{ display: "flex", justifyContent: "space-around" }}>
-            <Ring value={nutrition.calories.consumed} max={nutrition.calories.goal} color="#f97316" label="Kcal" size={68} />
-            <Ring value={nutrition.protein.consumed} max={nutrition.protein.goal} color="#3b82f6" label="Prot" unit="g" size={56} />
-            <Ring value={nutrition.carbs.consumed} max={nutrition.carbs.goal} color="#eab308" label="Carbs" unit="g" size={56} />
-            <Ring value={nutrition.fat.consumed} max={nutrition.fat.goal} color="#a855f7" label="Grasa" unit="g" size={56} />
+            <Ring value={nutrition.calories.consumed} max={nutrition.calories.goal} color={c.kcal} label="Kcal" size={68} />
+            <Ring value={nutrition.protein.consumed} max={nutrition.protein.goal} color={c.protein} label="Prot" unit="g" size={56} />
+            <Ring value={nutrition.carbs.consumed} max={nutrition.carbs.goal} color={c.carbs} label="Carbs" unit="g" size={56} />
+            <Ring value={nutrition.fat.consumed} max={nutrition.fat.goal} color={c.fat} label="Grasa" unit="g" size={56} />
           </div>
         </div>
 
@@ -140,12 +141,12 @@ export default function TodayDashboard() {
                 <div style={{ fontSize: 13, color: accent, fontWeight: 600, marginBottom: 8 }}>{workout.day_focus}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                   {workout.exercises.slice(0, 5).map((ex, i) => (
-                    <span key={i} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 12, backgroundColor: dark ? "#333" : "#e8e8e8", color: textColor }}>
+                    <span key={i} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 12, backgroundColor: c.chip, color: textColor }}>
                       {ex.name}
                     </span>
                   ))}
                   {workout.exercises.length > 5 && (
-                    <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 12, backgroundColor: dark ? "#333" : "#e8e8e8", color: sub }}>
+                    <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 12, backgroundColor: c.chip, color: sub }}>
                       +{workout.exercises.length - 5} más
                     </span>
                   )}
@@ -162,7 +163,7 @@ export default function TodayDashboard() {
           {workout?.has_workout && (
             <button
               onClick={() => sendFollowUpMessage("Muéstrame el entrenamiento de hoy con cal_todays_workout")}
-              style={{ flex: 1, padding: "8px 12px", borderRadius: 8, backgroundColor: accent, color: "#fff", fontWeight: 700, fontSize: 12, border: "none", cursor: "pointer" }}
+              style={{ flex: 1, padding: "8px 12px", borderRadius: 8, backgroundColor: accent, color: c.limeText, fontWeight: 700, fontSize: 12, border: "none", cursor: "pointer" }}
             >
               ▶ Empezar sesión
             </button>

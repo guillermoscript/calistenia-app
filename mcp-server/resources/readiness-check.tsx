@@ -1,5 +1,7 @@
-import { McpUseProvider, useWidget, useWidgetTheme, type WidgetMetadata } from "mcp-use/react";
+import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
+import { useAppColors, FONT, trafficColor } from "./lib/theme";
+import { WidgetLoading } from "./lib/ui";
 
 export const propsSchema = z.object({
   score: z.number(),
@@ -21,7 +23,8 @@ export const widgetMetadata: WidgetMetadata = {
 type Props = z.infer<typeof propsSchema>;
 
 function ReadinessGauge({ score }: { score: number }) {
-  const color = score >= 8 ? "#22c55e" : score >= 5 ? "#f59e0b" : "#ef4444";
+  const c = useAppColors();
+  const color = trafficColor(score, 5, 8, c);
   const size = 96;
   const strokeWidth = 10;
   const r = (size - strokeWidth) / 2;
@@ -60,32 +63,20 @@ function ReadinessGauge({ score }: { score: number }) {
 
 export default function ReadinessCheck() {
   const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
-  const theme = useWidgetTheme();
-  const dark = theme === "dark";
+  const c = useAppColors();
 
   if (isPending) {
-    return (
-      <McpUseProvider autoSize>
-        <div style={{ padding: 16, color: dark ? "#e0e0e0" : "#333" }}>Evaluando tu estado…</div>
-      </McpUseProvider>
-    );
+    return <WidgetLoading text="Evaluando tu estado…" />;
   }
-
-  const bg = dark ? "#1a1a1a" : "#ffffff";
-  const card = dark ? "#242424" : "#f8f8f8";
-  const border = dark ? "#333" : "#e8e8e8";
-  const textColor = dark ? "#e0e0e0" : "#1a1a1a";
-  const sub = dark ? "#888" : "#666";
-  const accent = "#6366f1";
 
   const { score, label, factors, recommendations, sessions_this_week, weekly_goal, already_trained_today, days_since_last_workout } = props;
 
-  const scoreColor = score >= 8 ? "#22c55e" : score >= 5 ? "#f59e0b" : "#ef4444";
-  const bgLabel = score >= 8 ? "#22c55e18" : score >= 5 ? "#f59e0b18" : "#ef444418";
+  const scoreColor = trafficColor(score, 5, 8, c);
+  const bgLabel = score >= 8 ? c.limeSoft : score >= 5 ? c.warn + "22" : c.dangerSoft;
 
   return (
     <McpUseProvider autoSize>
-      <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: "system-ui, sans-serif", maxWidth: 420 }}>
+      <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 420 }}>
 
         {/* Header: gauge + label */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
@@ -100,15 +91,15 @@ export default function ReadinessCheck() {
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {weekly_goal > 0 && (
-                <div style={{ fontSize: 11, color: sub }}>
+                <div style={{ fontSize: 11, color: c.sub }}>
                   {sessions_this_week}/{weekly_goal} sesiones esta semana
                 </div>
               )}
               {already_trained_today && (
-                <div style={{ fontSize: 11, color: "#22c55e" }}>✅ Ya entrenaste hoy</div>
+                <div style={{ fontSize: 11, color: c.success }}>✅ Ya entrenaste hoy</div>
               )}
               {days_since_last_workout !== null && !already_trained_today && (
-                <div style={{ fontSize: 11, color: sub }}>
+                <div style={{ fontSize: 11, color: c.sub }}>
                   {days_since_last_workout === 0 ? "Entrenaste hoy" : `${days_since_last_workout}d desde último entreno`}
                 </div>
               )}
@@ -118,13 +109,13 @@ export default function ReadinessCheck() {
 
         {/* Factors */}
         {factors.length > 0 && (
-          <div style={{ backgroundColor: card, borderRadius: 10, padding: "10px 14px", marginBottom: 10, border: `1px solid ${border}` }}>
-            <div style={{ fontSize: 10, color: sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+          <div style={{ backgroundColor: c.card, borderRadius: 10, padding: "10px 14px", marginBottom: 10, border: `1px solid ${c.border}` }}>
+            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
               Factores
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
               {factors.map((f, i) => (
-                <div key={i} style={{ fontSize: 12, color: textColor }}>{f}</div>
+                <div key={i} style={{ fontSize: 12, color: c.text }}>{f}</div>
               ))}
             </div>
           </div>
@@ -132,15 +123,15 @@ export default function ReadinessCheck() {
 
         {/* Recommendations */}
         {recommendations.length > 0 && (
-          <div style={{ backgroundColor: card, borderRadius: 10, padding: "10px 14px", marginBottom: 12, border: `1px solid ${border}` }}>
-            <div style={{ fontSize: 10, color: sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+          <div style={{ backgroundColor: c.card, borderRadius: 10, padding: "10px 14px", marginBottom: 12, border: `1px solid ${c.border}` }}>
+            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
               Recomendaciones
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
               {recommendations.map((r, i) => (
                 <div key={i} style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
-                  <span style={{ color: accent, fontSize: 12, marginTop: 1 }}>›</span>
-                  <span style={{ fontSize: 12, color: textColor }}>{r}</span>
+                  <span style={{ color: c.lime, fontSize: 12, marginTop: 1 }}>›</span>
+                  <span style={{ fontSize: 12, color: c.text }}>{r}</span>
                 </div>
               ))}
             </div>
@@ -152,7 +143,7 @@ export default function ReadinessCheck() {
           onClick={() => sendFollowUpMessage("¿Qué entreno hoy? Usa cal_todays_workout para mostrarme el entrenamiento del día")}
           style={{
             width: "100%", padding: "9px 14px", borderRadius: 8,
-            backgroundColor: accent, color: "#fff",
+            backgroundColor: c.lime, color: c.limeText,
             fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer",
           }}
         >
