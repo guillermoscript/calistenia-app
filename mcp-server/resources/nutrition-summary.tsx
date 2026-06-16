@@ -1,5 +1,7 @@
-import { McpUseProvider, useWidget, useWidgetTheme, type WidgetMetadata } from "mcp-use/react";
+import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
+import { useAppColors, FONT, trafficColor, type AppColors } from "./lib/theme";
+import { WidgetLoading } from "./lib/ui";
 
 const propsSchema = z.object({
   from: z.string(),
@@ -38,36 +40,29 @@ function MacroBar({
   goal,
   color,
   unit,
-  dark,
-  border,
-  sub,
-  textColor,
+  c,
 }: {
   label: string;
   avg: number;
   goal: number | null;
   color: string;
   unit: string;
-  dark: boolean;
-  border: string;
-  sub: string;
-  textColor: string;
+  c: AppColors;
 }) {
   const pct = goal && goal > 0 ? Math.min(avg / goal, 1) : null;
   const pctNum = goal && goal > 0 ? Math.round((avg / goal) * 100) : null;
-  const barBg = dark ? "#2a2a2a" : "#eeeeee";
 
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: textColor }}>{label}</span>
-        <span style={{ fontSize: 12, color: sub }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>{label}</span>
+        <span style={{ fontSize: 12, color: c.sub }}>
           {goal !== null ? (
             <>
               <span style={{ color: color, fontWeight: 700 }}>{avg}{unit}</span>
               <span> / {goal}{unit}</span>
               {pctNum !== null && (
-                <span style={{ marginLeft: 6, fontWeight: 700, color: pctNum >= 90 ? "#22c55e" : pctNum >= 70 ? "#f59e0b" : "#ef4444" }}>
+                <span style={{ marginLeft: 6, fontWeight: 700, color: trafficColor(pctNum, 70, 90, c) }}>
                   {pctNum}%
                 </span>
               )}
@@ -77,7 +72,7 @@ function MacroBar({
           )}
         </span>
       </div>
-      <div style={{ height: 8, borderRadius: 4, backgroundColor: barBg, overflow: "hidden" }}>
+      <div style={{ height: 8, borderRadius: 4, backgroundColor: c.chip, overflow: "hidden" }}>
         {pct !== null && (
           <div
             style={{
@@ -96,49 +91,29 @@ function MacroBar({
 
 export default function NutritionSummary() {
   const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
-  const theme = useWidgetTheme();
-  const dark = theme === "dark";
-
-  const bg = dark ? "#1a1a1a" : "#ffffff";
-  const card = dark ? "#242424" : "#f8f8f8";
-  const border = dark ? "#333" : "#e8e8e8";
-  const textColor = dark ? "#e0e0e0" : "#1a1a1a";
-  const sub = dark ? "#888" : "#666";
-  const chipBg = dark ? "#333" : "#e8e8e8";
+  const c = useAppColors();
 
   if (isPending) {
-    return (
-      <McpUseProvider autoSize>
-        <div style={{ padding: 16, color: sub, fontFamily: "system-ui, sans-serif" }}>
-          Calculando resumen de nutrición…
-        </div>
-      </McpUseProvider>
-    );
+    return <WidgetLoading text="Calculando resumen de nutrición…" />;
   }
 
   const { from, to, days_logged, total_entries, adherence_pct, daily_avg, goals, most_logged_meals } = props;
 
   const adherenceColor =
-    adherence_pct === null
-      ? sub
-      : adherence_pct >= 90
-      ? "#22c55e"
-      : adherence_pct >= 70
-      ? "#f59e0b"
-      : "#ef4444";
+    adherence_pct === null ? c.sub : trafficColor(adherence_pct, 70, 90, c);
 
   const dateLabel = from === to ? from : `${from} → ${to}`;
 
   return (
     <McpUseProvider autoSize>
-      <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: "system-ui, sans-serif", maxWidth: 480 }}>
+      <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 480 }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15 }}>📊 Resumen nutricional</div>
-            <div style={{ fontSize: 12, color: sub, marginTop: 2 }}>{dateLabel}</div>
-            <div style={{ fontSize: 12, color: sub }}>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>Resumen nutricional</div>
+            <div style={{ fontSize: 12, color: c.sub, marginTop: 2 }}>{dateLabel}</div>
+            <div style={{ fontSize: 12, color: c.sub }}>
               {days_logged} día{days_logged !== 1 ? "s" : ""} registrado{days_logged !== 1 ? "s" : ""} · {total_entries} comida{total_entries !== 1 ? "s" : ""}
             </div>
           </div>
@@ -147,8 +122,8 @@ export default function NutritionSummary() {
           {adherence_pct !== null && (
             <div
               style={{
-                backgroundColor: card,
-                border: `1px solid ${border}`,
+                backgroundColor: c.card,
+                border: `1px solid ${c.border}`,
                 borderRadius: 10,
                 padding: "8px 14px",
                 textAlign: "center",
@@ -158,7 +133,7 @@ export default function NutritionSummary() {
               <div style={{ fontSize: 22, fontWeight: 800, color: adherenceColor, lineHeight: 1 }}>
                 {adherence_pct}%
               </div>
-              <div style={{ fontSize: 10, color: sub, marginTop: 2 }}>adherencia</div>
+              <div style={{ fontSize: 10, color: c.sub, marginTop: 2 }}>adherencia</div>
             </div>
           )}
         </div>
@@ -166,17 +141,17 @@ export default function NutritionSummary() {
         {/* Macro bars */}
         <div
           style={{
-            backgroundColor: card,
+            backgroundColor: c.card,
             borderRadius: 10,
             padding: "12px 16px",
             marginBottom: 12,
-            border: `1px solid ${border}`,
+            border: `1px solid ${c.border}`,
           }}
         >
           <div
             style={{
               fontSize: 11,
-              color: sub,
+              color: c.sub,
               textTransform: "uppercase",
               letterSpacing: 1,
               marginBottom: 10,
@@ -189,45 +164,33 @@ export default function NutritionSummary() {
             label="Calorías"
             avg={daily_avg.calories}
             goal={goals?.calories ?? null}
-            color="#f97316"
+            color={c.kcal}
             unit=" kcal"
-            dark={dark}
-            border={border}
-            sub={sub}
-            textColor={textColor}
+            c={c}
           />
           <MacroBar
             label="Proteína"
             avg={daily_avg.protein}
             goal={goals?.protein ?? null}
-            color="#3b82f6"
+            color={c.protein}
             unit="g"
-            dark={dark}
-            border={border}
-            sub={sub}
-            textColor={textColor}
+            c={c}
           />
           <MacroBar
             label="Carbohidratos"
             avg={daily_avg.carbs}
             goal={goals?.carbs ?? null}
-            color="#eab308"
+            color={c.carbs}
             unit="g"
-            dark={dark}
-            border={border}
-            sub={sub}
-            textColor={textColor}
+            c={c}
           />
           <MacroBar
             label="Grasa"
             avg={daily_avg.fat}
             goal={goals?.fat ?? null}
-            color="#a855f7"
+            color={c.fat}
             unit="g"
-            dark={dark}
-            border={border}
-            sub={sub}
-            textColor={textColor}
+            c={c}
           />
         </div>
 
@@ -235,17 +198,17 @@ export default function NutritionSummary() {
         {most_logged_meals.length > 0 && (
           <div
             style={{
-              backgroundColor: card,
+              backgroundColor: c.card,
               borderRadius: 10,
               padding: "12px 16px",
               marginBottom: 14,
-              border: `1px solid ${border}`,
+              border: `1px solid ${c.border}`,
             }}
           >
             <div
               style={{
                 fontSize: 11,
-                color: sub,
+                color: c.sub,
                 textTransform: "uppercase",
                 letterSpacing: 1,
                 marginBottom: 8,
@@ -261,8 +224,8 @@ export default function NutritionSummary() {
                     fontSize: 12,
                     padding: "4px 10px",
                     borderRadius: 14,
-                    backgroundColor: chipBg,
-                    color: textColor,
+                    backgroundColor: c.chip,
+                    color: c.text,
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 5,
@@ -273,7 +236,7 @@ export default function NutritionSummary() {
                     style={{
                       fontSize: 10,
                       fontWeight: 700,
-                      color: sub,
+                      color: c.sub,
                     }}
                   >
                     ×{meal.count}
@@ -291,9 +254,9 @@ export default function NutritionSummary() {
             width: "100%",
             padding: "9px 12px",
             borderRadius: 8,
-            border: `1px solid ${border}`,
+            border: `1px solid ${c.border}`,
             backgroundColor: "transparent",
-            color: textColor,
+            color: c.text,
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",

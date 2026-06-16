@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
 import { localize } from "../lib/i18n.js";
+import { pickLocale, readiness as readinessMsg } from "../lib/tool-i18n.js";
 
 export function registerSmartTools(server: MCPServer, pbUrl: string) {
 
@@ -163,6 +164,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         ]);
 
         // ── Score components ────────────────────────────────
+        const M = readinessMsg[pickLocale(settings)];
         let score = 10;
         const factors: string[] = [];
 
@@ -174,19 +176,19 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         if (lumbarScore !== undefined && lumbarRecent) {
           if (lumbarScore <= 2) {
             score -= 3;
-            factors.push(`🔴 Lumbar pain (${lumbarScore}/5) — consider rest or light mobility`);
+            factors.push(M.lumbarPain(lumbarScore));
           } else if (lumbarScore === 3) {
             score -= 1;
-            factors.push(`🟡 Lumbar discomfort (${lumbarScore}/5) — reduce intensity if needed`);
+            factors.push(M.lumbarDiscomfort(lumbarScore));
           } else {
-            factors.push(`🟢 Lumbar healthy (${lumbarScore}/5)`);
+            factors.push(M.lumbarHealthy(lumbarScore));
           }
           if (lastLumbar?.slept_well === false) {
             score -= 1;
-            factors.push("😴 Poor sleep last night — expect reduced performance");
+            factors.push(M.poorSleep);
           }
         } else {
-          factors.push("⚪ No recent lumbar check — consider doing one");
+          factors.push(M.noLumbarCheck);
         }
 
         // Days since last workout (0-2 deduction for overtraining, 0-1 bonus for rest)
@@ -200,11 +202,11 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
 
         if (daysSinceLastWorkout === 0) {
           score -= 1;
-          factors.push("⚡ Already trained today — double session will increase fatigue");
+          factors.push(M.trainedToday);
         } else if (daysSinceLastWorkout === 1) {
-          factors.push("✅ 1 day since last workout — good recovery window");
+          factors.push(M.oneDayRest);
         } else if (daysSinceLastWorkout >= 4) {
-          factors.push("🔄 4+ days since last workout — you're well rested, go for it");
+          factors.push(M.wellRested);
         }
 
         // Weekly goal progress (motivation factor)
@@ -214,18 +216,16 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         if (weeklyGoal > 0) {
           const remaining = weeklyGoal - sessionsThisWeek;
           if (remaining <= 0) {
-            factors.push(`🎯 Weekly goal met! (${sessionsThisWeek}/${weeklyGoal}) — extra session is bonus`);
+            factors.push(M.goalMet(sessionsThisWeek, weeklyGoal));
           } else {
             // Calculate days left in week
             const dayOfWeek = new Date().getDay();
             const daysLeft = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
             if (remaining > daysLeft) {
               score -= 1;
-              factors.push(
-                `⚠️ Need ${remaining} more session(s) in ${daysLeft} day(s) to hit goal — prioritize training`
-              );
+              factors.push(M.goalAtRisk(remaining, daysLeft));
             } else {
-              factors.push(`📊 ${sessionsThisWeek}/${weeklyGoal} weekly goal — ${remaining} to go, on track`);
+              factors.push(M.goalOnTrack(sessionsThisWeek, weeklyGoal, remaining));
             }
           }
         }
@@ -280,38 +280,38 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         // Recommendation
         let recommendation: string;
         if (score >= 8) {
-          recommendation = "You're good to go! Full intensity.";
+          recommendation = M.recFull;
         } else if (score >= 6) {
-          recommendation = "Train with moderate intensity. Listen to your body.";
+          recommendation = M.recModerate;
         } else if (score >= 4) {
-          recommendation = "Consider a lighter session or active recovery (mobility, stretching).";
+          recommendation = M.recLight;
         } else {
-          recommendation = "Rest day recommended. Focus on recovery, sleep, and nutrition.";
+          recommendation = M.recRest;
         }
 
         const scoreBar = "🟩".repeat(score) + "⬜".repeat(10 - score);
 
         let summaryText = [
-          `# Readiness: ${score}/10`,
+          `# ${M.hReadiness}: ${score}/10`,
           scoreBar,
           `*${recommendation}*\n`,
-          `## Factors`,
+          `## ${M.hFactors}`,
           ...factors.map((f) => `- ${f}`),
           ``,
-          `## Today's Stats`,
-          `- Day: ${todayDayId} | Week: ${sessionsThisWeek}/${weeklyGoal || "?"} sessions`,
-          `- Days since last workout: ${daysSinceLastWorkout === 999 ? "never" : daysSinceLastWorkout}`,
-          alreadyDoneToday ? "- ✅ Already trained today" : "",
+          `## ${M.hTodayStats}`,
+          M.statLine(todayDayId, sessionsThisWeek, weeklyGoal ? String(weeklyGoal) : "?"),
+          M.daysSinceLine(daysSinceLastWorkout === 999 ? M.never : String(daysSinceLastWorkout)),
+          alreadyDoneToday ? M.alreadyTrained : "",
         ]
           .filter(Boolean)
           .join("\n");
 
         if (scheduledWorkout && !alreadyDoneToday) {
           summaryText += [
-            `\n## Scheduled: ${scheduledWorkout.workout_title}`,
-            `*${scheduledWorkout.day_focus}* — ${scheduledWorkout.exercise_count} exercises`,
+            `\n## ${M.hScheduled(scheduledWorkout.workout_title)}`,
+            M.scheduledFocus(scheduledWorkout.day_focus, scheduledWorkout.exercise_count),
             ...scheduledWorkout.exercises.map((e) => `- ${e.name}: ${e.sets} × ${e.reps}`),
-            scheduledWorkout.exercise_count > 5 ? `_... and ${scheduledWorkout.exercise_count - 5} more_` : "",
+            scheduledWorkout.exercise_count > 5 ? M.andMore(scheduledWorkout.exercise_count - 5) : "",
           ]
             .filter(Boolean)
             .join("\n");
