@@ -9,6 +9,10 @@ RUN corepack enable
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# patches/ es necesario: pnpm-workspace.yaml referencia un patchedDependency
+# (react-native-css-interop) y `pnpm install --frozen-lockfile` falla con ENOENT
+# si el archivo del patch no está en el contexto.
+COPY patches/ ./patches/
 COPY apps/web/package.json apps/web/
 COPY packages/core/package.json packages/core/
 RUN pnpm install --frozen-lockfile
