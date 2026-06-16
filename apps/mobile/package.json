@@ -30,6 +30,7 @@
     "@rn-primitives/label": "^1.4.0",
     "@rn-primitives/portal": "^1.4.0",
     "@rn-primitives/slot": "^1.4.0",
+    "@sentry/cli": "2.58.4",
     "@sentry/react-native": "~7.11.0",
     "ai": "^6.0.199",
     "class-variance-authority": "^0.7.1",
