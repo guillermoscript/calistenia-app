@@ -1,8 +1,10 @@
 const path = require('path');
-const { getDefaultConfig } = require('expo/metro-config');
+// getSentryExpoConfig = getDefaultConfig de Expo + recolección de source maps
+// (debugId) para symbolicar stacktraces de Hermes en Sentry. Drop-in.
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 const { withNativeWind } = require('nativewind/metro');
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 // Monorepo pnpm: `packages/core` y `apps/mobile` pueden resolver copias
 // distintas de react / react-query (peer deps satisfechos con versiones de
