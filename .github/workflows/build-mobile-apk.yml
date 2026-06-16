@@ -82,11 +82,11 @@ jobs:
 
       - name: Build APK
         working-directory: apps/mobile/android
-        # SENTRY_DISABLE_AUTO_UPLOAD skips the sentry-cli sourcemap upload task
-        # (no Sentry configured yet). The release APK is signed with the
-        # Expo-generated debug keystore — fine for sideloaded distribution.
+        # Sentry sourcemap/debug-symbol upload runs during assembleRelease using
+        # SENTRY_AUTH_TOKEN (org guillermoscript / project calistenia-app). The
+        # release APK is signed with the Expo-generated debug keystore — fine for
+        # sideloaded distribution.
         env:
-          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: ./gradlew assembleRelease --build-cache --parallel -Dorg.gradle.jvmargs="-Xmx4g -XX:+HeapDumpOnOutOfMemoryError" -Dorg.gradle.workers.max=4
 
