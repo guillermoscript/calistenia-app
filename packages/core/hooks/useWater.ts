@@ -6,6 +6,7 @@ import { op } from '../lib/analytics'
 import { todayStr, addDays, localMidnightAsUTC, nowLocalForPB } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
 import { makeOptimisticListHandlers } from '../lib/optimistic'
+import { persistOrQueue, cancelQueuedByTempId } from '../lib/offlineQueue'
 
 const LS_KEY = 'calistenia_water'
 const DEFAULT_GOAL = 2500 // ml
@@ -130,22 +131,27 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
   const currentDay: DayWater = dayData ?? { entries: [], total: 0 }
   const isReady = !userId ? true : (dayFetched || currentDay.entries.length > 0) && goalFetched
 
-  // — Mutación: agregar entrada de agua (optimista) —
+  // — Mutación: agregar entrada de agua (optimista, durable offline) —
+  // networkMode 'always' + persistOrQueue: la escritura corre aunque no haya red
+  // (se encola en storage durable y se reintenta al reconectar), así sobrevive a
+  // que el SO mate la app estando offline. El tempId va en las variables para que
+  // onMutate y mutationFn compartan el mismo id optimista.
   const addMutation = useMutation({
-    mutationFn: async (ml: number) => {
+    networkMode: 'always',
+    mutationFn: async ({ ml, tempId }: { ml: number; tempId: string }) => {
       if (!userId) return null
-      const rec = await pb.collection('water_entries').create({
-        user: userId,
-        amount_ml: ml,
+      return persistOrQueue(pb, {
+        collection: 'water_entries',
+        action: 'create',
+        // logged_at explícito = hora del registro real, no la del replay al reconectar
+        data: { user: userId, amount_ml: ml, logged_at: nowLocalForPB() },
+        tempId,
       })
-      return rec
     },
-    onMutate: async (ml: number) => {
+    onMutate: async ({ ml, tempId }: { ml: number; tempId: string }) => {
       await qc.cancelQueries({ queryKey: dayKey })
       const prev = qc.getQueryData<DayWater>(dayKey) ?? lsGetDay(activeDate)
-      // Guardia local_: id temporal hasta confirmar con PB
-      const localId = `local_${Date.now()}`
-      const entry: WaterEntry = { id: localId, amount_ml: ml, logged_at: nowLocalForPB() }
+      const entry: WaterEntry = { id: tempId, amount_ml: ml, logged_at: nowLocalForPB() }
       const next: DayWater = {
         entries: [entry, ...prev.entries],
         total: prev.total + ml,
@@ -153,20 +159,21 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
       lsSetDay(activeDate, next)
       qc.setQueryData(dayKey, next)
       op.track('water_logged', { amount_ml: ml })
-      return { prev, localId }
+      return { prev, tempId }
     },
-    onError: (_err, _ml, ctx) => {
+    onError: (_err, _vars, ctx) => {
       if (ctx?.prev) {
         lsSetDay(activeDate, ctx.prev)
         qc.setQueryData(dayKey, ctx.prev)
       }
     },
-    onSuccess: (rec, _ml, ctx) => {
+    onSuccess: (rec, _vars, ctx) => {
+      // rec null = encolado offline → mantener el tempId hasta que el refetch
+      // (tras drenar la cola al reconectar) traiga el registro real del server.
       if (!rec || !ctx) return
-      // Reemplazar el id local_ con el id real de PB
       qc.setQueryData(dayKey, (old: DayWater = { entries: [], total: 0 }) => {
         const entries = old.entries.map(e =>
-          e.id === ctx.localId ? { ...e, id: rec.id } : e
+          e.id === ctx.tempId ? { ...e, id: rec.id } : e
         )
         const updated: DayWater = { ...old, entries }
         lsSetDay(activeDate, updated)
@@ -193,10 +200,17 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
   )
 
   const removeMutation = useMutation({
+    networkMode: 'always',
     mutationFn: async (id: string) => {
-      // Guardia local_: no borrar en PB si es id temporal
-      if (!userId || id.startsWith('local_')) return
-      await pb.collection('water_entries').delete(id)
+      if (!userId) return
+      // Id temporal: el create aún está encolado (offline) o pendiente de
+      // reconciliar. No hay nada que borrar en PB; cancelamos el create encolado
+      // para que no se cree un huérfano al reconectar.
+      if (id.startsWith('local_')) {
+        cancelQueuedByTempId(id)
+        return
+      }
+      await persistOrQueue(pb, { collection: 'water_entries', action: 'delete', recordId: id })
     },
     ...removeHandlers,
   })
@@ -231,7 +245,11 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
   // .catch silencioso: onError ya revierte el optimista y la cola offline
   // reintenta; sin esto, un fallo (p.ej. offline) queda como unhandled rejection.
   const addWater = useCallback(
-    (ml: number) => addMutation.mutateAsync(ml).then(() => {}).catch(() => {}),
+    (ml: number) =>
+      addMutation
+        .mutateAsync({ ml, tempId: `local_${Date.now()}` })
+        .then(() => {})
+        .catch(() => {}),
     [addMutation],
   )
 
@@ -255,9 +273,9 @@ export function useWater(userId: string | null = null, selectedDate?: string): U
     addWater,
     removeEntry,
     isReady,
-    // Offline RQ pausa la mutación pero `isPending` sigue true → el spinner del
-    // botón quedaría colgado para siempre. `!isPaused` la trata como resuelta:
-    // la escritura está encolada y el update optimista ya refleja el cambio.
-    adding: addMutation.isPending && !addMutation.isPaused,
+    // networkMode 'always' = la mutación nunca se pausa: offline resuelve al
+    // instante (escritura encolada en durable + optimista ya aplicado), así que
+    // isPending refleja solo el camino online real → sin spinner colgado.
+    adding: addMutation.isPending,
   }
 }
