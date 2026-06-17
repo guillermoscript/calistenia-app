@@ -2,7 +2,7 @@
 // es dueño del estado local (stepIdx/phase/setsCount) y lo empuja al
 // ActiveSessionContext via onProgressChange — nunca lo lee de vuelta.
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
-import { View, ScrollView, Pressable, Alert, AppState, Linking, Dimensions, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, ScrollView, Pressable, Alert, AppState, Linking, Dimensions, KeyboardAvoidingView, Platform, useWindowDimensions } from 'react-native'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -616,6 +616,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
 }) {
   const { t } = useTranslation()
   const reduced = useReducedMotion()
+  const { width: screenW, height: screenH } = useWindowDimensions()
   const quote = useRef<Quote>(getLocalQuote()).current
   const user = useAuthUser()
   const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings, 6), [timings])
@@ -733,18 +734,22 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
         o toca en cualquier lugar
       </Animated.Text>
 
-      {/* Off-screen share card (captured to PNG on demand) */}
-      <ShareCardCapture ref={captureRef}>
+      {/* Off-screen share card (captured to PNG on demand). Sized to the device
+          screen for a full-bleed story image. */}
+      <ShareCardCapture ref={captureRef} width={screenW} height={screenH}>
         <WorkoutShareCard
           workoutTitle={workoutTitle}
           totalSets={totalSetsLogged}
           durationMin={durationMin}
           date={today}
           exercises={exercises}
+          timings={timings}
           quote={quote ? { q: quote.q, a: quote.a } : null}
           userName={userName}
           avatarUrl={avatarUrl}
           referralCode={referralCode}
+          width={screenW}
+          height={screenH}
         />
       </ShareCardCapture>
     </Pressable>
