@@ -82,10 +82,12 @@ jobs:
 
       - name: Build APK
         working-directory: apps/mobile/android
-        # Sentry sourcemap/debug-symbol upload runs during assembleRelease using
-        # SENTRY_AUTH_TOKEN (org guillermoscript / project calistenia-app). The
-        # release APK is signed with the Expo-generated debug keystore — fine for
-        # sideloaded distribution.
+        # Sentry source maps are uploaded during the release bundle task. The
+        # org/project come from android/sentry.properties (written by the
+        # @sentry/react-native expo plugin during prebuild) and the token from
+        # SENTRY_AUTH_TOKEN below. @sentry/cli is a direct dep of apps/mobile so
+        # its binary resolves cleanly under pnpm. The release APK is signed with
+        # the Expo-generated debug keystore — fine for sideloaded distribution.
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: ./gradlew assembleRelease --build-cache --parallel -Dorg.gradle.jvmargs="-Xmx4g -XX:+HeapDumpOnOutOfMemoryError" -Dorg.gradle.workers.max=4

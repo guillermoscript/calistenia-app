@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { McpUseProvider, useWidget, useWidgetTheme, type WidgetMetadata } from "mcp-use/react";
+import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
+import { useAppColors, FONT } from "./lib/theme";
+import { WidgetLoading } from "./lib/ui";
 
 const propsSchema = z.object({
   period_days: z.number(),
@@ -112,27 +114,26 @@ function Bars({ data, color, grid, sub, unit }: {
 
 export default function TrendsChart() {
   const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
-  const theme = useWidgetTheme();
-  const dark = theme === "dark";
+  const c = useAppColors();
   const [tab, setTab] = useState<Tab>("peso");
 
-  const bg = dark ? "#1a1a1a" : "#ffffff";
-  const card = dark ? "#242424" : "#f8f8f8";
-  const border = dark ? "#333" : "#e8e8e8";
-  const textColor = dark ? "#e0e0e0" : "#1a1a1a";
-  const sub = dark ? "#888" : "#666";
-  const grid = dark ? "#ffffff14" : "#00000010";
+  const bg = c.bg;
+  const card = c.card;
+  const border = c.border;
+  const textColor = c.text;
+  const sub = c.sub;
+  const grid = c.grid;
 
   if (isPending) {
-    return <McpUseProvider autoSize><div style={{ padding: 16, color: sub }}>Cargando gráficas…</div></McpUseProvider>;
+    return <WidgetLoading text="Cargando gráficas…" />;
   }
 
   const { period_days, weight, weekly, totals } = props;
 
   const tabs: { id: Tab; label: string; color: string }[] = [
-    { id: "peso", label: "⚖️ Peso", color: "#6366f1" },
-    { id: "volumen", label: "💪 Volumen", color: "#22c55e" },
-    { id: "sesiones", label: "🔥 Sesiones", color: "#f97316" },
+    { id: "peso", label: "⚖️ Peso", color: c.lime },
+    { id: "volumen", label: "💪 Volumen", color: c.success },
+    { id: "sesiones", label: "🔥 Sesiones", color: c.kcal },
   ];
   const active = tabs.find((t) => t.id === tab)!;
 
@@ -151,13 +152,13 @@ export default function TrendsChart() {
     flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer",
     border: `1px solid ${tab === t.id ? t.color : border}`,
     backgroundColor: tab === t.id ? t.color : "transparent",
-    color: tab === t.id ? "#fff" : textColor,
+    color: tab === t.id ? (t.id === "peso" ? c.limeText : "#fff") : textColor,
     transition: "all 0.15s",
   });
 
   return (
     <McpUseProvider autoSize>
-      <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: "system-ui, sans-serif", maxWidth: 480 }}>
+      <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: FONT, maxWidth: 480 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
           <div style={{ fontWeight: 800, fontSize: 15 }}>Tendencias</div>
           <div style={{ fontSize: 11, color: sub }}>últimos {period_days} días</div>

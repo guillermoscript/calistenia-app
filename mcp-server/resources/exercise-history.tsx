@@ -1,5 +1,7 @@
-import { McpUseProvider, useWidget, useWidgetTheme, type WidgetMetadata } from "mcp-use/react";
+import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
+import { useAppColors, FONT } from "./lib/theme";
+import { WidgetLoading } from "./lib/ui";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -181,25 +183,10 @@ function SetChip({
 
 export default function ExerciseHistory() {
   const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
-  const theme = useWidgetTheme();
-  const dark = theme === "dark";
-
-  // Theme palette — matches today-dashboard.tsx / trends-chart.tsx exactly
-  const bg = dark ? "#1a1a1a" : "#ffffff";
-  const card = dark ? "#242424" : "#f8f8f8";
-  const border = dark ? "#333" : "#e8e8e8";
-  const textColor = dark ? "#e0e0e0" : "#1a1a1a";
-  const sub = dark ? "#888" : "#666";
-  const grid = dark ? "#ffffff14" : "#00000010";
-  const chipBg = dark ? "#333" : "#e8e8e8";
-  const accent = "#6366f1";
+  const c = useAppColors();
 
   if (isPending) {
-    return (
-      <McpUseProvider autoSize>
-        <div style={{ padding: 16, color: sub }}>Cargando historial…</div>
-      </McpUseProvider>
-    );
+    return <WidgetLoading text="Cargando historial…" />;
   }
 
   const { exercise_id, exercise_name, days, total_sets, sessions } = props;
@@ -228,9 +215,9 @@ export default function ExerciseHistory() {
       <div
         style={{
           padding: 16,
-          backgroundColor: bg,
-          color: textColor,
-          fontFamily: "system-ui, sans-serif",
+          backgroundColor: c.bg,
+          color: c.text,
+          fontFamily: FONT,
           maxWidth: 480,
         }}
       >
@@ -244,7 +231,7 @@ export default function ExerciseHistory() {
           }}
         >
           <div style={{ fontWeight: 800, fontSize: 15 }}>{displayName}</div>
-          <div style={{ fontSize: 11, color: sub }}>últimos {days} días</div>
+          <div style={{ fontSize: 11, color: c.sub }}>últimos {days} días</div>
         </div>
 
         {/* ── Stats row ───────────────────────────────────────────── */}
@@ -252,48 +239,48 @@ export default function ExerciseHistory() {
           <div
             style={{
               flex: 1,
-              backgroundColor: card,
+              backgroundColor: c.card,
               borderRadius: 8,
               padding: "8px 10px",
-              border: `1px solid ${border}`,
+              border: `1px solid ${c.border}`,
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 800, color: accent }}>{total_sets}</div>
-            <div style={{ fontSize: 10, color: sub }}>series totales</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: c.lime }}>{total_sets}</div>
+            <div style={{ fontSize: 10, color: c.sub }}>series totales</div>
           </div>
           <div
             style={{
               flex: 1,
-              backgroundColor: card,
+              backgroundColor: c.card,
               borderRadius: 8,
               padding: "8px 10px",
-              border: `1px solid ${border}`,
+              border: `1px solid ${c.border}`,
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 800, color: accent }}>{sessionCount}</div>
-            <div style={{ fontSize: 10, color: sub }}>sesiones</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: c.lime }}>{sessionCount}</div>
+            <div style={{ fontSize: 10, color: c.sub }}>sesiones</div>
           </div>
           {bestRep !== null && (
             <div
               style={{
                 flex: 1,
-                backgroundColor: card,
+                backgroundColor: c.card,
                 borderRadius: 8,
                 padding: "8px 10px",
-                border: `1px solid ${border}`,
+                border: `1px solid ${c.border}`,
               }}
             >
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#22c55e" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.success }}>
                 {bestRep}
               </div>
-              <div style={{ fontSize: 10, color: sub }}>mejor marca</div>
+              <div style={{ fontSize: 10, color: c.sub }}>mejor marca</div>
             </div>
           )}
         </div>
 
         {/* Date range sub-label */}
         {firstDate && lastDate && firstDate !== lastDate && (
-          <div style={{ fontSize: 11, color: sub, marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: c.sub, marginBottom: 10 }}>
             {firstDate} → {lastDate}
           </div>
         )}
@@ -302,28 +289,28 @@ export default function ExerciseHistory() {
         {hasChart ? (
           <div
             style={{
-              backgroundColor: card,
+              backgroundColor: c.card,
               borderRadius: 10,
               padding: "12px 10px 8px",
-              border: `1px solid ${border}`,
+              border: `1px solid ${c.border}`,
               marginBottom: 12,
             }}
           >
-            <div style={{ fontSize: 11, color: sub, marginBottom: 6, paddingLeft: 4 }}>
+            <div style={{ fontSize: 11, color: c.sub, marginBottom: 6, paddingLeft: 4 }}>
               Progresión — máx. reps por sesión
             </div>
-            <ProgressionLine sessions={sessions} stroke={accent} grid={grid} sub={sub} />
+            <ProgressionLine sessions={sessions} stroke={c.lime} grid={c.grid} sub={c.sub} />
           </div>
         ) : (
           <div
             style={{
-              backgroundColor: card,
+              backgroundColor: c.card,
               borderRadius: 10,
               padding: 12,
-              border: `1px solid ${border}`,
+              border: `1px solid ${c.border}`,
               marginBottom: 12,
               fontSize: 13,
-              color: sub,
+              color: c.sub,
               textAlign: "center",
             }}
           >
@@ -337,9 +324,9 @@ export default function ExerciseHistory() {
         {recentSessions.length > 0 && (
           <div
             style={{
-              backgroundColor: card,
+              backgroundColor: c.card,
               borderRadius: 10,
-              border: `1px solid ${border}`,
+              border: `1px solid ${c.border}`,
               overflow: "hidden",
               marginBottom: 12,
             }}
@@ -347,9 +334,9 @@ export default function ExerciseHistory() {
             <div
               style={{
                 fontSize: 11,
-                color: sub,
+                color: c.sub,
                 padding: "8px 12px 6px",
-                borderBottom: `1px solid ${border}`,
+                borderBottom: `1px solid ${c.border}`,
                 textTransform: "uppercase",
                 letterSpacing: 1,
               }}
@@ -362,13 +349,13 @@ export default function ExerciseHistory() {
                 style={{
                   padding: "8px 12px",
                   borderBottom:
-                    idx < recentSessions.length - 1 ? `1px solid ${border}` : "none",
+                    idx < recentSessions.length - 1 ? `1px solid ${c.border}` : "none",
                 }}
               >
                 <div
                   style={{
                     fontSize: 11,
-                    color: sub,
+                    color: c.sub,
                     marginBottom: 4,
                     fontWeight: 600,
                   }}
@@ -377,12 +364,12 @@ export default function ExerciseHistory() {
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                   {session.sets.map((s, si) => (
-                    <SetChip key={si} reps={s.reps} chipBg={chipBg} textColor={textColor} />
+                    <SetChip key={si} reps={s.reps} chipBg={c.chip} textColor={c.text} />
                   ))}
                 </div>
                 {/* Show notes if any */}
                 {session.sets.some((s) => s.note) && (
-                  <div style={{ fontSize: 11, color: sub, marginTop: 4, fontStyle: "italic" }}>
+                  <div style={{ fontSize: 11, color: c.sub, marginTop: 4, fontStyle: "italic" }}>
                     {session.sets
                       .filter((s) => s.note)
                       .map((s) => s.note)
@@ -396,7 +383,7 @@ export default function ExerciseHistory() {
                 style={{
                   padding: "6px 12px",
                   fontSize: 11,
-                  color: sub,
+                  color: c.sub,
                   textAlign: "center",
                 }}
               >
@@ -418,8 +405,8 @@ export default function ExerciseHistory() {
               flex: 1,
               padding: "8px 12px",
               borderRadius: 8,
-              backgroundColor: accent,
-              color: "#fff",
+              backgroundColor: c.lime,
+              color: c.limeText,
               fontWeight: 700,
               fontSize: 12,
               border: "none",
@@ -437,9 +424,9 @@ export default function ExerciseHistory() {
             style={{
               padding: "8px 12px",
               borderRadius: 8,
-              border: `1px solid ${border}`,
+              border: `1px solid ${c.border}`,
               backgroundColor: "transparent",
-              color: textColor,
+              color: c.text,
               fontSize: 12,
               cursor: "pointer",
             }}

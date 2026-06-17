@@ -25,10 +25,13 @@ export interface ShareCardCaptureHandle {
 
 interface Props {
   children: ReactNode
+  /** Offscreen container size — must match the card so it isn't clipped. */
+  width?: number
+  height?: number
 }
 
 const ShareCardCapture = forwardRef<ShareCardCaptureHandle, Props>(
-  ({ children }, ref) => {
+  ({ children, width = 360, height = 640 }, ref) => {
     const viewRef = useRef<View>(null)
 
     useImperativeHandle(ref, () => ({
@@ -45,7 +48,7 @@ const ShareCardCapture = forwardRef<ShareCardCaptureHandle, Props>(
     }))
 
     return (
-      <View style={styles.offscreen} pointerEvents="none">
+      <View style={[styles.offscreen, { width, height }]} pointerEvents="none">
         <View ref={viewRef} collapsable={false}>
           {children}
         </View>
@@ -63,9 +66,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: -9999,
     top: -9999,
-    // Give it enough room; actual size is determined by child card
-    width: 360,
-    height: 640,
     overflow: 'hidden',
   },
 })

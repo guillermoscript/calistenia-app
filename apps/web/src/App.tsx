@@ -739,7 +739,7 @@ function AppInner() {
     else setOnboardingDone(false)
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { return setupAutoSync(pb) }, [])
+  useEffect(() => { return setupAutoSync(pb, () => queryClient.invalidateQueries()) }, [])
 
   useEffect(() => {
     const handler = (e: Event) => {

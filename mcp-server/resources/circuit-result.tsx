@@ -1,5 +1,7 @@
-import { McpUseProvider, useWidget, useWidgetTheme, type WidgetMetadata } from "mcp-use/react";
+import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
+import { useAppColors, FONT } from "./lib/theme";
+import { WidgetLoading } from "./lib/ui";
 
 const exerciseSchema = z.object({
   name: z.string(),
@@ -34,11 +36,12 @@ export const widgetMetadata: WidgetMetadata = {
 
 type Props = z.infer<typeof propsSchema>;
 
-// Accent colour per mode
-const MODE_COLORS: Record<string, string> = {
-  circuit: "#6366f1", // indigo
-  timed: "#f97316",   // orange (HIIT/Tabata)
-};
+// Accent colour per mode — resolved against the live palette
+function getModeColor(mode: string, c: ReturnType<typeof useAppColors>): string {
+  if (mode === "circuit") return c.lime;
+  if (mode === "timed") return c.kcal; // orange (#f97316) — HIIT/Tabata
+  return c.lime;
+}
 
 const MODE_LABELS: Record<string, string> = {
   circuit: "Circuit",
@@ -115,24 +118,10 @@ function ModeBadge({ mode, color }: { mode: string; color: string }) {
 
 export default function CircuitResult() {
   const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
-  const theme = useWidgetTheme();
-  const dark = theme === "dark";
-
-  const bg = dark ? "#1a1a1a" : "#ffffff";
-  const card = dark ? "#242424" : "#f8f8f8";
-  const border = dark ? "#333" : "#e8e8e8";
-  const textColor = dark ? "#e0e0e0" : "#1a1a1a";
-  const sub = dark ? "#888" : "#666";
-  const rowAlt = dark ? "#1e1e1e" : "#f0f0f0";
+  const c = useAppColors();
 
   if (isPending) {
-    return (
-      <McpUseProvider autoSize>
-        <div style={{ padding: 16, color: sub, fontFamily: "system-ui, sans-serif" }}>
-          Cargando circuito…
-        </div>
-      </McpUseProvider>
-    );
+    return <WidgetLoading text="Cargando circuito…" />;
   }
 
   const {
@@ -147,11 +136,11 @@ export default function CircuitResult() {
     config,
   } = props;
 
-  const accent = MODE_COLORS[mode] ?? "#6366f1";
+  const accent = getModeColor(mode, c);
 
   return (
     <McpUseProvider autoSize>
-      <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: "system-ui, sans-serif", maxWidth: 480 }}>
+      <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 480 }}>
 
         {/* ── Header: name + mode badge ── */}
         <div style={{ marginBottom: 12 }}>
@@ -159,18 +148,18 @@ export default function CircuitResult() {
             <div style={{ fontWeight: 800, fontSize: 18, lineHeight: 1.2, flex: 1 }}>{circuit_name}</div>
             <ModeBadge mode={mode} color={accent} />
           </div>
-          <div style={{ fontSize: 11, color: sub }}>{formatDate(started_at)}</div>
+          <div style={{ fontSize: 11, color: c.sub }}>{formatDate(started_at)}</div>
         </div>
 
         {/* ── Stats row: duration + rounds ring ── */}
         <div style={{
           display: "flex", alignItems: "center", gap: 12,
-          backgroundColor: card, borderRadius: 10, padding: "12px 16px",
-          border: `1px solid ${border}`, marginBottom: 12,
+          backgroundColor: c.card, borderRadius: 10, padding: "12px 16px",
+          border: `1px solid ${c.border}`, marginBottom: 12,
         }}>
           {/* Duration block */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, color: sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Duración</div>
+            <div style={{ fontSize: 11, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Duración</div>
             <div style={{ fontWeight: 800, fontSize: 26, color: accent }}>{formatDuration(duration_seconds)}</div>
           </div>
 
@@ -181,12 +170,12 @@ export default function CircuitResult() {
           {config && (config.work_seconds != null || config.rest_seconds != null) && (
             <div style={{ textAlign: "center" }}>
               {config.work_seconds != null && (
-                <div style={{ fontSize: 13, fontWeight: 700, color: textColor }}>{config.work_seconds}s</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: c.text }}>{config.work_seconds}s</div>
               )}
               {config.rest_seconds != null && (
-                <div style={{ fontSize: 13, fontWeight: 700, color: sub }}>/{config.rest_seconds}s</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: c.sub }}>/{config.rest_seconds}s</div>
               )}
-              <div style={{ fontSize: 9, color: sub, marginTop: 2 }}>on/off</div>
+              <div style={{ fontSize: 9, color: c.sub, marginTop: 2 }}>on/off</div>
             </div>
           )}
         </div>
@@ -196,7 +185,7 @@ export default function CircuitResult() {
           <div style={{
             backgroundColor: accent + "11", borderLeft: `3px solid ${accent}`,
             borderRadius: "0 8px 8px 0", padding: "8px 12px", marginBottom: 12,
-            fontSize: 12, color: textColor, fontStyle: "italic",
+            fontSize: 12, color: c.text, fontStyle: "italic",
           }}>
             {note}
           </div>
@@ -205,10 +194,10 @@ export default function CircuitResult() {
         {/* ── Exercises list ── */}
         {exercises.length > 0 && (
           <div style={{
-            backgroundColor: card, borderRadius: 10,
-            border: `1px solid ${border}`, marginBottom: 14, overflow: "hidden",
+            backgroundColor: c.card, borderRadius: 10,
+            border: `1px solid ${c.border}`, marginBottom: 14, overflow: "hidden",
           }}>
-            <div style={{ fontSize: 10, color: sub, textTransform: "uppercase", letterSpacing: 1, padding: "10px 14px 6px" }}>
+            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, padding: "10px 14px 6px" }}>
               Ejercicios · {exercises.length}
             </div>
             {exercises.map((ex, i) => (
@@ -217,8 +206,8 @@ export default function CircuitResult() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "7px 14px",
-                  backgroundColor: i % 2 === 1 ? rowAlt : "transparent",
-                  borderTop: i === 0 ? `1px solid ${border}` : "none",
+                  backgroundColor: i % 2 === 1 ? c.raised : "transparent",
+                  borderTop: i === 0 ? `1px solid ${c.border}` : "none",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
@@ -233,7 +222,7 @@ export default function CircuitResult() {
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{ex.name}</span>
                 </div>
                 {ex.reps && (
-                  <span style={{ fontSize: 11, color: sub, marginLeft: 8, whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 11, color: c.sub, marginLeft: 8, whiteSpace: "nowrap" }}>
                     {ex.reps}
                   </span>
                 )}
@@ -243,14 +232,14 @@ export default function CircuitResult() {
             {/* Timing config detail for timed/HIIT */}
             {config && mode === "timed" && (config.rest_between_exercises != null || config.rest_between_rounds != null) && (
               <div style={{
-                padding: "8px 14px", borderTop: `1px solid ${border}`,
+                padding: "8px 14px", borderTop: `1px solid ${c.border}`,
                 display: "flex", gap: 16, flexWrap: "wrap",
               }}>
                 {config.rest_between_exercises != null && config.rest_between_exercises > 0 && (
-                  <span style={{ fontSize: 11, color: sub }}>⏱ Descanso entre ejercicios: {config.rest_between_exercises}s</span>
+                  <span style={{ fontSize: 11, color: c.sub }}>⏱ Descanso entre ejercicios: {config.rest_between_exercises}s</span>
                 )}
                 {config.rest_between_rounds != null && config.rest_between_rounds > 0 && (
-                  <span style={{ fontSize: 11, color: sub }}>⏱ Descanso entre rondas: {config.rest_between_rounds}s</span>
+                  <span style={{ fontSize: 11, color: c.sub }}>⏱ Descanso entre rondas: {config.rest_between_rounds}s</span>
                 )}
               </div>
             )}
@@ -262,9 +251,9 @@ export default function CircuitResult() {
           onClick={() => sendFollowUpMessage("🔥 Ver mis estadísticas de circuitos con cal_circuit_stats")}
           style={{
             width: "100%", padding: "9px 12px", borderRadius: 8,
-            border: `1px solid ${border}`, backgroundColor: "transparent",
-            color: textColor, fontSize: 12, cursor: "pointer",
-            fontFamily: "system-ui, sans-serif",
+            border: `1px solid ${c.border}`, backgroundColor: "transparent",
+            color: c.text, fontSize: 12, cursor: "pointer",
+            fontFamily: FONT,
           }}
         >
           🔥 Ver mis estadísticas de circuitos

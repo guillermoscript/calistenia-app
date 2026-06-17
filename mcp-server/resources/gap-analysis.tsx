@@ -1,5 +1,7 @@
-import { McpUseProvider, useWidget, useWidgetTheme, type WidgetMetadata } from "mcp-use/react";
+import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
+import { useAppColors, FONT, trafficColor } from "./lib/theme";
+import { WidgetLoading } from "./lib/ui";
 
 export const propsSchema = z.object({
   weeks: z.number(),
@@ -29,8 +31,7 @@ export const widgetMetadata: WidgetMetadata = {
 
 type Props = z.infer<typeof propsSchema>;
 
-function CompletionRing({ pct }: { pct: number }) {
-  const color = pct >= 75 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+function CompletionRing({ pct, color }: { pct: number; color: string }) {
   const size = 96;
   const strokeWidth = 10;
   const r = (size - strokeWidth) / 2;
@@ -79,52 +80,40 @@ function DayBar({ actual, expected, color }: { actual: number; expected: number;
 
 export default function GapAnalysis() {
   const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
-  const theme = useWidgetTheme();
-  const dark = theme === "dark";
+  const c = useAppColors();
 
   if (isPending) {
-    return (
-      <McpUseProvider autoSize>
-        <div style={{ padding: 16, color: dark ? "#e0e0e0" : "#333" }}>Analizando constancia…</div>
-      </McpUseProvider>
-    );
+    return <WidgetLoading text="Analizando constancia…" />;
   }
-
-  const bg = dark ? "#1a1a1a" : "#ffffff";
-  const card = dark ? "#242424" : "#f8f8f8";
-  const border = dark ? "#333" : "#e8e8e8";
-  const textColor = dark ? "#e0e0e0" : "#1a1a1a";
-  const sub = dark ? "#888" : "#666";
-  const accent = "#6366f1";
 
   const { weeks, scheduled, completed, completion_pct, day_completion, neglected_exercises, muscle_volume } = props;
 
-  const ringColor = completion_pct >= 75 ? "#22c55e" : completion_pct >= 50 ? "#f59e0b" : "#ef4444";
+  const ringColor = trafficColor(completion_pct, 50, 75, c);
 
   // Derive consistency trend from completion_pct
   const trendLabel = completion_pct >= 75 ? "mejorando" : completion_pct >= 50 ? "estable" : "bajando";
-  const trendColor = completion_pct >= 75 ? "#22c55e" : completion_pct >= 50 ? "#f59e0b" : "#ef4444";
+  const trendColor = trafficColor(completion_pct, 50, 75, c);
   const trendEmoji = completion_pct >= 75 ? "📈" : completion_pct >= 50 ? "➡️" : "📉";
 
   // Sort days by completion_pct asc (worst first)
   const sortedDays = [...day_completion].sort((a, b) => a.completion_pct - b.completion_pct);
 
   function dayColor(pct: number) {
-    return pct >= 75 ? "#22c55e" : pct >= 50 ? "#f59e0b" : pct > 0 ? "#f97316" : "#ef4444";
+    return pct >= 75 ? c.success : pct >= 50 ? c.warn : pct > 0 ? c.kcal : c.danger;
   }
 
   return (
     <McpUseProvider autoSize>
-      <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: "system-ui, sans-serif", maxWidth: 420 }}>
+      <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 420 }}>
 
         {/* Header row: ring + summary */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
-          <CompletionRing pct={completion_pct} />
+          <CompletionRing pct={completion_pct} color={ringColor} />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>
               Análisis · últimas {weeks} semanas
             </div>
-            <div style={{ fontSize: 12, color: sub, marginBottom: 6 }}>
+            <div style={{ fontSize: 12, color: c.sub, marginBottom: 6 }}>
               {completed} sesiones de {scheduled} esperadas
             </div>
             <div style={{
@@ -139,8 +128,8 @@ export default function GapAnalysis() {
 
         {/* Day completion breakdown */}
         {sortedDays.length > 0 && (
-          <div style={{ backgroundColor: card, borderRadius: 10, padding: "10px 14px", marginBottom: 10, border: `1px solid ${border}` }}>
-            <div style={{ fontSize: 10, color: sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
+          <div style={{ backgroundColor: c.card, borderRadius: 10, padding: "10px 14px", marginBottom: 10, border: `1px solid ${c.border}` }}>
+            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
               Días por sesión
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -152,13 +141,13 @@ export default function GapAnalysis() {
                       {d.day_id}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 11, color: textColor, marginBottom: 3 }}>
+                      <div style={{ fontSize: 11, color: c.text, marginBottom: 3 }}>
                         {d.day_name}
-                        {d.day_focus ? <span style={{ color: sub }}> · {d.day_focus}</span> : null}
+                        {d.day_focus ? <span style={{ color: c.sub }}> · {d.day_focus}</span> : null}
                       </div>
                       <DayBar actual={d.actual} expected={d.expected} color={dc} />
                     </div>
-                    <div style={{ fontSize: 11, color: sub, minWidth: 44, textAlign: "right" }}>
+                    <div style={{ fontSize: 11, color: c.sub, minWidth: 44, textAlign: "right" }}>
                       {d.actual}/{d.expected}
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: dc, minWidth: 34, textAlign: "right" }}>
@@ -173,22 +162,22 @@ export default function GapAnalysis() {
 
         {/* Neglected exercises */}
         {neglected_exercises.length > 0 && (
-          <div style={{ backgroundColor: card, borderRadius: 10, padding: "10px 14px", marginBottom: 10, border: `1px solid ${border}` }}>
-            <div style={{ fontSize: 10, color: sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-              ⚠️ Ejercicios sin registrar
+          <div style={{ backgroundColor: c.card, borderRadius: 10, padding: "10px 14px", marginBottom: 10, border: `1px solid ${c.border}` }}>
+            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+              Ejercicios sin registrar
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
               {neglected_exercises.slice(0, 8).map((e) => (
                 <span key={e.id} style={{
                   fontSize: 11, padding: "3px 8px", borderRadius: 10,
-                  backgroundColor: dark ? "#3a2020" : "#fff0f0",
-                  color: "#ef4444", border: "1px solid #ef444433",
+                  backgroundColor: c.dangerSoft,
+                  color: c.danger, border: `1px solid ${c.danger}33`,
                 }}>
                   {e.name}
                 </span>
               ))}
               {neglected_exercises.length > 8 && (
-                <span style={{ fontSize: 11, color: sub, padding: "3px 8px" }}>
+                <span style={{ fontSize: 11, color: c.sub, padding: "3px 8px" }}>
                   +{neglected_exercises.length - 8} más
                 </span>
               )}
@@ -198,8 +187,8 @@ export default function GapAnalysis() {
 
         {/* Muscle volume mini-bars */}
         {muscle_volume.length > 0 && (
-          <div style={{ backgroundColor: card, borderRadius: 10, padding: "10px 14px", marginBottom: 12, border: `1px solid ${border}` }}>
-            <div style={{ fontSize: 10, color: sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+          <div style={{ backgroundColor: c.card, borderRadius: 10, padding: "10px 14px", marginBottom: 12, border: `1px solid ${c.border}` }}>
+            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
               Volumen por músculo
             </div>
             {(() => {
@@ -210,11 +199,11 @@ export default function GapAnalysis() {
                     const barPct = m.total_sets / maxSets;
                     return (
                       <div key={m.muscle} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 80, fontSize: 11, color: sub, flexShrink: 0 }}>{m.muscle}</div>
-                        <div style={{ flex: 1, height: 6, backgroundColor: dark ? "#333" : "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${barPct * 100}%`, backgroundColor: accent, borderRadius: 3 }} />
+                        <div style={{ width: 80, fontSize: 11, color: c.sub, flexShrink: 0 }}>{m.muscle}</div>
+                        <div style={{ flex: 1, height: 6, backgroundColor: c.chip, borderRadius: 3, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${barPct * 100}%`, backgroundColor: c.lime, borderRadius: 3 }} />
                         </div>
-                        <div style={{ fontSize: 10, color: sub, minWidth: 30, textAlign: "right" }}>{m.total_sets}s</div>
+                        <div style={{ fontSize: 10, color: c.sub, minWidth: 30, textAlign: "right" }}>{m.total_sets}s</div>
                       </div>
                     );
                   })}
@@ -229,7 +218,7 @@ export default function GapAnalysis() {
           onClick={() => sendFollowUpMessage("Ayúdame a recuperar el ritmo: ¿qué debo hacer esta semana para ponerme al día con mi programa?")}
           style={{
             width: "100%", padding: "9px 14px", borderRadius: 8,
-            backgroundColor: accent, color: "#fff",
+            backgroundColor: c.lime, color: c.limeText,
             fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer",
           }}
         >

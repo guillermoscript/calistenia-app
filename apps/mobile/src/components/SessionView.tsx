@@ -2,13 +2,19 @@
 // es dueño del estado local (stepIdx/phase/setsCount) y lo empuja al
 // ActiveSessionContext via onProgressChange — nunca lo lee de vuelta.
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
-import { View, ScrollView, Pressable, Alert, AppState, Linking, Dimensions } from 'react-native'
+import { View, ScrollView, Pressable, Alert, AppState, Linking, Dimensions, KeyboardAvoidingView, Platform, useWindowDimensions } from 'react-native'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
+  withDelay,
   runOnJS,
+  Easing,
+  useReducedMotion,
+  FadeIn,
+  FadeInDown,
+  ZoomIn,
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -28,7 +34,9 @@ import { haptics as haptic } from '@/lib/haptics'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import type { Exercise, Workout, ExerciseLog, SetData, ExerciseTiming } from '@calistenia/core/types'
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
+import { getCelebrationTagline } from '@calistenia/core/lib/celebration'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
+import Confetti from '@/components/Confetti'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { shareImage, shareWorkoutSession } from '@/lib/share'
@@ -516,20 +524,33 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: {
   onSave: (note: string) => void
 }) {
   const [note, setNote] = useState('')
+  const reduced = useReducedMotion()
   // Copy en español hardcodeado, igual que el NoteScreen de la web
   return (
-    <View className="flex-1 items-center justify-center gap-6 px-5">
-      <Text className="text-center font-bebas text-5xl leading-none tracking-[2px] text-emerald-500">¡Último set listo!</Text>
+    <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="grow items-center gap-6 px-5 pb-10 pt-12"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+      <Animated.Text
+        entering={reduced ? undefined : FadeInDown.duration(450)}
+        className="text-center font-bebas text-5xl leading-none tracking-[2px] text-emerald-500"
+      >
+        ¡Último set listo!
+      </Animated.Text>
       <Text className="font-mono text-[11px] tracking-[2px] text-muted-foreground">
         {workoutTitle.trim() ? `${workoutTitle.toUpperCase()} · ` : ''}{totalSetsLogged} SERIES · {durationMin} MIN
       </Text>
 
-      <View className="w-full max-w-[420px] shrink-0 rounded-xl border border-border bg-card px-6 py-5">
+      <Animated.View entering={reduced ? undefined : FadeInDown.delay(140).duration(450)} className="w-full max-w-[420px] shrink-0 rounded-xl border border-border bg-card px-6 py-5">
         <Text className="mb-2.5 font-mono text-[10px] uppercase tracking-[2px] text-lime">Nota de sesión</Text>
         <Text className="mb-3 text-[13px] text-muted-foreground">¿Cómo fue? ¿Algo que destacar?</Text>
         <Input
           value={note}
           onChangeText={setNote}
+          accessibilityLabel="Nota de sesión"
           placeholder="Ej: Dominadas mucho mejor hoy, llegué a 8 seguidas."
           multiline
           numberOfLines={3}
@@ -537,19 +558,52 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: {
           textAlignVertical="top"
         />
         <View className="mt-3 flex-row items-stretch gap-2.5">
-          <Button className="h-12 flex-1 bg-lime active:bg-lime/90" onPress={() => onSave(note.trim())}>
+          <Button className="h-12 flex-1 bg-lime active:bg-lime/90" onPress={() => { haptic.medium(); onSave(note.trim()) }}>
             <Text className="font-bebas text-lg tracking-wide text-lime-foreground">GUARDAR</Text>
           </Button>
           <Button variant="outline" className="h-12 px-5" onPress={() => onSave('')}>
             <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">SALTAR</Text>
           </Button>
         </View>
-      </View>
-    </View>
+      </Animated.View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
 // ─── Celebrate screen ─────────────────────────────────────────────────────────
+
+// One row of the end-of-session breakdown. The fill grows 0 → its share of the
+// longest exercise on mount for a bit of energy; with reduce-motion it just
+// snaps to its final width.
+function TimingBar({ name, pct, seconds, isMax, delay, animate }: {
+  name: string
+  pct: number
+  seconds: number
+  isMax: boolean
+  delay: number
+  animate: boolean
+}) {
+  const width = useSharedValue(animate ? 0 : pct)
+  useEffect(() => {
+    if (animate) width.value = withDelay(delay, withTiming(pct, { duration: 650, easing: Easing.out(Easing.cubic) }))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const fillStyle = useAnimatedStyle(() => ({ width: `${width.value}%` }))
+  return (
+    <View className="flex-row items-center gap-2.5">
+      <View className="relative flex-1 overflow-hidden rounded-md">
+        <Animated.View
+          className={cn('absolute inset-y-0 left-0 rounded-md', isMax ? 'bg-lime/20' : 'bg-muted')}
+          style={fillStyle}
+        />
+        <Text className="px-2.5 py-1 font-sans text-[12px] text-foreground/80" numberOfLines={1}>{name}</Text>
+      </View>
+      <Text className={cn('shrink-0 font-mono text-[11px] tabular-nums', isMax ? 'text-lime' : 'text-muted-foreground')}>
+        {formatTimingClock(seconds)}
+      </Text>
+    </View>
+  )
+}
 
 function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, onDone }: {
   workoutTitle: string
@@ -561,9 +615,17 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
   onDone: () => void
 }) {
   const { t } = useTranslation()
+  const reduced = useReducedMotion()
+  const { width: screenW, height: screenH } = useWindowDimensions()
   const quote = useRef<Quote>(getLocalQuote()).current
   const user = useAuthUser()
   const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings, 6), [timings])
+  const tagline = useRef<string>(getCelebrationTagline({
+    durationMin,
+    totalSets: totalSetsLogged,
+    exerciseCount: exercises.length,
+    hour: new Date().getHours(),
+  })).current
   const captureRef = useRef<ShareCardCaptureHandle>(null)
   const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
   const [sharing, setSharing] = useState(false)
@@ -604,76 +666,95 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
   }, [sharing, userName, workoutTitle, totalSetsLogged, durationMin, today, workoutKey, referralCode])
 
   return (
-    <Pressable onPress={onDone} className="flex-1 items-center justify-center gap-7 px-6">
-      <View className="size-[88px] items-center justify-center rounded-full border border-border bg-muted">
+    <View className="flex-1">
+      <Confetti />
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="grow px-6 py-10"
+        showsVerticalScrollIndicator={false}
+      >
+    <Pressable onPress={onDone} className="grow items-center justify-center gap-7">
+      <Animated.View
+        entering={reduced ? undefined : ZoomIn.duration(450).springify().damping(11)}
+        className="size-[88px] items-center justify-center rounded-full border border-border bg-muted"
+      >
         <Text className="text-[40px] text-lime">✓</Text>
-      </View>
+      </Animated.View>
 
-      <View className="items-center">
+      <Animated.View entering={reduced ? undefined : FadeInDown.delay(120).duration(450)} className="items-center">
         <Text className="text-center font-bebas text-5xl leading-none tracking-[3px] text-foreground">
           {t('notify.sessionComplete')}
         </Text>
         <Text className="mt-2.5 font-mono text-[11px] tracking-[2px] text-muted-foreground">
           {workoutTitle.toUpperCase()} · {totalSetsLogged} SERIES · {durationMin} MIN
         </Text>
-      </View>
+        <Text className="mt-2 text-center font-sans-medium text-[13px] text-lime">{tagline}</Text>
+      </Animated.View>
 
       {timingBreakdown.rows.length > 0 && (
-        <View className="w-full max-w-[360px]">
-          <Text className="mb-2 font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">Tiempo por ejercicio</Text>
-          {timingBreakdown.rows.map(row => (
-            <View key={row.exerciseId} className="mb-1.5">
-              <View className="flex-row items-center justify-between">
-                <Text className="flex-1 font-sans text-[12px] text-foreground/80" numberOfLines={1}>{row.exerciseName}</Text>
-                <Text className="ml-3 font-mono text-[11px] text-muted-foreground">{formatTimingClock(row.seconds)}</Text>
-              </View>
-              <View className="mt-0.5 h-1 w-full rounded-full bg-muted/40">
-                <View
-                  className={row.isMax ? 'h-full rounded-full bg-lime' : 'h-full rounded-full bg-muted'}
-                  style={{ width: `${row.pct}%` }}
-                />
-              </View>
-            </View>
+        <Animated.View entering={reduced ? undefined : FadeInDown.delay(240).duration(450)} className="w-full max-w-[360px] gap-1.5">
+          <Text className="mb-1 font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">Tiempo por ejercicio</Text>
+          {timingBreakdown.rows.map((row, i) => (
+            <TimingBar
+              key={row.exerciseId}
+              name={row.exerciseName}
+              pct={Math.max(row.pct, 8)}
+              seconds={row.seconds}
+              isMax={row.isMax}
+              delay={350 + i * 80}
+              animate={!reduced}
+            />
           ))}
           {timingBreakdown.overflowCount > 0 && (
-            <Text className="mt-0.5 font-mono text-[10px] text-muted-foreground/50">+{timingBreakdown.overflowCount} más</Text>
+            <Text className="font-mono text-[10px] text-muted-foreground/50">+{timingBreakdown.overflowCount} más</Text>
           )}
-        </View>
+        </Animated.View>
       )}
 
       {quote && (
-        <View className="max-w-[380px] items-center">
+        <Animated.View entering={reduced ? undefined : FadeInDown.delay(420).duration(450)} className="max-w-[380px] items-center">
           <Text className="mb-2.5 text-center font-sans-italic text-base leading-6 text-foreground/70">"{quote.q}"</Text>
           <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">— {quote.a}</Text>
-        </View>
+        </Animated.View>
       )}
 
-      <View className="w-full max-w-[280px] gap-2.5">
-        <Button size="lg" className="w-full bg-lime active:bg-lime/90" onPress={onDone}>
+      <Animated.View entering={reduced ? undefined : FadeInDown.delay(540).duration(450)} className="w-full max-w-[280px] gap-2.5">
+        <Button size="lg" className="w-full bg-lime active:bg-lime/90" onPress={() => { haptic.medium(); onDone() }}>
           <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
         </Button>
         <Button variant="outline" size="lg" className="w-full" disabled={sharing} onPress={handleShare}>
           <Text className="font-bebas text-lg tracking-[2px] text-foreground">{sharing ? 'GENERANDO…' : 'COMPARTIR'}</Text>
         </Button>
-      </View>
+      </Animated.View>
 
-      <Text className="font-mono text-[11px] tracking-wide text-muted-foreground/50">o toca en cualquier lugar</Text>
+      <Animated.Text
+        entering={reduced ? undefined : FadeIn.delay(800).duration(400)}
+        className="font-mono text-[11px] tracking-wide text-muted-foreground/50"
+      >
+        o toca en cualquier lugar
+      </Animated.Text>
 
-      {/* Off-screen share card (captured to PNG on demand) */}
-      <ShareCardCapture ref={captureRef}>
+      {/* Off-screen share card (captured to PNG on demand). Sized to the device
+          screen for a full-bleed story image. */}
+      <ShareCardCapture ref={captureRef} width={screenW} height={screenH}>
         <WorkoutShareCard
           workoutTitle={workoutTitle}
           totalSets={totalSetsLogged}
           durationMin={durationMin}
           date={today}
           exercises={exercises}
+          timings={timings}
           quote={quote ? { q: quote.q, a: quote.a } : null}
           userName={userName}
           avatarUrl={avatarUrl}
           referralCode={referralCode}
+          width={screenW}
+          height={screenH}
         />
       </ShareCardCapture>
     </Pressable>
+      </ScrollView>
+    </View>
   )
 }
 
