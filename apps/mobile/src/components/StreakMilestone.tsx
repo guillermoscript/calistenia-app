@@ -172,6 +172,10 @@ const styles = StyleSheet.create({
   },
   fire: {
     fontSize: 48,
+    // Emoji needs an explicit, generous lineHeight or Android's tight default
+    // line box crops the top/bottom of the glyph. textAlign centers the burst.
+    lineHeight: 64,
+    textAlign: 'center',
     marginBottom: 8,
   },
 })
