@@ -5,13 +5,15 @@
  * If found → shows modal, marks shown, offers share.
  */
 import React, { useEffect, useState, useCallback } from 'react'
-import { Animated, Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Animated, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { useRef } from 'react'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { haptics } from '@/lib/haptics'
-import { shareText, shareReferralInvite } from '@/lib/share'
+import { shareText, shareImage, shareReferralInvite } from '@/lib/share'
+import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
+import StreakShareCard from '@/components/share/StreakShareCard'
 import {
   getActiveMilestone,
   getShownMilestones,
@@ -39,6 +41,9 @@ export default function StreakMilestone({
   const [milestone, setMilestone] = useState<number | null>(null)
   const scale = useRef(new Animated.Value(0.85)).current
   const opacity = useRef(new Animated.Value(0)).current
+  const captureRef = useRef<ShareCardCaptureHandle>(null)
+  const { width: screenW, height: screenH } = useWindowDimensions()
+  const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
 
   useEffect(() => {
     let cancelled = false
@@ -79,18 +84,20 @@ export default function StreakMilestone({
 
   const handleShare = useCallback(async () => {
     if (!milestone) return
+    const message = referralCode
+      ? shareReferralInvite(userName, referralCode).message
+      : `¡${milestone} días de racha en Calistenia App! 🔥`
     try {
-      if (referralCode) {
-        const { message, url } = shareReferralInvite(userName, referralCode)
-        await shareText({ message, url })
+      // Fonts are loaded by _layout boot; small RAF guards against a blank capture.
+      await new Promise((r) => requestAnimationFrame(() => r(null)))
+      const uri = await captureRef.current?.capture()
+      if (uri) {
+        await shareImage(uri, { message, title: 'Compartir racha' })
       } else {
-        await shareText({
-          message: `¡${milestone} días de racha en Calistenia App! 🔥`,
-          url: 'https://gym.guille.tech',
-        })
+        await shareText({ message, url: 'https://gym.guille.tech' })
       }
     } catch {
-      // silent
+      // User cancelled the share sheet or capture failed — no-op.
     }
   }, [milestone, referralCode, userName])
 
@@ -141,6 +148,17 @@ export default function StreakMilestone({
               </Text>
             </Button>
           </Animated.View>
+
+          {/* Off-screen share card (captured to PNG on COMPARTIR) */}
+          <ShareCardCapture ref={captureRef} width={screenW} height={screenH}>
+            <StreakShareCard
+              streak={milestone}
+              userName={userName}
+              date={today}
+              width={screenW}
+              height={screenH}
+            />
+          </ShareCardCapture>
         </Pressable>
       </Pressable>
     </Modal>
