@@ -340,7 +340,6 @@ const styles = StyleSheet.create({
   // Exercise list
   exListContainer: {
     marginBottom: 8,
-    flex: 1,
   },
   exListHeader: {
     color: C.fgMuted,
