@@ -15,6 +15,7 @@ import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
+import HomeActivity from '@/components/home/HomeActivity'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
 import type { DayId, WeekDay } from '@calistenia/core/types'
@@ -304,6 +305,9 @@ export default function TodayScreen() {
           <CommunityPill icon={<Trophy size={15} color="hsl(0 0% 55%)" />} label="Ranking" onPress={() => router.push('/leaderboard')} />
           <CommunityPill icon={<Flag size={15} color="hsl(0 0% 55%)" />} label="Retos" onPress={() => router.push('/challenges')} />
         </View>
+
+        {/* Actividad reciente — amigos / tú */}
+        <HomeActivity />
 
         <Text className="text-center font-mono text-[9px] tracking-[2px] text-muted-foreground/50">{todayStr()}</Text>
       </ScrollView>
