@@ -28,8 +28,13 @@ test-results/
 playwright-report/
 .playwright-mcp/
 **/.playwright-mcp/
-vite_out.log
 pb_data_backup_*/
+
+# Dev/build logs (metro, gradle, eas, pocketbase, ai api, vite, …)
+*.log
+
+# Codex AI agent config
+.codex/
 
 # AI agent config — project-specific tooling, not needed by contributors
 .agents/
