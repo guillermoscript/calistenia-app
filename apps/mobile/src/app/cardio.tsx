@@ -51,7 +51,7 @@ export default function CardioScreen() {
   }>()
   const isFromProgram = !!(params.program && params.dayKey)
 
-  const { weeklyStats, monthlyStats, records, weeklyTrend, loadStats } = useCardioStats(userId)
+  const { weeklyStats, monthlyStats, records, weeklyTrend, lastSession, loadStats } = useCardioStats(userId)
 
   const [selectedActivity, setSelectedActivity] = useState<CardioActivityType>(
     (params.activity as CardioActivityType) || 'running',
@@ -322,7 +322,7 @@ export default function CardioScreen() {
             {(weeklyStats.totalSessions > 0 || monthlyStats.totalSessions > 0) && (
               <View className="gap-3">
                 <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('cardio.statistics')}</Text>
-                <CardioStats weeklyStats={weeklyStats} monthlyStats={monthlyStats} records={records} weeklyTrend={weeklyTrend} />
+                <CardioStats weeklyStats={weeklyStats} monthlyStats={monthlyStats} records={records} weeklyTrend={weeklyTrend} lastSession={lastSession} />
               </View>
             )}
           </View>

@@ -651,11 +651,17 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         clearUnsaved()
       }
       setUnsavedCount(remaining.length)
-      if (remaining.length < queue.length) void syncCardioWidget(userId)
+      if (remaining.length < queue.length) {
+        // Se subió al menos una sesión por la cola de reintento: refrescar la
+        // caché para que aparezca en actividad reciente / historial sin esperar
+        // a un cold load (finish() ya invalida, pero este camino es el del retry).
+        void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
+        void syncCardioWidget(userId)
+      }
     } finally {
       flushingRef.current = false
     }
-  }, [userId])
+  }, [userId, queryClient])
 
   useEffect(() => {
     void flushUnsaved()
