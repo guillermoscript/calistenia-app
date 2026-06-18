@@ -149,7 +149,16 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       if (Array.isArray(s.exercise_timings) && s.exercise_timings.length > 0) {
         entry.exerciseTimings = s.exercise_timings
       }
-      prog[`done_${date}_${s.workout_key}`] = entry
+      // Varias sesiones del mismo día+workout (repeticiones) comparten clave:
+      // conservamos la más reciente (sort -completed_at) y acumulamos el conteo.
+      const dk = `done_${date}_${s.workout_key}`
+      const existing = prog[dk] as import('../types').SessionDone | undefined
+      if (existing?.done) {
+        existing.count = (existing.count ?? 1) + 1
+      } else {
+        entry.count = 1
+        prog[dk] = entry
+      }
     })
 
     setsRes.forEach((s: any) => {
@@ -292,7 +301,10 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     const d = date || todayStr()
     const k = `done_${d}_${workoutKey}`
     patchProgress(prev => {
-      const entry: import('../types').SessionDone = { done: true as const, date: d, workoutKey, completedAt: Date.now(), note }
+      // Repetir el mismo entrenamiento el mismo día reusa la clave done_; sumamos
+      // al conteo previo para que getTotalSessions/getWeeklyDoneCount no lo pierdan.
+      const prevEntry = prev[k] as import('../types').SessionDone | undefined
+      const entry: import('../types').SessionDone = { done: true as const, date: d, workoutKey, count: (prevEntry?.count ?? (prevEntry?.done ? 1 : 0)) + 1, completedAt: Date.now(), note }
       if (warmupCooldown) {
         entry.warmupCompleted = !(warmupCooldown.warmupSkipped ?? false) && (warmupCooldown.warmupDurationSeconds ?? 0) > 0
         entry.warmupSkipped = warmupCooldown.warmupSkipped ?? false
@@ -371,7 +383,18 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   const unmarkWorkoutDone = useCallback(async (workoutKey: string, date?: string) => {
     const d = date || todayStr()
     const k = `done_${d}_${workoutKey}`
-    patchProgress(prev => { const next = { ...prev }; delete next[k]; return next })
+    // PB borra UNA sola sesión del día; el cache decrementa su conteo en 1 y
+    // solo elimina la clave cuando llega a 0 (soporta repeticiones del día).
+    patchProgress(prev => {
+      const next = { ...prev }
+      const entry = next[k] as import('../types').SessionDone | undefined
+      if (entry?.done && (entry.count ?? 1) > 1) {
+        next[k] = { ...entry, count: (entry.count ?? 1) - 1 }
+      } else {
+        delete next[k]
+      }
+      return next
+    })
 
     if (usePB && userId) {
       try {
@@ -404,11 +427,14 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         // Los días de cardio de programa (cardioSessionId) marcan el checkmark
         // pero NO cuentan en stats/racha/calendario (se mantienen solo-fuerza/yoga).
         if ((v as any)?.cardioSessionId) continue
-        totalSessions++
+        // Una clave done_ puede representar varias sesiones (repeticiones del
+        // mismo día+workout); contamos por su `count` (ausente = 1).
+        const n = (v as any)?.count ?? 1
+        totalSessions += n
         const date = k.split('_')[1]
         if (date) {
           doneDateSet.add(date)
-          doneCountByDate.set(date, (doneCountByDate.get(date) ?? 0) + 1)
+          doneCountByDate.set(date, (doneCountByDate.get(date) ?? 0) + n)
         }
       } else if ((v as any)?.exerciseId && (v as any)?.sets) {
         const exId: string = (v as any).exerciseId
