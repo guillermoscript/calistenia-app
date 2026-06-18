@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import i18n from '../lib/i18n'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { qk } from '@calistenia/core/lib/query-keys'
 import {
   haversineDistance, calculateElevationGain,
   calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
@@ -43,6 +45,7 @@ interface CardioSessionContextValue {
   discard: () => void
   getHistory: (limit?: number) => Promise<CardioSession[]>
   deleteSession: (id: string) => Promise<void>
+  updateSessionNote: (id: string, note: string) => Promise<void>
   unsavedCount: number
 }
 
@@ -129,6 +132,7 @@ interface Props {
 }
 
 export function CardioSessionProvider({ userId, userWeight, children }: Props) {
+  const queryClient = useQueryClient()
   const [state, setState] = useState<SessionState>('idle')
   const [activityType, setActivityType] = useState<CardioActivityType>('running')
   const [distance, setDistance] = useState(0)
@@ -510,6 +514,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         if (programDayKey) saveData.program_day_key = programDayKey
         const saved = await pb.collection('cardio_sessions').create(saveData)
         session.id = saved.id
+        // Refresh history, stats and recent-activity immediately after save.
+        void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
       } catch (e) {
         console.warn('Failed to save cardio session, queuing for retry:', e)
         const saveData: Record<string, unknown> = { user: userId, ...session }
@@ -521,7 +527,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     }
 
     return session
-  }, [stopTracking, releaseWakeLock, userId, userWeight, programId, programDayKey])
+  }, [stopTracking, releaseWakeLock, userId, userWeight, programId, programDayKey, queryClient])
 
   const discard = useCallback(() => {
     stopTracking()
@@ -550,10 +556,23 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     if (!userId) return
     try {
       await pb.collection('cardio_sessions').delete(id)
+      void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
     } catch (e) {
       console.warn('Failed to delete cardio session:', e)
     }
-  }, [userId])
+  }, [userId, queryClient])
+
+  // Persists the note written on the finished-session screen.
+  // The session is already saved at this point — this only patches the note field.
+  const updateSessionNote = useCallback(async (id: string, sessionNote: string): Promise<void> => {
+    if (!userId || !id) return
+    try {
+      await pb.collection('cardio_sessions').update(id, { note: sessionNote })
+      void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
+    } catch (e) {
+      console.warn('Failed to update cardio session note:', e)
+    }
+  }, [userId, queryClient])
 
   const getHistory = useCallback(async (limit = 20): Promise<CardioSession[]> => {
     if (!userId) return []
@@ -632,34 +651,50 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     }
   }, [startTracking, requestWakeLock, startTimer])
 
-  // ── Retry unsaved sessions on mount ────────────────────────────────────
-  useEffect(() => {
-    if (!userId) return
+  // ── Retry unsaved sessions (mount + online + visibility regained) ────────
+  const flushingRef = useRef(false)
+  const flushUnsaved = useCallback(async () => {
+    if (!userId || flushingRef.current) return
     const queue = loadUnsaved()
-    if (queue.length === 0) return
     setUnsavedCount(queue.length)
-
-    let cancelled = false
-    ;(async () => {
+    if (queue.length === 0) return
+    flushingRef.current = true
+    try {
       const remaining: Record<string, unknown>[] = []
       for (const session of queue) {
-        if (cancelled) { remaining.push(session); continue }
         try {
           await pb.collection('cardio_sessions').create(session)
         } catch {
           remaining.push(session)
         }
       }
-      if (cancelled) return
       if (remaining.length > 0) {
         try { localStorage.setItem(UNSAVED_KEY, JSON.stringify(remaining)) } catch {}
       } else {
         clearUnsaved()
       }
       setUnsavedCount(remaining.length)
-    })()
-    return () => { cancelled = true }
-  }, [userId])
+      if (remaining.length < queue.length) {
+        void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
+      }
+    } finally {
+      flushingRef.current = false
+    }
+  }, [userId, queryClient])
+
+  useEffect(() => {
+    void flushUnsaved()
+
+    const onOnline = () => void flushUnsaved()
+    const onVisible = () => { if (!document.hidden) void flushUnsaved() }
+
+    window.addEventListener('online', onOnline)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('online', onOnline)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [flushUnsaved])
 
   // ── Cleanup on unmount (e.g., user logs out) ────────────────────────────
 
@@ -685,7 +720,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
     programId, programDayKey,
-    start, pause, resume, finish, discard, getHistory, deleteSession, unsavedCount,
+    start, pause, resume, finish, discard, getHistory, deleteSession, updateSessionNote, unsavedCount,
   }
 
   return (

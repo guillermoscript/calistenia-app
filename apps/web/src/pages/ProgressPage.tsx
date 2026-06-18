@@ -86,7 +86,7 @@ export default function ProgressPage() {
 
   const allLogs = useMemo<SessionLog[]>(() => {
     return Object.entries(progress)
-      .filter(([k]) => k.startsWith('done_'))
+      .filter(([k, v]) => k.startsWith('done_') && !(v as { cardioSessionId?: string }).cardioSessionId)
       .map(([key, val]) => {
         const parts = key.split('_')
         const date = parts[1]

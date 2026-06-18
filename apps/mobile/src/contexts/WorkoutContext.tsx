@@ -28,6 +28,7 @@ interface WorkoutActions {
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => Promise<PREvent | null>
   markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
+  markCardioDayDone: (workoutKey: string, cardioSessionId: string, note?: string, date?: string) => void
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   // Progress queries
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
@@ -81,7 +82,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
 
   const {
     progress, settings, usePB, pbReady,
-    logSet: rawLogSet, markWorkoutDone, unmarkWorkoutDone, isWorkoutDone,
+    logSet: rawLogSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
     getLongestStreak, updateSettings, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
@@ -100,13 +101,13 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   }), [progress, settings, usePB, pbReady, programs, activeProgram, phases, weekDays, cardioDayConfigs, programsReady])
 
   const actions = useMemo<WorkoutActions>(() => ({
-    logSet, markWorkoutDone, unmarkWorkoutDone, updateSettings,
+    logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, refreshPrograms,
   }), [
-    logSet, markWorkoutDone, unmarkWorkoutDone, updateSettings,
+    logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
     getTotalSessions, getLongestStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,

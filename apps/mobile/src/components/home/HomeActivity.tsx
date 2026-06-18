@@ -11,7 +11,7 @@ import { View, Pressable } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, Users, Dumbbell, Apple } from 'lucide-react-native'
+import { ChevronRight, Users, Dumbbell, Apple, Activity } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
+import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { timeAgo, relativeDate } from '@calistenia/core/lib/dateUtils'
 import type { SessionDone } from '@calistenia/core/types'
@@ -32,7 +33,7 @@ type Tab = 'amigos' | 'tu'
 const WORKOUT_KEY_RE = /^p(\d+)_(\w+)$/
 
 type YouItem = {
-  kind: 'session' | 'meal'
+  kind: 'session' | 'meal' | 'cardio'
   id: string
   ts: number
   title: string
@@ -51,6 +52,7 @@ export default function HomeActivity() {
   const { progress } = useWorkoutState()
   const { getWorkout } = useWorkoutActions()
   const { entries } = useNutrition(userId)
+  const { sessions: cardioSessions } = useCardioSessions(userId)
 
   // Cargar el feed de amigos de forma perezosa al montar (la pestaña Amigos es la inicial).
   useEffect(() => {
@@ -75,7 +77,8 @@ export default function HomeActivity() {
   const youItems = useMemo<YouItem[]>(() => {
     // Un solo recorrido: filtra las sesiones hechas y las mapea a la vez (js-flatmap-filter).
     const sessions: YouItem[] = Object.entries(progress).flatMap(([k, v]) => {
-      if (!k.startsWith('done_') || !(v as SessionDone).done) return []
+      // Salta días de cardio de programa (cardioSessionId): ya se listan como cardio.
+      if (!k.startsWith('done_') || !(v as SessionDone).done || (v as SessionDone).cardioSessionId) return []
       const s = v as SessionDone
       return [{
         kind: 'session' as const,
@@ -94,11 +97,19 @@ export default function HomeActivity() {
       sub: `${t('dashboard.kcal', { count: Math.round(e.totalCalories) })} · ${timeAgo(e.loggedAt)}`,
     }))
 
-    return [...sessions, ...meals]
+    const cardio: YouItem[] = cardioSessions.map(c => ({
+      kind: 'cardio' as const,
+      id: `c_${c.id}`,
+      ts: Date.parse(c.started_at),
+      title: `${t(`cardio.${c.activity_type}`, { defaultValue: c.activity_type })} · ${(c.distance_km ?? 0).toFixed(2)} km`,
+      sub: timeAgo(c.started_at),
+    }))
+
+    return [...sessions, ...meals, ...cardio]
       .filter(i => Number.isFinite(i.ts))
       .sort((a, b) => b.ts - a.ts)
       .slice(0, 4)
-  }, [progress, entries, getWorkout, t]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [progress, entries, cardioSessions, getWorkout, t]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!userId) return null
 
@@ -176,17 +187,19 @@ export default function HomeActivity() {
           {youItems.map(item => (
             <Pressable
               key={item.id}
-              onPress={() => router.push(item.kind === 'meal' ? '/nutrition' : '/history')}
+              onPress={() => router.push(item.kind === 'meal' ? '/nutrition' : item.kind === 'cardio' ? '/cardio' : '/history')}
               className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 active:opacity-70"
             >
               <View
                 className={cn(
                   'size-9 items-center justify-center rounded-full',
-                  item.kind === 'meal' ? 'bg-emerald-400/10' : 'bg-lime/15',
+                  item.kind === 'meal' ? 'bg-emerald-400/10' : item.kind === 'cardio' ? 'bg-sky-500/15' : 'bg-lime/15',
                 )}
               >
                 {item.kind === 'meal' ? (
                   <Apple size={16} color="#34d399" />
+                ) : item.kind === 'cardio' ? (
+                  <Activity size={16} color="#0ea5e9" />
                 ) : (
                   <Dumbbell size={16} color={LIME} />
                 )}

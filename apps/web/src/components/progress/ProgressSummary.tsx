@@ -52,6 +52,7 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
 
     const doneKeys = Object.keys(progress).filter(k => {
       if (!k.startsWith('done_')) return false
+      if ((progress[k] as { cardioSessionId?: string }).cardioSessionId) return false
       if (filter === 'all') return true
       const wk = k.split('_').slice(2).join('_')
       return filter === 'free' ? isFreeSession(wk) : !isFreeSession(wk)
@@ -89,6 +90,7 @@ export default function ProgressSummary({ progress, settings, filter = 'all' }: 
     const freeSessionsThisWeek = filter === 'all'
       ? Object.keys(progress).filter(k =>
           k.startsWith('done_') &&
+          !(progress[k] as { cardioSessionId?: string }).cardioSessionId &&
           thisWeekDates.some(d => k.includes(d)) &&
           isFreeSession(k.split('_').slice(2).join('_'))
         ).length

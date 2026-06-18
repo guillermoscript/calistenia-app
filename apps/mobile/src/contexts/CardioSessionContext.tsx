@@ -11,7 +11,9 @@ import { createContext, useContext, useState, useRef, useCallback, useEffect, ty
 import { AppState } from 'react-native'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import i18n from 'i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { qk } from '@calistenia/core/lib/query-keys'
 import {
   haversineDistance, calculateElevationGain,
   calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
@@ -67,6 +69,7 @@ interface CardioSessionContextValue {
   discard: () => void
   getHistory: (limit?: number) => Promise<CardioSession[]>
   deleteSession: (id: string) => Promise<void>
+  updateSessionNote: (id: string, note: string) => Promise<void>
   unsavedCount: number
 }
 
@@ -152,6 +155,7 @@ interface Props {
 }
 
 export function CardioSessionProvider({ userId, userWeight, children }: Props) {
+  const queryClient = useQueryClient()
   const [state, setState] = useState<SessionState>('idle')
   const [activityType, setActivityType] = useState<CardioActivityType>('running')
   const [distance, setDistance] = useState(0)
@@ -487,6 +491,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         const saved = await pb.collection('cardio_sessions').create(saveData)
         session.id = saved.id
         void syncCardioWidget(userId)
+        // Refresca historial cardio, stats y actividad reciente de inmediato.
+        void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
       } catch (e) {
         console.warn('Failed to save cardio session, queuing for retry:', e)
         pushUnsaved(saveData)
@@ -496,7 +502,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     }
 
     return session
-  }, [stopTracking, userId, userWeight])
+  }, [stopTracking, userId, userWeight, queryClient])
 
   const discard = useCallback(() => {
     stopTracking()
@@ -528,10 +534,23 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     if (!userId) return
     try {
       await pb.collection('cardio_sessions').delete(id)
+      void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
     } catch (e) {
       console.warn('Failed to delete cardio session:', e)
     }
-  }, [userId])
+  }, [userId, queryClient])
+
+  // Persiste la nota escrita en la pantalla de resumen (la sesión ya se guardó
+  // al pulsar "parar", así que aquí solo actualizamos el registro existente).
+  const updateSessionNote = useCallback(async (id: string, sessionNote: string): Promise<void> => {
+    if (!userId || !id) return
+    try {
+      await pb.collection('cardio_sessions').update(id, { note: sessionNote })
+      void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
+    } catch (e) {
+      console.warn('Failed to update cardio session note:', e)
+    }
+  }, [userId, queryClient])
 
   const getHistory = useCallback(async (limit = 20): Promise<CardioSession[]> => {
     if (!userId) return []
@@ -632,11 +651,17 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         clearUnsaved()
       }
       setUnsavedCount(remaining.length)
-      if (remaining.length < queue.length) void syncCardioWidget(userId)
+      if (remaining.length < queue.length) {
+        // Se subió al menos una sesión por la cola de reintento: refrescar la
+        // caché para que aparezca en actividad reciente / historial sin esperar
+        // a un cold load (finish() ya invalida, pero este camino es el del retry).
+        void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
+        void syncCardioWidget(userId)
+      }
     } finally {
       flushingRef.current = false
     }
-  }, [userId])
+  }, [userId, queryClient])
 
   useEffect(() => {
     void flushUnsaved()
@@ -670,7 +695,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
     programId, programDayKey,
-    start, pause, resume, finish, discard, getHistory, deleteSession, unsavedCount,
+    start, pause, resume, finish, discard, getHistory, deleteSession, updateSessionNote, unsavedCount,
   }
 
   return (

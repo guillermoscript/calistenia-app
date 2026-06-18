@@ -140,6 +140,14 @@ export interface SessionDone {
   posesCompleted?: number
   totalPoses?: number
   exerciseTimings?: ExerciseTiming[]
+  /**
+   * Si está presente, este marcador de "día hecho" deriva de una sesión de
+   * cardio (cardio_sessions) vinculada a un día de programa — NO de la colección
+   * `sessions`. Las listas de historial/actividad/stats lo IGNORAN (la sesión de
+   * cardio ya se pinta por separado vía useCardioSessions); solo existe para que
+   * isWorkoutDone marque el día del programa como completado.
+   */
+  cardioSessionId?: string
 }
 
 /** The progress map stores both exercise logs and session-done markers */

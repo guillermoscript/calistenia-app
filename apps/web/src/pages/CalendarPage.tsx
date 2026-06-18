@@ -184,6 +184,7 @@ export default function CalendarPage() {
     Object.entries(progress).forEach(([key, val]) => {
       if (!key.startsWith('done_')) return
       const session = val as SessionDone
+      if (session.cardioSessionId) return
       if (!session.date) return
       if (!map[session.date]) map[session.date] = []
       map[session.date].push({

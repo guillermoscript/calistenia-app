@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useCardioSessionContext } from '../contexts/CardioSessionContext'
+import { useWorkoutActions } from '../contexts/WorkoutContext'
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, pointsToGPX, assessTrackQuality } from '@calistenia/core/lib/geo'
 import { useTranslation } from 'react-i18next'
@@ -40,8 +41,9 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
   const {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
-    start, pause, resume, finish, discard, getHistory, deleteSession, unsavedCount,
+    start, pause, resume, finish, discard, getHistory, deleteSession, updateSessionNote, unsavedCount,
   } = useCardioSessionContext()
+  const { markCardioDayDone } = useWorkoutActions()
 
   const [searchParams, setSearchParams] = useSearchParams()
   const urlProgram = searchParams.get('program')
@@ -89,6 +91,10 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
     const session = await finish(note.trim() || undefined)
     if (session) {
       op.track('cardio_completed', { activity_type: session.activity_type, distance_km: session.distance_km, duration_seconds: session.duration_seconds })
+      // Cardio program day → mark the program day done (program checkmark).
+      if (session.id && session.program_day_key) {
+        markCardioDayDone(session.program_day_key, session.id, session.note ?? '')
+      }
     }
     setSavedSession(session)
   }
@@ -535,15 +541,21 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           )}
 
           {/* Note */}
-          <textarea
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder={t('cardio.sessionNotes')}
-            aria-label={t('cardio.sessionNotes')}
-            maxLength={500}
-            rows={2}
-            className="w-full text-base px-3.5 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/20 placeholder:text-muted-foreground/40 transition-all resize-none"
-          />
+          <div className="space-y-1.5">
+            <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase">{t('cardio.notesOptional')}</div>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              onBlur={() => {
+                if (savedSession?.id) void updateSessionNote(savedSession.id, note.trim())
+              }}
+              placeholder={t('cardio.sessionNotes')}
+              aria-label={t('cardio.sessionNotes')}
+              maxLength={500}
+              rows={2}
+              className="w-full text-base px-3.5 py-3 rounded-xl border border-border bg-muted/30 focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/20 placeholder:text-muted-foreground/40 transition-all resize-none"
+            />
+          </div>
 
           {/* Race name for share card */}
           <Input

@@ -14,7 +14,7 @@ function progressToCSV(progress: ProgressMap): string {
   const rows: string[] = ['date,type,exercise,reps,weight_kg,note']
 
   Object.entries(progress).forEach(([key, val]) => {
-    if (key.startsWith('done_')) {
+    if (key.startsWith('done_') && !(val as { cardioSessionId?: string }).cardioSessionId) {
       const date = key.split('_')[1]
       const workoutKey = key.split('_').slice(2).join('_')
       const note = (val as { note?: string }).note || ''

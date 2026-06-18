@@ -68,8 +68,9 @@ export default function MuscleVolumeChart({ progress }: MuscleVolumeChartProps) 
     const currentVol: Record<string, number> = {}
     const prevVol: Record<string, number> = {}
 
-    Object.entries(progress).forEach(([key]) => {
+    Object.entries(progress).forEach(([key, val]) => {
       if (!key.startsWith('done_')) return
+      if ((val as { cardioSessionId?: string }).cardioSessionId) return
       const date = key.split('_')[1]
       const workoutKey = key.split('_').slice(2).join('_')
       const workout = WORKOUTS[workoutKey]

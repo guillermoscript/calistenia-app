@@ -3,29 +3,49 @@ import { useCountUp } from '@/lib/use-count-up'
 import { View, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Check } from 'lucide-react-native'
+import { Check, Activity } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
+import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import { relativeDate, todayStr } from '@calistenia/core/lib/dateUtils'
-import type { SessionDone } from '@calistenia/core/types'
+import { formatDuration } from '@calistenia/core/lib/geo'
+import type { SessionDone, CardioSession } from '@calistenia/core/types'
+
+// Fila unificada del historial: entreno (fuerza/yoga) o sesión de cardio GPS.
+type HistoryRow =
+  | { kind: 'strength'; ts: number; session: SessionDone }
+  | { kind: 'cardio'; ts: number; session: CardioSession }
 
 export default function HistoryScreen() {
   const { t } = useTranslation()
+  const user = useAuthUser()
   const { progress, settings } = useWorkoutState()
   const { getWorkout, getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity } = useWorkoutActions()
+  const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
 
-  const sessions = useMemo(() => {
-    return Object.entries(progress)
-      .filter(([k, v]) => k.startsWith('done_') && (v as SessionDone).done)
-      .map(([, v]) => v as SessionDone)
-      .sort((a, b) => {
-        const byDate = b.date.localeCompare(a.date)
-        return byDate !== 0 ? byDate : (b.completedAt ?? 0) - (a.completedAt ?? 0)
+  // Combina entrenos (progress) y cardio (cardio_sessions) en una sola lista
+  // ordenada por fecha/hora. Las stats de cabecera siguen contando solo entrenos.
+  const rows = useMemo<HistoryRow[]>(() => {
+    const strength: HistoryRow[] = Object.entries(progress)
+      // Excluye días de cardio de programa (cardioSessionId): ya se pintan como fila de cardio.
+      .filter(([k, v]) => k.startsWith('done_') && (v as SessionDone).done && !(v as SessionDone).cardioSessionId)
+      .map(([, v]) => {
+        const s = v as SessionDone
+        return { kind: 'strength' as const, ts: s.completedAt ?? Date.parse(`${s.date}T12:00:00`), session: s }
       })
-  }, [progress])
+    const cardio: HistoryRow[] = cardioSessions.map(c => ({
+      kind: 'cardio' as const,
+      ts: Date.parse(c.started_at),
+      session: c,
+    }))
+    return [...strength, ...cardio]
+      .filter(r => Number.isFinite(r.ts))
+      .sort((a, b) => b.ts - a.ts)
+  }, [progress, cardioSessions])
 
   const monthActivity = useMemo(() => getMonthActivity(), [getMonthActivity])
   const today = todayStr()
@@ -47,8 +67,8 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <FlatList
-        data={sessions}
-        keyExtractor={(s, i) => `${s.date}_${s.workoutKey}_${i}`}
+        data={rows}
+        keyExtractor={(r, i) => r.kind === 'cardio' ? `c_${r.session.id}_${i}` : `s_${r.session.date}_${r.session.workoutKey}_${i}`}
         contentContainerClassName="px-4 pb-8 gap-2"
         ListHeaderComponent={
           <View className="gap-4 pb-3 pt-2">
@@ -86,7 +106,7 @@ export default function HistoryScreen() {
               </CardContent>
             </Card>
 
-            {sessions.length > 0 && (
+            {rows.length > 0 && (
               <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
                 {t('progress.recentSessions')}
               </Text>
@@ -99,20 +119,44 @@ export default function HistoryScreen() {
             <Text className="text-center text-sm text-muted-foreground">{t('progress.noDataDesc')}</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <View className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-            <View className="size-8 items-center justify-center rounded-full bg-lime/15">
-              <Check size={15} color="hsl(74 90% 45%)" />
+        renderItem={({ item }) => {
+          if (item.kind === 'cardio') {
+            const c = item.session
+            const dist = (c.distance_km ?? 0).toFixed(2)
+            return (
+              <View className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                <View className="size-8 items-center justify-center rounded-full bg-sky-500/15">
+                  <Activity size={15} color="#0ea5e9" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+                    {t(`cardio.${c.activity_type}`, { defaultValue: c.activity_type })} · {dist} km
+                  </Text>
+                  <Text className="text-xs text-muted-foreground">
+                    <Text className="font-mono text-[11px] text-muted-foreground/70">{relativeDate(c.started_at.slice(0, 10))}</Text>
+                    {` · ${formatDuration(c.duration_seconds ?? 0)}`}
+                    {c.note ? ` · ${c.note}` : ''}
+                  </Text>
+                </View>
+              </View>
+            )
+          }
+          const s = item.session
+          return (
+            <View className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+              <View className="size-8 items-center justify-center rounded-full bg-lime/15">
+                <Check size={15} color="hsl(74 90% 45%)" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground" numberOfLines={1}>{titleFor(s)}</Text>
+                <Text className="text-xs text-muted-foreground">
+                  <Text className="font-mono text-[11px] text-muted-foreground/70">{relativeDate(s.date)}</Text>
+                  {s.note ? ` · ${s.note}` : ''}
+                </Text>
+              </View>
             </View>
-            <View className="flex-1">
-              <Text className="font-sans-medium text-foreground" numberOfLines={1}>{titleFor(item)}</Text>
-              <Text className="text-xs text-muted-foreground">
-                <Text className="font-mono text-[11px] text-muted-foreground/70">{relativeDate(item.date)}</Text>
-                {item.note ? ` · ${item.note}` : ''}
-              </Text>
-            </View>
-          </View>
-        )}
+          )
+        }}
       />
     </SafeAreaView>
   )

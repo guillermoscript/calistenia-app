@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
@@ -19,6 +19,11 @@ export interface CardioAggregateStats {
   totalSessions: number
   totalDuration: number
   totalCalories: number
+  totalElevation: number
+  /** Ritmo medio del periodo (min/km), ponderado por distancia. 0 si no hay distancia. */
+  avgPace: number
+  /** Velocidad media del periodo (km/h). 0 si no hay duración. */
+  avgSpeed: number
 }
 
 export interface PersonalRecords {
@@ -36,15 +41,24 @@ export interface WeeklyTrendPoint {
   sessions: number
 }
 
-const emptyStats: CardioAggregateStats = { totalDistance: 0, totalSessions: 0, totalDuration: 0, totalCalories: 0 }
+const emptyStats: CardioAggregateStats = { totalDistance: 0, totalSessions: 0, totalDuration: 0, totalCalories: 0, totalElevation: 0, avgPace: 0, avgSpeed: 0 }
 
-/** Suma distancia, sesiones, duración y calorías de un array de sesiones. */
+/** Suma distancia, sesiones, duración, calorías y elevación + ritmo/velocidad medios. */
 function aggregate(sessions: CardioSession[]): CardioAggregateStats {
+  const totalDistance = Math.round(sessions.reduce((a, s) => a + s.distance_km, 0) * 100) / 100
+  const totalDuration = sessions.reduce((a, s) => a + s.duration_seconds, 0)
+  const totalElevation = Math.round(sessions.reduce((a, s) => a + (s.elevation_gain || 0), 0))
+  // Ritmo/velocidad medios derivados del total (ponderados por distancia, no media de medias).
+  const avgPace = totalDistance > 0 ? (totalDuration / 60) / totalDistance : 0
+  const avgSpeed = totalDuration > 0 ? Math.round((totalDistance / (totalDuration / 3600)) * 10) / 10 : 0
   return {
-    totalDistance: Math.round(sessions.reduce((a, s) => a + s.distance_km, 0) * 100) / 100,
+    totalDistance,
     totalSessions: sessions.length,
-    totalDuration: sessions.reduce((a, s) => a + s.duration_seconds, 0),
+    totalDuration,
     totalCalories: sessions.reduce((a, s) => a + (s.calories_burned || 0), 0),
+    totalElevation,
+    avgPace,
+    avgSpeed,
   }
 }
 
@@ -52,7 +66,7 @@ function aggregate(sessions: CardioSession[]): CardioAggregateStats {
  * queryFn: obtiene todas las sesiones cardio del usuario desde PocketBase.
  * Devuelve el array crudo para que los derivados se calculen en useMemo.
  */
-async function fetchCardioSessions(userId: string): Promise<CardioSession[]> {
+export async function fetchCardioSessions(userId: string): Promise<CardioSession[]> {
   try {
     // getFullList elimina el límite implícito de 500: obtiene todas las sesiones del usuario
     const res = await pb.collection('cardio_sessions').getFullList({
@@ -83,14 +97,33 @@ async function fetchCardioSessions(userId: string): Promise<CardioSession[]> {
   }
 }
 
+/**
+ * Lista cruda de sesiones cardio del usuario (más recientes primero).
+ * Comparte la query key con useCardioStats — un único fetch alimenta stats,
+ * historial y actividad reciente, y una sola invalidación lo refresca todo.
+ */
+export function useCardioSessions(userId: string | null) {
+  const query = useQuery({
+    queryKey: qk.cardioSessions(userId),
+    staleTime: 30_000,
+    enabled: !!userId,
+    queryFn: () => fetchCardioSessions(userId!),
+  })
+  return {
+    sessions: query.data ?? [],
+    isLoading: query.isLoading,
+    refetch: query.refetch,
+  }
+}
+
 export function useCardioStats(userId: string | null) {
-  // Timezone y locale leídos en render para que entren en la query key.
-  // BUGFIX: si tz o locale cambian, la key cambia y TanStack Query recalcula.
+  // tz y locale solo afectan a las derivaciones (memos), no al fetch — por eso
+  // NO entran en la query key: comparte caché con useCardioSessions.
   const userTz = getTimezone()
   const locale = i18n.language
 
   const query = useQuery({
-    queryKey: qk.cardioStats(userId, userTz, locale),
+    queryKey: qk.cardioSessions(userId),
     staleTime: 30_000,
     enabled: !!userId,
     queryFn: () => fetchCardioSessions(userId!),
@@ -204,13 +237,17 @@ export function useCardioStats(userId: string | null) {
   }, [allSessions, userTz, locale])
 
   // — loadStats: compatibilidad con llamadores que invocan loadStats() manualmente —
-  const loadStats = async (force = false) => {
-    // force se ignora: TanStack Query gestiona el TTL vía staleTime.
+  // MEMOIZADO: si se recreara en cada render, un useEffect que lo tenga en deps
+  // (p.ej. cardio.tsx) entraría en bucle infinito ("Maximum update depth exceeded").
+  // query.refetch es estable en TanStack Query, así que la ref se mantiene fija.
+  const refetch = query.refetch
+  const loadStats = useCallback(async (_force = false) => {
+    // _force se ignora: TanStack Query gestiona el TTL vía staleTime.
     // Una invalidación explícita del caller es la alternativa idiomática;
     // aquí se expone refetch() para no romper la interfaz pública.
     if (!userId) return
-    await query.refetch()
-  }
+    await refetch()
+  }, [userId, refetch])
 
   return {
     weeklyStats,
