@@ -52,7 +52,7 @@ function aggregate(sessions: CardioSession[]): CardioAggregateStats {
  * queryFn: obtiene todas las sesiones cardio del usuario desde PocketBase.
  * Devuelve el array crudo para que los derivados se calculen en useMemo.
  */
-async function fetchCardioSessions(userId: string): Promise<CardioSession[]> {
+export async function fetchCardioSessions(userId: string): Promise<CardioSession[]> {
   try {
     // getFullList elimina el límite implícito de 500: obtiene todas las sesiones del usuario
     const res = await pb.collection('cardio_sessions').getFullList({
@@ -83,14 +83,33 @@ async function fetchCardioSessions(userId: string): Promise<CardioSession[]> {
   }
 }
 
+/**
+ * Lista cruda de sesiones cardio del usuario (más recientes primero).
+ * Comparte la query key con useCardioStats — un único fetch alimenta stats,
+ * historial y actividad reciente, y una sola invalidación lo refresca todo.
+ */
+export function useCardioSessions(userId: string | null) {
+  const query = useQuery({
+    queryKey: qk.cardioSessions(userId),
+    staleTime: 30_000,
+    enabled: !!userId,
+    queryFn: () => fetchCardioSessions(userId!),
+  })
+  return {
+    sessions: query.data ?? [],
+    isLoading: query.isLoading,
+    refetch: query.refetch,
+  }
+}
+
 export function useCardioStats(userId: string | null) {
-  // Timezone y locale leídos en render para que entren en la query key.
-  // BUGFIX: si tz o locale cambian, la key cambia y TanStack Query recalcula.
+  // tz y locale solo afectan a las derivaciones (memos), no al fetch — por eso
+  // NO entran en la query key: comparte caché con useCardioSessions.
   const userTz = getTimezone()
   const locale = i18n.language
 
   const query = useQuery({
-    queryKey: qk.cardioStats(userId, userTz, locale),
+    queryKey: qk.cardioSessions(userId),
     staleTime: 30_000,
     enabled: !!userId,
     queryFn: () => fetchCardioSessions(userId!),

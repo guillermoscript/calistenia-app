@@ -33,7 +33,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
         {WEEK_DAYS.map(day => {
           const workoutKey = `p${selectedPhase}_${day.id}`
           const dateForDay = addDays(today, (dayOffset[day.id] ?? 0) - todayMondayOffset)
-          const done    = day.type !== 'rest' && day.type !== 'cardio' && isWorkoutDone(workoutKey, dateForDay)
+          const done    = day.type !== 'rest' && isWorkoutDone(workoutKey, dateForDay)
           const isToday = day.id === todayId
           const isRest  = day.type === 'rest'
           const isCardio = day.type === 'cardio'
@@ -65,7 +65,7 @@ export default function WeekPlanWidget({ selectedPhase, isWorkoutDone, weekDays:
               )}>
                 {((day.nameKey ? t(day.nameKey) : day.name) ?? '').slice(0, 3).toUpperCase()}
               </div>
-              {isCardio ? (
+              {isCardio && !done ? (
                 <div className="text-lg text-emerald-400">{CARDIO_ACTIVITY[day.cardioConfig?.activityType || 'running']?.icon || '🏃'}</div>
               ) : isRest ? (
                 <div className="text-base text-muted-foreground">—</div>

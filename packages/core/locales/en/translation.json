@@ -661,6 +661,7 @@
   "cardio.discard": "DISCARD",
   "cardio.continue": "CONTINUE",
   "cardio.sessionComplete": "Session complete!",
+  "cardio.notesOptional": "Notes (optional)",
   "cardio.sessionNotes": "Session notes...",
   "cardio.newSession": "NEW SESSION",
   "cardio.share": "SHARE",

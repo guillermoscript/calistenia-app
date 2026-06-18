@@ -77,6 +77,13 @@ interface UseProgressReturn {
   logSet: (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string) => Promise<void>
   markWorkoutDone: (workoutKey: string, note?: string, warmupCooldown?: { warmupSkipped?: boolean; warmupDurationSeconds?: number; cooldownSkipped?: boolean; cooldownDurationSeconds?: number }, yogaMeta?: { duration_seconds?: number; poses_completed?: number; total_poses?: number }, date?: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => Promise<void>
   unmarkWorkoutDone: (workoutKey: string, date?: string) => Promise<void>
+  /**
+   * Marca un día de programa de tipo cardio como hecho de forma optimista, sin
+   * crear fila en `sessions` (la sesión ya vive en cardio_sessions). Útil para
+   * que el checkmark del programa aparezca al instante tras terminar el cardio;
+   * en la siguiente carga loadFromPB lo reconstruye desde cardio_sessions.
+   */
+  markCardioDayDone: (workoutKey: string, cardioSessionId: string, note?: string, date?: string) => void
   isWorkoutDone: (workoutKey: string, date?: string) => boolean
   getExerciseLogs: (exerciseId: string, limit?: number) => ExerciseLog[]
   getWeeklyDoneCount: () => number
@@ -109,10 +116,15 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       ? pb.filter('user = {:uid} && (program = {:pid} || program = "")', { uid, pid: activeProgramId })
       : pb.filter('user = {:uid}', { uid })
 
-    const [sessionsRes, setsRes] = await Promise.all([
+    const [sessionsRes, setsRes, cardioRes] = await Promise.all([
       // getFullList elimina el límite implícito (500/1000): obtiene todos los registros del usuario
       pb.collection('sessions').getFullList({ filter: sessionFilter, sort: '-completed_at', $autoCancel: false }),
       pb.collection('sets_log').getFullList({ filter: pb.filter('user = {:uid}', { uid }), sort: '-logged_at', $autoCancel: false }),
+      // Días de programa cardio: solo necesitamos id/fecha/clave para marcar el día hecho.
+      pb.collection('cardio_sessions').getFullList({
+        filter: pb.filter('user = {:uid} && program_day_key != ""', { uid }),
+        sort: '-started_at', fields: 'id,started_at,created,program_day_key,note', $autoCancel: false,
+      }).catch(() => [] as any[]),
     ])
 
     const prog: ProgressMap = {}
@@ -152,6 +164,23 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         rpe: s.rpe || undefined,
         timestamp: new Date(s.logged_at || s.created).getTime(),
       })
+    })
+
+    // Cardio vinculado a un día de programa → marcador "done_" etiquetado con
+    // cardioSessionId. Hace que isWorkoutDone(p1_mie) sea true (checkmark del
+    // programa) y sobrevive recargas porque se reconstruye desde cardio_sessions
+    // igual que las sesiones de fuerza. Las listas/stats lo ignoran por la etiqueta.
+    cardioRes.forEach((c: any) => {
+      if (!c.program_day_key) return
+      const date = utcToLocalDateStr(c.started_at || c.created)
+      prog[`done_${date}_${c.program_day_key}`] = {
+        done: true,
+        date,
+        workoutKey: c.program_day_key,
+        note: c.note || '',
+        completedAt: new Date(c.started_at || c.created).getTime(),
+        cardioSessionId: c.id,
+      }
     })
 
     lsSet(prog) // sincronizar cache local
@@ -330,6 +359,15 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   }, [usePB, userId, activeProgramId, patchProgress])
 
   // ─── unmarkWorkoutDone ───────────────────────────────────────────────────
+  const markCardioDayDone = useCallback((workoutKey: string, cardioSessionId: string, note: string = '', date?: string) => {
+    const d = date || todayStr()
+    const k = `done_${d}_${workoutKey}`
+    patchProgress(prev => ({
+      ...prev,
+      [k]: { done: true as const, date: d, workoutKey, completedAt: Date.now(), note, cardioSessionId },
+    }))
+  }, [patchProgress])
+
   const unmarkWorkoutDone = useCallback(async (workoutKey: string, date?: string) => {
     const d = date || todayStr()
     const k = `done_${d}_${workoutKey}`
@@ -363,6 +401,9 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
 
     for (const [k, v] of Object.entries(progress)) {
       if (k.startsWith('done_')) {
+        // Los días de cardio de programa (cardioSessionId) marcan el checkmark
+        // pero NO cuentan en stats/racha/calendario (se mantienen solo-fuerza/yoga).
+        if ((v as any)?.cardioSessionId) continue
         totalSessions++
         const date = k.split('_')[1]
         if (date) {
@@ -500,7 +541,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
 
   return {
     progress, settings, usePB, pbReady,
-    logSet, markWorkoutDone, unmarkWorkoutDone, isWorkoutDone,
+    logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
     getLongestStreak, updateSettings, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,

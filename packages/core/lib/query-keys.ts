@@ -80,8 +80,9 @@ export const qk = {
     ['leaderboard', userId, weekStart, monthStart] as const,
   profileCompare: (userId: string | null, weekStart: string, monthYYYYMM: string) =>
     ['profileCompare', userId, weekStart, monthYYYYMM] as const,
-  cardioStats: (userId: string | null, tz: string, locale: string) =>
-    ['cardio-stats', userId, tz, locale] as const,
+  // Lista cruda de sesiones cardio (por usuario). Fuente única que comparten
+  // useCardioStats, useCardioSessions y las invalidaciones tras guardar/borrar.
+  cardioSessions: (userId: string | null) => ['cardio-sessions', userId] as const,
 
   // — Retos —
   challenges: (userId: string | null) => ['challenges', userId] as const,

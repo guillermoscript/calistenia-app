@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
+import { useWorkoutActions } from '@/contexts/WorkoutContext'
 import RouteMap from '@/components/cardio/RouteMap'
 import CardioHistory from '@/components/cardio/CardioHistory'
 import CardioStats from '@/components/cardio/CardioStats'
@@ -41,8 +42,9 @@ export default function CardioScreen() {
   const {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
     currentPace, currentSpeed, currentSplit, error, note, setNote, gpsAccuracy,
-    start, pause, resume, finish, discard, getHistory, deleteSession, unsavedCount,
+    start, pause, resume, finish, discard, getHistory, deleteSession, updateSessionNote, unsavedCount,
   } = useCardioSessionContext()
+  const { markCardioDayDone } = useWorkoutActions()
 
   const params = useLocalSearchParams<{
     program?: string; dayKey?: string; activity?: string; targetKm?: string; targetMin?: string
@@ -93,6 +95,10 @@ export default function CardioScreen() {
         duration_seconds: session.duration_seconds,
         platform: 'mobile',
       })
+      // Día de programa cardio → marca el día hecho (checkmark del programa).
+      if (session.id && session.program_day_key) {
+        markCardioDayDone(session.program_day_key, session.id, session.note ?? '')
+      }
     }
     setSavedSession(session)
   }
@@ -496,15 +502,23 @@ export default function CardioScreen() {
               </View>
             )}
 
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('cardio.sessionNotes')}
-              placeholderTextColor="#71717a"
-              maxLength={500}
-              multiline
-              className="min-h-[72px] rounded-xl border border-border bg-muted/30 px-3.5 py-3 text-base text-foreground"
-            />
+            <View className="gap-1.5">
+              <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                {t('cardio.notesOptional')}
+              </Text>
+              <TextInput
+                value={note}
+                onChangeText={setNote}
+                onEndEditing={() => {
+                  if (savedSession?.id) void updateSessionNote(savedSession.id, note.trim())
+                }}
+                placeholder={t('cardio.sessionNotes')}
+                placeholderTextColor="#71717a"
+                maxLength={500}
+                multiline
+                className="min-h-[72px] rounded-xl border border-border bg-muted/30 px-3.5 py-3 text-base text-foreground"
+              />
+            </View>
 
             <Button onPress={handleNewSession} className="h-12 w-full bg-lime active:bg-lime/90">
               <Text className="font-bebas text-lg tracking-wide text-zinc-900">{t('cardio.newSession')}</Text>

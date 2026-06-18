@@ -661,6 +661,7 @@
   "cardio.discard": "DESCARTAR",
   "cardio.continue": "SEGUIR",
   "cardio.sessionComplete": "¡Sesión completada!",
+  "cardio.notesOptional": "Notas (opcional)",
   "cardio.sessionNotes": "Notas sobre la sesión...",
   "cardio.newSession": "NUEVA SESIÓN",
   "cardio.share": "COMPARTIR",
