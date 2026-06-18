@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Home, ClipboardList, Library, History, User, Utensils } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { isOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import { NAV_THEME } from '@/lib/theme'
 import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
 import { haptics } from '@/lib/haptics'
@@ -14,6 +15,8 @@ export default function TabsLayout() {
   const theme = NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']
 
   if (!pb.authStore.isValid) return <Redirect href="/login" />
+  const userId = pb.authStore.record?.id ?? pb.authStore.model?.id
+  if (!userId || !isOnboardingDone(userId)) return <Redirect href="/onboarding" />
 
   return (
     <View className="flex-1">

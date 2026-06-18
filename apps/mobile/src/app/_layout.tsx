@@ -121,6 +121,8 @@ function RootLayout() {
           }}>
             <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
             <Stack.Screen name="login" options={{ animation: 'fade' }} />
+            {/* Onboarding: full-screen, no header, gesture disabled so user can't swipe back */}
+            <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
             {/* Session slides up like a modal — can't gesture-dismiss mid-workout */}
             <Stack.Screen name="session" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           </Stack>
