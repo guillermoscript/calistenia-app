@@ -205,13 +205,15 @@ export function useAuth(): UseAuthReturn {
 
   // ── signOut ──────────────────────────────────────────────────────────────
   const signOut = useCallback(() => {
+    // Captura el id ANTES de logout(): luego authStore queda vacío.
+    const signedOutUserId = pb.authStore.record?.id ?? pb.authStore.model?.id
     op.clear()
     logout()
     // Limpia toda la caché de queries: evita que datos del usuario anterior
     // (nutrición, progreso, social…) persistan tras logout / cambio de cuenta.
     qc.clear()
     // Elimina las entradas de localStorage del usuario (offline-first hooks).
-    clearUserStorage()
+    clearUserStorage(signedOutUserId)
     // onChange listener limpia `user` automáticamente
   }, [qc])
 

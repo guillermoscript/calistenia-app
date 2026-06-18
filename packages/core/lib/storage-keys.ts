@@ -38,7 +38,19 @@ export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
   'calistenia_rq_cache',
 ]
 
+/**
+ * Prefijos de claves per-usuario (clave = prefijo + userId).
+ * Se limpian en signOut buscando la clave exacta con el userId dado.
+ */
+const USER_SCOPED_KEY_PREFIXES = [
+  // onboarding-state
+  'calistenia_onboarding_done_',
+] as const
+
 /** Elimina todas las entradas de localStorage vinculadas al usuario activo. */
-export function clearUserStorage(): void {
+export function clearUserStorage(userId?: string): void {
   USER_SCOPED_STORAGE_KEYS.forEach((key) => storage.removeItem(key))
+  if (userId) {
+    USER_SCOPED_KEY_PREFIXES.forEach((prefix) => storage.removeItem(`${prefix}${userId}`))
+  }
 }
