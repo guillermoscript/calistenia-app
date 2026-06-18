@@ -48,14 +48,18 @@ export default function SocialScreen() {
     load()
   }, [load])
 
-  // Cargar reacciones y conteos tras obtener items
+  // Cargar reacciones y conteos tras obtener items.
+  // Depender de una clave ESTABLE de ids (no del array `items`, que es una
+  // referencia flatMap nueva en cada render) para que el efecto solo se
+  // re-ejecute cuando cambia el conjunto de ids — si no,
+  // loadForSessions/loadCommentCounts hacen setState en cada render → loop.
+  const feedIdsKey = items.map((i) => i.id).join(',')
   useEffect(() => {
-    if (items.length > 0) {
-      const ids = items.map((i) => i.id)
-      loadForSessions(ids)
-      loadCommentCounts(ids)
-    }
-  }, [items, loadForSessions, loadCommentCounts])
+    if (!feedIdsKey) return
+    const ids = feedIdsKey.split(',')
+    loadForSessions(ids)
+    loadCommentCounts(ids)
+  }, [feedIdsKey, loadForSessions, loadCommentCounts])
 
   // Pull-to-refresh
   const handleRefresh = useCallback(() => {

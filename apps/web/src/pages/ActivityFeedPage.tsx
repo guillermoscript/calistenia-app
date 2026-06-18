@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from '../lib/i18n'
 import { timeAgo } from '@calistenia/core/lib/dateUtils'
+import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { useActivityFeed, type FeedItem } from '@calistenia/core/hooks/useActivityFeed'
 import { useReactions } from '@calistenia/core/hooks/useReactions'
 import { useComments } from '@calistenia/core/hooks/useComments'
@@ -13,7 +14,7 @@ import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
 import { Button } from '../components/ui/button'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
-import { shareWorkoutSession } from '../lib/share'
+import { shareWorkoutSession, shareContent } from '../lib/share'
 
 // relativeTime replaced by shared timeAgo from dateUtils
 
@@ -50,14 +51,18 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
     return () => observer.disconnect()
   }, [loadMore])
 
-  // Load reactions and comment counts once feed items are available
+  // Load reactions and comment counts once feed items are available.
+  // Depend on a STABLE id-key (not the `items` array, which is a fresh
+  // flatMap reference every render) so this effect only re-runs when the set
+  // of feed ids actually changes — otherwise loadForSessions/loadCommentCounts
+  // setState on every render → infinite re-render loop.
+  const feedIdsKey = items.map(i => i.id).join(',')
   useEffect(() => {
-    if (items.length > 0) {
-      const ids = items.map(i => i.id)
-      loadForSessions(ids)
-      loadCommentCounts(ids)
-    }
-  }, [items, loadForSessions, loadCommentCounts])
+    if (!feedIdsKey) return
+    const ids = feedIdsKey.split(',')
+    loadForSessions(ids)
+    loadCommentCounts(ids)
+  }, [feedIdsKey, loadForSessions, loadCommentCounts])
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 pt-6 md:pt-8 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
@@ -149,12 +154,38 @@ interface FeedCardProps {
 function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, commentCount, onComment }: FeedCardProps) {
   const { t, i18n } = useTranslation()
   const phaseColor = PHASE_COLORS[item.phase]
+  const isCardio = item.type === 'cardio'
 
   let normalizedDate = item.completedAt.replace(' ', 'T')
   if (!normalizedDate.endsWith('Z') && !normalizedDate.includes('+')) normalizedDate += 'Z'
   const formattedDate = new Date(normalizedDate).toLocaleDateString(i18n.language, {
     weekday: 'short', day: 'numeric', month: 'short',
   })
+
+  // Build cardio metrics string (distance · duration · pace)
+  const cardioMetrics = (() => {
+    if (!isCardio || !item.cardio) return null
+    const { distanceKm, durationSeconds, avgPace } = item.cardio
+    const parts: string[] = []
+    if (distanceKm != null) parts.push(`${distanceKm.toFixed(2)} km`)
+    if (durationSeconds != null) parts.push(formatDuration(durationSeconds))
+    if (avgPace != null && avgPace > 0) parts.push(`${formatPace(avgPace)} /km`)
+    return parts.length > 0 ? parts.join(' · ') : null
+  })()
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (isCardio) {
+      const distPart = item.cardio?.distanceKm != null ? ` · ${item.cardio.distanceKm.toFixed(2)} km 🏃` : ''
+      shareContent({
+        title: `${item.displayName} hizo ${item.workoutTitle}`,
+        text: `${item.displayName} hizo ${item.workoutTitle}${distPart}`,
+        url: '',
+      })
+    } else {
+      shareWorkoutSession(item.displayName, item.workoutTitle, item.date, item.workoutKey)
+    }
+  }
 
   return (
     <div className="px-4 py-3.5 bg-card border border-border rounded-xl hover:border-lime/20 transition-colors shadow-sm">
@@ -184,30 +215,43 @@ function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, comme
 
       {/* Action line */}
       <p className="text-xs text-muted-foreground mb-2">
-        {t('feed.completedWorkout')}
+        {isCardio ? 'Hizo cardio' : t('feed.completedWorkout')}
       </p>
 
-      {/* Workout */}
-      <button
-        onClick={onTap}
-        className={cn(
-          'w-full text-left px-3 py-2.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors',
-          phaseColor?.border ? `border-l-[3px] ${phaseColor.border}` : 'border-l-[3px] border-l-lime',
-        )}
-      >
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{item.workoutTitle}</div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">{t('feed.phase')} {item.phase}</span>
-            </div>
-          </div>
-          <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+      {/* Cardio variant */}
+      {isCardio ? (
+        <div className="w-full text-left px-3 py-2.5 rounded-md bg-muted/30 border-l-[3px] border-l-sky-500">
+          <div className="text-sm font-medium text-sky-400">{item.workoutTitle}</div>
+          {cardioMetrics && (
+            <div className="text-[11px] text-muted-foreground font-mono tracking-wider mt-0.5">{cardioMetrics}</div>
+          )}
+          {item.note && (
+            <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{item.note}"</div>
+          )}
         </div>
-        {item.note && (
-          <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{item.note}"</div>
-        )}
-      </button>
+      ) : (
+        /* Workout variant */
+        <button
+          onClick={onTap}
+          className={cn(
+            'w-full text-left px-3 py-2.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors',
+            phaseColor?.border ? `border-l-[3px] ${phaseColor.border}` : 'border-l-[3px] border-l-lime',
+          )}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{item.workoutTitle}</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">{t('feed.phase')} {item.phase}</span>
+              </div>
+            </div>
+            <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+          </div>
+          {item.note && (
+            <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{item.note}"</div>
+          )}
+        </button>
+      )}
 
       {/* Reactions + Comment */}
       <div id="tour-feed-reaction" className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -223,10 +267,7 @@ function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, comme
           <span className="font-medium tabular-nums">{commentCount}</span>
         </button>
         <button
-          onClick={(e) => {
-            e.stopPropagation()
-            shareWorkoutSession(item.displayName, item.workoutTitle, item.date, item.workoutKey)
-          }}
+          onClick={handleShare}
           className="inline-flex min-h-8 items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all duration-200 active:scale-95 text-muted-foreground hover:text-pink-400 hover:bg-pink-500/10 border border-transparent"
         >
           <svg className="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
