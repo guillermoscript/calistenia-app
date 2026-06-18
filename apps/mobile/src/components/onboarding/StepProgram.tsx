@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
 import type { ProgramMeta } from '@calistenia/core/types'
 import { matchUserToPrograms, type MatchUserInput, type MatchPenalty } from '@calistenia/core/lib/matchPrograms'
 
@@ -56,7 +57,7 @@ const ProgramItem = memo(function ProgramItem({ item, isSelected, userId, onSele
           : 'border-transparent'
 
   return (
-    <Pressable onPress={() => onSelect(program.id)} className="mb-3">
+    <Pressable onPress={() => { haptics.selection(); onSelect(program.id) }} className="mb-3">
       <Card className={cn('border-2', borderClass)}>
         <CardContent className="p-4 flex-row items-center gap-3">
           <View className={cn(

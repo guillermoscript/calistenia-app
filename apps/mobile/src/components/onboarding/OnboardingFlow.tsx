@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react'
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native'
 import { useRouter } from 'expo-router'
+import Animated, { FadeInRight } from 'react-native-reanimated'
 
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { op } from '@calistenia/core/lib/analytics'
@@ -19,6 +20,7 @@ import type { MatchUserInput } from '@calistenia/core/lib/matchPrograms'
 
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
+import { haptics } from '@/lib/haptics'
 
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
@@ -95,6 +97,7 @@ export function OnboardingFlow() {
   }
 
   const goToStep = (s: number) => {
+    haptics.light()
     op.track('onboarding_step_viewed', { step: s, step_name: stepNameFor(s) })
     setStep(s)
   }
@@ -227,7 +230,7 @@ export function OnboardingFlow() {
       >
         <OnboardingProgress step={step} totalSteps={totalSteps} />
 
-        <View className="flex-1">
+        <Animated.View key={step} entering={FadeInRight.duration(280)} className="flex-1">
           {step === 0 ? (
             <StepWelcome
               firstName={firstName}
@@ -305,7 +308,7 @@ export function OnboardingFlow() {
               onFinish={handleFinish}
             />
           ) : null}
-        </View>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   )

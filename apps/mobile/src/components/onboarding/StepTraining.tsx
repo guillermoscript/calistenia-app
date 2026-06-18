@@ -6,6 +6,7 @@ import { Chip } from '@/components/ui/chip'
 import { Text } from '@/components/ui/text'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
 
 import {
   FOCUS_AREA_IDS, DAY_IDS,
@@ -73,7 +74,7 @@ export function StepTraining({ values, onChange, saving, onBack, onContinue, onS
               {LEVELS.map((l) => (
                 <Pressable
                   key={l.value}
-                  onPress={() => set('level', l.value)}
+                  onPress={() => { haptics.selection(); set('level', l.value) }}
                   className={cn(
                     'flex-row items-center gap-3 px-3.5 py-2.5 rounded-md border',
                     values.level === l.value
@@ -125,7 +126,7 @@ export function StepTraining({ values, onChange, saving, onBack, onContinue, onS
               {DAY_IDS.map((d) => (
                 <Pressable
                   key={d}
-                  onPress={() => toggleDay(d)}
+                  onPress={() => { haptics.selection(); toggleDay(d) }}
                   className={cn(
                     'flex-1 h-10 rounded-md border items-center justify-center',
                     values.training_days.includes(d)
@@ -153,7 +154,7 @@ export function StepTraining({ values, onChange, saving, onBack, onContinue, onS
               {INTENSITY.map((opt) => (
                 <Pressable
                   key={opt.value}
-                  onPress={() => set('intensity', opt.value)}
+                  onPress={() => { haptics.selection(); set('intensity', opt.value) }}
                   className={cn(
                     'flex-1 items-center gap-0.5 rounded-md border px-2 py-2',
                     values.intensity === opt.value

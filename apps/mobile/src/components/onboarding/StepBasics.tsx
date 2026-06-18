@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
 
 export interface BasicsValues {
   weight: string
@@ -95,7 +96,7 @@ export function StepBasics({ values, onChange, saving, onBack, onContinue, onSki
               {SEX_OPTIONS.map((s) => (
                 <Pressable
                   key={s.value}
-                  onPress={() => set('sex', s.value)}
+                  onPress={() => { haptics.selection(); set('sex', s.value) }}
                   className={cn(
                     'flex-1 h-10 rounded-md border items-center justify-center',
                     values.sex === s.value

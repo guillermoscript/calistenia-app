@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, Easing, View } from 'react-native'
+import { Animated as RNAnimated, Easing, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import Confetti from '@/components/Confetti'
+import { haptics } from '@/lib/haptics'
 import type { ProgramMeta } from '@calistenia/core/types'
 import type { Pace } from './StepGoals'
 
@@ -29,13 +32,12 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
   const { t, i18n } = useTranslation()
   const [phase, setPhase] = useState<'loading' | 'preview'>('loading')
   const [msgIndex, setMsgIndex] = useState(0)
-  const progressAnim = useRef(new Animated.Value(0)).current
-  const spinAnim = useRef(new Animated.Value(0)).current
+  const progressAnim = useRef(new RNAnimated.Value(0)).current
+  const spinAnim = useRef(new RNAnimated.Value(0)).current
 
   useEffect(() => {
-    // Spinner rotation
-    Animated.loop(
-      Animated.timing(spinAnim, {
+    RNAnimated.loop(
+      RNAnimated.timing(spinAnim, {
         toValue: 1,
         duration: 1000,
         easing: Easing.linear,
@@ -43,8 +45,7 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
       })
     ).start()
 
-    // Progress bar fill
-    Animated.timing(progressAnim, {
+    RNAnimated.timing(progressAnim, {
       toValue: 1,
       duration: PHASE_DURATION_MS,
       easing: Easing.linear,
@@ -56,7 +57,10 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
     for (let i = 1; i < MESSAGE_COUNT; i++) {
       timers.push(setTimeout(() => setMsgIndex(i), i * interval))
     }
-    timers.push(setTimeout(() => setPhase('preview'), PHASE_DURATION_MS))
+    timers.push(setTimeout(() => {
+      haptics.success()
+      setPhase('preview')
+    }, PHASE_DURATION_MS))
     return () => timers.forEach(clearTimeout)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -91,7 +95,7 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
         </Text>
 
         <View className="mb-8">
-          <Animated.View
+          <RNAnimated.View
             style={{ transform: [{ rotate: spin }] }}
             className="w-16 h-16 rounded-full border-4 border-muted-foreground/15 border-t-lime"
           />
@@ -104,7 +108,7 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
         </View>
 
         <View className="mt-6 w-48 h-1 rounded-full bg-muted-foreground/15 overflow-hidden">
-          <Animated.View
+          <RNAnimated.View
             className="h-full bg-lime rounded-full"
             style={{
               width: progressAnim.interpolate({
@@ -120,94 +124,97 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
 
   return (
     <View>
-      <View className="items-center mb-6">
-        <Text className="font-bebas text-3xl mb-1">{t('onboarding.yourPlanTitle')}</Text>
-        <Text className="text-sm text-muted-foreground text-center">{t('onboarding.yourPlanDesc')}</Text>
-      </View>
+      <Confetti />
 
-      <View className="gap-3 mb-6">
-        {/* Weight transition */}
-        {currentWeightKg !== null ? (
-          <Card>
-            <CardContent className="p-4 flex-row items-center justify-between">
-              <View>
-                <Text className="text-[10px] text-muted-foreground tracking-[2px] uppercase">
-                  {t('onboarding.timelineWeight')}
-                </Text>
-                <Text className="font-bebas text-2xl text-foreground leading-none">
-                  {currentWeightKg} kg
-                </Text>
-              </View>
-              {goalWeightKg !== null ? (
-                <>
-                  <Text className="text-muted-foreground/60">→</Text>
-                  <View className="items-end">
-                    <Text className="text-[10px] text-muted-foreground tracking-[2px] uppercase">
-                      {t('onboarding.timelineGoal')}
-                    </Text>
-                    <Text className="font-bebas text-2xl text-lime leading-none">
-                      {goalWeightKg} kg
-                    </Text>
-                  </View>
-                </>
-              ) : null}
-            </CardContent>
-          </Card>
-        ) : null}
+      <Animated.View entering={FadeInDown.duration(400)}>
+        <View className="items-center mb-6">
+          <Text className="font-bebas text-3xl mb-1">{t('onboarding.yourPlanTitle')}</Text>
+          <Text className="text-sm text-muted-foreground text-center">{t('onboarding.yourPlanDesc')}</Text>
+        </View>
 
-        {/* Projection */}
-        {projection !== null && pace ? (
-          <Card>
-            <CardContent className="p-4">
-              <Text className="text-sm text-foreground font-sans-medium">
-                {t('onboarding.timelineProjection', { date: projection.dateLabel })}
-              </Text>
-              <Text className="text-[11px] text-muted-foreground mt-0.5">
-                {t('onboarding.timelineProjectionNote', {
-                  pace: t(`onboarding.pace${pace.charAt(0).toUpperCase()}${pace.slice(1)}`).toLowerCase(),
-                  weeks: projection.weeks,
-                })}
-              </Text>
-            </CardContent>
-          </Card>
-        ) : null}
+        <View className="gap-3 mb-6">
+          {currentWeightKg !== null ? (
+            <Card>
+              <CardContent className="p-4 flex-row items-center justify-between">
+                <View>
+                  <Text className="text-[10px] text-muted-foreground tracking-[2px] uppercase">
+                    {t('onboarding.timelineWeight')}
+                  </Text>
+                  <Text className="font-bebas text-2xl text-foreground leading-none">
+                    {currentWeightKg} kg
+                  </Text>
+                </View>
+                {goalWeightKg !== null ? (
+                  <>
+                    <Text className="text-muted-foreground/60">→</Text>
+                    <View className="items-end">
+                      <Text className="text-[10px] text-muted-foreground tracking-[2px] uppercase">
+                        {t('onboarding.timelineGoal')}
+                      </Text>
+                      <Text className="font-bebas text-2xl text-lime leading-none">
+                        {goalWeightKg} kg
+                      </Text>
+                    </View>
+                  </>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
 
-        {/* Program preview */}
-        {program !== null ? (
-          <Card>
-            <CardContent className="p-4 flex-row items-center gap-3">
-              <View className={cn(
-                'w-10 h-10 rounded-lg items-center justify-center shrink-0',
-                'bg-lime/10'
-              )}>
-                <Text className="font-bebas text-lg text-lime">
-                  {program.name[0]?.toUpperCase() ?? '?'}
-                </Text>
-              </View>
-              <View className="flex-1 min-w-0">
-                <Text className="text-[10px] text-muted-foreground tracking-[2px] uppercase">
-                  {t('onboarding.timelineProgram')}
-                </Text>
-                <Text className="text-sm font-sans-medium" numberOfLines={1}>
-                  {program.name}
-                </Text>
-                <Text className="text-[10px] text-muted-foreground">
-                  {t('onboarding.timelineWeeks', { weeks: program.duration_weeks })}
-                </Text>
-              </View>
-            </CardContent>
-          </Card>
-        ) : null}
-      </View>
+          {projection !== null && pace ? (
+            <Animated.View entering={FadeInDown.delay(120).duration(400)}>
+              <Card>
+                <CardContent className="p-4">
+                  <Text className="text-sm text-foreground font-sans-medium">
+                    {t('onboarding.timelineProjection', { date: projection.dateLabel })}
+                  </Text>
+                  <Text className="text-[11px] text-muted-foreground mt-0.5">
+                    {t('onboarding.timelineProjectionNote', {
+                      pace: t(`onboarding.pace${pace.charAt(0).toUpperCase()}${pace.slice(1)}`).toLowerCase(),
+                      weeks: projection.weeks,
+                    })}
+                  </Text>
+                </CardContent>
+              </Card>
+            </Animated.View>
+          ) : null}
 
-      <Button
-        onPress={onFinish}
-        className="w-full h-12 bg-lime active:bg-lime/90"
-      >
-        <Text className="font-bebas text-xl tracking-wide text-lime-foreground">
-          {t('onboarding.startTraining')}
-        </Text>
-      </Button>
+          {program !== null ? (
+            <Card>
+              <CardContent className="p-4 flex-row items-center gap-3">
+                <View className={cn(
+                  'w-10 h-10 rounded-lg items-center justify-center shrink-0',
+                  'bg-lime/10'
+                )}>
+                  <Text className="font-bebas text-lg text-lime">
+                    {program.name[0]?.toUpperCase() ?? '?'}
+                  </Text>
+                </View>
+                <View className="flex-1 min-w-0">
+                  <Text className="text-[10px] text-muted-foreground tracking-[2px] uppercase">
+                    {t('onboarding.timelineProgram')}
+                  </Text>
+                  <Text className="text-sm font-sans-medium" numberOfLines={1}>
+                    {program.name}
+                  </Text>
+                  <Text className="text-[10px] text-muted-foreground">
+                    {t('onboarding.timelineWeeks', { weeks: program.duration_weeks })}
+                  </Text>
+                </View>
+              </CardContent>
+            </Card>
+          ) : null}
+        </View>
+
+        <Button
+          onPress={onFinish}
+          className="w-full h-12 bg-lime active:bg-lime/90"
+        >
+          <Text className="font-bebas text-xl tracking-wide text-lime-foreground">
+            {t('onboarding.startTraining')}
+          </Text>
+        </Button>
+      </Animated.View>
     </View>
   )
 }

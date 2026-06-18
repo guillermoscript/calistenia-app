@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
 
 export type ActivityLevel = 'sedentary' | 'light' | 'active' | 'very_active'
 export type Pace = 'gradual' | 'balanced' | 'aggressive'
@@ -125,7 +126,7 @@ export function StepGoals({
               {ACTIVITY.map((opt) => (
                 <Pressable
                   key={opt.value}
-                  onPress={() => set('activity_level', opt.value)}
+                  onPress={() => { haptics.selection(); set('activity_level', opt.value) }}
                   className={cn(
                     'flex-1 min-w-[45%] items-start gap-0.5 rounded-md border px-3 py-2',
                     values.activity_level === opt.value
@@ -154,7 +155,7 @@ export function StepGoals({
               {PACE.map((opt) => (
                 <Pressable
                   key={opt.value}
-                  onPress={() => set('pace', opt.value)}
+                  onPress={() => { haptics.selection(); set('pace', opt.value) }}
                   className={cn(
                     'flex-1 items-center gap-0.5 rounded-md border px-2 py-2',
                     values.pace === opt.value

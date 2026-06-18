@@ -1,5 +1,6 @@
 import { Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
@@ -25,7 +26,7 @@ export function StepWelcome({ firstName, needsProfile, onStart, onSkipAll }: Pro
   const { t } = useTranslation()
 
   return (
-    <View className="items-center">
+    <Animated.View entering={FadeInDown.duration(500)} className="items-center">
       <Text className="font-bebas text-7xl leading-none text-lime mb-2">
         CALISTENIA
       </Text>
@@ -79,6 +80,6 @@ export function StepWelcome({ firstName, needsProfile, onStart, onSkipAll }: Pro
           {t('onboarding.skipAll')}
         </Text>
       </Pressable>
-    </View>
+    </Animated.View>
   )
 }
