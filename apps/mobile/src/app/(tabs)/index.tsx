@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
+import { RepeatTrainingButton } from '@/components/RepeatTrainingButton'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
@@ -249,6 +250,13 @@ export default function TodayScreen() {
               ) : null}
             </View>
 
+            {/* Ya entrenaste hoy → permitir repetir (paridad con "REPETIR" de la web) */}
+            {doneToday && canTrainToday && (
+              <View className="mt-4">
+                <RepeatTrainingButton tone="primary" onPress={handleStart} />
+              </View>
+            )}
+
             {isCardioDay && !doneToday && (cardioConfig?.targetDistanceKm || cardioConfig?.targetDurationMin) && (
               <Text className="mt-3 font-mono text-[10px] uppercase tracking-[2px] text-emerald-400">
                 {[
@@ -266,8 +274,9 @@ export default function TodayScreen() {
           </Pressable>
         )}
 
-        {/* Otro día: entrena el que quieras */}
-        {activeProgram && !doneToday && !canTrainToday && (
+        {/* Otro día: entrena el que quieras — siempre disponible, aunque hoy
+            tenga (o ya hayas hecho) su propio entrenamiento. */}
+        {activeProgram && (
           <OtherDays phase={phase} todayId={todayId} weekDays={weekDays} />
         )}
 

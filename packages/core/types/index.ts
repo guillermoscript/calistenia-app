@@ -124,6 +124,10 @@ export interface SessionDone {
   done: true
   date: string
   workoutKey: string
+  /** Nº de sesiones completadas para este día+workout. Ausente = 1.
+   *  Permite contar repeticiones del mismo entrenamiento el mismo día,
+   *  que comparten la misma clave `done_${date}_${workoutKey}` en el ProgressMap. */
+  count?: number
   completedAt?: number
   note: string
   warmupCompleted?: boolean

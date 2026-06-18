@@ -2003,6 +2003,8 @@
   "timer.resume": "RESUME",
   "timer.start": "START",
   "timer.reset": "Reset timer",
+  "timer.addSeconds": "Add {{secs}} seconds",
+  "timer.removeSeconds": "Remove {{secs}} seconds",
 
   "reminders.workoutReminders": "Workout reminders",
 

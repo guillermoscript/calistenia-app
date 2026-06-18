@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useKeepAwake } from 'expo-keep-awake'
 
@@ -12,13 +12,17 @@ export default function SessionScreen() {
   useKeepAwake()
 
   const {
-    isActive, workout, workoutKey, endSession,
+    isActive, workout, workoutKey, source, startSession, endSession,
     getRestForExercise, setRestForExercise,
     progress, setProgress, startedAt,
     setSectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown,
   } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
   const router = useRouter()
+
+  // Remontar SessionView al repetir: resetea su estado local (stepIdx/phase) sin
+  // salir de la ruta. startSession ya reinicia el progreso del contexto.
+  const [runId, setRunId] = useState(0)
 
   // Sin sesión activa → volver al dashboard
   useEffect(() => {
@@ -42,6 +46,12 @@ export default function SessionScreen() {
     goHome()
   }, [endSession, goHome])
 
+  const handleRepeat = useCallback(() => {
+    if (!workout) return
+    startSession(workout, workoutKey, source)
+    setRunId(n => n + 1)
+  }, [workout, workoutKey, source, startSession])
+
   const handleMarkDone = useCallback((key: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => {
     const wcData = getWarmupCooldownData()
     onMarkDone(key, note, {
@@ -56,11 +66,13 @@ export default function SessionScreen() {
 
   return (
     <SessionView
+      key={runId}
       workout={workout}
       workoutKey={workoutKey}
       onLogSet={onLogSet}
       onMarkDone={handleMarkDone}
       onGoToDashboard={handleGoToDashboard}
+      onRepeat={handleRepeat}
       onExitSession={handleExitSession}
       onBack={goHome}
       getExerciseLogs={getExerciseLogs}

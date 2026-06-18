@@ -2003,6 +2003,8 @@
   "timer.resume": "REANUDAR",
   "timer.start": "INICIAR",
   "timer.reset": "Reiniciar timer",
+  "timer.addSeconds": "Añadir {{secs}} segundos",
+  "timer.removeSeconds": "Quitar {{secs}} segundos",
 
   "reminders.workoutReminders": "Recordatorios de entrenamiento",
 
