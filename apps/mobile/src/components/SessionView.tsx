@@ -46,6 +46,7 @@ import { shareImage, shareWorkoutSession } from '@/lib/share'
 import WorkoutShareCard from '@/components/share/WorkoutShareCard'
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import PRCelebration from '@/components/share/PRCelebration'
+import { RepeatTrainingButton } from '@/components/RepeatTrainingButton'
 
 interface Step {
   exercise: Exercise
@@ -258,6 +259,7 @@ const TEAL = 'hsl(160 84% 60%)'
 type TimerPhase = 'idle' | 'countdown' | 'running' | 'paused' | 'done'
 
 function ExerciseTimer({ initialSeconds = 30 }: { initialSeconds?: number }) {
+  const { t } = useTranslation()
   const [phase, setPhase] = useState<TimerPhase>('idle')
   const [totalSeconds, setTotalSeconds] = useState(initialSeconds)
   const [remaining, setRemaining] = useState(initialSeconds)
@@ -387,9 +389,9 @@ function ExerciseTimer({ initialSeconds = 30 }: { initialSeconds?: number }) {
 
       {/* Status label */}
       {phase === 'countdown' ? (
-        <Text className="font-mono text-[11px] tracking-[3px]" style={{ color: 'rgba(251,191,36,0.7)' }}>PREPÁRATE</Text>
+        <Text className="font-mono text-[11px] tracking-[3px]" style={{ color: 'rgba(251,191,36,0.7)' }}>{t('timer.getReady').toUpperCase()}</Text>
       ) : phase === 'done' ? (
-        <Text className="font-mono text-[11px] tracking-[3px]" style={{ color: TEAL }}>¡LISTO!</Text>
+        <Text className="font-mono text-[11px] tracking-[3px]" style={{ color: TEAL }}>{t('timer.completed').toUpperCase()}</Text>
       ) : null}
 
       {/* ± seconds (idle/paused only) */}
@@ -400,7 +402,7 @@ function ExerciseTimer({ initialSeconds = 30 }: { initialSeconds?: number }) {
               key={d}
               onPress={() => adjustTime(d)}
               className="h-8 min-w-[48px] items-center justify-center rounded-md border border-border px-2.5 active:bg-muted"
-              accessibilityLabel={`${d > 0 ? 'Añadir' : 'Quitar'} ${Math.abs(d)} segundos`}
+              accessibilityLabel={t(d > 0 ? 'timer.addSeconds' : 'timer.removeSeconds', { secs: Math.abs(d) })}
             >
               <Text className="font-mono text-[11px] text-muted-foreground">{d > 0 ? `+${d}s` : `${d}s`}</Text>
             </Pressable>
@@ -411,24 +413,24 @@ function ExerciseTimer({ initialSeconds = 30 }: { initialSeconds?: number }) {
       {/* Controls */}
       <View className="flex-row items-center gap-3">
         {phase === 'running' ? (
-          <Pressable onPress={pause} className="h-11 min-w-[120px] flex-row items-center justify-center gap-2 rounded-full bg-destructive/10 px-6 active:opacity-80" accessibilityLabel="Pausar">
+          <Pressable onPress={pause} className="h-11 min-w-[120px] flex-row items-center justify-center gap-2 rounded-full bg-destructive/10 px-6 active:opacity-80" accessibilityLabel={t('timer.pause')}>
             <Pause size={18} color={URGENT} />
-            <Text className="font-mono text-[12px] tracking-[2px]" style={{ color: URGENT }}>PAUSA</Text>
+            <Text className="font-mono text-[12px] tracking-[2px]" style={{ color: URGENT }}>{t('timer.pause').toUpperCase()}</Text>
           </Pressable>
         ) : phase === 'countdown' ? null : (
           <Pressable
             onPress={phase === 'idle' ? start : phase === 'paused' ? resume : repeat}
             className="h-11 min-w-[120px] flex-row items-center justify-center gap-2 rounded-full bg-lime/15 px-6 active:opacity-80"
-            accessibilityLabel={phase === 'done' ? 'Repetir' : phase === 'paused' ? 'Reanudar' : 'Iniciar'}
+            accessibilityLabel={phase === 'done' ? t('timer.repeat') : phase === 'paused' ? t('timer.resume') : t('timer.start')}
           >
             <Play size={18} color={LIME} fill={LIME} />
             <Text className="font-mono text-[12px] tracking-[2px] text-lime">
-              {phase === 'done' ? 'REPETIR' : phase === 'paused' ? 'SEGUIR' : 'INICIAR'}
+              {(phase === 'done' ? t('timer.repeat') : phase === 'paused' ? t('timer.resume') : t('timer.start')).toUpperCase()}
             </Text>
           </Pressable>
         )}
         {(phase === 'paused' || phase === 'done') && (
-          <Pressable onPress={reset} className="size-11 items-center justify-center rounded-full bg-muted active:opacity-80" accessibilityLabel="Reiniciar">
+          <Pressable onPress={reset} className="size-11 items-center justify-center rounded-full bg-muted active:opacity-80" accessibilityLabel={t('timer.reset')}>
             <RotateCcw size={18} color={MUTED} />
           </Pressable>
         )}
@@ -757,7 +759,7 @@ function TimingBar({ name, pct, seconds, isMax, delay, animate }: {
   )
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, onDone }: {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, onDone, onRepeat }: {
   workoutTitle: string
   totalSetsLogged: number
   durationMin: number
@@ -765,6 +767,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
   workoutKey: string
   timings: ExerciseTiming[]
   onDone: () => void
+  onRepeat?: () => void
 }) {
   const { t } = useTranslation()
   const reduced = useReducedMotion()
@@ -877,6 +880,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
         <Button variant="outline" size="lg" className="w-full" disabled={sharing} onPress={handleShare}>
           <Text className="font-bebas text-lg tracking-[2px] text-foreground">{sharing ? 'GENERANDO…' : 'COMPARTIR'}</Text>
         </Button>
+        {onRepeat && <RepeatTrainingButton tone="outline" onPress={onRepeat} />}
       </Animated.View>
 
       <Animated.Text
@@ -927,6 +931,7 @@ interface SessionViewProps {
   onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number; rpe?: number }) => Promise<PREvent | null>
   onMarkDone: (workoutKey: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => void
   onGoToDashboard: () => void
+  onRepeat?: () => void
   onExitSession: () => void
   onBack: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
@@ -946,6 +951,7 @@ export default function SessionView({
   onLogSet,
   onMarkDone,
   onGoToDashboard,
+  onRepeat,
   onExitSession,
   onBack,
   getExerciseLogs,
@@ -1337,6 +1343,7 @@ export default function SessionView({
           workoutKey={workoutKey}
           timings={finalTimings ?? []}
           onDone={onGoToDashboard}
+          onRepeat={onRepeat}
         />
       )}
 
