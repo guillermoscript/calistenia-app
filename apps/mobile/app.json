@@ -76,6 +76,13 @@
       "expo-router",
       "expo-localization",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#a3e635"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#0c0a09",

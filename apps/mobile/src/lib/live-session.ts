@@ -51,8 +51,14 @@ async function getNotifee() {
 async function displayAndroid(state: LiveActivityState): Promise<void> {
   const notifee = await getNotifee()
   if (!notifee) return
-  const { AndroidImportance, AndroidForegroundServiceType } = await import('@notifee/react-native')
-  await notifee.createChannel({ id: NOTIF_ID, name: 'Sesión en curso', importance: AndroidImportance.LOW })
+  const { AndroidImportance, AndroidForegroundServiceType, AndroidVisibility } = await import('@notifee/react-native')
+  await notifee.createChannel({
+    id: NOTIF_ID,
+    name: 'Sesión en curso',
+    importance: AndroidImportance.LOW,
+    // Visible (con acciones) en la pantalla de bloqueo para saltar de ejercicio sin desbloquear
+    visibility: AndroidVisibility.PUBLIC,
+  })
   const resting = state.phase === 'rest' && !!state.restEndsAt
   const actionTitle = !labels
     ? null
@@ -74,6 +80,11 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
       foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_DATA_SYNC],
       ongoing: true,
       onlyAlertOnce: true,
+      // Silueta de marca (status bar) en vez del círculo genérico; logo a color como large icon
+      smallIcon: 'notification_icon',
+      largeIcon: 'ic_launcher',
+      // Mostrar contenido + acción "saltar" en la pantalla de bloqueo
+      visibility: AndroidVisibility.PUBLIC,
       // Lime de marca: tinta icono/acentos; colorized pinta el fondo (estilo
       // notificación de música) en los launchers que lo soportan
       color: '#a3e635',
