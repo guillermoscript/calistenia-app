@@ -134,35 +134,6 @@ jobs:
           path: Calistenia-${{ steps.version.outputs.version }}.apk
           retention-days: 30
 
-      - name: Publish APK to download host (Dokploy)
-        # scp the build to the apk.guille.tech static host and update the
-        # stable `latest.apk` pointer. Skips cleanly if SSH isn't configured,
-        # so the workflow never fails just because the host secrets are unset.
-        env:
-          SSH_KEY: ${{ secrets.DOKPLOY_SSH_KEY }}
-          SSH_HOST: ${{ secrets.DOKPLOY_SSH_HOST }}
-          SSH_USER: ${{ secrets.DOKPLOY_SSH_USER }}
-          SSH_PORT: ${{ vars.DOKPLOY_SSH_PORT || '22' }}
-          TARGET_DIR: ${{ vars.APK_HOST_DIR }}
-          TAG: ${{ steps.version.outputs.tag_name }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          if [ -z "$SSH_HOST" ] || [ -z "$SSH_KEY" ] || [ -z "$SSH_USER" ] || [ -z "$TARGET_DIR" ]; then
-            echo "::warning::Download host not configured (DOKPLOY_SSH_* / APK_HOST_DIR); skipping publish."
-            exit 0
-          fi
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_key
-          chmod 600 ~/.ssh/id_key
-          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          REMOTE_NAME="${TAG}.apk"
-          SSH_OPTS="-p $SSH_PORT -i ~/.ssh/id_key -o StrictHostKeyChecking=yes"
-          echo "Uploading $REMOTE_NAME to $SSH_USER@$SSH_HOST:$TARGET_DIR ..."
-          scp -P "$SSH_PORT" -i ~/.ssh/id_key "Calistenia-${VERSION}.apk" "$SSH_USER@$SSH_HOST:$TARGET_DIR/$REMOTE_NAME"
-          ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" "cd '$TARGET_DIR' && ln -sfn '$REMOTE_NAME' latest.apk && ls -lh '$REMOTE_NAME' latest.apk"
-          echo "Published:  https://apk.guille.tech/apks/$REMOTE_NAME"
-          echo "Latest URL: https://apk.guille.tech/latest.apk"
-
   release:
     name: Create GitHub Release
     needs: build
