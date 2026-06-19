@@ -2,6 +2,7 @@
   "expo": {
     "name": "Calistenia",
     "slug": "calistenia",
+    "owner": "",
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -181,6 +182,11 @@
       ],
       "expo-sharing"
     ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

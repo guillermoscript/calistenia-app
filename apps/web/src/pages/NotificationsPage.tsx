@@ -9,6 +9,15 @@ import { cn } from '../lib/utils'
 import { Loader } from '../components/ui/loader'
 import { Button } from '../components/ui/button'
 
+function GearIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
 function relativeTime(dateStr: string, t: TFunction): string {
   if (!dateStr) return ''
   const now = Date.now()
@@ -49,6 +58,14 @@ function getNotificationMessage(n: AppNotification, t: TFunction): string {
       return t('notif.referralSignup', { name: n.data?.referredName || n.actorName })
     case 'referral_bonus':
       return t('notif.referralBonus', { name: n.data?.referredName || n.actorName })
+    case 'friend_streak':
+      return t('notif.friendStreak', { name: n.actorName, days: n.data?.days || '' })
+    case 'friend_achievement':
+      return t('notif.friendAchievement', { name: n.actorName, achievement: n.data?.achievementName || t('notif.anAchievement') })
+    case 'friend_workout':
+      return t('notif.friendWorkout', { name: n.actorName })
+    case 'friend_joined':
+      return t('notif.friendJoined', { name: n.actorName })
     default:
       return t('notif.default', { name: n.actorName })
   }
@@ -73,6 +90,11 @@ function getNotificationRoute(n: AppNotification): string {
     case 'referral_signup':
     case 'referral_bonus':
       return '/referrals'
+    case 'friend_streak':
+    case 'friend_achievement':
+    case 'friend_workout':
+    case 'friend_joined':
+      return `/u/${n.actorId}`
     default:
       return '/'
   }
@@ -105,16 +127,28 @@ export default function NotificationsPage() {
       <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('notif.section')}</div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-bebas text-4xl md:text-5xl">{t('notif.title')}</h1>
-        {notifications.some(n => !n.read) && (
+        <div className="flex items-center gap-1">
+          {notifications.some(n => !n.read) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={markAllAsRead}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              {t('notif.markAllRead')}
+            </Button>
+          )}
           <Button
             variant="ghost"
-            size="sm"
-            onClick={markAllAsRead}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            size="icon"
+            onClick={() => navigate('/settings/notifications')}
+            className="size-8 text-muted-foreground hover:text-foreground"
+            aria-label={t('notifSettings.title')}
+            title={t('notifSettings.title')}
           >
-            {t('notif.markAllRead')}
+            <GearIcon className="size-4" />
           </Button>
-        )}
+        </div>
       </div>
 
       {loading && (

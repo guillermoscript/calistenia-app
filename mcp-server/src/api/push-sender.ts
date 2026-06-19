@@ -77,7 +77,14 @@ export async function sendPushToUser(
         title: payload.title,
         body: payload.body,
         sound: "default" as const,
-        data: { url: payload.url },
+        priority: "high" as const,
+        // Android: route to the HIGH-importance channel created by the app
+        // (push-registration.ts). Without this Android uses the default channel
+        // and heads-up banners may not show.
+        channelId: "push-notifications",
+        // `source: 'push'` lets the mobile foreground handler distinguish remote
+        // push (show banner) from the in-session rest timer (stay silent).
+        data: { url: payload.url, source: "push" },
       }));
 
     if (messages.length > 0) {

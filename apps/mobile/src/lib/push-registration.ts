@@ -12,6 +12,7 @@
  */
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
+import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import type PocketBase from 'pocketbase'
 
@@ -60,16 +61,17 @@ export async function registerPushTokenAsync(
     }
 
     // ── 4. Obtener token de Expo ──────────────────────────────────────────────
-    // No hay EAS projectId configurado en app.json/eas.json.
-    // Llamamos sin projectId — Expo lo infiere del slug cuando se ejecuta en
-    // un build de EAS. En Expo Go / dev build sin proyecto enlazado, puede
-    // fallar o devolver un token de sandbox.
-    // AVISO: para producción, añadir `extra.eas.projectId` en app.json.
-    console.warn(
-      '[push] expo.extra.eas.projectId no configurado en app.json. ' +
-      'El token de push puede no funcionar en builds de producción sin projectId.',
-    )
-    const tokenData = await Notifications.getExpoPushTokenAsync()
+    // Lee el projectId desde expo.extra.eas.projectId en app.json.
+    // En builds de EAS esto se inyecta automáticamente; en Expo Go puede
+    // no estar presente → fallback a llamada sin parámetro (sandbox token).
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined
+    if (!projectId) {
+      console.warn(
+        '[push] expo.extra.eas.projectId no configurado en app.json. ' +
+        'El token de push puede no funcionar en builds de producción sin projectId.',
+      )
+    }
+    const tokenData = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)
     const token = tokenData.data
 
     if (!token) {

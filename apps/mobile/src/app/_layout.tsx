@@ -4,10 +4,11 @@ import '../global.css'
 // Registra setNotificationHandler app-wide (rest timer + recordatorios) al boot.
 import '@/lib/notifications'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { Platform } from 'react-native'
-import { Stack, ThemeProvider, usePathname, useSegments } from 'expo-router'
+import { Stack, ThemeProvider, usePathname, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import * as Notifications from 'expo-notifications'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { colorScheme as nwColorScheme, useColorScheme } from 'nativewind'
@@ -36,6 +37,33 @@ import { CardioSessionProvider } from '@/contexts/CardioSessionContext'
 import OfflineBanner from '@/components/OfflineBanner'
 
 SplashScreen.preventAutoHideAsync()
+
+// ---------------------------------------------------------------------------
+// Notification deep-link routing
+// ---------------------------------------------------------------------------
+
+/**
+ * Translates a web-style path from a push notification payload to the
+ * closest expo-router route in the app.
+ *
+ * Incoming paths (examples): '/feed', '/u/<id>', '/challenges/<id>',
+ * '/progress', '/profile', '/referrals', '/notifications'.
+ */
+function resolveNotifRoute(url: string): Parameters<ReturnType<typeof useRouter>['push']>[0] | null {
+  if (!url) return null
+  // Normalize: trim trailing slash
+  const path = url.replace(/\/$/, '')
+
+  if (path === '/feed' || path === '/') return '/'
+  if (path.startsWith('/u/')) return path as `/u/${string}`
+  if (path === '/progress' || path === '/history') return '/history'
+  if (path === '/profile') return '/profile'
+  if (path === '/notifications') return '/notifications'
+  if (path === '/challenges' || path.startsWith('/challenges')) return '/challenges'
+  if (path === '/social') return '/social'
+  if (path === '/referrals') return '/notifications'
+  return '/notifications'
+}
 
 // Singletons a nivel módulo: un único QueryClient/persister por vida de la app.
 // init-core ya corrió (primer import del archivo), así que el adapter está listo.
@@ -80,6 +108,36 @@ function RootLayout() {
   // Tras vaciar la cola, invalida queries para reconciliar ids optimistas (local_)
   // con los reales del server.
   useEffect(() => setupAutoSync(pb, () => queryClient.invalidateQueries()), [])
+
+  // ── Notification tap deep-link routing ────────────────────────────────────
+  // useRouter must be called inside the component; we store a ref so the
+  // effect below doesn't need router in its dep array (stable reference).
+  const router = useRouter()
+  const routerRef = useRef(router)
+  routerRef.current = router
+
+  useEffect(() => {
+    // COLD START: if the app was opened by tapping a notification, handle it once.
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!response) return
+      const url = response.notification.request.content.data?.url as string | undefined
+      if (url) {
+        const route = resolveNotifRoute(url)
+        if (route) routerRef.current.push(route)
+      }
+    }).catch(() => { /* ignore */ })
+
+    // FOREGROUND / BACKGROUND TAP: listener for subsequent taps.
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const url = response.notification.request.content.data?.url as string | undefined
+      if (url) {
+        const route = resolveNotifRoute(url)
+        if (route) routerRef.current.push(route)
+      }
+    })
+
+    return () => sub.remove()
+  }, [])  // intentionally empty — runs once on mount
 
   useEffect(() => {
     let cancelled = false
