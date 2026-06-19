@@ -70,7 +70,13 @@ onRecordAfterCreateSuccess(function(e) {
       var session = $app.findRecordById("sessions", sessionId)
       ownerId = session.getString("user")
     } catch (err) {
-      return
+      // sessionId may belong to a cardio_sessions record — try fallback
+      try {
+        var cardioSession = $app.findRecordById("cardio_sessions", sessionId)
+        ownerId = cardioSession.getString("user")
+      } catch (err2) {
+        return
+      }
     }
 
     if (!ownerId || ownerId === reactorId) return
@@ -136,10 +142,16 @@ onRecordAfterCreateSuccess(function(e) {
       } catch (err) { /* parent not found */ }
     }
 
-    // Notify the session owner
+    // Notify the session owner (sessions or cardio_sessions)
     try {
-      var session = $app.findRecordById("sessions", sessionId)
-      var ownerId = session.getString("user")
+      var ownerRecord = null
+      try {
+        ownerRecord = $app.findRecordById("sessions", sessionId)
+      } catch (err) {
+        // sessionId may belong to a cardio_sessions record — try fallback
+        ownerRecord = $app.findRecordById("cardio_sessions", sessionId)
+      }
+      var ownerId = ownerRecord.getString("user")
       if (ownerId && ownerId !== authorId) {
         // Avoid double notification if owner is also the parent comment author
         var skipOwner = false

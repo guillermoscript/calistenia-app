@@ -21,6 +21,11 @@ export function inviteUrl(code: string): string {
   return `${BASE_URL}/invite/${code}`
 }
 
+/** Deep link to a single saved cardio session's detail page (web, universally openable). */
+export function cardioUrl(id: string): string {
+  return `${BASE_URL}/cardio/session/${id}`
+}
+
 // ── Primitive share helpers ───────────────────────────────────────────────────
 
 export interface ShareTextOptions {
@@ -107,6 +112,30 @@ export function sharePR(input: PRShareInput): PRShareResult {
   }
   // PR events don't have a canonical deep-link; point to BASE_URL
   return { message, url: BASE_URL }
+}
+
+export interface CardioShareInput {
+  userName?: string
+  activityLabel: string
+  distanceKm: number
+  durationLabel: string
+  sessionId?: string | null
+  referralCode?: string | null
+}
+
+export interface CardioShareResult {
+  message: string
+  url: string
+}
+
+export function shareCardioSession(input: CardioShareInput): CardioShareResult {
+  const { userName, activityLabel, distanceKm, durationLabel, sessionId, referralCode } = input
+  const url = sessionId ? cardioUrl(sessionId) : BASE_URL
+  let message = `${userName ? `${userName}: ` : ''}${activityLabel} — ${distanceKm.toFixed(2)} km en ${durationLabel} 🏃`
+  if (referralCode) {
+    message += `\n${inviteUrl(referralCode)}`
+  }
+  return { message, url }
 }
 
 export interface ReferralShareResult {

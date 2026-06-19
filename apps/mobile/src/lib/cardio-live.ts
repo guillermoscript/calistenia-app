@@ -57,9 +57,14 @@ async function display(s: CardioLiveState): Promise<void> {
   const mod = await getNotifee()
   if (!mod) return
   const notifee = mod.default
-  const { AndroidImportance, AndroidForegroundServiceType } = mod
+  const { AndroidImportance, AndroidForegroundServiceType, AndroidVisibility } = mod
 
-  await notifee.createChannel({ id: NOTIF_ID, name: 'Cardio en curso', importance: AndroidImportance.LOW })
+  await notifee.createChannel({
+    id: NOTIF_ID,
+    name: 'Cardio en curso',
+    importance: AndroidImportance.LOW,
+    visibility: AndroidVisibility.PUBLIC,
+  })
 
   const icon = CARDIO_ACTIVITY[s.activity]?.icon ?? '🏃'
   const metrics =
@@ -79,6 +84,9 @@ async function display(s: CardioLiveState): Promise<void> {
       onlyAlertOnce: true,
       color: '#a3e635',
       colorized: true,
+      smallIcon: 'notification_icon',
+      largeIcon: 'ic_launcher',
+      visibility: AndroidVisibility.PUBLIC,
       pressAction: { id: 'default', launchActivity: 'default' },
       // Cronómetro nativo: avanza solo, sin re-render de la notificación
       ...(s.paused ? {} : { showChronometer: true, timestamp: s.chronoBase }),
