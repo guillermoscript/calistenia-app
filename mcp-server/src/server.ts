@@ -54,6 +54,31 @@ const server = new MCPServer({
   baseUrl: SERVER_URL,
   host: HOST,
   oauth: pocketbaseOAuthBridge(PB_URL, SERVER_URL),
+  // Override mcp-use's global CORS (app.use("*", cors(...))). The web app runs on
+  // a different origin than this API in prod (gym.guille.tech → gym-server.guille.tech),
+  // so every /api/* call triggers a CORS preflight. The Sentry browser SDK injects
+  // `baggage`/`sentry-trace` distributed-tracing headers on outgoing fetches; if the
+  // preflight's Access-Control-Allow-Headers doesn't list them the browser blocks the
+  // POST entirely (status null, 0 B sent). We keep mcp-use's defaults (so MCP clients
+  // keep working) and add the tracing + internal-key headers. (In dev the web app uses
+  // the Vite proxy → same-origin → no preflight, which is why this only bit in prod.)
+  cors: {
+    origin: "*",
+    allowMethods: ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: [
+      "Content-Type",
+      "Accept",
+      "Authorization",
+      "mcp-protocol-version",
+      "mcp-session-id",
+      "X-Proxy-Token",
+      "X-Target-URL",
+      "baggage",
+      "sentry-trace",
+      "x-internal-key",
+    ],
+    exposeHeaders: ["mcp-session-id"],
+  },
 });
 
 // ── MCP request logging (parity with legacy [Auth] log) ─────────────────────
