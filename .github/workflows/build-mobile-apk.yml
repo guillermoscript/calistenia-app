@@ -76,6 +76,23 @@ jobs:
           EXPO_PUBLIC_SENTRY_DSN=${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
           DOTENV
 
+      - name: Create google-services.json
+        # Android FCM config. Kept out of the repo (gitignored credential);
+        # provided via the GOOGLE_SERVICES_JSON secret and written here so
+        # `expo prebuild` (android.googleServicesFile) can copy it into the
+        # native project. Set it with:
+        #   gh secret set GOOGLE_SERVICES_JSON < apps/mobile/google-services.json
+        working-directory: apps/mobile
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON secret is not set. Run: gh secret set GOOGLE_SERVICES_JSON < apps/mobile/google-services.json"
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > google-services.json
+          echo "Wrote google-services.json ($(wc -c < google-services.json) bytes)"
+
       - name: Generate Android native project
         working-directory: apps/mobile
         run: pnpm exec expo prebuild --platform android --clean
