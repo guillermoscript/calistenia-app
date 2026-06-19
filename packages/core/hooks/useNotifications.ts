@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 
-export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_invite' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus'
+export type NotificationType = 'follow' | 'reaction' | 'comment' | 'comment_reply' | 'challenge_invite' | 'challenge_join' | 'challenge_complete' | 'achievement' | 'streak' | 'referral_signup' | 'referral_bonus' | 'friend_streak' | 'friend_achievement' | 'friend_workout' | 'friend_joined'
 
 export interface AppNotification {
   id: string

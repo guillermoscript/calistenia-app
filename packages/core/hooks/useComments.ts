@@ -199,18 +199,7 @@ export function useComments(userId: string | null) {
         return { ...prev, [sessionId]: [...existing, optimistic] }
       })
 
-      // Notificación al dueño de la sesión (o autor del comentario padre).
-      if (sessionOwnerId && sessionOwnerId !== userId) {
-        pb.collection('notifications').create({
-          user: sessionOwnerId,
-          type: parentId ? 'comment_reply' : 'comment',
-          actor: userId,
-          reference_id: sessionId,
-          reference_type: 'session',
-          read: false,
-          data: { text: text.trim().slice(0, 100) },
-        }).catch(() => {})
-      }
+      // notificación la crea el hook de PocketBase (server-side)
 
       // Reconcile en background: invalidamos la caché RQ y recargamos el hilo.
       qc.invalidateQueries({ queryKey: qk.comments.list(sessionId, userId) })

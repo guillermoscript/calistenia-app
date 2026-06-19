@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import { Expo } from "expo-server-sdk";
 import { getAdminPB } from "./admin-pb.js";
+import { sendFcmV1 } from "./fcm-sender.js";
 
 const vapidPublicKey = process.env.VITE_VAPID_PUBLIC_KEY || "";
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
@@ -61,15 +62,24 @@ export async function sendPushToUser(
     console.error("[push] web-push channel error:", err);
   }
 
-  // ── Expo Push channel ─────────────────────────────────────────────────────
+  // ── Native push tokens (Expo for iOS, direct FCM for Android) ──────────────
+  // The `expo_push_tokens` collection holds both: Expo tokens
+  // (ExponentPushToken[...]) go through Expo's service; raw Android FCM tokens
+  // (registered via getDevicePushTokenAsync) go straight to FCM v1.
+  let nativeTokenRecords: { items: any[] } = { items: [] };
   try {
-    const expoTokenRecords = await pb
+    nativeTokenRecords = await pb
       .collection("expo_push_tokens")
-      .getList(1, 20, {
+      .getList(1, 50, {
         filter: pb.filter("user = {:uid}", { uid: userId }),
       });
+  } catch (err) {
+    console.error("[push] native token fetch error:", err);
+  }
 
-    const messages = expoTokenRecords.items
+  // ── Expo Push channel ─────────────────────────────────────────────────────
+  try {
+    const messages = nativeTokenRecords.items
       .filter((rec) => Expo.isExpoPushToken((rec as any).token))
       .map((rec) => ({
         _recId: rec.id,
@@ -77,7 +87,14 @@ export async function sendPushToUser(
         title: payload.title,
         body: payload.body,
         sound: "default" as const,
-        data: { url: payload.url },
+        priority: "high" as const,
+        // Android: route to the HIGH-importance channel created by the app
+        // (push-registration.ts). Without this Android uses the default channel
+        // and heads-up banners may not show.
+        channelId: "push-notifications",
+        // `source: 'push'` lets the mobile foreground handler distinguish remote
+        // push (show banner) from the in-session rest timer (stay silent).
+        data: { url: payload.url, source: "push" },
       }));
 
     if (messages.length > 0) {
@@ -125,6 +142,38 @@ export async function sendPushToUser(
     }
   } catch (err) {
     console.error("[push] expo channel error:", err);
+  }
+
+  // ── FCM v1 channel (raw Android device tokens) ─────────────────────────────
+  try {
+    const fcmRecords = nativeTokenRecords.items.filter(
+      (rec) =>
+        !Expo.isExpoPushToken((rec as any).token) &&
+        (rec as any).platform === "android" &&
+        (rec as any).token
+    );
+
+    if (fcmRecords.length > 0) {
+      const tokenToRecId = new Map<string, string>(
+        fcmRecords.map((rec) => [(rec as any).token as string, rec.id])
+      );
+      const result = await sendFcmV1([...tokenToRecId.keys()], payload);
+      sent += result.sent;
+      failed += result.failed;
+
+      for (const deadToken of result.dead) {
+        const recId = tokenToRecId.get(deadToken);
+        if (recId) {
+          try {
+            await pb.collection("expo_push_tokens").delete(recId);
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[push] fcm channel error:", err);
   }
 
   return { sent, failed };

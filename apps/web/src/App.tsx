@@ -51,6 +51,7 @@ const ChallengeDetailPage = lazy(() => import('./pages/ChallengeDetailPage'))
 const CreateChallengePage = lazy(() => import('./pages/CreateChallengePage'))
 const RoutineViewPage = lazy(() => import('./pages/RoutineViewPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const NotificationSettingsPage = lazy(() => import('./pages/NotificationSettingsPage'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
 const SleepPage = lazy(() => import('./pages/SleepPage'))
 const InviteLandingPage = lazy(() => import('./pages/InviteLandingPage'))
@@ -691,6 +692,7 @@ function AuthenticatedApp({
             <Route path="/add/:userId" element={<AddFriendPage currentUserId={userId!} />} />
             <Route path="/u/:userId/routine" element={<RoutineViewPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
             <Route path="/referrals" element={<ReferralsPage userId={userId!} />} />
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}

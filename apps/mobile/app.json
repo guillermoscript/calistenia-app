@@ -2,6 +2,7 @@
   "expo": {
     "name": "Calistenia",
     "slug": "calistenia",
+    "owner": "guillermouser",
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -11,7 +12,9 @@
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "tech.guille.calistenia",
       "supportsTablet": false,
-      "associatedDomains": ["applinks:gym.guille.tech"],
+      "associatedDomains": [
+        "applinks:gym.guille.tech"
+      ],
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.tech.guille.calistenia"
@@ -23,6 +26,7 @@
     },
     "android": {
       "package": "tech.guille.calistenia",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 4,
       "intentFilters": [
         {
@@ -50,7 +54,10 @@
               "pathPrefix": "/invite"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "adaptiveIcon": {
@@ -65,7 +72,10 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION",
-        "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+        "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "web": {
@@ -181,6 +191,38 @@
       ],
       "expo-sharing"
     ],
+    "extra": {
+      "eas": {
+        "projectId": "6f4d6901-1910-47a4-9003-5ac6a5975057",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "bundleIdentifier": "tech.guille.calistenia.widget",
+                  "targetName": "CalisteniaWidgets",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.tech.guille.calistenia"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "tech.guille.calistenia.widget",
+                  "targetName": "CalisteniaWidgets",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.tech.guille.calistenia"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "router": {}
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

@@ -42,6 +42,8 @@ export const qk = {
     unreadCount: (userId: string | null) =>
       ['notifications', 'unreadCount', userId] as const,
   },
+  notificationPrefs: (userId: string | null) =>
+    ['notification_prefs', userId] as const,
   referrals: {
     all: ['referrals'] as const,
     list: (userId: string | null) => ['referrals', 'list', userId] as const,

@@ -15,7 +15,6 @@ type ReactionsMap = Record<string, EmojiReactions>
  * La query key incluye los ids ORDENADOS para evitar refetches innecesarios por
  * permutaciones distintas.  toggleReaction es una mutación OPTIMISTA: onMutate
  * actualiza el caché, onError restaura el snapshot.
- * El side-effect notifications.create se preserva fire-and-forget.
  * Forma pública estable: { loadForSessions, toggleReaction, getReactions, REACTION_EMOJIS }.
  */
 export function useReactions(userId: string | null) {
@@ -108,19 +107,7 @@ export function useReactions(userId: string | null) {
           reactor: userId,
           emoji,
         })
-
-        // Side-effect: notificación al dueño de la sesión — fire-and-forget (se preserva)
-        if (sessionOwnerId && sessionOwnerId !== userId) {
-          pb.collection('notifications').create({
-            user: sessionOwnerId,
-            type: 'reaction',
-            actor: userId,
-            reference_id: sessionId,
-            reference_type: 'session',
-            read: false,
-            data: { emoji },
-          }).catch(() => {})
-        }
+        // notificación la crea el hook de PocketBase (server-side)
       }
     },
     onMutate: async ({ sessionId, emoji, hasReacted }) => {

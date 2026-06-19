@@ -6,7 +6,8 @@ import { useEffect, useCallback } from 'react'
 import { View, FlatList, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { X, BellOff } from 'lucide-react-native'
+import { X, BellOff, Settings } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
@@ -34,8 +35,8 @@ function relativeTimeEs(dateStr: string): string {
   return new Date(dateStr.replace(' ', 'T')).toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
-/** Mensaje en español para cada tipo de notificación */
-function getNotificationMessage(n: AppNotification): string {
+/** Mensaje localizado para cada tipo de notificación */
+function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record<string, unknown>) => string): string {
   const name = n.actorName || '?'
   switch (n.type as NotificationType) {
     case 'follow':
@@ -73,6 +74,15 @@ function getNotificationMessage(n: AppNotification): string {
       const refName = n.data?.referredName || name
       return `¡Bonus por referir a ${refName}!`
     }
+    // ── New friend-activity types ─────────────────────────────────────────────
+    case 'friend_streak':
+      return t('notif.friendStreak', { name, days: n.data?.days ?? 0 })
+    case 'friend_achievement':
+      return t('notif.friendAchievement', { name, achievement: n.data?.achievementName ?? n.data?.achievementIcon ?? '' })
+    case 'friend_workout':
+      return t('notif.friendWorkout', { name })
+    case 'friend_joined':
+      return t('notif.friendJoined', { name })
     default:
       return `${name} te envió una notificación`
   }
@@ -91,6 +101,12 @@ function getNotificationRoute(n: AppNotification): string | undefined {
     case 'challenge_join':
     case 'challenge_complete':
       return '/challenges'
+    // ── New friend-activity types → actor profile ─────────────────────────────
+    case 'friend_streak':
+    case 'friend_achievement':
+    case 'friend_workout':
+    case 'friend_joined':
+      return n.actorId ? `/u/${n.actorId}` : undefined
     default:
       return undefined
   }
@@ -111,6 +127,7 @@ interface NotificationRowProps {
 }
 
 function NotificationRow({ item, onPress }: NotificationRowProps) {
+  const { t } = useTranslation()
   const isUnread = !item.read
 
   return (
@@ -141,7 +158,7 @@ function NotificationRow({ item, onPress }: NotificationRowProps) {
             isUnread ? 'text-foreground' : 'text-muted-foreground',
           )}
         >
-          {getNotificationMessage(item)}
+          {getNotificationMessage(item, t)}
         </Text>
         <Text className="mt-0.5 font-mono text-[10px] text-muted-foreground/60">
           {relativeTimeEs(item.created)}
@@ -161,6 +178,7 @@ function NotificationRow({ item, onPress }: NotificationRowProps) {
 // ---------------------------------------------------------------------------
 
 export default function NotificationsScreen() {
+  const { t } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
   const userId = user?.id ?? null
@@ -219,6 +237,13 @@ export default function NotificationsScreen() {
               </Text>
             </Pressable>
           )}
+          <Pressable
+            onPress={() => router.push('/notification-settings')}
+            className="rounded-full bg-muted/60 p-2 active:opacity-70"
+            accessibilityLabel={t('notifSettings.title')}
+          >
+            <Settings size={18} color="#888899" />
+          </Pressable>
           <Pressable
             onPress={() => router.back()}
             className="rounded-full bg-muted/60 p-2 active:opacity-70"

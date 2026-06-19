@@ -8,14 +8,17 @@ import { Platform } from 'react-native'
 
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
-    // Recordatorios (comida/ejercicio/pausa) sí muestran banner en foreground;
-    // el rest timer no (el contador en pantalla basta).
-    const isReminder = notification.request.content.data?.source === 'reminder'
+    const source = notification.request.content.data?.source
+    // Recordatorios (comida/ejercicio/pausa) sí muestran banner en foreground.
+    const isReminder = source === 'reminder'
+    // Push remotas del backend (reacciones, comentarios, amigos, etc.)
+    const isPush = source === 'push'
+    // El rest timer no muestra nada — el contador en pantalla es suficiente.
     return {
-      shouldShowBanner: isReminder,
-      shouldShowList: isReminder,
-      shouldPlaySound: isReminder,
-      shouldSetBadge: false,
+      shouldShowBanner: isReminder || isPush,
+      shouldShowList: isReminder || isPush,
+      shouldPlaySound: isReminder || isPush,
+      shouldSetBadge: isPush,
     }
   },
 })

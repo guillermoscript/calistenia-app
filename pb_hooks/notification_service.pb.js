@@ -15,9 +15,22 @@
  * en cada handler → atrapado (200 sin notif) o propagado (400). Ver utils/.)
  *
  * To add a new notification type:
- * 1. Add a handler function below (require the helpers inside its body)
- * 2. Register it with onRecordAfterCreateSuccess/onRecordAfterUpdateSuccess
- * 3. Add the type string to NotificationsPage.tsx getNotificationMessage/getNotificationRoute
+ * 1. Add a handler function below (require the helpers inside its body).
+ *    - 1-to-1 (notify a single target): helpers.createNotification / createSelfNotification + sendPush
+ *    - broadcast (notify a user's followers): helpers.notifyFollowers(actorId, type, refId, data, push)
+ * 2. Register it with onRecordAfterCreateSuccess/onRecordAfterUpdateSuccess.
+ * 3. Pass the type as the last arg to sendPush so push respects notification_prefs.
+ * 4. Map the type → preference category in utils/notifications.js (categoryForType)
+ *    and add the toggle in migration 1776800000 + useNotificationPrefs if it's a new category.
+ * 5. Add the type to NotificationType (packages/core/types/index.ts AND
+ *    packages/core/hooks/useNotifications.ts).
+ * 6. Render it: web apps/web/src/pages/NotificationsPage.tsx (message + route) and
+ *    mobile apps/mobile/src/app/notifications.tsx (message + route).
+ * 7. Add i18n keys (notif.*) in packages/core/locales/{es,en}/translation.json.
+ *
+ * Current types: follow, reaction, comment, comment_reply, challenge_invite,
+ * challenge_join, challenge_complete, achievement, streak, referral_signup,
+ * referral_bonus, friend_streak, friend_achievement, friend_workout, friend_joined.
  */
 
 console.log("[notification_service] hook file loaded")
@@ -47,7 +60,8 @@ onRecordAfterCreateSuccess(function(e) {
       followingId,
       (followerName || "Alguien") + " te sigue",
       "Tienes un nuevo seguidor",
-      "/u/" + followerId
+      "/u/" + followerId,
+      "follow"
     )
   } catch (err) {
     console.log("[notif] follow hook error:", err)
@@ -96,7 +110,8 @@ onRecordAfterCreateSuccess(function(e) {
       ownerId,
       (reactorName || "Alguien") + " " + emoji,
       "Reacciono a tu sesion",
-      "/feed"
+      "/feed",
+      "reaction"
     )
   } catch (err) {
     console.log("[notif] reaction hook error:", err)
@@ -136,7 +151,8 @@ onRecordAfterCreateSuccess(function(e) {
             parentAuthorId,
             (authorName || "Alguien") + " respondio tu comentario",
             preview,
-            "/feed"
+            "/feed",
+            "comment_reply"
           )
         }
       } catch (err) { /* parent not found */ }
@@ -151,6 +167,7 @@ onRecordAfterCreateSuccess(function(e) {
         // sessionId may belong to a cardio_sessions record — try fallback
         ownerRecord = $app.findRecordById("cardio_sessions", sessionId)
       }
+      if (!ownerRecord) return
       var ownerId = ownerRecord.getString("user")
       if (ownerId && ownerId !== authorId) {
         // Avoid double notification if owner is also the parent comment author
@@ -174,7 +191,8 @@ onRecordAfterCreateSuccess(function(e) {
             ownerId,
             (authorName || "Alguien") + " comento tu sesion",
             preview,
-            "/feed"
+            "/feed",
+            "comment"
           )
         }
       }
@@ -220,7 +238,8 @@ onRecordAfterCreateSuccess(function(e) {
       authorId,
       (reactorName || "Alguien") + " " + emoji,
       "Reaccionó a tu comentario",
-      "/feed"
+      "/feed",
+      "reaction"
     )
   } catch (err) {
     console.log("[notif] comment_reaction hook error:", err)
@@ -271,7 +290,8 @@ onRecordAfterCreateSuccess(function(e) {
         userId,
         (inviterName || "Alguien") + " te invito a un desafio",
         challengeTitle,
-        "/challenges/" + challengeId
+        "/challenges/" + challengeId,
+        "challenge_invite"
       )
     }
 
@@ -293,7 +313,8 @@ onRecordAfterCreateSuccess(function(e) {
       creatorId,
       (userName || "Alguien") + " se unio a tu desafio",
       challengeTitle,
-      "/challenges/" + challengeId
+      "/challenges/" + challengeId,
+      "challenge_join"
     )
   } catch (err) {
     console.log("[notif] challenge_join hook error:", err)
@@ -334,13 +355,13 @@ onRecordAfterUpdateSuccess(function(e) {
       if (uid && !notified[uid]) {
         notified[uid] = true
         helpers.createSelfNotification(uid, "challenge_complete", challengeId, "challenge", { challengeTitle: challengeTitle })
-        helpers.sendPush(uid, "Desafio completado!", challengeTitle, "/challenges/" + challengeId)
+        helpers.sendPush(uid, "Desafio completado!", challengeTitle, "/challenges/" + challengeId, "challenge_complete")
       }
     }
     // Also notify creator if not already a participant
     if (creatorId && !notified[creatorId]) {
       helpers.createSelfNotification(creatorId, "challenge_complete", challengeId, "challenge", { challengeTitle: challengeTitle })
-      helpers.sendPush(creatorId, "Desafio completado!", challengeTitle, "/challenges/" + challengeId)
+      helpers.sendPush(creatorId, "Desafio completado!", challengeTitle, "/challenges/" + challengeId, "challenge_complete")
     }
   } catch (err) {
     console.log("[notif] challenge_complete hook error:", err)
@@ -373,7 +394,20 @@ onRecordAfterUpdateSuccess(function(e) {
     }
 
     helpers.createSelfNotification(userId, "achievement", achievementId, "achievement", { achievementName: achievementName, achievementIcon: achievementIcon })
-    helpers.sendPush(userId, achievementIcon + " " + achievementName, "Nuevo logro desbloqueado!", "/profile")
+    helpers.sendPush(userId, achievementIcon + " " + achievementName, "Nuevo logro desbloqueado!", "/profile", "achievement")
+
+    // Fan-out a seguidores: "tu amigo desbloqueó un logro"
+    helpers.notifyFollowers(
+      userId,
+      "friend_achievement",
+      achievementId,
+      { achievementName: achievementName, achievementIcon: achievementIcon },
+      {
+        title: (helpers.getUserName(userId) || "Tu amigo") + " desbloqueo un logro",
+        body: achievementIcon + " " + achievementName,
+        url: "/u/" + userId,
+      }
+    )
   } catch (err) {
     console.log("[notif] achievement hook error:", err)
   }
@@ -398,7 +432,20 @@ onRecordAfterUpdateSuccess(function(e) {
       var milestone = STREAK_MILESTONES[i]
       if (currentStreak >= milestone && oldStreak < milestone) {
         helpers.createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
-        helpers.sendPush(userId, milestone + " dias seguidos!", "Tu racha de entrenamiento sigue creciendo", "/progress")
+        helpers.sendPush(userId, milestone + " dias seguidos!", "Tu racha de entrenamiento sigue creciendo", "/progress", "streak")
+
+        // Fan-out a seguidores: "tu amigo lleva N días seguidos"
+        helpers.notifyFollowers(
+          userId,
+          "friend_streak",
+          String(milestone),
+          { days: milestone },
+          {
+            title: (helpers.getUserName(userId) || "Tu amigo") + " lleva " + milestone + " dias seguidos",
+            body: "Tu amigo esta en racha",
+            url: "/u/" + userId,
+          }
+        )
         break
       }
     }
@@ -496,7 +543,10 @@ onRecordAfterCreateSuccess(function(e) {
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var userId = e.record.getString("user")
-    if (userId) helpers.checkReferralBonus(userId)
+    if (userId) {
+      helpers.checkReferralBonus(userId)
+      helpers.notifyFriendsOnWorkout(userId)
+    }
   } catch (err) {
     console.log("[notif] session referral hook error:", err)
   }
@@ -506,7 +556,10 @@ onRecordAfterCreateSuccess(function(e) {
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var userId = e.record.getString("user")
-    if (userId) helpers.checkReferralBonus(userId)
+    if (userId) {
+      helpers.checkReferralBonus(userId)
+      helpers.notifyFriendsOnWorkout(userId)
+    }
   } catch (err) {
     console.log("[notif] circuit referral hook error:", err)
   }
@@ -516,7 +569,10 @@ onRecordAfterCreateSuccess(function(e) {
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var userId = e.record.getString("user")
-    if (userId) helpers.checkReferralBonus(userId)
+    if (userId) {
+      helpers.checkReferralBonus(userId)
+      helpers.notifyFriendsOnWorkout(userId)
+    }
   } catch (err) {
     console.log("[notif] cardio referral hook error:", err)
   }

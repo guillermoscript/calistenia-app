@@ -12,6 +12,7 @@
  */
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
+import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import type PocketBase from 'pocketbase'
 
@@ -59,22 +60,34 @@ export async function registerPushTokenAsync(
       }
     }
 
-    // ── 4. Obtener token de Expo ──────────────────────────────────────────────
-    // No hay EAS projectId configurado en app.json/eas.json.
-    // Llamamos sin projectId — Expo lo infiere del slug cuando se ejecuta en
-    // un build de EAS. En Expo Go / dev build sin proyecto enlazado, puede
-    // fallar o devolver un token de sandbox.
-    // AVISO: para producción, añadir `extra.eas.projectId` en app.json.
-    console.warn(
-      '[push] expo.extra.eas.projectId no configurado en app.json. ' +
-      'El token de push puede no funcionar en builds de producción sin projectId.',
-    )
-    const tokenData = await Notifications.getExpoPushTokenAsync()
-    const token = tokenData.data
-
-    if (!token) {
-      console.warn('[push] getExpoPushTokenAsync devolvió un token vacío.')
-      return null
+    // ── 4. Obtener token ──────────────────────────────────────────────────────
+    // Android: token NATIVO de FCM (getDevicePushTokenAsync) — lo enviamos
+    //          directo a FCM v1 desde el servidor (no pasa por Expo Push).
+    //          Requiere google-services.json embebido en el build nativo.
+    // iOS:     token de Expo Push (sigue usando el servicio de Expo).
+    let token: string | null = null
+    if (Platform.OS === 'android') {
+      const deviceToken = await Notifications.getDevicePushTokenAsync()
+      token = typeof deviceToken.data === 'string' ? deviceToken.data : null
+      if (!token) {
+        console.warn('[push] getDevicePushTokenAsync devolvió un token vacío (¿falta google-services.json?).')
+        return null
+      }
+    } else {
+      // Lee el projectId desde expo.extra.eas.projectId en app.json.
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined
+      if (!projectId) {
+        console.warn(
+          '[push] expo.extra.eas.projectId no configurado en app.json. ' +
+          'El token de push de iOS puede no funcionar sin projectId.',
+        )
+      }
+      const tokenData = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)
+      token = tokenData.data
+      if (!token) {
+        console.warn('[push] getExpoPushTokenAsync devolvió un token vacío.')
+        return null
+      }
     }
 
     // ── 5. Upsert en PocketBase ───────────────────────────────────────────────
