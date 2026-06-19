@@ -2,6 +2,11 @@ import i18n from './i18n'
 
 const BASE_URL = 'https://gym.guille.tech'
 
+/** Deep link to a single saved cardio session's detail page. */
+export function cardioUrl(id: string): string {
+  return `${BASE_URL}/cardio/session/${id}`
+}
+
 export type ShareMethod = 'native' | 'whatsapp' | 'copy'
 
 interface ShareContentOptions {

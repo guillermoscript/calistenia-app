@@ -4,14 +4,22 @@ import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
 import { op } from '@calistenia/core/lib/analytics'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
-import { fillRRect, drawInitialAvatar, CARD_COLORS } from '../../lib/canvas-helpers'
+import { fillRRect, drawInitialAvatar } from '../../lib/canvas-helpers'
 import i18n from '../../lib/i18n'
 import type { CardioSession } from '@calistenia/core/types'
+import {
+  fitViewport,
+  pointToPixel,
+  tilesForViewport,
+  cartoTileUrl,
+  ROUTE_COLOR,
+} from '@calistenia/core/lib/static-map'
 
-const ACCENT: Record<string, string> = {
-  running: '#a3e635',
-  walking: '#fbbf24',
-  cycling: '#38bdf8',
+// Spanish activity labels — matches mobile parity
+const ACTIVITY_LABEL: Record<string, string> = {
+  running: 'CARRERA',
+  walking: 'CAMINATA',
+  cycling: 'CICLISMO',
 }
 
 interface CardioShareCardProps {
@@ -35,260 +43,297 @@ export default function CardioShareCard({ session, referralCode, raceName, userN
       if (!ctx) return
 
       ctx.scale(scale, scale)
-      const pad = 32
+      const pad = 30
+      const contentW = w - pad * 2
       const logo = await loadLogo()
       const isCycling = session.activity_type === 'cycling'
-      const accent = ACCENT[session.activity_type] || ACCENT.running
-      const { fg, fgDim, fgMuted, bg, cardBg, borderColor } = CARD_COLORS
-      const contentW = w - pad * 2
 
-      // ── Background ──
-      ctx.fillStyle = bg
+      // Palette — warm-tinted neutrals, ONE accent (the activity color)
+      const accent = ROUTE_COLOR[session.activity_type] || ROUTE_COLOR.running
+      const INK = '#f5f5f4'
+      const INK_DIM = 'rgba(245,245,244,0.66)'
+      const INK_FAINT = 'rgba(245,245,244,0.40)'
+      const BG = '#0a0a0b'
+
+      // ════════════════════════════════════════════
+      // 0) CANVAS BACKGROUND
+      // ════════════════════════════════════════════
+      ctx.fillStyle = BG
       ctx.fillRect(0, 0, w, h)
 
-      // ── Top accent band — thick, bold ──
-      const bandH = 4
-      ctx.fillStyle = accent
-      ctx.fillRect(0, 0, w, bandH)
-
-      // ── Subtle noise texture via diagonal lines ──
-      ctx.globalAlpha = 0.012
-      ctx.strokeStyle = fg
-      ctx.lineWidth = 0.5
-      for (let i = -h; i < w + h; i += 18) {
-        ctx.beginPath()
-        ctx.moveTo(i, 0)
-        ctx.lineTo(i + h, h)
-        ctx.stroke()
-      }
-      ctx.globalAlpha = 1
-
-      // ── Large accent glow ──
-      const glow = ctx.createRadialGradient(w * 0.3, 160, 0, w * 0.3, 160, 320)
-      glow.addColorStop(0, accent + '0c')
-      glow.addColorStop(1, accent + '00')
-      ctx.fillStyle = glow
-      ctx.fillRect(0, 0, w, 400)
-
-      let y = bandH + 32
-
       // ════════════════════════════════════════════
-      // ZONE 1: Identity (profile + race + activity)
+      // 1) MAP HERO — full-bleed tiles + route
       // ════════════════════════════════════════════
 
-      // Profile
-      const avatarR = 18
-      drawInitialAvatar(ctx, pad + avatarR, y + avatarR, avatarR, (userName || '?')[0], borderColor, accent)
+      const hasRoute = session.gps_points && session.gps_points.length >= 2
 
-      const px = pad + avatarR * 2 + 12
-      ctx.fillStyle = fg
-      ctx.font = '700 14px "DM Sans", system-ui, sans-serif'
-      ctx.fillText(userName || 'Atleta', px, y + avatarR - 1)
-      ctx.fillStyle = fgMuted
-      ctx.font = '400 10px "DM Sans", system-ui, sans-serif'
-      ctx.fillText(formatDate(session.started_at), px, y + avatarR + 13)
+      if (hasRoute) {
+        const vp = fitViewport(session.gps_points, w, h, { padding: 40 })
 
-      // Logo right
-      if (logo) ctx.drawImage(logo, w - pad - 24, y + 6, 24, 24)
+        if (vp) {
+          const tiles = tilesForViewport(vp)
 
-      y += avatarR * 2 + 24
+          // Load all tiles; resolve (not reject) so a bad tile never aborts the share
+          const tileImages = await Promise.all(
+            tiles.map(t =>
+              new Promise<{ img: HTMLImageElement | null; t: typeof t }>(resolve => {
+                const img = new Image()
+                img.crossOrigin = 'anonymous'
+                img.onload = () => resolve({ img, t })
+                img.onerror = () => resolve({ img: null, t })
+                img.src = cartoTileUrl(t, 'dark', true)
+              })
+            )
+          )
 
-      // Race name — large typographic element, not a badge
-      if (raceName) {
+          // Clip to canvas bounds then draw tiles full-bleed
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(0, 0, w, h)
+          ctx.clip()
+
+          for (const { img, t } of tileImages) {
+            if (img) ctx.drawImage(img, t.px, t.py, 256, 256)
+          }
+
+          ctx.restore()
+
+          // Route polyline — build path helper (break on gap)
+          const pts = session.gps_points
+          const buildPath = () => {
+            ctx.beginPath()
+            let penDown = false
+            for (const p of pts) {
+              if (p.gap) { penDown = false; continue }
+              const { x, y: py } = pointToPixel(p.lat, p.lng, vp)
+              if (!penDown) { ctx.moveTo(x, py); penDown = true }
+              else ctx.lineTo(x, py)
+            }
+          }
+
+          // Dark casing
+          buildPath()
+          ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+          ctx.lineWidth = 9
+          ctx.lineJoin = 'round'
+          ctx.lineCap = 'round'
+          ctx.stroke()
+
+          // Accent stroke
+          buildPath()
+          ctx.strokeStyle = accent
+          ctx.lineWidth = 6
+          ctx.lineJoin = 'round'
+          ctx.lineCap = 'round'
+          ctx.stroke()
+
+          // Start dot — filled #fafafa, accent ring
+          const firstPt = pointToPixel(pts[0].lat, pts[0].lng, vp)
+          ctx.beginPath()
+          ctx.arc(firstPt.x, firstPt.y, 8, 0, Math.PI * 2)
+          ctx.fillStyle = '#fafafa'
+          ctx.fill()
+          ctx.strokeStyle = accent
+          ctx.lineWidth = 3
+          ctx.stroke()
+
+          // End dot — filled accent, white ring
+          const lastPt = pointToPixel(pts[pts.length - 1].lat, pts[pts.length - 1].lng, vp)
+          ctx.beginPath()
+          ctx.arc(lastPt.x, lastPt.y, 8, 0, Math.PI * 2)
+          ctx.fillStyle = accent
+          ctx.fill()
+          ctx.strokeStyle = '#ffffff'
+          ctx.lineWidth = 2.5
+          ctx.stroke()
+        }
+      } else {
+        // No route: vertical gradient wash + giant ghost wordmark
+        const emptyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.65)
+        emptyGrad.addColorStop(0, accent + '2e')   // ~0.18 alpha
+        emptyGrad.addColorStop(1, BG + 'ff')
+        ctx.fillStyle = emptyGrad
+        ctx.fillRect(0, 0, w, h)
+
+        const ghostWord = ACTIVITY_LABEL[session.activity_type] ?? session.activity_type.toUpperCase()
+        ctx.save()
+        ctx.globalAlpha = 0.08
         ctx.fillStyle = accent
-        ctx.font = '800 22px "DM Sans", system-ui, sans-serif'
-        ctx.fillText(raceName.toUpperCase(), pad, y + 20)
-        // Underline accent
-        const nameW = ctx.measureText(raceName.toUpperCase()).width
-        ctx.fillStyle = accent + '40'
-        ctx.fillRect(pad, y + 26, nameW, 2)
-        y += 44
+        ctx.font = '800 220px "DM Sans", system-ui, sans-serif'
+        ctx.textBaseline = 'top'
+        ctx.fillText(ghostWord, -10, h * 0.35)
+        ctx.textBaseline = 'alphabetic'
+        ctx.globalAlpha = 1
+        ctx.restore()
       }
 
-      // Activity label — small, muted
-      ctx.fillStyle = fgMuted
-      ctx.font = '500 9px "DM Sans", system-ui, sans-serif'
-      ctx.letterSpacing = '2px'
-      ctx.fillText(i18n.t(`cardio.${session.activity_type}`).toUpperCase(), pad, y + 8)
-      ctx.letterSpacing = '0px'
-      y += 18
-
       // ════════════════════════════════════════════
-      // ZONE 2: Hero distance — BIG, dominant
+      // 2) SCRIMS — legibility over the map
       // ════════════════════════════════════════════
 
-      const distStr = session.distance_km.toFixed(2)
-      const dotPos = distStr.indexOf('.')
+      // Top scrim: header legibility (only meaningful when hasRoute)
+      if (hasRoute) {
+        const topScrim = ctx.createLinearGradient(0, 0, 0, h * 0.32)
+        topScrim.addColorStop(0, 'rgba(0,0,0,0.55)')
+        topScrim.addColorStop(1, 'rgba(0,0,0,0)')
+        ctx.fillStyle = topScrim
+        ctx.fillRect(0, 0, w, h * 0.32)
+      }
 
-      // Whole number — massive
-      ctx.fillStyle = fg
-      ctx.font = '800 120px "DM Sans", system-ui, sans-serif'
-      const wholeStr = distStr.slice(0, dotPos)
-      ctx.fillText(wholeStr, pad - 4, y + 105)
-      const wholeW = ctx.measureText(wholeStr).width
+      // Bottom scrim: transparent → BG (stats sit on solid ground)
+      const bottomScrim = ctx.createLinearGradient(0, h * 0.46, 0, h)
+      bottomScrim.addColorStop(0, 'rgba(10,10,11,0)')
+      bottomScrim.addColorStop(0.6, 'rgba(10,10,11,0.8)')
+      bottomScrim.addColorStop(1, 'rgba(10,10,11,0.99)')
+      ctx.fillStyle = bottomScrim
+      ctx.fillRect(0, h * 0.46, w, h * 0.54)
 
-      // Decimal — lighter, smaller
-      ctx.fillStyle = fgDim
-      ctx.font = '300 60px "DM Sans", system-ui, sans-serif'
-      ctx.fillText(distStr.slice(dotPos), pad - 4 + wholeW, y + 105)
+      // ════════════════════════════════════════════
+      // 3) HEADER (top, pad≈30)
+      // ════════════════════════════════════════════
 
-      // KM unit — right-aligned, vertical center with distance
+      const headerY = pad + 10
+
+      // Accent dot + activity label
       ctx.fillStyle = accent
-      ctx.font = '700 18px "DM Sans", system-ui, sans-serif'
+      ctx.beginPath()
+      ctx.arc(pad + 4, headerY + 8, 4, 0, Math.PI * 2)
+      ctx.fill()
+
+      ctx.fillStyle = accent
+      ctx.font = '700 15px "DM Sans", system-ui, sans-serif'
+      ctx.letterSpacing = '2px'
+      ctx.fillText(ACTIVITY_LABEL[session.activity_type] ?? session.activity_type.toUpperCase(), pad + 14, headerY + 12)
+      ctx.letterSpacing = '0px'
+
+      // Date below
+      ctx.fillStyle = INK_DIM
+      ctx.font = '500 12px "DM Sans", system-ui, sans-serif'
+      ctx.fillText(formatDate(session.started_at), pad + 14, headerY + 28)
+
+      // Top-right: initial avatar
+      const avatarCx = w - pad - 17
+      const avatarCy = headerY + 17
+      drawInitialAvatar(ctx, avatarCx, avatarCy, 17, (userName || '?')[0], 'rgba(10,10,11,0.55)', INK)
+
+      // ════════════════════════════════════════════
+      // 4) FOOT — anchored from bottom
+      // ════════════════════════════════════════════
+
+      // Brand row height reserve
+      const brandH = 44
+      const footBottom = h - pad
+
+      // Brand row — hairline top border + CALISTENIA left / URL right
+      const brandY = footBottom - brandH
+      ctx.fillStyle = 'rgba(245,245,244,0.18)'
+      ctx.fillRect(pad, brandY, contentW, 1)
+
+      if (logo) ctx.drawImage(logo, pad, brandY + 14, 16, 16)
+      ctx.fillStyle = INK
+      ctx.font = '700 13px "DM Sans", system-ui, sans-serif'
+      ctx.letterSpacing = '1px'
+      ctx.fillText('CALISTENIA', pad + (logo ? 22 : 0), brandY + 27)
+      ctx.letterSpacing = '0px'
+
+      ctx.fillStyle = INK_FAINT
+      ctx.font = '400 12px "DM Sans", system-ui, sans-serif'
       ctx.textAlign = 'right'
-      ctx.fillText('KM', w - pad, y + 105)
+      ctx.fillText('calistenia-app.com', w - pad, brandY + 27)
       ctx.textAlign = 'left'
 
-      y += 128
-
-      // ════════════════════════════════════════════
-      // ZONE 3: Stats — 2x2 grid, tight, dense
-      // ════════════════════════════════════════════
-
-      const g = 6
-      const cW = (contentW - g) / 2
-      const cH = 72
-
-      const allStats = [
-        { value: formatDuration(session.duration_seconds), label: 'TIEMPO', color: fg },
-        {
-          value: isCycling ? formatSpeed(session.avg_speed_kmh || 0) : formatPace(session.avg_pace),
-          label: isCycling ? 'VELOCIDAD' : 'RITMO',
-          color: accent,
-        },
-        {
-          value: isCycling ? formatSpeed(session.max_speed_kmh || 0) : formatPace(session.max_pace || 0),
-          label: isCycling ? 'VEL. MÁX' : 'MEJOR RITMO',
-          color: accent + 'a0',
-        },
-        { value: String(session.calories_burned || 0), label: 'CALORÍAS', color: '#fb923c' },
-      ]
-
-      allStats.forEach((s, i) => {
-        const col = i % 2
-        const row = Math.floor(i / 2)
-        const sx = pad + col * (cW + g)
-        const sy = y + row * (cH + g)
-
-        fillRRect(ctx, sx, sy, cW, cH, 10, cardBg)
-
-        // Left accent stripe
-        fillRRect(ctx, sx, sy + 12, 2.5, cH - 24, 1, s.color + '60')
-
-        ctx.fillStyle = s.color
-        ctx.font = '800 26px "DM Sans", system-ui, sans-serif'
-        ctx.fillText(s.value, sx + 16, sy + 38)
-
-        ctx.fillStyle = fgMuted
-        ctx.font = '500 8px "DM Sans", system-ui, sans-serif'
-        ctx.letterSpacing = '1px'
-        ctx.fillText(s.label, sx + 16, sy + cH - 14)
-        ctx.letterSpacing = '0px'
-      })
-
-      y += 2 * (cH + g) + 4
-
-      // Elevation row (if > 0)
-      if (session.elevation_gain > 0) {
-        y += 4
-        fillRRect(ctx, pad, y, contentW, 48, 10, cardBg)
-        fillRRect(ctx, pad, y + 10, 2.5, 28, 1, '#fbbf24' + '60')
-
-        ctx.fillStyle = '#fbbf24'
-        ctx.font = '800 20px "DM Sans", system-ui, sans-serif'
-        ctx.fillText(`${session.elevation_gain}m`, pad + 16, y + 31)
-
-        ctx.fillStyle = fgMuted
-        ctx.font = '500 8px "DM Sans", system-ui, sans-serif'
-        ctx.letterSpacing = '1px'
-        ctx.textAlign = 'right'
-        ctx.fillText('DESNIVEL', w - pad - 14, y + 31)
-        ctx.letterSpacing = '0px'
-        ctx.textAlign = 'left'
-        y += 56
-      }
-
-      // ════════════════════════════════════════════
-      // ZONE 4: Splits — visual bars fill remaining space
-      // ════════════════════════════════════════════
-
-      if (session.splits && session.splits.length > 0) {
-        y += 12
-        ctx.fillStyle = fgMuted
-        ctx.font = '500 9px "DM Sans", system-ui, sans-serif'
-        ctx.letterSpacing = '2px'
-        ctx.fillText('SPLITS POR KM', pad, y + 8)
-        ctx.letterSpacing = '0px'
-        y += 20
-
-        const validSplits = session.splits.filter(s => s.pace > 0)
-        const bestPace = validSplits.length ? Math.min(...validSplits.map(s => s.pace)) : 1
-        const worstPace = validSplits.length ? Math.max(...validSplits.map(s => s.pace)) : 1
+      // Splits micro bar-chart (only if ≥2 valid splits)
+      const validSplits = (session.splits || []).filter(s => s.pace > 0)
+      let splitsH = 0
+      if (validSplits.length >= 2) {
+        const splitsSlice = validSplits.slice(0, 12)
+        const bestPace = Math.min(...splitsSlice.map(s => s.pace))
+        const worstPace = Math.max(...splitsSlice.map(s => s.pace))
         const paceRange = worstPace - bestPace || 1
+        const maxBarH = 34
+        const barW = (contentW - (splitsSlice.length - 1) * 3) / splitsSlice.length
+        splitsH = maxBarH + 10  // 10px bottom gap before stat row
 
-        // Available space for splits — fill to footer
-        const footerReserve = 64
-        const availH = h - y - footerReserve
-        const maxSplits = Math.min(session.splits.length, 10)
-        const barH = Math.min(Math.floor((availH - 4) / maxSplits) - 4, 32)
+        const splitsTop = brandY - splitsH - 14
 
-        for (let i = 0; i < maxSplits; i++) {
-          const split = session.splits[i]
-          const sy = y + i * (barH + 4)
-          const isBest = split.pace === bestPace && split.pace > 0
+        for (let i = 0; i < splitsSlice.length; i++) {
+          const sp = splitsSlice[i]
+          const ratio = 1 - ((sp.pace - bestPace) / paceRange) * 0.7
+          const bh = Math.max(4, Math.round(maxBarH * ratio))
+          const bx = pad + i * (barW + 3)
+          const by = splitsTop + (maxBarH - bh)
+          const isBest = sp.pace === bestPace
 
-          // Bar width relative to pace (best = full, worst = 40%)
-          const ratio = split.pace > 0 ? 1 - ((split.pace - bestPace) / paceRange) * 0.6 : 0.4
-          const maxBarW = contentW - 80  // reserve space for km label + pace
-          const barW = maxBarW * ratio
-
-          // Bar bg
-          fillRRect(ctx, pad + 30, sy, maxBarW, barH, 4, cardBg)
-
-          // Bar fill
-          const barColor = isBest ? accent : fgMuted + '50'
-          fillRRect(ctx, pad + 30, sy, barW, barH, 4, barColor)
-
-          // KM number
-          ctx.fillStyle = isBest ? accent : fgDim
-          ctx.font = `${isBest ? '700' : '500'} 10px "DM Sans", system-ui, sans-serif`
-          ctx.textAlign = 'right'
-          ctx.fillText(String(split.km), pad + 22, sy + barH / 2 + 4)
-
-          // Pace text
-          ctx.fillStyle = isBest ? accent : fg
-          ctx.font = `${isBest ? '700' : '500'} 11px "DM Sans", system-ui, sans-serif`
-          ctx.textAlign = 'right'
-          ctx.fillText(formatPace(split.pace), w - pad, sy + barH / 2 + 4)
-
-          ctx.textAlign = 'left'
+          fillRRect(ctx, bx, by, barW, bh, 2, isBest ? accent : INK_FAINT)
         }
       }
 
-      // ════════════════════════════════════════════
-      // FOOTER
-      // ════════════════════════════════════════════
+      // Stat row — 3 inline stats with thin vertical dividers
+      const statRowH = 60
+      const splitsBlockH = validSplits.length >= 2 ? splitsH + 14 : 0
+      const statRowBottom = brandY - splitsBlockH
+      const statRowTop = statRowBottom - statRowH
 
-      const fy = h - 48
-      // Gradient line
-      const fGrad = ctx.createLinearGradient(pad, fy - 8, w - pad, fy - 8)
-      fGrad.addColorStop(0, borderColor + '00')
-      fGrad.addColorStop(0.15, borderColor)
-      fGrad.addColorStop(0.85, borderColor)
-      fGrad.addColorStop(1, borderColor + '00')
-      ctx.fillStyle = fGrad
-      ctx.fillRect(pad, fy - 8, contentW, 1)
+      const statItems = [
+        { value: formatDuration(session.duration_seconds), label: 'Tiempo' },
+        {
+          value: isCycling ? formatSpeed(session.avg_speed_kmh || 0) : formatPace(session.avg_pace),
+          label: isCycling ? 'km/h' : 'min/km',
+        },
+        { value: String(session.calories_burned || 0), label: 'kcal' },
+      ]
 
-      if (logo) ctx.drawImage(logo, pad, fy + 6, 18, 18)
-      ctx.fillStyle = fgDim
-      ctx.font = '600 11px "DM Sans", system-ui, sans-serif'
-      ctx.fillText('CALISTENIA', pad + (logo ? 26 : 0), fy + 19)
+      const statCellW = contentW / 3
 
-      ctx.fillStyle = fgMuted
-      ctx.font = '400 10px "DM Sans", system-ui, sans-serif'
-      ctx.textAlign = 'right'
-      ctx.fillText('calistenia-app.com', w - pad, fy + 19)
-      ctx.textAlign = 'left'
+      statItems.forEach((st, i) => {
+        const sx = pad + i * statCellW
+
+        ctx.fillStyle = INK
+        ctx.font = '800 34px "DM Sans", system-ui, sans-serif'
+        ctx.fillText(st.value, sx, statRowTop + 36)
+
+        ctx.fillStyle = INK_DIM
+        ctx.font = '500 16px "DM Sans", system-ui, sans-serif'
+        ctx.fillText(st.label, sx, statRowTop + 56)
+
+        // Thin vertical divider between cells
+        if (i > 0) {
+          ctx.fillStyle = 'rgba(245,245,244,0.15)'
+          ctx.fillRect(sx - 1, statRowTop + 4, 1, 44)
+        }
+      })
+
+      // Accent rule under distance hero
+      const ruleBottom = statRowTop - 16
+      fillRRect(ctx, pad, ruleBottom, 90, 6, 3, accent)
+
+      // Distance hero — left-aligned, value + 'KM' beside it
+      const distStr = session.distance_km.toFixed(2)
+      ctx.fillStyle = INK
+      ctx.font = '800 100px "DM Sans", system-ui, sans-serif'
+      ctx.textBaseline = 'alphabetic'
+      const heroBaseline = ruleBottom - 10
+      ctx.fillText(distStr, pad, heroBaseline)
+      const distW = ctx.measureText(distStr).width
+
+      ctx.fillStyle = accent
+      ctx.font = '800 30px "DM Sans", system-ui, sans-serif'
+      ctx.fillText('KM', pad + distW + 8, heroBaseline)
+
+      // Byline — userName above distance
+      const bylineY = heroBaseline - 104
+      ctx.fillStyle = INK
+      ctx.font = '600 26px "DM Sans", system-ui, sans-serif'
+      ctx.fillText(userName || 'Atleta', pad, bylineY)
+
+      // Optional race kicker — above byline in accent
+      if (raceName) {
+        ctx.fillStyle = accent
+        ctx.font = '800 22px "DM Sans", system-ui, sans-serif'
+        ctx.letterSpacing = '1px'
+        ctx.fillText(raceName.toUpperCase(), pad, bylineY - 32)
+        ctx.letterSpacing = '0px'
+      }
 
       // ── Export ──
       const blob = await canvasToBlob(canvas)

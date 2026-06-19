@@ -104,6 +104,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
                   onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}
                   commentCount={commentCount}
                   onComment={() => setCommentsSessionId(item.id)}
+                  onOpenCardio={(id) => navigate(`/cardio/session/${id}`)}
                 />
               </div>
             )
@@ -149,9 +150,10 @@ interface FeedCardProps {
   onReact: (emoji: string) => void
   commentCount: number
   onComment: () => void
+  onOpenCardio?: (id: string) => void
 }
 
-function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, commentCount, onComment }: FeedCardProps) {
+function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, commentCount, onComment, onOpenCardio }: FeedCardProps) {
   const { t, i18n } = useTranslation()
   const phaseColor = PHASE_COLORS[item.phase]
   const isCardio = item.type === 'cardio'
@@ -220,15 +222,21 @@ function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, comme
 
       {/* Cardio variant */}
       {isCardio ? (
-        <div className="w-full text-left px-3 py-2.5 rounded-md bg-muted/30 border-l-[3px] border-l-sky-500">
-          <div className="text-sm font-medium text-sky-400">{item.workoutTitle}</div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpenCardio?.(item.id) }}
+          className="w-full text-left px-3 py-2.5 rounded-md bg-muted/30 border-l-[3px] border-l-sky-500 hover:bg-muted/50 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm font-medium text-sky-400">{item.workoutTitle}</div>
+            <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
+          </div>
           {cardioMetrics && (
             <div className="text-[11px] text-muted-foreground font-mono tracking-wider mt-0.5">{cardioMetrics}</div>
           )}
           {item.note && (
             <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{item.note}"</div>
           )}
-        </div>
+        </button>
       ) : (
         /* Workout variant */
         <button

@@ -23,6 +23,7 @@ import CardioStats from '@/components/cardio/CardioStats'
 import SplitsTable from '@/components/cardio/SplitsTable'
 import ElevationProfile from '@/components/cardio/ElevationProfile'
 import RacePRsPanel from '@/components/race/RacePRsPanel'
+import CardioShareButton from '@/components/share/CardioShareButton'
 
 import { useCardioStats } from '@calistenia/core/hooks/useCardioStats'
 import { formatDuration, formatPace, formatSpeed, assessTrackQuality } from '@calistenia/core/lib/geo'
@@ -519,6 +520,15 @@ export default function CardioScreen() {
                 className="min-h-[72px] rounded-xl border border-border bg-muted/30 px-3.5 py-3 text-base text-foreground"
               />
             </View>
+
+            {/* Share card — only available once the session is saved (has id + full data) */}
+            {savedSession && (
+              <CardioShareButton
+                session={savedSession}
+                userName={(user?.display_name as string | undefined) ?? (user?.email as string | undefined)?.split('@')[0]}
+                referralCode={(user?.referral_code as string | undefined) ?? null}
+              />
+            )}
 
             <Button onPress={handleNewSession} className="h-12 w-full bg-lime active:bg-lime/90">
               <Text className="font-bebas text-lg tracking-wide text-zinc-900">{t('cardio.newSession')}</Text>

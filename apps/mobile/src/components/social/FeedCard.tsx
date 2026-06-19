@@ -1,5 +1,6 @@
 /** Tarjeta de actividad del feed social — muestra avatar, nombre, workout y reacciones. */
 import { View, Image, Pressable } from 'react-native'
+import { useRouter } from 'expo-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { timeAgo } from '@calistenia/core/lib/dateUtils'
@@ -27,21 +28,25 @@ export function FeedCard({
   commentCount,
   onComment,
 }: FeedCardProps) {
+  const router = useRouter()
   const phaseColor = PHASE_COLORS[item.phase]
   const isCardio = item.type === 'cardio'
 
   const handleShare = () => {
     if (isCardio) {
-      const c = item.cardio
-      const dist = c?.distanceKm != null ? `${c.distanceKm.toFixed(2)} km` : null
-      const details = dist ? ` · ${dist} 🏃` : ' 🏃'
-      const msg = `${item.displayName} hizo ${item.workoutTitle}${details}`
-      shareText({ message: msg }).catch(() => {})
+      // Navigate to the detail screen — it has the full session data + share card.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push(`/cardio/${item.id}` as any)
     } else {
       const url = sessionUrl(item.date, item.workoutKey)
       const msg = `${item.displayName} completó "${item.workoutTitle}" 💪`
       shareText({ message: msg, url }).catch(() => {})
     }
+  }
+
+  const handleCardioPress = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    router.push(`/cardio/${item.id}` as any)
   }
 
   return (
@@ -82,21 +87,28 @@ export function FeedCard({
       </Text>
 
       {isCardio ? (
-        /* Bloque de cardio */
-        <View className="px-3 py-2.5 rounded-md bg-muted/30 border-l-[3px] border-l-sky-500">
-          <Text className="font-sans-medium text-sm text-sky-500" numberOfLines={1}>
-            {item.workoutTitle}
-          </Text>
-          <CardioMetrics cardio={item.cardio} />
-          {Boolean(item.note) && (
-            <Text
-              className="font-sans-italic text-[11px] text-muted-foreground truncate mt-1.5 border-t border-border/50 pt-1.5"
-              numberOfLines={2}
-            >
-              "{item.note}"
+        /* Bloque de cardio — toca para abrir el detalle de la sesión */
+        <Pressable
+          onPress={handleCardioPress}
+          className="rounded-md active:opacity-75"
+          accessibilityRole="button"
+          accessibilityLabel="Ver detalle de sesión de cardio"
+        >
+          <View className="px-3 py-2.5 rounded-md bg-muted/30 border-l-[3px] border-l-sky-500">
+            <Text className="font-sans-medium text-sm text-sky-500" numberOfLines={1}>
+              {item.workoutTitle}
             </Text>
-          )}
-        </View>
+            <CardioMetrics cardio={item.cardio} />
+            {Boolean(item.note) && (
+              <Text
+                className="font-sans-italic text-[11px] text-muted-foreground truncate mt-1.5 border-t border-border/50 pt-1.5"
+                numberOfLines={2}
+              >
+                "{item.note}"
+              </Text>
+            )}
+          </View>
+        </Pressable>
       ) : (
         /* Bloque del workout */
         <View
