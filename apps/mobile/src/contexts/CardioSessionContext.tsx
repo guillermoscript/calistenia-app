@@ -15,10 +15,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { qk } from '@calistenia/core/lib/query-keys'
 import {
-  haversineDistance, calculateElevationGain,
+  calculateElevationGain,
   calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
-  kalmanUpdate, type KalmanState,
+  type KalmanState,
 } from '@calistenia/core/lib/geo'
+import { processCardioFix, type CardioFixState } from '@calistenia/core/lib/cardio-fix'
 import { estimateCalories } from '@calistenia/core/lib/calories'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
@@ -34,10 +35,6 @@ import {
   endCardioLive, setCardioLiveActionHandler,
 } from '@/lib/cardio-live'
 import { syncCardioWidget } from '@/lib/sync-cardio-widget'
-
-// ── Precision tuning (idéntico a web) ───────────────────────────────────────
-const MAX_ACCURACY_M = 20
-const MIN_POINT_DISTANCE_M = 3
 
 const KEEP_AWAKE_TAG = 'cardio-session'
 
@@ -230,90 +227,52 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
   const processFix = useCallback((fix: CardioFix) => {
     if (stateRef.current !== 'tracking') return
-    const { latitude, longitude, altitude, speed, accuracy } = fix
-    if (accuracy == null) return
-    setGpsAccuracy(accuracy)
-    if (accuracy > MAX_ACCURACY_M) return
 
     const pts = pointsRef.current
-    const prevPt = pts.length > 0 ? pts[pts.length - 1] : null
-    const timeDiff = prevPt ? (fix.timestamp - prevPt.timestamp) / 1000 : 0
-    const isGap = prevPt !== null && timeDiff > 30
-
-    // Reset del Kalman en gaps — la varianza predicha sería enorme y sesgaría
-    // el suavizado hacia la posición pre-gap.
-    if (isGap) kalmanRef.current = null
-
-    const smoothed = kalmanUpdate(kalmanRef.current, latitude, longitude, accuracy, fix.timestamp)
-    kalmanRef.current = smoothed
-
-    const point: GpsPoint = {
-      lat: smoothed.lat,
-      lng: smoothed.lng,
-      alt: altitude ?? undefined,
-      timestamp: fix.timestamp,
-      speed: speed ?? undefined,
-      accuracy,
+    const state: CardioFixState = {
+      lastPoint: pts.length > 0 ? pts[pts.length - 1] : null,
+      kalman: kalmanRef.current,
+      distanceKm: distanceRef.current,
+      lastSplitKm: lastSplitKmRef.current,
+      lastSplitTime: lastSplitTimeRef.current,
+      startTime: startTimeRef.current,
+      maxSpeedKmh: maxSpeedRef.current,
     }
 
-    if (prevPt) {
-      const d = haversineDistance(prevPt.lat, prevPt.lng, point.lat, point.lng)
+    const result = processCardioFix(state, fix, activityTypeRef.current)
 
-      if (isGap) {
-        const maxSpeed: Record<CardioActivityType, number> = {
-          running: 6, walking: 3, cycling: 14,
-        }
-        const limit = maxSpeed[activityTypeRef.current] ?? 6
-        const plausible = timeDiff > 0 && (d / timeDiff) <= limit
+    if (result.accuracy != null) setGpsAccuracy(result.accuracy)
+    if (!result.accepted || !result.point) return
 
-        point.gap = true
-        if (plausible) {
-          const newDist = distanceRef.current + d / 1000
-          distanceRef.current = newDist
-          setDistance(newDist)
-        }
-      } else {
-        // Filtro de jitter — parado, el GPS rebota dentro del radio de accuracy
-        if (d < MIN_POINT_DISTANCE_M) return
-        if (timeDiff > 0 && d / timeDiff > 14) return
+    // Aplicar nextState de vuelta a los refs.
+    kalmanRef.current = result.nextState.kalman
+    distanceRef.current = result.nextState.distanceKm
+    lastSplitKmRef.current = result.nextState.lastSplitKm
+    lastSplitTimeRef.current = result.nextState.lastSplitTime
+    maxSpeedRef.current = result.nextState.maxSpeedKmh
 
-        const newDist = distanceRef.current + d / 1000
-        distanceRef.current = newDist
-        setDistance(newDist)
-      }
-
-      const currentKm = Math.floor(distanceRef.current)
-      if (currentKm > lastSplitKmRef.current) {
-        lastSplitKmRef.current = currentKm
-        lastSplitTimeRef.current = point.timestamp
-        // Km completado — vibración estilo Strava (el teléfono suele ir en el
-        // bolsillo/brazalete: la háptica es el único feedback que llega)
-        void haptics.success()
-      }
-      const splitKm = currentKm + 1
-      const splitStartTime = lastSplitTimeRef.current || startTimeRef.current
-      const splitElapsed = Math.floor((point.timestamp - splitStartTime) / 1000)
-      setCurrentSplit({ km: splitKm, elapsed: splitElapsed })
-    }
-
-    pts.push(point)
+    pts.push(result.point)
     setPointsCount(pts.length)
     lastGpsTimestampRef.current = Date.now()
 
-    let paceMinKm = 0
-    let speedKmh = 0
-    if (speed != null && speed > 0.5) {
-      paceMinKm = 1000 / 60 / speed
-      speedKmh = Math.round(speed * 3.6 * 10) / 10
-      setCurrentPace(paceMinKm)
-      setCurrentSpeed(speedKmh)
-      if (speedKmh > maxSpeedRef.current) {
-        maxSpeedRef.current = speedKmh
-      }
+    setDistance(result.distanceKm)
+    if (result.split) setCurrentSplit(result.split)
+    if (result.splitCompleted) {
+      // Km completado — vibración estilo Strava (el teléfono suele ir en el
+      // bolsillo/brazalete: la háptica es el único feedback que llega).
+      void haptics.success()
+    }
+    if (result.speedKmh > 0 || result.paceMinKm > 0) {
+      setCurrentPace(result.paceMinKm)
+      setCurrentSpeed(result.speedKmh)
     }
 
-    // Notificación en vivo: distancia + ritmo (throttled dentro del módulo)
-    updateCardioLive({ distanceKm: distanceRef.current, paceMinKm, speedKmh })
+    // Notificación en vivo: distancia + ritmo (throttled dentro del módulo).
+    updateCardioLive({
+      distanceKm: result.distanceKm,
+      paceMinKm: result.paceMinKm,
+      speedKmh: result.speedKmh,
+    })
   }, [])
 
   // Listener de módulo registrado una sola vez — procesa lotes del FGS/watch
