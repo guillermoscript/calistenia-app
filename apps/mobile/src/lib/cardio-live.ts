@@ -14,6 +14,10 @@ import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import type { CardioActivityType } from '@calistenia/core/types'
 
 const NOTIF_ID = 'cardio-live'
+// Canal con sufijo -active: Android congela la importance de un canal tras
+// crearlo, así que para subir de LOW a DEFAULT hace falta un id nuevo. DEFAULT
+// saca la notif del cajón "silenciosas" que HyperOS/MIUI esconde del lock screen.
+const CHANNEL_ID = 'cardio-live-active'
 const UPDATE_THROTTLE_MS = 3000
 
 interface CardioLiveState {
@@ -55,14 +59,20 @@ async function getNotifee() {
 
 async function display(s: CardioLiveState): Promise<void> {
   const mod = await getNotifee()
-  if (!mod) return
+  if (!mod) {
+    // En release build notifee siempre existe; null = el módulo nativo no cargó.
+    Sentry.captureMessage('cardio-live: notifee no disponible en Android')
+    return
+  }
   const notifee = mod.default
   const { AndroidImportance, AndroidForegroundServiceType, AndroidVisibility } = mod
 
   await notifee.createChannel({
-    id: NOTIF_ID,
+    id: CHANNEL_ID,
     name: 'Cardio en curso',
-    importance: AndroidImportance.LOW,
+    // DEFAULT (no LOW): HyperOS/MIUI ocultan las "silenciosas" del lock screen.
+    // onlyAlertOnce abajo evita que suene en cada update.
+    importance: AndroidImportance.DEFAULT,
     visibility: AndroidVisibility.PUBLIC,
   })
 
@@ -77,7 +87,7 @@ async function display(s: CardioLiveState): Promise<void> {
     title: `${icon} ${i18n.t(`cardio.${s.activity}`)} — ${i18n.t(s.paused ? 'cardio.paused' : 'cardio.recording')}`,
     body: metrics,
     android: {
-      channelId: NOTIF_ID,
+      channelId: CHANNEL_ID,
       asForegroundService: true,
       foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_LOCATION],
       ongoing: true,
