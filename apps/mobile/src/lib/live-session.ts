@@ -10,6 +10,11 @@ import type { LiveActivityState } from './live-activity-state'
 import { getWidgetBridge } from '../../modules/widget-bridge'
 
 const NOTIF_ID = 'live-session'
+// Canal con sufijo de versión: Android congela la importance de un canal tras
+// crearlo (el usuario es dueño de sus ajustes), así que para SUBIR de LOW a
+// DEFAULT hay que estrenar un id nuevo. DEFAULT saca la notificación del cajón
+// "silenciosas" que HyperOS/MIUI esconde de la pantalla de bloqueo.
+const CHANNEL_ID = 'live-session-active'
 let active = false
 let workoutTitle = ''
 let lastState: LiveActivityState | null = null
@@ -50,12 +55,20 @@ async function getNotifee() {
 
 async function displayAndroid(state: LiveActivityState): Promise<void> {
   const notifee = await getNotifee()
-  if (!notifee) return
+  if (!notifee) {
+    // Camino silencioso clave: en una release build notifee SIEMPRE existe; si
+    // es null aquí, el módulo nativo no cargó → dejamos rastro para diagnosticar
+    // por qué la notificación "no aparece" sin que nada pete visiblemente.
+    Sentry.captureMessage('live-session: notifee no disponible en Android')
+    return
+  }
   const { AndroidImportance, AndroidForegroundServiceType, AndroidVisibility } = await import('@notifee/react-native')
   await notifee.createChannel({
-    id: NOTIF_ID,
+    id: CHANNEL_ID,
     name: 'Sesión en curso',
-    importance: AndroidImportance.LOW,
+    // DEFAULT (no LOW): HyperOS/MIUI ocultan las "silenciosas" del lock screen.
+    // onlyAlertOnce abajo evita que suene en cada update — solo al arrancar.
+    importance: AndroidImportance.DEFAULT,
     // Visible (con acciones) en la pantalla de bloqueo para saltar de ejercicio sin desbloquear
     visibility: AndroidVisibility.PUBLIC,
   })
@@ -72,7 +85,7 @@ async function displayAndroid(state: LiveActivityState): Promise<void> {
       ? `${state.exerciseName} — SERIE ${state.setIndex}/${state.setTotal}`
       : state.exerciseName,
     android: {
-      channelId: NOTIF_ID,
+      channelId: CHANNEL_ID,
       asForegroundService: true,
       // FGS de entreno = dataSync (no location). El service de notifee es
       // compartido y su tipo de manifest incluye location; sin especificar tipo
