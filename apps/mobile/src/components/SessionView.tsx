@@ -50,6 +50,7 @@ import WorkoutShareCard from '@/components/share/WorkoutShareCard'
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import PRCelebration from '@/components/share/PRCelebration'
 import { RepeatTrainingButton } from '@/components/RepeatTrainingButton'
+import { buildSteps, computeExerciseBoundaries, findCurrentExerciseIndex, nextPhaseAfterSet, type Step } from '@/lib/session-machine'
 
 /** Format a structured tempo object into a compact human-readable string.
  *  e.g. { eccentric: 5, pauseTop: 2 } → "baja 5s · pausa 2s arriba"
@@ -63,24 +64,6 @@ function formatTempo(tempo: ExerciseTempo | undefined): string | null {
   if (tempo.concentric != null)  parts.push(tempo.concentric === 1 ? 'sube explosivo' : `sube ${tempo.concentric}s`)
   if (tempo.pauseTop != null)    parts.push(`pausa ${tempo.pauseTop}s arriba`)
   return parts.length > 0 ? parts.join(' · ') : null
-}
-
-interface Step {
-  exercise: Exercise
-  setNumber: number
-  totalSets: number
-  section: 'warmup' | 'main' | 'cooldown'
-}
-
-function buildSteps(exercises: Exercise[]): Step[] {
-  const steps: Step[] = []
-  exercises.forEach(ex => {
-    const total = ex.sets === 'múltiples' ? 3 : (parseInt(String(ex.sets)) || 1)
-    for (let s = 1; s <= total; s++) {
-      steps.push({ exercise: ex, setNumber: s, totalSets: total, section: ex.section || 'main' })
-    }
-  })
-  return steps
 }
 
 const LIME = 'hsl(74 90% 45%)'
@@ -1145,17 +1128,9 @@ export default function SessionView({
   const isLastStep = stepIdx === steps.length - 1
 
   // Límites de ejercicio para navegación prev/next
-  const exerciseBoundaries = useRef<number[]>(
-    steps.reduce<number[]>((acc, s, i) => {
-      if (i === 0 || s.exercise.id !== steps[i - 1].exercise.id) acc.push(i)
-      return acc
-    }, [])
-  ).current
+  const exerciseBoundaries = useRef<number[]>(computeExerciseBoundaries(steps)).current
 
-  const currentExerciseIndex = exerciseBoundaries.findIndex((bIdx, i) => {
-    const nextBoundary = exerciseBoundaries[i + 1] ?? steps.length
-    return stepIdx >= bIdx && stepIdx < nextBoundary
-  })
+  const currentExerciseIndex = findCurrentExerciseIndex(exerciseBoundaries, stepIdx, steps.length)
   const hasPrevExercise = currentExerciseIndex > 0
   const hasNextExercise = currentExerciseIndex < exerciseBoundaries.length - 1
 
@@ -1245,29 +1220,23 @@ export default function SessionView({
     }
     setSetsCount(c => c + 1)
 
-    if (isLastStep) {
-      setPhase('note')
-      return
-    }
-
-    // Transición de sección (warmup→main o main→cooldown)
-    const currentSection = currentStep.section
-    const nextSection = nextStep?.section || 'main'
-    if (currentSection !== nextSection) {
-      setTransitionType(currentSection === 'warmup' ? 'warmup-to-main' : 'main-to-cooldown')
-      pendingStepIdx.current = stepIdx + 1
-      setPhase('section-transition')
-      return
-    }
-
-    // Superset: sin descanso entre ejercicios del mismo grupo
-    const currentGroup = currentStep.exercise.supersetGroup
-    const nextExGroup = nextStep?.exercise.supersetGroup
-    if (currentGroup && nextExGroup && currentGroup === nextExGroup) {
-      setStepIdx(i => i + 1)
-      setPhase('exercise')
-    } else {
-      setPhase('rest')
+    const decision = nextPhaseAfterSet({ currentStep, nextStep, isLastStep, stepIdx })
+    switch (decision.kind) {
+      case 'note':
+        setPhase('note')
+        return
+      case 'section-transition':
+        setTransitionType(decision.transitionType)
+        pendingStepIdx.current = decision.nextStepIdx
+        setPhase('section-transition')
+        return
+      case 'advance':
+        setStepIdx(i => i + 1)
+        setPhase('exercise')
+        return
+      case 'rest':
+        setPhase('rest')
+        return
     }
   }, [currentStep, isLastStep, nextStep, onLogSet, workoutKey, stepIdx])
 
