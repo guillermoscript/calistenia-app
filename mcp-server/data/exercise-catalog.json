@@ -72,7 +72,7 @@
           "videos": []
         },
         {
-          "id": "sit_ups",
+          "id": "biceps_curl_cable",
           "name": {
             "es": "Biceps Curl With Cable",
             "en": "Biceps Curl With Cable"
@@ -2618,10 +2618,10 @@
           "images": []
         },
         {
-          "id": "thoracic_rot",
+          "id": "thoracic_rotation_side",
           "name": {
-            "es": "Thoracic Rotation",
-            "en": "Thoracic Rotation"
+            "es": "Thoracic Rotation (Side-Lying)",
+            "en": "Thoracic Rotation (Side-Lying)"
           },
           "muscles": {
             "es": "Columna torácica, oblicuos",
@@ -2955,24 +2955,6 @@
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Glute%20Bridge%20Warm-up%20exercise%20tutorial",
           "youtube_query": "glute bridge warm up activation",
-          "images": []
-        },
-        {
-          "id": "cat_cow",
-          "name": { "es": "Gato-Vaca", "en": "Cat-Cow" },
-          "muscles": { "es": "Columna, core", "en": "Spine, core" },
-          "sets": 2,
-          "reps": "10",
-          "rest": 15,
-          "note": { "es": "En cuadrupedia, alterna entre arquear y redondear la espalda. Movilidad espinal.", "en": "On all fours, alternate between arching and rounding the back. Spinal mobility." },
-          "priority": "med",
-          "isTimer": false,
-          "category": "movilidad",
-          "difficulty": "beginner",
-          "equipment": ["ninguno"],
-          "source": "local",
-          "youtube_search": "https://www.youtube.com/results?search_query=Cat-Cow%20exercise%20tutorial",
-          "youtube_query": "cat cow stretch spine mobility",
           "images": []
         },
         {
