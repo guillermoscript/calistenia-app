@@ -998,7 +998,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
 
       {quote && (
         <Animated.View entering={reduced ? undefined : FadeInDown.delay(420).duration(450)} className="max-w-[380px] items-center">
-          <Text className="mb-2.5 text-center font-sans-italic text-base leading-6 text-foreground/70">"{quote.q}"</Text>
+          <Text className="mb-2.5 text-center font-sans-italic text-base leading-6 text-foreground/70">&quot;{quote.q}&quot;</Text>
           <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">— {quote.a}</Text>
         </Animated.View>
       )}
