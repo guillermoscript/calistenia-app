@@ -154,17 +154,28 @@
           "default": "primary",
           "description": "Exercise importance tier → exercises_catalog.priority"
         },
-        "image_files": {
-          "type": "array",
-          "items": { "type": "string" },
-          "maxItems": 3,
-          "default": [],
-          "description": "Relative paths to demo images (uploaded to exercises_catalog.default_images). Empty = placeholder for later."
-        },
-        "video_file": {
-          "type": "string",
-          "default": "",
-          "description": "Relative path to demo video (uploaded to exercises_catalog.default_video). Empty = placeholder for later."
+        "media": {
+          "type": "object",
+          "description": "Structured demo media for this exercise. Filenames reference files inside seeds/exercises/media/<slug>/. All keys are optional — omit entirely when no media exists yet.",
+          "additionalProperties": false,
+          "properties": {
+            "sequence": {
+              "type": "string",
+              "description": "Phase-strip / movement demo image (hero). Filename relative to seeds/exercises/media/<slug>/."
+            },
+            "muscles": {
+              "type": "string",
+              "description": "Muscle-activation map image. Filename relative to seeds/exercises/media/<slug>/."
+            },
+            "thumbnail": {
+              "type": "string",
+              "description": "Small preview image for lists and cards. Filename relative to seeds/exercises/media/<slug>/."
+            },
+            "video": {
+              "type": "string",
+              "description": "Optional looping form-demo video clip. Filename relative to seeds/exercises/media/<slug>/."
+            }
+          }
         },
         "progression_order": {
           "type": "integer",
