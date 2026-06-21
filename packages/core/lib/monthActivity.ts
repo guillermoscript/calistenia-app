@@ -34,6 +34,24 @@ export interface WeightEntryLite {
   note?: string
 }
 
+// Medidas corporales (cinta métrica) — el calendario solo necesita presencia + fecha.
+export interface BodyMeasurementLite {
+  id: string
+  date: string
+}
+
+// Resumen de fotos de progreso por día (cuántas se registraron).
+export interface DayPhotoSummary {
+  count: number
+}
+
+// Chequeo lumbar diario (forma mínima: la puntuación y la fecha).
+export interface LumbarCheckLite {
+  id: string
+  date: string
+  lumbar_score: number
+}
+
 // Todo lo que el usuario registró en un mes, agrupado por fecha local.
 // Los entrenamientos NO se incluyen aquí: viven en WorkoutContext (progress)
 // y se mezclan en el componente.
@@ -44,6 +62,9 @@ export interface MonthActivity {
   waterByDate: Record<string, DayWaterSummary>
   sleepByDate: Record<string, SleepEntry>
   weightByDate: Record<string, WeightEntryLite>
+  measurementByDate: Record<string, BodyMeasurementLite>
+  photosByDate: Record<string, DayPhotoSummary>
+  lumbarByDate: Record<string, LumbarCheckLite>
 }
 
 export function emptyMonthActivity(): MonthActivity {
@@ -54,6 +75,9 @@ export function emptyMonthActivity(): MonthActivity {
     waterByDate: {},
     sleepByDate: {},
     weightByDate: {},
+    measurementByDate: {},
+    photosByDate: {},
+    lumbarByDate: {},
   }
 }
 
@@ -102,7 +126,16 @@ export async function fetchMonthActivity(
     uid: userId, start: monthStart, end: nextMonth,
   })
 
-  const [cardioRes, circuitRes, nutritionRes, waterRes, sleepRes, weightRes] = await Promise.allSettled([
+  // getFullList (sin tope de página) para fuentes que pueden tener muchas filas/día
+  // (agua: varios vasos al día → un getList(1,500) podría descartar entradas en
+  // meses intensos). Normalizamos a { items } para mantener la forma uniforme.
+  const fullList = (collection: string, opts: Record<string, unknown>) =>
+    pb.collection(collection).getFullList(opts).then((items) => ({ items }))
+
+  const [
+    cardioRes, circuitRes, nutritionRes, waterRes, sleepRes, weightRes,
+    measurementRes, photoRes, lumbarRes,
+  ] = await Promise.allSettled([
     pb.collection('cardio_sessions').getList(1, 200, {
       filter: utcRange('started_at'),
       sort: '-started_at',
@@ -113,11 +146,11 @@ export async function fetchMonthActivity(
       sort: '-started_at',
       fields: 'id,circuit_name,mode,rounds_completed,rounds_target,duration_seconds,started_at,finished_at,note',
     }),
-    pb.collection('nutrition_entries').getList(1, 500, {
+    fullList('nutrition_entries', {
       filter: utcRange('logged_at'),
       fields: 'id,logged_at,total_calories',
     }),
-    pb.collection('water_entries').getList(1, 500, {
+    fullList('water_entries', {
       filter: utcRange('logged_at'),
       fields: 'id,logged_at,amount_ml',
     }),
@@ -128,6 +161,22 @@ export async function fetchMonthActivity(
     pb.collection('weight_entries').getList(1, 62, {
       filter: dateRange,
       fields: 'id,date,weight_kg,note',
+    }),
+    pb.collection('body_measurements').getList(1, 62, {
+      filter: dateRange,
+      sort: '-date',
+      fields: 'id,date',
+    }),
+    pb.collection('body_photos').getList(1, 300, {
+      filter: dateRange,
+      fields: 'id,date',
+    }),
+    // lumbar_checks.date es un campo `text` YYYY-MM-DD: la comparación lexicográfica
+    // del rango sigue siendo válida porque el formato ordena cronológicamente.
+    pb.collection('lumbar_checks').getList(1, 62, {
+      filter: dateRange,
+      sort: '-date',
+      fields: 'id,date,lumbar_score',
     }),
   ])
 
@@ -146,7 +195,7 @@ export async function fetchMonthActivity(
   if (nutritionRes.status === 'fulfilled') {
     for (const item of nutritionRes.value.items) {
       const date = utcToLocalDateStr((item as Record<string, unknown>).logged_at as string || '')
-      if (!date) continue
+      if (!date || date === 'Invalid Date') continue
       const cur = result.nutritionByDate[date] || (result.nutritionByDate[date] = { meals: 0, calories: 0 })
       cur.meals++
       cur.calories += ((item as Record<string, unknown>).total_calories as number) || 0
@@ -158,7 +207,7 @@ export async function fetchMonthActivity(
   if (waterRes.status === 'fulfilled') {
     for (const item of waterRes.value.items) {
       const date = utcToLocalDateStr((item as Record<string, unknown>).logged_at as string || '')
-      if (!date) continue
+      if (!date || date === 'Invalid Date') continue
       const cur = result.waterByDate[date] || (result.waterByDate[date] = { totalMl: 0 })
       cur.totalMl += ((item as Record<string, unknown>).amount_ml as number) || 0
     }
@@ -184,6 +233,40 @@ export async function fetchMonthActivity(
     }
   } else {
     console.warn('monthActivity: weight fetch failed', weightRes.reason)
+  }
+
+  // Medidas corporales: una por día (la más reciente gana, ordenado por -date).
+  if (measurementRes.status === 'fulfilled') {
+    for (const raw of measurementRes.value.items as unknown as BodyMeasurementLite[]) {
+      const date = dateKey(raw.date)
+      if (!date || result.measurementByDate[date]) continue
+      result.measurementByDate[date] = { ...raw, date }
+    }
+  } else {
+    console.warn('monthActivity: measurements fetch failed', measurementRes.reason)
+  }
+
+  // Fotos de progreso: pueden ser varias por día → contamos.
+  if (photoRes.status === 'fulfilled') {
+    for (const item of photoRes.value.items) {
+      const date = dateKey((item as Record<string, unknown>).date as string || '')
+      if (!date) continue
+      const cur = result.photosByDate[date] || (result.photosByDate[date] = { count: 0 })
+      cur.count++
+    }
+  } else {
+    console.warn('monthActivity: photos fetch failed', photoRes.reason)
+  }
+
+  // Chequeo lumbar: uno por día (el más reciente gana).
+  if (lumbarRes.status === 'fulfilled') {
+    for (const raw of lumbarRes.value.items as unknown as LumbarCheckLite[]) {
+      const date = dateKey(raw.date)
+      if (!date || result.lumbarByDate[date]) continue
+      result.lumbarByDate[date] = { ...raw, date }
+    }
+  } else {
+    console.warn('monthActivity: lumbar fetch failed', lumbarRes.reason)
   }
 
   return result
