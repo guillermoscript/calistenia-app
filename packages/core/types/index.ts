@@ -12,6 +12,17 @@ export type ExerciseStatus = 'official' | 'private' | 'promoted'
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
 
+export interface ExerciseTempo {
+  /** Lowering phase duration in seconds (e.g. eccentric: 5 = "baja 5s") */
+  eccentric?: number
+  /** Pause at bottom position in seconds */
+  pauseBottom?: number
+  /** Lifting phase duration in seconds (1 = explosive) */
+  concentric?: number
+  /** Pause at top position in seconds */
+  pauseTop?: number
+}
+
 export interface Exercise {
   id: string
   name: string
@@ -37,6 +48,7 @@ export interface Exercise {
   difficulty?: DifficultyLevel
   section?: 'warmup' | 'main' | 'cooldown'
   stretchType?: 'dynamic' | 'static'
+  tempo?: ExerciseTempo
 }
 
 export interface Workout {
