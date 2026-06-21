@@ -15,6 +15,7 @@ import { Card, CardContent } from '../components/ui/card'
 import { useWorkoutState, useWorkoutActions } from '../contexts/WorkoutContext'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+import { resolveExerciseId } from '@calistenia/core/lib/resolveExerciseId'
 import { toast } from 'sonner'
 import type { DayId } from '@calistenia/core/types'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
@@ -69,7 +70,10 @@ function extractCatalog(): CatalogItem[] {
 }
 
 function mapPBCatalog(rec: any): CatalogItem {
-  return { id: rec.id ?? '', name: rec.name ?? '', muscles: rec.muscles ?? '' }
+  // Identity MUST be the stable, human-meaningful slug — never the random PB
+  // primary key (rec.id), which silently fragments score history. slug is a
+  // required field on every exercises_catalog record (migration 1774000001).
+  return { id: rec.slug || rec.id || '', name: rec.name ?? '', muscles: rec.muscles ?? '' }
 }
 
 function makeCustomId(name: string): string {
@@ -151,7 +155,8 @@ export default function LogWorkoutPage() {
   const addCustomExercise = useCallback(() => {
     const name = search.trim()
     if (!name) return
-    const id = makeCustomId(name)
+    const resolved = resolveExerciseId(name)
+    const id = resolved !== name ? resolved : makeCustomId(name)
     setExercises(prev => [...prev, {
       id,
       key: `${id}_${Date.now()}`,

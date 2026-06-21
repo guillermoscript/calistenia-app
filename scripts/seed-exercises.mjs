@@ -17,12 +17,13 @@
  *   node scripts/seed-exercises.mjs https://gym.guille.tech admin@app.com pass123 --dry-run
  */
 
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync, readdirSync, existsSync, createReadStream } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEEDS_DIR = resolve(__dirname, "../seeds/exercises");
+const MEDIA_DIR = resolve(SEEDS_DIR, "media");
 
 const args = process.argv.slice(2);
 const flags = args.filter(a => a.startsWith("--"));
@@ -56,6 +57,82 @@ async function api(path, opts = {}) {
   }
   const text = await res.text();
   return text ? JSON.parse(text) : {};
+}
+
+/**
+ * Upload media files to an exercises_catalog record.
+ *
+ * [Plan 015] Reads ex.media (structured) → uploads to the named PB file fields:
+ *   media.sequence  → media_sequence
+ *   media.muscles   → media_muscles
+ *   media.thumbnail → media_thumbnail
+ *   media.video     → default_video
+ *
+ * Files are resolved against seeds/exercises/media/<slug>/<filename>.
+ * The slug is derived from ex.slug (required when ex.media is set).
+ *
+ * NO-OPs cleanly when:
+ *   - the exercise has no media object
+ *   - the resolved file path does not exist on disk
+ *   - we are in dry-run mode
+ *
+ * Uses multipart/form-data via fetch (no extra deps required).
+ */
+async function uploadMediaToRecord(recordId, ex) {
+  const media = ex.media && typeof ex.media === "object" ? ex.media : null;
+
+  if (!media) return; // No structured media — NO-OP
+
+  const slug = ex.slug;
+  if (!slug) {
+    console.warn(`    WARN: ex.media present but ex.slug missing for record ${recordId} — skipping upload`);
+    return;
+  }
+
+  const slugMediaDir = resolve(MEDIA_DIR, slug);
+
+  // Build the list of (PB field name, absolute file path) pairs
+  const filesToUpload = [
+    media.sequence  ? { field: "media_sequence",  absPath: resolve(slugMediaDir, media.sequence)  } : null,
+    media.muscles   ? { field: "media_muscles",   absPath: resolve(slugMediaDir, media.muscles)   } : null,
+    media.thumbnail ? { field: "media_thumbnail", absPath: resolve(slugMediaDir, media.thumbnail) } : null,
+    media.video     ? { field: "default_video",   absPath: resolve(slugMediaDir, media.video)     } : null,
+  ].filter(Boolean).filter(f => existsSync(f.absPath));
+
+  if (filesToUpload.length === 0) {
+    // Files referenced in seed but not yet on disk — NO-OP (placeholder workflow)
+    return;
+  }
+
+  if (DRY_RUN) {
+    console.log(`    [dry-run] Would upload ${filesToUpload.length} media file(s) to ${recordId} (${slug})`);
+    return;
+  }
+
+  const formData = new FormData();
+  for (const { field, absPath } of filesToUpload) {
+    const fileBytes = readFileSync(absPath);
+    const filename = absPath.split("/").pop();
+    const mime = filename.endsWith(".mp4")  ? "video/mp4"
+      : filename.endsWith(".webm") ? "video/webm"
+      : filename.endsWith(".jpg") || filename.endsWith(".jpeg") ? "image/jpeg"
+      : filename.endsWith(".png")  ? "image/png"
+      : filename.endsWith(".webp") ? "image/webp"
+      : "application/octet-stream";
+    formData.append(field, new Blob([fileBytes], { type: mime }), filename);
+  }
+
+  const res = await fetch(`${PB_URL}/api/collections/exercises_catalog/records/${recordId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    console.warn(`    WARN: media upload failed for ${recordId}: ${res.status} ${body.slice(0, 120)}`);
+  } else {
+    console.log(`    Uploaded ${filesToUpload.length} media file(s) to ${recordId} (${slug})`);
+  }
 }
 
 function loadSeedFiles() {
@@ -167,11 +244,16 @@ async function seedCategory(seedData) {
           priority: ex.priority || "primary",
           source: ex.source || "catalog",
           status: ex.status || "official",
+          // plan-013: tempo field — only included when seed provides it
+          ...(ex.tempo ? { tempo: ex.tempo } : {}),
         }),
       });
 
       exerciseIdMap[slug] = record.id;
       created++;
+
+      // Upload demo images / video if present in seeds/exercises/media/
+      await uploadMediaToRecord(record.id, ex);
     }
 
     // Build progression chain for this subcategory

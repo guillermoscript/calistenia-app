@@ -2,22 +2,146 @@
 /**
  * Build a comprehensive, deduplicated exercise catalog.
  *
- * 1. Collects all exercises from workouts.ts + supplementary-exercises.ts
- * 2. Fetches bodyweight/calisthenics exercises from wger API
- * 3. Deduplicates by normalized name (exact match only)
- * 4. Stores image URLs and YouTube tutorial links
- * 5. Outputs a clean master JSON organized by category
+ * DEFAULT (no flag) = OFFLINE MERGE:
+ *   - Reads existing packages/core/data/exercise-catalog.json as base
+ *   - Merges seeds/exercises/*.json using seeds/exercises/_id-map.json
+ *   - Enriches existing entries where a seed maps to their id
+ *   - Adds new entries for seeds that have no existing id
+ *   - Writes identical JSON to all 3 catalog copies
+ *
+ * --refresh-wger flag = ONLINE: fetches from wger API (old behavior), THEN merges seeds.
  *
  * Translatable fields (name, muscles, note, description) are stored as
  * i18n JSON objects: { es: "...", en: "..." }.
  *
- * Usage: node scripts/build-exercise-catalog.mjs
- * NOTE: After modifying this script, regenerate the catalog by running it.
+ * Usage:
+ *   node scripts/build-exercise-catalog.mjs            # OFFLINE merge (default)
+ *   node scripts/build-exercise-catalog.mjs --refresh-wger  # online wger fetch + merge
  */
 
 import { readFileSync, writeFileSync } from 'fs'
+import { resolve, join } from 'path'
+
+const ROOT = resolve(import.meta.dirname, '..')
+// FROZEN pre-merge base (local + wger layer). OFFLINE merge reads this — never
+// the merged output — so re-running the pipeline from a clean checkout is
+// idempotent. `--refresh-wger` rewrites this snapshot from the wger fetch.
+const BASE_PATH = join(ROOT, 'packages/core/data/exercise-catalog.base.json')
+const SEEDS_DIR = join(ROOT, 'seeds/exercises')
+const ID_MAP_PATH = join(SEEDS_DIR, '_id-map.json')
+
+// 3 output copies — must always be byte-identical
+const OUTPUT_PATHS = [
+  join(ROOT, 'packages/core/data/exercise-catalog.json'),
+  join(ROOT, 'mcp-server/data/exercise-catalog.json'),
+  join(ROOT, 'mcp-server/src/data/exercise-catalog.json'),
+]
 
 const WGER_BASE = 'https://wger.de/api/v2'
+
+// Seed file -> catalog category map
+const SEED_CAT_MAP = {
+  'push': 'push',
+  'pull': 'pull',
+  'legs': 'legs',
+  'core': 'core',
+  'skills': 'skill',
+  'mobility': 'movilidad',
+  'glutes-lower-back': 'lumbar',
+  'cardio': 'full',
+}
+
+// Deterministic seed file order
+const SEED_FILES = Object.keys(SEED_CAT_MAP).sort()
+
+// ── Equipment mapping (seed English keys → canonical Spanish ids) ─────────────
+const EQUIP_MAP = {
+  'jump_rope': 'ninguno',        // LOSSY — jump_rope has no canonical id
+  'pull_up_bar': 'barra_dominadas',
+  'bench': 'banco',
+  'rings': 'anillas',
+  'resistance_band': 'banda_elastica',
+  'weighted_vest': 'lastre',
+  'step_box': 'escalon',
+  'towel': 'toalla',
+  'wall': 'pared',
+  'parallel_bars': 'paralelas',
+  // canonical keys pass through unchanged
+  'ninguno': 'ninguno',
+  'barra_dominadas': 'barra_dominadas',
+  'paralelas': 'paralelas',
+  'anillas': 'anillas',
+  'banda_elastica': 'banda_elastica',
+  'lastre': 'lastre',
+  'fitball': 'fitball',
+  'rueda_abdominal': 'rueda_abdominal',
+  'trx': 'trx',
+  'banco': 'banco',
+  'kettlebell': 'kettlebell',
+  'pared': 'pared',
+  'toalla': 'toalla',
+  'escalon': 'escalon',
+}
+
+const CANONICAL_EQUIPMENT = new Set([
+  'ninguno','barra_dominadas','paralelas','anillas','banda_elastica',
+  'lastre','fitball','rueda_abdominal','trx','banco','kettlebell',
+  'pared','toalla','escalon',
+])
+
+const LOSSY_MAP_LOG = [] // track lossy mappings
+
+function mapEquipment(equipArr) {
+  if (!Array.isArray(equipArr) || equipArr.length === 0) return ['ninguno']
+  const result = new Set()
+  for (const e of equipArr) {
+    if (EQUIP_MAP[e] !== undefined) {
+      if (e === 'jump_rope') {
+        LOSSY_MAP_LOG.push(`jump_rope → ninguno (lossy: no canonical id for jump rope)`)
+      }
+      result.add(EQUIP_MAP[e])
+    } else if (CANONICAL_EQUIPMENT.has(e)) {
+      result.add(e)
+    } else {
+      console.warn(`  WARN: Unknown equipment key "${e}" — keeping as-is`)
+      result.add(e)
+    }
+  }
+  if (result.size === 0) return ['ninguno']
+  return [...result]
+}
+
+function mapDifficulty(dl) {
+  const valid = new Set(['beginner', 'intermediate', 'advanced'])
+  if (!valid.has(dl)) {
+    throw new Error(`Invalid difficulty_level "${dl}" — must be beginner|intermediate|advanced`)
+  }
+  return dl
+}
+
+function youtubeUrl(name) {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' exercise tutorial')}`
+}
+
+/** Extract plain string from an i18n field (or pass through plain strings). */
+function str(field, lang = 'es') {
+  if (!field) return ''
+  if (typeof field === 'string') return field
+  return field[lang] ?? field['es'] ?? Object.values(field)[0] ?? ''
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+async function fetchJSON(url, timeoutMs = 8000) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeout)
+    if (!res.ok) return null
+    return await res.json()
+  } catch { clearTimeout(timeout); return null }
+}
 
 // ── wger mappings ─────────────────────────────────────────────────────────────
 const WGER_MUSCLE_MAP = {
@@ -32,41 +156,31 @@ const WGER_EQUIP_MAP = {
   6: 'barra_dominadas', 7: 'ninguno', 8: 'banco', 9: 'banco', 10: 'kettlebell',
 }
 
-// ── Comprehensive search terms ────────────────────────────────────────────────
 const SEARCH_TERMS = [
-  // Upper push
   'push up', 'push-up', 'dip', 'handstand push', 'pike push', 'diamond push',
   'archer push', 'decline push', 'incline push', 'clap push', 'wide push',
   'hindu push', 'one arm push', 'pseudo planche', 'sphinx',
-  // Upper pull
   'pull up', 'pull-up', 'chin up', 'row', 'inverted row', 'australian',
   'muscle up', 'face pull', 'typewriter', 'commando', 'towel pull',
-  // Legs
   'squat', 'lunge', 'pistol', 'bulgarian', 'nordic curl', 'calf raise',
   'step up', 'wall sit', 'box jump', 'shrimp squat', 'hip thrust',
   'glute', 'leg raise', 'sissy squat', 'cossack', 'split squat',
-  // Core
   'plank', 'crunch', 'sit up', 'hollow body', 'dead bug', 'v up',
   'dragon flag', 'ab wheel', 'windshield wiper', 'mountain climber',
   'flutter kick', 'bicycle crunch', 'russian twist', 'toe touch',
   'leg raise hang', 'knee raise', 'side plank',
-  // Skills
   'handstand', 'l-sit', 'l sit', 'front lever', 'back lever', 'planche',
   'human flag', 'muscle-up', 'frog stand', 'crow pose', 'elbow lever',
   'skin the cat', 'ring', 'tuck planche', 'iron cross',
-  // Mobility / Stretch
   'stretch', 'yoga', 'mobility', 'hip flexor', 'pigeon pose',
   'thoracic', 'foam roll', 'shoulder dislocate', 'pancake',
   'hamstring stretch', 'quad stretch', 'calf stretch',
-  // Full body / Cardio
   'burpee', 'jumping jack', 'bear crawl', 'high knee', 'skater',
   'jump rope', 'star jump', 'inchworm', 'turkish get up',
-  // Lumbar / posterior chain
   'bridge', 'superman', 'bird dog', 'good morning', 'back extension',
   'hip hinge', 'reverse hyper',
 ]
 
-// ── Machine/barbell keywords to filter out ────────────────────────────────────
 const MACHINE_KEYWORDS = [
   'machine', 'barbell', 'dumbbell', 'cable', 'smith', 'ez bar', 'ez-bar',
   'kettlebell', 'trap bar', 'plate pinch', 'rope pull', 'bench press',
@@ -79,21 +193,28 @@ const MACHINE_KEYWORDS = [
   'treadmill', 'elliptical', 'rowing machine', 'stairmaster',
 ]
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+function normalize(name) {
+  return name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
+}
+
+function slugify(name) {
+  return name.toLowerCase()
+    .replace(/[áà]/g, 'a').replace(/[éè]/g, 'e').replace(/[íì]/g, 'i')
+    .replace(/[óò]/g, 'o').replace(/[úù]/g, 'u').replace(/ñ/g, 'n')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+}
 
 function inferCategory(name, muscles, note = '') {
   const n = name.toLowerCase()
   const m = muscles.toLowerCase()
   const nt = note.toLowerCase()
 
-  // Skills
   if (n.includes('handstand') || n.includes('l-sit') || n.includes('l sit') ||
       n.includes('muscle-up') || n.includes('muscle up') ||
       n.includes('front lever') || n.includes('back lever') || n.includes('planche') ||
       n.includes('human flag') || n.includes('skill') || n.includes('test de fuerza') ||
       n.includes('iron cross') || n.includes('maltese') || n.includes('frog stand') ||
       n.includes('crow pose') || n.includes('elbow lever') || n.includes('ring support')) return 'skill'
-  // Movilidad
   if (n.includes('stretch') || n.includes('yoga') || n.includes('mobility') || n.includes('movilidad') ||
       n.includes('cat-cow') || n.includes('cat cow') || n.includes('pigeon') || n.includes('child') ||
       n.includes('forward fold') || n.includes('hip flexor') || n.includes('hip mobility') ||
@@ -104,13 +225,11 @@ function inferCategory(name, muscles, note = '') {
       n.includes('pancake') || n.includes('pike stretch') || n.includes('foam roll') ||
       n.includes('quad stretch') || n.includes('calf stretch') || n.includes('hamstring stretch') ||
       n.includes('3d lunge warmup')) return 'movilidad'
-  // Lumbar
   if (n.includes('bird-dog') || n.includes('bird dog') || n.includes('superman') ||
       n.includes('glute bridge') || n.includes('hip bridge') ||
       n.includes('glute activation') || n.includes('back extension') ||
       n.includes('reverse hyper') || n.includes('hip hinge') ||
       nt.includes('lumbar')) return 'lumbar'
-  // Push
   if (n.includes('push-up') || n.includes('push up') || n.includes('pushup') ||
       n.includes('dip') || n.includes('pike push') || n.includes('pike hspu') ||
       n.includes('hspu') || n.includes('diamond') || n.includes('wide push') ||
@@ -121,7 +240,6 @@ function inferCategory(name, muscles, note = '') {
       n.includes('deficit push') || n.includes('weighted push') ||
       n.includes('finger push') || n.includes('side to side push') ||
       n.includes('parallettes push') || n.includes('incline push')) return 'push'
-  // Pull
   if (n.includes('pull-up') || n.includes('pull up') || n.includes('pullup') ||
       n.includes('chin-up') || n.includes('chin up') || n.includes('chinup') ||
       n.includes('row') || n.includes('face pull') || n.includes('facepull') ||
@@ -135,7 +253,6 @@ function inferCategory(name, muscles, note = '') {
       n.includes('neutral grip pull') || n.includes('archer pull') ||
       n.includes('isometric hold') || n.includes('dead hang') ||
       n.includes('recruitment pull')) return 'pull'
-  // Legs
   if (n.includes('squat') || n.includes('sentadilla') || n.includes('lunge') ||
       n.includes('bulgarian') || n.includes('pistol') || n.includes('nordic') ||
       n.includes('step-up') || n.includes('step up') || n.includes('calf raise') ||
@@ -146,7 +263,6 @@ function inferCategory(name, muscles, note = '') {
       n.includes('hip thrust') || n.includes('hamstring kick') ||
       n.includes('hamstring choke') || n.includes('star jump') ||
       n.includes('squat jump') || n.includes('jump squat')) return 'legs'
-  // Core (after push/pull/legs)
   if (n.includes('hollow') || n.includes('plank') || n.includes('dead bug') ||
       n.includes('dragon flag') || n.includes('hanging leg raise') || n.includes('leg raise') ||
       n.includes('hanging knee raise') || n.includes('knee raise') ||
@@ -157,7 +273,6 @@ function inferCategory(name, muscles, note = '') {
       n.includes('plank jack') || n.includes('plank reach') || n.includes('reverse plank') ||
       n.includes('turkish get') ||
       (m.includes('core') && !m.includes('cuad') && !m.includes('dorsal') && !m.includes('pecho'))) return 'core'
-  // Full
   if (n.includes('burpee') || n.includes('jumping jack') || n.includes('bear crawl') ||
       n.includes('jump rope')) return 'full'
   return 'full'
@@ -185,41 +300,6 @@ function inferDifficulty(name) {
       n.includes('shrimp squat completo') || n.includes('360') ||
       n.includes('tiger bend') || n.includes('clapping') || n.includes('clap push')) return 'advanced'
   return 'intermediate'
-}
-
-function normalize(name) {
-  return name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
-}
-
-function slugify(name) {
-  return name.toLowerCase()
-    .replace(/[áà]/g, 'a').replace(/[éè]/g, 'e').replace(/[íì]/g, 'i')
-    .replace(/[óò]/g, 'o').replace(/[úù]/g, 'u').replace(/ñ/g, 'n')
-    .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
-}
-
-function youtubeUrl(name) {
-  return `https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' exercise tutorial')}`
-}
-
-/** Extract plain string from an i18n field (or pass through plain strings). */
-function str(field, lang = 'es') {
-  if (!field) return ''
-  if (typeof field === 'string') return field
-  return field[lang] ?? field['es'] ?? Object.values(field)[0] ?? ''
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
-
-async function fetchJSON(url, timeoutMs = 8000) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(url, { signal: controller.signal })
-    clearTimeout(timeout)
-    if (!res.ok) return null
-    return await res.json()
-  } catch { clearTimeout(timeout); return null }
 }
 
 // ── Extract exercises from TS source files ────────────────────────────────────
@@ -296,14 +376,12 @@ async function fetchWgerExercises() {
 
   console.log(`  Total unique from search: ${searchResults.length}`)
 
-  // Filter out machine exercises
   const bodyweight = searchResults.filter(r => {
     const nl = r.name.toLowerCase()
     return !MACHINE_KEYWORDS.some(kw => nl.includes(kw))
   })
   console.log(`  After filtering machines: ${bodyweight.length}`)
 
-  // Fetch detailed info — process ALL bodyweight exercises
   console.log(`  Fetching exercise details (${bodyweight.length} exercises)...`)
   const detailed = []
   let i = 0
@@ -315,11 +393,8 @@ async function fetchWgerExercises() {
     const info = await fetchJSON(`${WGER_BASE}/exerciseinfo/${ex.wger_id}/?format=json`, 10000)
     if (!info) { await sleep(200); continue }
 
-    // Check equipment — skip if it requires heavy gym equipment
     const equipIds = (info.equipment || []).map(e => e.id)
-    // Equipment IDs: 1=Barbell, 2=SZ-Bar, 3=Dumbbell, 5=Swiss Ball, 6=Pull-up bar,
-    // 7=none (bodyweight), 8=Bench, 9=Incline bench, 10=Kettlebell
-    const heavyGymEquip = [1, 2, 3, 10] // barbell, sz-bar, dumbbell, kettlebell
+    const heavyGymEquip = [1, 2, 3, 10]
     if (equipIds.some(id => heavyGymEquip.includes(id)) && !equipIds.includes(7) && !equipIds.includes(6)) {
       await sleep(100)
       continue
@@ -335,7 +410,6 @@ async function fetchWgerExercises() {
     )]
     if (equipment.length === 0) equipment.push('ninguno')
 
-    // Get translations for both ES and EN
     const enTrans = info.translations?.find(t => t.language === 2)
     const esTrans = info.translations?.find(t => t.language === 4)
 
@@ -345,22 +419,18 @@ async function fetchWgerExercises() {
 
     const esName = esTrans?.name
     const enName = enTrans?.name || ex.name
-    // Use Spanish name only if it seems related to the English name
     const displayNameEs = (esName && normalize(esName).includes(normalize(enName).slice(0, 4)))
       ? esName : enName
     const nameField = { es: displayNameEs || enName, ...(enName ? { en: enName } : {}) }
 
-    // Category
     const category = inferCategory(ex.name, muscles, str(description))
     const difficulty = inferDifficulty(ex.name)
 
-    // Images — store URLs from wger
     const images = (info.images || [])
       .sort((a, b) => (b.is_main ? 1 : 0) - (a.is_main ? 1 : 0))
       .slice(0, 3)
       .map(img => img.image.startsWith('http') ? img.image : `https://wger.de${img.image}`)
 
-    // Videos
     const videos = (info.videos || [])
       .slice(0, 1)
       .map(v => v.video?.startsWith('http') ? v.video : `https://wger.de${v.video}`)
@@ -395,27 +465,20 @@ async function fetchWgerExercises() {
   return detailed
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-async function main() {
-  console.log('Building master exercise catalog...\n')
-
-  // 1. Extract from local files
+async function buildBaseListFromWger() {
   console.log('1. Extracting local exercises...')
   const workoutExercises = extractFromTS('packages/core/data/workouts.ts')
   console.log(`   workouts.ts: ${workoutExercises.length} exercises`)
   const suppExercises = extractFromTS('packages/core/data/supplementary-exercises.ts')
   console.log(`   supplementary-exercises.ts: ${suppExercises.length} exercises`)
 
-  // 2. Fetch from wger
   console.log('\n2. Fetching wger exercises...')
   const wgerExercises = await fetchWgerExercises()
 
-  // 3. Merge and deduplicate
   console.log('\n3. Merging and deduplicating...')
   const catalog = new Map()
   const normalizedNames = new Map()
 
-  // Local exercises take priority
   for (const ex of [...workoutExercises, ...suppExercises]) {
     if (catalog.has(ex.id)) continue
     if (!ex.category) ex.category = inferCategory(str(ex.name), str(ex.muscles), str(ex.note))
@@ -423,23 +486,17 @@ async function main() {
     catalog.set(ex.id, ex)
     normalizedNames.set(normalize(str(ex.name)), ex.id)
   }
-  console.log(`   Local exercises: ${catalog.size}`)
 
-  // Add wger exercises — only skip exact normalized name matches
   let wgerAdded = 0, wgerSkipped = 0
   for (const ex of wgerExercises) {
-    const norm = normalize(str(ex.name))
-    const normEn = ex.name?.en ? normalize(ex.name.en) : norm
+    const normName = normalize(str(ex.name))
+    const normEn = ex.name?.en ? normalize(ex.name.en) : normName
 
-    if (normalizedNames.has(norm) || normalizedNames.has(normEn)) {
-      wgerSkipped++
-      continue
-    }
+    if (normalizedNames.has(normName) || normalizedNames.has(normEn)) { wgerSkipped++; continue }
 
-    // Check for very close matches (one is substring of the other AND short)
     let isDupe = false
     for (const existingNorm of normalizedNames.keys()) {
-      if ((norm.length > 8 && existingNorm === norm) ||
+      if ((normName.length > 8 && existingNorm === normName) ||
           (normEn.length > 8 && existingNorm === normEn)) {
         isDupe = true; break
       }
@@ -448,13 +505,12 @@ async function main() {
 
     if (catalog.has(ex.id)) ex.id = `wger_${ex.wger_id}`
     catalog.set(ex.id, ex)
-    normalizedNames.set(norm, ex.id)
-    if (normEn !== norm) normalizedNames.set(normEn, ex.id)
+    normalizedNames.set(normName, ex.id)
+    if (normEn !== normName) normalizedNames.set(normEn, ex.id)
     wgerAdded++
   }
   console.log(`   wger added: ${wgerAdded}, skipped: ${wgerSkipped}`)
 
-  // 3b. Post-process: remove non-calisthenics wger exercises and fix bad data
   const BLACKLIST_NAMES = [
     'reverse bar curl', 'preacher curls', 'lateral raises', 'rear delt raises',
     'standing rope forearm', 'front plate raise', 'butterfly reverse',
@@ -476,76 +532,339 @@ async function main() {
   for (const [id, ex] of catalog) {
     if (ex.source !== 'wger') continue
     const nl = str(ex.name, 'en').toLowerCase() || str(ex.name).toLowerCase()
-    if (BLACKLIST_NAMES.some(b => nl.includes(b))) {
-      catalog.delete(id)
+    if (BLACKLIST_NAMES.some(b => nl.includes(b))) { catalog.delete(id); continue }
+  }
+
+  return Array.from(catalog.values())
+}
+
+// ── Load seeds and id map ─────────────────────────────────────────────────────
+function loadSeeds() {
+  const idMap = JSON.parse(readFileSync(ID_MAP_PATH, 'utf8'))
+  const allSeeds = [] // { slug, entry, category, file }
+
+  for (const seedFile of SEED_FILES) {
+    const seedPath = join(SEEDS_DIR, `${seedFile}.json`)
+    const seedData = JSON.parse(readFileSync(seedPath, 'utf8'))
+    const category = SEED_CAT_MAP[seedFile]
+
+    for (const sub of seedData.subcategories ?? []) {
+      for (const ex of sub.exercises ?? []) {
+        allSeeds.push({ slug: ex.slug, entry: ex, category, file: seedFile })
+      }
+    }
+  }
+
+  return { idMap, allSeeds }
+}
+
+// ── OFFLINE MERGE: read the FROZEN base snapshot (not the merged output) ──────
+function loadBaseListFromCatalog() {
+  const catalogRaw = JSON.parse(readFileSync(BASE_PATH, 'utf8'))
+  const baseList = []
+  for (const [, catVal] of Object.entries(catalogRaw.categories ?? {})) {
+    for (const ex of catVal.exercises ?? []) {
+      baseList.push({ ...ex })
+    }
+  }
+  return baseList
+}
+
+// ── Merge seeds into baseList ─────────────────────────────────────────────────
+function mergeSeeds(baseList, idMap, allSeeds) {
+  // Build lookup: id -> baseList entry (for enrichment)
+  const byId = new Map()
+  for (const ex of baseList) byId.set(ex.id, ex)
+
+  // Invert map: canonicalId -> first slug (first claim wins)
+  const enrichTargets = new Map() // canonicalId -> seed entry
+  const newEntries = [] // seeds that need new entries
+
+  // Track which existing ids are targeted
+  const existingIds = new Set(baseList.map(e => e.id))
+
+  for (const { slug, entry, category } of allSeeds) {
+    const canonicalId = idMap[slug]
+    if (!canonicalId) {
+      console.warn(`  WARN: slug "${slug}" not found in id map — skipping`)
       continue
     }
-  }
-  // Fix bad muscle data from wger based on category
-  const MUSCLE_DEFAULTS = {
-    push: 'Pecho, Deltoides, Triceps',
-    pull: 'Dorsal, Biceps, Trapecio',
-    legs: 'Cuadriceps, Gluteos, Isquios',
-    core: 'Core, Oblicuos',
-    lumbar: 'Lumbar, Gluteos, Isquios',
-    skill: 'Hombros, Core, Equilibrio',
-    movilidad: 'Movilidad, Flexibilidad',
-    full: 'Full body',
-  }
-  for (const [, ex] of catalog) {
-    if (ex.source !== 'wger') continue
-    // If muscles are clearly wrong (e.g., "Biceps" for sit-ups), override
-    const mStr = str(ex.muscles)
-    if (!mStr || mStr === 'General' ||
-        (ex.category === 'core' && !mStr.includes('Core')) ||
-        (ex.category === 'legs' && !mStr.includes('Cuad') && !mStr.includes('Glut') && !mStr.includes('Isquio')) ||
-        (ex.category === 'push' && !mStr.includes('Pecho') && !mStr.includes('Tricep') && !mStr.includes('Deltoid'))) {
-      const defaultMuscle = MUSCLE_DEFAULTS[ex.category] || mStr
-      ex.muscles = { es: defaultMuscle, en: defaultMuscle }
+
+    if (existingIds.has(canonicalId)) {
+      // Enrichment target — first slug wins
+      if (!enrichTargets.has(canonicalId)) {
+        enrichTargets.set(canonicalId, { slug, entry, category })
+      }
+      // else: multi-claim, later slug treated as new
+      // But wait — if later slug has a NEW id (from idMap), it would be different
+      // So we don't need extra handling here — the slug->id mapping already
+      // assigned a different id for multi-claim extras
+    } else {
+      // New entry
+      if (!enrichTargets.has(canonicalId)) {
+        newEntries.push({ canonicalId, slug, entry, category })
+        enrichTargets.set(canonicalId, { slug, entry, category, isNew: true })
+      }
     }
   }
 
-  console.log(`   After cleanup: ${catalog.size} exercises`)
+  // ENRICH pass
+  let enrichedCount = 0
+  for (const ex of baseList) {
+    const target = enrichTargets.get(ex.id)
+    if (!target || target.isNew) continue
 
-  // 4. Organize by category
-  const allExercises = Array.from(catalog.values())
+    const { entry } = target
+    // Overlay: seed wins for description, difficulty, equipment, muscles
+    // KEEP: id, category, sets, reps, rest, note, priority, isTimer, timerSeconds,
+    //       source, images, videos, youtube_search, youtube_query
+    if (entry.description) {
+      ex.description = entry.description
+    }
+    if (entry.difficulty_level) {
+      ex.difficulty = mapDifficulty(entry.difficulty_level)
+    }
+    if (entry.equipment !== undefined) {
+      ex.equipment = mapEquipment(entry.equipment)
+    }
+    if (entry.muscles) {
+      ex.muscles = entry.muscles
+    }
+    // [015] Carry structured media into the bundled catalog as origin-relative paths
+    if (entry.media && typeof entry.media === 'object') {
+      const m = entry.media
+      const built = {}
+      if (m.sequence) built.sequence = `/exercise-media/${target.slug}/${m.sequence}`
+      if (m.muscles)  built.muscles  = `/exercise-media/${target.slug}/${m.muscles}`
+      if (m.thumbnail) built.thumbnail = `/exercise-media/${target.slug}/${m.thumbnail}`
+      if (m.video)    built.video    = `/exercise-media/${target.slug}/${m.video}`
+      if (Object.keys(built).length > 0) ex.media = built
+    }
+    // Add provenance
+    ex.seed_slug = target.slug
+
+    // Overlay tempo if seed provides it (plan-013: structured tempo plumbing)
+    if (entry.tempo) ex.tempo = entry.tempo
+
+    // Ensure name.en is populated (may be missing on old entries)
+    if (!ex.name.en && ex.name.es) {
+      ex.name = { es: ex.name.es, en: entry.name?.en || ex.name.es }
+    }
+    if (!ex.name.es && ex.name.en) {
+      ex.name = { es: entry.name?.es || ex.name.en, en: ex.name.en }
+    }
+
+    enrichedCount++
+  }
+
+  // NEW ENTRY pass
+  let newCount = 0
+  for (const { canonicalId, slug, entry, category } of newEntries) {
+    const nameEs = entry.name?.es || entry.name?.en || slug
+    const nameEn = entry.name?.en || entry.name?.es || slug
+
+    const newEx = {
+      id: canonicalId,
+      name: { es: nameEs || nameEn, en: nameEn || nameEs },
+      muscles: entry.muscles || { es: 'General', en: 'General' },
+      sets: entry.default_sets ?? 3,
+      reps: entry.default_reps ?? '8-12',
+      rest: entry.default_rest_seconds ?? 60,
+      note: { es: '', en: '' },
+      description: entry.description || { es: '', en: '' },
+      priority: 'med',
+      isTimer: false,
+      category,
+      difficulty: mapDifficulty(entry.difficulty_level),
+      equipment: mapEquipment(entry.equipment),
+      source: 'seed',
+      youtube_search: youtubeUrl(nameEn || nameEs),
+      youtube_query: `${nameEn || nameEs} exercise tutorial`,
+      images: [],
+      seed_slug: slug,
+      // plan-013: structured tempo plumbing — included when seed provides it
+      ...(entry.tempo ? { tempo: entry.tempo } : {}),
+      // [015] Carry structured media into the bundled catalog as origin-relative paths
+      ...((() => {
+        if (!entry.media || typeof entry.media !== 'object') return {}
+        const m = entry.media
+        const built = {}
+        if (m.sequence)  built.sequence  = `/exercise-media/${slug}/${m.sequence}`
+        if (m.muscles)   built.muscles   = `/exercise-media/${slug}/${m.muscles}`
+        if (m.thumbnail) built.thumbnail = `/exercise-media/${slug}/${m.thumbnail}`
+        if (m.video)     built.video     = `/exercise-media/${slug}/${m.video}`
+        return Object.keys(built).length > 0 ? { media: built } : {}
+      })()),
+    }
+
+    // Ensure both name fields are non-empty
+    if (!newEx.name.es) newEx.name.es = newEx.name.en
+    if (!newEx.name.en) newEx.name.en = newEx.name.es
+
+    baseList.push(newEx)
+    newCount++
+  }
+
+  // variant_of pass: stamp _N collision pairs conservatively.
+  // Only links x_2 → x when x also exists in the final list.
+  // No guessing for anything else.
+  const finalIdSet = new Set(baseList.map(e => e.id))
+  for (const ex of baseList) {
+    const m = ex.id.match(/^(.+)_(\d+)$/)
+    if (m && finalIdSet.has(m[1])) {
+      ex.variant_of = m[1]
+    }
+  }
+
+  return { enrichedCount, newCount }
+}
+
+// ── HARD INVARIANT check ──────────────────────────────────────────────────────
+function assertInvariant(originalIds, finalList) {
+  const finalIds = new Set(finalList.map(e => e.id))
+
+  // Check for duplicates
+  const seen = new Map()
+  for (const ex of finalList) {
+    if (seen.has(ex.id)) {
+      throw new Error(`INVARIANT VIOLATED: Duplicate id "${ex.id}" in final catalog!`)
+    }
+    seen.set(ex.id, true)
+  }
+
+  // Check old ⊆ new
+  const missing = []
+  for (const id of originalIds) {
+    if (!finalIds.has(id)) missing.push(id)
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `INVARIANT VIOLATED: These original ids are MISSING from final catalog:\n  ${missing.join('\n  ')}\n` +
+      'DO NOT WRITE — fix the merge logic.'
+    )
+  }
+}
+
+// ── Rebuild catalog structure ─────────────────────────────────────────────────
+function rebuildCatalog(finalList) {
   const byCategory = {}
-  for (const ex of allExercises) {
+  for (const ex of finalList) {
     const cat = ex.category || 'full'
     if (!byCategory[cat]) byCategory[cat] = []
     byCategory[cat].push(ex)
   }
+
+  // Sort each category by name.es
   for (const cat of Object.keys(byCategory)) {
-    byCategory[cat].sort((a, b) => str(a.name).localeCompare(str(b.name)))
+    byCategory[cat].sort((a, b) => {
+      const aName = a.name?.es || ''
+      const bName = b.name?.es || ''
+      return aName.localeCompare(bName, 'es')
+    })
   }
 
-  // 5. Stats
-  const withImages = allExercises.filter(e => e.images?.length > 0).length
-  const withVideos = allExercises.filter(e => e.videos?.length > 0 || e.youtube_search).length
+  const totalCount = finalList.length
+  const withImages = finalList.filter(e => e.images?.length > 0).length
+  // [014] Split video stat: curated = real hosted files; youtube_query = search fallback only
+  const withCuratedVideo = finalList.filter(e => e.videos?.length > 0 || e.media?.video).length
+  const withYoutubeQuery = finalList.filter(e => !!(e.youtube_query || e.youtube_search)).length
+  // [015] Structured media counters
+  const withSequence = finalList.filter(e => !!e.media?.sequence).length
+  const withMuscleMap = finalList.filter(e => !!e.media?.muscles).length
 
-  const output = {
+  return {
     generated_at: new Date().toISOString(),
-    total_count: allExercises.length,
-    local_count: catalog.size - wgerAdded,
-    wger_count: wgerAdded,
+    total_count: totalCount,
+    local_count: finalList.filter(e => e.source === 'local').length,
+    wger_count: finalList.filter(e => e.source === 'wger').length,
     with_images: withImages,
-    with_video_links: withVideos,
+    with_curated_video: withCuratedVideo,
+    with_youtube_query: withYoutubeQuery,
+    with_sequence: withSequence,
+    with_muscle_map: withMuscleMap,
     categories: Object.keys(byCategory).sort().reduce((obj, key) => {
       obj[key] = { count: byCategory[key].length, exercises: byCategory[key] }
       return obj
     }, {}),
   }
-
-  console.log('\n4. Category breakdown:')
-  for (const [cat, data] of Object.entries(output.categories)) {
-    console.log(`   ${cat}: ${data.count}`)
-  }
-  console.log(`\n   TOTAL: ${output.total_count} exercises`)
-  console.log(`   With images: ${withImages}`)
-  console.log(`   With video links: ${withVideos}`)
-
-  writeFileSync('packages/core/data/exercise-catalog.json', JSON.stringify(output, null, 2))
-  console.log('\n   Written to packages/core/data/exercise-catalog.json')
 }
 
-main().catch(console.error)
+// ── Main ──────────────────────────────────────────────────────────────────────
+async function main() {
+  const args = process.argv.slice(2)
+  const refreshWger = args.includes('--refresh-wger')
+
+  console.log(`Building exercise catalog... [mode: ${refreshWger ? 'ONLINE (wger)' : 'OFFLINE (merge seeds)'}]\n`)
+
+  let baseList
+
+  if (refreshWger) {
+    console.log('=== ONLINE MODE: fetching from wger ===\n')
+    baseList = await buildBaseListFromWger()
+    // Freeze the refreshed base so future OFFLINE runs are reproducible.
+    const baseSnapshot = rebuildCatalog(baseList)
+    writeFileSync(BASE_PATH, JSON.stringify(baseSnapshot, null, 2))
+    console.log(`Refreshed frozen base snapshot: ${BASE_PATH} (${baseList.length} exercises)\n`)
+  } else {
+    console.log('=== OFFLINE MODE: reading frozen base snapshot ===\n')
+    baseList = loadBaseListFromCatalog()
+    console.log(`Base list loaded: ${baseList.length} exercises from frozen base\n`)
+  }
+
+  // Capture original id set for invariant check
+  const originalIds = new Set(baseList.map(e => e.id))
+  console.log(`Original id set: ${originalIds.size} exercises`)
+
+  // Load seeds and id map
+  console.log('Loading seeds and id map...')
+  const { idMap, allSeeds } = loadSeeds()
+  console.log(`Seeds loaded: ${allSeeds.length} exercises`)
+  console.log(`ID map: ${Object.keys(idMap).length} entries\n`)
+
+  // Merge
+  console.log('Merging seeds into catalog...')
+  const { enrichedCount, newCount } = mergeSeeds(baseList, idMap, allSeeds)
+  console.log(`  Enriched: ${enrichedCount} existing entries`)
+  console.log(`  New entries added: ${newCount}`)
+
+  // Log lossy equipment mappings
+  if (LOSSY_MAP_LOG.length > 0) {
+    console.log('\nLossy equipment mappings:')
+    for (const msg of LOSSY_MAP_LOG) console.log(`  WARN: ${msg}`)
+  }
+
+  // HARD INVARIANT check (throws on violation — do NOT write)
+  console.log('\nChecking invariants...')
+  assertInvariant(originalIds, baseList)
+  console.log('  Invariant OK: all original ids present, no duplicates')
+
+  // Rebuild catalog structure
+  const output = rebuildCatalog(baseList)
+  const jsonStr = JSON.stringify(output, null, 2)
+
+  // Write all 3 copies
+  console.log('\nWriting catalog copies...')
+  for (const outPath of OUTPUT_PATHS) {
+    writeFileSync(outPath, jsonStr)
+    console.log(`  Written: ${outPath}`)
+  }
+
+  // Summary
+  const missingDesc = baseList.filter(e => !e.description?.es && !e.description?.en).length
+  console.log('\n=== Summary ===')
+  console.log(`  Total exercises: ${output.total_count}`)
+  console.log(`  Enriched: ${enrichedCount}`)
+  console.log(`  New entries: ${newCount}`)
+  console.log(`  Missing description: ${missingDesc}/${output.total_count} (${Math.round((output.total_count - missingDesc) / output.total_count * 100)}% covered)`)
+  console.log(`  with_sequence: ${output.with_sequence}`)
+  console.log(`  with_muscle_map: ${output.with_muscle_map}`)
+  console.log('\nCategory breakdown:')
+  for (const [cat, data] of Object.entries(output.categories)) {
+    console.log(`  ${cat}: ${data.count}`)
+  }
+}
+
+main().catch(err => {
+  console.error('\nFATAL ERROR:', err.message)
+  process.exit(1)
+})
