@@ -104,7 +104,7 @@ export function FeedCard({
                 className="font-sans-italic text-[11px] text-muted-foreground truncate mt-1.5 border-t border-border/50 pt-1.5"
                 numberOfLines={2}
               >
-                "{item.note}"
+                &quot;{item.note}&quot;
               </Text>
             )}
           </View>
@@ -135,7 +135,7 @@ export function FeedCard({
               className="font-sans-italic text-[11px] text-muted-foreground truncate mt-1.5 border-t border-border/50 pt-1.5"
               numberOfLines={2}
             >
-              "{item.note}"
+              &quot;{item.note}&quot;
             </Text>
           )}
         </View>

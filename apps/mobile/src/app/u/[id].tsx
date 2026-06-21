@@ -328,7 +328,7 @@ export default function UserProfileScreen() {
                     </View>
                     {s.note ? (
                       <Text className="mt-1.5 border-t border-border/50 pt-1.5 text-[11px] italic text-muted-foreground" numberOfLines={1}>
-                        "{s.note}"
+                        &quot;{s.note}&quot;
                       </Text>
                     ) : null}
                   </View>

@@ -214,7 +214,7 @@ const WorkoutShareCard = forwardRef<View, WorkoutShareCardProps>(
           {quote?.q ? (
             <View style={s.quoteContainer}>
               <View style={s.quoteDivider} />
-              <Text style={s.quoteGlyph}>"</Text>
+              <Text style={s.quoteGlyph}>&quot;</Text>
               <Text className="font-sans-italic" style={s.quoteText} numberOfLines={4}>
                 {quote.q}
               </Text>
