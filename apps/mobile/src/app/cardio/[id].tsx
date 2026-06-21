@@ -17,6 +17,7 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import RouteMap from '@/components/cardio/RouteMap'
+import ElevationProfile from '@/components/cardio/ElevationProfile'
 import SplitsTable from '@/components/cardio/SplitsTable'
 import CardioShareButton from '@/components/share/CardioShareButton'
 import type { CardioSession } from '@calistenia/core/types'
@@ -163,6 +164,9 @@ export default function CardioDetailScreen() {
             activityType={session.activity_type}
           />
         )}
+
+        {/* Elevation profile (self-hides when the track has no altitude data) */}
+        {hasRoute && <ElevationProfile points={session.gps_points} height={80} />}
 
         {/* Primary stats */}
         <View className="flex-row gap-3">

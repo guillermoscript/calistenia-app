@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { View, Pressable } from 'react-native'
 import { Image } from 'expo-image'
-import { useRouter } from 'expo-router'
+import { useRouter, type Href } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Users, Dumbbell, Apple, Activity } from 'lucide-react-native'
 
@@ -38,6 +38,8 @@ type YouItem = {
   ts: number
   title: string
   sub: string
+  /** Destino al tocar la fila: detalle de sesión/cardio o tab de nutrición. */
+  nav: Href
 }
 
 export default function HomeActivity() {
@@ -86,6 +88,7 @@ export default function HomeActivity() {
         ts: s.completedAt ?? Date.parse(`${s.date}T12:00:00`),
         title: titleForSession(s),
         sub: relativeDate(s.date),
+        nav: { pathname: '/session-detail', params: { date: s.date, workoutKey: s.workoutKey, title: titleForSession(s) } },
       }]
     })
 
@@ -95,6 +98,7 @@ export default function HomeActivity() {
       ts: Date.parse(e.loggedAt),
       title: t(`meal.${e.mealType}`, { defaultValue: e.mealType }),
       sub: `${t('dashboard.kcal', { count: Math.round(e.totalCalories) })} · ${timeAgo(e.loggedAt)}`,
+      nav: '/nutrition' as Href,
     }))
 
     const cardio: YouItem[] = cardioSessions.map(c => ({
@@ -103,6 +107,7 @@ export default function HomeActivity() {
       ts: Date.parse(c.started_at),
       title: `${t(`cardio.${c.activity_type}`, { defaultValue: c.activity_type })} · ${(c.distance_km ?? 0).toFixed(2)} km`,
       sub: timeAgo(c.started_at),
+      nav: { pathname: '/cardio/[id]', params: { id: String(c.id) } },
     }))
 
     return [...sessions, ...meals, ...cardio]
@@ -187,7 +192,7 @@ export default function HomeActivity() {
           {youItems.map(item => (
             <Pressable
               key={item.id}
-              onPress={() => router.push(item.kind === 'meal' ? '/nutrition' : item.kind === 'cardio' ? '/cardio' : '/history')}
+              onPress={() => router.push(item.nav)}
               className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 active:opacity-70"
             >
               <View
