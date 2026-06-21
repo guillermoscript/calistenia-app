@@ -630,12 +630,15 @@ function mergeSeeds(baseList, idMap, allSeeds) {
     if (entry.muscles) {
       ex.muscles = entry.muscles
     }
-    // [014] Carry seed media references into the bundled catalog
-    if (entry.image_files && Array.isArray(entry.image_files) && entry.image_files.length > 0) {
-      ex.seed_image_files = entry.image_files
-    }
-    if (entry.video_file && typeof entry.video_file === 'string' && entry.video_file.trim()) {
-      ex.seed_video_file = entry.video_file.trim()
+    // [015] Carry structured media into the bundled catalog as origin-relative paths
+    if (entry.media && typeof entry.media === 'object') {
+      const m = entry.media
+      const built = {}
+      if (m.sequence) built.sequence = `/exercise-media/${target.slug}/${m.sequence}`
+      if (m.muscles)  built.muscles  = `/exercise-media/${target.slug}/${m.muscles}`
+      if (m.thumbnail) built.thumbnail = `/exercise-media/${target.slug}/${m.thumbnail}`
+      if (m.video)    built.video    = `/exercise-media/${target.slug}/${m.video}`
+      if (Object.keys(built).length > 0) ex.media = built
     }
     // Add provenance
     ex.seed_slug = target.slug
@@ -681,9 +684,17 @@ function mergeSeeds(baseList, idMap, allSeeds) {
       seed_slug: slug,
       // plan-013: structured tempo plumbing — included when seed provides it
       ...(entry.tempo ? { tempo: entry.tempo } : {}),
-      // [014] Carry seed media references into the bundled catalog
-      ...(entry.image_files?.length ? { seed_image_files: entry.image_files } : {}),
-      ...(entry.video_file ? { seed_video_file: entry.video_file } : {}),
+      // [015] Carry structured media into the bundled catalog as origin-relative paths
+      ...((() => {
+        if (!entry.media || typeof entry.media !== 'object') return {}
+        const m = entry.media
+        const built = {}
+        if (m.sequence)  built.sequence  = `/exercise-media/${slug}/${m.sequence}`
+        if (m.muscles)   built.muscles   = `/exercise-media/${slug}/${m.muscles}`
+        if (m.thumbnail) built.thumbnail = `/exercise-media/${slug}/${m.thumbnail}`
+        if (m.video)     built.video     = `/exercise-media/${slug}/${m.video}`
+        return Object.keys(built).length > 0 ? { media: built } : {}
+      })()),
     }
 
     // Ensure both name fields are non-empty
@@ -755,8 +766,11 @@ function rebuildCatalog(finalList) {
   const totalCount = finalList.length
   const withImages = finalList.filter(e => e.images?.length > 0).length
   // [014] Split video stat: curated = real hosted files; youtube_query = search fallback only
-  const withCuratedVideo = finalList.filter(e => e.videos?.length > 0 || e.seed_video_file).length
+  const withCuratedVideo = finalList.filter(e => e.videos?.length > 0 || e.media?.video).length
   const withYoutubeQuery = finalList.filter(e => !!(e.youtube_query || e.youtube_search)).length
+  // [015] Structured media counters
+  const withSequence = finalList.filter(e => !!e.media?.sequence).length
+  const withMuscleMap = finalList.filter(e => !!e.media?.muscles).length
 
   return {
     generated_at: new Date().toISOString(),
@@ -766,6 +780,8 @@ function rebuildCatalog(finalList) {
     with_images: withImages,
     with_curated_video: withCuratedVideo,
     with_youtube_query: withYoutubeQuery,
+    with_sequence: withSequence,
+    with_muscle_map: withMuscleMap,
     categories: Object.keys(byCategory).sort().reduce((obj, key) => {
       obj[key] = { count: byCategory[key].length, exercises: byCategory[key] }
       return obj
@@ -840,6 +856,8 @@ async function main() {
   console.log(`  Enriched: ${enrichedCount}`)
   console.log(`  New entries: ${newCount}`)
   console.log(`  Missing description: ${missingDesc}/${output.total_count} (${Math.round((output.total_count - missingDesc) / output.total_count * 100)}% covered)`)
+  console.log(`  with_sequence: ${output.with_sequence}`)
+  console.log(`  with_muscle_map: ${output.with_muscle_map}`)
   console.log('\nCategory breakdown:')
   for (const [cat, data] of Object.entries(output.categories)) {
     console.log(`  ${cat}: ${data.count}`)
