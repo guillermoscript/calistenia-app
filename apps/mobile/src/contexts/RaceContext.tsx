@@ -462,17 +462,23 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
 
   const clearError = useCallback(() => setLastError(null), [])
 
-  const value: RaceContextValue = {
-    phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError,
-    actions: {
-      join,
-      markReady: markReadyAction,
-      startCountdown: startCountdownAction,
-      cancelRace: cancelRaceAction,
-      finishRace: finishRaceAction,
-      leave: leaveAction,
-    },
-  }
+  // Memoizado: durante una carrera activa el provider re-renderiza hasta a 2 Hz
+  // (myStats cada 500ms, participants cada 3s). Sin memo, cada render recrea este
+  // objeto y re-renderiza a todos los consumidores de useRaceContext().
+  const value = useMemo<RaceContextValue>(
+    () => ({
+      phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError,
+      actions: {
+        join,
+        markReady: markReadyAction,
+        startCountdown: startCountdownAction,
+        cancelRace: cancelRaceAction,
+        finishRace: finishRaceAction,
+        leave: leaveAction,
+      },
+    }),
+    [phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError, join, markReadyAction, startCountdownAction, cancelRaceAction, finishRaceAction, leaveAction],
+  )
 
   return <RaceContext.Provider value={value}>{children}</RaceContext.Provider>
 }

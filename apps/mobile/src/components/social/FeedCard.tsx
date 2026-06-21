@@ -1,5 +1,6 @@
 /** Tarjeta de actividad del feed social — muestra avatar, nombre, workout y reacciones. */
-import { View, Image, Pressable } from 'react-native'
+import { View, Pressable } from 'react-native'
+import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
@@ -57,7 +58,11 @@ export function FeedCard({
           {item.avatarUrl ? (
             <Image
               source={{ uri: item.avatarUrl }}
-              className="size-full"
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              transition={150}
+              cachePolicy="memory-disk"
+              recyclingKey={item.id}
               accessibilityLabel={item.displayName}
             />
           ) : (

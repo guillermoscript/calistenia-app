@@ -52,6 +52,8 @@ export default function FreeSessionScreen() {
   // ── Selection helpers ──────────────────────────────────────────────────────
 
   const selectedIds = useMemo(() => new Set(selected.map(e => e.id)), [selected])
+  // Posición 1-based por id → evita un findIndex O(n) por fila en la lista de 307.
+  const selectedPositions = useMemo(() => new Map(selected.map((e, i) => [e.id, i + 1])), [selected])
 
   function toggleExercise(ex: CatalogExercise) {
     setSelected(prev =>
@@ -144,6 +146,7 @@ export default function FreeSessionScreen() {
           filtered={filtered}
           selectedIds={selectedIds}
           selected={selected}
+          selectedPositions={selectedPositions}
           onToggle={toggleExercise}
           onContinue={() => setView('review')}
         />
@@ -180,6 +183,7 @@ function PickView({
   filtered,
   selectedIds,
   selected,
+  selectedPositions,
   onToggle,
   onContinue,
 }: {
@@ -191,6 +195,7 @@ function PickView({
   filtered: CatalogExercise[]
   selectedIds: Set<string>
   selected: CatalogExercise[]
+  selectedPositions: Map<string, number>
   onToggle: (ex: CatalogExercise) => void
   onContinue: () => void
 }) {
@@ -247,7 +252,7 @@ function PickView({
         keyboardDismissMode="on-drag"
         renderItem={({ item }) => {
           const isSelected = selectedIds.has(item.id)
-          const position = isSelected ? selected.findIndex(e => e.id === item.id) + 1 : null
+          const position = selectedPositions.get(item.id) ?? null
           return (
             <Pressable
               onPress={() => onToggle(item)}
