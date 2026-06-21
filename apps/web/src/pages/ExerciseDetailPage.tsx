@@ -439,9 +439,11 @@ export default function ExerciseDetailPage() {
   const images = exercise.demoImages || []
   const hasImages = images.length > 0
   const hasVideo = !!exercise.demoVideo
-  // [015] Structured canonical media (sequence hero + muscle-activation map) by exercise id.
+  // [015] Structured canonical media (sequence hero + muscle-activation map).
+  // Look up by slug first (PB path sets exercise.id to the PB record id, not the
+  // catalog id/slug), then fall back to id. catalogMedia indexes both keys.
   // Origin-relative paths ("/exercise-media/…") resolve same-origin on web.
-  const staticMedia = getCatalogStaticMedia(exercise.id)
+  const staticMedia = getCatalogStaticMedia(exercise.slug) ?? getCatalogStaticMedia(exercise.id)
   const sequenceUrl = staticMedia?.sequence || null
   const musclesUrl = staticMedia?.muscles || null
 
