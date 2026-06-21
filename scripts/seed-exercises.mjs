@@ -60,49 +60,64 @@ async function api(path, opts = {}) {
 }
 
 /**
- * Upload media files (image_files / video_file) to an exercises_catalog record.
- * Resolves relative paths against seeds/exercises/media/.
+ * Upload media files to an exercises_catalog record.
+ *
+ * [Plan 015] Reads ex.media (structured) → uploads to the named PB file fields:
+ *   media.sequence  → media_sequence
+ *   media.muscles   → media_muscles
+ *   media.thumbnail → media_thumbnail
+ *   media.video     → default_video
+ *
+ * Files are resolved against seeds/exercises/media/<slug>/<filename>.
+ * The slug is derived from ex.slug (required when ex.media is set).
+ *
  * NO-OPs cleanly when:
- *   - the exercise has no image_files / video_file
+ *   - the exercise has no media object
  *   - the resolved file path does not exist on disk
  *   - we are in dry-run mode
  *
  * Uses multipart/form-data via fetch (no extra deps required).
  */
 async function uploadMediaToRecord(recordId, ex) {
-  const imageFiles = (ex.image_files || []).filter(Boolean);
-  const videoFile = ex.video_file || "";
+  const media = ex.media && typeof ex.media === "object" ? ex.media : null;
 
+  if (!media) return; // No structured media — NO-OP
+
+  const slug = ex.slug;
+  if (!slug) {
+    console.warn(`    WARN: ex.media present but ex.slug missing for record ${recordId} — skipping upload`);
+    return;
+  }
+
+  const slugMediaDir = resolve(MEDIA_DIR, slug);
+
+  // Build the list of (PB field name, absolute file path) pairs
   const filesToUpload = [
-    ...imageFiles.map(f => ({ field: "default_images", relPath: f })),
-    ...(videoFile ? [{ field: "default_video", relPath: videoFile }] : []),
-  ];
+    media.sequence  ? { field: "media_sequence",  absPath: resolve(slugMediaDir, media.sequence)  } : null,
+    media.muscles   ? { field: "media_muscles",   absPath: resolve(slugMediaDir, media.muscles)   } : null,
+    media.thumbnail ? { field: "media_thumbnail", absPath: resolve(slugMediaDir, media.thumbnail) } : null,
+    media.video     ? { field: "default_video",   absPath: resolve(slugMediaDir, media.video)     } : null,
+  ].filter(Boolean).filter(f => existsSync(f.absPath));
 
-  if (filesToUpload.length === 0) return;
-
-  const existing = filesToUpload.map(f => resolve(MEDIA_DIR, f.relPath));
-  const present = existing.filter(p => existsSync(p));
-
-  if (present.length === 0) {
-    // No media files exist on disk yet — NO-OP (placeholder workflow)
+  if (filesToUpload.length === 0) {
+    // Files referenced in seed but not yet on disk — NO-OP (placeholder workflow)
     return;
   }
 
   if (DRY_RUN) {
-    console.log(`    [dry-run] Would upload ${present.length} media files to ${recordId}`);
+    console.log(`    [dry-run] Would upload ${filesToUpload.length} media file(s) to ${recordId} (${slug})`);
     return;
   }
 
   const formData = new FormData();
-  for (const { field, relPath } of filesToUpload) {
-    const absPath = resolve(MEDIA_DIR, relPath);
-    if (!existsSync(absPath)) continue;
+  for (const { field, absPath } of filesToUpload) {
     const fileBytes = readFileSync(absPath);
-    const filename = relPath.split("/").pop();
-    const mime = filename.endsWith(".mp4") ? "video/mp4"
+    const filename = absPath.split("/").pop();
+    const mime = filename.endsWith(".mp4")  ? "video/mp4"
       : filename.endsWith(".webm") ? "video/webm"
       : filename.endsWith(".jpg") || filename.endsWith(".jpeg") ? "image/jpeg"
-      : filename.endsWith(".png") ? "image/png"
+      : filename.endsWith(".png")  ? "image/png"
+      : filename.endsWith(".webp") ? "image/webp"
       : "application/octet-stream";
     formData.append(field, new Blob([fileBytes], { type: mime }), filename);
   }
@@ -116,7 +131,7 @@ async function uploadMediaToRecord(recordId, ex) {
     const body = await res.text();
     console.warn(`    WARN: media upload failed for ${recordId}: ${res.status} ${body.slice(0, 120)}`);
   } else {
-    console.log(`    Uploaded ${present.length} media file(s) to ${recordId}`);
+    console.log(`    Uploaded ${filesToUpload.length} media file(s) to ${recordId} (${slug})`);
   }
 }
 
