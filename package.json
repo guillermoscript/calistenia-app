@@ -14,6 +14,8 @@
     "changelog": "node scripts/generate-changelog.mjs",
     "release": "node scripts/release.mjs",
     "validate:catalog": "node scripts/validate-exercise-catalog.mjs packages/core/data/exercise-catalog.json",
-    "test:catalog": "node scripts/test-validate-exercise-catalog.mjs"
+    "test:catalog": "node scripts/test-validate-exercise-catalog.mjs",
+    "build:catalog": "node scripts/build-exercise-catalog.mjs",
+    "build:id-map": "node scripts/build-id-map.mjs"
   }
 }
