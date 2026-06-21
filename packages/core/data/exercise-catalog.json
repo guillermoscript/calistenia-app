@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-21T16:54:34.075Z",
+  "generated_at": "2026-06-21T17:16:31.850Z",
   "total_count": 307,
   "local_count": 148,
   "wger_count": 22,
@@ -4200,7 +4200,11 @@
             "es": "Elevación de cadera tumbado boca arriba con pies apoyados. Aprieta los glúteos arriba y baja controladamente.",
             "en": "Hip raise lying face up with feet planted. Squeeze glutes at the top and lower with control."
           },
-          "seed_slug": "glute-bridge"
+          "seed_slug": "glute-bridge",
+          "tempo": {
+            "pauseTop": 1,
+            "concentric": 1
+          }
         },
         {
           "id": "glute_bridge_pause",
@@ -4234,7 +4238,10 @@
             "es": "Puente de glúteos manteniendo 3 segundos arriba. La pausa elimina la inercia y aumenta la activación muscular.",
             "en": "Glute bridge holding 3 seconds at the top. The pause removes momentum and increases muscle activation."
           },
-          "seed_slug": "glute-bridge-pause"
+          "seed_slug": "glute-bridge-pause",
+          "tempo": {
+            "pauseTop": 3
+          }
         },
         {
           "id": "elevated_glute_bridge",
@@ -4439,7 +4446,10 @@
             "es": "Tumbado boca abajo, eleva brazos y piernas del suelo y mantén la posición. Fortalece los erectores y toda la cadena posterior.",
             "en": "Lying face down, lift arms and legs off the floor and hold. Strengthens the erectors and the entire posterior chain."
           },
-          "seed_slug": "superman-hold"
+          "seed_slug": "superman-hold",
+          "tempo": {
+            "pauseTop": 3
+          }
         },
         {
           "id": "superman_swimmers",
@@ -6220,7 +6230,10 @@
             "es": "Salta o sube con ayuda hasta la posicion alta y baja lo mas lento posible. Construye fuerza excentrica para la dominada completa.",
             "en": "Jump or assist yourself to the top position and lower as slowly as possible. Builds eccentric strength toward the full pull-up."
           },
-          "seed_slug": "negative-pull-ups"
+          "seed_slug": "negative-pull-ups",
+          "tempo": {
+            "eccentric": 5
+          }
         },
         {
           "id": "face_pull",
@@ -6393,7 +6406,10 @@
             "es": "Remo invertido con pausa de 2-3 segundos arriba. La pausa elimina impulso y maximiza la activacion de romboides y trapecio.",
             "en": "Inverted row with a 2-3 second hold at the top. The pause eliminates momentum and maximizes rhomboid and trap activation."
           },
-          "seed_slug": "inverted-row-with-pause"
+          "seed_slug": "inverted-row-with-pause",
+          "tempo": {
+            "pauseTop": 2
+          }
         },
         {
           "id": "t_bar_row",
@@ -6907,7 +6923,10 @@
             "es": "Dominada con agarre prono a la anchura de los hombros. Sube hasta que la barbilla pase la barra sin balanceo.",
             "en": "Pull-up with pronated grip at shoulder width. Pull until your chin clears the bar without swinging."
           },
-          "seed_slug": "strict-pull-up"
+          "seed_slug": "strict-pull-up",
+          "tempo": {
+            "pauseTop": 1
+          }
         },
         {
           "id": "renegade_row",
