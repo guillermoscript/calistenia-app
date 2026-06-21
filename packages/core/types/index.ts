@@ -174,6 +174,9 @@ export interface Settings {
   pr_lsit?: number
   pr_pistol?: number
   pr_handstand?: number
+  /** Universal PRs: exerciseId → best achieved reps. Authoritative for ALL
+   *  exercises. The 5 pr_* fields above are kept in sync for legacy UI. */
+  prs?: Record<string, number>
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
