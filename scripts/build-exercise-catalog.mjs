@@ -633,6 +633,9 @@ function mergeSeeds(baseList, idMap, allSeeds) {
     // Add provenance
     ex.seed_slug = target.slug
 
+    // Overlay tempo if seed provides it (plan-013: structured tempo plumbing)
+    if (entry.tempo) ex.tempo = entry.tempo
+
     // Ensure name.en is populated (may be missing on old entries)
     if (!ex.name.en && ex.name.es) {
       ex.name = { es: ex.name.es, en: entry.name?.en || ex.name.es }
@@ -669,6 +672,8 @@ function mergeSeeds(baseList, idMap, allSeeds) {
       youtube_query: `${nameEn || nameEs} exercise tutorial`,
       images: [],
       seed_slug: slug,
+      // plan-013: structured tempo plumbing — included when seed provides it
+      ...(entry.tempo ? { tempo: entry.tempo } : {}),
     }
 
     // Ensure both name fields are non-empty
