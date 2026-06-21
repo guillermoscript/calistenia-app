@@ -505,12 +505,15 @@ export default function CalendarPage() {
                   </div>
                 )}
                 {photosByDate[selectedDate] && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-fuchsia-400/5 border border-fuchsia-400/15 rounded-lg">
+                  <button
+                    onClick={() => navigate('/progress')}
+                    className="flex items-center gap-2 px-3 py-2 bg-fuchsia-400/5 border border-fuchsia-400/15 rounded-lg hover:border-fuchsia-400/30 transition-colors"
+                  >
                     <div className="size-2 rounded-full bg-fuchsia-400" />
                     <div className="text-[11px]">
                       <span className="text-fuchsia-400 font-medium">{t('calendar.photoLabel', { count: photosByDate[selectedDate].count })}</span>
                     </div>
-                  </div>
+                  </button>
                 )}
                 {lumbarByDate[selectedDate] && (
                   <div className="flex items-center gap-2 px-3 py-2 bg-emerald-400/5 border border-emerald-400/15 rounded-lg">

@@ -40,9 +40,16 @@ export interface BodyMeasurementLite {
   date: string
 }
 
-// Resumen de fotos de progreso por día (cuántas se registraron).
+// Foto de progreso individual (id + URL servible desde PocketBase).
+export interface DayPhotoEntry {
+  id: string
+  url: string
+}
+
+// Resumen de fotos de progreso por día (cuántas + sus URLs, para el visor).
 export interface DayPhotoSummary {
   count: number
+  photos: DayPhotoEntry[]
 }
 
 // Chequeo lumbar diario (forma mínima: la puntuación y la fecha).
@@ -169,7 +176,8 @@ export async function fetchMonthActivity(
     }),
     pb.collection('body_photos').getList(1, 300, {
       filter: dateRange,
-      fields: 'id,date',
+      sort: '-date',
+      fields: 'id,collectionId,collectionName,date,photo',
     }),
     // lumbar_checks.date es un campo `text` YYYY-MM-DD: la comparación lexicográfica
     // del rango sigue siendo válida porque el formato ordena cronológicamente.
@@ -246,13 +254,16 @@ export async function fetchMonthActivity(
     console.warn('monthActivity: measurements fetch failed', measurementRes.reason)
   }
 
-  // Fotos de progreso: pueden ser varias por día → contamos.
+  // Fotos de progreso: pueden ser varias por día → contamos y guardamos URLs servibles.
   if (photoRes.status === 'fulfilled') {
     for (const item of photoRes.value.items) {
-      const date = dateKey((item as Record<string, unknown>).date as string || '')
+      const rec = item as Record<string, unknown>
+      const date = dateKey(rec.date as string || '')
       if (!date) continue
-      const cur = result.photosByDate[date] || (result.photosByDate[date] = { count: 0 })
+      const cur = result.photosByDate[date] || (result.photosByDate[date] = { count: 0, photos: [] })
       cur.count++
+      const file = rec.photo as string
+      if (file) cur.photos.push({ id: rec.id as string, url: pb.files.getURL(rec, file) })
     }
   } else {
     console.warn('monthActivity: photos fetch failed', photoRes.reason)

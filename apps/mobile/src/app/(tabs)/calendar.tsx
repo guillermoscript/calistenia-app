@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
-import { View, ScrollView, Pressable } from 'react-native'
+import { View, ScrollView, Pressable, Modal, useWindowDimensions } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import i18n from '@/lib/i18n'
-import { ChevronLeft, ChevronRight, Dumbbell, Activity, Repeat, Sparkles, Utensils, Droplet, Moon, Scale, Ruler, Camera, ShieldCheck, ChevronRight as Caret } from 'lucide-react-native'
+import { ChevronLeft, ChevronRight, Dumbbell, Activity, Repeat, Sparkles, Utensils, Droplet, Moon, Scale, Ruler, Camera, ShieldCheck, X, ChevronRight as Caret } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,7 +14,7 @@ import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { utcToLocalDateStr, todayStr } from '@calistenia/core/lib/dateUtils'
-import { fetchMonthActivity, emptyMonthActivity, type MonthActivity } from '@calistenia/core/lib/monthActivity'
+import { fetchMonthActivity, emptyMonthActivity, type MonthActivity, type DayPhotoEntry } from '@calistenia/core/lib/monthActivity'
 import type { SessionDone, WeekDay } from '@calistenia/core/types'
 
 // Acentos por tipo de actividad (paridad con el calendario web).
@@ -65,6 +66,8 @@ export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [data, setData] = useState<MonthActivity>(emptyMonthActivity())
   const [refreshKey, setRefreshKey] = useState(0)
+  const [lightbox, setLightbox] = useState<DayPhotoEntry[] | null>(null)
+  const { width: screenW } = useWindowDimensions()
 
   const today = todayStr()
   const days = useMemo(() => getMonthDays(viewYear, viewMonth), [viewYear, viewMonth])
@@ -352,7 +355,7 @@ export default function CalendarScreen() {
               {(data.nutritionByDate[selectedDate] || data.waterByDate[selectedDate] || data.sleepByDate[selectedDate] || data.weightByDate[selectedDate] || data.measurementByDate[selectedDate] || data.photosByDate[selectedDate] || data.lumbarByDate[selectedDate]) && (
                 <View className="flex-row flex-wrap gap-2 pt-1">
                   {data.nutritionByDate[selectedDate] && (
-                    <Pressable onPress={() => router.push('/nutrition')} className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2 active:opacity-70', ACCENT.nutrition.chip)}>
+                    <Pressable onPress={() => router.push({ pathname: '/nutrition', params: { date: selectedDate } })} className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2 active:opacity-70', ACCENT.nutrition.chip)}>
                       <Utensils size={13} color={ACCENT.nutrition.icon} />
                       <Text className="font-mono text-[11px] text-foreground">
                         {t('calendar.mealLabel', { count: data.nutritionByDate[selectedDate].meals })} · {data.nutritionByDate[selectedDate].calories} kcal
@@ -386,10 +389,14 @@ export default function CalendarScreen() {
                     </View>
                   )}
                   {data.photosByDate[selectedDate] && (
-                    <View className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2', ACCENT.photo.chip)}>
+                    <Pressable
+                      onPress={() => { haptics.selection(); setLightbox(data.photosByDate[selectedDate].photos) }}
+                      disabled={data.photosByDate[selectedDate].photos.length === 0}
+                      className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2 active:opacity-70', ACCENT.photo.chip)}
+                    >
                       <Camera size={13} color={ACCENT.photo.icon} />
                       <Text className="font-mono text-[11px] text-foreground">{t('calendar.photoLabel', { count: data.photosByDate[selectedDate].count })}</Text>
-                    </View>
+                    </Pressable>
                   )}
                   {data.lumbarByDate[selectedDate] && (
                     <View className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2', ACCENT.lumbar.chip)}>
@@ -403,6 +410,31 @@ export default function CalendarScreen() {
           </Card>
         )}
       </ScrollView>
+
+      {/* Visor de fotos de progreso: ScrollView paginado a pantalla completa.
+          (Galeria daría pinch-zoom/shared-element pero exige build nativo; esto
+          usa expo-image + Modal, sin dependencia nueva.) */}
+      <Modal visible={!!lightbox} transparent animationType="fade" onRequestClose={() => setLightbox(null)}>
+        <View className="flex-1 bg-black">
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+            {(lightbox || []).map((p) => (
+              <View key={p.id} style={{ width: screenW }} className="flex-1 items-center justify-center">
+                <Image source={{ uri: p.url }} style={{ width: screenW, height: '100%' }} contentFit="contain" transition={150} />
+              </View>
+            ))}
+          </ScrollView>
+          <SafeAreaView edges={['top']} className="absolute left-0 right-0 top-0">
+            <View className="flex-row items-center justify-between px-4 py-2">
+              <Text className="font-mono text-[11px] uppercase tracking-[2px] text-white/70">
+                {t('calendar.photoLabel', { count: lightbox?.length || 0 })}
+              </Text>
+              <Pressable onPress={() => { haptics.selection(); setLightbox(null) }} hitSlop={12} className="size-9 items-center justify-center rounded-full bg-white/10 active:opacity-60">
+                <X size={18} color="#fff" />
+              </Pressable>
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
