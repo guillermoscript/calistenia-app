@@ -7,6 +7,7 @@ import { ChevronRight } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Input } from '@/components/ui/input'
+import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { localize } from '@calistenia/core/lib/i18n-db'
@@ -33,7 +34,10 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="gap-3 px-4 pb-2 pt-2">
-        <Text className="font-bebas text-4xl leading-none text-foreground">{t('nav.exercises')}</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="font-bebas text-4xl leading-none text-foreground">{t('nav.exercises')}</Text>
+          <MenuButton />
+        </View>
         <Input
           value={query}
           onChangeText={setQuery}

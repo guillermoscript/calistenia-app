@@ -21,6 +21,7 @@ import { runOnJS } from 'react-native-reanimated'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -470,11 +471,14 @@ export default function NutritionTab() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
-        <View className="pt-4 pb-2">
-          <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">
-            {t('nutrition.subtitle')}
-          </Text>
-          <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
+        <View className="pt-4 pb-2 flex-row items-start justify-between">
+          <View className="flex-1">
+            <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">
+              {t('nutrition.subtitle')}
+            </Text>
+            <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
+          </View>
+          <MenuButton className="mt-1" />
         </View>
 
         {/* Phase change banner (US-14) */}
