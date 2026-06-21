@@ -18,7 +18,7 @@
  * El gesto de arrastrar-para-cerrar se limita a la cabecera para no pelear con
  * el scroll; cerrar por backdrop / ✕ / botón-atrás siempre funciona.
  */
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, use, useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -117,7 +117,7 @@ function pairs<T>(arr: T[]): T[][] {
 const QuickMenuContext = createContext<{ open: () => void } | null>(null)
 
 export function useQuickMenu() {
-  const ctx = useContext(QuickMenuContext)
+  const ctx = use(QuickMenuContext)
   if (!ctx) throw new Error('useQuickMenu debe usarse dentro de <QuickMenuProvider>')
   return ctx
 }
@@ -129,7 +129,7 @@ export function QuickMenuProvider({ children }: { children: ReactNode }) {
   // pantalla) nunca deja un offset residual que parpadee al reabrir.
   const translateY = useSharedValue(0)
   const open = useCallback(() => {
-    translateY.value = 0
+    translateY.set(0)
     haptics.selection()
     setVisible(true)
   }, [translateY])
@@ -202,14 +202,14 @@ function QuickMenuSheet({
   // dos pantallas en el stack. Se resetea al mostrarse (onShow).
   const navigatingRef = useRef(false)
 
-  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }))
+  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.get() }] }))
 
   const dragToClose = useMemo(
     () =>
       Gesture.Pan()
         .activeOffsetY(8)
         .onUpdate(e => {
-          translateY.value = Math.max(0, e.translationY)
+          translateY.set(Math.max(0, e.translationY))
         })
         .onEnd(e => {
           const shouldClose = e.translationY > 90 || e.velocityY > 800
@@ -219,14 +219,14 @@ function QuickMenuSheet({
             if (reduceMotion) {
               runOnJS(onClose)()
             } else {
-              translateY.value = withTiming(screenH, { duration: 220 }, finished => {
+              translateY.set(withTiming(screenH, { duration: 220 }, finished => {
                 if (finished) runOnJS(onClose)()
-              })
+              }))
             }
           } else {
-            translateY.value = reduceMotion
+            translateY.set(reduceMotion
               ? withTiming(0, { duration: 120 })
-              : withSpring(0, { damping: 20, stiffness: 220 })
+              : withSpring(0, { damping: 20, stiffness: 220 }))
           }
         }),
     [translateY, screenH, reduceMotion, onClose],
