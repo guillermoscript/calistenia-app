@@ -31,6 +31,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { getExerciseMedia } from '@calistenia/core/lib/exerciseMedia'
+import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
 import { requestNotifPermission, scheduleRestEnd, cancelScheduled } from '@/lib/notifications'
 import { useLiveSession } from '@/lib/use-live-session'
 import { updateLiveRest, liveSessionHandlesRest } from '@/lib/live-session'
@@ -522,7 +523,7 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
       demoVideo: exercise.demoVideo,
       youtube: exercise.youtube,
     },
-    { mediaBaseUrl: MEDIA_BASE },
+    { mediaBaseUrl: MEDIA_BASE, catalogRecord: { staticMedia: getCatalogStaticMedia(exercise.id) } },
   )
   // [015] Structured media fields
   const mediaSequence = resolvedMedia.sequence

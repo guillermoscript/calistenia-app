@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs'
 import type { Exercise } from '@calistenia/core/types'
 import { getExerciseMedia } from '@calistenia/core/lib/exerciseMedia'
 import type { CatalogMediaRecord } from '@calistenia/core/lib/exerciseMedia'
+import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
 
 interface MediaViewerProps {
   exercise: Exercise
@@ -22,6 +23,12 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
   const { t } = useTranslation()
   const [imgIdx, setImgIdx] = useState<number>(0)
 
+  // Supply the bundled catalog's structured media (by exercise id) when the caller
+  // didn't pass an explicit catalogRecord — so library/session/free-session all resolve it.
+  const staticMedia = catalogRecord?.staticMedia ?? getCatalogStaticMedia(exercise.id)
+  const effectiveCatalogRecord: CatalogMediaRecord | undefined =
+    (catalogRecord || staticMedia) ? { ...catalogRecord, staticMedia } : undefined
+
   // Resolve media via canonical hierarchy: program override → catalog static → catalog PB → curated → youtube
   const resolved = getExerciseMedia(
     {
@@ -30,7 +37,7 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
       demoVideo: exercise.demoVideo,
       youtube: exercise.youtube,
     },
-    { catalogRecord },
+    { catalogRecord: effectiveCatalogRecord },
   )
 
   // [015] Structured media: prefer structured fields when available; fall back to legacy images[]
