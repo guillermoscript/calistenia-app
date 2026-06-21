@@ -182,6 +182,29 @@
           "default": 3,
           "description": "Consecutive sessions at target reps before advancing → exercise_progressions.sessions_at_target"
         },
+        "tempo": {
+          "type": "object",
+          "description": "Optional structured tempo prescription for the exercise. All phases are optional. Do NOT populate from free-text without human review — this field is for maintainer-approved values only.",
+          "additionalProperties": false,
+          "properties": {
+            "eccentric": {
+              "type": "number",
+              "description": "Lowering/lengthening phase duration in seconds (e.g. 5 = baja 5s)"
+            },
+            "pauseBottom": {
+              "type": "number",
+              "description": "Pause at bottom/stretched position in seconds"
+            },
+            "concentric": {
+              "type": "number",
+              "description": "Lifting/shortening phase duration in seconds (1 = explosive)"
+            },
+            "pauseTop": {
+              "type": "number",
+              "description": "Pause at top/contracted position in seconds"
+            }
+          }
+        },
         "source": {
           "type": "string",
           "default": "catalog",

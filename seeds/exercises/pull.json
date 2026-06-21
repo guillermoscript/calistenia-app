@@ -77,6 +77,7 @@
         {
           "name": { "es": "Dominadas Negativas", "en": "Negative Pull-ups" },
           "slug": "negative-pull-ups",
+          "tempo": { "eccentric": 5 },
           "description": {
             "es": "Salta o sube con ayuda hasta la posicion alta y baja lo mas lento posible. Construye fuerza excentrica para la dominada completa.",
             "en": "Jump or assist yourself to the top position and lower as slowly as possible. Builds eccentric strength toward the full pull-up."
@@ -97,6 +98,7 @@
         {
           "name": { "es": "Pull-up Estricto", "en": "Strict Pull-up" },
           "slug": "strict-pull-up",
+          "tempo": { "pauseTop": 1 },
           "description": {
             "es": "Dominada con agarre prono a la anchura de los hombros. Sube hasta que la barbilla pase la barra sin balanceo.",
             "en": "Pull-up with pronated grip at shoulder width. Pull until your chin clears the bar without swinging."
@@ -537,6 +539,7 @@
         {
           "name": { "es": "Inverted Row con Pausa", "en": "Inverted Row with Pause" },
           "slug": "inverted-row-with-pause",
+          "tempo": { "pauseTop": 2 },
           "description": {
             "es": "Remo invertido con pausa de 2-3 segundos arriba. La pausa elimina impulso y maximiza la activacion de romboides y trapecio.",
             "en": "Inverted row with a 2-3 second hold at the top. The pause eliminates momentum and maximizes rhomboid and trap activation."

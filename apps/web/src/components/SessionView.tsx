@@ -27,9 +27,23 @@ import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
 import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
-import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming } from '@calistenia/core/types'
+import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming, ExerciseTempo } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
+
+/** Format a structured tempo object into a compact human-readable string.
+ *  e.g. { eccentric: 5, pauseTop: 2 } → "baja 5s · pausa 2s arriba"
+ *  Returns null if tempo is absent or all fields are undefined.
+ */
+function formatTempo(tempo: ExerciseTempo | undefined): string | null {
+  if (!tempo) return null
+  const parts: string[] = []
+  if (tempo.eccentric != null)   parts.push(`baja ${tempo.eccentric}s`)
+  if (tempo.pauseBottom != null) parts.push(`pausa ${tempo.pauseBottom}s abajo`)
+  if (tempo.concentric != null)  parts.push(tempo.concentric === 1 ? 'sube explosivo' : `sube ${tempo.concentric}s`)
+  if (tempo.pauseTop != null)    parts.push(`pausa ${tempo.pauseTop}s arriba`)
+  return parts.length > 0 ? parts.join(' · ') : null
+}
 
 interface Step {
   exercise: Exercise
@@ -451,8 +465,15 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
         {/* Exercise note */}
         {exercise.note && (
-          <div className="text-[13px] text-muted-foreground bg-muted/30 rounded-md px-3.5 py-2.5 mb-5 border-l-[3px] border-lime/20 italic leading-relaxed">
+          <div className="text-[13px] text-muted-foreground bg-muted/30 rounded-md px-3.5 py-2.5 mb-3 border-l-[3px] border-lime/20 italic leading-relaxed">
             {exercise.note}
+          </div>
+        )}
+
+        {/* Structured tempo cues (plan-013) */}
+        {formatTempo(exercise.tempo) && (
+          <div className="text-[12px] text-cyan-400/80 bg-cyan-400/5 rounded-md px-3 py-2 mb-5 border-l-[3px] border-cyan-400/20 font-mono tracking-wide">
+            Tempo: {formatTempo(exercise.tempo)}
           </div>
         )}
 

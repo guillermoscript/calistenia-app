@@ -167,6 +167,8 @@ async function seedCategory(seedData) {
           priority: ex.priority || "primary",
           source: ex.source || "catalog",
           status: ex.status || "official",
+          // plan-013: tempo field — only included when seed provides it
+          ...(ex.tempo ? { tempo: ex.tempo } : {}),
         }),
       });
 

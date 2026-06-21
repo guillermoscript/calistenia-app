@@ -1,0 +1,84 @@
+{
+  "_note": "PROPOSAL ONLY — do NOT auto-apply. Review each entry and manually add approved tempo values to seed JSON files.",
+  "_generated": "2026-06-21T16:57:23.461Z",
+  "_counts": {
+    "total": 370,
+    "withTempo": 7,
+    "highConfidence": 6,
+    "lowConfidence": 1,
+    "skipped": 363
+  },
+  "proposals": [
+    {
+      "id": "neg_pullup",
+      "name": "Dominadas Negativas",
+      "source": "workouts.ts",
+      "sourceText": "5 (5s bajada) Sube con silla, baja MUY lento 5 segundos. Base para dominadas.",
+      "proposedTempo": {
+        "eccentric": 5
+      },
+      "confidence": "high"
+    },
+    {
+      "id": "superman",
+      "name": "Superman Hold",
+      "source": "workouts.ts",
+      "sourceText": "10 (3s arriba) Fortalece cadena posterior. Esencial para tu lumbar.",
+      "proposedTempo": {
+        "pauseTop": 3
+      },
+      "confidence": "high"
+    },
+    {
+      "id": "glute_bridge",
+      "name": "Glute Bridge",
+      "source": "workouts.ts",
+      "sourceText": "15 Glúteos débiles sobrecargan la lumbar. Aprieta fuerte arriba, 1s pausa.",
+      "proposedTempo": {
+        "pauseTop": 1,
+        "concentric": 1
+      },
+      "confidence": "high"
+    },
+    {
+      "id": "pullup_strict",
+      "name": "Pull-up Estricto",
+      "source": "workouts.ts",
+      "sourceText": "máx (obj 8-12) Sin kipping. Pausa 1s arriba.",
+      "proposedTempo": {
+        "pauseTop": 1
+      },
+      "confidence": "high"
+    },
+    {
+      "id": "inverted_row_pause",
+      "name": "Inverted Row con Pausa",
+      "source": "workouts.ts",
+      "sourceText": "10-12 2s de pausa arriba. Clave para postura de programador.",
+      "proposedTempo": {
+        "pauseTop": 2
+      },
+      "confidence": "high"
+    },
+    {
+      "id": "glute_bridge_pause",
+      "name": "Glute Bridge con Pausa (3s)",
+      "source": "workouts.ts",
+      "sourceText": "15 Pausa isométrica 3s arriba. Si es fácil: unilateral.",
+      "proposedTempo": {
+        "pauseTop": 3
+      },
+      "confidence": "high"
+    },
+    {
+      "id": "step_up",
+      "name": "Step-up Explosivo",
+      "source": "workouts.ts",
+      "sourceText": "10/lado Sube fuerte, baja controlado. Usa escalón o silla sólida.",
+      "proposedTempo": {
+        "concentric": 1
+      },
+      "confidence": "low"
+    }
+  ]
+}
