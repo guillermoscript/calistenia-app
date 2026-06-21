@@ -8,21 +8,36 @@ import {
 } from './ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs'
 import type { Exercise } from '@calistenia/core/types'
+import { getExerciseMedia } from '@calistenia/core/lib/exerciseMedia'
+import type { CatalogMediaRecord } from '@calistenia/core/lib/exerciseMedia'
 
 interface MediaViewerProps {
   exercise: Exercise
   onClose: () => void
+  /** Optional catalog record for fallback media (layers b + c) */
+  catalogRecord?: CatalogMediaRecord
 }
 
-export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
+export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaViewerProps) {
   const { t } = useTranslation()
   const [imgIdx, setImgIdx] = useState<number>(0)
 
-  const images = exercise.demoImages || []
-  const video = exercise.demoVideo || ''
+  // Resolve media via canonical hierarchy: program override → catalog → curated → youtube
+  const resolved = getExerciseMedia(
+    {
+      pbRecordId: exercise.pbRecordId,
+      demoImages: exercise.demoImages,
+      demoVideo: exercise.demoVideo,
+      youtube: exercise.youtube,
+    },
+    { catalogRecord },
+  )
+
+  const images = resolved.images
+  const video = resolved.video || ''
   const hasMedia = images.length > 0 || !!video
 
-  const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.youtube)}`
+  const ytSearchUrl = resolved.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.youtube)}`
   const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(exercise.youtube + ' tutorial video')}`
 
   const prevImage = () => setImgIdx(i => (i - 1 + images.length) % images.length)
@@ -65,7 +80,7 @@ export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
                   {images.length > 0 && (
                     <div className="relative">
                       <img
-                        src={`/api/files/program_exercises/${exercise.pbRecordId}/${images[imgIdx]}`}
+                        src={images[imgIdx]}
                         alt={`${exercise.name} demo ${imgIdx + 1}`}
                         className="w-full max-h-[400px] object-contain rounded-lg bg-muted"
                       />
@@ -95,7 +110,7 @@ export default function MediaViewer({ exercise, onClose }: MediaViewerProps) {
                   {video && (
                     <div className="rounded-lg overflow-hidden bg-muted">
                       <video
-                        src={`/api/files/program_exercises/${exercise.pbRecordId}/${video}`}
+                        src={video}
                         controls
                         className="w-full max-h-[360px]"
                         preload="metadata"
