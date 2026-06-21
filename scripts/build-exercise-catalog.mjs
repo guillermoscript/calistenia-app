@@ -679,6 +679,17 @@ function mergeSeeds(baseList, idMap, allSeeds) {
     newCount++
   }
 
+  // variant_of pass: stamp _N collision pairs conservatively.
+  // Only links x_2 → x when x also exists in the final list.
+  // No guessing for anything else.
+  const finalIdSet = new Set(baseList.map(e => e.id))
+  for (const ex of baseList) {
+    const m = ex.id.match(/^(.+)_(\d+)$/)
+    if (m && finalIdSet.has(m[1])) {
+      ex.variant_of = m[1]
+    }
+  }
+
   return { enrichedCount, newCount }
 }
 

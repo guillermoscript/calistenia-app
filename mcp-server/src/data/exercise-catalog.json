@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-21T16:30:09.756Z",
+  "generated_at": "2026-06-21T16:50:30.171Z",
   "total_count": 307,
   "local_count": 148,
   "wger_count": 22,
@@ -765,7 +765,8 @@
           "youtube_search": "https://www.youtube.com/results?search_query=Mountain%20Climbers%20exercise%20tutorial",
           "youtube_query": "Mountain Climbers exercise tutorial",
           "images": [],
-          "seed_slug": "mountain-climbers"
+          "seed_slug": "mountain-climbers",
+          "variant_of": "mountain_climbers"
         },
         {
           "id": "pallof_press",
@@ -2046,7 +2047,8 @@
           "youtube_search": "https://www.youtube.com/results?search_query=Box%20Jump%20exercise%20tutorial",
           "youtube_query": "Box Jump exercise tutorial",
           "images": [],
-          "seed_slug": "box-jump"
+          "seed_slug": "box-jump",
+          "variant_of": "box_jump"
         },
         {
           "id": "box_jump",
@@ -3483,7 +3485,8 @@
           "youtube_search": "https://www.youtube.com/results?search_query=Step-up%20exercise%20tutorial",
           "youtube_query": "Step-up exercise tutorial",
           "images": [],
-          "seed_slug": "step-up"
+          "seed_slug": "step-up",
+          "variant_of": "step_up"
         },
         {
           "id": "weighted_step_up",
@@ -3690,7 +3693,8 @@
           "youtube_search": "https://www.youtube.com/results?search_query=Tuck%20Jumps%20exercise%20tutorial",
           "youtube_query": "Tuck Jumps exercise tutorial",
           "images": [],
-          "seed_slug": "tuck-jumps"
+          "seed_slug": "tuck-jumps",
+          "variant_of": "tuck_jumps"
         },
         {
           "id": "walking_lunge",
