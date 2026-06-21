@@ -99,6 +99,7 @@
           "name": { "es": "Pull-up Estricto", "en": "Strict Pull-up" },
           "slug": "strict-pull-up",
           "tempo": { "pauseTop": 1 },
+          "media": { "sequence": "sequence.webp", "muscles": "muscles.webp", "thumbnail": "thumbnail.webp" },
           "description": {
             "es": "Dominada con agarre prono a la anchura de los hombros. Sube hasta que la barbilla pase la barra sin balanceo.",
             "en": "Pull-up with pronated grip at shoulder width. Pull until your chin clears the bar without swinging."
