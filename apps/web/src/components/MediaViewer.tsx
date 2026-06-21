@@ -22,7 +22,7 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
   const { t } = useTranslation()
   const [imgIdx, setImgIdx] = useState<number>(0)
 
-  // Resolve media via canonical hierarchy: program override → catalog → curated → youtube
+  // Resolve media via canonical hierarchy: program override → catalog static → catalog PB → curated → youtube
   const resolved = getExerciseMedia(
     {
       pbRecordId: exercise.pbRecordId,
@@ -33,15 +33,20 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
     { catalogRecord },
   )
 
-  const images = resolved.images
+  // [015] Structured media: prefer structured fields when available; fall back to legacy images[]
+  const sequenceUrl = resolved.sequence
+  const musclesUrl = resolved.muscles
+  const legacyImages = resolved.sequence
+    ? [] // sequence + muscles are rendered in their own sections below
+    : resolved.images
   const video = resolved.video || ''
-  const hasMedia = images.length > 0 || !!video
+  const hasMedia = !!(sequenceUrl || legacyImages.length > 0 || musclesUrl || video)
 
   const ytSearchUrl = resolved.youtubeUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.youtube)}`
   const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(exercise.youtube + ' tutorial video')}`
 
-  const prevImage = () => setImgIdx(i => (i - 1 + images.length) % images.length)
-  const nextImage = () => setImgIdx(i => (i + 1) % images.length)
+  const prevImage = () => setImgIdx(i => (i - 1 + legacyImages.length) % legacyImages.length)
+  const nextImage = () => setImgIdx(i => (i + 1) % legacyImages.length)
 
   return (
     <Dialog open onOpenChange={open => { if (!open) onClose() }}>
@@ -76,15 +81,47 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
                 </div>
               ) : (
                 <>
-                  {/* Image carousel */}
-                  {images.length > 0 && (
+                  {/* [015] Sequence image — hero demo (movement phase strip) */}
+                  {sequenceUrl && (
+                    <div>
+                      <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
+                        DEMO
+                      </div>
+                      <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
+                        <img
+                          src={sequenceUrl}
+                          alt={`${exercise.name} — secuencia`}
+                          className="w-full max-h-[420px] object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* [015] Muscles image — activation map with labeled section */}
+                  {musclesUrl && (
+                    <div>
+                      <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
+                        MÚSCULOS TRABAJADOS
+                      </div>
+                      <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
+                        <img
+                          src={musclesUrl}
+                          alt={`${exercise.name} — músculos trabajados`}
+                          className="w-full max-h-[320px] object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Legacy image carousel (when no structured media) */}
+                  {legacyImages.length > 0 && (
                     <div className="relative">
                       <img
-                        src={images[imgIdx]}
+                        src={legacyImages[imgIdx]}
                         alt={`${exercise.name} demo ${imgIdx + 1}`}
                         className="w-full max-h-[400px] object-contain rounded-lg bg-muted"
                       />
-                      {images.length > 1 && (
+                      {legacyImages.length > 1 && (
                         <>
                           <button
                             onClick={prevImage}
@@ -99,7 +136,7 @@ export default function MediaViewer({ exercise, onClose, catalogRecord }: MediaV
                             &rarr;
                           </button>
                           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-[10px] text-muted-foreground bg-card/70 px-2 py-0.5 rounded">
-                            {imgIdx + 1} / {images.length}
+                            {imgIdx + 1} / {legacyImages.length}
                           </div>
                         </>
                       )}

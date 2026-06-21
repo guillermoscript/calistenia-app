@@ -511,7 +511,10 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
     Linking.openURL(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`).catch(() => {})
   }
 
-  // [014] Resolve canonical media (program override → catalog fallback → youtube)
+  // [014+015] Resolve canonical media (program override → catalog static → catalog PB → youtube)
+  // mediaBaseUrl prefixes origin-relative static paths (/exercise-media/…) so they resolve
+  // as absolute HTTPS URLs on device (same origin as PocketBase / web).
+  const MEDIA_BASE = process.env.EXPO_PUBLIC_PB_URL || 'https://gym.guille.tech'
   const resolvedMedia = getExerciseMedia(
     {
       pbRecordId: exercise.pbRecordId,
@@ -519,8 +522,13 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
       demoVideo: exercise.demoVideo,
       youtube: exercise.youtube,
     },
+    { mediaBaseUrl: MEDIA_BASE },
   )
-  const mediaImages = resolvedMedia.images
+  // [015] Structured media fields
+  const mediaSequence = resolvedMedia.sequence
+  const mediaMuscles  = resolvedMedia.muscles
+  // Back-compat: legacy flat images (only used when no structured media)
+  const mediaImages = mediaSequence ? [] : resolvedMedia.images
 
   return (
     <ScrollView className="flex-1" contentContainerClassName="flex-grow px-5 pb-6 pt-4">
@@ -572,8 +580,8 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           </Text>
         </View>
       ) : null}
-      {/* [014] Demo image carousel — shown when catalog/program media is available */}
-      {mediaImages.length > 0 && (
+      {/* [014+015] Demo media — structured (sequence + muscles) or legacy flat carousel */}
+      {(mediaSequence || mediaMuscles || mediaImages.length > 0) && (
         <View className="mb-5">
           <Pressable
             onPress={() => setShowImages(v => !v)}
@@ -588,34 +596,68 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
             </Text>
           </Pressable>
           {showImages && (
-            <View className="rounded-lg overflow-hidden bg-muted/30">
-              <Image
-                source={{ uri: mediaImages[imgIdx] }}
-                style={{ width: '100%', aspectRatio: 4 / 3 }}
-                contentFit="contain"
-                accessibilityLabel={`${exercise.name} demo ${imgIdx + 1}`}
-              />
-              {mediaImages.length > 1 && (
-                <View className="flex-row items-center justify-between px-3 py-2">
-                  <Pressable
-                    onPress={() => setImgIdx(i => (i - 1 + mediaImages.length) % mediaImages.length)}
-                    className="size-8 items-center justify-center rounded-full border border-border"
-                    accessibilityLabel="Imagen anterior"
-                  >
-                    <Text className="text-muted-foreground text-sm">‹</Text>
-                  </Pressable>
-                  <Text className="font-mono text-[10px] text-muted-foreground">
-                    {imgIdx + 1} / {mediaImages.length}
-                  </Text>
-                  <Pressable
-                    onPress={() => setImgIdx(i => (i + 1) % mediaImages.length)}
-                    className="size-8 items-center justify-center rounded-full border border-border"
-                    accessibilityLabel="Imagen siguiente"
-                  >
-                    <Text className="text-muted-foreground text-sm">›</Text>
-                  </Pressable>
+            <View className="gap-3">
+              {/* [015] Sequence — hero movement demo */}
+              {mediaSequence ? (
+                <View className="rounded-lg overflow-hidden bg-muted/30">
+                  <Image
+                    source={{ uri: mediaSequence }}
+                    style={{ width: '100%', aspectRatio: 16 / 9 }}
+                    contentFit="contain"
+                    accessibilityLabel={`${exercise.name} — secuencia`}
+                  />
                 </View>
-              )}
+              ) : null}
+
+              {/* [015] Muscles — activation map with labeled section */}
+              {mediaMuscles ? (
+                <View>
+                  <Text className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
+                    MÚSCULOS TRABAJADOS
+                  </Text>
+                  <View className="rounded-lg overflow-hidden bg-muted/30">
+                    <Image
+                      source={{ uri: mediaMuscles }}
+                      style={{ width: '100%', aspectRatio: 4 / 3 }}
+                      contentFit="contain"
+                      accessibilityLabel={`${exercise.name} — músculos trabajados`}
+                    />
+                  </View>
+                </View>
+              ) : null}
+
+              {/* Legacy flat carousel — only when no structured media */}
+              {!mediaSequence && mediaImages.length > 0 ? (
+                <View className="rounded-lg overflow-hidden bg-muted/30">
+                  <Image
+                    source={{ uri: mediaImages[imgIdx] }}
+                    style={{ width: '100%', aspectRatio: 4 / 3 }}
+                    contentFit="contain"
+                    accessibilityLabel={`${exercise.name} demo ${imgIdx + 1}`}
+                  />
+                  {mediaImages.length > 1 && (
+                    <View className="flex-row items-center justify-between px-3 py-2">
+                      <Pressable
+                        onPress={() => setImgIdx(i => (i - 1 + mediaImages.length) % mediaImages.length)}
+                        className="size-8 items-center justify-center rounded-full border border-border"
+                        accessibilityLabel="Imagen anterior"
+                      >
+                        <Text className="text-muted-foreground text-sm">‹</Text>
+                      </Pressable>
+                      <Text className="font-mono text-[10px] text-muted-foreground">
+                        {imgIdx + 1} / {mediaImages.length}
+                      </Text>
+                      <Pressable
+                        onPress={() => setImgIdx(i => (i + 1) % mediaImages.length)}
+                        className="size-8 items-center justify-center rounded-full border border-border"
+                        accessibilityLabel="Imagen siguiente"
+                      >
+                        <Text className="text-muted-foreground text-sm">›</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+              ) : null}
             </View>
           )}
         </View>
