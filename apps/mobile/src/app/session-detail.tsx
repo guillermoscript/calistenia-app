@@ -5,7 +5,7 @@
  *
  * Ruta: /session-detail?date=YYYY-MM-DD&workoutKey=p1_lun&title=...
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -20,6 +20,7 @@ import { useWorkoutState } from '@/contexts/WorkoutContext'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { useSessionDetail } from '@calistenia/core/hooks/useSessionDetail'
 import type { SessionExercise } from '@calistenia/core/hooks/useSessionDetail'
+import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { formatTimingClock } from '@calistenia/core/lib/exerciseTiming'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
@@ -70,7 +71,33 @@ export default function SessionDetailScreen() {
   const router = useRouter()
   const { progress } = useWorkoutState()
 
-  const { session, exercises } = useSessionDetail(progress, date, workoutKey, STATIC_CATALOG)
+  // Las sesiones libres pueden incluir ejercicios que sólo viven en PB (custom).
+  // Enriquece el catálogo una vez si algún nombre no se resolvió contra el
+  // catálogo empaquetado. Espejo de la web SessionDetailPage; sin coste de red
+  // en el caso normal (programa/biblioteca estándar).
+  const [catalog, setCatalog] = useState(STATIC_CATALOG)
+  const { session, exercises } = useSessionDetail(progress, date, workoutKey, catalog)
+  const enrichedRef = useRef(false)
+  useEffect(() => {
+    if (enrichedRef.current) return
+    if (!exercises.some(e => typeof e.name === 'string' && e.name === e.exerciseId)) return
+    enrichedRef.current = true
+    let cancelled = false
+    void (async () => {
+      try {
+        if (!(await isPocketBaseAvailable())) return
+        const res = await pb.collection('exercises_catalog').getList(1, 200, { $autoCancel: false })
+        if (cancelled) return
+        const items = res.items as unknown as { id: string; name?: TranslatableField; muscles?: TranslatableField }[]
+        const merged = { ...STATIC_CATALOG }
+        items.forEach(it => {
+          if (!merged[it.id]) merged[it.id] = { name: it.name ?? it.id, muscles: it.muscles ?? '' }
+        })
+        setCatalog(merged)
+      } catch { /* mantiene el catálogo empaquetado */ }
+    })()
+    return () => { cancelled = true }
+  }, [exercises])
 
   const totalSets = useMemo(
     () => exercises.reduce((sum, ex) => sum + ex.sets.length, 0),
