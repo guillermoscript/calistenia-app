@@ -15,7 +15,10 @@ import { readFileSync, writeFileSync } from 'fs';
 import { resolve, join } from 'path';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const CATALOG_PATH = join(ROOT, 'packages/core/data/exercise-catalog.json');
+// Read the FROZEN pre-merge base, never the merged output. This keeps the
+// pipeline idempotent/reproducible: the map is a pure function of (base, seeds)
+// and re-running never drifts (see exercise-catalog.base.json).
+const BASE_PATH = join(ROOT, 'packages/core/data/exercise-catalog.base.json');
 const SEEDS_DIR = join(ROOT, 'seeds/exercises');
 const OUT_MAP = join(SEEDS_DIR, '_id-map.json');
 const OUT_REPORT = join(SEEDS_DIR, '_id-map-report.md');
@@ -58,8 +61,8 @@ function norm(s) {
 }
 
 function main() {
-  // 1. Load existing catalog, build normName -> Set<id> index
-  const catalogRaw = JSON.parse(readFileSync(CATALOG_PATH, 'utf8'));
+  // 1. Load the frozen base catalog, build normName -> Set<id> index
+  const catalogRaw = JSON.parse(readFileSync(BASE_PATH, 'utf8'));
   const nameIndex = new Map(); // normName -> Set<id>
   const existingIds = new Set();
 
@@ -144,34 +147,26 @@ function main() {
           newIdsSoFar.add(canonicalId);
           newEntries.push({ slug, newId: canonicalId, nameEs, nameEn, reason: 'ambiguous' });
         } else {
-          // hitIds.size === 0
-          if (existingIds.has(derivedId)) {
-            // Derived-id collision -> resolve as MATCH (enrich it)
-            const dId = derivedId;
-            if (claimedIds.has(dId)) {
-              multiClaim.push({ slug, id: dId, firstSlug: claimedIds.get(dId) });
-              // treat as new
-              canonicalId = `${derivedId}_2`;
-              let suffix = 2;
-              while (existingIds.has(canonicalId) || newIdsSoFar.has(canonicalId)) {
-                canonicalId = `${derivedId}_${suffix++}`;
-              }
-              newIdsSoFar.add(canonicalId);
-              newEntries.push({ slug, newId: canonicalId, nameEs, nameEn, reason: 'derivedCollisionMulti' });
-            } else {
-              canonicalId = dId;
-              claimedIds.set(dId, slug);
-              derivedCollisions.push({ slug, derivedId: dId, nameEs, nameEn });
-            }
-          } else {
-            // Truly new
-            canonicalId = derivedId;
-            let suffix = 2;
-            while (existingIds.has(canonicalId) || newIdsSoFar.has(canonicalId)) {
-              canonicalId = `${derivedId}_${suffix++}`;
-            }
-            newIdsSoFar.add(canonicalId);
-            newEntries.push({ slug, newId: canonicalId, nameEs, nameEn, reason: 'new' });
+          // hitIds.size === 0 — no NAME match.
+          // We NEVER enrich a name-mismatched existing entry just because the
+          // derived id collides: id-string coincidence does not imply the same
+          // movement. (e.g. the basic "step-up" seed must NOT overwrite the
+          // existing `step_up` entry, which is actually "Step-up Explosivo" and
+          // has its own matching `explosive-step-up` seed.) Always create a NEW
+          // entry; suffix the id if it collides with an existing or prior id.
+          const collidesExisting = existingIds.has(derivedId);
+          canonicalId = derivedId;
+          let suffix = 2;
+          while (existingIds.has(canonicalId) || newIdsSoFar.has(canonicalId)) {
+            canonicalId = `${derivedId}_${suffix++}`;
+          }
+          newIdsSoFar.add(canonicalId);
+          newEntries.push({
+            slug, newId: canonicalId, nameEs, nameEn,
+            reason: collidesExisting ? 'derivedCollision→new' : 'new',
+          });
+          if (collidesExisting) {
+            derivedCollisions.push({ slug, derivedId, assignedId: canonicalId, nameEs, nameEn });
           }
         }
 
@@ -194,10 +189,8 @@ function main() {
     throw new Error(`Duplicate new ids detected: ${dupes.join(', ')}`);
   }
 
-  // Existing catalog ids with NO seed
-  const enrichedIds = new Set(
-    [...matched.map(m => m.canonicalId), ...derivedCollisions.map(d => d.derivedId)]
-  );
+  // Existing catalog ids with NO seed (only true name-matches enrich an existing id)
+  const enrichedIds = new Set(matched.map(m => m.canonicalId));
   const unseeded = [];
   for (const id of existingIds) {
     if (!enrichedIds.has(id)) {
@@ -223,7 +216,7 @@ function main() {
   console.log(`\nWrote ${OUT_MAP}`);
   console.log(`  Total keys: ${mapKeys.length}`);
   console.log(`  Matched: ${matched.length}`);
-  console.log(`  Derived-id collisions (enriched): ${derivedCollisions.length}`);
+  console.log(`  Derived-id collisions (→ new entry, name mismatch): ${derivedCollisions.length}`);
   console.log(`  Ambiguous (treated as new): ${ambiguous.length}`);
   console.log(`  Multi-claim (later ones as new): ${multiClaim.length}`);
   console.log(`  New entries: ${newEntries.length}`);
@@ -241,7 +234,7 @@ function main() {
   lines.push(`|--------|-------|`);
   lines.push(`| Total seed entries | ${mapKeys.length} |`);
   lines.push(`| Matched to existing id (by name) | ${matched.length} |`);
-  lines.push(`| Derived-id collisions resolved as enrich | ${derivedCollisions.length} |`);
+  lines.push(`| Derived-id collisions → new entry (name mismatch) | ${derivedCollisions.length} |`);
   lines.push(`| Ambiguous (multiple catalog hits → new) | ${ambiguous.length} |`);
   lines.push(`| Multi-claim extras (first seed wins, later → new) | ${multiClaim.length} |`);
   lines.push(`| New entries | ${newEntries.length} |`);
@@ -273,14 +266,16 @@ function main() {
   }
 
   if (derivedCollisions.length > 0) {
-    lines.push('## Derived-ID Collisions Resolved as Enrich — REVIEW REQUIRED');
+    lines.push('## Derived-ID Collisions → New Entry — REVIEW REQUIRED');
     lines.push('');
-    lines.push('Slug → derivedId matched an existing catalog id (no name hit). Resolved as ENRICH. Verify correctness.');
+    lines.push('Slug → derivedId equals an existing catalog id but the NAMES did not match,');
+    lines.push('so this seed is a DIFFERENT movement. Added as a NEW entry under `Assigned ID`');
+    lines.push('(the existing entry is left untouched / matched by its own name-matching seed).');
     lines.push('');
-    lines.push('| Slug | Derived/Catalog ID | Name ES | Name EN |');
-    lines.push('|------|-------------------|---------|---------|');
+    lines.push('| Slug | Collided Existing ID | Assigned New ID | Name ES | Name EN |');
+    lines.push('|------|---------------------|-----------------|---------|---------|');
     for (const d of derivedCollisions) {
-      lines.push(`| ${d.slug} | ${d.derivedId} | ${d.nameEs} | ${d.nameEn} |`);
+      lines.push(`| ${d.slug} | ${d.derivedId} | ${d.assignedId} | ${d.nameEs} | ${d.nameEn} |`);
     }
     lines.push('');
   }

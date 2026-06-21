@@ -23,7 +23,10 @@ import { readFileSync, writeFileSync } from 'fs'
 import { resolve, join } from 'path'
 
 const ROOT = resolve(import.meta.dirname, '..')
-const CATALOG_PATH = join(ROOT, 'packages/core/data/exercise-catalog.json')
+// FROZEN pre-merge base (local + wger layer). OFFLINE merge reads this — never
+// the merged output — so re-running the pipeline from a clean checkout is
+// idempotent. `--refresh-wger` rewrites this snapshot from the wger fetch.
+const BASE_PATH = join(ROOT, 'packages/core/data/exercise-catalog.base.json')
 const SEEDS_DIR = join(ROOT, 'seeds/exercises')
 const ID_MAP_PATH = join(SEEDS_DIR, '_id-map.json')
 
@@ -555,9 +558,9 @@ function loadSeeds() {
   return { idMap, allSeeds }
 }
 
-// ── OFFLINE MERGE: read existing catalog as base ──────────────────────────────
+// ── OFFLINE MERGE: read the FROZEN base snapshot (not the merged output) ──────
 function loadBaseListFromCatalog() {
-  const catalogRaw = JSON.parse(readFileSync(CATALOG_PATH, 'utf8'))
+  const catalogRaw = JSON.parse(readFileSync(BASE_PATH, 'utf8'))
   const baseList = []
   for (const [, catVal] of Object.entries(catalogRaw.categories ?? {})) {
     for (const ex of catVal.exercises ?? []) {
@@ -753,10 +756,14 @@ async function main() {
   if (refreshWger) {
     console.log('=== ONLINE MODE: fetching from wger ===\n')
     baseList = await buildBaseListFromWger()
+    // Freeze the refreshed base so future OFFLINE runs are reproducible.
+    const baseSnapshot = rebuildCatalog(baseList)
+    writeFileSync(BASE_PATH, JSON.stringify(baseSnapshot, null, 2))
+    console.log(`Refreshed frozen base snapshot: ${BASE_PATH} (${baseList.length} exercises)\n`)
   } else {
-    console.log('=== OFFLINE MODE: reading existing catalog ===\n')
+    console.log('=== OFFLINE MODE: reading frozen base snapshot ===\n')
     baseList = loadBaseListFromCatalog()
-    console.log(`Base list loaded: ${baseList.length} exercises from existing catalog\n`)
+    console.log(`Base list loaded: ${baseList.length} exercises from frozen base\n`)
   }
 
   // Capture original id set for invariant check

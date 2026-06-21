@@ -73,7 +73,9 @@ console.log('\n[a] Bundled catalog — packages/core/data/exercise-catalog.json'
 // ──────────────────────────────────────────────────────────────
 import { readdirSync } from 'fs';
 const seedFiles = readdirSync(SEEDS_DIR)
-  .filter(f => f.endsWith('.json') && f !== '_schema.json')
+  // Skip all `_`-prefixed meta files (_schema.json, _id-map.json) — they are not
+  // seed-shaped and the validator only understands seed/bundled shapes.
+  .filter(f => f.endsWith('.json') && !f.startsWith('_'))
   .map(f => join(SEEDS_DIR, f));
 
 console.log(`\n[b] Seed files — ${seedFiles.length} files`);

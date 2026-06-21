@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-21T16:11:55.171Z",
-  "total_count": 306,
+  "generated_at": "2026-06-21T16:30:09.756Z",
+  "total_count": 307,
   "local_count": 148,
   "wger_count": 22,
   "with_images": 8,
-  "with_video_links": 306,
+  "with_video_links": 307,
   "categories": {
     "core": {
       "count": 37,
@@ -2012,8 +2012,42 @@
       ]
     },
     "legs": {
-      "count": 50,
+      "count": 51,
       "exercises": [
+        {
+          "id": "box_jump_2",
+          "name": {
+            "es": "Box Jump",
+            "en": "Box Jump"
+          },
+          "muscles": {
+            "es": "Explosividad total",
+            "en": "Total explosiveness"
+          },
+          "sets": 3,
+          "reps": "5-8",
+          "rest": 120,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Salto explosivo desde el suelo a un cajón. Desarrolla potencia de tren inferior y coordinación.",
+            "en": "Explosive jump from the floor onto a box. Develops lower-body power and coordination."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "legs",
+          "difficulty": "intermediate",
+          "equipment": [
+            "escalon"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=Box%20Jump%20exercise%20tutorial",
+          "youtube_query": "Box Jump exercise tutorial",
+          "images": [],
+          "seed_slug": "box-jump"
+        },
         {
           "id": "box_jump",
           "name": {
@@ -2041,12 +2075,7 @@
           "source": "local",
           "youtube_search": "https://www.youtube.com/results?search_query=Box%20Jump%20(silla%20s%C3%B3lida)%20exercise%20tutorial",
           "youtube_query": "box jump tutorial plyometric form",
-          "images": [],
-          "description": {
-            "es": "Salto explosivo desde el suelo a un cajón. Desarrolla potencia de tren inferior y coordinación.",
-            "en": "Explosive jump from the floor onto a box. Develops lower-body power and coordination."
-          },
-          "seed_slug": "box-jump"
+          "images": []
         },
         {
           "id": "broad_jump",
@@ -3423,6 +3452,40 @@
           "seed_slug": "sissy-squat"
         },
         {
+          "id": "step_up_2",
+          "name": {
+            "es": "Step-up",
+            "en": "Step-up"
+          },
+          "muscles": {
+            "es": "Glúteos, cuádriceps",
+            "en": "Glutes, quads"
+          },
+          "sets": 3,
+          "reps": "10-15",
+          "rest": 90,
+          "note": {
+            "es": "",
+            "en": ""
+          },
+          "description": {
+            "es": "Sube a un cajón impulsándote con una sola pierna. Trabaja fuerza unilateral y estabilidad de rodilla.",
+            "en": "Step onto a box driving through one leg. Works unilateral strength and knee stability."
+          },
+          "priority": "med",
+          "isTimer": false,
+          "category": "legs",
+          "difficulty": "beginner",
+          "equipment": [
+            "escalon"
+          ],
+          "source": "seed",
+          "youtube_search": "https://www.youtube.com/results?search_query=Step-up%20exercise%20tutorial",
+          "youtube_query": "Step-up exercise tutorial",
+          "images": [],
+          "seed_slug": "step-up"
+        },
+        {
           "id": "weighted_step_up",
           "name": {
             "es": "Step-up con Lastre",
@@ -3464,8 +3527,8 @@
             "en": "Explosive Step-up"
           },
           "muscles": {
-            "es": "Glúteos, cuádriceps",
-            "en": "Glutes, quads"
+            "es": "Glúteos, cuádriceps, potencia",
+            "en": "Glutes, quads, power"
           },
           "sets": 3,
           "reps": "10/lado",
@@ -3477,7 +3540,7 @@
           "priority": "med",
           "isTimer": false,
           "category": "legs",
-          "difficulty": "beginner",
+          "difficulty": "intermediate",
           "equipment": [
             "escalon"
           ],
@@ -3486,43 +3549,9 @@
           "youtube_query": "explosive step up tutorial plyometric",
           "images": [],
           "description": {
-            "es": "Sube a un cajón impulsándote con una sola pierna. Trabaja fuerza unilateral y estabilidad de rodilla.",
-            "en": "Step onto a box driving through one leg. Works unilateral strength and knee stability."
-          },
-          "seed_slug": "step-up"
-        },
-        {
-          "id": "explosive_step_up",
-          "name": {
-            "es": "Step-up Explosivo",
-            "en": "Explosive Step-up"
-          },
-          "muscles": {
-            "es": "Glúteos, cuádriceps, potencia",
-            "en": "Glutes, quads, power"
-          },
-          "sets": 3,
-          "reps": "8-12",
-          "rest": 90,
-          "note": {
-            "es": "",
-            "en": ""
-          },
-          "description": {
             "es": "Step-up con impulso explosivo para elevar la rodilla arriba del cajón. Desarrolla potencia unilateral.",
             "en": "Step-up with explosive drive to lift the knee above the box. Builds unilateral power."
           },
-          "priority": "med",
-          "isTimer": false,
-          "category": "legs",
-          "difficulty": "intermediate",
-          "equipment": [
-            "escalon"
-          ],
-          "source": "seed",
-          "youtube_search": "https://www.youtube.com/results?search_query=Explosive%20Step-up%20exercise%20tutorial",
-          "youtube_query": "Explosive Step-up exercise tutorial",
-          "images": [],
           "seed_slug": "explosive-step-up"
         },
         {
