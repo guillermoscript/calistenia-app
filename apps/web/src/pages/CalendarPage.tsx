@@ -440,7 +440,8 @@ export default function CalendarPage() {
                       const circuitId = s.workoutKey.replace('circuit_', '')
                       navigate(`/circuit/history/${circuitId}`)
                     } else if (isCardio) {
-                      navigate('/cardio')
+                      const cardioId = s.workoutKey.replace('cardio_', '')
+                      navigate(cardioId ? `/cardio/session/${cardioId}` : '/cardio')
                     } else {
                       navigate(`/session/${s.date}/${s.workoutKey}`)
                     }
