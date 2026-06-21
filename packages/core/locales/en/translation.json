@@ -907,6 +907,8 @@
   "calendar.noTraining": "You didn't train this day",
   "calendar.upcoming": "Upcoming day",
   "calendar.waterLabel": "water",
+  "calendar.sleepLabel": "sleep",
+  "calendar.weightLabel": "weight",
   "calendar.running": "Running",
   "calendar.walking": "Walking",
   "calendar.cycling": "Cycling",
