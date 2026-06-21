@@ -23,12 +23,14 @@ import { useTranslation } from 'react-i18next'
 import Svg, { Circle } from 'react-native-svg'
 import { ChevronLeft, ChevronRight, X, Play, Pause, RotateCcw } from 'lucide-react-native'
 
+import { Image } from 'expo-image'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { getExerciseMedia } from '@calistenia/core/lib/exerciseMedia'
 import { requestNotifPermission, scheduleRestEnd, cancelScheduled } from '@/lib/notifications'
 import { useLiveSession } from '@/lib/use-live-session'
 import { updateLiveRest, liveSessionHandlesRest } from '@/lib/live-session'
@@ -473,6 +475,9 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
   const [customNote, setCustomNote] = useState('')
   const [customWeight, setCustomWeight] = useState('')
   const [customRpe, setCustomRpe] = useState('')
+  // [014] media viewer state
+  const [imgIdx, setImgIdx] = useState(0)
+  const [showImages, setShowImages] = useState(false)
 
   const { exercise, setNumber, totalSets } = step
   const recentLogs = logs.slice(0, 2)
@@ -505,6 +510,17 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
     const query = exercise.youtube?.trim() || exercise.name
     Linking.openURL(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`).catch(() => {})
   }
+
+  // [014] Resolve canonical media (program override → catalog fallback → youtube)
+  const resolvedMedia = getExerciseMedia(
+    {
+      pbRecordId: exercise.pbRecordId,
+      demoImages: exercise.demoImages,
+      demoVideo: exercise.demoVideo,
+      youtube: exercise.youtube,
+    },
+  )
+  const mediaImages = resolvedMedia.images
 
   return (
     <ScrollView className="flex-1" contentContainerClassName="flex-grow px-5 pb-6 pt-4">
@@ -556,6 +572,54 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
           </Text>
         </View>
       ) : null}
+      {/* [014] Demo image carousel — shown when catalog/program media is available */}
+      {mediaImages.length > 0 && (
+        <View className="mb-5">
+          <Pressable
+            onPress={() => setShowImages(v => !v)}
+            className="mb-2 flex-row items-center gap-1.5"
+            accessibilityLabel={showImages ? 'Ocultar demo' : 'Ver demo'}
+          >
+            <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
+              DEMO
+            </Text>
+            <Text className="font-mono text-[9px] text-muted-foreground/40">
+              {showImages ? '▲' : '▼'}
+            </Text>
+          </Pressable>
+          {showImages && (
+            <View className="rounded-lg overflow-hidden bg-muted/30">
+              <Image
+                source={{ uri: mediaImages[imgIdx] }}
+                style={{ width: '100%', aspectRatio: 4 / 3 }}
+                contentFit="contain"
+                accessibilityLabel={`${exercise.name} demo ${imgIdx + 1}`}
+              />
+              {mediaImages.length > 1 && (
+                <View className="flex-row items-center justify-between px-3 py-2">
+                  <Pressable
+                    onPress={() => setImgIdx(i => (i - 1 + mediaImages.length) % mediaImages.length)}
+                    className="size-8 items-center justify-center rounded-full border border-border"
+                    accessibilityLabel="Imagen anterior"
+                  >
+                    <Text className="text-muted-foreground text-sm">‹</Text>
+                  </Pressable>
+                  <Text className="font-mono text-[10px] text-muted-foreground">
+                    {imgIdx + 1} / {mediaImages.length}
+                  </Text>
+                  <Pressable
+                    onPress={() => setImgIdx(i => (i + 1) % mediaImages.length)}
+                    className="size-8 items-center justify-center rounded-full border border-border"
+                    accessibilityLabel="Imagen siguiente"
+                  >
+                    <Text className="text-muted-foreground text-sm">›</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Historial reciente */}
       {recentLogs.length > 0 && (

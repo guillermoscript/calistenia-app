@@ -1,10 +1,11 @@
 {
-  "generated_at": "2026-06-21T17:17:59.577Z",
+  "generated_at": "2026-06-21T17:19:38.629Z",
   "total_count": 307,
   "local_count": 148,
   "wger_count": 22,
   "with_images": 8,
-  "with_video_links": 307,
+  "with_curated_video": 2,
+  "with_youtube_query": 307,
   "categories": {
     "core": {
       "count": 37,

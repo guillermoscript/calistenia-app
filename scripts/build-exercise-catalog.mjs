@@ -630,6 +630,13 @@ function mergeSeeds(baseList, idMap, allSeeds) {
     if (entry.muscles) {
       ex.muscles = entry.muscles
     }
+    // [014] Carry seed media references into the bundled catalog
+    if (entry.image_files && Array.isArray(entry.image_files) && entry.image_files.length > 0) {
+      ex.seed_image_files = entry.image_files
+    }
+    if (entry.video_file && typeof entry.video_file === 'string' && entry.video_file.trim()) {
+      ex.seed_video_file = entry.video_file.trim()
+    }
     // Add provenance
     ex.seed_slug = target.slug
 
@@ -674,6 +681,9 @@ function mergeSeeds(baseList, idMap, allSeeds) {
       seed_slug: slug,
       // plan-013: structured tempo plumbing — included when seed provides it
       ...(entry.tempo ? { tempo: entry.tempo } : {}),
+      // [014] Carry seed media references into the bundled catalog
+      ...(entry.image_files?.length ? { seed_image_files: entry.image_files } : {}),
+      ...(entry.video_file ? { seed_video_file: entry.video_file } : {}),
     }
 
     // Ensure both name fields are non-empty
@@ -744,7 +754,9 @@ function rebuildCatalog(finalList) {
 
   const totalCount = finalList.length
   const withImages = finalList.filter(e => e.images?.length > 0).length
-  const withVideos = finalList.filter(e => e.videos?.length > 0 || e.youtube_search).length
+  // [014] Split video stat: curated = real hosted files; youtube_query = search fallback only
+  const withCuratedVideo = finalList.filter(e => e.videos?.length > 0 || e.seed_video_file).length
+  const withYoutubeQuery = finalList.filter(e => !!(e.youtube_query || e.youtube_search)).length
 
   return {
     generated_at: new Date().toISOString(),
@@ -752,7 +764,8 @@ function rebuildCatalog(finalList) {
     local_count: finalList.filter(e => e.source === 'local').length,
     wger_count: finalList.filter(e => e.source === 'wger').length,
     with_images: withImages,
-    with_video_links: withVideos,
+    with_curated_video: withCuratedVideo,
+    with_youtube_query: withYoutubeQuery,
     categories: Object.keys(byCategory).sort().reduce((obj, key) => {
       obj[key] = { count: byCategory[key].length, exercises: byCategory[key] }
       return obj

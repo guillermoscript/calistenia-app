@@ -17,12 +17,13 @@
  *   node scripts/seed-exercises.mjs https://gym.guille.tech admin@app.com pass123 --dry-run
  */
 
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync, readdirSync, existsSync, createReadStream } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEEDS_DIR = resolve(__dirname, "../seeds/exercises");
+const MEDIA_DIR = resolve(SEEDS_DIR, "media");
 
 const args = process.argv.slice(2);
 const flags = args.filter(a => a.startsWith("--"));
@@ -56,6 +57,67 @@ async function api(path, opts = {}) {
   }
   const text = await res.text();
   return text ? JSON.parse(text) : {};
+}
+
+/**
+ * Upload media files (image_files / video_file) to an exercises_catalog record.
+ * Resolves relative paths against seeds/exercises/media/.
+ * NO-OPs cleanly when:
+ *   - the exercise has no image_files / video_file
+ *   - the resolved file path does not exist on disk
+ *   - we are in dry-run mode
+ *
+ * Uses multipart/form-data via fetch (no extra deps required).
+ */
+async function uploadMediaToRecord(recordId, ex) {
+  const imageFiles = (ex.image_files || []).filter(Boolean);
+  const videoFile = ex.video_file || "";
+
+  const filesToUpload = [
+    ...imageFiles.map(f => ({ field: "default_images", relPath: f })),
+    ...(videoFile ? [{ field: "default_video", relPath: videoFile }] : []),
+  ];
+
+  if (filesToUpload.length === 0) return;
+
+  const existing = filesToUpload.map(f => resolve(MEDIA_DIR, f.relPath));
+  const present = existing.filter(p => existsSync(p));
+
+  if (present.length === 0) {
+    // No media files exist on disk yet — NO-OP (placeholder workflow)
+    return;
+  }
+
+  if (DRY_RUN) {
+    console.log(`    [dry-run] Would upload ${present.length} media files to ${recordId}`);
+    return;
+  }
+
+  const formData = new FormData();
+  for (const { field, relPath } of filesToUpload) {
+    const absPath = resolve(MEDIA_DIR, relPath);
+    if (!existsSync(absPath)) continue;
+    const fileBytes = readFileSync(absPath);
+    const filename = relPath.split("/").pop();
+    const mime = filename.endsWith(".mp4") ? "video/mp4"
+      : filename.endsWith(".webm") ? "video/webm"
+      : filename.endsWith(".jpg") || filename.endsWith(".jpeg") ? "image/jpeg"
+      : filename.endsWith(".png") ? "image/png"
+      : "application/octet-stream";
+    formData.append(field, new Blob([fileBytes], { type: mime }), filename);
+  }
+
+  const res = await fetch(`${PB_URL}/api/collections/exercises_catalog/records/${recordId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    console.warn(`    WARN: media upload failed for ${recordId}: ${res.status} ${body.slice(0, 120)}`);
+  } else {
+    console.log(`    Uploaded ${present.length} media file(s) to ${recordId}`);
+  }
 }
 
 function loadSeedFiles() {
@@ -174,6 +236,9 @@ async function seedCategory(seedData) {
 
       exerciseIdMap[slug] = record.id;
       created++;
+
+      // Upload demo images / video if present in seeds/exercises/media/
+      await uploadMediaToRecord(record.id, ex);
     }
 
     // Build progression chain for this subcategory
