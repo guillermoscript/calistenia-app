@@ -128,7 +128,7 @@ jobs:
           cp "$APK_PATH" "Calistenia-${{ steps.version.outputs.version }}.apk"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: calistenia-apk
           path: Calistenia-${{ steps.version.outputs.version }}.apk
