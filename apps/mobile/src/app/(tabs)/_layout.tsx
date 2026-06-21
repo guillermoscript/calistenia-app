@@ -1,7 +1,7 @@
 import { View, Easing } from 'react-native'
 import { Redirect, Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Home, ClipboardList, Library, History, User, Utensils } from 'lucide-react-native'
+import { Home, ClipboardList, Library, History, User, Utensils, CalendarDays } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { isOnboardingDone } from '@calistenia/core/lib/onboarding-state'
@@ -68,6 +68,13 @@ export default function TabsLayout() {
         options={{
           title: t('nav.progress'),
           tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: t('nav.calendar'),
+          tabBarIcon: ({ color, size }) => <CalendarDays color={color} size={size} />,
         }}
       />
       <Tabs.Screen

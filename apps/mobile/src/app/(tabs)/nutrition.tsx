@@ -91,9 +91,9 @@ export default function NutritionTab() {
   const authUser = useAuthUser()
   const userId = authUser?.id ?? null
   const router = useRouter()
-  const { action } = useLocalSearchParams<{ action?: string }>()
+  const { action, date: dateParam } = useLocalSearchParams<{ action?: string; date?: string }>()
 
-  const [selectedDate, setSelectedDate] = useState(todayStr())
+  const [selectedDate, setSelectedDate] = useState(dateParam || todayStr())
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily')
   const [showCoach, setShowCoach] = useState(false)
   const [loggerVisible, setLoggerVisible] = useState(false)
@@ -261,6 +261,13 @@ export default function NutritionTab() {
   useEffect(() => {
     fetchEntriesForDate(selectedDate)
   }, [selectedDate, fetchEntriesForDate])
+
+  // Deep-link: cuando se navega aquí con ?date (p.ej. desde el Calendario), saltar
+  // a ese día. El tab queda montado, así que el initializer de useState no basta.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync a deep-link param into local state; tab stays mounted so initializer alone won't fire
+    if (dateParam) setSelectedDate(dateParam)
+  }, [dateParam])
 
   // ─── Preload last 7 days for weekly chart ────────────────────────────────────
   useEffect(() => {
