@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import i18n from '@/lib/i18n'
-import { ChevronLeft, ChevronRight, Dumbbell, Activity, Repeat, Sparkles, Utensils, Droplet, Moon, Scale, ChevronRight as Caret } from 'lucide-react-native'
+import { ChevronLeft, ChevronRight, Dumbbell, Activity, Repeat, Sparkles, Utensils, Droplet, Moon, Scale, Ruler, Camera, ShieldCheck, ChevronRight as Caret } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
@@ -26,6 +26,9 @@ const ACCENT = {
   water: { dot: 'bg-cyan-400', text: 'text-cyan-400', icon: '#22d3ee', chip: 'bg-cyan-400/10 border-cyan-400/20' },
   sleep: { dot: 'bg-indigo-400', text: 'text-indigo-400', icon: '#818cf8', chip: 'bg-indigo-400/10 border-indigo-400/20' },
   weight: { dot: 'bg-rose-400', text: 'text-rose-400', icon: '#fb7185', chip: 'bg-rose-400/10 border-rose-400/20' },
+  measurement: { dot: 'bg-teal-400', text: 'text-teal-400', icon: '#2dd4bf', chip: 'bg-teal-400/10 border-teal-400/20' },
+  photo: { dot: 'bg-fuchsia-400', text: 'text-fuchsia-400', icon: '#e879f9', chip: 'bg-fuchsia-400/10 border-fuchsia-400/20' },
+  lumbar: { dot: 'bg-emerald-400', text: 'text-emerald-400', icon: '#34d399', chip: 'bg-emerald-400/10 border-emerald-400/20' },
 } as const
 
 type CalEntry =
@@ -85,7 +88,13 @@ export default function CalendarScreen() {
   }, [userId, viewYear, viewMonth, refreshKey])
 
   // Refresca al volver a la pestaña (equivalente al visibilitychange web).
-  useFocusEffect(useCallback(() => { setRefreshKey(k => k + 1) }, []))
+  // Saltamos el primer focus: coincide con el montaje, que el useEffect de arriba
+  // ya cubre — así evitamos un doble fetch en la carga inicial.
+  const didMount = useRef(false)
+  useFocusEffect(useCallback(() => {
+    if (!didMount.current) { didMount.current = true; return }
+    setRefreshKey(k => k + 1)
+  }, []))
 
   // Mapa fecha → entradas (entrenos del progress + cardio + circuit del mes).
   const entriesByDate = useMemo(() => {
@@ -122,17 +131,24 @@ export default function CalendarScreen() {
     let activeDays = 0, totalSessions = 0
     for (const d of days) {
       if (d === null) continue
-      const n = entriesByDate[ymd(viewYear, viewMonth, d)]?.length || 0
-      if (n > 0) { activeDays++; totalSessions += n }
+      const date = ymd(viewYear, viewMonth, d)
+      const n = entriesByDate[date]?.length || 0
+      totalSessions += n
+      // "Día activo" = cualquier dato registrado (sesión o bienestar), para que
+      // el contador coincida con los puntos que pinta la cuadrícula.
+      const hasWellness = !!data.nutritionByDate[date] || !!data.waterByDate[date]
+        || !!data.sleepByDate[date] || !!data.weightByDate[date]
+        || !!data.measurementByDate[date] || !!data.photosByDate[date] || !!data.lumbarByDate[date]
+      if (n > 0 || hasWellness) activeDays++
     }
     return { activeDays, totalSessions }
-  }, [days, viewYear, viewMonth, entriesByDate])
+  }, [days, viewYear, viewMonth, entriesByDate, data])
 
   const selectedEntries = selectedDate ? entriesByDate[selectedDate] || [] : []
 
   const prevMonth = () => { haptics.selection(); if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) } else setViewMonth(m => m - 1) }
   const nextMonth = () => { haptics.selection(); if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) } else setViewMonth(m => m + 1) }
-  const goToday = () => { haptics.selection(); setViewYear(now.getFullYear()); setViewMonth(now.getMonth()); setSelectedDate(today) }
+  const goToday = () => { haptics.selection(); const n = new Date(); setViewYear(n.getFullYear()); setViewMonth(n.getMonth()); setSelectedDate(todayStr()) }
 
   // Entreno planificado del día (según weekday del programa activo).
   const plannedFor = (dateStr: string): WeekDay | null => {
@@ -207,8 +223,11 @@ export default function CalendarScreen() {
                   const water = data.waterByDate[date]
                   const sleep = data.sleepByDate[date]
                   const weight = data.weightByDate[date]
+                  const measurement = data.measurementByDate[date]
+                  const photos = data.photosByDate[date]
+                  const lumbar = data.lumbarByDate[date]
                   const hasSession = entries.length > 0
-                  const hasAny = hasSession || !!nutrition || !!water || !!sleep || !!weight
+                  const hasAny = hasSession || !!nutrition || !!water || !!sleep || !!weight || !!measurement || !!photos || !!lumbar
                   const isToday = date === today
                   const isSelected = date === selectedDate
                   const isFuture = date > today
@@ -237,6 +256,9 @@ export default function CalendarScreen() {
                             {water && <View className={cn('size-1 rounded-full', ACCENT.water.dot)} />}
                             {sleep && <View className={cn('size-1 rounded-full', ACCENT.sleep.dot)} />}
                             {weight && <View className={cn('size-1 rounded-full', ACCENT.weight.dot)} />}
+                            {measurement && <View className={cn('size-1 rounded-full', ACCENT.measurement.dot)} />}
+                            {photos && <View className={cn('size-1 rounded-full', ACCENT.photo.dot)} />}
+                            {lumbar && <View className={cn('size-1 rounded-full', ACCENT.lumbar.dot)} />}
                           </View>
                         )}
                       </Pressable>
@@ -326,8 +348,8 @@ export default function CalendarScreen() {
                 )
               )}
 
-              {/* Métricas de bienestar: nutrición · agua · sueño · peso */}
-              {(data.nutritionByDate[selectedDate] || data.waterByDate[selectedDate] || data.sleepByDate[selectedDate] || data.weightByDate[selectedDate]) && (
+              {/* Métricas de bienestar: nutrición · agua · sueño · peso · medidas · fotos · lumbar */}
+              {(data.nutritionByDate[selectedDate] || data.waterByDate[selectedDate] || data.sleepByDate[selectedDate] || data.weightByDate[selectedDate] || data.measurementByDate[selectedDate] || data.photosByDate[selectedDate] || data.lumbarByDate[selectedDate]) && (
                 <View className="flex-row flex-wrap gap-2 pt-1">
                   {data.nutritionByDate[selectedDate] && (
                     <Pressable onPress={() => router.push('/nutrition')} className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2 active:opacity-70', ACCENT.nutrition.chip)}>
@@ -355,6 +377,24 @@ export default function CalendarScreen() {
                     <View className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2', ACCENT.weight.chip)}>
                       <Scale size={13} color={ACCENT.weight.icon} />
                       <Text className="font-mono text-[11px] text-foreground">{data.weightByDate[selectedDate].weight_kg} kg</Text>
+                    </View>
+                  )}
+                  {data.measurementByDate[selectedDate] && (
+                    <View className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2', ACCENT.measurement.chip)}>
+                      <Ruler size={13} color={ACCENT.measurement.icon} />
+                      <Text className="font-mono text-[11px] capitalize text-foreground">{t('calendar.measurementLabel')}</Text>
+                    </View>
+                  )}
+                  {data.photosByDate[selectedDate] && (
+                    <View className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2', ACCENT.photo.chip)}>
+                      <Camera size={13} color={ACCENT.photo.icon} />
+                      <Text className="font-mono text-[11px] text-foreground">{t('calendar.photoLabel', { count: data.photosByDate[selectedDate].count })}</Text>
+                    </View>
+                  )}
+                  {data.lumbarByDate[selectedDate] && (
+                    <View className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2', ACCENT.lumbar.chip)}>
+                      <ShieldCheck size={13} color={ACCENT.lumbar.icon} />
+                      <Text className="font-mono text-[11px] capitalize text-foreground">{t('calendar.lumbarLabel')} {data.lumbarByDate[selectedDate].lumbar_score}/5</Text>
                     </View>
                   )}
                 </View>

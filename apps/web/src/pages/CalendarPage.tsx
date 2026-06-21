@@ -10,7 +10,7 @@ import { useWorkoutState } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { fetchMonthActivity } from '@calistenia/core/lib/monthActivity'
-import type { DayNutritionSummary, DayWaterSummary, CircuitSessionLite, WeightEntryLite } from '@calistenia/core/lib/monthActivity'
+import type { DayNutritionSummary, DayWaterSummary, CircuitSessionLite, WeightEntryLite, BodyMeasurementLite, DayPhotoSummary, LumbarCheckLite } from '@calistenia/core/lib/monthActivity'
 import type { SessionDone, WeekDay, CardioSession, SleepEntry } from '@calistenia/core/types'
 
 function getMonthDays(year: number, month: number) {
@@ -64,6 +64,9 @@ export default function CalendarPage() {
   const [waterByDate, setWaterByDate] = useState<Record<string, DayWaterSummary>>({})
   const [sleepByDate, setSleepByDate] = useState<Record<string, SleepEntry>>({})
   const [weightByDate, setWeightByDate] = useState<Record<string, WeightEntryLite>>({})
+  const [measurementByDate, setMeasurementByDate] = useState<Record<string, BodyMeasurementLite>>({})
+  const [photosByDate, setPhotosByDate] = useState<Record<string, DayPhotoSummary>>({})
+  const [lumbarByDate, setLumbarByDate] = useState<Record<string, LumbarCheckLite>>({})
 
   const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate())
   const days = useMemo(() => getMonthDays(viewYear, viewMonth), [viewYear, viewMonth])
@@ -89,6 +92,9 @@ export default function CalendarPage() {
       setWaterByDate(data.waterByDate)
       setSleepByDate(data.sleepByDate)
       setWeightByDate(data.weightByDate)
+      setMeasurementByDate(data.measurementByDate)
+      setPhotosByDate(data.photosByDate)
+      setLumbarByDate(data.lumbarByDate)
     })
     return () => { cancelled = true }
   }, [userId, viewYear, viewMonth, refreshKey])
@@ -162,10 +168,16 @@ export default function CalendarPage() {
       if (d === null) return
       const date = formatDate(viewYear, viewMonth, d)
       const count = sessionsByDate[date]?.length || 0
-      if (count > 0) { totalSessions += count; activeDays++ }
+      totalSessions += count
+      // "Active day" = any logged activity (session or wellness), so the count
+      // matches the dots painted in the grid.
+      const hasWellness = !!nutritionByDate[date] || !!waterByDate[date]
+        || !!sleepByDate[date] || !!weightByDate[date]
+        || !!measurementByDate[date] || !!photosByDate[date] || !!lumbarByDate[date]
+      if (count > 0 || hasWellness) activeDays++
     })
     return { totalSessions, activeDays }
-  }, [days, viewYear, viewMonth, sessionsByDate])
+  }, [days, viewYear, viewMonth, sessionsByDate, nutritionByDate, waterByDate, sleepByDate, weightByDate, measurementByDate, photosByDate, lumbarByDate])
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
@@ -251,10 +263,13 @@ export default function CalendarPage() {
               const water = waterByDate[date]
               const sleep = sleepByDate[date]
               const weight = weightByDate[date]
+              const measurement = measurementByDate[date]
+              const photos = photosByDate[date]
+              const lumbar = lumbarByDate[date]
               const isToday = date === todayStr
               const isSelected = date === selectedDate
               const hasSession = sessions.length > 0
-              const hasAnyData = hasSession || !!nutrition || !!water || !!sleep || !!weight
+              const hasAnyData = hasSession || !!nutrition || !!water || !!sleep || !!weight || !!measurement || !!photos || !!lumbar
               const isFuture = date > todayStr
 
               return (
@@ -290,6 +305,9 @@ export default function CalendarPage() {
                       {water && <div className="size-1 rounded-full bg-cyan-400" />}
                       {sleep && <div className="size-1 rounded-full bg-indigo-400" />}
                       {weight && <div className="size-1 rounded-full bg-rose-400" />}
+                      {measurement && <div className="size-1 rounded-full bg-teal-400" />}
+                      {photos && <div className="size-1 rounded-full bg-fuchsia-400" />}
+                      {lumbar && <div className="size-1 rounded-full bg-emerald-400" />}
                     </div>
                   )}
                 </button>
@@ -431,8 +449,8 @@ export default function CalendarPage() {
               <div className="text-xs text-muted-foreground">{t('calendar.upcoming')}</div>
             )}
 
-            {/* Nutrition · Water · Sleep · Weight summary for selected day */}
-            {selectedDate && (nutritionByDate[selectedDate] || waterByDate[selectedDate] || sleepByDate[selectedDate] || weightByDate[selectedDate]) && (
+            {/* Nutrition · Water · Sleep · Weight · Measurements · Photos · Lumbar summary for selected day */}
+            {selectedDate && (nutritionByDate[selectedDate] || waterByDate[selectedDate] || sleepByDate[selectedDate] || weightByDate[selectedDate] || measurementByDate[selectedDate] || photosByDate[selectedDate] || lumbarByDate[selectedDate]) && (
               <div className={cn('flex gap-4 flex-wrap', selectedSessions.length > 0 || selectedPlanned ? 'mt-4 pt-4 border-t border-border/60' : 'mt-2')}>
                 {nutritionByDate[selectedDate] && (
                   <button
@@ -475,6 +493,30 @@ export default function CalendarPage() {
                     <div className="text-[11px]">
                       <span className="text-rose-400 font-medium">{weightByDate[selectedDate].weight_kg} kg</span>
                       <span className="text-muted-foreground ml-1.5">{t('calendar.weightLabel')}</span>
+                    </div>
+                  </div>
+                )}
+                {measurementByDate[selectedDate] && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-teal-400/5 border border-teal-400/15 rounded-lg">
+                    <div className="size-2 rounded-full bg-teal-400" />
+                    <div className="text-[11px]">
+                      <span className="text-teal-400 font-medium capitalize">{t('calendar.measurementLabel')}</span>
+                    </div>
+                  </div>
+                )}
+                {photosByDate[selectedDate] && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-fuchsia-400/5 border border-fuchsia-400/15 rounded-lg">
+                    <div className="size-2 rounded-full bg-fuchsia-400" />
+                    <div className="text-[11px]">
+                      <span className="text-fuchsia-400 font-medium">{t('calendar.photoLabel', { count: photosByDate[selectedDate].count })}</span>
+                    </div>
+                  </div>
+                )}
+                {lumbarByDate[selectedDate] && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-emerald-400/5 border border-emerald-400/15 rounded-lg">
+                    <div className="size-2 rounded-full bg-emerald-400" />
+                    <div className="text-[11px]">
+                      <span className="text-emerald-400 font-medium capitalize">{t('calendar.lumbarLabel')} {lumbarByDate[selectedDate].lumbar_score}/5</span>
                     </div>
                   </div>
                 )}
