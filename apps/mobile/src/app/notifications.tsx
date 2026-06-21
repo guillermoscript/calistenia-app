@@ -19,6 +19,9 @@ import type { AppNotification, NotificationType } from '@calistenia/core/hooks/u
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Separador de fila estable (a nivel de módulo: no se remonta en cada render). */
+const NotifSeparator = () => <View className="mx-4 h-px bg-border/40" />
+
 /** Tiempo relativo en español */
 function relativeTimeEs(dateStr: string): string {
   if (!dateStr) return ''
@@ -272,7 +275,7 @@ export default function NotificationsScreen() {
           renderItem={({ item }) => (
             <NotificationRow item={item} onPress={handleTap} />
           )}
-          ItemSeparatorComponent={() => <View className="mx-4 h-px bg-border/40" />}
+          ItemSeparatorComponent={NotifSeparator}
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center gap-3 py-20">
               <BellOff size={36} color="#52525b" strokeWidth={1.5} />

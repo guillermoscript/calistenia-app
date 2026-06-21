@@ -115,28 +115,20 @@ export default function PRCelebration({
             </View>
           </View>
 
-          {/* Share button — stopPropagation via onPress not calling onDismiss */}
-          <Pressable
+          {/* Botón compartir — su propio onPress evita que el tap llegue a la tarjeta. */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-lime-400/25 shrink-0"
             onPress={(e) => {
               e.stopPropagation?.()
               void handleShare()
             }}
-            style={styles.shareBtn}
           >
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-lime-400/25 shrink-0"
-              onPress={(e) => {
-                e.stopPropagation?.()
-                void handleShare()
-              }}
-            >
-              <Text className="font-mono text-[10px] tracking-widest text-lime-400 uppercase">
-                COMPARTIR
-              </Text>
-            </Button>
-          </Pressable>
+            <Text className="font-mono text-[10px] tracking-widest text-lime-400 uppercase">
+              COMPARTIR
+            </Text>
+          </Button>
         </Pressable>
       </Animated.View>
     </>
@@ -178,8 +170,4 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 2,
-  },
-  shareBtn: {
-    flexShrink: 0,
-  },
-})
+  },})
