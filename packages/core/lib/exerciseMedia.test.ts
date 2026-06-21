@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { getExerciseMedia } from './exerciseMedia'
-import type { ExerciseMediaInput, CatalogMediaRecord } from './exerciseMedia'
+import type { ExerciseMediaInput, CatalogMediaRecord, CatalogStaticMedia } from './exerciseMedia'
 
 const PB = 'https://gym.guille.tech'
 
@@ -42,6 +42,19 @@ const catalogNoMedia: CatalogMediaRecord = {
   pbRecordId: 'cat_rec_def',
   defaultImages: [],
   youtube_query: 'burpee exercise tutorial',
+}
+
+// [015] Catalog with static structured media (bundled catalog paths)
+const pullupStaticMedia: CatalogStaticMedia = {
+  sequence:  '/exercise-media/strict-pull-up/sequence.webp',
+  muscles:   '/exercise-media/strict-pull-up/muscles.webp',
+  thumbnail: '/exercise-media/strict-pull-up/thumbnail.webp',
+}
+
+const catalogWithStaticMedia: CatalogMediaRecord = {
+  pbRecordId: 'cat_rec_pullup',
+  youtube_query: 'strict pull-up tutorial',
+  staticMedia: pullupStaticMedia,
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -149,5 +162,54 @@ describe('getExerciseMedia', () => {
     })
     // Should fall to catalog, not program
     expect(result.source).toBe('catalog')
+  })
+
+  // ── [Plan 015] Structured static media ──────────────────────────────────────
+
+  it('[015] resolves staticMedia fields with origin-relative paths (web, no baseUrl)', () => {
+    const result = getExerciseMedia(exerciseNoMedia, { catalogRecord: catalogWithStaticMedia })
+    expect(result.source).toBe('catalog')
+    expect(result.sequence).toBe('/exercise-media/strict-pull-up/sequence.webp')
+    expect(result.muscles).toBe('/exercise-media/strict-pull-up/muscles.webp')
+    expect(result.thumbnail).toBe('/exercise-media/strict-pull-up/thumbnail.webp')
+    // back-compat images[] = [sequence, muscles]
+    expect(result.images).toEqual([
+      '/exercise-media/strict-pull-up/sequence.webp',
+      '/exercise-media/strict-pull-up/muscles.webp',
+    ])
+  })
+
+  it('[015] prefixes origin-relative paths with mediaBaseUrl (mobile)', () => {
+    const result = getExerciseMedia(exerciseNoMedia, {
+      catalogRecord: catalogWithStaticMedia,
+      mediaBaseUrl: PB,
+    })
+    expect(result.source).toBe('catalog')
+    expect(result.sequence).toBe(`${PB}/exercise-media/strict-pull-up/sequence.webp`)
+    expect(result.muscles).toBe(`${PB}/exercise-media/strict-pull-up/muscles.webp`)
+    expect(result.thumbnail).toBe(`${PB}/exercise-media/strict-pull-up/thumbnail.webp`)
+    expect(result.images[0]).toBe(`${PB}/exercise-media/strict-pull-up/sequence.webp`)
+  })
+
+  it('[015] program override wins over staticMedia; muscles/thumbnail still from catalog', () => {
+    const result = getExerciseMedia(exerciseWithOverride, {
+      pbBaseUrl: PB,
+      catalogRecord: catalogWithStaticMedia,
+    })
+    expect(result.source).toBe('program')
+    // sequence gets first program image
+    expect(result.sequence).toBe(`${PB}/api/files/program_exercises/pe_rec_123/demo1.jpg`)
+    // muscles still comes from catalog staticMedia (supplementary)
+    expect(result.muscles).toBe('/exercise-media/strict-pull-up/muscles.webp')
+  })
+
+  it('[015] no-media exercise → sequence/muscles/thumbnail all null, youtubeUrl set', () => {
+    const result = getExerciseMedia(exerciseNoMedia, { catalogRecord: catalogNoMedia })
+    expect(result.source).toBe('none')
+    expect(result.sequence).toBeNull()
+    expect(result.muscles).toBeNull()
+    expect(result.thumbnail).toBeNull()
+    expect(result.images).toHaveLength(0)
+    expect(result.youtubeUrl).toContain('youtube.com')
   })
 })
