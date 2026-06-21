@@ -7,6 +7,7 @@ import catalogData from '@calistenia/core/data/exercise-catalog.json'
 import { useProgressions } from '@calistenia/core/hooks/useProgressions'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, getEquipmentLabelKey, EQUIPMENT_CATALOG } from '@calistenia/core/lib/equipment'
+import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
@@ -438,6 +439,11 @@ export default function ExerciseDetailPage() {
   const images = exercise.demoImages || []
   const hasImages = images.length > 0
   const hasVideo = !!exercise.demoVideo
+  // [015] Structured canonical media (sequence hero + muscle-activation map) by exercise id.
+  // Origin-relative paths ("/exercise-media/…") resolve same-origin on web.
+  const staticMedia = getCatalogStaticMedia(exercise.id)
+  const sequenceUrl = staticMedia?.sequence || null
+  const musclesUrl = staticMedia?.muscles || null
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12 pb-16">
@@ -537,7 +543,15 @@ export default function ExerciseDetailPage() {
 
         {/* Media - shown on right on desktop */}
         <div className="md:w-[320px] shrink-0">
-          {hasImages ? (
+          {sequenceUrl ? (
+            <div className="rounded-xl overflow-hidden bg-muted/30 border border-border/40">
+              <img
+                src={sequenceUrl}
+                alt={`${l(exercise.name)} — secuencia`}
+                className="w-full object-contain"
+              />
+            </div>
+          ) : hasImages ? (
             <div className="relative rounded-xl overflow-hidden bg-muted">
               <img
                 src={images[imageIndex]}
@@ -646,6 +660,15 @@ export default function ExerciseDetailPage() {
 
         {/* Muscles tab */}
         <TabsContent value="musculos">
+          {musclesUrl && (
+            <div className="rounded-xl overflow-hidden bg-muted/30 border border-border/40 mb-4">
+              <img
+                src={musclesUrl}
+                alt={`${l(exercise.name)} — músculos trabajados`}
+                className="w-full max-h-[420px] object-contain mx-auto"
+              />
+            </div>
+          )}
           <div className="rounded-xl bg-muted/60 p-6">
             <div className="flex flex-wrap gap-3">
               {muscleList.map((muscle, i) => (
