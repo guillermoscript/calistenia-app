@@ -69,7 +69,10 @@ function extractCatalog(): CatalogItem[] {
 }
 
 function mapPBCatalog(rec: any): CatalogItem {
-  return { id: rec.id ?? '', name: rec.name ?? '', muscles: rec.muscles ?? '' }
+  // Identity MUST be the stable, human-meaningful slug — never the random PB
+  // primary key (rec.id), which silently fragments score history. slug is a
+  // required field on every exercises_catalog record (migration 1774000001).
+  return { id: rec.slug || rec.id || '', name: rec.name ?? '', muscles: rec.muscles ?? '' }
 }
 
 function makeCustomId(name: string): string {
