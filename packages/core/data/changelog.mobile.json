@@ -46,6 +46,15 @@
           }
         },
         {
+          "icon": "💾",
+          "type": "feat",
+          "title": { "es": "Plantillas de sesión libre", "en": "Free-session templates" },
+          "body": {
+            "es": "Guarda tus sesiones de IA y reutilízalas cuando quieras, sin volver a generarlas.",
+            "en": "Save your AI free sessions and reuse them anytime — no need to regenerate."
+          }
+        },
+        {
           "icon": "🎬",
           "type": "feat",
           "title": { "es": "Ejercicios más claros", "en": "Clearer exercise guides" },
@@ -83,6 +92,7 @@
             { "description": "Meal-timing, day-rollover & quality scoring", "scope": "nutrition", "breaking": false, "hash": "559d478" },
             { "description": "Past-session detail views + web/native parity", "scope": "mobile", "breaking": false, "hash": "0a2ce6b" },
             { "description": "Quick-access hamburger menu", "scope": "mobile", "breaking": false, "hash": "cd6976f" },
+            { "description": "Save & reuse free sessions as templates", "scope": "free-session", "breaking": false, "hash": "770c328" },
             { "description": "Exercise normalization, universal PRs, tempo & structured media", "scope": "exercise-data", "breaking": false, "hash": "4e818a9" }
           ]
         },

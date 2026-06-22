@@ -19,6 +19,7 @@ _Calendario unificado, horario de comidas y un repaso completo de tus sesiones p
 - **Horario de comidas** — Registra cuándo comes y cuánto dura cada comida, con una puntuación diaria de calidad nutricional.
 - **Detalle de sesiones pasadas** — Toca cualquier entreno o cardio anterior para ver el desglose completo: series, reps, ruta y mapa.
 - **Menú de acceso rápido** — Un nuevo menú ☰ te lleva en un toque a sesiones libres, comunidad, carreras y recordatorios.
+- **Plantillas de sesión libre** — Guarda tus sesiones de IA y reutilízalas cuando quieras, sin volver a generarlas.
 - **Ejercicios más claros** — Los ejercicios ahora incluyen indicaciones de tempo y mejores demos para cuidar tu técnica.
 
 ### Corregido

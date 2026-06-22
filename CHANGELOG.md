@@ -19,6 +19,7 @@ _A unified calendar, meal timing, and a full look back at your past sessions._
 - **Meal timing** — Log when you eat and how long each meal lasts, with a daily nutrition-quality score.
 - **Past-session details** — Tap any past workout or cardio to see the full breakdown: sets, reps, route and map.
 - **Quick-access menu** — A new ☰ menu takes you in one tap to free sessions, community, races and reminders.
+- **Free-session templates** — Save your AI free sessions and reuse them anytime — no need to regenerate.
 - **Clearer exercise guides** — Exercises now include tempo cues and clearer demo media to keep your form sharp.
 
 ### Fixed
