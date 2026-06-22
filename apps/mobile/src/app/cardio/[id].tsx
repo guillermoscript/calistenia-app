@@ -234,7 +234,7 @@ export default function CardioDetailScreen() {
               NOTA
             </Text>
             <Text className="font-sans-italic text-sm text-muted-foreground leading-5">
-              "{session.note}"
+              &quot;{session.note}&quot;
             </Text>
           </View>
         )}

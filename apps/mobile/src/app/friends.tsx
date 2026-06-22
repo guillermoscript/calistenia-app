@@ -347,7 +347,7 @@ export default function FriendsScreen() {
           )}
           {!searching && !searchError && searchResults.length === 0 && (
             <View className="items-center py-10 gap-2">
-              <Text className="font-sans-medium text-foreground">Sin resultados para "{query}"</Text>
+              <Text className="font-sans-medium text-foreground">Sin resultados para &quot;{query}&quot;</Text>
               <Text className="text-sm text-muted-foreground text-center">
                 ¿No está en la app? Invítalo a unirse.
               </Text>

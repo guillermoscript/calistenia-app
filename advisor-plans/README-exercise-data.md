@@ -1,4 +1,4 @@
-# Advisor Plans — exercise data normalization, score tracking, tempo & media (plans 008–014)
+# Advisor Plans — exercise data normalization, score tracking, tempo & media (plans 008–015)
 
 Generated 2026-06-21 from a `plan`-style request: *"are exercises properly
 normalized (es/en), can we track every exercise's score (not just a handful), does
@@ -53,26 +53,13 @@ Full evidence is embedded verbatim in each plan's "Current state" section.
 | 008 | Fix exercise ID drift in `LogWorkoutPage` (log `rec.slug`, not random `rec.id`) | P1 | S | MED | — | DONE — branch `advisor/008-logworkout-id-drift` @ `cb4e725`, adversarial verify=PASS (tsc✓); awaiting maintainer apply + manual smoke (Step 4) |
 | 009 | Universal PR tracking + robust reps parsing (every exercise, not 5 families) | P1 | M | MED | — | DONE — branch `advisor/009-universal-pr-tracking` @ `e49def3`, verify=PASS (web+mobile tsc✓, core 67 tests✓); awaiting apply + smoke (Step 6) |
 | 010 | Catalog data-integrity pass (dup `cat_cow`, split `thoracic_rot*`, mislabeled `sit_ups`) + validation test | P2 | M | LOW | — | DONE — branch `advisor/010-catalog-data-integrity` @ `a27e0725`, verify=PASS (validator + 20 tests✓); awaiting apply |
-| 011 | Unify the catalog: make `seeds/exercises/*.json` the single source of truth (descriptions 13%→100%, one id scheme) | P2 | L | HIGH | 010 | DONE (Phase A+B) — branch `advisor/011-unify-catalog-from-seeds` @ `e9f10d0`. 307 entries (126 enriched + 137 new), 92% desc coverage, invariant held (170 old ids ⊆ 307), 3 copies md5-identical, `test:catalog` 20/20, idempotent (frozen base). Adversarial verify PASS after 3 fixes (F1 test glob / F2 idempotency / F3 step_up mis-enrich). Phase C (PB) + Phase D (`sets_log`) DEFERRED. |
-| 012 | Exercise alias / canonicalization layer (`resolveExerciseId`, populate `variant_of`) | P3 | M | MED | 011 | DONE — branch `advisor/012-exercise-alias-canonicalization` @ `8440f9d` (off 011). Pure `resolveExerciseId` (exact id → slug-map via `seed_slug` → unambiguous name index es/en → unchanged; **no fuzzy**), 20 new vitest (77/77 core), wired into `LogWorkoutPage` custom path (no-op on true custom names), `variant_of` on 4 `_N` collision pairs. Verify=PASS high (web build + mobile tsc ✓). |
-| 013 | Structured exercise execution model (tempo / eccentric / pauses / holds) + player display | P2 | M–L | MED | 011 | DONE — branch `advisor/013-structured-exercise-tempo` @ `f805206` (off 011). `ExerciseTempo`+`tempo?` type, seed `_schema` field, `extract-tempo.mjs` (19 vitest) → `tempo-proposal.json` (7 proposals). **6 maintainer-approved high-confidence cues applied to seeds** (`neg_pullup` ecc 5s, `pullup_strict`/`inverted_row_pause`/`glute_bridge`/`glute_bridge_pause`/`superman` pauses); `step_up` (low conf) deferred. Generator+`seed-exercises` plumbing, PB migration (field-id-safe), web+mobile `SessionView` render. Verify=PASS high. (Minor follow-up: guard `extract-tempo.mjs` `main()` so importing it in tests has no side effect.) |
-| 014 | Canonical, reusable exercise media (one image/video set, reused across library · program · free session · mobile) | P2 | L | MED | 011 | DONE (pipeline) — branch `advisor/014-canonical-reusable-media` @ `bbbb055` (off 011). Pure `exerciseMedia.ts` resolver (program→catalog→youtube fallback, 67 core tests), `MediaViewer` uses it (renders catalog media), `seed-exercises` media upload (no-op without files), honest `with_curated_video`/`with_youtube_query` counters, mobile image viewer. **No media binaries committed**; mobile video deferred (no player dep). Verify=PASS high. |
+| 011 | Unify the catalog: make `seeds/exercises/*.json` the single source of truth (descriptions 13%→100%, one id scheme) | P2 | L | HIGH | 010 | DONE (Phase A+B) — branch `advisor/011-unify-catalog-from-seeds` @ `4abea7d` (A `abc00c5` + B `2355e61` + post-verify fixes `4abea7d`). Final count=307, coverage=92% (24 missing = pre-existing app-specific ids with no seed, e.g. `pushup_std`), 126 enriched + 137 new, invariant held (170 old ids ⊆ 307, 0 dropped/renamed), md5 identical (3 copies), `test:catalog` 20/20 ✓, validator 0 hard errors (3 copies + 8 seed files), equipment vocab 100% canonical, **pipeline idempotent** (frozen base). Adversarial verify (2 opus lenses) PASS after 3 fixes (see "Post-verify fixes" below). Web build / mobile typecheck unaffected by construction (catalog imported `as any` / `as unknown`; `base.json` unreferenced). Phase C (PB) + Phase D (`sets_log`) DEFERRED. |
+| 012 | Exercise alias / canonicalization layer (`resolveExerciseId`, populate `variant_of`) | P3 | M | MED | 011 | DONE — branch `advisor/012-exercise-alias-canonicalization`, verify=PASS-high. Re-run `build:catalog` after merging 011. |
+| 013 | Structured exercise execution model (tempo / eccentric / pauses / holds) + player display | P2 | M–L | MED | 011 | DONE (pipeline) — branch `advisor/013-structured-exercise-tempo`, verify=PASS-high. Tempo **data** awaits maintainer approval (6 high-confidence cues applied to seeds; `scripts/tempo-proposal.json` is proposal-only). |
+| 014 | Canonical, reusable exercise media (one image/video set, reused across library · program · free session · mobile) | P2 | L | MED | 011 | DONE — branch `advisor/014-canonical-reusable-media`, verify=PASS-high. Pure resolver `packages/core/lib/exerciseMedia.ts` (program → catalog-static → catalog-PB → curated → youtube); no binaries. |
+| 015 | Structured media schema (`media {sequence, muscles, thumbnail, video}`) + static-bundled delivery so all exercises render demo + muscle map | P2 | M | MED | 011, 014 | DONE — branch `advisor/015-structured-media` @ `7a4dab5`, verified end-to-end on web (strict-pull-up: 3-phase movement strip in hero box + muscle-activation map in MÚSCULOS tab). Mobile resolves via catalog id (tsc✓). See "Plan 015" section below. |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (reason) | REJECTED (reason)
-
-### Integration branch (verified, not merged to `main`)
-
-`advisor/exercise-data-integration` @ `730510b` is the **full shippable stack: 008 + 009 +
-010 + 011 + 012 + 013 (incl. the 6 approved tempos) + 014**. 010–014 merged off `advisor/011`;
-008 + 009 then merged in cleanly (no conflicts — 008's `mapPBCatalog` vs 012's custom path are
-different functions; 009's Settings PR fields vs 013's tempo are different regions). The only
-conflicts in the 012–014 round were the regenerated catalog JSON (resolved by re-running
-`build:catalog`), one generator line (tempo + media fields combined), and mobile
-`SessionView.tsx` (tempo cue + media carousel, both kept). Full gate suite GREEN: core vitest
-**97/97** (incl. 009 pr-utils), tempo parser 19/19, web + mobile typecheck exit 0, web build
-exit 0, `test:catalog` 20/20, 3 catalog copies md5-identical, invariant held, catalog 307
-entries (4 `variant_of`, 6 `tempo`, honest media counters). `main` untouched at `943f558`.
-**To ship: merge this one branch into `main`** (brings the whole 008→014 chain).
 
 ## Decisions
 
@@ -80,6 +67,91 @@ entries (4 `variant_of`, 6 `tempo`, honest media counters). `main` untouched at 
   from seeds (Option A).** Rejected: adopting kebab slugs as canonical (would
   require migrating all historical `sets_log`). This keeps existing user score
   history intact while raising description coverage to ~100%.
+
+## Plan 011 — Post-verify fixes (2026-06-21)
+
+Phase A+B were implemented and adversarially verified by two opus lenses. Lens A
+(invariant safety) passed first time; Lens B (data correctness) found three real
+defects, all since fixed in commit `4abea7d`:
+
+- **F1 — `test:catalog` regression.** The Plan-010 test globs
+  `seeds/exercises/*.json` minus `_schema.json`, so the newly-committed
+  `_id-map.json` (not seed-shaped) failed the gate (20/22). Fix: the test now
+  skips **all** `_`-prefixed files. → 20/20.
+- **F2 — non-idempotent pipeline.** Both `build-id-map.mjs` and
+  `build-exercise-catalog.mjs` (offline) read `packages/core/data/exercise-catalog.json`
+  — the same file the merge overwrites — so re-running drifted 306→316 and the
+  artifact was not reproducible from a clean checkout. Fix: a **frozen base
+  snapshot** `packages/core/data/exercise-catalog.base.json` (the pre-011
+  170-entry catalog) is the merge's immutable input; the 3 live copies are the
+  output. `npm run build:id-map && npm run build:catalog` is now idempotent.
+  `--refresh-wger` rewrites the snapshot from the wger fetch.
+- **F3 — semantic mis-enrichment on id collision.** The basic `step-up` seed's
+  derived id `step_up` collided with the *existing* `step_up` entry — which is
+  actually **"Step-up Explosivo"** — and overwrote it with generic content, while
+  the real `explosive-step-up` seed became a duplicate `explosive_step_up`. Fix:
+  derived-id collisions where the **names don't match** are now added as NEW
+  entries (`step_up_2`, `box_jump_2`) and never enrich the mismatched entry; the
+  explosive seed now correctly enriches `step_up` and the duplicate is gone.
+
+**Known acceptable residue (for Plan 012's alias layer):** a few near-duplicate
+pairs remain by design rather than risk a wrong merge — `box_jump` (local "silla
+sólida", no seed) vs `box_jump_2` (seed "Box Jump"); `muscle_up` (ambiguous
+fuzzy-hit, routed to a new entry) vs `muscleup_real`. These are the validator's
+remaining duplicate-**name** warnings (11 total, all non-blocking). Plan 012
+(`resolveExerciseId` + `variant_of`) is the place to canonicalize them.
+
+**Coverage note:** 24/307 still lack a description — every one is a pre-existing
+app-specific id with no seed (e.g. `pushup_std` from `workouts.ts`). Reaching
+~100% is content work (author seeds for those), not a pipeline gap. The merge
+already brings all 263 seeds' descriptions through.
+
+## Plan 015 — Structured media (2026-06-21)
+
+Builds on 014's resolver to give every exercise a well-managed media schema and a
+working static-bundled delivery path, so images like the pasted pull-up composite
+(3-phase movement strip + muscle-activation map) render across all surfaces.
+
+**Schema.** The canonical seed/catalog record carries a structured
+`media { sequence, muscles, thumbnail, video }` object (filenames, stored under
+`seeds/exercises/media/<slug>/`). `seeds/exercises/_schema.json` replaces the old
+flat `image_files`/`video_file` with this object. A PB migration
+(`pb_migrations/1776920000_add_structured_media_to_exercises_catalog.js`) adds
+`media_sequence` / `media_muscles` / `media_thumbnail` file fields (additive,
+field ids preserved per the migration-safety rule).
+
+**Delivery (static-bundled).** `scripts/sync-exercise-media.mjs` (`npm run build:media`)
+copies `seeds/exercises/media/<slug>/*` → `apps/web/public/exercise-media/<slug>/`;
+`build-exercise-catalog.mjs` carries each `media` value into the bundled catalog as
+an **origin-relative** path (`/exercise-media/<slug>/<file>`). Web resolves these
+same-origin; mobile prefixes `EXPO_PUBLIC_PB_URL` (or `gym.guille.tech`).
+
+**Resolution.** The pure resolver `packages/core/lib/exerciseMedia.ts` returns
+`{ sequence, muscles, thumbnail, video, images, … }`. A bundled-catalog helper
+`packages/core/lib/catalogMedia.ts` (`getCatalogStaticMedia`) supplies the
+`catalogRecord.staticMedia` from just an id/slug, indexing the catalog by **`id`,
+`seed_slug` AND `slug`**. Wired into `MediaViewer` (library/session/free-session),
+mobile `SessionView`, and `ExerciseDetailPage`.
+
+**Adversarial verify caught two real defects, both fixed:**
+
+- **D1 — media never populated.** The resolver reads `catalogRecord.staticMedia`,
+  but no call site set it → structured media silently never rendered. Fixed by the
+  `catalogMedia.ts` helper + wiring all three surfaces (commit `47e870a`).
+- **D2 — detail-page lookup miss (`7a4dab5`).** `ExerciseDetailPage` loads from PB
+  when available, where `mapPBRecord` sets `exercise.id` to the **PB record id**
+  (random 15-char), not the catalog id/slug → `getCatalogStaticMedia(exercise.id)`
+  missed and fell back to the placeholder. Fixed by indexing media by id + seed_slug
+  + slug, and looking up by `exercise.slug` first, then `exercise.id`.
+
+First populated exercise: **strict-pull-up** (`pullup_strict`) — composite split
+into `sequence.webp` / `muscles.webp` / `thumbnail.webp` (~96 KB total).
+Verified visually on web (Playwright): hero box shows the movement strip, MÚSCULOS
+tab shows the activation map. Web + mobile `tsc` clean.
+
+**To populate a new exercise:** drop `sequence/muscles/thumbnail.webp` into
+`seeds/exercises/media/<slug>/`, add the `media {…}` object to that exercise's seed
+entry, then `npm run build:media && npm run build:catalog`.
 
 ## Recommended sequencing
 

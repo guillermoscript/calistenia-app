@@ -19,6 +19,7 @@
         {
           "name": { "es": "Glute Bridge", "en": "Glute Bridge" },
           "slug": "glute-bridge",
+          "tempo": { "pauseTop": 1, "concentric": 1 },
           "description": { "es": "Elevación de cadera tumbado boca arriba con pies apoyados. Aprieta los glúteos arriba y baja controladamente.", "en": "Hip raise lying face up with feet planted. Squeeze glutes at the top and lower with control." },
           "muscles": { "es": "Glúteos, isquiotibiales, lumbar", "en": "Glutes, hamstrings, lower back" },
           "difficulty_level": "beginner",
@@ -35,6 +36,7 @@
         {
           "name": { "es": "Glute Bridge con Pausa (3s)", "en": "Glute Bridge with Pause (3s)" },
           "slug": "glute-bridge-pause",
+          "tempo": { "pauseTop": 3 },
           "description": { "es": "Puente de glúteos manteniendo 3 segundos arriba. La pausa elimina la inercia y aumenta la activación muscular.", "en": "Glute bridge holding 3 seconds at the top. The pause removes momentum and increases muscle activation." },
           "muscles": { "es": "Glúteos, isquiotibiales", "en": "Glutes, hamstrings" },
           "difficulty_level": "beginner",
@@ -253,6 +255,7 @@
         {
           "name": { "es": "Superman Hold", "en": "Superman Hold" },
           "slug": "superman-hold",
+          "tempo": { "pauseTop": 3 },
           "description": { "es": "Tumbado boca abajo, eleva brazos y piernas del suelo y mantén la posición. Fortalece los erectores y toda la cadena posterior.", "en": "Lying face down, lift arms and legs off the floor and hold. Strengthens the erectors and the entire posterior chain." },
           "muscles": { "es": "Erectores, glúteos, lumbar", "en": "Erectors, glutes, lower back" },
           "difficulty_level": "beginner",

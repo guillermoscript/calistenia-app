@@ -7,6 +7,7 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { isOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import { NAV_THEME } from '@/lib/theme'
 import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
+import { QuickMenuProvider } from '@/components/QuickMenu'
 import { haptics } from '@/lib/haptics'
 
 export default function TabsLayout() {
@@ -19,6 +20,7 @@ export default function TabsLayout() {
   if (!userId || !isOnboardingDone(userId)) return <Redirect href="/onboarding" />
 
   return (
+    <QuickMenuProvider>
     <View className="flex-1">
     <Tabs
       screenListeners={{ tabPress: () => haptics.selection() }}
@@ -93,5 +95,6 @@ export default function TabsLayout() {
     {/* Sesión de cardio en curso: barra flotante para volver a /cardio */}
     <ActiveCardioBar />
     </View>
+    </QuickMenuProvider>
   )
 }

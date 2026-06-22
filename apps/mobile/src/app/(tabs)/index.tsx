@@ -17,6 +17,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
 import HomeActivity from '@/components/home/HomeActivity'
+import { MenuButton } from '@/components/QuickMenu'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
 import type { DayId, WeekDay } from '@calistenia/core/types'
@@ -149,16 +150,9 @@ export default function TodayScreen() {
               {activeProgram ? <Text className="text-sm text-lime"> · {activeProgram.name}</Text> : null}
             </Text>
           </View>
-          {/* Accesos sociales */}
+          {/* Cabecera: solo la campana (con badge ambiental) + ☰. Comunidad ya
+              está en el menú ☰ y en los pills de abajo — sin botón redundante. */}
           <View className="flex-row items-center gap-1.5 pt-1">
-            <Pressable
-              onPress={() => router.push('/social')}
-              className="size-10 items-center justify-center rounded-full bg-card border border-border active:opacity-70"
-              accessibilityRole="button"
-              accessibilityLabel="Comunidad"
-            >
-              <Users size={18} color="hsl(0 0% 55%)" />
-            </Pressable>
             <Pressable
               onPress={() => router.push('/notifications')}
               className="size-10 items-center justify-center rounded-full bg-card border border-border active:opacity-70"
@@ -168,6 +162,7 @@ export default function TodayScreen() {
               <Bell size={18} color="hsl(0 0% 55%)" />
               <NotificationBadge count={unreadCount} />
             </Pressable>
+            <MenuButton />
           </View>
         </View>
 

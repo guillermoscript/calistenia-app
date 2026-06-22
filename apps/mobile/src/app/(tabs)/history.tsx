@@ -8,6 +8,7 @@ import { Check, Activity, ChevronRight } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
+import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
@@ -74,7 +75,10 @@ export default function HistoryScreen() {
         contentContainerClassName="px-4 pb-8 gap-2"
         ListHeaderComponent={
           <View className="gap-4 pb-3 pt-2">
-            <Text className="font-bebas text-4xl leading-none text-foreground">{t('progress.title')}</Text>
+            <View className="flex-row items-center justify-between">
+              <Text className="font-bebas text-4xl leading-none text-foreground">{t('progress.title')}</Text>
+              <MenuButton />
+            </View>
 
             {/* Stats */}
             <View className="flex-row gap-3">
