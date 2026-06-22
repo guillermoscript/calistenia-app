@@ -1488,6 +1488,9 @@
   "freeSession.moveUp": "Move {{name}} up",
   "freeSession.moveDown": "Move {{name}} down",
   "freeSession.removeExercise": "Remove {{name}}",
+  "freeSession.savedTemplates": "Saved templates",
+  "freeSession.deleteTemplate": "Delete template",
+  "freeSession.delete": "Delete",
 
   "progress.summary.freePerWeek": "Free / week",
   "progress.summary.sessionsPerWeek": "Sessions / week",

@@ -1488,6 +1488,9 @@
   "freeSession.moveUp": "Mover {{name}} arriba",
   "freeSession.moveDown": "Mover {{name}} abajo",
   "freeSession.removeExercise": "Eliminar {{name}}",
+  "freeSession.savedTemplates": "Plantillas guardadas",
+  "freeSession.deleteTemplate": "Eliminar plantilla",
+  "freeSession.delete": "Eliminar",
 
   "progress.summary.freePerWeek": "Libres / semana",
   "progress.summary.sessionsPerWeek": "Sesiones / semana",

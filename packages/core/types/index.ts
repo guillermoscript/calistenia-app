@@ -338,6 +338,17 @@ export interface MealTemplate {
   lastUsedAt: string
 }
 
+/** Plantilla reutilizable de sesión libre: la lista de ejercicios que el
+ *  usuario armó, para re-lanzar el mismo entreno otra vez. */
+export interface FreeSessionTemplate {
+  id?: string
+  user?: string
+  title: string
+  exercises: Exercise[]
+  usageCount: number
+  lastUsedAt: string
+}
+
 export interface FoodHistoryItem {
   id?: string
   user?: string
