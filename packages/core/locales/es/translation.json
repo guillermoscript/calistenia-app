@@ -2067,6 +2067,9 @@
 
   "whatsNew.title": "Novedades",
   "whatsNew.continue": "Continuar",
+  "whatsNew.kicker": "Novedades",
+  "whatsNew.gotIt": "Entendido",
+  "whatsNew.details": "Detalles técnicos",
 
   "barcode.permissionDenied": "Permiso de cámara denegado. Actívalo en los ajustes del navegador.",
   "barcode.noCameraFound": "No se encontró ninguna cámara en este dispositivo.",
