@@ -247,6 +247,8 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                       try {
                         await onSaveMeal(meal)
                         setSavedMeals(prev => new Set(prev).add(i))
+                      } catch {
+                        setError(t('nutrition.dailyPlan.error', 'Error al guardar la comida'))
                       } finally {
                         setSavingIndex(null)
                       }

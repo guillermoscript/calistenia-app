@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { todayStr, addDays, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
+import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
 import NutritionDashboard from '../components/nutrition/NutritionDashboard'
@@ -26,7 +27,7 @@ import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
 import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
-import type { NutritionGoal, NutritionEntry, FoodItem, Sex, QualityScore } from '@calistenia/core/types'
+import type { NutritionGoal, NutritionEntry, FoodItem, Sex } from '@calistenia/core/types'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
@@ -243,17 +244,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     return missed.length >= 2
   }, [weeklyHistory, goals])
 
-  // Compute daily quality score
-  const dailyQualityScore = useMemo((): QualityScore | undefined => {
-    const scored = entries.filter(e => e.qualityScore)
-    if (scored.length < 2) return undefined
-    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 }
-    const reverseMap: Record<number, QualityScore> = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'E' }
-    const totalWeight = scored.reduce((s, e) => s + e.totalCalories, 0)
-    if (totalWeight === 0) return undefined
-    const weightedAvg = scored.reduce((s, e) => s + scoreMap[e.qualityScore!] * e.totalCalories, 0) / totalWeight
-    return reverseMap[Math.round(weightedAvg)]
-  }, [entries])
+  // Compute daily quality score (shared helper — same logic on web + native)
+  const dailyQualityScore = useMemo(() => computeDailyQualityScore(entries), [entries])
 
   // Persist daily score and check badges
   useEffect(() => {
@@ -492,15 +484,19 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                     <button
                       key={i}
                       onClick={async () => {
-                        await handleSaveEntry({
-                          mealType: entry.mealType,
-                          foods: entry.foods,
-                          totalCalories: entry.totalCalories,
-                          totalProtein: entry.totalProtein,
-                          totalCarbs: entry.totalCarbs,
-                          totalFat: entry.totalFat,
-                          loggedAt: nowLocalForPB(),
-                        })
+                        try {
+                          await handleSaveEntry({
+                            mealType: entry.mealType,
+                            foods: entry.foods,
+                            totalCalories: entry.totalCalories,
+                            totalProtein: entry.totalProtein,
+                            totalCarbs: entry.totalCarbs,
+                            totalFat: entry.totalFat,
+                            loggedAt: nowLocalForPB(),
+                          })
+                        } catch {
+                          toast.error(t('nutrition.logger.saveError'))
+                        }
                       }}
                       className="shrink-0 w-40 p-3 bg-card border border-border rounded-lg hover:border-lime/40 transition-colors text-left group"
                     >
@@ -527,17 +523,21 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               onDeleteEntry={deleteEntry}
               onEditEntry={updateEntry}
               onDuplicateEntry={async (entry) => {
-                await saveEntry({
-                  user: userId || undefined,
-                  mealType: entry.mealType,
-                  foods: entry.foods.map(f => ({ ...f })),
-                  totalCalories: entry.totalCalories,
-                  totalProtein: entry.totalProtein,
-                  totalCarbs: entry.totalCarbs,
-                  totalFat: entry.totalFat,
-                  loggedAt: nowLocalForPB(),
-                })
-                toast.success(t('nutrition.mealDuplicated'))
+                try {
+                  await saveEntry({
+                    user: userId || undefined,
+                    mealType: entry.mealType,
+                    foods: entry.foods.map(f => ({ ...f })),
+                    totalCalories: entry.totalCalories,
+                    totalProtein: entry.totalProtein,
+                    totalCarbs: entry.totalCarbs,
+                    totalFat: entry.totalFat,
+                    loggedAt: nowLocalForPB(),
+                  })
+                  toast.success(t('nutrition.mealDuplicated'))
+                } catch {
+                  toast.error(t('nutrition.logger.saveError'))
+                }
               }}
               selectedDate={selectedDate}
             />

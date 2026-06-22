@@ -371,6 +371,10 @@ export interface NutritionEntry {
   aiModel?: string
   source?: NutritionSource
   loggedAt: string
+  /** Wall-clock time the user finished the meal (PB datetime). Falls back to loggedAt when unset. */
+  eatenAt?: string
+  /** How long the meal took, in minutes. */
+  durationMin?: number
   qualityScore?: QualityScore
   qualityBreakdown?: QualityBreakdown
   qualityMessage?: string

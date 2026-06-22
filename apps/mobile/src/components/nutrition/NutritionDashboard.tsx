@@ -2,7 +2,7 @@
  * NutritionDashboard — gauges de calorías/macros + timeline de comidas del día.
  * Port móvil de apps/web/src/components/nutrition/NutritionDashboard.tsx
  */
-import { useState, useMemo } from 'react'
+import { memo, useCallback, useState, useMemo } from 'react'
 import { View, ScrollView, Pressable, Alert } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Copy, Trash2, Pencil, ChevronDown, ChevronUp } from 'lucide-react-native'
@@ -29,6 +29,8 @@ interface NutritionDashboardProps {
   onDuplicateEntry?: (entry: NutritionEntry) => Promise<void>
   onEditEntry?: (entry: NutritionEntry) => void
   selectedDate?: string
+  /** Calorie-weighted daily quality letter, computed once by the parent. */
+  dailyQualityScore?: QualityScore
 }
 
 // ─── Meal color tokens (NativeWind safe — no dynamic class generation) ───────
@@ -93,16 +95,25 @@ interface MealCardProps {
   entry: NutritionEntry
   entryId: string
   expanded: boolean
-  onToggle: () => void
-  onDelete?: () => void
-  onDuplicate?: () => void
-  onEdit?: () => void
+  showDelete: boolean
+  showDuplicate: boolean
+  showEdit: boolean
+  onToggle: (id: string) => void
+  onDelete: (entry: NutritionEntry) => void
+  onDuplicate: (entry: NutritionEntry) => void
+  onEdit: (entry: NutritionEntry) => void
 }
 
-function MealCard({
+// Memoized + entry-arg callbacks: rows only re-render when their own entry /
+// expanded / visibility flags change, not on every parent render (e.g. when a
+// sibling row expands or unrelated screen state updates).
+const MealCard = memo(function MealCard({
   entry,
   entryId,
   expanded,
+  showDelete,
+  showDuplicate,
+  showEdit,
   onToggle,
   onDelete,
   onDuplicate,
@@ -152,11 +163,16 @@ function MealCard({
   }, [entry.foods])
 
   const isAI = entry.source?.startsWith('ai_')
+  // Prefer the user-reported finish time (eaten_at, naive local digits) over the
+  // record creation time. Slice the HH:MM digits to avoid any tz reinterpretation.
+  const mealTime = entry.eatenAt && entry.eatenAt.length >= 16
+    ? entry.eatenAt.slice(11, 16)
+    : formatTime(entry.loggedAt)
 
   return (
     <View className="mb-3 rounded-xl border border-border bg-card overflow-hidden">
       {/* Main row */}
-      <Pressable onPress={onToggle} className="active:opacity-80">
+      <Pressable onPress={() => onToggle(entryId)} className="active:opacity-80">
         <View className="px-4 pt-4 pb-3">
           {/* Top row: type badge + time + calories */}
           <View className="flex-row items-center gap-2 mb-2">
@@ -180,10 +196,17 @@ function MealCard({
             {/* Quality score */}
             {entry.qualityScore && <ScoreBadge score={entry.qualityScore} />}
 
-            {/* Time */}
-            <Text className="font-mono text-[10px] text-muted-foreground ml-auto">
-              {formatTime(entry.loggedAt)}
-            </Text>
+            {/* Finish time + optional duration */}
+            <View className="flex-row items-center gap-1.5 ml-auto">
+              {entry.durationMin ? (
+                <Text className="font-mono text-[9px] text-muted-foreground/70">
+                  {entry.durationMin} {t('nutrition.logger.durationUnit', { defaultValue: 'min' })}
+                </Text>
+              ) : null}
+              <Text className="font-mono text-[10px] text-muted-foreground">
+                {mealTime}
+              </Text>
+            </View>
 
             {/* Calories */}
             <Text className="font-bebas text-xl leading-none text-foreground ml-2">
@@ -256,11 +279,11 @@ function MealCard({
           ))}
 
           {/* Action buttons */}
-          {(onDelete || onDuplicate || onEdit) && (
+          {(showDelete || showDuplicate || showEdit) && (
             <View className="flex-row justify-end gap-1 pt-1 mt-1 border-t border-border/30">
-              {onEdit && (
+              {showEdit && (
                 <Pressable
-                  onPress={onEdit}
+                  onPress={() => onEdit(entry)}
                   className="flex-row items-center gap-1.5 rounded-lg px-3 py-1.5 active:bg-sky-400/10"
                 >
                   <Pencil size={13} color="#38bdf8" />
@@ -269,9 +292,9 @@ function MealCard({
                   </Text>
                 </Pressable>
               )}
-              {onDuplicate && (
+              {showDuplicate && (
                 <Pressable
-                  onPress={onDuplicate}
+                  onPress={() => onDuplicate(entry)}
                   className="flex-row items-center gap-1.5 rounded-lg px-3 py-1.5 active:bg-lime-400/10"
                 >
                   <Copy size={13} color="#a3e635" />
@@ -280,9 +303,9 @@ function MealCard({
                   </Text>
                 </Pressable>
               )}
-              {onDelete && (
+              {showDelete && (
                 <Pressable
-                  onPress={onDelete}
+                  onPress={() => onDelete(entry)}
                   className="flex-row items-center gap-1.5 rounded-lg px-3 py-1.5 active:bg-red-500/10"
                 >
                   <Trash2 size={13} color="#f87171" />
@@ -297,11 +320,11 @@ function MealCard({
       )}
     </View>
   )
-}
+})
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-export default function NutritionDashboard({
+function NutritionDashboard({
   dailyTotals,
   goals,
   entries,
@@ -309,30 +332,19 @@ export default function NutritionDashboard({
   onDuplicateEntry,
   onEditEntry,
   selectedDate,
+  dailyQualityScore,
 }: NutritionDashboardProps) {
   const { t } = useTranslation()
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const isToday = !selectedDate || selectedDate === todayStr()
 
-  // Daily quality score: weighted average by calories (min 2 scored entries)
-  const dailyQualityScore = useMemo((): QualityScore | undefined => {
-    const scored = entries.filter(e => e.qualityScore)
-    if (scored.length < 2) return undefined
-    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 }
-    const reverseMap: Record<number, QualityScore> = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'E' }
-    const totalWeight = scored.reduce((s, e) => s + e.totalCalories, 0)
-    if (totalWeight === 0) return undefined
-    const weightedAvg =
-      scored.reduce((s, e) => s + scoreMap[e.qualityScore!] * e.totalCalories, 0) / totalWeight
-    return reverseMap[Math.round(weightedAvg)]
-  }, [entries])
-
-  const handleToggle = (id: string) => {
+  // Stable callbacks so memoized MealCards only re-render when their own props change.
+  const handleToggle = useCallback((id: string) => {
     setExpandedId(prev => (prev === id ? null : id))
-  }
+  }, [])
 
-  const handleDelete = (entry: NutritionEntry) => {
+  const handleDelete = useCallback((entry: NutritionEntry) => {
     if (!onDeleteEntry || !entry.id) return
     Alert.alert(
       t('nutrition.deleteMeal', { defaultValue: 'Eliminar comida' }),
@@ -349,7 +361,15 @@ export default function NutritionDashboard({
         },
       ]
     )
-  }
+  }, [onDeleteEntry, t])
+
+  const handleDuplicate = useCallback((entry: NutritionEntry) => {
+    onDuplicateEntry?.(entry)
+  }, [onDuplicateEntry])
+
+  const handleEdit = useCallback((entry: NutritionEntry) => {
+    onEditEntry?.(entry)
+  }, [onEditEntry])
 
   // Contextual empty-state message
   const emptyMessage = isToday
@@ -431,22 +451,16 @@ export default function NutritionDashboard({
                   entry={entry}
                   entryId={entryId}
                   expanded={expandedId === entryId}
-                  onToggle={() => handleToggle(entryId)}
-                  onDelete={
-                    onDeleteEntry && entry.id
-                      ? () => handleDelete(entry)
-                      : undefined
-                  }
-                  onDuplicate={
-                    onDuplicateEntry && entry.id
-                      ? () => onDuplicateEntry(entry)
-                      : undefined
-                  }
-                  onEdit={
-                    onEditEntry && entry.id
-                      ? () => onEditEntry(entry)
-                      : undefined
-                  }
+                  showDelete={!!onDeleteEntry && !!entry.id}
+                  // Quick-add always lands on TODAY (logged_at is server-stamped),
+                  // so duplicating a past-day meal would silently misfile it. Only
+                  // offer Duplicate while viewing today.
+                  showDuplicate={!!onDuplicateEntry && !!entry.id && isToday}
+                  showEdit={!!onEditEntry && !!entry.id}
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                  onEdit={handleEdit}
                 />
               )
             })}
@@ -456,3 +470,5 @@ export default function NutritionDashboard({
     </View>
   )
 }
+
+export default memo(NutritionDashboard)

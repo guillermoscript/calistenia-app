@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { cn } from '../../lib/utils'
 import { todayStr, localHour } from '@calistenia/core/lib/dateUtils'
+import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
 import { Button } from '../ui/button'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 import EditMealSheet from './EditMealSheet'
@@ -82,17 +83,8 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
   const [showScoreCriteria, setShowScoreCriteria] = useState(false)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
 
-  // Daily quality score (weighted average by calories)
-  const dailyQualityScore = useMemo((): QualityScore | undefined => {
-    const scored = entries.filter(e => e.qualityScore)
-    if (scored.length < 2) return undefined
-    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 }
-    const reverseMap: Record<number, QualityScore> = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'E' }
-    const totalWeight = scored.reduce((s, e) => s + e.totalCalories, 0)
-    if (totalWeight === 0) return undefined
-    const weightedAvg = scored.reduce((s, e) => s + scoreMap[e.qualityScore!] * e.totalCalories, 0) / totalWeight
-    return reverseMap[Math.round(weightedAvg)]
-  }, [entries])
+  // Daily quality score (weighted average by calories) — shared with native.
+  const dailyQualityScore = useMemo(() => computeDailyQualityScore(entries), [entries])
 
   if (!goals) return null
 
@@ -106,6 +98,11 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
       return ''
     }
   }
+
+  // Prefer the user-reported finish time (eaten_at, naive local digits); slice
+  // the HH:MM to avoid tz reinterpretation. Falls back to the creation time.
+  const mealTime = (entry: NutritionEntry) =>
+    entry.eatenAt && entry.eatenAt.length >= 16 ? entry.eatenAt.slice(11, 16) : formatTime(entry.loggedAt)
 
   // Scale visual weight by calories relative to goal
   const maxCal = goals.dailyCalories * 0.5 // a single meal > 50% of goal is "large"
@@ -228,7 +225,10 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               size="sm"
                               pending={!entry.qualityScore && entry.foods.length > 0}
                             />
-                            <span className="text-[10px] text-muted-foreground/60 shrink-0">{formatTime(entry.loggedAt)}</span>
+                            {entry.durationMin ? (
+                              <span className="text-[9px] text-muted-foreground/50 shrink-0">{entry.durationMin} {t('nutrition.logger.durationUnit')}</span>
+                            ) : null}
+                            <span className="text-[10px] text-muted-foreground/60 shrink-0">{mealTime(entry)}</span>
                             <span className={cn(
                               'ml-auto tabular-nums shrink-0',
                               weight === 'large' ? 'font-bebas text-xl text-foreground' : 'text-xs text-foreground font-medium',
@@ -271,7 +271,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                         {/* Actions */}
                         {entry.id && (
                           <div className="flex gap-0.5 shrink-0 self-start">
-                            {onDuplicateEntry && (
+                            {onDuplicateEntry && isToday && (
                               <button
                                 onClick={() => onDuplicateEntry(entry)}
                                 className="size-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-lime hover:bg-lime/10 transition-colors"

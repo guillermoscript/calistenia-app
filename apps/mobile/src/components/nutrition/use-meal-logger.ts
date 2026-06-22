@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
 
 import { haptics } from '@/lib/haptics'
-import { localHour, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
+import { localHour, nowLocalForPB, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
 import { useFoodHistory } from '@calistenia/core/hooks/useFoodHistory'
 import type { FoodItem, MealType, NutritionEntry } from '@calistenia/core/types'
@@ -24,6 +24,8 @@ import {
   type Step,
   MAX_PHOTOS,
   getDefaultMealType,
+  getLastMealType,
+  setLastMealType,
   normalizeEntryFoods,
 } from './meal-logger-shared'
 
@@ -47,6 +49,10 @@ export function useMealLogger({
   const [captureSubView, setCaptureSubView] = useState<CaptureSubView>('main')
   const [imageAssets, setImageAssets] = useState<ImageAsset[]>([])
   const [mealType, setMealType] = useState<MealType>(getDefaultMealType)
+  // Meal timing — exact finish time (HH/MM strings) + optional duration in minutes.
+  const [eatenHour, setEatenHour] = useState('')
+  const [eatenMinute, setEatenMinute] = useState('')
+  const [durationInput, setDurationInput] = useState('')
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [quickText, setQuickText] = useState('')
@@ -99,11 +105,20 @@ export function useMealLogger({
   const mealLabel = t(`meal.${mealType}`)
 
   // ── Reset / prefill ──────────────────────────────────────────────────────────
-  const handleResetForm = () => {
+  // `seed` lets callers force a meal type across the reset (the edit flow
+  // overrides it afterward anyway). Otherwise we prefer the user's last-used type
+  // and fall back to the hour heuristic, so the choice sticks between logs and
+  // across "Registrar otra".
+  const handleResetForm = (seed?: MealType) => {
     setStep('capture')
     setCaptureSubView('main')
     setImageAssets([])
-    setMealType(getDefaultMealType())
+    setMealType(seed ?? getLastMealType() ?? getDefaultMealType())
+    // Default the finish time to "now" so logging is one tap; the user can adjust.
+    const nowPb = nowLocalForPB()
+    setEatenHour(nowPb.slice(11, 13))
+    setEatenMinute(nowPb.slice(14, 16))
+    setDurationInput('')
     setFoods([])
     setError(null)
     setEditingMacro(null)
@@ -123,6 +138,19 @@ export function useMealLogger({
   const loadEntryForEdit = (entry: NutritionEntry) => {
     handleResetForm()
     setMealType(entry.mealType)
+    // Prefill the finish time from the stored eaten_at (naive local digits) or
+    // fall back to the record's creation time; prefill the duration too.
+    if (entry.eatenAt && entry.eatenAt.length >= 16) {
+      setEatenHour(entry.eatenAt.slice(11, 13))
+      setEatenMinute(entry.eatenAt.slice(14, 16))
+    } else {
+      const d = new Date(entry.loggedAt)
+      if (!isNaN(d.getTime())) {
+        setEatenHour(String(d.getHours()).padStart(2, '0'))
+        setEatenMinute(String(d.getMinutes()).padStart(2, '0'))
+      }
+    }
+    setDurationInput(entry.durationMin != null ? String(entry.durationMin) : '')
     setFoods(normalizeEntryFoods(entry.foods))
     setStep('review')
   }
@@ -346,6 +374,18 @@ export function useMealLogger({
       setError(t('nutrition.logger.addFood'))
       return
     }
+    // Compose the finish time as a naive local datetime "YYYY-MM-DD HH:mm:ss":
+    // the digits are displayed verbatim (no tz conversion). Keep it on the meal's
+    // own day — today for new logs, the original day when editing.
+    const hNum = Math.min(23, Math.max(0, parseInt(eatenHour, 10) || 0))
+    const mNum = Math.min(59, Math.max(0, parseInt(eatenMinute, 10) || 0))
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const baseDate = editEntry
+      ? (editEntry.eatenAt?.slice(0, 10) || utcToLocalDateStr(editEntry.loggedAt))
+      : todayStr()
+    const eatenAt = `${baseDate} ${pad(hNum)}:${pad(mNum)}:00`
+    const durNum = durationInput.trim() ? Math.max(0, parseInt(durationInput, 10) || 0) : 0
+
     setStep('saving')
     try {
       await onSave(
@@ -357,6 +397,8 @@ export function useMealLogger({
           totalCarbs: totals.carbs,
           totalFat: totals.fat,
           loggedAt: nowLocalForPB(),
+          eatenAt,
+          ...(durNum > 0 ? { durationMin: durNum } : {}),
           ...(analysisQuality
             ? {
                 qualityScore: analysisQuality.score,
@@ -370,6 +412,7 @@ export function useMealLogger({
       )
       const hour = localHour()
       validFoods.forEach((f) => trackFood(f, mealType, hour))
+      setLastMealType(mealType)
       haptics.success()
       setStep('success')
     } catch {
@@ -422,6 +465,9 @@ export function useMealLogger({
     captureSubView,
     imageAssets,
     mealType,
+    eatenHour,
+    eatenMinute,
+    durationInput,
     foods,
     error,
     quickText,
@@ -440,6 +486,9 @@ export function useMealLogger({
     setRecentTypeFilter,
     setEditingMacro,
     setEditingMacroValue,
+    setEatenHour,
+    setEatenMinute,
+    setDurationInput,
     // refs
     quickTextInputRef,
     // derived
