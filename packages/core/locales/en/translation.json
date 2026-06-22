@@ -599,6 +599,9 @@
   "nutrition.logger.usualAtThisHour": "Usual at this hour",
   "nutrition.logger.recents": "Recents",
   "nutrition.logger.addFood": "ADD FOOD",
+  "nutrition.logger.finishedAt": "Finished at",
+  "nutrition.logger.duration": "Duration",
+  "nutrition.logger.durationUnit": "min",
   "nutrition.logger.saveMeal": "SAVE MEAL",
   "nutrition.logger.saveAsTemplate": "SAVE AS TEMPLATE",
   "nutrition.logger.templateNamePlaceholder": "Template name",
@@ -1485,6 +1488,9 @@
   "freeSession.moveUp": "Move {{name}} up",
   "freeSession.moveDown": "Move {{name}} down",
   "freeSession.removeExercise": "Remove {{name}}",
+  "freeSession.savedTemplates": "Saved templates",
+  "freeSession.deleteTemplate": "Delete template",
+  "freeSession.delete": "Delete",
 
   "progress.summary.freePerWeek": "Free / week",
   "progress.summary.sessionsPerWeek": "Sessions / week",
@@ -2061,6 +2067,9 @@
 
   "whatsNew.title": "What's New",
   "whatsNew.continue": "Continue",
+  "whatsNew.kicker": "What's New",
+  "whatsNew.gotIt": "Got it",
+  "whatsNew.details": "Technical details",
 
   "barcode.permissionDenied": "Camera permission denied. Enable it in your browser settings.",
   "barcode.noCameraFound": "No camera found on this device.",

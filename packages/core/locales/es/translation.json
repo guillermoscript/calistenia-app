@@ -599,6 +599,9 @@
   "nutrition.logger.usualAtThisHour": "Habitual a esta hora",
   "nutrition.logger.recents": "Recientes",
   "nutrition.logger.addFood": "AGREGAR ALIMENTO",
+  "nutrition.logger.finishedAt": "Terminé a las",
+  "nutrition.logger.duration": "Duración",
+  "nutrition.logger.durationUnit": "min",
   "nutrition.logger.saveMeal": "GUARDAR COMIDA",
   "nutrition.logger.saveAsTemplate": "GUARDAR COMO PLANTILLA",
   "nutrition.logger.templateNamePlaceholder": "Nombre de la plantilla",
@@ -1485,6 +1488,9 @@
   "freeSession.moveUp": "Mover {{name}} arriba",
   "freeSession.moveDown": "Mover {{name}} abajo",
   "freeSession.removeExercise": "Eliminar {{name}}",
+  "freeSession.savedTemplates": "Plantillas guardadas",
+  "freeSession.deleteTemplate": "Eliminar plantilla",
+  "freeSession.delete": "Eliminar",
 
   "progress.summary.freePerWeek": "Libres / semana",
   "progress.summary.sessionsPerWeek": "Sesiones / semana",
@@ -2061,6 +2067,9 @@
 
   "whatsNew.title": "Novedades",
   "whatsNew.continue": "Continuar",
+  "whatsNew.kicker": "Novedades",
+  "whatsNew.gotIt": "Entendido",
+  "whatsNew.details": "Detalles técnicos",
 
   "barcode.permissionDenied": "Permiso de cámara denegado. Actívalo en los ajustes del navegador.",
   "barcode.noCameraFound": "No se encontró ninguna cámara en este dispositivo.",

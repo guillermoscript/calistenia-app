@@ -26,12 +26,15 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { todayStr, addDays, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
 import { useWater } from '@calistenia/core/hooks/useWater'
-import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
+import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
+import { qk } from '@calistenia/core/lib/query-keys'
+import { useDayRollover } from '@/lib/use-day-rollover'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
@@ -91,6 +94,7 @@ export default function NutritionTab() {
   const authUser = useAuthUser()
   const userId = authUser?.id ?? null
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { action, date: dateParam } = useLocalSearchParams<{ action?: string; date?: string }>()
 
   const [selectedDate, setSelectedDate] = useState(dateParam || todayStr())
@@ -148,17 +152,6 @@ export default function NutritionTab() {
     getWeeklyInsight,
     generateWeeklyInsight,
   } = useNutritionCoach(userId)
-
-  const { handleAnalyze: _handleAnalyzeCore, handleSave: handleSaveEntry } = useMealLoggerActions({
-    userId,
-    goals,
-    entries: allEntries,
-    analyzeMeal,
-    scoreMealQuality,
-    saveEntry,
-    updateEntry,
-    getRemainingMacros,
-  })
 
   // Mobile analyze: uses URI-based API instead of File objects
   const handleAnalyze = useCallback(async (
@@ -269,6 +262,17 @@ export default function NutritionTab() {
     if (dateParam) setSelectedDate(dateParam)
   }, [dateParam])
 
+  // ─── Day rollover ────────────────────────────────────────────────────────────
+  // The tab can stay mounted across midnight; without this, selectedDate stays
+  // frozen on yesterday and the calorie ring/water/widget never reset to the new
+  // day. On rollover, if the user was viewing "today", advance to the new today
+  // and refetch the accumulator (its midnight boundary is recomputed on fetch).
+  // A user inspecting a past day is left untouched.
+  useDayRollover((newToday, prevToday) => {
+    setSelectedDate(d => (d === prevToday ? newToday : d))
+    if (userId) queryClient.invalidateQueries({ queryKey: qk.nutrition.today(userId) })
+  })
+
   // ─── Preload last 7 days for weekly chart ────────────────────────────────────
   useEffect(() => {
     fetchEntriesForDateRange(addDays(todayStr(), -6), todayStr())
@@ -311,16 +315,10 @@ export default function NutritionTab() {
     }
   }, [dailyTotals, goals, selectedDate])
 
-  const dailyQualityScore = useMemo((): QualityScore | undefined => {
-    const scored = entries.filter(e => e.qualityScore)
-    if (scored.length < 2) return undefined
-    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 }
-    const reverseMap: Record<number, QualityScore> = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'E' }
-    const totalWeight = scored.reduce((s, e) => s + e.totalCalories, 0)
-    if (totalWeight === 0) return undefined
-    const weightedAvg = scored.reduce((s, e) => s + scoreMap[e.qualityScore!] * e.totalCalories, 0) / totalWeight
-    return reverseMap[Math.round(weightedAvg)]
-  }, [entries])
+  const dailyQualityScore = useMemo<QualityScore | undefined>(
+    () => computeDailyQualityScore(entries),
+    [entries],
+  )
 
   useEffect(() => {
     if (!dailyQualityScore || selectedDate !== todayStr()) return
@@ -407,6 +405,33 @@ export default function NutritionTab() {
       loggedAt: nowLocalForPB(),
     })
   }, [saveEntry, userId])
+
+  // Stable dashboard callbacks (so memoized meal cards don't re-render on every
+  // parent render). Duplicate surfaces save failures instead of losing the meal.
+  const handleDuplicateEntry = useCallback(async (entry: NutritionEntry) => {
+    haptics.medium()
+    try {
+      await saveEntry({
+        user: userId || undefined,
+        mealType: entry.mealType,
+        foods: entry.foods.map(f => ({ ...f })),
+        totalCalories: entry.totalCalories,
+        totalProtein: entry.totalProtein,
+        totalCarbs: entry.totalCarbs,
+        totalFat: entry.totalFat,
+        loggedAt: nowLocalForPB(),
+      })
+    } catch {
+      haptics.error()
+      Alert.alert(t('nutrition.logger.saveError', { defaultValue: 'No se pudo guardar' }))
+    }
+  }, [saveEntry, userId, t])
+
+  const handleEditEntry = useCallback((entry: NutritionEntry) => {
+    haptics.medium()
+    setEditingEntry(entry)
+    setLoggerVisible(true)
+  }, [])
 
   const isToday = selectedDate === todayStr()
 
@@ -617,15 +642,20 @@ export default function NutritionTab() {
                     key={i}
                     onPress={async () => {
                       haptics.medium()
-                      await handleSaveMobileEntry({
-                        mealType: entry.mealType,
-                        foods: entry.foods,
-                        totalCalories: entry.totalCalories,
-                        totalProtein: entry.totalProtein,
-                        totalCarbs: entry.totalCarbs,
-                        totalFat: entry.totalFat,
-                        loggedAt: nowLocalForPB(),
-                      })
+                      try {
+                        await handleSaveMobileEntry({
+                          mealType: entry.mealType,
+                          foods: entry.foods,
+                          totalCalories: entry.totalCalories,
+                          totalProtein: entry.totalProtein,
+                          totalCarbs: entry.totalCarbs,
+                          totalFat: entry.totalFat,
+                          loggedAt: nowLocalForPB(),
+                        })
+                      } catch {
+                        haptics.error()
+                        Alert.alert(t('nutrition.logger.saveError', { defaultValue: 'No se pudo guardar' }))
+                      }
                     }}
                     className="w-40 p-3 bg-card border border-border rounded-xl active:border-lime-400/40"
                   >
@@ -653,25 +683,10 @@ export default function NutritionTab() {
             goals={goals}
             entries={entries}
             onDeleteEntry={deleteEntry}
-            onDuplicateEntry={async (entry) => {
-              haptics.medium()
-              await saveEntry({
-                user: userId || undefined,
-                mealType: entry.mealType,
-                foods: entry.foods.map(f => ({ ...f })),
-                totalCalories: entry.totalCalories,
-                totalProtein: entry.totalProtein,
-                totalCarbs: entry.totalCarbs,
-                totalFat: entry.totalFat,
-                loggedAt: nowLocalForPB(),
-              })
-            }}
-            onEditEntry={(entry) => {
-              haptics.medium()
-              setEditingEntry(entry)
-              setLoggerVisible(true)
-            }}
+            onDuplicateEntry={handleDuplicateEntry}
+            onEditEntry={handleEditEntry}
             selectedDate={selectedDate}
+            dailyQualityScore={dailyQualityScore}
           />
         </View>
 

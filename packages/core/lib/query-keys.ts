@@ -135,6 +135,8 @@ export const qk = {
       ['food_history', 'hour', userId, hour] as const,
   },
   mealTemplates: (userId: string | null) => ['meal_templates', userId] as const,
+  freeSessionTemplates: (userId: string | null) =>
+    ['free_session_templates', userId] as const,
   mealReminders: (userId: string | null) => ['meal_reminders', userId] as const,
   weeklyMealPlan: {
     active: (userId: string | null) =>

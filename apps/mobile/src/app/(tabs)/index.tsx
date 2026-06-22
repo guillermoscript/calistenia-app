@@ -17,6 +17,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
 import HomeActivity from '@/components/home/HomeActivity'
+import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
 import { localDay, localHour, todayStr, diffDays } from '@calistenia/core/lib/dateUtils'
@@ -325,6 +326,9 @@ export default function TodayScreen() {
           onDismiss={() => setShowMilestone(false)}
         />
       )}
+
+      {/* Novedades: se auto-muestra una vez al llegar a Home tras actualizar. */}
+      <WhatsNewModal />
     </SafeAreaView>
   )
 }

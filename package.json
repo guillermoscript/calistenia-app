@@ -12,6 +12,8 @@
     "pb:serve": "./pocketbase serve",
     "pb:migrate": "node scripts/pb-migrate.js",
     "changelog": "node scripts/generate-changelog.mjs",
+    "changelog:mobile": "node scripts/generate-changelog-ai.mjs",
+    "changelog:md": "node scripts/generate-changelog-md.mjs",
     "release": "node scripts/release.mjs",
     "validate:catalog": "node scripts/validate-exercise-catalog.mjs packages/core/data/exercise-catalog.json",
     "test:catalog": "node scripts/test-validate-exercise-catalog.mjs",

@@ -7,16 +7,19 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { X, Plus } from 'lucide-react-native'
+import { X, Plus, RotateCcw, Trash2 } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { COLORS } from '@/lib/theme'
+import { haptics } from '@/lib/haptics'
+import { useAuthUser } from '@/lib/use-auth-user'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { catalogToExercise } from '@/lib/catalog-to-exercise'
 import { moveItem, removeAt } from '@/lib/reorder'
@@ -25,14 +28,26 @@ import { useStartFreeSession } from '@/lib/start-free-session'
 import { WarmupCooldownPrompt } from '@/components/free-session/WarmupCooldownPrompt'
 import { ReorderControls } from '@/components/free-session/ReorderControls'
 import { AISessionTab } from '@/components/free-session/AISessionTab'
+import { useFreeSessionTemplates } from '@calistenia/core/hooks/useFreeSessionTemplates'
 import { localize } from '@calistenia/core/lib/i18n-db'
-import type { Exercise } from '@calistenia/core/types'
+import type { Exercise, FreeSessionTemplate } from '@calistenia/core/types'
 
 export default function FreeSessionScreen() {
   const router = useRouter()
   const { i18n } = useTranslation()
   const locale = i18n.language || 'es'
   const startFreeSession = useStartFreeSession()
+  const authUser = useAuthUser()
+  const { templates, useTemplate, deleteTemplate } = useFreeSessionTemplates(authUser?.id ?? null)
+
+  // Re-lanzar una plantilla guardada: arranca la misma sesión al instante y
+  // registra el uso en segundo plano (no bloquea la navegación).
+  const relaunchTemplate = (tpl: FreeSessionTemplate) => {
+    if (!tpl.exercises?.length) return
+    haptics.medium()
+    startFreeSession(tpl.exercises, tpl.title || 'Sesión libre')
+    if (tpl.id) void useTemplate(tpl.id)
+  }
 
   const [mode, setMode] = useState<'manual' | 'ai'>('manual')
   const [view, setView] = useState<'pick' | 'review'>('pick')
@@ -149,6 +164,9 @@ export default function FreeSessionScreen() {
           selectedPositions={selectedPositions}
           onToggle={toggleExercise}
           onContinue={() => setView('review')}
+          templates={templates}
+          onRelaunchTemplate={relaunchTemplate}
+          onDeleteTemplate={deleteTemplate}
         />
       ) : (
         <ReviewView
@@ -172,6 +190,70 @@ export default function FreeSessionScreen() {
   )
 }
 
+// ── Saved templates (re-run a past free session) ────────────────────────────
+
+function SavedTemplates({
+  locale,
+  templates,
+  onRelaunch,
+  onDelete,
+}: {
+  locale: string
+  templates: FreeSessionTemplate[]
+  onRelaunch: (tpl: FreeSessionTemplate) => void
+  onDelete: (id: string) => void
+}) {
+  const { t } = useTranslation()
+
+  const confirmDelete = (tpl: FreeSessionTemplate) => {
+    if (!tpl.id) return
+    Alert.alert(t('freeSession.deleteTemplate'), tpl.title || '', [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('freeSession.delete'), style: 'destructive', onPress: () => onDelete(tpl.id!) },
+    ])
+  }
+
+  return (
+    <View className="mb-4">
+      <Text className="mb-2 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+        {t('freeSession.savedTemplates')}
+      </Text>
+      <View className="gap-1.5">
+        {templates.map(tpl => {
+          const count = tpl.exercises.filter(e => !e.section || e.section === 'main').length
+          return (
+            <Pressable
+              key={tpl.id}
+              onPress={() => onRelaunch(tpl)}
+              className="flex-row items-center gap-3 rounded-xl border border-lime/30 bg-lime/5 px-3 py-2.5 active:opacity-70"
+            >
+              <View className="h-7 w-7 items-center justify-center rounded-full bg-lime/15">
+                <RotateCcw size={14} color={COLORS.lime} />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+                  {tpl.title || t('freeSession.freeSessionTitle')}
+                </Text>
+                <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {t('freeSession.exerciseCount', { count })}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => confirmDelete(tpl)}
+                hitSlop={10}
+                className="p-1.5 active:opacity-60"
+                accessibilityLabel={t('freeSession.deleteTemplate')}
+              >
+                <Trash2 size={15} color={COLORS.mutedIcon} />
+              </Pressable>
+            </Pressable>
+          )
+        })}
+      </View>
+    </View>
+  )
+}
+
 // ── Pick view ──────────────────────────────────────────────────────────────
 
 function PickView({
@@ -186,6 +268,9 @@ function PickView({
   selectedPositions,
   onToggle,
   onContinue,
+  templates,
+  onRelaunchTemplate,
+  onDeleteTemplate,
 }: {
   locale: string
   search: string
@@ -198,8 +283,15 @@ function PickView({
   selectedPositions: Map<string, number>
   onToggle: (ex: CatalogExercise) => void
   onContinue: () => void
+  templates: FreeSessionTemplate[]
+  onRelaunchTemplate: (tpl: FreeSessionTemplate) => void
+  onDeleteTemplate: (id: string) => void
 }) {
   const categories = ['todos', ...CATALOG_CATEGORIES]
+  // Las plantillas solo se muestran en la vista "limpia" (sin búsqueda ni
+  // filtro) para no estorbar al buscar ejercicios.
+  const showTemplates =
+    templates.length > 0 && search.trim() === '' && activeCategory === 'todos'
 
   return (
     <View className="flex-1">
@@ -250,6 +342,16 @@ function PickView({
         contentContainerClassName="px-4 pb-24 gap-1.5"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        ListHeaderComponent={
+          showTemplates ? (
+            <SavedTemplates
+              locale={locale}
+              templates={templates}
+              onRelaunch={onRelaunchTemplate}
+              onDelete={onDeleteTemplate}
+            />
+          ) : null
+        }
         renderItem={({ item }) => {
           const isSelected = selectedIds.has(item.id)
           const position = selectedPositions.get(item.id) ?? null
