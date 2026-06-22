@@ -78,7 +78,8 @@ function getNotificationRoute(n: AppNotification): string {
     case 'reaction':
     case 'comment':
     case 'comment_reply':
-      return '/feed'
+      // referenceId = id de la sesión (el post) → abrir ese post + resaltarlo.
+      return n.referenceId ? `/feed?session=${n.referenceId}` : '/feed'
     case 'challenge_invite':
     case 'challenge_join':
     case 'challenge_complete':
