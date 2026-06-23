@@ -34,7 +34,10 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   // resalta (flash) y abre sus comentarios. Espeja la app nativa.
   const [searchParams] = useSearchParams()
   const sessionParam = searchParams.get('session')
+  const commentParam = searchParams.get('comment')
   const [highlightId, setHighlightId] = useState<string | null>(null)
+  // Comentario concreto a resaltar dentro del sheet (deep-link ?comment=).
+  const [highlightCommentId, setHighlightCommentId] = useState<string | null>(null)
   const deepLinkDoneRef = useRef<string | null>(null)
 
   const commentsSessionOwner = commentsSessionId
@@ -56,6 +59,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
     if (!inFeed && loading) return // aún cargando, reevaluar al llegar items
 
     deepLinkDoneRef.current = target
+    setHighlightCommentId(commentParam)
     // Nota: NO llamamos loadForSessions aquí — reemplaza el set de sesiones
     // rastreadas y borraría las reacciones del resto del feed. Los posts del feed
     // ya cargan reacciones/conteos vía el efecto de feedIdsKey.
@@ -70,7 +74,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
     } else {
       setCommentsSessionId(target)
     }
-  }, [sessionParam, items, loading])
+  }, [sessionParam, commentParam, items, loading])
 
   // Infinite scroll: observe sentinel element
   useEffect(() => {
@@ -138,7 +142,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
                   reactions={reactions}
                   onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}
                   commentCount={commentCount}
-                  onComment={() => setCommentsSessionId(item.id)}
+                  onComment={() => { setHighlightCommentId(null); setCommentsSessionId(item.id) }}
                   onOpenCardio={(id) => navigate(`/cardio/session/${id}`)}
                 />
               </div>
@@ -159,7 +163,8 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
         <CommentsSheet
           sessionId={commentsSessionId}
           isOpen={!!commentsSessionId}
-          onClose={() => setCommentsSessionId(null)}
+          onClose={() => { setCommentsSessionId(null); setHighlightCommentId(null) }}
+          highlightCommentId={highlightCommentId}
           comments={commentsBySession[commentsSessionId] || []}
           onLoadComments={getComments}
           onAddComment={(sid, text, parentId) => addComment(sid, text, parentId, commentsSessionOwner)}

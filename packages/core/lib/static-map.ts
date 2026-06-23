@@ -10,7 +10,7 @@ import type { GpsPoint } from '../types'
  *    capture it without touching the GL surface) and draws the route with SVG
  *
  * Tiles come from CARTO's keyless raster basemaps, matching the live RouteMap
- * (voyager / dark_matter), so the share card looks like the in-app map.
+ * (voyager / dark_all), so the share card looks like the in-app map.
  */
 
 const TILE_SIZE = 256
@@ -189,7 +189,9 @@ function cartoSubdomain(t: TileRef): string {
  * `retina` requests @2x tiles for crisp share images on hi-dpi exports.
  */
 export function cartoTileUrl(t: TileRef, theme: MapTheme = 'light', retina = false): string {
-  const style = theme === 'dark' ? 'dark_matter' : 'voyager'
+  // CARTO retired the `dark_matter` raster alias (now 404s); `dark_all` is the
+  // current keyless dark basemap. `voyager` (light) is unchanged.
+  const style = theme === 'dark' ? 'dark_all' : 'voyager'
   const r = retina ? '@2x' : ''
   return `https://${cartoSubdomain(t)}.basemaps.cartocdn.com/rastertiles/${style}/${t.z}/${t.x}/${t.y}${r}.png`
 }
