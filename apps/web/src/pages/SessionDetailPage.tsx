@@ -9,11 +9,14 @@ import { formatTimingClock } from '@calistenia/core/lib/exerciseTiming'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { useWorkoutState } from '../contexts/WorkoutContext'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import type { SessionExercise } from '@calistenia/core/hooks/useSessionDetail'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+import { useAuthState } from '../contexts/AuthContext'
+import WorkoutShareCard from '../components/WorkoutShareCard'
+import type { Exercise } from '@calistenia/core/types'
 
 // ── Build exercise catalog from static workout data ──────────────────────────
 
@@ -133,6 +136,7 @@ export default function SessionDetailPage() {
   const { progress } = useWorkoutState()
   const { date, workoutKey } = useParams<{ date: string; workoutKey: string }>()
   const navigate = useNavigate()
+  const { user } = useAuthState()
 
   // Enrich catalog with PB exercises_catalog for free sessions
   const [catalog, setCatalog] = useState(STATIC_CATALOG)
@@ -166,6 +170,16 @@ export default function SessionDetailPage() {
   const totalSets = useMemo(
     () => exercises.reduce((sum, ex) => sum + ex.sets.length, 0),
     [exercises],
+  )
+
+  const shareExercises = useMemo(
+    () => exercises.map(ex => ({
+      id: ex.exerciseId,
+      name: localize(ex.name, i18n.language),
+      sets: ex.sets.length,
+      reps: ex.bestSet?.reps ?? ex.sets[0]?.reps ?? '',
+    })) as unknown as Exercise[],
+    [exercises, i18n.language],
   )
 
   if (!date || !workoutKey) return null
@@ -271,6 +285,20 @@ export default function SessionDetailPage() {
           <div className="text-sm text-muted-foreground italic">{session.note}</div>
         </div>
       )}
+
+      {/* Share card */}
+      <div className="mt-8">
+        <WorkoutShareCard
+          workoutTitle={displayTitle}
+          totalSets={totalSets}
+          durationMin={session.durationSeconds ? Math.round(session.durationSeconds / 60) : 0}
+          date={date}
+          exercises={shareExercises}
+          userName={(user as any)?.display_name || user?.email?.split('@')[0]}
+          avatarUrl={user ? getUserAvatarUrl(user as any, '200x200') : null}
+          referralCode={(user as any)?.referral_code || null}
+        />
+      </div>
     </div>
   )
 }

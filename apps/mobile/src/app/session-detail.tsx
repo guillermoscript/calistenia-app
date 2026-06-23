@@ -17,13 +17,16 @@ import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { CATALOG, getCatalogExercise } from '@/lib/catalog'
 import { useWorkoutState } from '@/contexts/WorkoutContext'
+import { useAuthUser } from '@/lib/use-auth-user'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { useSessionDetail } from '@calistenia/core/hooks/useSessionDetail'
 import type { SessionExercise } from '@calistenia/core/hooks/useSessionDetail'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { formatTimingClock } from '@calistenia/core/lib/exerciseTiming'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import type { TranslatableField } from '@calistenia/core/lib/i18n-db'
+import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
+import WorkoutShareButton from '@/components/share/WorkoutShareButton'
 
 const MUTED = 'hsl(0 0% 55%)'
 
@@ -111,6 +114,39 @@ export default function SessionDetailScreen() {
     (title && title.trim()) ||
     (isFreeSession ? t('progress.freeSession') : WORKOUTS[workoutKey]?.title) ||
     humanizeKey(workoutKey, t)
+
+  // ── Share data ──────────────────────────────────────────────────────────────
+  const user = useAuthUser()
+  const userName = (user?.display_name as string) || (user?.name as string) || 'Atleta'
+  const avatarUrl = user ? getUserAvatarUrl(user, '200x200') : null
+  const referralCode = (user?.referral_code as string) || null
+
+  const shareExercises = useMemo<Exercise[]>(
+    () =>
+      exercises.map((ex) => ({
+        id: ex.exerciseId,
+        name: localize(ex.name, locale),
+        sets: ex.sets.length,
+        reps: ex.bestSet?.reps ?? ex.sets[0]?.reps ?? '',
+      })) as Exercise[],
+    [exercises, locale],
+  )
+
+  const shareTimings = useMemo<ExerciseTiming[]>(
+    () =>
+      exercises
+        .filter((ex) => ex.seconds != null && ex.seconds > 0)
+        .map((ex) => ({
+          exerciseId: ex.exerciseId,
+          exerciseName: localize(ex.name, locale),
+          seconds: ex.seconds!,
+        })),
+    [exercises, locale],
+  )
+
+  const durationMin = session
+    ? Math.round((session.durationSeconds ?? 0) / 60)
+    : 0
 
   if (!session) {
     return (
@@ -207,6 +243,22 @@ export default function SessionDetailScreen() {
             </Text>
             <Text className="font-sans-italic text-sm leading-5 text-muted-foreground">{`"${session.note}"`}</Text>
           </View>
+        )}
+
+        {/* Share as image — only when there are exercises to show */}
+        {exercises.length > 0 && (
+          <WorkoutShareButton
+            workoutTitle={resolvedTitle}
+            totalSets={totalSets}
+            durationMin={durationMin}
+            date={date}
+            workoutKey={workoutKey}
+            exercises={shareExercises}
+            timings={shareTimings}
+            userName={userName}
+            avatarUrl={avatarUrl}
+            referralCode={referralCode}
+          />
         )}
       </ScrollView>
     </SafeAreaView>

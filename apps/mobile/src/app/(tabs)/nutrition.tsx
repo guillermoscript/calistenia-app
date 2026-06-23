@@ -35,7 +35,7 @@ import { useWater } from '@calistenia/core/hooks/useWater'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
 import { qk } from '@calistenia/core/lib/query-keys'
 import { useDayRollover } from '@/lib/use-day-rollover'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
 
@@ -50,6 +50,7 @@ import WeeklyNutritionChart from '@/components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan from '@/components/nutrition/DailyMealPlan'
 import WeeklyMealPlan from '@/components/nutrition/WeeklyMealPlan'
 import CoachInsights from '@/components/nutrition/CoachInsights'
+import NutritionShareButton from '@/components/share/NutritionShareButton'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
@@ -689,6 +690,24 @@ export default function NutritionTab() {
             dailyQualityScore={dailyQualityScore}
           />
         </View>
+
+        {/* Share card — only in daily view and when there's at least one logged entry */}
+        {activeTab === 'daily' && entries.length > 0 && (
+          <View className="mb-5">
+            <NutritionShareButton
+              date={selectedDate}
+              totals={dailyTotals}
+              goals={goals}
+              waterMl={waterTotal}
+              waterGoal={waterGoal}
+              qualityScore={dailyQualityScore}
+              mealCount={entries.length}
+              userName={(authUser?.display_name as string) || (authUser?.name as string) || 'Atleta'}
+              avatarUrl={authUser ? getUserAvatarUrl(authUser as any, '200x200') : null}
+              referralCode={(authUser?.referral_code as string) || null}
+            />
+          </View>
+        )}
 
         {/* AI Meal plans — daily or weekly */}
         {activeTab === 'weekly' ? (
