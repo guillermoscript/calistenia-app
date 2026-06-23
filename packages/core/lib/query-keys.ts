@@ -100,6 +100,15 @@ export const qk = {
   bodyPhotos: (userId: string | null) => ['body_photos', userId] as const,
   weight: (userId: string | null) => ['weight', userId] as const,
   sleep: (userId: string | null) => ['sleepEntries', userId] as const,
+  // — Integración smartwatch / health hub (Health Connect / HealthKit) —
+  health: {
+    all: ['health'] as const,
+    status: (userId: string | null) => ['health', 'status', userId] as const,
+    daily: (userId: string | null, date: string) =>
+      ['health', 'daily', userId, date] as const,
+    dailyRange: (userId: string | null, from: string, to: string) =>
+      ['health', 'daily', 'range', userId, from, to] as const,
+  },
   water: {
     day: (userId: string | null, date: string) =>
       ['water', userId, 'day', date] as const,

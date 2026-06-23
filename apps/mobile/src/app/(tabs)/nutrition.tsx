@@ -35,6 +35,7 @@ import { useWater } from '@calistenia/core/hooks/useWater'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
 import { qk } from '@calistenia/core/lib/query-keys'
 import { useDayRollover } from '@/lib/use-day-rollover'
+import { useDailyHealth } from '@/lib/health/useDailyHealth'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
@@ -341,16 +342,23 @@ export default function NutritionTab() {
     return missed.length >= 2
   }, [weeklyHistory, goals])
 
+  // ─── Calorías activas del reloj (Health Connect) para este día ───────────────
+  // El reloj quemó X kcal → amplían el budget de calorías del día (modelo
+  // "comes lo que quemas"). OJO: el TDEE ya incluye un multiplicador de actividad,
+  // así que sumar esto puede doble-contar si el usuario eligió un nivel alto.
+  const dailyHealth = useDailyHealth(selectedDate)
+  const activeCalories = Math.max(0, Math.round(dailyHealth?.active_calories ?? 0))
+
   // ─── Remaining macros ────────────────────────────────────────────────────────
   const remaining = useMemo(() => {
     if (!goals) return { calories: 0, protein: 0, carbs: 0, fat: 0 }
     return {
-      calories: goals.dailyCalories - dailyTotals.calories,
+      calories: goals.dailyCalories + activeCalories - dailyTotals.calories,
       protein: goals.dailyProtein - dailyTotals.protein,
       carbs: goals.dailyCarbs - dailyTotals.carbs,
       fat: goals.dailyFat - dailyTotals.fat,
     }
-  }, [goals, dailyTotals])
+  }, [goals, dailyTotals, activeCalories])
 
   const loggedMealTypes = useMemo(
     () => [...new Set(entries.map(e => e.mealType))],
@@ -687,6 +695,7 @@ export default function NutritionTab() {
             onEditEntry={handleEditEntry}
             selectedDate={selectedDate}
             dailyQualityScore={dailyQualityScore}
+            activeCalories={activeCalories}
           />
         </View>
 
