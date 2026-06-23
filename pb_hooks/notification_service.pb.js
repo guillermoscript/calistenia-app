@@ -110,7 +110,7 @@ onRecordAfterCreateSuccess(function(e) {
       ownerId,
       (reactorName || "Alguien") + " " + emoji,
       "Reacciono a tu sesion",
-      "/feed",
+      "/feed?session=" + sessionId,
       "reaction"
     )
   } catch (err) {
@@ -151,7 +151,7 @@ onRecordAfterCreateSuccess(function(e) {
             parentAuthorId,
             (authorName || "Alguien") + " respondio tu comentario",
             preview,
-            "/feed",
+            "/feed?session=" + sessionId,
             "comment_reply"
           )
         }
@@ -191,7 +191,7 @@ onRecordAfterCreateSuccess(function(e) {
             ownerId,
             (authorName || "Alguien") + " comento tu sesion",
             preview,
-            "/feed",
+            "/feed?session=" + sessionId,
             "comment"
           )
         }
@@ -214,9 +214,11 @@ onRecordAfterCreateSuccess(function(e) {
     if (!reactorId || !commentId) return
 
     let authorId = ""
+    let sessionId = ""
     try {
       const comment = $app.findRecordById("comments", commentId)
       authorId = comment.getString("author")
+      sessionId = comment.getString("session_id")
     } catch (err) {
       return
     }
@@ -225,20 +227,23 @@ onRecordAfterCreateSuccess(function(e) {
 
     const reactorName = helpers.getUserName(reactorId)
 
+    // reference_id = sessionId (el post que contiene el comentario), no el
+    // commentId: así el deep-link abre el post y lo resalta igual que el resto de
+    // reacciones. commentId queda en data por si luego scrolleamos al comentario.
     helpers.createNotification(
       authorId,
       "reaction",
       reactorId,
-      commentId,
-      "comment",
-      { emoji: emoji, reactorName: reactorName }
+      sessionId,
+      "session",
+      { emoji: emoji, reactorName: reactorName, commentId: commentId, onComment: true }
     )
 
     helpers.sendPush(
       authorId,
       (reactorName || "Alguien") + " " + emoji,
       "Reaccionó a tu comentario",
-      "/feed",
+      sessionId ? ("/feed?session=" + sessionId) : "/feed",
       "reaction"
     )
   } catch (err) {

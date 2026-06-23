@@ -66,26 +66,27 @@ onRecordAfterCreateSuccess((e) => {
     console.log("Referred user bonus points creation failed:", err)
   }
 
-  // 3. Notify referrer
+  // 3. Notify referrer (in-app + push, vía helpers para respetar preferencias).
   try {
-    const notifCollection = $app.findCollectionByNameOrId("notifications")
-    const notif = new Record(notifCollection)
-    notif.set("user", referrerId)
-    notif.set("type", "referral_signup")
-    notif.set("actor", referredId)
-    notif.set("reference_id", referredId)
-    notif.set("reference_type", "user")
-    notif.set("read", false)
+    const helpers = require(`${__hooks}/utils/notifications.js`)
+    const referredName = helpers.getUserName(referredId)
 
-    // Get referred user's display name for notification data
-    let referredName = ""
-    try {
-      const referred = $app.findRecordById("users", referredId)
-      referredName = referred.getString("display_name") || referred.getString("name") || referred.getString("email").split("@")[0] || ""
-    } catch (err) { /* non-critical */ }
+    helpers.createNotification(
+      referrerId,
+      "referral_signup",
+      referredId,
+      referredId,
+      "user",
+      { referredName: referredName }
+    )
 
-    notif.set("data", JSON.stringify({ referredName }))
-    $app.save(notif)
+    helpers.sendPush(
+      referrerId,
+      (referredName || "Alguien") + " se registro con tu enlace",
+      "Tu invitacion dio resultado",
+      "/referrals",
+      "referral_signup"
+    )
   } catch (err) {
     console.log("Referral notification creation failed:", err)
   }

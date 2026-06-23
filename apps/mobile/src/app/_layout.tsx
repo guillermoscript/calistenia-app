@@ -26,6 +26,7 @@ import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
+import { resolveNotifUrl } from '@/lib/notification-route'
 import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
 import { initI18n } from '@/lib/i18n'
@@ -38,32 +39,8 @@ import OfflineBanner from '@/components/OfflineBanner'
 
 SplashScreen.preventAutoHideAsync()
 
-// ---------------------------------------------------------------------------
-// Notification deep-link routing
-// ---------------------------------------------------------------------------
-
-/**
- * Translates a web-style path from a push notification payload to the
- * closest expo-router route in the app.
- *
- * Incoming paths (examples): '/feed', '/u/<id>', '/challenges/<id>',
- * '/progress', '/profile', '/referrals', '/notifications'.
- */
-function resolveNotifRoute(url: string): Parameters<ReturnType<typeof useRouter>['push']>[0] | null {
-  if (!url) return null
-  // Normalize: trim trailing slash
-  const path = url.replace(/\/$/, '')
-
-  if (path === '/feed' || path === '/') return '/'
-  if (path.startsWith('/u/')) return path as `/u/${string}`
-  if (path === '/progress' || path === '/history') return '/history'
-  if (path === '/profile') return '/profile'
-  if (path === '/notifications') return '/notifications'
-  if (path === '/challenges' || path.startsWith('/challenges')) return '/challenges'
-  if (path === '/social') return '/social'
-  if (path === '/referrals') return '/notifications'
-  return '/notifications'
-}
+// Deep-link de notificaciones: `resolveNotifUrl` (mapea la url del payload de push
+// a una ruta nativa) vive en '@/lib/notification-route', compartido con la campana.
 
 // Singletons a nivel módulo: un único QueryClient/persister por vida de la app.
 // init-core ya corrió (primer import del archivo), así que el adapter está listo.
@@ -121,19 +98,15 @@ function RootLayout() {
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!response) return
       const url = response.notification.request.content.data?.url as string | undefined
-      if (url) {
-        const route = resolveNotifRoute(url)
-        if (route) routerRef.current.push(route)
-      }
+      const route = resolveNotifUrl(url)
+      if (route) routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0])
     }).catch(() => { /* ignore */ })
 
     // FOREGROUND / BACKGROUND TAP: listener for subsequent taps.
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const url = response.notification.request.content.data?.url as string | undefined
-      if (url) {
-        const route = resolveNotifRoute(url)
-        if (route) routerRef.current.push(route)
-      }
+      const route = resolveNotifUrl(url)
+      if (route) routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0])
     })
 
     return () => sub.remove()
