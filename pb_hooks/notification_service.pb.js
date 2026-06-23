@@ -110,7 +110,7 @@ onRecordAfterCreateSuccess(function(e) {
       ownerId,
       (reactorName || "Alguien") + " " + emoji,
       "Reacciono a tu sesion",
-      "/feed",
+      "/feed?session=" + sessionId,
       "reaction"
     )
   } catch (err) {
@@ -128,6 +128,8 @@ onRecordAfterCreateSuccess(function(e) {
     var parentId = e.record.getString("parent_id")
     var commentBody = e.record.getString("text") || ""
     var preview = commentBody.length > 60 ? commentBody.substring(0, 60) + "..." : commentBody
+    // id del comentario recién creado (estilo getString, robusto en el JSVM).
+    var newCommentId = e.record.getString("id")
 
     if (!authorId || !sessionId) return
 
@@ -145,13 +147,14 @@ onRecordAfterCreateSuccess(function(e) {
             authorId,
             sessionId,
             "session",
-            { authorName: authorName, preview: preview }
+            // commentId = la respuesta recién creada → el deep-link la resalta en el sheet.
+            { authorName: authorName, preview: preview, commentId: newCommentId }
           )
           helpers.sendPush(
             parentAuthorId,
             (authorName || "Alguien") + " respondio tu comentario",
             preview,
-            "/feed",
+            "/feed?session=" + sessionId + "&comment=" + newCommentId,
             "comment_reply"
           )
         }
@@ -185,13 +188,14 @@ onRecordAfterCreateSuccess(function(e) {
             authorId,
             sessionId,
             "session",
-            { authorName: authorName, preview: preview }
+            // commentId = el comentario recién creado → el deep-link lo resalta en el sheet.
+            { authorName: authorName, preview: preview, commentId: newCommentId }
           )
           helpers.sendPush(
             ownerId,
             (authorName || "Alguien") + " comento tu sesion",
             preview,
-            "/feed",
+            "/feed?session=" + sessionId + "&comment=" + newCommentId,
             "comment"
           )
         }
@@ -214,9 +218,14 @@ onRecordAfterCreateSuccess(function(e) {
     if (!reactorId || !commentId) return
 
     let authorId = ""
+    let sessionId = ""
+    let commentPreview = ""
     try {
       const comment = $app.findRecordById("comments", commentId)
       authorId = comment.getString("author")
+      sessionId = comment.getString("session_id")
+      const body = comment.getString("text") || ""
+      commentPreview = body.length > 60 ? body.substring(0, 60) + "..." : body
     } catch (err) {
       return
     }
@@ -225,20 +234,24 @@ onRecordAfterCreateSuccess(function(e) {
 
     const reactorName = helpers.getUserName(reactorId)
 
+    // reference_id = sessionId (el post que contiene el comentario), no el
+    // commentId: así el deep-link abre el post y lo resalta igual que el resto de
+    // reacciones. commentId queda en data para resaltar el comentario concreto en
+    // el sheet, y commentPreview para mostrar a cuál se reaccionó en la lista.
     helpers.createNotification(
       authorId,
       "reaction",
       reactorId,
-      commentId,
-      "comment",
-      { emoji: emoji, reactorName: reactorName }
+      sessionId,
+      "session",
+      { emoji: emoji, reactorName: reactorName, commentId: commentId, commentPreview: commentPreview, onComment: true }
     )
 
     helpers.sendPush(
       authorId,
       (reactorName || "Alguien") + " " + emoji,
       "Reaccionó a tu comentario",
-      "/feed",
+      sessionId ? ("/feed?session=" + sessionId + "&comment=" + commentId) : "/feed",
       "reaction"
     )
   } catch (err) {

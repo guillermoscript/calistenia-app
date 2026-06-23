@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from '../lib/i18n'
 import { timeAgo } from '@calistenia/core/lib/dateUtils'
@@ -30,6 +30,15 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const { getComments, loadCommentCounts, addComment, deleteComment, getCommentCount, commentsBySession } = useComments(userId)
   const commentReactions = useCommentReactions(userId)
   const [commentsSessionId, setCommentsSessionId] = useState<string | null>(null)
+  // Deep-link desde una notificación (?session=<id>): hace scroll al post, lo
+  // resalta (flash) y abre sus comentarios. Espeja la app nativa.
+  const [searchParams] = useSearchParams()
+  const sessionParam = searchParams.get('session')
+  const commentParam = searchParams.get('comment')
+  const [highlightId, setHighlightId] = useState<string | null>(null)
+  // Comentario concreto a resaltar dentro del sheet (deep-link ?comment=).
+  const [highlightCommentId, setHighlightCommentId] = useState<string | null>(null)
+  const deepLinkDoneRef = useRef<string | null>(null)
 
   const commentsSessionOwner = commentsSessionId
     ? items.find(i => i.id === commentsSessionId)?.userId
@@ -38,6 +47,34 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { load() }, [load])
+
+  // Deep-link → llevar al post y resaltarlo. Si está en el feed: scroll + flash y
+  // (tras ~1s) abrir comentarios. Si no (p.ej. muy antiguo): abrir comentarios
+  // directo. Espera a que el feed cargue antes de decidir.
+  useEffect(() => {
+    const target = sessionParam
+    if (!target || deepLinkDoneRef.current === target) return
+
+    const inFeed = items.some(i => i.id === target)
+    if (!inFeed && loading) return // aún cargando, reevaluar al llegar items
+
+    deepLinkDoneRef.current = target
+    setHighlightCommentId(commentParam)
+    // Nota: NO llamamos loadForSessions aquí — reemplaza el set de sesiones
+    // rastreadas y borraría las reacciones del resto del feed. Los posts del feed
+    // ya cargan reacciones/conteos vía el efecto de feedIdsKey.
+
+    if (inFeed) {
+      requestAnimationFrame(() => {
+        document.getElementById(`feed-card-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+      setHighlightId(target)
+      setTimeout(() => setHighlightId(cur => (cur === target ? null : cur)), 1600)
+      setTimeout(() => setCommentsSessionId(target), 1050)
+    } else {
+      setCommentsSessionId(target)
+    }
+  }, [sessionParam, commentParam, items, loading])
 
   // Infinite scroll: observe sentinel element
   useEffect(() => {
@@ -92,18 +129,20 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
             return (
               <div
                 key={item.id}
-                className="motion-safe:animate-fade-in"
+                id={`feed-card-${item.id}`}
+                className="motion-safe:animate-fade-in scroll-mt-24"
                 style={{ animationDelay: `${Math.min(i, 10) * 50}ms`, animationFillMode: 'both' }}
               >
                 <FeedCard
                   item={item}
                   isOwnPost={item.userId === userId}
+                  highlight={item.id === highlightId}
                   onTap={() => navigate(`/u/${item.userId}`)}
                   onTapUser={() => navigate(`/u/${item.userId}`)}
                   reactions={reactions}
                   onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}
                   commentCount={commentCount}
-                  onComment={() => setCommentsSessionId(item.id)}
+                  onComment={() => { setHighlightCommentId(null); setCommentsSessionId(item.id) }}
                   onOpenCardio={(id) => navigate(`/cardio/session/${id}`)}
                 />
               </div>
@@ -124,7 +163,8 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
         <CommentsSheet
           sessionId={commentsSessionId}
           isOpen={!!commentsSessionId}
-          onClose={() => setCommentsSessionId(null)}
+          onClose={() => { setCommentsSessionId(null); setHighlightCommentId(null) }}
+          highlightCommentId={highlightCommentId}
           comments={commentsBySession[commentsSessionId] || []}
           onLoadComments={getComments}
           onAddComment={(sid, text, parentId) => addComment(sid, text, parentId, commentsSessionOwner)}
@@ -144,6 +184,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
 interface FeedCardProps {
   item: FeedItem
   isOwnPost?: boolean
+  highlight?: boolean
   onTap: () => void
   onTapUser: () => void
   reactions: Record<string, { count: number; hasReacted: boolean }>
@@ -153,7 +194,7 @@ interface FeedCardProps {
   onOpenCardio?: (id: string) => void
 }
 
-function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, commentCount, onComment, onOpenCardio }: FeedCardProps) {
+function FeedCard({ item, isOwnPost, highlight, onTap, onTapUser, reactions, onReact, commentCount, onComment, onOpenCardio }: FeedCardProps) {
   const { t, i18n } = useTranslation()
   const phaseColor = PHASE_COLORS[item.phase]
   const isCardio = item.type === 'cardio'
@@ -190,7 +231,10 @@ function FeedCard({ item, isOwnPost, onTap, onTapUser, reactions, onReact, comme
   }
 
   return (
-    <div className="px-4 py-3.5 bg-card border border-border rounded-xl hover:border-lime/20 transition-colors shadow-sm">
+    <div className={cn(
+      'px-4 py-3.5 bg-card border border-border rounded-xl hover:border-lime/20 transition-colors shadow-sm',
+      highlight && 'feed-flash',
+    )}>
       {/* User + time */}
       <div className="flex items-center gap-2.5 mb-2.5">
         <button

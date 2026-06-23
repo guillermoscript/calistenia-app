@@ -5,7 +5,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { View, FlatList, RefreshControl, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { X } from 'lucide-react-native'
 import { Pressable } from 'react-native'
 import { Text } from '@/components/ui/text'
@@ -21,6 +21,10 @@ import type { FeedItem } from '@calistenia/core/hooks/useActivityFeed'
 
 export default function SocialScreen() {
   const router = useRouter()
+  // Deep-link desde una notificación de comentario/reacción: ?session=<id> hace
+  // scroll al post, lo resalta (flash) y abre sus comentarios (ver
+  // lib/notification-route).
+  const { session: sessionParam, comment: commentParam } = useLocalSearchParams<{ session?: string; comment?: string }>()
   const user = useAuthUser()
   const userId = user?.id ?? null
 
@@ -42,11 +46,51 @@ export default function SocialScreen() {
   // Sesión activa en el sheet (para derivar reactions + sessionOwner)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const commentsSheetRef = useRef<CommentsSheetMethods>(null)
+  const listRef = useRef<FlatList<FeedItem>>(null)
+  // Post a resaltar tras un deep-link de notificación (flash lime de ~1s).
+  const [highlightId, setHighlightId] = useState<string | null>(null)
 
   // Cargar al montar
   useEffect(() => {
     load()
   }, [load])
+
+  // Deep-link de notificación → llevar al post y resaltarlo.
+  // Si el post está en el feed: scroll + flash y, tras el flash (~1s), abrir sus
+  // comentarios. Si no está (p.ej. muy antiguo): abrir los comentarios directo,
+  // que el sheet los carga por id. Espera a que el feed cargue antes de decidir.
+  const deepLinkDoneRef = useRef<string | null>(null)
+  useEffect(() => {
+    const target = sessionParam
+    if (!target || deepLinkDoneRef.current === target) return
+
+    const idx = items.findIndex((i) => i.id === target)
+    if (idx < 0 && loading) return // aún cargando, reevaluar al llegar items
+
+    deepLinkDoneRef.current = target
+    setActiveSessionId(target)
+    // Nota: NO llamamos loadForSessions aquí — reemplaza el set de sesiones
+    // rastreadas y borraría las reacciones del resto del feed. Los posts del feed
+    // ya cargan sus reacciones/conteos vía el efecto de feedIdsKey.
+
+    if (idx >= 0) {
+      requestAnimationFrame(() => {
+        try {
+          listRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.25 })
+        } catch {
+          /* sin getItemLayout puede fallar → lo maneja onScrollToIndexFailed */
+        }
+      })
+      setHighlightId(target)
+      // Limpiar el resaltado tras la animación (permite re-disparar a futuro).
+      setTimeout(() => setHighlightId((cur) => (cur === target ? null : cur)), 1600)
+      // Abrir comentarios cuando el flash ya se percibió. Si la notif apunta a un
+      // comentario concreto, lo pasamos para resaltarlo dentro del sheet.
+      setTimeout(() => commentsSheetRef.current?.open(target, commentParam), 1050)
+    } else {
+      commentsSheetRef.current?.open(target, commentParam)
+    }
+  }, [sessionParam, commentParam, items, loading])
 
   // Cargar reacciones y conteos tras obtener items.
   // Depender de una clave ESTABLE de ids (no del array `items`, que es una
@@ -103,6 +147,7 @@ export default function SocialScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <FlatList
+        ref={listRef}
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, gap: 10 }}
@@ -116,6 +161,21 @@ export default function SocialScreen() {
         }
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.4}
+        // El feed no usa getItemLayout (alturas variables), así que scrollToIndex
+        // a un post fuera de pantalla puede fallar: estimamos y reintentamos.
+        onScrollToIndexFailed={(info) => {
+          listRef.current?.scrollToOffset({
+            offset: info.averageItemLength * info.index,
+            animated: true,
+          })
+          setTimeout(() => {
+            try {
+              listRef.current?.scrollToIndex({ index: info.index, animated: true, viewPosition: 0.25 })
+            } catch {
+              /* noop */
+            }
+          }, 250)
+        }}
         ListHeaderComponent={
           <View className="flex-row items-start justify-between pt-2 pb-3">
             <View>
@@ -163,6 +223,7 @@ export default function SocialScreen() {
             onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}
             commentCount={getCommentCount(item.id)}
             onComment={() => handleOpenComments(item)}
+            highlight={item.id === highlightId}
           />
         )}
       />

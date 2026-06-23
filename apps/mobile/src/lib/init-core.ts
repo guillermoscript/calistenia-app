@@ -89,17 +89,21 @@ const pbAuthStore = new AsyncAuthStore({
   clear: async () => AsyncStorage.removeItem('pb_auth'),
 })
 
-// Mismo proyecto OpenPanel que la web: OpenPanel identifica por profileId (el id
-// de usuario de PocketBase, idéntico en web y móvil) → un único perfil por
-// persona y funnels cross-platform intactos. Los eventos llevan platform:'mobile'
-// para segmentar dentro del mismo proyecto. clientSecret NO se usa (solo eventos
-// server-side; además un secreto en el bundle no es secreto). En dev solo
-// logueamos para no ensuciar las métricas.
+// Proyecto OpenPanel propio del móvil (separado del de la web) → métricas
+// nativas aisladas. OpenPanel sigue identificando por profileId (el id de
+// usuario de PocketBase, idéntico en web y móvil), así que el mismo perfil
+// existe en ambos proyectos; los eventos llevan platform:'mobile'. El
+// clientSecret habilita los eventos del proyecto móvil; aunque viaje en el
+// bundle no es un secreto real (como ya pasa con el clientId público). En dev
+// solo logueamos para no ensuciar las métricas.
 // storage + networkInfo = buffering offline: los eventos se persisten en disco y
 // se reenvían al recuperar conexión (clave para un gym sin señal).
 const op = new OpenPanel({
   apiUrl: 'https://openpanel.guille.tech/api',
-  clientId: process.env.EXPO_PUBLIC_OPENPANEL_CLIENT_ID || '95f75c3f-fb38-4c0b-a401-a3a63f8b91f5',
+  clientId: process.env.EXPO_PUBLIC_OPENPANEL_CLIENT_ID || '896084a4-5808-472e-a329-cc2863d3a0ed',
+  // El secret NO va hardcodeado: lo inyecta CI (secret EXPO_PUBLIC_OPENPANEL_CLIENT_SECRET).
+  // En dev queda undefined → no pasa nada, los eventos solo se loguean (ver gating __DEV__).
+  clientSecret: process.env.EXPO_PUBLIC_OPENPANEL_CLIENT_SECRET,
   storage: AsyncStorage,
   networkInfo: NetInfo,
 })
