@@ -166,10 +166,17 @@ const CardioShareCard = memo(function CardioShareCard({
             <Stop offset="0" stopColor="#000" stopOpacity={hasRoute ? 0.55 : 0} />
             <Stop offset="1" stopColor="#000" stopOpacity="0" />
           </LinearGradient>
+          {/* Mood scrim under the route — gentle, so the route stays visible on top */}
           <LinearGradient id="bottom" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={CARD_BG} stopOpacity="0" />
-            <Stop offset="0.5" stopColor={CARD_BG} stopOpacity="0.8" />
-            <Stop offset="1" stopColor={CARD_BG} stopOpacity="0.985" />
+            <Stop offset="0.5" stopColor={CARD_BG} stopOpacity="0.35" />
+            <Stop offset="1" stopColor={CARD_BG} stopOpacity="0.6" />
+          </LinearGradient>
+          {/* Stats scrim over the route — fades the path out behind the stat block */}
+          <LinearGradient id="foot" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={CARD_BG} stopOpacity="0" />
+            <Stop offset="0.55" stopColor={CARD_BG} stopOpacity="0.82" />
+            <Stop offset="1" stopColor={CARD_BG} stopOpacity="0.97" />
           </LinearGradient>
           <LinearGradient id="empty" x1="0" y1="0" x2="0.5" y2="1">
             <Stop offset="0" stopColor={accent} stopOpacity="0.18" />
@@ -183,7 +190,11 @@ const CardioShareCard = memo(function CardioShareCard({
         {/* Top scrim for header legibility */}
         <Rect x="0" y="0" width={width} height={height * 0.32} fill="url(#top)" />
 
-        {/* Route — dark casing then accent */}
+        {/* Mood scrim BELOW the route — darkens the raw map without hiding the path */}
+        <Rect x="0" y={height * 0.46} width={width} height={height * 0.54} fill="url(#bottom)" />
+
+        {/* Route — dark casing then accent. Drawn AFTER the scrims so the GPS
+            path is never buried (previously the bottom scrim painted over it). */}
         {vp &&
           segments.map((seg, i) => {
             const pts = seg
@@ -194,7 +205,7 @@ const CardioShareCard = memo(function CardioShareCard({
               .join(' ')
             return (
               <React.Fragment key={i}>
-                <Polyline points={pts} fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth={r(8)} strokeLinejoin="round" strokeLinecap="round" />
+                <Polyline points={pts} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth={r(9)} strokeLinejoin="round" strokeLinecap="round" />
                 <Polyline points={pts} fill="none" stroke={accent} strokeWidth={r(5)} strokeLinejoin="round" strokeLinecap="round" />
               </React.Fragment>
             )
@@ -202,8 +213,13 @@ const CardioShareCard = memo(function CardioShareCard({
         {startPt && <Circle cx={startPt.x} cy={startPt.y} r={r(7)} fill="#fafafa" stroke={accent} strokeWidth={r(3)} />}
         {endPt && <Circle cx={endPt.x} cy={endPt.y} r={r(7)} fill={accent} stroke="#fafafa" strokeWidth={r(2.5)} />}
 
-        {/* Bottom scrim — anchors the stats over the map */}
-        <Rect x="0" y={height * 0.46} width={width} height={height * 0.54} fill="url(#bottom)" />
+        {/* Stats scrim OVER the route — only the bottom third, so the path fades
+            gently behind the stat block while staying visible across the map. */}
+        <Rect x="0" y={height * 0.68} width={width} height={height * 0.32} fill="url(#foot)" />
+
+        {/* Top accent line — drawn in the SVG layer so it captures reliably
+            (a plain RN View over the map/SVG gets dropped by view-shot on Android) */}
+        <Rect x={r(22)} y={0} width={width - r(44)} height={r(4)} rx={r(2)} fill={accent} />
       </Svg>
 
       {/* ── Header ── */}

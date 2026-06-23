@@ -17,7 +17,7 @@ import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { CATALOG, getCatalogExercise } from '@/lib/catalog'
 import { useAuthUser } from '@/lib/use-auth-user'
-import { useWorkoutState } from '@/contexts/WorkoutContext'
+import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { useSessionDetail } from '@calistenia/core/hooks/useSessionDetail'
 import type { SessionExercise } from '@calistenia/core/hooks/useSessionDetail'
@@ -74,13 +74,31 @@ export default function SessionDetailScreen() {
   const router = useRouter()
   const { progress } = useWorkoutState()
   const me = useAuthUser()
+  const { getWorkout } = useWorkoutActions()
+
+  // Los ejercicios de un programa se registran con claves de slot (p.ej.
+  // "lun_1_2"), no con ids de catálogo — sus nombres legibles sólo viven en el
+  // propio programa (PB program_exercises). Resuélvelos desde el WorkoutsMap ya
+  // cargado del programa activo para esta workoutKey ("p1_lun" → fase 1, día lun).
+  const programCatalog = useMemo(() => {
+    const m = /^p(\d+)_(.+)$/.exec(workoutKey)
+    if (!m) return {} as Record<string, { name: TranslatableField; muscles: TranslatableField }>
+    const workout = getWorkout(parseInt(m[1], 10), m[2])
+    if (!workout) return {} as Record<string, { name: TranslatableField; muscles: TranslatableField }>
+    const out: Record<string, { name: TranslatableField; muscles: TranslatableField }> = {}
+    workout.exercises.forEach(ex => { out[ex.id] = { name: ex.name, muscles: ex.muscles } })
+    return out
+  }, [workoutKey, getWorkout])
 
   // Las sesiones libres pueden incluir ejercicios que sólo viven en PB (custom).
   // Enriquece el catálogo una vez si algún nombre no se resolvió contra el
   // catálogo empaquetado. Espejo de la web SessionDetailPage; sin coste de red
   // en el caso normal (programa/biblioteca estándar).
   const [catalog, setCatalog] = useState(STATIC_CATALOG)
-  const { session, exercises } = useSessionDetail(progress, date, workoutKey, catalog)
+  // Nombres del programa tienen prioridad sobre el catálogo estático/PB para las
+  // claves de slot que sólo el programa conoce.
+  const mergedCatalog = useMemo(() => ({ ...catalog, ...programCatalog }), [catalog, programCatalog])
+  const { session, exercises } = useSessionDetail(progress, date, workoutKey, mergedCatalog)
   const enrichedRef = useRef(false)
   useEffect(() => {
     if (enrichedRef.current) return
