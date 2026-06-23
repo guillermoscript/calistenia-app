@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { localize } from '@calistenia/core/lib/i18n-db'
+import type { ProgramMeta } from '@calistenia/core/types'
 import i18n from 'i18next'
 
 interface DayRow {
@@ -22,6 +23,23 @@ interface DayRow {
   color: string
 }
 
+/** Mapea un registro de `programs` de PB a la forma mínima que pinta la pantalla. */
+function toProgramMeta(p: any): ProgramMeta {
+  const locale = i18n.language
+  return {
+    id:             p.id,
+    name:           localize(p.name, locale),
+    description:    localize(p.description, locale),
+    duration_weeks: p.duration_weeks,
+    created_by:     p.created_by || undefined,
+    is_official:    p.is_official || false,
+    is_featured:    p.is_featured || false,
+    difficulty:     p.difficulty || undefined,
+    discipline:     'calistenia', // se refina con los días cargados (ver useEffect)
+    days_per_week:  typeof p.days_per_week === 'number' ? p.days_per_week : undefined,
+  }
+}
+
 export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { t } = useTranslation()
@@ -29,12 +47,30 @@ export default function ProgramDetailScreen() {
   const { programs, activeProgram } = useWorkoutState()
   const { selectProgram } = useWorkoutActions()
 
-  const program = programs.find(p => p.id === id) ?? null
+  // El catálogo en memoria solo trae programas is_active y puede no estar
+  // hidratado en cold-start. Como la web (getOne por id), buscamos primero en el
+  // catálogo y, si no está, lo traemos directo de PB → la pantalla nunca queda
+  // colgada en "cargando".
+  const catalogProgram = programs.find(p => p.id === id) ?? null
+  const [fetchedProgram, setFetchedProgram] = useState<ProgramMeta | null>(null)
+  const program = catalogProgram ?? fetchedProgram
   const isActive = activeProgram?.id === id
 
   const [days, setDays] = useState<DayRow[] | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [selecting, setSelecting] = useState(false)
   const [error, setError] = useState('')
+
+  // Trae el programa por id si el catálogo no lo tiene (programa inactivo,
+  // catálogo aún sin hidratar, deep-link, etc.).
+  useEffect(() => {
+    if (!id || catalogProgram) return
+    let cancelled = false
+    pb.collection('programs').getOne(id, { $autoCancel: false })
+      .then(rec => { if (!cancelled) setFetchedProgram(toProgramMeta(rec)) })
+      .catch(() => { if (!cancelled) setNotFound(true) })
+    return () => { cancelled = true }
+  }, [id, catalogProgram])
 
   // Estructura semanal (fase 1) — se consulta directo a PB porque el catálogo
   // de usePrograms solo carga días/ejercicios del programa activo.
@@ -78,7 +114,14 @@ export default function ProgramDetailScreen() {
           rows = toRows(ex.items)
         } catch { /* sin datos */ }
       }
-      if (!cancelled) setDays(rows)
+      if (cancelled) return
+      setDays(rows)
+      // Refina la disciplina del programa traído directo (el del catálogo ya la
+      // trae): si todos los días no-descanso son yoga → 'yoga'.
+      const nonRest = rows.filter(r => r.type !== 'rest')
+      if (nonRest.length > 0 && nonRest.every(r => r.type === 'yoga')) {
+        setFetchedProgram(prev => (prev && prev.discipline !== 'yoga' ? { ...prev, discipline: 'yoga' } : prev))
+      }
     }
     load()
     return () => { cancelled = true }
@@ -110,7 +153,11 @@ export default function ProgramDetailScreen() {
 
       <ScrollView contentContainerClassName="px-4 pb-8 gap-4">
         {!program ? (
-          <Text className="py-10 text-center text-muted-foreground">{t('common.loading')}</Text>
+          notFound ? (
+            <Text className="py-10 text-center text-muted-foreground">{t('common.noResults')}</Text>
+          ) : (
+            <ActivityIndicator className="py-10" />
+          )
         ) : (
           <>
             <Card>
