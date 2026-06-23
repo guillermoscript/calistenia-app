@@ -38,12 +38,23 @@ function getNotificationMessage(n: AppNotification, t: TFunction): string {
   switch (n.type) {
     case 'follow':
       return t('notif.follow', { name: n.actorName })
-    case 'reaction':
-      return t('notif.reaction', { name: n.actorName, emoji: n.data?.emoji || '' })
-    case 'comment':
-      return t('notif.comment', { name: n.actorName })
-    case 'comment_reply':
-      return t('notif.commentReply', { name: n.actorName })
+    case 'reaction': {
+      // Reacción a un comentario vs. a la sesión (el hook marca data.onComment).
+      const emoji = n.data?.emoji || ''
+      if (n.data?.onComment) {
+        const base = t('notif.reactionComment', { name: n.actorName, emoji })
+        return n.data?.commentPreview ? `${base}: «${n.data.commentPreview}»` : base
+      }
+      return t('notif.reaction', { name: n.actorName, emoji })
+    }
+    case 'comment': {
+      const base = t('notif.comment', { name: n.actorName })
+      return n.data?.preview ? `${base}: «${n.data.preview}»` : base
+    }
+    case 'comment_reply': {
+      const base = t('notif.commentReply', { name: n.actorName })
+      return n.data?.preview ? `${base}: «${n.data.preview}»` : base
+    }
     case 'challenge_invite':
       return t('notif.challengeInvite', { name: n.actorName })
     case 'challenge_join':
@@ -77,9 +88,13 @@ function getNotificationRoute(n: AppNotification): string {
       return `/u/${n.actorId}`
     case 'reaction':
     case 'comment':
-    case 'comment_reply':
+    case 'comment_reply': {
       // referenceId = id de la sesión (el post) → abrir ese post + resaltarlo.
-      return n.referenceId ? `/feed?session=${n.referenceId}` : '/feed'
+      // Si apunta a un comentario concreto, pasamos ?comment= para resaltarlo.
+      if (!n.referenceId) return '/feed'
+      const commentId = n.data?.commentId
+      return `/feed?session=${n.referenceId}${commentId ? `&comment=${commentId}` : ''}`
+    }
     case 'challenge_invite':
     case 'challenge_join':
     case 'challenge_complete':

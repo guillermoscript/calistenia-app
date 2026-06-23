@@ -11,7 +11,7 @@
  *    dentro del Modal mantienen el input SIEMPRE sobre el teclado y la lista
  *    scrollable encima — el flujo de comentarios real de Instagram.
  */
-import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react'
 import {
   View,
   Pressable,
@@ -42,7 +42,8 @@ interface CommentReactionsHook {
 }
 
 export interface CommentsSheetMethods {
-  open: (sessionId: string) => void
+  /** `highlightCommentId` resalta (flash) el comentario al abrir desde una notif. */
+  open: (sessionId: string, highlightCommentId?: string) => void
   dismiss: () => void
 }
 
@@ -116,18 +117,24 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
     const [text, setText] = useState('')
     const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null)
     const [sending, setSending] = useState(false)
+    // Comentario a resaltar tras un deep-link de notificación (flash lime ~2s).
+    const [highlightCommentId, setHighlightCommentId] = useState<string | null>(null)
+    const listRef = useRef<FlatList<Comment>>(null)
+    const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const close = useCallback(() => {
       setVisible(false)
       setText('')
       setReplyTo(null)
+      setHighlightCommentId(null)
     }, [])
 
     useImperativeHandle(ref, () => ({
-      open(sid: string) {
+      open(sid: string, hlCommentId?: string) {
         setSessionId(sid)
         setText('')
         setReplyTo(null)
+        setHighlightCommentId(hlCommentId ?? null)
         setVisible(true)
       },
       dismiss() {
@@ -136,6 +143,27 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
     }))
 
     const comments: Comment[] = sessionId ? (commentsBySession[sessionId] ?? []) : []
+
+    // Deep-link a un comentario concreto: cuando los comentarios ya están cargados,
+    // hacemos scroll al comentario de nivel superior que lo contiene y limpiamos el
+    // flash tras ~2s. (El comentario puede ser una respuesta anidada; en ese caso
+    // scrolleamos a su padre, que sí es un item de la FlatList.)
+    useEffect(() => {
+      if (!highlightCommentId || comments.length === 0) return
+      const topIdx = comments.findIndex(
+        (c) => c.id === highlightCommentId || c.replies.some((r) => r.id === highlightCommentId),
+      )
+      if (topIdx >= 0) {
+        requestAnimationFrame(() => {
+          try {
+            listRef.current?.scrollToIndex({ index: topIdx, animated: true, viewPosition: 0.3 })
+          } catch { /* sin getItemLayout puede fallar → onScrollToIndexFailed */ }
+        })
+      }
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+      highlightTimerRef.current = setTimeout(() => setHighlightCommentId(null), 2200)
+      return () => { if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current) }
+    }, [highlightCommentId, comments])
 
     // Total incluyendo respuestas anidadas (no solo los comentarios de nivel superior)
     const totalComments = comments.reduce((sum, c) => sum + 1 + c.replies.length, 0)
@@ -296,12 +324,19 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                   </View>
                 ) : (
                   <FlatList
+                    ref={listRef}
                     data={comments}
                     keyExtractor={(c) => c.id}
                     style={{ flex: 1 }}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode="interactive"
+                    onScrollToIndexFailed={(info) => {
+                      listRef.current?.scrollToOffset({
+                        offset: info.averageItemLength * info.index,
+                        animated: true,
+                      })
+                    }}
                     contentContainerStyle={{
                       paddingHorizontal: 20,
                       paddingTop: 12,
@@ -329,6 +364,7 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                               : Promise.resolve(false)
                           }
                           commentReactions={commentReactions}
+                          highlight={comment.id === highlightCommentId}
                         />
                         {/* Respuestas anidadas (1 nivel) */}
                         {comment.replies.length > 0 && (
@@ -348,6 +384,7 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                                 }
                                 commentReactions={commentReactions}
                                 isReply
+                                highlight={reply.id === highlightCommentId}
                               />
                             ))}
                           </View>
@@ -469,6 +506,8 @@ interface CommentBubbleProps {
   onDelete: () => Promise<boolean>
   commentReactions?: CommentReactionsHook
   isReply?: boolean
+  /** Flash lime al llegar desde una notif que apunta a este comentario. */
+  highlight?: boolean
 }
 
 function CommentBubble({
@@ -478,6 +517,7 @@ function CommentBubble({
   onDelete,
   commentReactions,
   isReply,
+  highlight,
 }: CommentBubbleProps) {
   const [showPicker, setShowPicker] = useState(false)
   const isOwn = comment.authorId === currentUserId
@@ -488,7 +528,12 @@ function CommentBubble({
   const hue = authorHue(comment.authorName)
 
   return (
-    <View className="flex-row gap-3">
+    <View
+      className={cn(
+        'flex-row gap-3',
+        highlight && 'rounded-lg bg-lime/10 -mx-2 px-2 py-1.5',
+      )}
+    >
       {/* ── Avatar ────────────────────────────────────────────────────── */}
       <View
         className={cn(

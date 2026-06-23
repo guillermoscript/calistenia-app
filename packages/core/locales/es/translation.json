@@ -837,6 +837,7 @@
   "notif.emptyHint": "Cuando alguien interactúe contigo, aparecerá aquí",
   "notif.follow": "{{name}} te empezó a seguir",
   "notif.reaction": "{{name}} reaccionó {{emoji}} a tu sesión",
+  "notif.reactionComment": "{{name}} reaccionó {{emoji}} a tu comentario",
   "notif.comment": "{{name}} comentó en tu sesión",
   "notif.commentReply": "{{name}} respondió a tu comentario",
   "notif.challengeInvite": "{{name}} te invitó a un desafío",

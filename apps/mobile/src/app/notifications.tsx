@@ -48,12 +48,20 @@ function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record
     case 'reaction': {
       const emoji = n.data?.emoji ? ` ${n.data.emoji}` : ''
       const target = n.data?.onComment ? 'tu comentario' : 'tu sesión'
-      return `${name} reaccionó a ${target}${emoji}`
+      const base = `${name} reaccionó a ${target}${emoji}`
+      // Para reacciones a un comentario mostramos a cuál se reaccionó.
+      return n.data?.onComment && n.data?.commentPreview
+        ? `${base}: «${n.data.commentPreview}»`
+        : base
     }
     case 'comment':
-      return `${name} comentó tu sesión`
+      return n.data?.preview
+        ? `${name} comentó tu sesión: «${n.data.preview}»`
+        : `${name} comentó tu sesión`
     case 'comment_reply':
-      return `${name} respondió tu comentario`
+      return n.data?.preview
+        ? `${name} respondió tu comentario: «${n.data.preview}»`
+        : `${name} respondió tu comentario`
     case 'challenge_invite':
       return `${name} te invitó a un reto`
     case 'challenge_join':

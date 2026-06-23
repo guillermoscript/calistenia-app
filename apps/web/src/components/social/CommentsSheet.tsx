@@ -39,6 +39,8 @@ interface CommentsSheetProps {
   reactions: EmojiReactions
   onReact: (emoji: string) => void
   commentReactions?: CommentReactionsHook
+  /** Resalta (flash) este comentario al abrir desde una notificación. */
+  highlightCommentId?: string | null
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -69,12 +71,15 @@ export function CommentsSheet({
   reactions,
   onReact,
   commentReactions,
+  highlightCommentId,
 }: CommentsSheetProps) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [text, setText] = useState('')
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null)
   const [sending, setSending] = useState(false)
+  // Comentario a resaltar tras un deep-link de notificación (flash lime ~2s).
+  const [flashCommentId, setFlashCommentId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -82,13 +87,15 @@ export function CommentsSheet({
   useEffect(() => {
     if (isOpen && sessionId) {
       setLoading(true)
+      setFlashCommentId(highlightCommentId ?? null)
       onLoadComments(sessionId).finally(() => setLoading(false))
     }
     if (!isOpen) {
       setText('')
       setReplyTo(null)
+      setFlashCommentId(null)
     }
-  }, [isOpen, sessionId, onLoadComments])
+  }, [isOpen, sessionId, highlightCommentId, onLoadComments])
 
   // Load comment reactions when comments change
   useEffect(() => {
@@ -98,12 +105,25 @@ export function CommentsSheet({
     }
   }, [comments, commentReactions])
 
-  // Scroll to bottom when new comments arrive
+  // Scroll to bottom when new comments arrive — salvo que vengamos de un
+  // deep-link a un comentario concreto (entonces scrolleamos a ese, no al final).
   useEffect(() => {
+    if (flashCommentId) return
     if (scrollRef.current && comments.length > 0) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [comments])
+  }, [comments, flashCommentId])
+
+  // Deep-link a un comentario: scroll a su elemento y limpiar el flash tras ~2s.
+  useEffect(() => {
+    if (!flashCommentId || comments.length === 0) return
+    requestAnimationFrame(() => {
+      document.getElementById(`comment-${flashCommentId}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+    const tid = setTimeout(() => setFlashCommentId(null), 2200)
+    return () => clearTimeout(tid)
+  }, [flashCommentId, comments])
 
   // Focus input when replying
   useEffect(() => {
@@ -234,6 +254,7 @@ export function CommentsSheet({
                     onReply={() => setReplyTo({ id: comment.id, name: comment.authorName })}
                     onDelete={() => onDeleteComment(comment.id, sessionId)}
                     commentReactions={commentReactions}
+                    highlight={comment.id === flashCommentId}
                   />
 
                   {/* Threaded replies */}
@@ -248,6 +269,7 @@ export function CommentsSheet({
                           onDelete={() => onDeleteComment(reply.id, sessionId)}
                           commentReactions={commentReactions}
                           isReply
+                          highlight={reply.id === flashCommentId}
                         />
                       ))}
                     </div>
@@ -341,9 +363,11 @@ interface CommentBubbleProps {
   onDelete: () => void
   commentReactions?: CommentReactionsHook
   isReply?: boolean
+  /** Flash lime al llegar desde una notif que apunta a este comentario. */
+  highlight?: boolean
 }
 
-function CommentBubble({ comment, currentUserId, onReply, onDelete, commentReactions, isReply }: CommentBubbleProps) {
+function CommentBubble({ comment, currentUserId, onReply, onDelete, commentReactions, isReply, highlight }: CommentBubbleProps) {
   const { t } = useTranslation()
   const isOwn = comment.authorId === currentUserId
   const [showReactionPicker, setShowReactionPicker] = useState(false)
@@ -355,7 +379,13 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, commentReact
   const hasAnyReaction = Object.values(cReactions).some(r => r.count > 0)
 
   return (
-    <div className="group flex gap-2.5">
+    <div
+      id={`comment-${comment.id}`}
+      className={cn(
+        'group flex gap-2.5 scroll-mt-4 transition-colors duration-500',
+        highlight && 'rounded-lg bg-lime-400/10 -mx-2 px-2 py-1.5',
+      )}
+    >
       {/* Avatar */}
       {comment.authorAvatarUrl ? (
         <img

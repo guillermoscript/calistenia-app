@@ -34,10 +34,16 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
 
     case 'reaction':
     case 'comment':
-    case 'comment_reply':
+    case 'comment_reply': {
       // referenceId = id de la sesión (el post). Abrimos ese post y su hoja de
-      // comentarios directamente (social.tsx lee ?session=).
-      return n.referenceId ? `/social?session=${n.referenceId}` : '/social'
+      // comentarios directamente (social.tsx lee ?session=). Si la notificación
+      // apunta a un comentario concreto (comentario/respuesta/reacción a comentario),
+      // pasamos también ?comment= para resaltarlo dentro del sheet.
+      if (!n.referenceId) return '/social'
+      const commentId = n.data?.commentId
+      const commentQs = commentId ? `&comment=${commentId}` : ''
+      return `/social?session=${n.referenceId}${commentQs}`
+    }
 
     case 'challenge_invite':
     case 'challenge_join':

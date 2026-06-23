@@ -24,7 +24,7 @@ export default function SocialScreen() {
   // Deep-link desde una notificación de comentario/reacción: ?session=<id> hace
   // scroll al post, lo resalta (flash) y abre sus comentarios (ver
   // lib/notification-route).
-  const { session: sessionParam } = useLocalSearchParams<{ session?: string }>()
+  const { session: sessionParam, comment: commentParam } = useLocalSearchParams<{ session?: string; comment?: string }>()
   const user = useAuthUser()
   const userId = user?.id ?? null
 
@@ -84,12 +84,13 @@ export default function SocialScreen() {
       setHighlightId(target)
       // Limpiar el resaltado tras la animación (permite re-disparar a futuro).
       setTimeout(() => setHighlightId((cur) => (cur === target ? null : cur)), 1600)
-      // Abrir comentarios cuando el flash ya se percibió.
-      setTimeout(() => commentsSheetRef.current?.open(target), 1050)
+      // Abrir comentarios cuando el flash ya se percibió. Si la notif apunta a un
+      // comentario concreto, lo pasamos para resaltarlo dentro del sheet.
+      setTimeout(() => commentsSheetRef.current?.open(target, commentParam), 1050)
     } else {
-      commentsSheetRef.current?.open(target)
+      commentsSheetRef.current?.open(target, commentParam)
     }
-  }, [sessionParam, items, loading])
+  }, [sessionParam, commentParam, items, loading])
 
   // Cargar reacciones y conteos tras obtener items.
   // Depender de una clave ESTABLE de ids (no del array `items`, que es una
