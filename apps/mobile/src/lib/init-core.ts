@@ -160,7 +160,7 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
     if (pb.authStore.isValid) {
       const user = (pb.authStore as any).record ?? (pb.authStore as any).model
       if (user?.id) {
-        registerPushTokenAsync(pb, user.id).catch(() => {/* silenciar */})
+        registerPushTokenAsync(pb, user.id).catch((e) => { Sentry.captureException(e, { tags: { feature: 'push', op: 'register_push_token' } }) /* silenciar */ })
       }
     }
   }

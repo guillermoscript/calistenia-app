@@ -50,6 +50,7 @@ import {
   getReminderPermission,
   type ReminderPermStatus,
 } from '@/lib/reminder-scheduler'
+import { Sentry } from '@/lib/instrument'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -520,7 +521,8 @@ export default function RemindersScreen() {
 
       setShowForm(null)
       setTimeout(reschedule, 0)
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'reminders', op: 'save_reminder' } })
       setError(t('reminders.saveError'))
     } finally {
       setSaving(false)
@@ -559,7 +561,8 @@ export default function RemindersScreen() {
       }
       setEditingItem(null)
       setTimeout(reschedule, 0)
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'reminders', op: 'update_reminder' } })
       setError(t('reminders.updateError'))
     } finally {
       setSaving(false)
@@ -578,7 +581,8 @@ export default function RemindersScreen() {
         await toggleWorkoutReminder(rawId)
       }
       setTimeout(reschedule, 0)
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'reminders', op: 'toggle_reminder' } })
       console.warn('Error toggling reminder')
     } finally {
       setBusyIds((prev) => { const next = new Set(prev); next.delete(item.id); return next })
@@ -598,7 +602,8 @@ export default function RemindersScreen() {
         await deleteWorkoutReminder(rawId)
       }
       setTimeout(reschedule, 0)
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'reminders', op: 'delete_reminder' } })
       console.warn('Error deleting reminder')
     } finally {
       setBusyIds((prev) => { const next = new Set(prev); next.delete(item.id); return next })

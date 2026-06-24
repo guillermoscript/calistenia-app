@@ -34,6 +34,7 @@ import {
   endCardioLive, setCardioLiveActionHandler,
 } from '@/lib/cardio-live'
 import { syncCardioWidget } from '@/lib/sync-cardio-widget'
+import { Sentry } from '@/lib/instrument'
 
 // ── Precision tuning (idéntico a web) ───────────────────────────────────────
 const MAX_ACCURACY_M = 20
@@ -641,7 +642,8 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       for (const session of queue) {
         try {
           await pb.collection('cardio_sessions').create(session)
-        } catch {
+        } catch (e) {
+          Sentry.captureException(e, { tags: { feature: 'cardio', op: 'flush_unsaved_session' } })
           remaining.push(session)
         }
       }

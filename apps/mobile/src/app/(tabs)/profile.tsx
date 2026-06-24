@@ -20,6 +20,7 @@ import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { Sentry } from '@/lib/instrument'
 
 type SaveState = 'idle' | 'saving' | 'saved'
 
@@ -55,7 +56,8 @@ export default function ProfileScreen() {
       await pb.collection('users').update(user.id, { display_name: name.trim() })
       setSaveState('saved')
       setTimeout(() => setSaveState('idle'), 2000)
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_display_name' } })
       setSaveState('idle')
     }
   }

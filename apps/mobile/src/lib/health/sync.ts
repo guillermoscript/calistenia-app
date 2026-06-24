@@ -11,6 +11,7 @@
 import { pb } from '@calistenia/core/lib/pocketbase'
 import type { DailyHealthSummary, HealthDataType, HealthSyncResult } from '@calistenia/core/types'
 import * as hc from './bridge'
+import { Sentry } from '@/lib/instrument'
 
 const DAY_MS = 86_400_000
 
@@ -377,17 +378,20 @@ export async function syncHealth(opts: { userId: string; days?: number }): Promi
     // No-fatal: el cache (arriba) ya quedó guardado aunque esto falle.
     try {
       await mergeSleepEntries(opts.userId, sleep)
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'health', op: 'merge_sleep_entries' } })
       /* merge sueño best-effort */
     }
     try {
       await mergeWeightEntries(opts.userId, weightByDay, bodyFatByDay)
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'health', op: 'merge_weight_entries' } })
       /* merge peso best-effort */
     }
     try {
       await mergeSessionMetrics(opts.userId, range.startTime, heartRate, active)
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'health', op: 'merge_session_metrics' } })
       /* merge HR→sesiones best-effort */
     }
 
