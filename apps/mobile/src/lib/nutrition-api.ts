@@ -26,6 +26,10 @@ async function uriToBlob(uri: string, mimeType?: string): Promise<Blob> {
     const xhr = new XMLHttpRequest()
     xhr.onload = () => resolve(xhr.response as Blob)
     xhr.onerror = () => reject(new Error('No se pudo leer la imagen seleccionada'))
+    // Una lectura de archivo local es instantánea; el timeout sólo evita que un
+    // uri corrupto / sin permiso deje el spinner colgado para siempre.
+    xhr.timeout = 20_000
+    xhr.ontimeout = () => reject(new Error('La lectura de la imagen tardó demasiado'))
     xhr.responseType = 'blob'
     xhr.open('GET', uri, true)
     xhr.send(null)
