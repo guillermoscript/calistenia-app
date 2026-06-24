@@ -33,6 +33,8 @@ import {
   Platform,
 } from 'react-native'
 import { Image } from 'expo-image'
+import { Share2 } from 'lucide-react-native'
+import { useColorScheme } from 'nativewind'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 
@@ -101,6 +103,10 @@ export default function NutritionShareButton({
   const { t } = useTranslation()
   const { width: screenW, height: screenH } = useWindowDimensions()
   const insets = useSafeAreaInsets()
+  // Trigger icon must track the --lime token (not the fixed-canvas card LIME),
+  // so it matches the adjacent text-lime in both themes.
+  const { colorScheme } = useColorScheme()
+  const triggerLime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)'
 
   // Off-screen capture refs — one per variant so we can always capture the
   // selected variant without switching render trees at share time.
@@ -222,15 +228,17 @@ export default function NutritionShareButton({
         <NutritionShareCard {...sharedCardProps} variant="rich" />
       </ShareCardCapture>
 
-      {/* ── Visible trigger button ── */}
+      {/* ── Visible trigger button (lime variant — see button.tsx) ── */}
       <Button
-        variant="outline"
+        variant="lime"
         size="sm"
-        className="border-lime-400/30 bg-lime-400/5"
+        className="self-start"
         onPress={openModal}
+        accessibilityLabel={t('common.share', { defaultValue: 'Compartir' })}
       >
-        <Text className="font-mono text-[10px] tracking-widest text-lime-400 uppercase">
-          COMPARTIR
+        <Share2 size={14} color={triggerLime} strokeWidth={2.2} />
+        <Text className="font-mono text-[11px] tracking-[3px] text-lime uppercase">
+          {t('common.share', { defaultValue: 'Compartir' })}
         </Text>
       </Button>
 

@@ -101,16 +101,13 @@ export async function analyzeMealMobile(
   }
 }
 
-// Save photo URIs to a nutrition entry via PocketBase multipart upload
-export async function saveEntryWithPhotos(
-  entryId: string,
-  photoUris: string[],
-): Promise<void> {
-  if (photoUris.length === 0) return
-  const formData = new FormData()
-  for (let i = 0; i < photoUris.length; i++) {
-    const blob = await uriToBlob(photoUris[i], 'image/jpeg')
-    formData.append('photos', blob, `meal_${i}.jpg`)
-  }
-  await pb.collection('nutrition_entries').update(entryId, formData)
+/**
+ * Read local photo URIs into real Blobs so they can be attached to the
+ * `photos` multipart field when the nutrition entry is CREATED (one atomic
+ * request, matching the web File[] flow). Creating the record with photos
+ * means mapPBToEntry derives photoUrls immediately — no second update call and
+ * no cache-staleness window where the just-saved meal shows no image.
+ */
+export async function urisToBlobs(photoUris: string[]): Promise<Blob[]> {
+  return Promise.all(photoUris.map((uri) => uriToBlob(uri, 'image/jpeg')))
 }

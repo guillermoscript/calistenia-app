@@ -4,6 +4,7 @@
  */
 import { memo, useCallback, useState, useMemo } from 'react'
 import { View, ScrollView, Pressable, Alert } from 'react-native'
+import { Image as ExpoImage } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { Copy, Trash2, Pencil, ChevronDown, ChevronUp } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
@@ -14,6 +15,9 @@ import { getMealTimeLabel } from '@calistenia/core/lib/meal-time'
 import type { NutritionEntry, DailyTotals, QualityScore } from '@calistenia/core/types'
 import MacroRing from './MacroRing'
 import MacroBar from './MacroBar'
+import QualityBreakdownPanel from './QualityBreakdownPanel'
+import ScoreCriteriaSheet from './ScoreCriteriaSheet'
+import { haptics } from '@/lib/haptics'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -77,13 +81,27 @@ const SCORE_TEXT: Record<QualityScore, string> = {
 
 // ─── Quality score badge ──────────────────────────────────────────────────────
 
-function ScoreBadge({ score }: { score: QualityScore }) {
+function ScoreBadge({ score, pending }: { score?: QualityScore; pending?: boolean }) {
+  // Pending '?' placeholder while async scoring runs on a freshly-logged meal
+  // (parity with web QualityScoreBadge pending state).
+  if (!score && pending) {
+    return (
+      <View
+        className="h-5 w-5 items-center justify-center rounded-full border border-muted-foreground/20 bg-muted"
+        accessibilityLabel="Calidad pendiente"
+      >
+        <Text className="font-mono text-[10px] text-muted-foreground/50">?</Text>
+      </View>
+    )
+  }
+  if (!score) return null
   return (
     <View
       className={cn(
         'h-5 w-5 items-center justify-center rounded-full',
         SCORE_BG[score]
       )}
+      accessibilityLabel={`Calidad ${score}`}
     >
       <Text className={cn('font-mono text-[10px]', SCORE_TEXT[score])}>
         {score}
@@ -155,6 +173,8 @@ const MealCard = memo(function MealCard({
   }, [entry.foods])
 
   const isAI = entry.source?.startsWith('ai_')
+  const photoUrls = entry.photoUrls ?? []
+  const hasPhotos = photoUrls.length > 0
   // Use the shared helper: treats "00:00" as the unset sentinel and falls back
   // to loggedAt (a real UTC timestamp), so legacy rows never display 00:00.
   const mealTime = getMealTimeLabel(entry)
@@ -163,7 +183,27 @@ const MealCard = memo(function MealCard({
     <View className="mb-3 rounded-xl border border-border bg-card overflow-hidden">
       {/* Main row */}
       <Pressable onPress={() => onToggle(entryId)} className="active:opacity-80">
-        <View className="px-4 pt-4 pb-3">
+        <View className="flex-row gap-3 px-4 pt-4 pb-3">
+          {/* Leading photo thumbnail */}
+          {hasPhotos && (
+            <View className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+              <ExpoImage
+                source={{ uri: photoUrls[0] }}
+                style={{ width: 56, height: 56 }}
+                contentFit="cover"
+                recyclingKey={photoUrls[0]}
+                cachePolicy="memory-disk"
+                accessibilityLabel={`Foto de ${entry.mealType}`}
+              />
+              {photoUrls.length > 1 && (
+                <View className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 py-px">
+                  <Text className="font-mono text-[8px] text-white">+{photoUrls.length - 1}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          <View className="flex-1">
           {/* Top row: type badge + time + calories */}
           <View className="flex-row items-center gap-2 mb-2">
             {/* Meal type dot + label */}
@@ -183,8 +223,11 @@ const MealCard = memo(function MealCard({
               </View>
             )}
 
-            {/* Quality score */}
-            {entry.qualityScore && <ScoreBadge score={entry.qualityScore} />}
+            {/* Quality score (or pending '?' while async scoring runs) */}
+            <ScoreBadge
+              score={entry.qualityScore}
+              pending={!entry.qualityScore && entry.foods.length > 0}
+            />
 
             {/* Finish time + optional duration */}
             <View className="flex-row items-center gap-1.5 ml-auto">
@@ -245,12 +288,46 @@ const MealCard = memo(function MealCard({
               )}
             </View>
           </View>
+          </View>
         </View>
       </Pressable>
 
-      {/* Expanded: per-food breakdown */}
+      {/* Expanded: photos + AI quality feedback + per-food breakdown */}
       {expanded && (
-        <View className="border-t border-border/50 px-4 py-3 gap-2">
+        <View className="border-t border-border/50 px-4 py-3 gap-3">
+          {/* Photo gallery */}
+          {hasPhotos && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="gap-2"
+            >
+              {photoUrls.map((url, pi) => (
+                <ExpoImage
+                  key={url}
+                  source={{ uri: url }}
+                  style={{ width: 168, height: 112, borderRadius: 8 }}
+                  contentFit="cover"
+                  recyclingKey={url}
+                  cachePolicy="memory-disk"
+                  accessibilityLabel={`Foto ${pi + 1} de ${entry.mealType}`}
+                />
+              ))}
+            </ScrollView>
+          )}
+
+          {/* AI quality feedback: score, summary, positives/negatives, suggestion */}
+          {entry.qualityScore && entry.qualityBreakdown && (
+            <QualityBreakdownPanel
+              score={entry.qualityScore}
+              breakdown={entry.qualityBreakdown}
+              message={entry.qualityMessage}
+              suggestion={entry.qualitySuggestion}
+            />
+          )}
+
+          {/* Per-food breakdown */}
+          <View className="gap-2">
           {groupedFoods.map((g, fi) => (
             <View key={fi} className="flex-row items-center gap-2">
               <Text className="flex-1 font-sans text-xs text-foreground/80" numberOfLines={1}>
@@ -267,6 +344,7 @@ const MealCard = memo(function MealCard({
               </Text>
             </View>
           ))}
+          </View>
 
           {/* Action buttons */}
           {(showDelete || showDuplicate || showEdit) && (
@@ -327,6 +405,7 @@ function NutritionDashboard({
 }: NutritionDashboardProps) {
   const { t } = useTranslation()
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [showCriteria, setShowCriteria] = useState(false)
 
   const isToday = !selectedDate || selectedDate === todayStr()
   // Calorías activas del reloj amplían el budget del día (modelo "comes lo que
@@ -387,6 +466,7 @@ function NutritionDashboard({
               consumed={dailyTotals.calories}
               target={effectiveTarget}
               dailyScore={dailyQualityScore}
+              onScorePress={dailyQualityScore ? () => { haptics.light(); setShowCriteria(true) } : undefined}
             />
             {burn > 0 && (
               <Text className="mt-2 font-mono text-[11px] tracking-wide text-lime-400">
@@ -467,6 +547,9 @@ function NutritionDashboard({
           </View>
         )}
       </View>
+
+      {/* A–E score legend (opened by tapping the daily-score chip in the ring) */}
+      <ScoreCriteriaSheet visible={showCriteria} onClose={() => setShowCriteria(false)} />
     </View>
   )
 }

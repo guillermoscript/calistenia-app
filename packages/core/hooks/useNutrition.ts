@@ -312,7 +312,10 @@ export function useNutrition(userId: string | null) {
   // ─── CRUD: saveEntry ──────────────────────────────────────────────────────
   const saveEntry = useCallback(async (
     entry: Omit<NutritionEntry, 'id'>,
-    photoFiles?: File[],
+    // Web passes File[]; mobile passes Blob[] (URIs read to Blob via XHR, since
+    // expo/fetch's FormData rejects RN's { uri, name, type } shape). Both append
+    // to the 'photos' multipart field so the record is created WITH photos.
+    photoFiles?: Array<File | Blob>,
   ): Promise<NutritionEntry> => {
     let saved: NutritionEntry = { ...entry, id: `local_${Date.now()}`, loggedAt: entry.loggedAt || nowLocalForPB() }
     if (usePB && userId) {
@@ -331,7 +334,9 @@ export function useNutrition(userId: string | null) {
           if (entry.source) formData.append('source', entry.source)
           if (entry.eatenAt) formData.append('eaten_at', entry.eatenAt)
           if (entry.durationMin != null) formData.append('duration_min', String(entry.durationMin))
-          for (const file of photoFiles) formData.append('photos', file)
+          // Provide an explicit filename: File carries its own .name, but a bare
+          // Blob (mobile) has none, which some servers reject — fall back to one.
+          for (const file of photoFiles) formData.append('photos', file, (file as { name?: string }).name || 'photo.jpg')
           body = formData
         } else {
           body = {

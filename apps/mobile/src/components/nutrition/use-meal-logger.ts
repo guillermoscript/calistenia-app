@@ -317,6 +317,17 @@ export function useMealLogger({
     setStep('capture')
   }
 
+  // Clear AI-derived artifacts (quality panel + meal description) when the review
+  // step is re-entered WITHOUT a fresh analyze (Back → Manual / Repeat). Without
+  // this, the previous meal's quality would render over the new foods and — worse
+  // — get persisted on save (handleSave spreads analysisQuality), tagging a
+  // manually-entered meal with a stale AI score. Only AI-analyzed foods carry a
+  // quality score.
+  const clearAiAnalysis = () => {
+    setAnalysisQuality(undefined)
+    setMealDescription('')
+  }
+
   // ── Food editing ─────────────────────────────────────────────────────────────
   const updateFood = useCallback((index: number, field: keyof FoodItem, value: string | number) => {
     setFoods((prev) => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)))
@@ -349,11 +360,13 @@ export function useMealLogger({
 
   // Manual entry: start blank, or seed from a comma-separated quick-text list.
   const startManualEntry = () => {
+    clearAiAnalysis()
     setFoods([createEmptyFood()])
     setStep('review')
   }
 
   const createManualFoodsFromText = () => {
+    clearAiAnalysis()
     const names = quickText.split(',').map((s) => s.trim()).filter(Boolean)
     const newFoods = names.map((name) => {
       const food = createEmptyFood()
@@ -384,6 +397,7 @@ export function useMealLogger({
   }
 
   const selectRecentEntry = (entry: NutritionEntry) => {
+    clearAiAnalysis()
     setMealType(entry.mealType)
     setFoods(normalizeEntryFoods(entry.foods))
     setCaptureSubView('main')
@@ -398,6 +412,7 @@ export function useMealLogger({
   }
 
   const backFromReview = () => {
+    clearAiAnalysis()
     setStep('capture')
     setFoods([])
     setImageAssets([])
@@ -510,6 +525,7 @@ export function useMealLogger({
     quickText,
     imageDescription,
     mealDescription,
+    analysisQuality,
     editingMacro,
     editingMacroValue,
     recentFoods,
