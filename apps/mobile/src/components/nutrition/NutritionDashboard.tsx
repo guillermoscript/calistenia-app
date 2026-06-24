@@ -32,6 +32,8 @@ interface NutritionDashboardProps {
   selectedDate?: string
   /** Calorie-weighted daily quality letter, computed once by the parent. */
   dailyQualityScore?: QualityScore
+  /** Calorías activas quemadas (reloj/Health Connect) que amplían el budget del día. */
+  activeCalories?: number
 }
 
 // ─── Meal color tokens (NativeWind safe — no dynamic class generation) ───────
@@ -321,11 +323,16 @@ function NutritionDashboard({
   onEditEntry,
   selectedDate,
   dailyQualityScore,
+  activeCalories = 0,
 }: NutritionDashboardProps) {
   const { t } = useTranslation()
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const isToday = !selectedDate || selectedDate === todayStr()
+  // Calorías activas del reloj amplían el budget del día (modelo "comes lo que
+  // quemas"). El target visual del anillo sube con ellas.
+  const burn = Math.max(0, Math.round(activeCalories))
+  const effectiveTarget = goals.dailyCalories + burn
 
   // Stable callbacks so memoized MealCards only re-render when their own props change.
   const handleToggle = useCallback((id: string) => {
@@ -378,9 +385,14 @@ function NutritionDashboard({
           <View className="items-center">
             <MacroRing
               consumed={dailyTotals.calories}
-              target={goals.dailyCalories}
+              target={effectiveTarget}
               dailyScore={dailyQualityScore}
             />
+            {burn > 0 && (
+              <Text className="mt-2 font-mono text-[11px] tracking-wide text-lime-400">
+                🔥 +{burn} kcal {t('nutrition.fromActivity', { defaultValue: 'por actividad' })}
+              </Text>
+            )}
           </View>
 
           {/* Macro bars */}

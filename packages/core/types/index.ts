@@ -1,5 +1,8 @@
 import type { TranslatableField } from '../lib/i18n-db'
 
+// Integración smartwatch / hub de salud (Health Connect / HealthKit)
+export * from './health'
+
 // ─── Workout & Program Data ──────────────────────────────────────────────────
 
 export type DayId = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
@@ -508,6 +511,10 @@ export interface CardioSession {
   avg_speed_kmh?: number
   max_speed_kmh?: number
   splits?: KmSplit[]
+  /** Frecuencia cardíaca y calorías reales importadas del reloj (Health Connect / HealthKit). */
+  hr_avg?: number
+  hr_max?: number
+  calories_actual?: number
 }
 
 // ─── Challenges ──────────────────────────────────────────────────────────────

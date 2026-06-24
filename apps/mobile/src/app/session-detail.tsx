@@ -16,8 +16,8 @@ import { ArrowLeft, Clock, ChevronRight } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { CATALOG, getCatalogExercise } from '@/lib/catalog'
-import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { useSessionDetail } from '@calistenia/core/hooks/useSessionDetail'
 import type { SessionExercise } from '@calistenia/core/hooks/useSessionDetail'
@@ -74,6 +74,7 @@ export default function SessionDetailScreen() {
   const router = useRouter()
   const { progress } = useWorkoutState()
   const { getWorkout } = useWorkoutActions()
+  const me = useAuthUser()
 
   // Los ejercicios de un programa se registran con claves de slot (p.ej.
   // "lun_1_2"), no con ids de catálogo — sus nombres legibles sólo viven en el
@@ -124,6 +125,30 @@ export default function SessionDetailScreen() {
     () => exercises.reduce((sum, ex) => sum + ex.sets.length, 0),
     [exercises],
   )
+
+  // FC/calorías reales del reloj (Health Connect) para esta sesión. Viven en el
+  // record PB `sessions` (no en el ProgressMap en memoria) → fetch aislado.
+  const [hrMetrics, setHrMetrics] = useState<{ hr_avg?: number; hr_max?: number; calories_actual?: number } | null>(null)
+  useEffect(() => {
+    if (!date || !workoutKey || !me?.id) return
+    let cancelled = false
+    void (async () => {
+      try {
+        if (!(await isPocketBaseAvailable())) return
+        const rec = await pb.collection('sessions').getFirstListItem(
+          pb.filter('user = {:u} && workout_key = {:w} && completed_at >= {:d1} && completed_at <= {:d2}', {
+            u: me.id, w: workoutKey, d1: `${date} 00:00:00`, d2: `${date} 23:59:59`,
+          }),
+          { $autoCancel: false, fields: 'hr_avg,hr_max,calories_actual' },
+        )
+        if (cancelled) return
+        if (rec && (rec.hr_avg || rec.calories_actual)) {
+          setHrMetrics({ hr_avg: rec.hr_avg, hr_max: rec.hr_max, calories_actual: rec.calories_actual })
+        }
+      } catch { /* sesión sin métricas de reloj */ }
+    })()
+    return () => { cancelled = true }
+  }, [date, workoutKey, me?.id])
 
   // Título: el que computó la pantalla de origen (programa activo) → WORKOUTS por
   // defecto → versión humanizada. Evita mostrar la clave cruda "p1_lun".
@@ -203,6 +228,15 @@ export default function SessionDetailScreen() {
             <StatBox value={formatTimingClock(session.durationSeconds!)} label={t('cardio.duration')} accent="text-sky-500" />
           )}
         </View>
+
+        {/* FC / calorías reales del reloj (Health Connect) */}
+        {hrMetrics && (
+          <View className="flex-row gap-3">
+            <StatBox value={hrMetrics.hr_avg ? String(hrMetrics.hr_avg) : '—'} label="FC MEDIA" accent="text-red-500" />
+            <StatBox value={hrMetrics.hr_max ? String(hrMetrics.hr_max) : '—'} label="FC MÁX" accent="text-red-500" />
+            <StatBox value={hrMetrics.calories_actual ? String(hrMetrics.calories_actual) : '—'} label="KCAL RELOJ" accent="text-red-500" />
+          </View>
+        )}
 
         {/* Warmup / cooldown */}
         {(showWarmup || showCooldown) && (
