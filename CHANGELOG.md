@@ -9,6 +9,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.0.7] - 2026-06-24
+
+_When a meal-photo analysis fails, you now see the real error instead of a silent failure._
+
+### Fixed
+
+- **Clearer meal-analysis errors** — If a meal-photo analysis fails, the app shows the real error message so you know what happened. Failures are also reported automatically so they get fixed sooner.
+
+## [1.0.6] - 2026-06-24
+
+_Pick the app theme —light, dark or automatic— and reopen what's new anytime to browse every version._
+
+### Added
+
+- **Light & dark theme** — Switch between light, dark or system mode from your profile. Your choice is remembered next time you open the app.
+- **What's-new history** — Open what's new anytime from your profile and review every previous version.
+
+## [1.0.5] - 2026-06-24
+
+_Circuits and timed workouts, smartwatch data import, and richer nutrition sharing._
+
+### Added
+
+- **Circuits in free sessions** — Build circuits with rounds, rest between exercises and between rounds — then train them with a full-screen timer.
+- **Timed workouts** — Timed mode: set work and rest seconds per exercise and let the app guide you through it.
+- **Smartwatch import** — Connect Health Connect to bring steps, sleep, heart rate, weight and more into your calendar and nutrition.
+- **Nutrition share cards** — New nutrition cards to share your day with each meal's thumbnail, name and macros.
+
+### Fixed
+
+- **Cardio share maps** — Fixed the blank map when sharing cardio sessions — your route shows up again.
+
 ## [1.0.4] - 2026-06-22
 
 _A unified calendar, meal timing, and a full look back at your past sessions._
@@ -77,7 +109,10 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.4...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.7...HEAD
+[1.0.7]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.6...mobile-v1.0.7
+[1.0.6]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.5...mobile-v1.0.6
+[1.0.5]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.4...mobile-v1.0.5
 [1.0.4]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.3...mobile-v1.0.4
 [1.0.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.2...mobile-v1.0.3
 [1.0.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.1...mobile-v1.0.2

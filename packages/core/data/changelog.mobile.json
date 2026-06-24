@@ -1,6 +1,43 @@
 {
-  "generated": "2026-06-24T00:00:00.000Z",
+  "generated": "2026-06-24T18:25:54.674Z",
   "versions": [
+    {
+      "version": "1.0.7",
+      "date": "2026-06-24",
+      "summary": {
+        "es": "Cuando el análisis de una foto de comida falla, ahora ves el error real en vez de un fallo silencioso.",
+        "en": "When a meal-photo analysis fails, you now see the real error instead of a silent failure."
+      },
+      "highlights": [
+        {
+          "icon": "🐛",
+          "type": "fix",
+          "title": {
+            "es": "Errores de análisis de comida más claros",
+            "en": "Clearer meal-analysis errors"
+          },
+          "body": {
+            "es": "Si el análisis de una foto de comida falla, la app te muestra el mensaje real del error para que sepas qué pasó. Además, los fallos se reportan automáticamente para corregirlos antes.",
+            "en": "If a meal-photo analysis fails, the app shows the real error message so you know what happened. Failures are also reported automatically so they get fixed sooner."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Mensaje de error real al fallar el análisis de fotos de comida + reporte automático a Sentry",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "c32f0cd"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.0.6",
       "date": "2026-06-24",
@@ -12,7 +49,10 @@
         {
           "icon": "🌗",
           "type": "feat",
-          "title": { "es": "Tema claro y oscuro", "en": "Light & dark theme" },
+          "title": {
+            "es": "Tema claro y oscuro",
+            "en": "Light & dark theme"
+          },
           "body": {
             "es": "Cambia entre modo claro, oscuro o el del sistema desde tu perfil. Tu elección se recuerda al reabrir la app.",
             "en": "Switch between light, dark or system mode from your profile. Your choice is remembered next time you open the app."
@@ -21,7 +61,10 @@
         {
           "icon": "🕑",
           "type": "feat",
-          "title": { "es": "Historial de novedades", "en": "What's-new history" },
+          "title": {
+            "es": "Historial de novedades",
+            "en": "What's-new history"
+          },
           "body": {
             "es": "Abre las novedades cuando quieras desde tu perfil y revisa todas las versiones anteriores.",
             "en": "Open what's new anytime from your profile and review every previous version."
@@ -40,7 +83,10 @@
         {
           "icon": "🔁",
           "type": "feat",
-          "title": { "es": "Circuitos en sesión libre", "en": "Circuits in free sessions" },
+          "title": {
+            "es": "Circuitos en sesión libre",
+            "en": "Circuits in free sessions"
+          },
           "body": {
             "es": "Arma circuitos con rondas, descanso entre ejercicios y entre rondas — y entrénalos con un cronómetro a pantalla completa.",
             "en": "Build circuits with rounds, rest between exercises and between rounds — then train them with a full-screen timer."
@@ -49,7 +95,10 @@
         {
           "icon": "⏱️",
           "type": "feat",
-          "title": { "es": "Entrenos cronometrados", "en": "Timed workouts" },
+          "title": {
+            "es": "Entrenos cronometrados",
+            "en": "Timed workouts"
+          },
           "body": {
             "es": "Modo cronometrado: define el tiempo de trabajo y descanso de cada ejercicio y deja que la app te guíe.",
             "en": "Timed mode: set work and rest seconds per exercise and let the app guide you through it."
@@ -58,7 +107,10 @@
         {
           "icon": "⌚",
           "type": "feat",
-          "title": { "es": "Importa datos de tu reloj", "en": "Smartwatch import" },
+          "title": {
+            "es": "Importa datos de tu reloj",
+            "en": "Smartwatch import"
+          },
           "body": {
             "es": "Conecta Health Connect para traer pasos, sueño, frecuencia cardíaca, peso y más a tu calendario y nutrición.",
             "en": "Connect Health Connect to bring steps, sleep, heart rate, weight and more into your calendar and nutrition."
@@ -67,7 +119,10 @@
         {
           "icon": "📤",
           "type": "feat",
-          "title": { "es": "Comparte tu nutrición", "en": "Nutrition share cards" },
+          "title": {
+            "es": "Comparte tu nutrición",
+            "en": "Nutrition share cards"
+          },
           "body": {
             "es": "Nuevas tarjetas de nutrición para compartir tu día con las miniaturas, nombres y macros de cada comida.",
             "en": "New nutrition cards to share your day with each meal's thumbnail, name and macros."
@@ -76,7 +131,10 @@
         {
           "icon": "🗺️",
           "type": "fix",
-          "title": { "es": "Mapas de cardio al compartir", "en": "Cardio share maps" },
+          "title": {
+            "es": "Mapas de cardio al compartir",
+            "en": "Cardio share maps"
+          },
           "body": {
             "es": "Arreglado el mapa en blanco al compartir tus sesiones de cardio: la ruta vuelve a verse.",
             "en": "Fixed the blank map when sharing cardio sessions — your route shows up again."
@@ -89,10 +147,30 @@
           "emoji": "✨",
           "type": "feat",
           "items": [
-            { "description": "Circuit & timed (cronometrado) sessions in free session", "scope": "free-session", "breaking": false, "hash": "c845049" },
-            { "description": "Health Connect smartwatch import wired into calendar/nutrition/sessions", "scope": "mobile", "breaking": false, "hash": "e152a42" },
-            { "description": "Nutrition meal-timing (eaten_at/duration) + day-rollover + shared quality score", "scope": "nutrition", "breaking": false, "hash": "c845049" },
-            { "description": "Rich nutrition share cards with meal thumbnails, names & macros", "scope": "share", "breaking": false, "hash": "c845049" }
+            {
+              "description": "Circuit & timed (cronometrado) sessions in free session",
+              "scope": "free-session",
+              "breaking": false,
+              "hash": "c845049"
+            },
+            {
+              "description": "Health Connect smartwatch import wired into calendar/nutrition/sessions",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "e152a42"
+            },
+            {
+              "description": "Nutrition meal-timing (eaten_at/duration) + day-rollover + shared quality score",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "c845049"
+            },
+            {
+              "description": "Rich nutrition share cards with meal thumbnails, names & macros",
+              "scope": "share",
+              "breaking": false,
+              "hash": "c845049"
+            }
           ]
         },
         {
@@ -100,7 +178,12 @@
           "emoji": "🐛",
           "type": "fix",
           "items": [
-            { "description": "Fix blank route map on cardio share cards (CARTO dark_all)", "scope": "share", "breaking": false, "hash": "c845049" }
+            {
+              "description": "Fix blank route map on cardio share cards (CARTO dark_all)",
+              "scope": "share",
+              "breaking": false,
+              "hash": "c845049"
+            }
           ]
         }
       ]
@@ -116,7 +199,10 @@
         {
           "icon": "📅",
           "type": "feat",
-          "title": { "es": "Calendario unificado", "en": "Unified calendar" },
+          "title": {
+            "es": "Calendario unificado",
+            "en": "Unified calendar"
+          },
           "body": {
             "es": "Ve toda tu actividad — entrenos, cardio, comidas, sueño, agua y peso — en una sola vista mensual.",
             "en": "See all your activity — workouts, cardio, meals, sleep, water and weight — in one monthly view."
@@ -125,7 +211,10 @@
         {
           "icon": "⏱️",
           "type": "feat",
-          "title": { "es": "Horario de comidas", "en": "Meal timing" },
+          "title": {
+            "es": "Horario de comidas",
+            "en": "Meal timing"
+          },
           "body": {
             "es": "Registra cuándo comes y cuánto dura cada comida, con una puntuación diaria de calidad nutricional.",
             "en": "Log when you eat and how long each meal lasts, with a daily nutrition-quality score."
@@ -134,7 +223,10 @@
         {
           "icon": "📖",
           "type": "feat",
-          "title": { "es": "Detalle de sesiones pasadas", "en": "Past-session details" },
+          "title": {
+            "es": "Detalle de sesiones pasadas",
+            "en": "Past-session details"
+          },
           "body": {
             "es": "Toca cualquier entreno o cardio anterior para ver el desglose completo: series, reps, ruta y mapa.",
             "en": "Tap any past workout or cardio to see the full breakdown: sets, reps, route and map."
@@ -143,7 +235,10 @@
         {
           "icon": "☰",
           "type": "feat",
-          "title": { "es": "Menú de acceso rápido", "en": "Quick-access menu" },
+          "title": {
+            "es": "Menú de acceso rápido",
+            "en": "Quick-access menu"
+          },
           "body": {
             "es": "Un nuevo menú ☰ te lleva en un toque a sesiones libres, comunidad, carreras y recordatorios.",
             "en": "A new ☰ menu takes you in one tap to free sessions, community, races and reminders."
@@ -152,7 +247,10 @@
         {
           "icon": "💾",
           "type": "feat",
-          "title": { "es": "Plantillas de sesión libre", "en": "Free-session templates" },
+          "title": {
+            "es": "Plantillas de sesión libre",
+            "en": "Free-session templates"
+          },
           "body": {
             "es": "Guarda tus sesiones de IA y reutilízalas cuando quieras, sin volver a generarlas.",
             "en": "Save your AI free sessions and reuse them anytime — no need to regenerate."
@@ -161,7 +259,10 @@
         {
           "icon": "🎬",
           "type": "feat",
-          "title": { "es": "Ejercicios más claros", "en": "Clearer exercise guides" },
+          "title": {
+            "es": "Ejercicios más claros",
+            "en": "Clearer exercise guides"
+          },
           "body": {
             "es": "Los ejercicios ahora incluyen indicaciones de tempo y mejores demos para cuidar tu técnica.",
             "en": "Exercises now include tempo cues and clearer demo media to keep your form sharp."
@@ -170,7 +271,10 @@
         {
           "icon": "🔔",
           "type": "fix",
-          "title": { "es": "Controles en pantalla bloqueada", "en": "Lock-screen controls" },
+          "title": {
+            "es": "Controles en pantalla bloqueada",
+            "en": "Lock-screen controls"
+          },
           "body": {
             "es": "Tu entreno y cardio en vivo ahora se ven y se controlan desde la pantalla bloqueada (incl. Xiaomi/MIUI).",
             "en": "Your live workout and cardio now stay visible and controllable from the lock screen (incl. Xiaomi/MIUI)."
@@ -179,7 +283,10 @@
         {
           "icon": "⚡",
           "type": "perf",
-          "title": { "es": "App más fluida", "en": "Smoother app" },
+          "title": {
+            "es": "App más fluida",
+            "en": "Smoother app"
+          },
           "body": {
             "es": "Repaso de rendimiento en varias pantallas para que todo vaya más ligero.",
             "en": "A performance sweep across several screens so everything feels lighter."
@@ -192,12 +299,42 @@
           "emoji": "✨",
           "type": "feat",
           "items": [
-            { "description": "Unified daily-activity calendar (web + native)", "scope": "calendar", "breaking": false, "hash": "7d841f9" },
-            { "description": "Meal-timing, day-rollover & quality scoring", "scope": "nutrition", "breaking": false, "hash": "559d478" },
-            { "description": "Past-session detail views + web/native parity", "scope": "mobile", "breaking": false, "hash": "0a2ce6b" },
-            { "description": "Quick-access hamburger menu", "scope": "mobile", "breaking": false, "hash": "cd6976f" },
-            { "description": "Save & reuse free sessions as templates", "scope": "free-session", "breaking": false, "hash": "770c328" },
-            { "description": "Exercise normalization, universal PRs, tempo & structured media", "scope": "exercise-data", "breaking": false, "hash": "4e818a9" }
+            {
+              "description": "Unified daily-activity calendar (web + native)",
+              "scope": "calendar",
+              "breaking": false,
+              "hash": "7d841f9"
+            },
+            {
+              "description": "Meal-timing, day-rollover & quality scoring",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "559d478"
+            },
+            {
+              "description": "Past-session detail views + web/native parity",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "0a2ce6b"
+            },
+            {
+              "description": "Quick-access hamburger menu",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "cd6976f"
+            },
+            {
+              "description": "Save & reuse free sessions as templates",
+              "scope": "free-session",
+              "breaking": false,
+              "hash": "770c328"
+            },
+            {
+              "description": "Exercise normalization, universal PRs, tempo & structured media",
+              "scope": "exercise-data",
+              "breaking": false,
+              "hash": "4e818a9"
+            }
           ]
         },
         {
@@ -205,7 +342,12 @@
           "emoji": "🐛",
           "type": "fix",
           "items": [
-            { "description": "Show workout & cardio live notifications on the lock screen (Xiaomi/MIUI)", "scope": "mobile", "breaking": false, "hash": "943f558" }
+            {
+              "description": "Show workout & cardio live notifications on the lock screen (Xiaomi/MIUI)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "943f558"
+            }
           ]
         },
         {
@@ -213,7 +355,12 @@
           "emoji": "⚡",
           "type": "perf",
           "items": [
-            { "description": "Apply Vercel RN/React best-practice sweep (7 files)", "scope": "mobile", "breaking": false, "hash": "34ab5e6" }
+            {
+              "description": "Apply Vercel RN/React best-practice sweep (7 files)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "34ab5e6"
+            }
           ]
         }
       ]
@@ -229,7 +376,10 @@
         {
           "icon": "🔔",
           "type": "feat",
-          "title": { "es": "Notificaciones push", "en": "Push notifications" },
+          "title": {
+            "es": "Notificaciones push",
+            "en": "Push notifications"
+          },
           "body": {
             "es": "Recibe avisos cuando tus amigos logran rachas, terminan entrenos o te dan un toque.",
             "en": "Get notified when friends hit streaks, finish workouts or send you a nudge."
@@ -238,7 +388,10 @@
         {
           "icon": "👥",
           "type": "feat",
-          "title": { "es": "Actividad de amigos", "en": "Friend activity" },
+          "title": {
+            "es": "Actividad de amigos",
+            "en": "Friend activity"
+          },
           "body": {
             "es": "Las rachas, logros y entrenos de tus amigos ahora aparecen en tu feed y notificaciones.",
             "en": "Friend streaks, achievements and workouts now show up in your feed and notifications."
@@ -251,7 +404,12 @@
           "emoji": "✨",
           "type": "feat",
           "items": [
-            { "description": "Social notifications + direct FCM push", "scope": "mobile", "breaking": false, "hash": "" }
+            {
+              "description": "Social notifications + direct FCM push",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            }
           ]
         }
       ]
@@ -267,7 +425,10 @@
         {
           "icon": "🏠",
           "type": "feat",
-          "title": { "es": "Feed de actividad", "en": "Activity feed" },
+          "title": {
+            "es": "Feed de actividad",
+            "en": "Activity feed"
+          },
           "body": {
             "es": "Ve la actividad reciente de tus amigos y la tuya en el inicio, con búsqueda y filtros de programas.",
             "en": "See recent friend and personal activity on Home, with program search and filters."
@@ -276,7 +437,10 @@
         {
           "icon": "🎉",
           "type": "feat",
-          "title": { "es": "Final de sesión con chispa", "en": "Session-complete delight" },
+          "title": {
+            "es": "Final de sesión con chispa",
+            "en": "Session-complete delight"
+          },
           "body": {
             "es": "Confetti, frases dinámicas y animaciones de tiempos al terminar tu entreno.",
             "en": "Confetti, dynamic taglines and timing animations when you finish a workout."
@@ -285,7 +449,10 @@
         {
           "icon": "📤",
           "type": "feat",
-          "title": { "es": "Tarjetas para compartir", "en": "Shareable cards" },
+          "title": {
+            "es": "Tarjetas para compartir",
+            "en": "Shareable cards"
+          },
           "body": {
             "es": "Comparte tu racha y el resumen de tu sesión como imagen.",
             "en": "Share your streak and session summary as an image."
@@ -294,7 +461,10 @@
         {
           "icon": "🔑",
           "type": "fix",
-          "title": { "es": "Arreglo de inicio con Google", "en": "Google login fix" },
+          "title": {
+            "es": "Arreglo de inicio con Google",
+            "en": "Google login fix"
+          },
           "body": {
             "es": "Soluciona el cuelgue infinito al iniciar sesión con Google en Honor/MagicOS.",
             "en": "Fixes the infinite hang when signing in with Google on Honor/MagicOS."
@@ -307,11 +477,36 @@
           "emoji": "✨",
           "type": "feat",
           "items": [
-            { "description": "Home activity feed + programs search/filters", "scope": "mobile", "breaking": false, "hash": "" },
-            { "description": "Session-complete delight — confetti, dynamic tagline, timing anims", "scope": "mobile", "breaking": false, "hash": "" },
-            { "description": "Shareable streak & session cards", "scope": "mobile", "breaking": false, "hash": "" },
-            { "description": "Public user profile route /u/[id]", "scope": "mobile", "breaking": false, "hash": "" },
-            { "description": "Durable offline queue for water logging", "scope": "core", "breaking": false, "hash": "" }
+            {
+              "description": "Home activity feed + programs search/filters",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            },
+            {
+              "description": "Session-complete delight — confetti, dynamic tagline, timing anims",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            },
+            {
+              "description": "Shareable streak & session cards",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            },
+            {
+              "description": "Public user profile route /u/[id]",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            },
+            {
+              "description": "Durable offline queue for water logging",
+              "scope": "core",
+              "breaking": false,
+              "hash": ""
+            }
           ]
         },
         {
@@ -319,8 +514,18 @@
           "emoji": "🐛",
           "type": "fix",
           "items": [
-            { "description": "Google login via deep-link code flow (fixes infinite hang on Honor/MagicOS)", "scope": "mobile", "breaking": false, "hash": "" },
-            { "description": "Guard referral hooks so session create doesn't 400", "scope": "pb", "breaking": false, "hash": "" }
+            {
+              "description": "Google login via deep-link code flow (fixes infinite hang on Honor/MagicOS)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            },
+            {
+              "description": "Guard referral hooks so session create doesn't 400",
+              "scope": "pb",
+              "breaking": false,
+              "hash": ""
+            }
           ]
         }
       ]
@@ -336,7 +541,10 @@
         {
           "icon": "💬",
           "type": "feat",
-          "title": { "es": "Comentarios renovados", "en": "Redesigned comments" },
+          "title": {
+            "es": "Comentarios renovados",
+            "en": "Redesigned comments"
+          },
           "body": {
             "es": "Nueva interfaz de comentarios con teclado nativo y notificaciones push para comentarios y reacciones.",
             "en": "A new comments UI with native keyboard and push notifications for comments and reactions."
@@ -345,7 +553,10 @@
         {
           "icon": "⏰",
           "type": "feat",
-          "title": { "es": "Recordatorios locales", "en": "Local reminders" },
+          "title": {
+            "es": "Recordatorios locales",
+            "en": "Local reminders"
+          },
           "body": {
             "es": "Programa recordatorios de entreno directamente en tu teléfono.",
             "en": "Schedule workout reminders right on your phone."
@@ -354,7 +565,10 @@
         {
           "icon": "⚡",
           "type": "perf",
-          "title": { "es": "Mejor rendimiento de datos", "en": "Data performance" },
+          "title": {
+            "es": "Mejor rendimiento de datos",
+            "en": "Data performance"
+          },
           "body": {
             "es": "Carga y sincronización de datos más rápidas.",
             "en": "Faster data loading and sync."
@@ -367,8 +581,18 @@
           "emoji": "✨",
           "type": "feat",
           "items": [
-            { "description": "Redesign comments UI + native keyboard + Expo push for comments/reactions", "scope": "mobile", "breaking": false, "hash": "" },
-            { "description": "Local reminders + nutrition/profile polish", "scope": "mobile", "breaking": false, "hash": "" }
+            {
+              "description": "Redesign comments UI + native keyboard + Expo push for comments/reactions",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            },
+            {
+              "description": "Local reminders + nutrition/profile polish",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            }
           ]
         }
       ]
@@ -384,7 +608,10 @@
         {
           "icon": "🚀",
           "type": "feat",
-          "title": { "es": "Primera versión móvil", "en": "First mobile release" },
+          "title": {
+            "es": "Primera versión móvil",
+            "en": "First mobile release"
+          },
           "body": {
             "es": "La app de Calistenia llega a Android con tu programa, sesiones y progreso.",
             "en": "The Calistenia app arrives on Android with your program, sessions and progress."
@@ -393,7 +620,10 @@
         {
           "icon": "🧭",
           "type": "feat",
-          "title": { "es": "Onboarding inteligente", "en": "Smart onboarding" },
+          "title": {
+            "es": "Onboarding inteligente",
+            "en": "Smart onboarding"
+          },
           "body": {
             "es": "Te emparejamos con los programas ideales según tu nivel y objetivos.",
             "en": "We match you with the right programs based on your level and goals."
@@ -402,7 +632,10 @@
         {
           "icon": "🍎",
           "type": "feat",
-          "title": { "es": "Registro de comidas con IA", "en": "AI meal logging" },
+          "title": {
+            "es": "Registro de comidas con IA",
+            "en": "AI meal logging"
+          },
           "body": {
             "es": "Registra comidas describiéndolas en texto y deja que la IA calcule los macros.",
             "en": "Log meals by describing them in text and let AI estimate the macros."
@@ -411,7 +644,10 @@
         {
           "icon": "🏋️",
           "type": "feat",
-          "title": { "es": "Sesiones guiadas", "en": "Guided sessions" },
+          "title": {
+            "es": "Sesiones guiadas",
+            "en": "Guided sessions"
+          },
           "body": {
             "es": "Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.",
             "en": "Train with step-by-step sessions that respect your injured joints."
@@ -424,8 +660,18 @@
           "emoji": "✨",
           "type": "feat",
           "items": [
-            { "description": "Initial Android release: onboarding, program matching, sessions, profile", "scope": "mobile", "breaking": false, "hash": "" },
-            { "description": "AI text-based meal logging", "scope": "nutrition", "breaking": false, "hash": "" }
+            {
+              "description": "Initial Android release: onboarding, program matching, sessions, profile",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": ""
+            },
+            {
+              "description": "AI text-based meal logging",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": ""
+            }
           ]
         }
       ]

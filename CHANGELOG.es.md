@@ -9,6 +9,38 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.0.7] - 2026-06-24
+
+_Cuando el análisis de una foto de comida falla, ahora ves el error real en vez de un fallo silencioso._
+
+### Corregido
+
+- **Errores de análisis de comida más claros** — Si el análisis de una foto de comida falla, la app te muestra el mensaje real del error para que sepas qué pasó. Además, los fallos se reportan automáticamente para corregirlos antes.
+
+## [1.0.6] - 2026-06-24
+
+_Elige el tema de la app —claro, oscuro o automático— y reabre las novedades cuando quieras para ver todas las versiones._
+
+### Añadido
+
+- **Tema claro y oscuro** — Cambia entre modo claro, oscuro o el del sistema desde tu perfil. Tu elección se recuerda al reabrir la app.
+- **Historial de novedades** — Abre las novedades cuando quieras desde tu perfil y revisa todas las versiones anteriores.
+
+## [1.0.5] - 2026-06-24
+
+_Circuitos y entrenos cronometrados, importa datos de tu reloj y comparte tu nutrición con estilo._
+
+### Añadido
+
+- **Circuitos en sesión libre** — Arma circuitos con rondas, descanso entre ejercicios y entre rondas — y entrénalos con un cronómetro a pantalla completa.
+- **Entrenos cronometrados** — Modo cronometrado: define el tiempo de trabajo y descanso de cada ejercicio y deja que la app te guíe.
+- **Importa datos de tu reloj** — Conecta Health Connect para traer pasos, sueño, frecuencia cardíaca, peso y más a tu calendario y nutrición.
+- **Comparte tu nutrición** — Nuevas tarjetas de nutrición para compartir tu día con las miniaturas, nombres y macros de cada comida.
+
+### Corregido
+
+- **Mapas de cardio al compartir** — Arreglado el mapa en blanco al compartir tus sesiones de cardio: la ruta vuelve a verse.
+
 ## [1.0.4] - 2026-06-22
 
 _Calendario unificado, horario de comidas y un repaso completo de tus sesiones pasadas._
@@ -77,7 +109,10 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.4...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.7...HEAD
+[1.0.7]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.6...mobile-v1.0.7
+[1.0.6]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.5...mobile-v1.0.6
+[1.0.5]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.4...mobile-v1.0.5
 [1.0.4]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.3...mobile-v1.0.4
 [1.0.3]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.2...mobile-v1.0.3
 [1.0.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.1...mobile-v1.0.2
