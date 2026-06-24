@@ -2,12 +2,15 @@
  * NutritionShareCard — shareable image for a nutrition day summary.
  *
  * Layout (dark spec-sheet, 360×640 scalable):
- *   Header row  — accent dot + mono "NUTRICIÓN" kicker + date + avatar initial
- *   Hero        — Bebas calorie number + "/ GOAL KCAL" + thin lime progress bar
- *   Quality badge — letter A–E with semantic colour
- *   Macro rows  — PROTEÍNA / CARBOS / GRASA, value + thin progress bar
- *   Water row   — AGUA  X.X / Y.Y L  (if provided)
- *   Brand footer hairline — "CALISTENIA" / "calistenia-app.com"
+ *   variant="summary" (default) — unchanged original layout:
+ *     Header row  — accent dot + mono "NUTRICIÓN" kicker + date + avatar initial
+ *     Hero        — Bebas calorie number + "/ GOAL KCAL" + thin lime progress bar
+ *     Quality badge — letter A–E with semantic colour
+ *     Macro rows  — PROTEÍNA / CARBOS / GRASA, value + thin progress bar
+ *     Water row   — AGUA  X.X / Y.Y L  (if provided)
+ *     Brand footer hairline — "CALISTENIA" / "calistenia-app.com"
+ *
+ *   variant="rich" — compact hero/macros + COMIDAS section with meal thumbnails.
  *
  * Pure RN Views + Text — no charting libs.  `collapsable={false}` on root so
  * react-native-view-shot can capture every pixel.
@@ -17,6 +20,9 @@
  */
 import React, { memo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
+
+import type { ShareMeal } from '@calistenia/core/lib/share-meals'
 
 const BASE_W = 360
 const BASE_H = 640
@@ -44,6 +50,14 @@ const QUALITY_COLOR: Record<string, string> = {
   E: RED,
 }
 
+// Meal-type accent colours (hex, for use in RN StyleSheet)
+const MEAL_TYPE_HEX: Record<string, string> = {
+  desayuno: AMBER,
+  almuerzo: BLUE,
+  cena:     PINK,
+  snack:    LIME,
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 export interface NutritionShareCardProps {
   date: string
@@ -62,6 +76,14 @@ export interface NutritionShareCardProps {
   avatarUrl?: string | null
   width?: number
   height?: number
+  /** Render variant. Default: "summary" (original layout unchanged). */
+  variant?: 'summary' | 'rich'
+  /** Meal rows for rich variant — output of buildShareMeals(entries). */
+  meals?: ShareMeal[]
+  /** How many entries were cut off after max rows. */
+  mealsOverflow?: number
+  /** Precomputed daily quality score string ("A"–"E") for the header badge. */
+  dailyQualityScore?: 'A' | 'B' | 'C' | 'D' | 'E'
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -134,6 +156,191 @@ function MacroRow({ label, value, goal, unit, color, r }: MacroRowProps) {
   )
 }
 
+// ── Rich variant sub-components ───────────────────────────────────────────────
+
+interface CompactMacroLineProps {
+  protein: number
+  carbs: number
+  fat: number
+  goalProtein?: number
+  goalCarbs?: number
+  goalFat?: number
+  r: (n: number) => number
+}
+
+function CompactMacroLine({ protein, carbs, fat, goalProtein, goalCarbs, goalFat, r }: CompactMacroLineProps) {
+  const items = [
+    { label: 'P', value: protein, goal: goalProtein, color: BLUE },
+    { label: 'C', value: carbs,   goal: goalCarbs,   color: AMBER },
+    { label: 'G', value: fat,     goal: goalFat,     color: PINK },
+  ]
+
+  return (
+    <View style={{ flexDirection: 'row', gap: r(16), marginTop: r(6) }}>
+      {items.map(({ label, value, goal, color }) => {
+        const pct = goal && goal > 0 ? Math.min(value / goal, 1) : 0
+        const pctStr = `${Math.round(pct * 100)}%`
+        return (
+          <View key={label} style={{ alignItems: 'center', flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: r(3) }}>
+              <Text style={{
+                fontFamily: 'JetBrainsMono_400Regular',
+                color: INK_FAINT,
+                fontSize: r(8),
+                letterSpacing: r(1.5),
+                marginRight: r(3),
+              }}>
+                {label}
+              </Text>
+              <Text style={{
+                fontFamily: 'BebasNeue_400Regular',
+                color: INK,
+                fontSize: r(16),
+              }}>
+                {value}g
+              </Text>
+            </View>
+            <View style={{ height: r(3), width: '100%', backgroundColor: SURFACE, borderRadius: r(2) }}>
+              {pct > 0 ? (
+                <View style={{ height: r(3), width: pctStr as any, backgroundColor: color, borderRadius: r(2), opacity: 0.7 }} />
+              ) : null}
+            </View>
+          </View>
+        )
+      })}
+    </View>
+  )
+}
+
+interface MealRowProps {
+  meal: ShareMeal
+  r: (n: number) => number
+}
+
+function MealRow({ meal, r }: MealRowProps) {
+  const accentColor = MEAL_TYPE_HEX[meal.mealType] ?? LIME
+  const firstLetter = (meal.title || meal.mealType || '?').trim()[0]?.toUpperCase() ?? '?'
+  const qColor = meal.qualityScore ? QUALITY_COLOR[meal.qualityScore] : null
+
+  return (
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: r(8),
+    }}>
+      {/* 2px left accent bar */}
+      <View style={{
+        width: r(2),
+        height: r(44),
+        backgroundColor: accentColor,
+        borderRadius: r(1),
+        marginRight: r(8),
+        opacity: 0.6,
+      }} />
+
+      {/* Thumbnail or letter tile */}
+      <View style={{
+        width: r(44),
+        height: r(44),
+        borderRadius: r(6),
+        overflow: 'hidden',
+        marginRight: r(10),
+        borderWidth: 1,
+        borderColor: accentColor + '33',
+      }}>
+        {meal.photoUrl ? (
+          <Image
+            source={{ uri: meal.photoUrl }}
+            style={{ width: r(44), height: r(44) }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+        ) : (
+          <View style={{
+            flex: 1,
+            backgroundColor: accentColor + '24',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Text style={{
+              fontFamily: 'JetBrainsMono_700Bold',
+              color: accentColor,
+              fontSize: r(18),
+            }}>
+              {firstLetter}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Text: title + macros */}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text
+          numberOfLines={1}
+          style={{
+            fontFamily: 'DMSans_500Medium',
+            color: INK,
+            fontSize: r(12),
+            marginBottom: r(2),
+          }}
+        >
+          {meal.title || meal.mealType}
+        </Text>
+        <Text style={{
+          fontFamily: 'JetBrainsMono_400Regular',
+          color: INK_FAINT,
+          fontSize: r(8.5),
+          letterSpacing: r(0.5),
+        }}>
+          {meal.protein}P  {meal.carbs}C  {meal.fat}G
+        </Text>
+      </View>
+
+      {/* Kcal + quality chip */}
+      <View style={{ alignItems: 'flex-end', marginLeft: r(8) }}>
+        <Text style={{
+          fontFamily: 'BebasNeue_400Regular',
+          color: INK,
+          fontSize: r(16),
+          lineHeight: r(18),
+        }}>
+          {meal.calories}
+        </Text>
+        <Text style={{
+          fontFamily: 'JetBrainsMono_400Regular',
+          color: INK_FAINT,
+          fontSize: r(7),
+          letterSpacing: r(0.5),
+        }}>
+          kcal
+        </Text>
+        {qColor && meal.qualityScore ? (
+          <View style={{
+            marginTop: r(1),
+            width: r(18),
+            height: r(18),
+            borderRadius: r(4),
+            borderWidth: 1,
+            borderColor: qColor + '55',
+            backgroundColor: qColor + '18',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Text style={{
+              fontFamily: 'BebasNeue_400Regular',
+              color: qColor,
+              fontSize: r(12),
+              lineHeight: r(14),
+            }}>
+              {meal.qualityScore}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </View>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 const NutritionShareCard = memo(function NutritionShareCard({
@@ -147,6 +354,10 @@ const NutritionShareCard = memo(function NutritionShareCard({
   userName,
   width = BASE_W,
   height = BASE_H,
+  variant = 'summary',
+  meals = [],
+  mealsOverflow = 0,
+  dailyQualityScore,
 }: NutritionShareCardProps) {
   const S = width / BASE_W
   const r = (n: number) => Math.round(n * S)
@@ -172,6 +383,97 @@ const NutritionShareCard = memo(function NutritionShareCard({
     ? clamp(waterMl / waterGoal, 0, 1)
     : 0
 
+  // ── RICH VARIANT ─────────────────────────────────────────────────────────────
+  if (variant === 'rich') {
+    const headerQScore = dailyQualityScore ?? qualityScore
+    const headerQColor = headerQScore ? QUALITY_COLOR[headerQScore] : null
+
+    return (
+      <View style={s.card} collapsable={false}>
+        {/* ── Top lime accent line ── */}
+        <View style={s.topLine} />
+
+        {/* ── Header ── */}
+        <View style={[s.header, { marginTop: r(8) }]}>
+          <View style={s.headerLeft}>
+            <View style={s.kickerRow}>
+              <View style={s.accentDot} />
+              <Text style={s.kicker}>NUTRICIÓN</Text>
+            </View>
+            <Text style={s.dateText}>{formatNutritionDate(date)}</Text>
+          </View>
+          {/* Daily grade badge — only when available */}
+          {headerQScore && headerQColor ? (
+            <View style={[s.qualityBadge, { borderColor: headerQColor + '55', backgroundColor: headerQColor + '18' }]}>
+              <Text style={[s.qualityLetter, { color: headerQColor }]}>{headerQScore}</Text>
+              <Text style={[s.qualityLabel, { color: headerQColor }]}>CALIDAD</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* ── HERO (compact) ── */}
+        <View style={{ marginTop: r(14) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+            <Text style={[s.heroNumber, { fontSize: r(54), lineHeight: r(52) }]}>{calories}</Text>
+            <View style={{ marginLeft: r(8), marginBottom: r(4), alignItems: 'flex-start' }}>
+              {showCalGoal && (
+                <Text style={[s.heroGoal, { fontSize: r(13) }]}>/ {goalCal}</Text>
+              )}
+              <Text style={[s.heroUnit, { fontSize: r(16), lineHeight: r(18) }]}>KCAL</Text>
+            </View>
+          </View>
+          {/* Calorie progress bar */}
+          <View style={[s.calBarTrack, { marginTop: r(6) }]}>
+            <View style={[s.calBarFill, {
+              width: `${calPct * 100}%` as any,
+              backgroundColor: calories > goalCal && goalCal > 0 ? RED : LIME,
+            }]} />
+          </View>
+        </View>
+
+        {/* ── Compact macro line ── */}
+        <CompactMacroLine
+          protein={Math.round(totals.protein)}
+          carbs={Math.round(totals.carbs)}
+          fat={Math.round(totals.fat)}
+          goalProtein={goals?.dailyProtein}
+          goalCarbs={goals?.dailyCarbs}
+          goalFat={goals?.dailyFat}
+          r={r}
+        />
+
+        {/* ── Divider + COMIDAS label ── */}
+        <View style={[s.divider, { marginTop: r(12), marginBottom: r(10) }]} />
+        <Text style={s.sectionLabel}>COMIDAS</Text>
+
+        {/* ── Meal rows (up to 4) ── */}
+        <View style={{ flex: 1 }}>
+          {meals.map((meal, idx) => (
+            <MealRow key={`${meal.mealType}-${idx}`} meal={meal} r={r} />
+          ))}
+          {mealsOverflow > 0 && (
+            <Text style={{
+              fontFamily: 'JetBrainsMono_400Regular',
+              color: INK_FAINT,
+              fontSize: r(9),
+              letterSpacing: r(1),
+              marginTop: r(2),
+            }}>
+              +{mealsOverflow} más
+            </Text>
+          )}
+        </View>
+
+        {/* ── Divider + Brand footer ── */}
+        <View style={s.brandRow}>
+          <Text style={s.brand}>CALISTENIA</Text>
+          <Text style={s.brandUrl}>calistenia-app.com</Text>
+        </View>
+      </View>
+    )
+  }
+
+  // ── SUMMARY VARIANT (original, byte-for-byte) ─────────────────────────────
   return (
     <View style={s.card} collapsable={false}>
       {/* ── Top lime accent line ── */}

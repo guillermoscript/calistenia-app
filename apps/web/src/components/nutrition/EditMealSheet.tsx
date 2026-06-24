@@ -5,7 +5,8 @@ import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
 import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS } from '@calistenia/core/lib/style-tokens'
-import { todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { isMidnightEatenAt } from '@calistenia/core/lib/meal-time'
+import { todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
 import { toast } from 'sonner'
 import type { NutritionEntry, FoodItem, MealType } from '@calistenia/core/types'
 
@@ -36,14 +37,19 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
     if (entry) {
       setMealType(entry.mealType)
       setFoods(entry.foods.map(f => ({ ...f })))
-      if (entry.eatenAt && entry.eatenAt.length >= 16) {
-        setEatenHour(entry.eatenAt.slice(11, 13))
-        setEatenMinute(entry.eatenAt.slice(14, 16))
+
+      // Prefer eatenAt unless it is the midnight sentinel (legacy unset value).
+      // When it is midnight/unset, fall back to the creation time (loggedAt) so
+      // the edit sheet shows a sane default instead of 00:00.
+      const useFallback = !entry.eatenAt || entry.eatenAt.length < 16 || isMidnightEatenAt(entry.eatenAt)
+      if (!useFallback) {
+        setEatenHour(entry.eatenAt!.slice(11, 13))
+        setEatenMinute(entry.eatenAt!.slice(14, 16))
       } else {
-        const d = new Date(entry.loggedAt)
-        if (!isNaN(d.getTime())) {
-          setEatenHour(String(d.getHours()).padStart(2, '0'))
-          setEatenMinute(String(d.getMinutes()).padStart(2, '0'))
+        const hm = localHMFromPB(entry.loggedAt)
+        if (hm) {
+          setEatenHour(hm.hour)
+          setEatenMinute(hm.minute)
         }
       }
       setDurationInput(entry.durationMin != null ? String(entry.durationMin) : '')

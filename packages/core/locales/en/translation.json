@@ -560,6 +560,10 @@
   "nutrition.summary.share": "SHARE SUMMARY",
   "nutrition.summary.sectionLabel": "D A I L Y   N U T R I T I O N",
   "nutrition.summary.water": "Water",
+  "nutrition.summary.mealsLabel": "MEALS",
+  "nutrition.summary.moreMeals": "+{{count}} more",
+  "nutrition.summary.variantSummary": "SUMMARY",
+  "nutrition.summary.variantMeals": "WITH MEALS",
 
   "nutrition.logger.title": "Log Meal",
   "nutrition.logger.subtitle": "Take a photo of your meal to analyze the macros",

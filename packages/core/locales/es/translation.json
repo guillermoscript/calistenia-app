@@ -560,6 +560,10 @@
   "nutrition.summary.share": "COMPARTIR RESUMEN",
   "nutrition.summary.sectionLabel": "N U T R I C I O N   D E L   D I A",
   "nutrition.summary.water": "Agua",
+  "nutrition.summary.mealsLabel": "COMIDAS",
+  "nutrition.summary.moreMeals": "+{{count}} más",
+  "nutrition.summary.variantSummary": "RESUMEN",
+  "nutrition.summary.variantMeals": "CON COMIDAS",
 
   "nutrition.logger.title": "Registrar Comida",
   "nutrition.logger.subtitle": "Toma una foto de tu comida para analizar los macros",

@@ -35,6 +35,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { WorkoutProvider } from '@/contexts/WorkoutContext'
 import { ActiveSessionProvider } from '@/contexts/ActiveSessionContext'
 import { CardioSessionProvider } from '@/contexts/CardioSessionContext'
+import { CircuitSessionProvider, useCircuitSession } from '@/contexts/CircuitSessionContext'
 import OfflineBanner from '@/components/OfflineBanner'
 
 SplashScreen.preventAutoHideAsync()
@@ -61,11 +62,33 @@ function Providers({ children }: { children: ReactNode }) {
     <WorkoutProvider userId={user?.id ?? null}>
       <ActiveSessionProvider getRestForExercise={getRestForExercise} setRestForExercise={setRestForExercise}>
         <CardioSessionProvider userId={user?.id ?? null} userWeight={latestWeight}>
-          <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+          <CircuitSessionProvider userId={user?.id ?? null}>
+            <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+          </CircuitSessionProvider>
         </CardioSessionProvider>
       </ActiveSessionProvider>
     </WorkoutProvider>
   )
+}
+
+/** Si al arrancar la app hay un circuito persistido (restaurado del storage),
+ *  reabre el runner una sola vez — paridad con CircuitRestoreNavigator de la web. */
+function CircuitRestoreNavigator() {
+  const { isActive } = useCircuitSession()
+  const router = useRouter()
+  // Solo true si había un circuito activo en el primer render (restaurado al boot),
+  // no para los que se inician durante esta sesión (esos ya navegan ellos mismos).
+  const restoredOnBoot = useRef(isActive)
+  const hasNavigated = useRef(false)
+
+  useEffect(() => {
+    if (restoredOnBoot.current && !hasNavigated.current) {
+      hasNavigated.current = true
+      router.push('/circuit')
+    }
+  }, [router])
+
+  return null
 }
 
 function RootLayout() {
@@ -156,7 +179,10 @@ function RootLayout() {
             <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
             {/* Session slides up like a modal — can't gesture-dismiss mid-workout */}
             <Stack.Screen name="session" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
+            {/* Circuit runner slides up like the session — full-screen, no gesture dismiss */}
+            <Stack.Screen name="circuit" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           </Stack>
+          <CircuitRestoreNavigator />
         </Providers>
         <OfflineBanner />
         <PortalHost />

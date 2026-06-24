@@ -15,6 +15,8 @@ import { useFoodHistory } from '@calistenia/core/hooks/useFoodHistory'
 import { useMealTemplates } from '@calistenia/core/hooks/useMealTemplates'
 import { op } from '@calistenia/core/lib/analytics'
 import { calcMacros, normalizeToBase100, migrateLegacyFood, createEmptyFood } from '@calistenia/core/lib/macro-calc'
+import { parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
+import { readPhotoTakenAt } from '../../lib/exif'
 import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate, MealType, QualityScore, QualityBreakdown, QualitySuggestion } from '@calistenia/core/types'
 
 const MAX_PHOTOS = 5
@@ -124,8 +126,10 @@ export default function MealLoggerContent({
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [mealType, setMealType] = useState<MealType>(getSeedMealType)
   // Meal timing — exact finish time (HH/MM) + optional duration (minutes).
-  const [eatenHour, setEatenHour] = useState('')
-  const [eatenMinute, setEatenMinute] = useState('')
+  // Lazy initializers seed from the current local time so a first-open save
+  // never yields the midnight sentinel "00:00". handleResetForm re-seeds on reset.
+  const [eatenHour, setEatenHour] = useState<string>(() => nowLocalForPB().slice(11, 13))
+  const [eatenMinute, setEatenMinute] = useState<string>(() => nowLocalForPB().slice(14, 16))
   const [durationInput, setDurationInput] = useState('')
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -188,6 +192,24 @@ export default function MealLoggerContent({
     const reader = new FileReader()
     reader.onload = () => setImagePreviews(prev => [...prev, reader.result as string])
     reader.readAsDataURL(compressed)
+
+    // Auto-seed the finish time from EXIF DateTimeOriginal on the FIRST photo
+    // of a fresh form (imageFiles.length === 0 means this is the first photo).
+    // We use the original pre-compression File for EXIF so we don't lose the
+    // metadata that canvas.toBlob() strips. Only overrides when it's the first
+    // photo being added (any previously-set manual value is left intact after
+    // subsequent additions).
+    if (imageFiles.length === 0) {
+      readPhotoTakenAt(file).then(exifRaw => {
+        if (!exifRaw) return
+        const hm = parseExifDateTimeToHM(exifRaw)
+        if (hm) {
+          setEatenHour(hm.hour)
+          setEatenMinute(hm.minute)
+        }
+      }).catch(() => {/* non-fatal — time remains at now-default */})
+    }
+
     // Reset input so the same file can be re-selected
     e.target.value = ''
   }

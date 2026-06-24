@@ -4,6 +4,22 @@ export default {
   content: [
     './index.html',
     './src/**/*.{js,ts,jsx,tsx}',
+    // Include core package so Tailwind sees class strings in style-tokens.ts etc.
+    '../../packages/core/**/*.{js,ts,jsx,tsx}',
+  ],
+  // Belt-and-suspenders safelist for score palette (SCORE_COLORS / SCORE_BORDER_COLORS /
+  // SCORE_BAR_COLORS in packages/core/lib/style-tokens.ts). These are assembled
+  // dynamically at runtime so the content scan alone isn't enough.
+  safelist: [
+    // bg color for each grade badge (SCORE_COLORS)
+    'bg-green-500', 'bg-lime-500', 'bg-yellow-500', 'bg-orange-500', 'bg-red-500',
+    // text color paired with each bg (SCORE_COLORS)
+    'text-white', 'text-black',
+    // border ring for each grade (SCORE_BORDER_COLORS)
+    'border-green-500/30', 'border-lime-500/30', 'border-yellow-500/30',
+    'border-orange-500/30', 'border-red-500/30',
+    // bar fill colors (SCORE_BAR_COLORS — same hues as bg, listed for clarity)
+    // already covered by bg-* above
   ],
   theme: {
     extend: {
