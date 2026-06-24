@@ -11,6 +11,7 @@ import { QualityBreakdownPanel } from './QualityBreakdownPanel'
 import { ScoreCriteriaDialog } from './ScoreCriteriaDialog'
 import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS, BADGE_COLORS, MACRO_COLORS } from '@calistenia/core/lib/style-tokens'
+import { getMealTimeLabel } from '@calistenia/core/lib/meal-time'
 import type { NutritionEntry, QualityScore } from '@calistenia/core/types'
 
 interface NutritionDashboardProps {
@@ -90,19 +91,8 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
 
   const isToday = !selectedDate || selectedDate === todayStr()
 
-  const formatTime = (isoString: string) => {
-    try {
-      const d = new Date(isoString)
-      return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-    } catch {
-      return ''
-    }
-  }
-
-  // Prefer the user-reported finish time (eaten_at, naive local digits); slice
-  // the HH:MM to avoid tz reinterpretation. Falls back to the creation time.
-  const mealTime = (entry: NutritionEntry) =>
-    entry.eatenAt && entry.eatenAt.length >= 16 ? entry.eatenAt.slice(11, 16) : formatTime(entry.loggedAt)
+  // getMealTimeLabel handles the midnight-sentinel guard and loggedAt fallback.
+  const mealTime = (entry: NutritionEntry) => getMealTimeLabel(entry)
 
   // Scale visual weight by calories relative to goal
   const maxCal = goals.dailyCalories * 0.5 // a single meal > 50% of goal is "large"

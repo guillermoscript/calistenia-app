@@ -621,6 +621,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                     goals={goals}
                     waterMl={waterTotal}
                     waterGoal={waterGoal}
+                    entries={entries}
+                    dailyQualityScore={dailyQualityScore}
                   />
                 )}
               </div>

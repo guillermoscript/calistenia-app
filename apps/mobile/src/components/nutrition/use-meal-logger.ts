@@ -9,7 +9,8 @@ import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
 
 import { haptics } from '@/lib/haptics'
-import { localHour, nowLocalForPB, todayStr, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { localHour, nowLocalForPB, todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
+import { isMidnightEatenAt, parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
 import { createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
 import { useFoodHistory } from '@calistenia/core/hooks/useFoodHistory'
 import type { FoodItem, MealType, NutritionEntry } from '@calistenia/core/types'
@@ -140,14 +141,16 @@ export function useMealLogger({
     setMealType(entry.mealType)
     // Prefill the finish time from the stored eaten_at (naive local digits) or
     // fall back to the record's creation time; prefill the duration too.
-    if (entry.eatenAt && entry.eatenAt.length >= 16) {
+    // Guard: treat "00:00" as the unset sentinel (legacy rows) and fall back to
+    // loggedAt rather than surfacing midnight to the user in the edit form.
+    if (entry.eatenAt && entry.eatenAt.length >= 16 && !isMidnightEatenAt(entry.eatenAt)) {
       setEatenHour(entry.eatenAt.slice(11, 13))
       setEatenMinute(entry.eatenAt.slice(14, 16))
     } else {
-      const d = new Date(entry.loggedAt)
-      if (!isNaN(d.getTime())) {
-        setEatenHour(String(d.getHours()).padStart(2, '0'))
-        setEatenMinute(String(d.getMinutes()).padStart(2, '0'))
+      const hm = localHMFromPB(entry.loggedAt)
+      if (hm) {
+        setEatenHour(hm.hour)
+        setEatenMinute(hm.minute)
       }
     }
     setDurationInput(entry.durationMin != null ? String(entry.durationMin) : '')
@@ -180,6 +183,26 @@ export function useMealLogger({
     return true
   }
 
+  /**
+   * Apply capture time from the first asset's EXIF metadata (fresh logs only).
+   * EXIF keys differ by platform; check in priority order.
+   */
+  const applyExifTime = (asset: ImagePicker.ImagePickerAsset) => {
+    // Only seed time for fresh logs (editEntry == null handled by the caller).
+    const exif = asset.exif as Record<string, unknown> | null | undefined
+    if (!exif) return
+    const raw =
+      (exif['DateTimeOriginal'] as string | undefined) ??
+      (exif['DateTimeDigitized'] as string | undefined) ??
+      (exif['DateTime'] as string | undefined) ??
+      ((exif['{Exif}'] as Record<string, unknown> | undefined)?.['DateTimeOriginal'] as string | undefined)
+    const hm = parseExifDateTimeToHM(raw)
+    if (hm) {
+      setEatenHour(hm.hour)
+      setEatenMinute(hm.minute)
+    }
+  }
+
   const handleCamera = async () => {
     const ok = await requestCameraPermission()
     if (!ok) return
@@ -187,6 +210,7 @@ export function useMealLogger({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
       allowsEditing: false,
+      exif: true,
     })
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0]
@@ -195,6 +219,10 @@ export function useMealLogger({
           ? [...prev, { uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileName: asset.fileName ?? undefined }]
           : prev,
       )
+      // For fresh logs, seed the finish-time from EXIF capture datetime.
+      if (!editEntry) {
+        applyExifTime(asset)
+      }
     }
   }
 
@@ -206,6 +234,7 @@ export function useMealLogger({
       quality: 0.8,
       allowsMultipleSelection: true,
       selectionLimit: MAX_PHOTOS - imageAssets.length,
+      exif: true,
     })
     if (!result.canceled && result.assets.length > 0) {
       const newAssets: ImageAsset[] = result.assets.map((a: ImagePicker.ImagePickerAsset) => ({
@@ -214,6 +243,10 @@ export function useMealLogger({
         fileName: a.fileName ?? undefined,
       }))
       setImageAssets((prev) => [...prev, ...newAssets].slice(0, MAX_PHOTOS))
+      // For fresh logs, seed the finish-time from the first asset's EXIF datetime.
+      if (!editEntry) {
+        applyExifTime(result.assets[0])
+      }
     }
   }
 

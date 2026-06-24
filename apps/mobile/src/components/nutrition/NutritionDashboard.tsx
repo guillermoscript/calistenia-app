@@ -10,6 +10,7 @@ import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { todayStr, localHour } from '@calistenia/core/lib/dateUtils'
+import { getMealTimeLabel } from '@calistenia/core/lib/meal-time'
 import type { NutritionEntry, DailyTotals, QualityScore } from '@calistenia/core/types'
 import MacroRing from './MacroRing'
 import MacroBar from './MacroBar'
@@ -125,17 +126,6 @@ const MealCard = memo(function MealCard({
   const mealDotBg = MEAL_DOT_BG[entry.mealType] ?? 'bg-muted-foreground'
   const mealBadge = MEAL_BADGE_CLASS[entry.mealType] ?? 'bg-muted/20 border-border'
 
-  const formatTime = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    } catch {
-      return ''
-    }
-  }
-
   // Food names summary (deduplicate with count)
   const foodSummary = useMemo(() => {
     const counts = new Map<string, number>()
@@ -163,11 +153,9 @@ const MealCard = memo(function MealCard({
   }, [entry.foods])
 
   const isAI = entry.source?.startsWith('ai_')
-  // Prefer the user-reported finish time (eaten_at, naive local digits) over the
-  // record creation time. Slice the HH:MM digits to avoid any tz reinterpretation.
-  const mealTime = entry.eatenAt && entry.eatenAt.length >= 16
-    ? entry.eatenAt.slice(11, 16)
-    : formatTime(entry.loggedAt)
+  // Use the shared helper: treats "00:00" as the unset sentinel and falls back
+  // to loggedAt (a real UTC timestamp), so legacy rows never display 00:00.
+  const mealTime = getMealTimeLabel(entry)
 
   return (
     <View className="mb-3 rounded-xl border border-border bg-card overflow-hidden">

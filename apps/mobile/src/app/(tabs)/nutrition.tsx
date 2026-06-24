@@ -705,6 +705,7 @@ export default function NutritionTab() {
               userName={(authUser?.display_name as string) || (authUser?.name as string) || 'Atleta'}
               avatarUrl={authUser ? getUserAvatarUrl(authUser as any, '200x200') : null}
               referralCode={(authUser?.referral_code as string) || null}
+              entries={entries}
             />
           </View>
         )}
