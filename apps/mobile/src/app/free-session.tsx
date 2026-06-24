@@ -28,15 +28,18 @@ import { useStartFreeSession } from '@/lib/start-free-session'
 import { WarmupCooldownPrompt } from '@/components/free-session/WarmupCooldownPrompt'
 import { ReorderControls } from '@/components/free-session/ReorderControls'
 import { AISessionTab } from '@/components/free-session/AISessionTab'
+import CircuitBuilder from '@/components/circuit/CircuitBuilder'
+import { useCircuitSession } from '@/contexts/CircuitSessionContext'
 import { useFreeSessionTemplates } from '@calistenia/core/hooks/useFreeSessionTemplates'
 import { localize } from '@calistenia/core/lib/i18n-db'
-import type { Exercise, FreeSessionTemplate } from '@calistenia/core/types'
+import type { CircuitDefinition, Exercise, FreeSessionTemplate } from '@calistenia/core/types'
 
 export default function FreeSessionScreen() {
   const router = useRouter()
   const { i18n } = useTranslation()
   const locale = i18n.language || 'es'
   const startFreeSession = useStartFreeSession()
+  const { startCircuit } = useCircuitSession()
   const authUser = useAuthUser()
   const { templates, useTemplate, deleteTemplate } = useFreeSessionTemplates(authUser?.id ?? null)
 
@@ -49,7 +52,7 @@ export default function FreeSessionScreen() {
     if (tpl.id) void useTemplate(tpl.id)
   }
 
-  const [mode, setMode] = useState<'manual' | 'ai'>('manual')
+  const [mode, setMode] = useState<'manual' | 'circuit' | 'ai'>('manual')
   const [view, setView] = useState<'pick' | 'review'>('pick')
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('todos')
@@ -89,9 +92,20 @@ export default function FreeSessionScreen() {
     startFreeSession([...warmup, ...main, ...cooldown], 'Sesión libre')
   }
 
+  // Circuito / Cronometrado: arranca el motor de circuitos y abre el runner.
+  function handleCircuitStart(circuit: CircuitDefinition) {
+    haptics.medium()
+    startCircuit(circuit, 'custom')
+    router.push('/circuit')
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const title = mode === 'ai' ? 'Coach IA' : view === 'pick' ? 'Sesión libre' : 'Tu sesión'
+  const title =
+    mode === 'ai' ? 'Coach IA'
+    : mode === 'circuit' ? 'Circuitos'
+    : view === 'pick' ? 'Sesión libre'
+    : 'Tu sesión'
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
@@ -120,12 +134,12 @@ export default function FreeSessionScreen() {
         </Pressable>
       </View>
 
-      {/* Manual | IA segmented control */}
+      {/* Manual | Circuito | IA segmented control */}
       <View className="mx-4 mb-3 flex-row rounded-xl bg-muted/40 p-1">
-        {(['manual', 'ai'] as const).map(m => (
+        {(['manual', 'circuit', 'ai'] as const).map(m => (
           <Pressable
             key={m}
-            onPress={() => setMode(m)}
+            onPress={() => { haptics.selection(); setMode(m) }}
             className={cn(
               'flex-1 items-center rounded-lg py-2 active:opacity-80',
               mode === m && 'bg-card',
@@ -137,7 +151,7 @@ export default function FreeSessionScreen() {
                 mode === m ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
-              {m === 'manual' ? 'Manual' : 'Coach IA'}
+              {m === 'manual' ? 'Manual' : m === 'circuit' ? 'Circuito' : 'IA'}
             </Text>
           </Pressable>
         ))}
@@ -150,6 +164,21 @@ export default function FreeSessionScreen() {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
         >
           <AISessionTab />
+        </KeyboardAvoidingView>
+      ) : mode === 'circuit' ? (
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+        >
+          <ScrollView
+            className="flex-1"
+            contentContainerClassName="px-4 pb-10"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+          >
+            <CircuitBuilder onStart={handleCircuitStart} />
+          </ScrollView>
         </KeyboardAvoidingView>
       ) : view === 'pick' ? (
         <PickView
