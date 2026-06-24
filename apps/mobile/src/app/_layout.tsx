@@ -29,6 +29,7 @@ import { FONTS } from '@/lib/fonts'
 import { resolveNotifUrl } from '@/lib/notification-route'
 import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
+import { applyThemeMode, getThemeMode } from '@/lib/theme-mode'
 import { initI18n } from '@/lib/i18n'
 import { NAV_THEME } from '@/lib/theme'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -49,7 +50,8 @@ setupOnlineManager()
 const queryClient = createQueryClient()
 const persister = createCorePersister()
 // darkMode: 'class' en tailwind.config → NativeWind controla la clase .dark;
-// 'system' sigue el modo del dispositivo (igual que el default de la web).
+// 'system' como default inicial; la preferencia persistida se aplica en boot
+// (applyThemeMode) tras hidratar storage, mientras el splash sigue visible.
 nwColorScheme.set('system')
 
 function Providers({ children }: { children: ReactNode }) {
@@ -140,6 +142,8 @@ function RootLayout() {
     const boot = async () => {
       // Sesión PB persistida + caché síncrona de storage, antes de pintar nada.
       await Promise.all([hydrateStorage(), pbAuthHydration])
+      // Storage ya hidratado → aplica la preferencia de tema guardada (claro/oscuro/sistema).
+      applyThemeMode(getThemeMode())
       initI18n()
       if (!cancelled) setReady(true)
     }

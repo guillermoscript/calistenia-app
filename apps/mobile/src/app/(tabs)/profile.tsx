@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { getThemeMode, setThemeMode, type ThemeMode } from '@/lib/theme-mode'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
@@ -29,6 +30,12 @@ export default function ProfileScreen() {
 
   const [name, setName] = useState((user?.display_name as string) || (user?.name as string) || '')
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(getThemeMode)
+
+  const changeTheme = (mode: ThemeMode) => {
+    setThemeMode(mode)
+    setThemeModeState(mode)
+  }
 
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
   const initial = (name || (user?.email as string) || '?').trim().charAt(0).toUpperCase()
@@ -164,6 +171,35 @@ export default function ProfileScreen() {
                   )}
                 >
                   <Text className={cn('font-mono text-xs tracking-wide', currentLang === code ? 'text-lime' : 'text-muted-foreground')}>
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </CardContent>
+        </Card>
+
+        {/* Tema */}
+        <Card>
+          <CardContent className="gap-3 py-4">
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              {t('profile.theme')}
+            </Text>
+            <View className="flex-row gap-2">
+              {([
+                ['system', t('profile.themeSystem')],
+                ['light', t('profile.themeLight')],
+                ['dark', t('profile.themeDark')],
+              ] as const).map(([mode, label]) => (
+                <Pressable
+                  key={mode}
+                  onPress={() => changeTheme(mode)}
+                  className={cn(
+                    'h-11 flex-1 items-center justify-center rounded-md border',
+                    themeMode === mode ? 'border-lime/40 bg-lime/10' : 'border-border',
+                  )}
+                >
+                  <Text className={cn('font-mono text-xs tracking-wide', themeMode === mode ? 'text-lime' : 'text-muted-foreground')}>
                     {label}
                   </Text>
                 </Pressable>

@@ -250,6 +250,10 @@
   "profile.saved": "SAVED!",
   "profile.saveChanges": "SAVE CHANGES",
   "profile.language": "Language",
+  "profile.theme": "Theme",
+  "profile.themeSystem": "System",
+  "profile.themeLight": "Light",
+  "profile.themeDark": "Dark",
   "profile.whatsappShare": "💪 Follow me on Calistenia App and let's train together!",
 
   "landing.enter": "Get started",
