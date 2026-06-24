@@ -33,6 +33,7 @@ import {
   Platform,
 } from 'react-native'
 import { Image } from 'expo-image'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
@@ -99,6 +100,7 @@ export default function NutritionShareButton({
 }: NutritionShareButtonProps) {
   const { t } = useTranslation()
   const { width: screenW, height: screenH } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
 
   // Off-screen capture refs — one per variant so we can always capture the
   // selected variant without switching render trees at share time.
@@ -185,8 +187,10 @@ export default function NutritionShareButton({
   // Modal inner width ≈ screenW - 48px padding
   const previewAreaW = screenW - 48
   const computedPreviewH = CARD_H * (previewAreaW / CARD_W)
-  // Cap preview height to 50% of screen so toggle + COMPARTIR are always visible
-  const previewH = Math.min(computedPreviewH, screenH * 0.5)
+  // Cap preview height so header + toggle + COMPARTIR button always stay on
+  // screen above the Android nav bar (subtract chrome + bottom inset budget).
+  const chromeBudget = 180 + insets.bottom
+  const previewH = Math.min(computedPreviewH, screenH * 0.5, screenH - chromeBudget)
   // Recompute scale from the capped height (keeps card aspect ratio)
   const scale = previewH / CARD_H
 
@@ -240,8 +244,13 @@ export default function NutritionShareButton({
       >
         {/* Semi-transparent backdrop — tap to dismiss */}
         <Pressable style={styles.backdrop} onPress={closeModal}>
-          {/* Bottom sheet container — prevent tap-through */}
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          {/* Bottom sheet container — prevent tap-through.
+              paddingBottom uses the safe-area inset so the lime COMPARTIR
+              button always clears the Android nav bar (matches QuickMenu). */}
+          <Pressable
+            style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}
+            onPress={(e) => e.stopPropagation()}
+          >
 
             {/* ── Sheet header ── */}
             <View style={styles.sheetHeader}>
@@ -342,7 +351,6 @@ const styles = StyleSheet.create({
     borderColor: HAIRLINE,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 32,
     maxHeight: '92%',
   },
   sheetHeader: {
