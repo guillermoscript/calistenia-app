@@ -132,13 +132,16 @@ jobs:
           const p = 'build.gradle';
           let s = fs.readFileSync(p, 'utf8');
           if (s.includes('signingConfigs.release')) { console.log('release signingConfig already present'); process.exit(0); }
-          s = s.replace(/signingConfigs\s*\{/, `signingConfigs {
-        release {
-            storeFile file('release.keystore')
-            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
-            keyAlias System.getenv('ANDROID_KEY_ALIAS')
-            keyPassword System.getenv('ANDROID_KEY_PASSWORD')
-        }`);
+          const block = [
+          'signingConfigs {',
+          '    release {',
+          "        storeFile file('release.keystore')",
+          "        storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')",
+          "        keyAlias System.getenv('ANDROID_KEY_ALIAS')",
+          "        keyPassword System.getenv('ANDROID_KEY_PASSWORD')",
+          '    }',
+          ].join('\n');
+          s = s.replace(/signingConfigs\s*\{/, block);
           s = s.replace(/(release\s*\{[^}]*?signingConfig\s+)signingConfigs\.debug/s, '$1signingConfigs.release');
           fs.writeFileSync(p, s);
           console.log('Patched build.gradle with release signingConfig');
