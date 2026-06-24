@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
-import { LogOut, Bell, ChevronRight, Watch } from 'lucide-react-native'
+import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles } from 'lucide-react-native'
+import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { getThemeMode, setThemeMode, type ThemeMode } from '@/lib/theme-mode'
+import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
@@ -26,11 +28,17 @@ export default function ProfileScreen() {
   const router = useRouter()
   const user = useAuthUser()
   const { settings } = useWorkoutState()
+  const { colorScheme } = useColorScheme()
   const { getTotalSessions, getLongestStreak, getWeeklyDoneCount } = useWorkoutActions()
+
+  // Lime se aclara/oscurece según el tema (paridad con reminders.tsx); muted = chevron gris.
+  const lime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)'
+  const muted = 'hsl(0 0% 45%)'
 
   const [name, setName] = useState((user?.display_name as string) || (user?.name as string) || '')
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [themeMode, setThemeModeState] = useState<ThemeMode>(getThemeMode)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const changeTheme = (mode: ThemeMode) => {
     setThemeMode(mode)
@@ -154,6 +162,24 @@ export default function ProfileScreen() {
           </Card>
         </Pressable>
 
+        {/* Novedades / historial de cambios */}
+        <Pressable onPress={() => setHistoryOpen(true)}>
+          <Card>
+            <CardContent className="flex-row items-center gap-3 py-4">
+              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+                <Sparkles size={18} color="hsl(74 90% 57%)" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground">{t('profile.whatsNew')}</Text>
+                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                  {t('profile.whatsNewDesc')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="hsl(0 0% 45%)" />
+            </CardContent>
+          </Card>
+        </Pressable>
+
         {/* Idioma */}
         <Card>
           <CardContent className="gap-3 py-4">
@@ -187,23 +213,27 @@ export default function ProfileScreen() {
             </Text>
             <View className="flex-row gap-2">
               {([
-                ['system', t('profile.themeSystem')],
-                ['light', t('profile.themeLight')],
-                ['dark', t('profile.themeDark')],
-              ] as const).map(([mode, label]) => (
-                <Pressable
-                  key={mode}
-                  onPress={() => changeTheme(mode)}
-                  className={cn(
-                    'h-11 flex-1 items-center justify-center rounded-md border',
-                    themeMode === mode ? 'border-lime/40 bg-lime/10' : 'border-border',
-                  )}
-                >
-                  <Text className={cn('font-mono text-xs tracking-wide', themeMode === mode ? 'text-lime' : 'text-muted-foreground')}>
-                    {label}
-                  </Text>
-                </Pressable>
-              ))}
+                ['system', t('profile.themeSystem'), Smartphone],
+                ['light', t('profile.themeLight'), Sun],
+                ['dark', t('profile.themeDark'), Moon],
+              ] as const).map(([mode, label, Icon]) => {
+                const active = themeMode === mode
+                return (
+                  <Pressable
+                    key={mode}
+                    onPress={() => changeTheme(mode)}
+                    className={cn(
+                      'flex-1 items-center justify-center gap-1.5 rounded-md border py-3',
+                      active ? 'border-lime/40 bg-lime/10' : 'border-border',
+                    )}
+                  >
+                    <Icon size={18} color={active ? lime : muted} />
+                    <Text className={cn('font-mono text-xs tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
             </View>
           </CardContent>
         </Card>
@@ -243,6 +273,8 @@ export default function ProfileScreen() {
           v{Constants.expoConfig?.version || '1.0.0'}
         </Text>
       </ScrollView>
+
+      <ChangelogHistory visible={historyOpen} onClose={() => setHistoryOpen(false)} />
     </SafeAreaView>
   )
 }
