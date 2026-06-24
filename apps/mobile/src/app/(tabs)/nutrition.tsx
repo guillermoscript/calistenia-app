@@ -161,6 +161,7 @@ export default function NutritionTab() {
     images: Array<{ uri: string; mimeType?: string; fileName?: string }>,
     mealType: string,
     description?: string,
+    eatenHour?: number,
   ) => {
     const remaining = getRemainingMacros()
     const recentScores = allEntries
@@ -171,7 +172,8 @@ export default function NutritionTab() {
       goal: goals?.goal,
       remainingMacros: remaining,
       recentScores: recentScores.length > 0 ? recentScores : undefined,
-      logHour: new Date().getHours(),
+      // Hour the food was eaten (photo EXIF / finish time), else current hour.
+      logHour: eatenHour != null && Number.isFinite(eatenHour) ? eatenHour : new Date().getHours(),
     })
   }, [goals, allEntries, getRemainingMacros])
 

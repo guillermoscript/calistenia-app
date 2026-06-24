@@ -52,6 +52,8 @@ export interface MealLoggerSheetProps {
     images: ImageAsset[],
     mealType: string,
     description?: string,
+    /** Hour (0–23) the food was eaten — fed to the AI for timing quality. */
+    eatenHour?: number,
   ) => Promise<{
     foods: FoodItem[]
     meal_description?: string

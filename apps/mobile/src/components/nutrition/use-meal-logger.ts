@@ -256,6 +256,13 @@ export function useMealLogger({
   }
 
   // ── Analysis ───────────────────────────────────────────────────────────────
+  // The finish-time field (seeded from photo EXIF, else "now") = the hour the
+  // food was eaten; feed it to the AI for timing-based quality scoring.
+  const eatenHourNum = (): number | undefined => {
+    const h = parseInt(eatenHour, 10)
+    return Number.isFinite(h) ? h : undefined
+  }
+
   const handleAnalyzeImages = async () => {
     if (imageAssets.length === 0) return
     cancelledRef.current = false
@@ -263,7 +270,7 @@ export function useMealLogger({
     setError(null)
     haptics.medium()
     try {
-      const result = await onAnalyze(imageAssets, mealType, imageDescription.trim() || undefined)
+      const result = await onAnalyze(imageAssets, mealType, imageDescription.trim() || undefined, eatenHourNum())
       if (cancelledRef.current) return
       const normalized = normalizeEntryFoods(result.foods || [])
       if (normalized.length === 0) {
@@ -291,7 +298,7 @@ export function useMealLogger({
     setError(null)
     haptics.medium()
     try {
-      const result = await onAnalyze([], mealType, text)
+      const result = await onAnalyze([], mealType, text, eatenHourNum())
       if (cancelledRef.current) return
       const normalized = normalizeEntryFoods(result.foods || [])
       if (normalized.length === 0) {
