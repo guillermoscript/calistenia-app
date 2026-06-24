@@ -3,6 +3,7 @@
 import React from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget'
+import * as Sentry from '@sentry/react-native'
 import { todayStrInTz } from '@calistenia/core/lib/dateUtils'
 import { TodayWidget } from './TodayWidget'
 import { CardioWidget } from './CardioWidget'
@@ -31,7 +32,8 @@ async function readSnapshot<T>(key: string): Promise<T | null> {
   try {
     const raw = await AsyncStorage.getItem(key)
     return raw ? (JSON.parse(raw) as T) : null
-  } catch {
+  } catch (e) {
+    Sentry.captureException(e, { tags: { feature: 'widget', op: 'read_snapshot' } })
     return null
   }
 }

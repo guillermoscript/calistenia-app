@@ -8,6 +8,7 @@ import { storage } from '@calistenia/core/platform'
 import type { CircuitDefinition } from '@calistenia/core/types'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { op } from '@calistenia/core/lib/analytics'
+import { Sentry } from '@/lib/instrument'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -418,7 +419,8 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
     for (const session of queue) {
       try {
         await pb.collection('circuit_sessions').create(session)
-      } catch {
+      } catch (e) {
+        Sentry.captureException(e, { tags: { feature: 'circuit', op: 'flush_unsaved_session' } })
         remaining.push(session)
       }
     }
@@ -443,7 +445,8 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
         if (cancelled) { remaining.push(session); continue }
         try {
           await pb.collection('circuit_sessions').create(session)
-        } catch {
+        } catch (e) {
+          Sentry.captureException(e, { tags: { feature: 'circuit', op: 'flush_unsaved_session_mount' } })
           remaining.push(session)
         }
       }

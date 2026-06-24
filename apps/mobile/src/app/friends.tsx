@@ -23,6 +23,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { shareReferralInvite, shareText, profileUrl } from '@/lib/share'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
+import { Sentry } from '@/lib/instrument'
 import type { FollowUser } from '@calistenia/core/hooks/useFollows'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -209,7 +210,8 @@ export default function FriendsScreen() {
             u.username.toLowerCase().includes(q),
         )
         setSearchResults(filtered)
-      } catch {
+      } catch (e) {
+        Sentry.captureException(e, { tags: { feature: 'social', op: 'search_users' } })
         setSearchError(true)
         setSearchResults([])
       } finally {

@@ -52,6 +52,7 @@ import DailyMealPlan from '@/components/nutrition/DailyMealPlan'
 import WeeklyMealPlan from '@/components/nutrition/WeeklyMealPlan'
 import CoachInsights from '@/components/nutrition/CoachInsights'
 import NutritionShareButton from '@/components/share/NutritionShareButton'
+import { Sentry } from '@/lib/instrument'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
@@ -188,7 +189,7 @@ export default function NutritionTab() {
     }
     const saved = await saveEntry({ ...entry, user: userId || undefined })
     if (photoUris && photoUris.length > 0 && saved.id && !saved.id.startsWith('local_')) {
-      saveEntryWithPhotos(saved.id, photoUris).catch(() => {})
+      saveEntryWithPhotos(saved.id, photoUris).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'save_entry_photos' } }) })
     }
     // Async quality scoring for manual entries
     if (!saved.qualityScore && saved.foods.length > 0) {
@@ -210,9 +211,9 @@ export default function NutritionTab() {
             qualityBreakdown: quality.breakdown,
             qualityMessage: quality.message,
             qualitySuggestion: quality.suggestion,
-          }).catch(() => {})
+          }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'update_quality_score' } }) })
         }
-      }).catch(() => {})
+      }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'score_meal_quality' } }) })
     }
   }, [saveEntry, userId, scoreMealQuality, goals, getRemainingMacros, updateEntry, editingEntry])
 
@@ -332,7 +333,7 @@ export default function NutritionTab() {
           Alert.alert(`${def.icon} ${def.label}`, def.description)
         }
       }
-    }).catch(() => {})
+    }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'upsert_daily_insight' } }) })
   }, [dailyQualityScore, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Missed goals alert (US-15) ──────────────────────────────────────────────
@@ -430,7 +431,8 @@ export default function NutritionTab() {
         totalFat: entry.totalFat,
         loggedAt: nowLocalForPB(),
       })
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'duplicate_meal_entry' } })
       haptics.error()
       Alert.alert(t('nutrition.logger.saveError', { defaultValue: 'No se pudo guardar' }))
     }
@@ -661,7 +663,8 @@ export default function NutritionTab() {
                           totalFat: entry.totalFat,
                           loggedAt: nowLocalForPB(),
                         })
-                      } catch {
+                      } catch (e) {
+                        Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'quick_add_recent_entry' } })
                         haptics.error()
                         Alert.alert(t('nutrition.logger.saveError', { defaultValue: 'No se pudo guardar' }))
                       }
@@ -773,7 +776,7 @@ export default function NutritionTab() {
                 generatingWeekly={generatingWeekly}
                 activeTab={activeTab}
                 onGenerateWeekly={() => {
-                  generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch(() => {})
+                  generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'generate_weekly_insight' } }) })
                 }}
               />
               <WeeklyNutritionChart

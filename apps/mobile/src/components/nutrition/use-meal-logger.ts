@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
 
 import { haptics } from '@/lib/haptics'
+import { Sentry } from '@/lib/instrument'
 import { localHour, nowLocalForPB, todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
 import { isMidnightEatenAt, parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
 import { createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
@@ -274,9 +275,10 @@ export function useMealLogger({
       setMealDescription(result.meal_description || '')
       setAnalysisQuality(result.quality)
       setStep('review')
-    } catch {
+    } catch (e) {
       if (cancelledRef.current) return
-      setError(t('nutrition.logger.noFoodsDetected'))
+      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'analyze-images' } })
+      setError(e instanceof Error && e.message ? e.message : t('nutrition.logger.noFoodsDetected'))
       setStep('capture')
     }
   }
@@ -302,9 +304,10 @@ export function useMealLogger({
       setAnalysisQuality(result.quality)
       setQuickText('')
       setStep('review')
-    } catch {
+    } catch (e) {
       if (cancelledRef.current) return
-      setError(t('nutrition.logger.noFoodsDetected'))
+      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'analyze-text' } })
+      setError(e instanceof Error && e.message ? e.message : t('nutrition.logger.noFoodsDetected'))
       setStep('capture')
     }
   }
@@ -375,8 +378,8 @@ export function useMealLogger({
     setRecentTypeFilter('')
     try {
       setRecentEntries(await getRecentEntries(30))
-    } catch {
-      // ignore
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'load-repeat-meal' } })
     }
   }
 
@@ -448,7 +451,8 @@ export function useMealLogger({
       setLastMealType(mealType)
       haptics.success()
       setStep('success')
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'save-meal' } })
       setError(t('nutrition.logger.saveError'))
       setStep('review')
       haptics.error()
@@ -484,7 +488,7 @@ export function useMealLogger({
   // Load recent foods when review step opens.
   useEffect(() => {
     if (step === 'review' && userId) {
-      getRecentFoods(8).then(setRecentFoods).catch(() => {})
+      getRecentFoods(8).then(setRecentFoods).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'load_recent_foods' } }) })
     }
   }, [step, userId, getRecentFoods])
 

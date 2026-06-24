@@ -10,6 +10,7 @@
  * Phase 1 = READ ONLY. No write/share permissions are requested.
  */
 import { Platform } from 'react-native'
+import { Sentry } from '@/lib/instrument'
 import {
   initialize,
   getSdkStatus,
@@ -136,7 +137,8 @@ async function read<T>(recordType: (typeof READ_RECORD_TYPES)[number], range: Ti
     // exact literal, so cast to satisfy overload resolution.
     const { records } = await readRecords(recordType as never, filter(range))
     return records as unknown as T[]
-  } catch {
+  } catch (e) {
+    Sentry.captureException(e, { tags: { feature: 'health', op: 'read_health_records' } })
     return []
   }
 }

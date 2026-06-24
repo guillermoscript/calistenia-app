@@ -3,7 +3,7 @@
     "name": "Calistenia",
     "slug": "calistenia",
     "owner": "guillermouser",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "calistenia",
@@ -27,7 +27,7 @@
     "android": {
       "package": "tech.guille.calistenia",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 7,
+      "versionCode": 8,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -210,7 +210,8 @@
           "android": {
             "minSdkVersion": 26,
             "compileSdkVersion": 36,
-            "targetSdkVersion": 35
+            "targetSdkVersion": 35,
+            "enablePngCrunchInReleaseBuilds": false
           }
         }
       ]

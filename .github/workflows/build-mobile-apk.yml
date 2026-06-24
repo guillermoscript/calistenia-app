@@ -59,7 +59,9 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.gradle/build-cache
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'pnpm-lock.yaml') }}
+          # android/ no existe en el checkout (lo genera prebuild), así que
+          # hasheamos lo que SÍ define el grafo nativo: lockfile + config Expo.
+          key: gradle-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/mobile/app.json', 'apps/mobile/package.json') }}
           restore-keys: |
             gradle-${{ runner.os }}-
 
@@ -98,16 +100,71 @@ jobs:
         working-directory: apps/mobile
         run: pnpm exec expo prebuild --platform android --clean
 
+      - name: Configure release signing
+        # Stable release keystore so sideloaded updates install over a previous
+        # version (Android keys app identity by package + signing cert). Runs
+        # AFTER prebuild because --clean wipes android/. If the keystore secret
+        # is absent we fall back to Expo's debug keystore (the build still works,
+        # but each build is signed with a different throwaway key → users must
+        # uninstall to update). Set the secrets to enable stable signing:
+        #   keytool -genkeypair -v -keystore calistenia-release.jks -alias calistenia \
+        #     -keyalg RSA -keysize 2048 -validity 10000 -storepass <PW> -keypass <PW> \
+        #     -dname "CN=Calistenia, O=Guille, C=US"
+        #   base64 -i calistenia-release.jks | gh secret set ANDROID_KEYSTORE_BASE64
+        #   gh secret set ANDROID_KEYSTORE_PASSWORD --body <PW>
+        #   gh secret set ANDROID_KEY_ALIAS --body calistenia
+        #   gh secret set ANDROID_KEY_PASSWORD --body <PW>
+        working-directory: apps/mobile/android/app
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 no está seteado — el APK se firmará con el debug keystore (regenerado cada build, los updates requerirán reinstalar). Setéalo para firma estable."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.keystore
+          echo "Wrote release.keystore ($(wc -c < release.keystore) bytes)"
+          # Expo's build.gradle only defines a `debug` signingConfig and points
+          # buildTypes.release at it. Inject a `release` config that reads creds
+          # from env, and repoint the release buildType to it.
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = 'build.gradle';
+          let s = fs.readFileSync(p, 'utf8');
+          if (s.includes('signingConfigs.release')) { console.log('release signingConfig already present'); process.exit(0); }
+          const block = [
+          'signingConfigs {',
+          '    release {',
+          "        storeFile file('release.keystore')",
+          "        storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')",
+          "        keyAlias System.getenv('ANDROID_KEY_ALIAS')",
+          "        keyPassword System.getenv('ANDROID_KEY_PASSWORD')",
+          '    }',
+          ].join('\n');
+          s = s.replace(/signingConfigs\s*\{/, block);
+          s = s.replace(/(release\s*\{[^}]*?signingConfig\s+)signingConfigs\.debug/s, '$1signingConfigs.release');
+          fs.writeFileSync(p, s);
+          console.log('Patched build.gradle with release signingConfig');
+          NODE
+
       - name: Build APK
         working-directory: apps/mobile/android
         # Sentry source maps are uploaded during the release bundle task. The
         # org/project come from android/sentry.properties (written by the
         # @sentry/react-native expo plugin during prebuild) and the token from
         # SENTRY_AUTH_TOKEN below. @sentry/cli is a direct dep of apps/mobile so
-        # its binary resolves cleanly under pnpm. The release APK is signed with
-        # the Expo-generated debug keystore — fine for sideloaded distribution.
+        # its binary resolves cleanly under pnpm.
+        #
+        # reactNativeArchitectures restricts the native build to real phones
+        # (arm64 + 32-bit arm), dropping x86/x86_64 emulator ABIs → ~half the
+        # native compile (Hermes + New Arch codegen). The keystore creds are read
+        # by the release signingConfig injected in the previous step.
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_reactNativeArchitectures: arm64-v8a,armeabi-v7a
         run: ./gradlew assembleRelease --build-cache --parallel -Dorg.gradle.jvmargs="-Xmx4g -XX:+HeapDumpOnOutOfMemoryError" -Dorg.gradle.workers.max=4
 
       - name: Get version info

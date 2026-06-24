@@ -9,6 +9,7 @@ import { useRaceContext } from '@/contexts/RaceContext'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { haptics } from '@/lib/haptics'
 import * as sounds from '@/lib/sounds'
+import { Sentry } from '@/lib/instrument'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { estimateCalories } from '@calistenia/core/lib/calories'
@@ -68,7 +69,8 @@ export default function RaceResults({ celebrate = false }: { celebrate?: boolean
       })
       setSaved(true)
       void haptics.success()
-    } catch {
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'race', op: 'save_cardio_session' } })
       void haptics.error()
     }
     setSaving(false)

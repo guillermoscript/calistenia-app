@@ -254,6 +254,8 @@
   "profile.themeSystem": "System",
   "profile.themeLight": "Light",
   "profile.themeDark": "Dark",
+  "profile.whatsNew": "What's New",
+  "profile.whatsNewDesc": "Changelog & version history",
   "profile.whatsappShare": "💪 Follow me on Calistenia App and let's train together!",
 
   "landing.enter": "Get started",
@@ -2079,6 +2081,8 @@
   "whatsNew.kicker": "What's New",
   "whatsNew.gotIt": "Got it",
   "whatsNew.details": "Technical details",
+  "whatsNew.historyKicker": "History",
+  "whatsNew.seeOlder": "See previous versions",
 
   "barcode.permissionDenied": "Camera permission denied. Enable it in your browser settings.",
   "barcode.noCameraFound": "No camera found on this device.",

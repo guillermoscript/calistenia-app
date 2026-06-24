@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Chip } from '@/components/ui/chip'
 import { COLORS } from '@/lib/theme'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { Sentry } from '@/lib/instrument'
 import { pb } from '@calistenia/core/lib/pocketbase'
 
 type Goal = 'fuerza' | 'resistencia' | 'movilidad' | 'mixto' | 'yoga' | 'circuito'
@@ -101,7 +102,8 @@ export function AISessionForm({ onSubmit, isLoading }: Props) {
         if (rec.weight) setWeight(String(rec.weight))
         if (rec.height) setHeight(String(rec.height))
         if (rec.sex) setSex(rec.sex as string)
-      } catch {
+      } catch (e) {
+        Sentry.captureException(e, { tags: { feature: 'free_session', op: 'prefetch_nutrition_goals' } })
         /* sin nutrition_goals guardados */
       }
     })()

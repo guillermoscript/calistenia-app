@@ -154,6 +154,16 @@ function buildWorkoutsMap(exerciseRecords: RecordModel[]): WorkoutsMap {
 
 /** Catálogo (+ disciplina por programa) desde PB. */
 async function fetchCatalog(): Promise<ProgramMeta[]> {
+  // Guard: sin token válido, el listRule `@request.auth.id != ""` de PocketBase
+  // devuelve 200 con lista VACÍA (no 401). Si dejáramos pasar eso, React Query
+  // cachearía —y el persister lo guardaría en disco hasta 24h— un catálogo vacío,
+  // y la pantalla de Programas quedaría vacía hasta que el caché expire. Lanzar
+  // aquí mantiene la query en error (los errores no se persisten) y se reintenta
+  // en cuanto el auth esté listo. enabled ya filtra el caso normal; esto cubre la
+  // carrera de rehidratación del authStore al arrancar la app.
+  if (!pb.authStore.isValid) {
+    throw new Error('programs catalog: fetch attempted without a valid auth token')
+  }
   const catalogRes = await pb.collection('programs').getList(1, 100, {
     filter: 'is_active = true', sort: 'name', expand: 'created_by', $autoCancel: false,
   })
@@ -255,9 +265,13 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
   const qc = useQueryClient()
   const selectingRef = useRef(false)
 
+  // Solo corremos las queries con un token válido: evita el 200-lista-vacía de
+  // PocketBase cuando el authStore aún no se rehidrató (ver fetchCatalog).
+  const authReady = !!userId && pb.authStore.isValid
+
   const catalogQuery = useQuery({
     queryKey: qk.programs.catalog,
-    enabled: !!userId,
+    enabled: authReady,
     staleTime: 5 * 60 * 1000,
     // Reintento ante fallos transitorios en cold-start (red/DNS/5xx/429).
     retry: (failureCount, error: any) => {
@@ -271,7 +285,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   const enrollmentQuery = useQuery({
     queryKey: qk.programs.activeEnrollment(userId),
-    enabled: !!userId,
+    enabled: authReady,
     staleTime: 5 * 60 * 1000,
     queryFn: () => fetchActiveEnrollment(userId!),
   })
@@ -280,7 +294,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
   const detailQuery = useQuery({
     queryKey: qk.programs.detail(activeProgramId),
-    enabled: !!userId && !!activeProgramId,
+    enabled: authReady && !!activeProgramId,
     staleTime: 5 * 60 * 1000,
     queryFn: () => fetchProgramDetail(activeProgramId!),
   })

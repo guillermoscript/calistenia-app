@@ -1,6 +1,110 @@
 {
-  "generated": "2026-06-22T00:00:00.000Z",
+  "generated": "2026-06-24T00:00:00.000Z",
   "versions": [
+    {
+      "version": "1.0.6",
+      "date": "2026-06-24",
+      "summary": {
+        "es": "Elige el tema de la app —claro, oscuro o automático— y reabre las novedades cuando quieras para ver todas las versiones.",
+        "en": "Pick the app theme —light, dark or automatic— and reopen what's new anytime to browse every version."
+      },
+      "highlights": [
+        {
+          "icon": "🌗",
+          "type": "feat",
+          "title": { "es": "Tema claro y oscuro", "en": "Light & dark theme" },
+          "body": {
+            "es": "Cambia entre modo claro, oscuro o el del sistema desde tu perfil. Tu elección se recuerda al reabrir la app.",
+            "en": "Switch between light, dark or system mode from your profile. Your choice is remembered next time you open the app."
+          }
+        },
+        {
+          "icon": "🕑",
+          "type": "feat",
+          "title": { "es": "Historial de novedades", "en": "What's-new history" },
+          "body": {
+            "es": "Abre las novedades cuando quieras desde tu perfil y revisa todas las versiones anteriores.",
+            "en": "Open what's new anytime from your profile and review every previous version."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.0.5",
+      "date": "2026-06-24",
+      "summary": {
+        "es": "Circuitos y entrenos cronometrados, importa datos de tu reloj y comparte tu nutrición con estilo.",
+        "en": "Circuits and timed workouts, smartwatch data import, and richer nutrition sharing."
+      },
+      "highlights": [
+        {
+          "icon": "🔁",
+          "type": "feat",
+          "title": { "es": "Circuitos en sesión libre", "en": "Circuits in free sessions" },
+          "body": {
+            "es": "Arma circuitos con rondas, descanso entre ejercicios y entre rondas — y entrénalos con un cronómetro a pantalla completa.",
+            "en": "Build circuits with rounds, rest between exercises and between rounds — then train them with a full-screen timer."
+          }
+        },
+        {
+          "icon": "⏱️",
+          "type": "feat",
+          "title": { "es": "Entrenos cronometrados", "en": "Timed workouts" },
+          "body": {
+            "es": "Modo cronometrado: define el tiempo de trabajo y descanso de cada ejercicio y deja que la app te guíe.",
+            "en": "Timed mode: set work and rest seconds per exercise and let the app guide you through it."
+          }
+        },
+        {
+          "icon": "⌚",
+          "type": "feat",
+          "title": { "es": "Importa datos de tu reloj", "en": "Smartwatch import" },
+          "body": {
+            "es": "Conecta Health Connect para traer pasos, sueño, frecuencia cardíaca, peso y más a tu calendario y nutrición.",
+            "en": "Connect Health Connect to bring steps, sleep, heart rate, weight and more into your calendar and nutrition."
+          }
+        },
+        {
+          "icon": "📤",
+          "type": "feat",
+          "title": { "es": "Comparte tu nutrición", "en": "Nutrition share cards" },
+          "body": {
+            "es": "Nuevas tarjetas de nutrición para compartir tu día con las miniaturas, nombres y macros de cada comida.",
+            "en": "New nutrition cards to share your day with each meal's thumbnail, name and macros."
+          }
+        },
+        {
+          "icon": "🗺️",
+          "type": "fix",
+          "title": { "es": "Mapas de cardio al compartir", "en": "Cardio share maps" },
+          "body": {
+            "es": "Arreglado el mapa en blanco al compartir tus sesiones de cardio: la ruta vuelve a verse.",
+            "en": "Fixed the blank map when sharing cardio sessions — your route shows up again."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            { "description": "Circuit & timed (cronometrado) sessions in free session", "scope": "free-session", "breaking": false, "hash": "c845049" },
+            { "description": "Health Connect smartwatch import wired into calendar/nutrition/sessions", "scope": "mobile", "breaking": false, "hash": "e152a42" },
+            { "description": "Nutrition meal-timing (eaten_at/duration) + day-rollover + shared quality score", "scope": "nutrition", "breaking": false, "hash": "c845049" },
+            { "description": "Rich nutrition share cards with meal thumbnails, names & macros", "scope": "share", "breaking": false, "hash": "c845049" }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            { "description": "Fix blank route map on cardio share cards (CARTO dark_all)", "scope": "share", "breaking": false, "hash": "c845049" }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.0.4",
       "date": "2026-06-22",

@@ -38,6 +38,7 @@ import { haptics } from '@/lib/haptics'
 import { syncStorage } from '@/lib/storage'
 import {
   WHATS_NEW_STORAGE_KEY,
+  compareVersions,
   dotColorForType,
   getUnseenVersions,
   pickLang,
@@ -80,6 +81,16 @@ export default function WhatsNewModal() {
   const [unseen] = useState<ChangelogVersion[]>(() =>
     getUnseenVersions(CHANGELOG.versions, current, syncStorage.getItem(WHATS_NEW_STORAGE_KEY)),
   )
+  // Versiones publicadas más viejas que las sin ver: se revelan con "ver anteriores".
+  const older = useMemo(
+    () =>
+      CHANGELOG.versions.filter(
+        (v) =>
+          compareVersions(v.version, current) <= 0 &&
+          !unseen.some((u) => u.version === v.version),
+      ),
+    [current, unseen],
+  )
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -107,9 +118,40 @@ export default function WhatsNewModal() {
     <WhatsNewSheet
       visible={visible}
       versions={unseen}
+      olderVersions={older}
       lang={i18n.language}
       reduceMotion={reduceMotion}
       onClose={dismiss}
+    />
+  )
+}
+
+// ── Historial: hoja reabrible (desde Perfil) con TODAS las versiones publicadas ──
+
+export function ChangelogHistory({
+  visible,
+  onClose,
+}: {
+  visible: boolean
+  onClose: () => void
+}) {
+  const { t, i18n } = useTranslation()
+  const reduceMotion = useReducedMotion()
+  const current = useMemo(() => getCurrentVersion(), [])
+  // Todas las versiones que el usuario ya tiene (<= instalada), más nueva primero.
+  const released = useMemo(
+    () => CHANGELOG.versions.filter((v) => compareVersions(v.version, current) <= 0),
+    [current],
+  )
+  if (released.length === 0) return null
+  return (
+    <WhatsNewSheet
+      visible={visible}
+      versions={released}
+      lang={i18n.language}
+      reduceMotion={reduceMotion}
+      onClose={onClose}
+      kicker={t('whatsNew.historyKicker')}
     />
   )
 }
@@ -119,25 +161,38 @@ export default function WhatsNewModal() {
 function WhatsNewSheet({
   visible,
   versions,
+  olderVersions,
   lang,
   reduceMotion,
   onClose,
+  kicker,
 }: {
   visible: boolean
   versions: ChangelogVersion[]
+  /** Versiones más viejas, ocultas tras "ver anteriores". Opcional. */
+  olderVersions?: ChangelogVersion[]
   lang: string
   reduceMotion: boolean
   onClose: () => void
+  /** Texto del kicker de cabecera (por defecto "Novedades"). */
+  kicker?: string
 }) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const { height: screenH } = useWindowDimensions()
   const translateY = useSharedValue(0)
   const [showDetails, setShowDetails] = useState(false)
+  const [showOlder, setShowOlder] = useState(false)
 
-  // La versión más nueva encabeza la hoja; el cuerpo lista todas las sin ver.
+  // La versión más nueva encabeza la hoja; el cuerpo lista las visibles (y las
+  // anteriores si el usuario las desplegó).
   const headVersion = versions[0]
-  const hasGroups = versions.some((v) => v.groups && v.groups.length > 0)
+  const shownVersions = useMemo(
+    () => (showOlder && olderVersions?.length ? [...versions, ...olderVersions] : versions),
+    [showOlder, olderVersions, versions],
+  )
+  const hasGroups = shownVersions.some((v) => v.groups && v.groups.length > 0)
+  const hasOlder = !!olderVersions?.length && !showOlder
 
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.get() }] }))
 
@@ -184,6 +239,7 @@ function WhatsNewSheet({
       onShow={() => {
         translateY.set(0)
         setShowDetails(false)
+        setShowOlder(false)
       }}
     >
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -221,7 +277,7 @@ function WhatsNewSheet({
                         <View className="flex-row items-center gap-2">
                           <PulseDot reduceMotion={reduceMotion} />
                           <Text className="font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">
-                            {t('whatsNew.kicker')}
+                            {kicker ?? t('whatsNew.kicker')}
                           </Text>
                         </View>
                         <View className="mt-1 flex-row items-end gap-2">
@@ -253,10 +309,10 @@ function WhatsNewSheet({
                   contentContainerClassName="px-5 py-4 gap-5"
                   showsVerticalScrollIndicator={false}
                 >
-                  {versions.map((version, vi) => (
+                  {shownVersions.map((version, vi) => (
                     <Animated.View key={version.version} entering={entering(vi)} className="gap-3">
-                      {/* Etiqueta de versión solo si hay más de una sin ver */}
-                      {versions.length > 1 && (
+                      {/* Etiqueta de versión solo si hay más de una en la hoja */}
+                      {shownVersions.length > 1 && (
                         <View className="flex-row items-center gap-2">
                           <View className="size-1.5 bg-lime" />
                           <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
@@ -298,6 +354,20 @@ function WhatsNewSheet({
                     </Animated.View>
                   ))}
 
+                  {/* Ver versiones anteriores — revela el historial más viejo */}
+                  {hasOlder && (
+                    <Pressable
+                      onPress={() => setShowOlder(true)}
+                      className="flex-row items-center gap-2 py-1 active:opacity-70"
+                      accessibilityRole="button"
+                    >
+                      <ChevronDown size={14} color="hsl(0 0% 55%)" />
+                      <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                        {t('whatsNew.seeOlder')} ({olderVersions!.length})
+                      </Text>
+                    </Pressable>
+                  )}
+
                   {/* Expander "Detalles técnicos" — commits crudos */}
                   {hasGroups && (
                     <View className="gap-2">
@@ -318,7 +388,7 @@ function WhatsNewSheet({
 
                       {showDetails && (
                         <View className="gap-3 rounded-lg border border-border bg-background p-3">
-                          {versions.flatMap((version) =>
+                          {shownVersions.flatMap((version) =>
                             (version.groups ?? []).map((group) => (
                               <View key={`${version.version}-${group.type}`} className="gap-1.5">
                                 <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/70">
