@@ -1,12 +1,13 @@
 import { View, Easing } from 'react-native'
 import { Redirect, Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Home, ClipboardList, Library, History, User, Utensils } from 'lucide-react-native'
+import { Home, ClipboardList, Library, History, User, Utensils, CalendarDays } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { isOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import { NAV_THEME } from '@/lib/theme'
 import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
+import { QuickMenuProvider } from '@/components/QuickMenu'
 import { haptics } from '@/lib/haptics'
 
 export default function TabsLayout() {
@@ -19,6 +20,7 @@ export default function TabsLayout() {
   if (!userId || !isOnboardingDone(userId)) return <Redirect href="/onboarding" />
 
   return (
+    <QuickMenuProvider>
     <View className="flex-1">
     <Tabs
       screenListeners={{ tabPress: () => haptics.selection() }}
@@ -69,6 +71,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="calendar"
+        options={{
+          title: t('nav.calendar'),
+          tabBarIcon: ({ color, size }) => <CalendarDays color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="nutrition"
         options={{
           title: t('nav.nutrition'),
@@ -86,5 +95,6 @@ export default function TabsLayout() {
     {/* Sesión de cardio en curso: barra flotante para volver a /cardio */}
     <ActiveCardioBar />
     </View>
+    </QuickMenuProvider>
   )
 }

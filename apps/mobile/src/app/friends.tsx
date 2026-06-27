@@ -23,6 +23,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { shareReferralInvite, shareText, profileUrl } from '@/lib/share'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
+import { Sentry } from '@/lib/instrument'
 import type { FollowUser } from '@calistenia/core/hooks/useFollows'
 import { buildUserSearchFilter } from '@/lib/user-search-filter'
 
@@ -198,7 +199,8 @@ export default function FriendsScreen() {
         })
         if (queryRef.current !== query) return // stale
         setSearchResults(mapPbItems(res.items, userId ?? ''))
-      } catch {
+      } catch (e) {
+        Sentry.captureException(e, { tags: { feature: 'social', op: 'search_users' } })
         setSearchError(true)
         setSearchResults([])
       } finally {
@@ -336,7 +338,7 @@ export default function FriendsScreen() {
           )}
           {!searching && !searchError && searchResults.length === 0 && (
             <View className="items-center py-10 gap-2">
-              <Text className="font-sans-medium text-foreground">Sin resultados para "{query}"</Text>
+              <Text className="font-sans-medium text-foreground">Sin resultados para &quot;{query}&quot;</Text>
               <Text className="text-sm text-muted-foreground text-center">
                 ¿No está en la app? Invítalo a unirse.
               </Text>

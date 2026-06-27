@@ -5,6 +5,7 @@
  */
 import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
+import { Sentry } from '@/lib/instrument'
 
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
@@ -40,7 +41,8 @@ export async function requestNotifPermission(): Promise<boolean> {
     permissionAsked = true
     const res = await Notifications.requestPermissionsAsync()
     return res.granted
-  } catch {
+  } catch (e) {
+    Sentry.captureException(e, { tags: { feature: 'notifications', op: 'request_permission' } })
     return false
   }
 }
@@ -57,7 +59,8 @@ export async function scheduleRestEnd(secondsFromNow: number, title: string, bod
         channelId: Platform.OS === 'android' ? 'rest-timer' : undefined,
       },
     })
-  } catch {
+  } catch (e) {
+    Sentry.captureException(e, { tags: { feature: 'notifications', op: 'schedule_rest_end' } })
     return null
   }
 }

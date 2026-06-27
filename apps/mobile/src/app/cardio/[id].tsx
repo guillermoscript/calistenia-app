@@ -17,6 +17,7 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import RouteMap from '@/components/cardio/RouteMap'
+import ElevationProfile from '@/components/cardio/ElevationProfile'
 import SplitsTable from '@/components/cardio/SplitsTable'
 import CardioShareButton from '@/components/share/CardioShareButton'
 import type { CardioSession } from '@calistenia/core/types'
@@ -42,6 +43,9 @@ function toCardioSession(raw: Record<string, unknown>): CardioSession {
     avg_speed_kmh: raw.avg_speed_kmh as number | undefined,
     max_speed_kmh: raw.max_speed_kmh as number | undefined,
     splits: Array.isArray(raw.splits) ? (raw.splits as CardioSession['splits']) : [],
+    hr_avg: raw.hr_avg as number | undefined,
+    hr_max: raw.hr_max as number | undefined,
+    calories_actual: raw.calories_actual as number | undefined,
   }
 }
 
@@ -164,6 +168,9 @@ export default function CardioDetailScreen() {
           />
         )}
 
+        {/* Elevation profile (self-hides when the track has no altitude data) */}
+        {hasRoute && <ElevationProfile points={session.gps_points} height={80} />}
+
         {/* Primary stats */}
         <View className="flex-row gap-3">
           <StatBox
@@ -213,6 +220,30 @@ export default function CardioDetailScreen() {
           />
         </View>
 
+        {/* Heart rate / real calories from the watch (Health Connect) */}
+        {Boolean(session.hr_avg || session.calories_actual) && (
+          <View className="flex-row gap-3">
+            <StatBox
+              value={session.hr_avg ? String(session.hr_avg) : '—'}
+              label="FC MEDIA"
+              accent="text-red-500"
+              small
+            />
+            <StatBox
+              value={session.hr_max ? String(session.hr_max) : '—'}
+              label="FC MÁX"
+              accent="text-red-500"
+              small
+            />
+            <StatBox
+              value={session.calories_actual ? String(session.calories_actual) : '—'}
+              label="KCAL RELOJ"
+              accent="text-red-500"
+              small
+            />
+          </View>
+        )}
+
         {/* Splits */}
         {session.splits && session.splits.length > 0 && (
           <View className="gap-2">
@@ -230,7 +261,7 @@ export default function CardioDetailScreen() {
               NOTA
             </Text>
             <Text className="font-sans-italic text-sm text-muted-foreground leading-5">
-              "{session.note}"
+              &quot;{session.note}&quot;
             </Text>
           </View>
         )}

@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../lib/i18n'
 import { cn } from '../../lib/utils'
-import { localHour, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
+import { localHour, nowLocalForPB, todayStr } from '@calistenia/core/lib/dateUtils'
+import { storage } from '@calistenia/core/platform'
 import { Button } from '../ui/button'
 import FoodNameInput from './FoodNameInput'
 import PortionInput from './PortionInput'
@@ -14,12 +15,14 @@ import { useFoodHistory } from '@calistenia/core/hooks/useFoodHistory'
 import { useMealTemplates } from '@calistenia/core/hooks/useMealTemplates'
 import { op } from '@calistenia/core/lib/analytics'
 import { calcMacros, normalizeToBase100, migrateLegacyFood, createEmptyFood } from '@calistenia/core/lib/macro-calc'
+import { parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
+import { readPhotoTakenAt } from '../../lib/exif'
 import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate, MealType, QualityScore, QualityBreakdown, QualitySuggestion } from '@calistenia/core/types'
 
 const MAX_PHOTOS = 5
 
 export interface MealLoggerContentProps {
-  onAnalyze: (imageFiles: File[], mealType: string, description?: string) => Promise<{ foods: FoodItem[]; meal_description?: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }>
+  onAnalyze: (imageFiles: File[], mealType: string, description?: string, eatenHour?: number) => Promise<{ foods: FoodItem[]; meal_description?: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }>
   onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => Promise<void>
   userId: string | null
   dailyTotals: DailyTotals
@@ -47,6 +50,16 @@ function getDefaultMealType(): MealType {
   if (hour < 15) return 'almuerzo'
   if (hour < 18) return 'snack'
   return 'cena'
+}
+
+const LS_LAST_MEAL_TYPE = 'calistenia_last_meal_type'
+/** Prefer the user's last-used meal type so their choice sticks between logs. */
+function getSeedMealType(): MealType {
+  try {
+    const v = storage.getItem(LS_LAST_MEAL_TYPE) as MealType | null
+    if (v && MEAL_OPTIONS.some(o => o.id === v)) return v
+  } catch { /* ignore */ }
+  return getDefaultMealType()
 }
 
 /** Compress image client-side to max 1536px (higher res = better AI food detection) */
@@ -111,7 +124,19 @@ export default function MealLoggerContent({
   const [captureSubView, setCaptureSubView] = useState<'main' | 'repeatMeal' | 'templates'>('main')
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
-  const [mealType, setMealType] = useState<MealType>(getDefaultMealType)
+  const [mealType, setMealType] = useState<MealType>(getSeedMealType)
+  // Meal timing — exact finish time (HH/MM) + optional duration (minutes).
+  // Lazy initializers seed from the current local time so a first-open save
+  // never yields the midnight sentinel "00:00". handleResetForm re-seeds on reset.
+  const [eatenHour, setEatenHour] = useState<string>(() => nowLocalForPB().slice(11, 13))
+  const [eatenMinute, setEatenMinute] = useState<string>(() => nowLocalForPB().slice(14, 16))
+  const [durationInput, setDurationInput] = useState('')
+  // The hour the food was eaten (from the finish-time field / photo EXIF) — fed
+  // to the AI for timing-based quality scoring. undefined if not a valid number.
+  const eatenHourNum = (): number | undefined => {
+    const h = parseInt(eatenHour, 10)
+    return Number.isFinite(h) ? h : undefined
+  }
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [editingMacro, setEditingMacro] = useState<{ index: number; field: keyof FoodItem } | null>(null)
@@ -173,6 +198,24 @@ export default function MealLoggerContent({
     const reader = new FileReader()
     reader.onload = () => setImagePreviews(prev => [...prev, reader.result as string])
     reader.readAsDataURL(compressed)
+
+    // Auto-seed the finish time from EXIF DateTimeOriginal on the FIRST photo
+    // of a fresh form (imageFiles.length === 0 means this is the first photo).
+    // We use the original pre-compression File for EXIF so we don't lose the
+    // metadata that canvas.toBlob() strips. Only overrides when it's the first
+    // photo being added (any previously-set manual value is left intact after
+    // subsequent additions).
+    if (imageFiles.length === 0) {
+      readPhotoTakenAt(file).then(exifRaw => {
+        if (!exifRaw) return
+        const hm = parseExifDateTimeToHM(exifRaw)
+        if (hm) {
+          setEatenHour(hm.hour)
+          setEatenMinute(hm.minute)
+        }
+      }).catch(() => {/* non-fatal — time remains at now-default */})
+    }
+
     // Reset input so the same file can be re-selected
     e.target.value = ''
   }
@@ -200,7 +243,7 @@ export default function MealLoggerContent({
     }
 
     try {
-      const result = await onAnalyze(imageFiles, mealType, imageDescription.trim() || undefined)
+      const result = await onAnalyze(imageFiles, mealType, imageDescription.trim() || undefined, eatenHourNum())
       if (cancelledRef.current) return
       const normalized = (result.foods || []).map(f => {
         if (!('baseCal100' in f) || !f.baseCal100) {
@@ -285,7 +328,7 @@ export default function MealLoggerContent({
     setError(null)
 
     try {
-      const result = await onAnalyze([], mealType, text)
+      const result = await onAnalyze([], mealType, text, eatenHourNum())
       if (cancelledRef.current) return
       const normalized = (result.foods || []).map(f => {
         if (!('baseCal100' in f) || !f.baseCal100) {
@@ -352,6 +395,13 @@ export default function MealLoggerContent({
       setError(t('nutrition.logger.addAtLeastOneFood'))
       return
     }
+    // Naive local finish time "YYYY-MM-DD HH:mm:ss" — digits shown verbatim.
+    const hNum = Math.min(23, Math.max(0, parseInt(eatenHour, 10) || 0))
+    const mNum = Math.min(59, Math.max(0, parseInt(eatenMinute, 10) || 0))
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const eatenAt = `${todayStr()} ${pad(hNum)}:${pad(mNum)}:00`
+    const durNum = durationInput.trim() ? Math.max(0, parseInt(durationInput, 10) || 0) : 0
+
     setStep('saving')
     try {
       await onSave({
@@ -362,6 +412,8 @@ export default function MealLoggerContent({
         totalCarbs: totals.carbs,
         totalFat: totals.fat,
         loggedAt: nowLocalForPB(),
+        eatenAt,
+        ...(durNum > 0 ? { durationMin: durNum } : {}),
         ...(analysisQuality ? {
           qualityScore: analysisQuality.score,
           qualityBreakdown: analysisQuality.breakdown,
@@ -372,6 +424,7 @@ export default function MealLoggerContent({
       foods.filter(f => f.name.trim()).forEach(f => saveFoodToCatalog(f))
       const hour = localHour()
       foods.filter(f => f.name.trim()).forEach(f => trackFood(f, mealType, hour))
+      try { storage.setItem(LS_LAST_MEAL_TYPE, mealType) } catch { /* best-effort */ }
       op.track('meal_logged', { meal_type: mealType, food_count: validFoods.length, calories: totals.calories })
       setStep('success')
     } catch {
@@ -385,7 +438,13 @@ export default function MealLoggerContent({
     setCaptureSubView('main')
     setImagePreviews([])
     setImageFiles([])
-    setMealType(getDefaultMealType())
+    setMealType(getSeedMealType())
+    {
+      const nowPb = nowLocalForPB()
+      setEatenHour(nowPb.slice(11, 13))
+      setEatenMinute(nowPb.slice(14, 16))
+      setDurationInput('')
+    }
     setFoods([])
     setError(null)
     setEditingMacro(null)
@@ -928,6 +987,45 @@ export default function MealLoggerContent({
                   {opt.icon}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Meal timing: exact finish time + optional duration */}
+          <div className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
+            <div className="space-y-1">
+              <div className="text-[9px] text-muted-foreground tracking-widest uppercase">{t('nutrition.logger.finishedAt')}</div>
+              <div className="flex items-center">
+                <input
+                  value={eatenHour}
+                  onChange={e => setEatenHour(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
+                  onBlur={() => { const n = parseInt(eatenHour, 10); setEatenHour(isNaN(n) ? '' : String(Math.min(23, Math.max(0, n))).padStart(2, '0')) }}
+                  inputMode="numeric"
+                  aria-label={t('nutrition.logger.finishedAt')}
+                  className="w-12 h-10 text-center rounded-lg bg-background border border-input font-bebas text-xl focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-lime-400/30"
+                />
+                <span className="font-bebas text-xl text-muted-foreground mx-1">:</span>
+                <input
+                  value={eatenMinute}
+                  onChange={e => setEatenMinute(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
+                  onBlur={() => { const n = parseInt(eatenMinute, 10); setEatenMinute(isNaN(n) ? '' : String(Math.min(59, Math.max(0, n))).padStart(2, '0')) }}
+                  inputMode="numeric"
+                  aria-label={t('nutrition.logger.duration')}
+                  className="w-12 h-10 text-center rounded-lg bg-background border border-input font-bebas text-xl focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-lime-400/30"
+                />
+              </div>
+            </div>
+            <div className="space-y-1 flex-1">
+              <div className="text-[9px] text-muted-foreground tracking-widest uppercase">{t('nutrition.logger.duration')}</div>
+              <div className="flex items-center gap-1.5">
+                <input
+                  value={durationInput}
+                  onChange={e => setDurationInput(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+                  inputMode="numeric"
+                  placeholder="—"
+                  className="w-16 h-10 text-center rounded-lg bg-background border border-input font-bebas text-xl focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-lime-400/30"
+                />
+                <span className="text-[11px] text-muted-foreground">{t('nutrition.logger.durationUnit')}</span>
+              </div>
             </div>
           </div>
 

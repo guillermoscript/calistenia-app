@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
 import { useCountUp } from '@/lib/use-count-up'
-import { View, FlatList } from 'react-native'
+import { View, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Check, Activity } from 'lucide-react-native'
+import { Check, Activity, ChevronRight } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
+import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
@@ -22,6 +24,7 @@ type HistoryRow =
 
 export default function HistoryScreen() {
   const { t } = useTranslation()
+  const router = useRouter()
   const user = useAuthUser()
   const { progress, settings } = useWorkoutState()
   const { getWorkout, getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity } = useWorkoutActions()
@@ -72,7 +75,10 @@ export default function HistoryScreen() {
         contentContainerClassName="px-4 pb-8 gap-2"
         ListHeaderComponent={
           <View className="gap-4 pb-3 pt-2">
-            <Text className="font-bebas text-4xl leading-none text-foreground">{t('progress.title')}</Text>
+            <View className="flex-row items-center justify-between">
+              <Text className="font-bebas text-4xl leading-none text-foreground">{t('progress.title')}</Text>
+              <MenuButton />
+            </View>
 
             {/* Stats */}
             <View className="flex-row gap-3">
@@ -124,7 +130,10 @@ export default function HistoryScreen() {
             const c = item.session
             const dist = (c.distance_km ?? 0).toFixed(2)
             return (
-              <View className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+              <Pressable
+                onPress={() => router.push(`/cardio/${c.id}`)}
+                className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
+              >
                 <View className="size-8 items-center justify-center rounded-full bg-sky-500/15">
                   <Activity size={15} color="#0ea5e9" />
                 </View>
@@ -138,12 +147,16 @@ export default function HistoryScreen() {
                     {c.note ? ` · ${c.note}` : ''}
                   </Text>
                 </View>
-              </View>
+                <ChevronRight size={16} color="hsl(0 0% 45%)" />
+              </Pressable>
             )
           }
           const s = item.session
           return (
-            <View className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+            <Pressable
+              onPress={() => router.push({ pathname: '/session-detail', params: { date: s.date, workoutKey: s.workoutKey, title: titleFor(s) } })}
+              className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
+            >
               <View className="size-8 items-center justify-center rounded-full bg-lime/15">
                 <Check size={15} color="hsl(74 90% 45%)" />
               </View>
@@ -154,7 +167,8 @@ export default function HistoryScreen() {
                   {s.note ? ` · ${s.note}` : ''}
                 </Text>
               </View>
-            </View>
+              <ChevronRight size={16} color="hsl(0 0% 45%)" />
+            </Pressable>
           )
         }}
       />

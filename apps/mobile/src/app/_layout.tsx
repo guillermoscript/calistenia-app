@@ -26,44 +26,23 @@ import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
+import { resolveNotifUrl } from '@/lib/notification-route'
 import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
+import { applyThemeMode, getThemeMode } from '@/lib/theme-mode'
 import { initI18n } from '@/lib/i18n'
 import { NAV_THEME } from '@/lib/theme'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { WorkoutProvider } from '@/contexts/WorkoutContext'
 import { ActiveSessionProvider } from '@/contexts/ActiveSessionContext'
 import { CardioSessionProvider } from '@/contexts/CardioSessionContext'
+import { CircuitSessionProvider, useCircuitSession } from '@/contexts/CircuitSessionContext'
 import OfflineBanner from '@/components/OfflineBanner'
 
 SplashScreen.preventAutoHideAsync()
 
-// ---------------------------------------------------------------------------
-// Notification deep-link routing
-// ---------------------------------------------------------------------------
-
-/**
- * Translates a web-style path from a push notification payload to the
- * closest expo-router route in the app.
- *
- * Incoming paths (examples): '/feed', '/u/<id>', '/challenges/<id>',
- * '/progress', '/profile', '/referrals', '/notifications'.
- */
-function resolveNotifRoute(url: string): Parameters<ReturnType<typeof useRouter>['push']>[0] | null {
-  if (!url) return null
-  // Normalize: trim trailing slash
-  const path = url.replace(/\/$/, '')
-
-  if (path === '/feed' || path === '/') return '/'
-  if (path.startsWith('/u/')) return path as `/u/${string}`
-  if (path === '/progress' || path === '/history') return '/history'
-  if (path === '/profile') return '/profile'
-  if (path === '/notifications') return '/notifications'
-  if (path === '/challenges' || path.startsWith('/challenges')) return '/challenges'
-  if (path === '/social') return '/social'
-  if (path === '/referrals') return '/notifications'
-  return '/notifications'
-}
+// Deep-link de notificaciones: `resolveNotifUrl` (mapea la url del payload de push
+// a una ruta nativa) vive en '@/lib/notification-route', compartido con la campana.
 
 // Singletons a nivel módulo: un único QueryClient/persister por vida de la app.
 // init-core ya corrió (primer import del archivo), así que el adapter está listo.
@@ -71,7 +50,8 @@ setupOnlineManager()
 const queryClient = createQueryClient()
 const persister = createCorePersister()
 // darkMode: 'class' en tailwind.config → NativeWind controla la clase .dark;
-// 'system' sigue el modo del dispositivo (igual que el default de la web).
+// 'system' como default inicial; la preferencia persistida se aplica en boot
+// (applyThemeMode) tras hidratar storage, mientras el splash sigue visible.
 nwColorScheme.set('system')
 
 function Providers({ children }: { children: ReactNode }) {
@@ -84,11 +64,33 @@ function Providers({ children }: { children: ReactNode }) {
     <WorkoutProvider userId={user?.id ?? null}>
       <ActiveSessionProvider getRestForExercise={getRestForExercise} setRestForExercise={setRestForExercise}>
         <CardioSessionProvider userId={user?.id ?? null} userWeight={latestWeight}>
-          <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+          <CircuitSessionProvider userId={user?.id ?? null}>
+            <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+          </CircuitSessionProvider>
         </CardioSessionProvider>
       </ActiveSessionProvider>
     </WorkoutProvider>
   )
+}
+
+/** Si al arrancar la app hay un circuito persistido (restaurado del storage),
+ *  reabre el runner una sola vez — paridad con CircuitRestoreNavigator de la web. */
+function CircuitRestoreNavigator() {
+  const { isActive } = useCircuitSession()
+  const router = useRouter()
+  // Solo true si había un circuito activo en el primer render (restaurado al boot),
+  // no para los que se inician durante esta sesión (esos ya navegan ellos mismos).
+  const restoredOnBoot = useRef(isActive)
+  const hasNavigated = useRef(false)
+
+  useEffect(() => {
+    if (restoredOnBoot.current && !hasNavigated.current) {
+      hasNavigated.current = true
+      router.push('/circuit')
+    }
+  }, [router])
+
+  return null
 }
 
 function RootLayout() {
@@ -121,19 +123,15 @@ function RootLayout() {
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!response) return
       const url = response.notification.request.content.data?.url as string | undefined
-      if (url) {
-        const route = resolveNotifRoute(url)
-        if (route) routerRef.current.push(route)
-      }
+      const route = resolveNotifUrl(url)
+      if (route) routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0])
     }).catch(() => { /* ignore */ })
 
     // FOREGROUND / BACKGROUND TAP: listener for subsequent taps.
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const url = response.notification.request.content.data?.url as string | undefined
-      if (url) {
-        const route = resolveNotifRoute(url)
-        if (route) routerRef.current.push(route)
-      }
+      const route = resolveNotifUrl(url)
+      if (route) routerRef.current.push(route as Parameters<typeof routerRef.current.push>[0])
     })
 
     return () => sub.remove()
@@ -144,6 +142,8 @@ function RootLayout() {
     const boot = async () => {
       // Sesión PB persistida + caché síncrona de storage, antes de pintar nada.
       await Promise.all([hydrateStorage(), pbAuthHydration])
+      // Storage ya hidratado → aplica la preferencia de tema guardada (claro/oscuro/sistema).
+      applyThemeMode(getThemeMode())
       initI18n()
       if (!cancelled) setReady(true)
     }
@@ -183,7 +183,10 @@ function RootLayout() {
             <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
             {/* Session slides up like a modal — can't gesture-dismiss mid-workout */}
             <Stack.Screen name="session" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
+            {/* Circuit runner slides up like the session — full-screen, no gesture dismiss */}
+            <Stack.Screen name="circuit" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           </Stack>
+          <CircuitRestoreNavigator />
         </Providers>
         <OfflineBanner />
         <PortalHost />

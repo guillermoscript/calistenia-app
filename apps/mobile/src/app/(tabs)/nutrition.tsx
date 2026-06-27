@@ -21,22 +21,27 @@ import { runOnJS } from 'react-native-reanimated'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { todayStr, addDays, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
 import { useWater } from '@calistenia/core/hooks/useWater'
-import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
+import { qk } from '@calistenia/core/lib/query-keys'
+import { useDayRollover } from '@/lib/use-day-rollover'
+import { useDailyHealth } from '@/lib/health/useDailyHealth'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
 
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { analyzeMealMobile, saveEntryWithPhotos } from '@/lib/nutrition-api'
+import { analyzeMealMobile, urisToBlobs } from '@/lib/nutrition-api'
 import { syncNutritionWidget } from '@/lib/sync-nutrition-widget'
 import NutritionDashboard from '@/components/nutrition/NutritionDashboard'
 import NutritionGoalSetup from '@/components/nutrition/NutritionGoalSetup'
@@ -46,6 +51,8 @@ import WeeklyNutritionChart from '@/components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan from '@/components/nutrition/DailyMealPlan'
 import WeeklyMealPlan from '@/components/nutrition/WeeklyMealPlan'
 import CoachInsights from '@/components/nutrition/CoachInsights'
+import NutritionShareButton from '@/components/share/NutritionShareButton'
+import { Sentry } from '@/lib/instrument'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
@@ -90,9 +97,10 @@ export default function NutritionTab() {
   const authUser = useAuthUser()
   const userId = authUser?.id ?? null
   const router = useRouter()
-  const { action } = useLocalSearchParams<{ action?: string }>()
+  const queryClient = useQueryClient()
+  const { action, date: dateParam } = useLocalSearchParams<{ action?: string; date?: string }>()
 
-  const [selectedDate, setSelectedDate] = useState(todayStr())
+  const [selectedDate, setSelectedDate] = useState(dateParam || todayStr())
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily')
   const [showCoach, setShowCoach] = useState(false)
   const [loggerVisible, setLoggerVisible] = useState(false)
@@ -148,22 +156,12 @@ export default function NutritionTab() {
     generateWeeklyInsight,
   } = useNutritionCoach(userId)
 
-  const { handleAnalyze: _handleAnalyzeCore, handleSave: handleSaveEntry } = useMealLoggerActions({
-    userId,
-    goals,
-    entries: allEntries,
-    analyzeMeal,
-    scoreMealQuality,
-    saveEntry,
-    updateEntry,
-    getRemainingMacros,
-  })
-
   // Mobile analyze: uses URI-based API instead of File objects
   const handleAnalyze = useCallback(async (
     images: Array<{ uri: string; mimeType?: string; fileName?: string }>,
     mealType: string,
     description?: string,
+    eatenHour?: number,
   ) => {
     const remaining = getRemainingMacros()
     const recentScores = allEntries
@@ -174,7 +172,8 @@ export default function NutritionTab() {
       goal: goals?.goal,
       remainingMacros: remaining,
       recentScores: recentScores.length > 0 ? recentScores : undefined,
-      logHour: new Date().getHours(),
+      // Hour the food was eaten (photo EXIF / finish time), else current hour.
+      logHour: eatenHour != null && Number.isFinite(eatenHour) ? eatenHour : new Date().getHours(),
     })
   }, [goals, allEntries, getRemainingMacros])
 
@@ -190,10 +189,19 @@ export default function NutritionTab() {
       setEditingEntry(null)
       return
     }
-    const saved = await saveEntry({ ...entry, user: userId || undefined })
-    if (photoUris && photoUris.length > 0 && saved.id && !saved.id.startsWith('local_')) {
-      saveEntryWithPhotos(saved.id, photoUris).catch(() => {})
+    // Read photo URIs to Blobs and create the entry WITH them in one request, so
+    // the cached entry carries populated photoUrls right away (mirrors web's
+    // File[] path). If a Blob read fails, fall back to saving without photos
+    // rather than losing the whole meal.
+    let photoFiles: Blob[] | undefined
+    if (photoUris && photoUris.length > 0) {
+      try {
+        photoFiles = await urisToBlobs(photoUris)
+      } catch (e) {
+        Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'read_meal_photos' } })
+      }
     }
+    const saved = await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
     // Async quality scoring for manual entries
     if (!saved.qualityScore && saved.foods.length > 0) {
       scoreMealQuality(
@@ -214,9 +222,9 @@ export default function NutritionTab() {
             qualityBreakdown: quality.breakdown,
             qualityMessage: quality.message,
             qualitySuggestion: quality.suggestion,
-          }).catch(() => {})
+          }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'update_quality_score' } }) })
         }
-      }).catch(() => {})
+      }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'score_meal_quality' } }) })
     }
   }, [saveEntry, userId, scoreMealQuality, goals, getRemainingMacros, updateEntry, editingEntry])
 
@@ -261,6 +269,24 @@ export default function NutritionTab() {
     fetchEntriesForDate(selectedDate)
   }, [selectedDate, fetchEntriesForDate])
 
+  // Deep-link: cuando se navega aquí con ?date (p.ej. desde el Calendario), saltar
+  // a ese día. El tab queda montado, así que el initializer de useState no basta.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync a deep-link param into local state; tab stays mounted so initializer alone won't fire
+    if (dateParam) setSelectedDate(dateParam)
+  }, [dateParam])
+
+  // ─── Day rollover ────────────────────────────────────────────────────────────
+  // The tab can stay mounted across midnight; without this, selectedDate stays
+  // frozen on yesterday and the calorie ring/water/widget never reset to the new
+  // day. On rollover, if the user was viewing "today", advance to the new today
+  // and refetch the accumulator (its midnight boundary is recomputed on fetch).
+  // A user inspecting a past day is left untouched.
+  useDayRollover((newToday, prevToday) => {
+    setSelectedDate(d => (d === prevToday ? newToday : d))
+    if (userId) queryClient.invalidateQueries({ queryKey: qk.nutrition.today(userId) })
+  })
+
   // ─── Preload last 7 days for weekly chart ────────────────────────────────────
   useEffect(() => {
     fetchEntriesForDateRange(addDays(todayStr(), -6), todayStr())
@@ -303,16 +329,10 @@ export default function NutritionTab() {
     }
   }, [dailyTotals, goals, selectedDate])
 
-  const dailyQualityScore = useMemo((): QualityScore | undefined => {
-    const scored = entries.filter(e => e.qualityScore)
-    if (scored.length < 2) return undefined
-    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 }
-    const reverseMap: Record<number, QualityScore> = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'E' }
-    const totalWeight = scored.reduce((s, e) => s + e.totalCalories, 0)
-    if (totalWeight === 0) return undefined
-    const weightedAvg = scored.reduce((s, e) => s + scoreMap[e.qualityScore!] * e.totalCalories, 0) / totalWeight
-    return reverseMap[Math.round(weightedAvg)]
-  }, [entries])
+  const dailyQualityScore = useMemo<QualityScore | undefined>(
+    () => computeDailyQualityScore(entries),
+    [entries],
+  )
 
   useEffect(() => {
     if (!dailyQualityScore || selectedDate !== todayStr()) return
@@ -324,7 +344,7 @@ export default function NutritionTab() {
           Alert.alert(`${def.icon} ${def.label}`, def.description)
         }
       }
-    }).catch(() => {})
+    }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'upsert_daily_insight' } }) })
   }, [dailyQualityScore, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Missed goals alert (US-15) ──────────────────────────────────────────────
@@ -335,16 +355,23 @@ export default function NutritionTab() {
     return missed.length >= 2
   }, [weeklyHistory, goals])
 
+  // ─── Calorías activas del reloj (Health Connect) para este día ───────────────
+  // El reloj quemó X kcal → amplían el budget de calorías del día (modelo
+  // "comes lo que quemas"). OJO: el TDEE ya incluye un multiplicador de actividad,
+  // así que sumar esto puede doble-contar si el usuario eligió un nivel alto.
+  const dailyHealth = useDailyHealth(selectedDate)
+  const activeCalories = Math.max(0, Math.round(dailyHealth?.active_calories ?? 0))
+
   // ─── Remaining macros ────────────────────────────────────────────────────────
   const remaining = useMemo(() => {
     if (!goals) return { calories: 0, protein: 0, carbs: 0, fat: 0 }
     return {
-      calories: goals.dailyCalories - dailyTotals.calories,
+      calories: goals.dailyCalories + activeCalories - dailyTotals.calories,
       protein: goals.dailyProtein - dailyTotals.protein,
       carbs: goals.dailyCarbs - dailyTotals.carbs,
       fat: goals.dailyFat - dailyTotals.fat,
     }
-  }, [goals, dailyTotals])
+  }, [goals, dailyTotals, activeCalories])
 
   const loggedMealTypes = useMemo(
     () => [...new Set(entries.map(e => e.mealType))],
@@ -399,6 +426,34 @@ export default function NutritionTab() {
       loggedAt: nowLocalForPB(),
     })
   }, [saveEntry, userId])
+
+  // Stable dashboard callbacks (so memoized meal cards don't re-render on every
+  // parent render). Duplicate surfaces save failures instead of losing the meal.
+  const handleDuplicateEntry = useCallback(async (entry: NutritionEntry) => {
+    haptics.medium()
+    try {
+      await saveEntry({
+        user: userId || undefined,
+        mealType: entry.mealType,
+        foods: entry.foods.map(f => ({ ...f })),
+        totalCalories: entry.totalCalories,
+        totalProtein: entry.totalProtein,
+        totalCarbs: entry.totalCarbs,
+        totalFat: entry.totalFat,
+        loggedAt: nowLocalForPB(),
+      })
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'duplicate_meal_entry' } })
+      haptics.error()
+      Alert.alert(t('nutrition.logger.saveError', { defaultValue: 'No se pudo guardar' }))
+    }
+  }, [saveEntry, userId, t])
+
+  const handleEditEntry = useCallback((entry: NutritionEntry) => {
+    haptics.medium()
+    setEditingEntry(entry)
+    setLoggerVisible(true)
+  }, [])
 
   const isToday = selectedDate === todayStr()
 
@@ -470,11 +525,14 @@ export default function NutritionTab() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
-        <View className="pt-4 pb-2">
-          <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">
-            {t('nutrition.subtitle')}
-          </Text>
-          <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
+        <View className="pt-4 pb-2 flex-row items-start justify-between">
+          <View className="flex-1">
+            <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-1">
+              {t('nutrition.subtitle')}
+            </Text>
+            <Text className="font-bebas text-4xl text-foreground">{t('nutrition.title')}</Text>
+          </View>
+          <MenuButton className="mt-1" />
         </View>
 
         {/* Phase change banner (US-14) */}
@@ -606,15 +664,21 @@ export default function NutritionTab() {
                     key={i}
                     onPress={async () => {
                       haptics.medium()
-                      await handleSaveMobileEntry({
-                        mealType: entry.mealType,
-                        foods: entry.foods,
-                        totalCalories: entry.totalCalories,
-                        totalProtein: entry.totalProtein,
-                        totalCarbs: entry.totalCarbs,
-                        totalFat: entry.totalFat,
-                        loggedAt: nowLocalForPB(),
-                      })
+                      try {
+                        await handleSaveMobileEntry({
+                          mealType: entry.mealType,
+                          foods: entry.foods,
+                          totalCalories: entry.totalCalories,
+                          totalProtein: entry.totalProtein,
+                          totalCarbs: entry.totalCarbs,
+                          totalFat: entry.totalFat,
+                          loggedAt: nowLocalForPB(),
+                        })
+                      } catch (e) {
+                        Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'quick_add_recent_entry' } })
+                        haptics.error()
+                        Alert.alert(t('nutrition.logger.saveError', { defaultValue: 'No se pudo guardar' }))
+                      }
                     }}
                     className="w-40 p-3 bg-card border border-border rounded-xl active:border-lime-400/40"
                   >
@@ -642,27 +706,32 @@ export default function NutritionTab() {
             goals={goals}
             entries={entries}
             onDeleteEntry={deleteEntry}
-            onDuplicateEntry={async (entry) => {
-              haptics.medium()
-              await saveEntry({
-                user: userId || undefined,
-                mealType: entry.mealType,
-                foods: entry.foods.map(f => ({ ...f })),
-                totalCalories: entry.totalCalories,
-                totalProtein: entry.totalProtein,
-                totalCarbs: entry.totalCarbs,
-                totalFat: entry.totalFat,
-                loggedAt: nowLocalForPB(),
-              })
-            }}
-            onEditEntry={(entry) => {
-              haptics.medium()
-              setEditingEntry(entry)
-              setLoggerVisible(true)
-            }}
+            onDuplicateEntry={handleDuplicateEntry}
+            onEditEntry={handleEditEntry}
             selectedDate={selectedDate}
+            dailyQualityScore={dailyQualityScore}
+            activeCalories={activeCalories}
           />
         </View>
+
+        {/* Share card — only in daily view and when there's at least one logged entry */}
+        {activeTab === 'daily' && entries.length > 0 && (
+          <View className="mb-5">
+            <NutritionShareButton
+              date={selectedDate}
+              totals={dailyTotals}
+              goals={goals}
+              waterMl={waterTotal}
+              waterGoal={waterGoal}
+              qualityScore={dailyQualityScore}
+              mealCount={entries.length}
+              userName={(authUser?.display_name as string) || (authUser?.name as string) || 'Atleta'}
+              avatarUrl={authUser ? getUserAvatarUrl(authUser as any, '200x200') : null}
+              referralCode={(authUser?.referral_code as string) || null}
+              entries={entries}
+            />
+          </View>
+        )}
 
         {/* AI Meal plans — daily or weekly */}
         {activeTab === 'weekly' ? (
@@ -718,7 +787,7 @@ export default function NutritionTab() {
                 generatingWeekly={generatingWeekly}
                 activeTab={activeTab}
                 onGenerateWeekly={() => {
-                  generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch(() => {})
+                  generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'generate_weekly_insight' } }) })
                 }}
               />
               <WeeklyNutritionChart

@@ -100,6 +100,15 @@ export const qk = {
   bodyPhotos: (userId: string | null) => ['body_photos', userId] as const,
   weight: (userId: string | null) => ['weight', userId] as const,
   sleep: (userId: string | null) => ['sleepEntries', userId] as const,
+  // — Integración smartwatch / health hub (Health Connect / HealthKit) —
+  health: {
+    all: ['health'] as const,
+    status: (userId: string | null) => ['health', 'status', userId] as const,
+    daily: (userId: string | null, date: string) =>
+      ['health', 'daily', userId, date] as const,
+    dailyRange: (userId: string | null, from: string, to: string) =>
+      ['health', 'daily', 'range', userId, from, to] as const,
+  },
   water: {
     day: (userId: string | null, date: string) =>
       ['water', userId, 'day', date] as const,
@@ -135,6 +144,8 @@ export const qk = {
       ['food_history', 'hour', userId, hour] as const,
   },
   mealTemplates: (userId: string | null) => ['meal_templates', userId] as const,
+  freeSessionTemplates: (userId: string | null) =>
+    ['free_session_templates', userId] as const,
   mealReminders: (userId: string | null) => ['meal_reminders', userId] as const,
   weeklyMealPlan: {
     active: (userId: string | null) =>

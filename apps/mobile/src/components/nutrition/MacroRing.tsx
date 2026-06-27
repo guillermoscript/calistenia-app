@@ -1,7 +1,8 @@
 /** SVG calorie ring gauge — port of web CalorieGauge. */
 import { useEffect, useRef } from 'react'
-import { Animated, Easing, View } from 'react-native'
+import { Animated, Easing, View, Pressable } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
+import { Info } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { useCountUp } from '@/lib/use-count-up'
 import type { QualityScore } from '@calistenia/core/types'
@@ -28,12 +29,14 @@ interface MacroRingProps {
   consumed: number
   target: number
   dailyScore?: QualityScore
+  /** When set, the daily-score chip becomes tappable (opens the A–E criteria). */
+  onScorePress?: () => void
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AnimatedCircle = Animated.createAnimatedComponent(Circle as any)
 
-export default function MacroRing({ consumed, target, dailyScore }: MacroRingProps) {
+export default function MacroRing({ consumed, target, dailyScore, onScorePress }: MacroRingProps) {
   const pct = target > 0 ? Math.min(consumed / target, 1.1) : 0
   const fillPct = Math.min(pct, 1)
   const dashOffset = CIRCUMFERENCE * (1 - fillPct)
@@ -93,11 +96,26 @@ export default function MacroRing({ consumed, target, dailyScore }: MacroRingPro
         </Text>
 
         {dailyScore && (
-          <View className="mt-1.5 rounded-full bg-muted/60 px-2 py-0.5">
-            <Text className={`font-bebas text-base leading-none ${QUALITY_COLORS[dailyScore]}`}>
-              {dailyScore}
-            </Text>
-          </View>
+          onScorePress ? (
+            <Pressable
+              onPress={onScorePress}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`Calidad del día ${dailyScore}. Ver cómo se calcula`}
+              className="mt-1.5 flex-row items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 active:bg-muted"
+            >
+              <Text className={`font-bebas text-base leading-none ${QUALITY_COLORS[dailyScore]}`}>
+                {dailyScore}
+              </Text>
+              <Info size={10} color="rgba(245,245,244,0.45)" />
+            </Pressable>
+          ) : (
+            <View className="mt-1.5 rounded-full bg-muted/60 px-2 py-0.5">
+              <Text className={`font-bebas text-base leading-none ${QUALITY_COLORS[dailyScore]}`}>
+                {dailyScore}
+              </Text>
+            </View>
+          )
         )}
       </View>
     </View>

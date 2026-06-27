@@ -2,7 +2,8 @@
  * Step components for the MealLogger state machine. Each renders one `step` and reads
  * everything it needs from the injected `model` (see useMealLogger).
  */
-import { View, ScrollView, TextInput, Pressable, Image, ActivityIndicator } from 'react-native'
+import { View, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native'
+import { Image as ExpoImage } from 'expo-image'
 import { useTranslation } from 'react-i18next'
 import { X, Camera, Image as ImageIcon, PenLine, RefreshCw, Plus, Check } from 'lucide-react-native'
 
@@ -11,8 +12,10 @@ import { cn } from '@/lib/utils'
 
 import { MAX_PHOTOS, MEAL_OPTIONS } from './meal-logger-shared'
 import type { MealLoggerModel } from './use-meal-logger'
+import QualityBreakdownPanel from './QualityBreakdownPanel'
 import {
   MealTypeSelector,
+  MealTimingRow,
   InputMethodCard,
   RepeatMealView,
   FoodItemCard,
@@ -92,7 +95,13 @@ export function CaptureStep({ model }: StepProps) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 px-1">
             {model.imageAssets.map((asset, i) => (
               <View key={i} className="relative rounded-xl overflow-hidden" style={{ width: 120, height: 120 }}>
-                <Image source={{ uri: asset.uri }} style={{ width: 120, height: 120 }} resizeMode="cover" />
+                <ExpoImage
+                  source={{ uri: asset.uri }}
+                  style={{ width: 120, height: 120 }}
+                  contentFit="cover"
+                  recyclingKey={asset.uri}
+                  cachePolicy="memory-disk"
+                />
                 <Pressable
                   onPress={() => model.removePhoto(i)}
                   className="absolute top-1.5 right-1.5 size-6 rounded-full bg-black/60 items-center justify-center"
@@ -177,7 +186,7 @@ export function AnalyzingStep({ model }: StepProps) {
     <View className="py-10 items-center gap-6">
       {model.imageAssets.length > 0 ? (
         <View className="w-full rounded-xl overflow-hidden" style={{ maxHeight: 240 }}>
-          <Image source={{ uri: model.imageAssets[0].uri }} style={{ width: '100%', height: 200 }} resizeMode="cover" className="opacity-60" />
+          <ExpoImage source={{ uri: model.imageAssets[0].uri }} style={{ width: '100%', height: 200, opacity: 0.6 }} contentFit="cover" cachePolicy="memory-disk" />
           <View className="absolute inset-0 items-center justify-center">
             <View className="bg-background/80 rounded-xl px-6 py-4 items-center gap-2">
               <ActivityIndicator size="small" color="#a3e635" />
@@ -226,6 +235,17 @@ export function ReviewStep({ model }: StepProps) {
           ))}
         </View>
       </View>
+
+      {/* Meal timing: exact finish time + optional duration */}
+      <MealTimingRow
+        hour={model.eatenHour}
+        minute={model.eatenMinute}
+        duration={model.durationInput}
+        onHourChange={model.setEatenHour}
+        onMinuteChange={model.setEatenMinute}
+        onDurationChange={model.setDurationInput}
+        t={t}
+      />
 
       {/* Daily progress context (compact) */}
       {model.goals && (
@@ -276,6 +296,20 @@ export function ReviewStep({ model }: StepProps) {
       {model.mealDescription ? (
         <View className="px-3 py-2.5 rounded-xl bg-lime-400/5 border border-lime-400/10">
           <Text className="font-sans text-xs text-muted-foreground leading-relaxed">{model.mealDescription}</Text>
+        </View>
+      ) : null}
+
+      {/* AI quality feedback — compact (score + summary + suggestion) mid-log;
+          the full positives/negatives breakdown shows on the saved meal card. */}
+      {model.analysisQuality?.score && model.analysisQuality.breakdown ? (
+        <View className="rounded-xl border border-border bg-card px-4 py-3.5">
+          <QualityBreakdownPanel
+            score={model.analysisQuality.score}
+            breakdown={model.analysisQuality.breakdown}
+            message={model.analysisQuality.message}
+            suggestion={model.analysisQuality.suggestion}
+            compact
+          />
         </View>
       ) : null}
 
@@ -367,7 +401,7 @@ export function SuccessStep({ model }: StepProps) {
           <Text className="font-bebas text-lg tracking-wide text-zinc-900">{t('nutrition.logger.done')}</Text>
         </Pressable>
         <Pressable
-          onPress={model.handleResetForm}
+          onPress={() => model.handleResetForm()}
           className="flex-1 h-12 border border-border active:bg-muted items-center justify-center rounded-xl"
         >
           <Text className="font-bebas text-lg tracking-wide text-foreground">{t('nutrition.logger.registerAnother')}</Text>

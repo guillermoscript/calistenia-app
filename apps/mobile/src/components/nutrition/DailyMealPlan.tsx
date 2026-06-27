@@ -4,6 +4,7 @@ import { View, Pressable, ActivityIndicator, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { Sentry } from '@/lib/instrument'
 import { submitMealPlanJob, fetchJobStatus } from '@calistenia/core/lib/ai-jobs-api'
 import type { MealType } from '@calistenia/core/types'
 
@@ -247,6 +248,9 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                       try {
                         await onSaveMeal(meal)
                         setSavedMeals(prev => new Set(prev).add(i))
+                      } catch (e) {
+                        Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'save_ai_plan_meal' } })
+                        setError(t('nutrition.dailyPlan.error', 'Error al guardar la comida'))
                       } finally {
                         setSavingIndex(null)
                       }

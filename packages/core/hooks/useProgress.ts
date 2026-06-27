@@ -5,6 +5,7 @@ import { pb } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
+import { parseRepsForPR } from '../lib/pr-utils'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -28,25 +29,37 @@ const PR_PATTERNS: Array<{ test: (id: string) => boolean; key: keyof Settings }>
   { test: (id) => id.startsWith('handstand'), key: 'pr_handstand' },
 ]
 
-/** Scan all logged sets and return PR updates that exceed current values */
+/** Legacy pr_* field for an id, or null if it is not one of the 5 families. */
+const legacyPrKey = (id: string): keyof Settings | null =>
+  PR_PATTERNS.find(p => p.test(id))?.key ?? null
+
+/**
+ * Scan all logged sets and rebuild the full `prs` map (every exercise id) plus
+ * mirror updates into the 5 legacy pr_* fields. Uses parseRepsForPR so
+ * "8-12"→12, "max"→null, etc.
+ */
 const computePRBackfill = (sets: any[], currentSettings: Settings): Partial<Settings> | null => {
-  const maxPRs: Partial<Record<keyof Settings, number>> = {}
+  const bestById: Record<string, number> = { ...(currentSettings.prs ?? {}) }
+  let changed = false
   for (const s of sets) {
-    const repsNum = parseInt(s.reps)
-    if (isNaN(repsNum) || repsNum <= 0) continue
-    const match = PR_PATTERNS.find(p => p.test(s.exercise_id))
-    if (!match) continue
-    const cur = (maxPRs[match.key] as number) || 0
-    if (repsNum > cur) maxPRs[match.key] = repsNum
+    const n = parseRepsForPR(s.reps)
+    if (n == null) continue
+    const id = s.exercise_id
+    if (!id) continue
+    if (n > (bestById[id] ?? 0)) { bestById[id] = n; changed = true }
+  }
+  // Mirror into the 5 legacy fields from the best matching id(s).
+  const legacy: Partial<Record<keyof Settings, number>> = {}
+  for (const [id, n] of Object.entries(bestById)) {
+    const lk = legacyPrKey(id)
+    if (lk && n > ((legacy[lk] as number) ?? 0)) legacy[lk] = n
   }
   const updates: Partial<Settings> = {}
   let hasUpdates = false
-  for (const [key, val] of Object.entries(maxPRs)) {
-    const stored = (currentSettings as unknown as Record<string, number>)[key] || 0
-    if ((val as number) > stored) {
-      ;(updates as any)[key] = val
-      hasUpdates = true
-    }
+  if (changed) { (updates as any).prs = bestById; hasUpdates = true }
+  for (const [k, v] of Object.entries(legacy)) {
+    const stored = (currentSettings as unknown as Record<string, number>)[k] || 0
+    if ((v as number) > stored) { (updates as any)[k] = v; hasUpdates = true }
   }
   return hasUpdates ? updates : null
 }
@@ -215,7 +228,11 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         const prUpdates = computePRBackfill(setsRes, s)
         if (prUpdates) {
           Object.assign(s, prUpdates)
-          pb.collection('settings').update(settingsRec.id, prUpdates).catch(() => {})
+          // Strip prs (localStorage-only) before writing to PB typed columns.
+          const { prs: _prs, ...pbPrUpdates } = prUpdates as any
+          if (Object.keys(pbPrUpdates).length > 0) {
+            pb.collection('settings').update(settingsRec.id, pbPrUpdates).catch(() => {})
+          }
         }
         settings = s
         lsSetSettings(s)
@@ -228,7 +245,11 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         }).then((rec: any) => {
           const prUpdates = computePRBackfill(setsRes, s)
           if (prUpdates) {
-            pb.collection('settings').update(rec.id, prUpdates).catch(() => {})
+            // Strip prs (localStorage-only) before writing to PB typed columns.
+            const { prs: _prs, ...pbPrUpdates } = prUpdates as any
+            if (Object.keys(pbPrUpdates).length > 0) {
+              pb.collection('settings').update(rec.id, pbPrUpdates).catch(() => {})
+            }
             qc.setQueryData<ProgressData>(key, (old) => old ? { ...old, settings: { ...old.settings, ...prUpdates } } : old)
           }
         }).catch(() => {})
@@ -550,19 +571,19 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
 
   // ─── Auto-detect PRs ─────────────────────────────────────────────────────
   const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string): Promise<PREvent | null> => {
-    const repsNum = parseInt(reps)
-    if (isNaN(repsNum) || repsNum <= 0) return null
-    const match = PR_PATTERNS.find(p => p.test(exerciseId))
-    if (!match) return null
-    const prKey = match.key
+    const n = parseRepsForPR(reps)
+    if (n == null || !exerciseId) return null
     const cur = qc.getQueryData<ProgressData>(key)?.settings ?? settings
-    const current = (cur as unknown as Record<string, number>)[prKey] || 0
-    if (repsNum > current) {
-      await updateSettings({ [prKey]: repsNum } as Partial<Settings>)
-      op.track('pr_achieved', { exercise_id: exerciseId, pr_key: String(prKey), old_value: current, new_value: repsNum })
-      return { exerciseId, prKey: String(prKey), oldValue: current, newValue: repsNum }
+    const prevBest = (cur.prs?.[exerciseId]) ?? 0
+    if (n <= prevBest) return null
+    const lk = legacyPrKey(exerciseId)
+    const patch: Partial<Settings> = { prs: { ...(cur.prs ?? {}), [exerciseId]: n } }
+    if (lk && n > ((cur as unknown as Record<string, number>)[lk] || 0)) {
+      (patch as any)[lk] = n
     }
-    return null
+    await updateSettings(patch)
+    op.track('pr_achieved', { exercise_id: exerciseId, pr_key: String(lk ?? exerciseId), old_value: prevBest, new_value: n })
+    return { exerciseId, prKey: String(lk ?? exerciseId), oldValue: prevBest, newValue: n }
   }, [updateSettings, qc, key, settings])
 
   return {

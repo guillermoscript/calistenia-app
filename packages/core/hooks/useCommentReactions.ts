@@ -105,25 +105,31 @@ export function useCommentReactions(userId: string | null) {
     mutationFn: async ({
       commentId,
       emoji,
+      hasReacted,
     }: {
       commentId: string
       emoji: string
+      // Estado PREVIO al toggle, calculado por el caller ANTES de que onMutate
+      // voltee la caché de forma optimista. NO se relee de la caché aquí: para
+      // cuando corre mutationFn, onMutate ya la invirtió → releerla daría el
+      // valor opuesto y crearíamos/borraríamos al revés (bug histórico: cada
+      // tap hacía la acción inversa, fallaba con 404/400 y onError revertía →
+      // la reacción "no se quedaba").
+      hasReacted: boolean
     }) => {
       if (!userId) return
       const available = await isPocketBaseAvailable()
       if (!available) return
 
-      // Leer el estado actual de la cache para saber si ya reaccionó.
-      const cached = qc.getQueryData<CommentEmojiReactions>(
-        qk.commentReactions(commentId, userId),
-      )
-      const hasReacted = cached?.[emoji]?.hasReacted ?? false
-
       if (hasReacted) {
         const existing = await pb
           .collection('comment_reactions')
           .getFirstListItem(
-            `comment_id = '${commentId}' && reactor = '${userId}' && emoji = '${emoji}'`,
+            pb.filter('comment_id = {:cid} && reactor = {:uid} && emoji = {:emoji}', {
+              cid: commentId,
+              uid: userId,
+              emoji,
+            }),
             { $autoCancel: false },
           )
         await pb.collection('comment_reactions').delete(existing.id)
@@ -136,7 +142,7 @@ export function useCommentReactions(userId: string | null) {
       }
     },
 
-    onMutate: async ({ commentId, emoji }) => {
+    onMutate: async ({ commentId, emoji, hasReacted }) => {
       if (!userId) return
 
       const key = qk.commentReactions(commentId, userId)
@@ -146,15 +152,15 @@ export function useCommentReactions(userId: string | null) {
 
       // Snapshot previo para rollback.
       const prev = qc.getQueryData<CommentEmojiReactions>(key) ?? {}
-
       const current = prev[emoji] ?? { count: 0, hasReacted: false }
-      const hasReacted = current.hasReacted
 
-      // Aplicar cambio optimista en la caché del comentario.
+      // Cambio optimista usando el hasReacted PREVIO (el mismo que recibe
+      // mutationFn), no el de la caché, para que UI y servidor no se
+      // desincronicen.
       qc.setQueryData<CommentEmojiReactions>(key, {
         ...prev,
         [emoji]: {
-          count: current.count + (hasReacted ? -1 : 1),
+          count: Math.max(0, current.count + (hasReacted ? -1 : 1)),
           hasReacted: !hasReacted,
         },
       })
@@ -168,6 +174,14 @@ export function useCommentReactions(userId: string | null) {
       const key = qk.commentReactions(commentId, userId)
       qc.setQueryData<CommentEmojiReactions>(key, ctx.prev)
     },
+
+    onSettled: (_data, _err, { commentId }) => {
+      // Reconciliar con el servidor tras crear/borrar: confirma la escritura y
+      // recoge conteos de otros usuarios. Sin esto, un fallo silencioso dejaría
+      // el update optimista sin validar hasta que expire el staleTime (30 s).
+      if (!userId) return
+      void qc.invalidateQueries({ queryKey: qk.commentReactions(commentId, userId) })
+    },
   })
 
   /**
@@ -177,9 +191,19 @@ export function useCommentReactions(userId: string | null) {
   const toggleReaction = useCallback(
     // async para conservar la firma pública previa (Promise<void>).
     async (commentId: string, emoji: string): Promise<void> => {
-      await toggleMutation.mutateAsync({ commentId, emoji }).catch(() => {})
+      if (!userId) return
+      // Capturar el estado PREVIO antes de mutar: mutateAsync dispara onMutate,
+      // que voltea la caché. Pasamos este valor para que mutationFn decida
+      // crear/borrar con el estado correcto (ver comentario en mutationFn).
+      const cached = qc.getQueryData<CommentEmojiReactions>(
+        qk.commentReactions(commentId, userId),
+      )
+      const hasReacted = cached?.[emoji]?.hasReacted ?? false
+      await toggleMutation
+        .mutateAsync({ commentId, emoji, hasReacted })
+        .catch(() => {})
     },
-    [toggleMutation],
+    [toggleMutation, qc, userId],
   )
 
   /**

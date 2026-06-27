@@ -1,6 +1,6 @@
 /**
  * Mapa de ruta GPS con MapLibre (sin API key). Tiles raster de CARTO —
- * voyager en claro y dark_matter en oscuro, igual que el RouteMap web (Leaflet).
+ * voyager en claro y dark_all en oscuro, igual que el RouteMap web (Leaflet).
  * Segmentos con gap GPS se pintan discontinuos, como en la web.
  */
 import { useMemo } from 'react'

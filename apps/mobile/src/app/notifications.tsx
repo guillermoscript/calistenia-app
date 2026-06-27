@@ -14,10 +14,14 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import type { AppNotification, NotificationType } from '@calistenia/core/hooks/useNotifications'
+import { getNotifRoute } from '@/lib/notification-route'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Separador de fila estable (a nivel de módulo: no se remonta en cada render). */
+const NotifSeparator = () => <View className="mx-4 h-px bg-border/40" />
 
 /** Tiempo relativo en español */
 function relativeTimeEs(dateStr: string): string {
@@ -43,12 +47,21 @@ function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record
       return `${name} te empezó a seguir`
     case 'reaction': {
       const emoji = n.data?.emoji ? ` ${n.data.emoji}` : ''
-      return `${name} reaccionó a tu sesión${emoji}`
+      const target = n.data?.onComment ? 'tu comentario' : 'tu sesión'
+      const base = `${name} reaccionó a ${target}${emoji}`
+      // Para reacciones a un comentario mostramos a cuál se reaccionó.
+      return n.data?.onComment && n.data?.commentPreview
+        ? `${base}: «${n.data.commentPreview}»`
+        : base
     }
     case 'comment':
-      return `${name} comentó tu sesión`
+      return n.data?.preview
+        ? `${name} comentó tu sesión: «${n.data.preview}»`
+        : `${name} comentó tu sesión`
     case 'comment_reply':
-      return `${name} respondió tu comentario`
+      return n.data?.preview
+        ? `${name} respondió tu comentario: «${n.data.preview}»`
+        : `${name} respondió tu comentario`
     case 'challenge_invite':
       return `${name} te invitó a un reto`
     case 'challenge_join':
@@ -85,30 +98,6 @@ function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record
       return t('notif.friendJoined', { name })
     default:
       return `${name} te envió una notificación`
-  }
-}
-
-/** Ruta mobile para navegar al tocar (o undefined para no-op) */
-function getNotificationRoute(n: AppNotification): string | undefined {
-  switch (n.type as NotificationType) {
-    case 'reaction':
-    case 'comment':
-    case 'comment_reply':
-      return '/social'
-    case 'follow':
-      return '/social'
-    case 'challenge_invite':
-    case 'challenge_join':
-    case 'challenge_complete':
-      return '/challenges'
-    // ── New friend-activity types → actor profile ─────────────────────────────
-    case 'friend_streak':
-    case 'friend_achievement':
-    case 'friend_workout':
-    case 'friend_joined':
-      return n.actorId ? `/u/${n.actorId}` : undefined
-    default:
-      return undefined
   }
 }
 
@@ -201,7 +190,7 @@ export default function NotificationsScreen() {
       if (!n.read) {
         void markAsRead(n.id)
       }
-      const route = getNotificationRoute(n)
+      const route = getNotifRoute(n)
       if (route) {
         router.push(route as Parameters<typeof router.push>[0])
       }
@@ -272,7 +261,7 @@ export default function NotificationsScreen() {
           renderItem={({ item }) => (
             <NotificationRow item={item} onPress={handleTap} />
           )}
-          ItemSeparatorComponent={() => <View className="mx-4 h-px bg-border/40" />}
+          ItemSeparatorComponent={NotifSeparator}
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center gap-3 py-20">
               <BellOff size={36} color="#52525b" strokeWidth={1.5} />

@@ -3,6 +3,8 @@
  * No React / component dependencies — safe to import from the hook, steps and views.
  */
 import { migrateLegacyFood } from '@calistenia/core/lib/macro-calc'
+import { localHour } from '@calistenia/core/lib/dateUtils'
+import { storage } from '@calistenia/core/platform'
 import type {
   FoodItem,
   NutritionEntry,
@@ -50,6 +52,8 @@ export interface MealLoggerSheetProps {
     images: ImageAsset[],
     mealType: string,
     description?: string,
+    /** Hour (0–23) the food was eaten — fed to the AI for timing quality. */
+    eatenHour?: number,
   ) => Promise<{
     foods: FoodItem[]
     meal_description?: string
@@ -80,12 +84,35 @@ export const MEAL_OPTIONS = [
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Hour-based default meal type, in the user's configured timezone (parity with web). */
 export function getDefaultMealType(): MealType {
-  const h = new Date().getHours()
+  const h = localHour()
   if (h < 10) return 'desayuno'
   if (h < 15) return 'almuerzo'
   if (h < 18) return 'snack'
   return 'cena'
+}
+
+const LS_LAST_MEAL_TYPE = 'calistenia_last_meal_type'
+const VALID_MEAL_TYPES = MEAL_OPTIONS.map((o) => o.id) as MealType[]
+
+/** Last meal type the user logged, if any (validated against MEAL_OPTIONS). */
+export function getLastMealType(): MealType | null {
+  try {
+    const v = storage.getItem(LS_LAST_MEAL_TYPE) as MealType | null
+    return v && VALID_MEAL_TYPES.includes(v) ? v : null
+  } catch {
+    return null
+  }
+}
+
+/** Remember the user's meal-type choice so the picker keeps it on the next open. */
+export function setLastMealType(mealType: MealType): void {
+  try {
+    storage.setItem(LS_LAST_MEAL_TYPE, mealType)
+  } catch {
+    /* best-effort */
+  }
 }
 
 /** Bring an entry's foods up to the current FoodItem shape, migrating legacy records. */

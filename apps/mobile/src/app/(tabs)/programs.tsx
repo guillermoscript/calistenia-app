@@ -1,14 +1,15 @@
 import { memo, useCallback, useMemo, useState } from 'react'
-import { View, FlatList, Pressable, ScrollView } from 'react-native'
+import { View, FlatList, Pressable, ScrollView, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, BadgeCheck, Dumbbell, Search, X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { MenuButton } from '@/components/QuickMenu'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { cn } from '@/lib/utils'
-import { useWorkoutState } from '@/contexts/WorkoutContext'
+import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useAuthUser } from '@/lib/use-auth-user'
 import type { ProgramMeta, ProgramDifficulty } from '@calistenia/core/types'
 
@@ -21,11 +22,24 @@ export default function ProgramsScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const { programs, activeProgram } = useWorkoutState()
+  const { refreshPrograms } = useWorkoutActions()
   const user = useAuthUser()
   const userId = user?.id ?? null
 
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<FilterKey>('all')
+  const [refreshing, setRefreshing] = useState(false)
+
+  // Pull-to-refresh: invalida el catálogo y vuelve a pedirlo (escape manual si
+  // el caché quedó vacío). refreshPrograms ignora la llamada si no hay userId.
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await refreshPrograms()
+    } finally {
+      setRefreshing(false)
+    }
+  }, [refreshPrograms])
 
   // Chips de filtro derivados de los datos: solo mostramos lo que existe.
   // Un único "Todos" + facetas presentes (ámbito · dificultad · disciplina).
@@ -87,7 +101,10 @@ export default function ProgramsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="gap-3 px-4 pb-3 pt-2">
-        <Text className="font-bebas text-4xl leading-none text-foreground">{t('programs.title')}</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="font-bebas text-4xl leading-none text-foreground">{t('programs.title')}</Text>
+          <MenuButton />
+        </View>
 
         {/* Búsqueda */}
         <InputGroup>
@@ -144,6 +161,14 @@ export default function ProgramsScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         contentContainerClassName="px-4 pb-8 gap-2.5"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={LIME}
+            colors={[LIME]}
+          />
+        }
         ListHeaderComponent={
           <View className="gap-2.5 pb-0.5">
             <Pressable

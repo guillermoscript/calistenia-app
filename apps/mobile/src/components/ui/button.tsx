@@ -39,6 +39,14 @@ const buttonVariants = cva(
           'active:bg-accent dark:active:bg-accent/50',
           Platform.select({ web: 'hover:bg-accent dark:hover:bg-accent/50' })
         ),
+        // Lime accent action. Uses the --lime token directly (no `dark:bg-input`
+        // override like `outline`), so the tint survives twMerge and renders
+        // visibly in the dark-first app — the reusable fix for "invisible" lime
+        // outline buttons (e.g. the share trigger).
+        lime: cn(
+          'border border-lime/40 bg-lime/10 active:bg-lime/20',
+          Platform.select({ web: 'hover:bg-lime/20' })
+        ),
         link: '',
       },
       size: {
@@ -71,6 +79,7 @@ const buttonTextVariants = cva(
         ),
         secondary: 'text-secondary-foreground',
         ghost: 'group-active:text-accent-foreground',
+        lime: 'text-lime',
         link: cn(
           'text-primary group-active:underline',
           Platform.select({ web: 'underline-offset-4 hover:underline group-hover:underline' })

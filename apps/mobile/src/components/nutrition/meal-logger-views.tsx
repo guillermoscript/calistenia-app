@@ -49,6 +49,87 @@ export function MealTypeSelector({
   )
 }
 
+// ── Meal timing (finish time + duration) ──────────────────────────────────────
+
+function clampTimePart(v: string, max: number): string {
+  const n = parseInt(v, 10)
+  if (isNaN(n)) return ''
+  return String(Math.min(max, Math.max(0, n))).padStart(2, '0')
+}
+
+export function MealTimingRow({
+  hour,
+  minute,
+  duration,
+  onHourChange,
+  onMinuteChange,
+  onDurationChange,
+  t,
+}: {
+  hour: string
+  minute: string
+  duration: string
+  onHourChange: (v: string) => void
+  onMinuteChange: (v: string) => void
+  onDurationChange: (v: string) => void
+  t: Translate
+}) {
+  return (
+    <View className="flex-row items-center gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
+      {/* Finish time */}
+      <View className="gap-1">
+        <Text className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+          {t('nutrition.logger.finishedAt')}
+        </Text>
+        <View className="flex-row items-center">
+          <TextInput
+            value={hour}
+            onChangeText={(v) => onHourChange(v.replace(/[^0-9]/g, ''))}
+            onBlur={() => onHourChange(clampTimePart(hour, 23))}
+            keyboardType="number-pad"
+            maxLength={2}
+            accessibilityLabel={t('nutrition.logger.finishedAt')}
+            className="w-12 h-10 text-center rounded-lg bg-background text-foreground font-bebas"
+            style={{ fontSize: 20 }}
+          />
+          <Text className="font-bebas text-xl text-muted-foreground mx-1">:</Text>
+          <TextInput
+            value={minute}
+            onChangeText={(v) => onMinuteChange(v.replace(/[^0-9]/g, ''))}
+            onBlur={() => onMinuteChange(clampTimePart(minute, 59))}
+            keyboardType="number-pad"
+            maxLength={2}
+            className="w-12 h-10 text-center rounded-lg bg-background text-foreground font-bebas"
+            style={{ fontSize: 20 }}
+          />
+        </View>
+      </View>
+
+      {/* Duration (optional) */}
+      <View className="gap-1 flex-1">
+        <Text className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+          {t('nutrition.logger.duration')}
+        </Text>
+        <View className="flex-row items-center gap-1.5">
+          <TextInput
+            value={duration}
+            onChangeText={(v) => onDurationChange(v.replace(/[^0-9]/g, '').slice(0, 3))}
+            keyboardType="number-pad"
+            maxLength={3}
+            placeholder="—"
+            placeholderTextColor="#52525b"
+            className="w-16 h-10 text-center rounded-lg bg-background text-foreground font-bebas"
+            style={{ fontSize: 20 }}
+          />
+          <Text className="font-mono text-[11px] text-muted-foreground">
+            {t('nutrition.logger.durationUnit')}
+          </Text>
+        </View>
+      </View>
+    </View>
+  )
+}
+
 // ── Input method card ──────────────────────────────────────────────────────────
 
 export function InputMethodCard({

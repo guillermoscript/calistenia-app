@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { View, FlatList, Pressable, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -7,6 +7,7 @@ import { ChevronRight } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Input } from '@/components/ui/input'
+import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { localize } from '@calistenia/core/lib/i18n-db'
@@ -30,10 +31,24 @@ export default function LibraryScreen() {
     })
   }, [query, category, locale])
 
+  const openExercise = useCallback(
+    (id: string) => router.push({ pathname: '/exercise/[id]', params: { id } }),
+    [router],
+  )
+  const renderItem = useCallback(
+    ({ item }: { item: CatalogExercise }) => (
+      <ExerciseRow ex={item} locale={locale} onPress={openExercise} />
+    ),
+    [locale, openExercise],
+  )
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="gap-3 px-4 pb-2 pt-2">
-        <Text className="font-bebas text-4xl leading-none text-foreground">{t('nav.exercises')}</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="font-bebas text-4xl leading-none text-foreground">{t('nav.exercises')}</Text>
+          <MenuButton />
+        </View>
         <Input
           value={query}
           onChangeText={setQuery}
@@ -65,16 +80,17 @@ export default function LibraryScreen() {
         contentContainerClassName="px-4 pb-8 gap-2"
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<Text className="py-10 text-center text-muted-foreground">{t('common.noResults')}</Text>}
-        renderItem={({ item }) => <ExerciseRow ex={item} locale={locale} onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.id } })} />}
+        renderItem={renderItem}
       />
     </SafeAreaView>
   )
 }
 
-function ExerciseRow({ ex, locale, onPress }: { ex: CatalogExercise; locale: string; onPress: () => void }) {
+const ExerciseRow = memo(function ExerciseRow({ ex, locale, onPress }: { ex: CatalogExercise; locale: string; onPress: (id: string) => void }) {
+  const handlePress = useCallback(() => onPress(ex.id), [onPress, ex.id])
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
     >
       <View className="flex-1">
@@ -88,4 +104,4 @@ function ExerciseRow({ ex, locale, onPress }: { ex: CatalogExercise; locale: str
       <ChevronRight size={16} color="hsl(0 0% 55%)" />
     </Pressable>
   )
-}
+})

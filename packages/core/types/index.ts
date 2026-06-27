@@ -1,5 +1,8 @@
 import type { TranslatableField } from '../lib/i18n-db'
 
+// Integración smartwatch / hub de salud (Health Connect / HealthKit)
+export * from './health'
+
 // ─── Workout & Program Data ──────────────────────────────────────────────────
 
 export type DayId = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
@@ -11,6 +14,17 @@ export type Priority = 'high' | 'med' | 'low'
 export type ExerciseStatus = 'official' | 'private' | 'promoted'
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
+
+export interface ExerciseTempo {
+  /** Lowering phase duration in seconds (e.g. eccentric: 5 = "baja 5s") */
+  eccentric?: number
+  /** Pause at bottom position in seconds */
+  pauseBottom?: number
+  /** Lifting phase duration in seconds (1 = explosive) */
+  concentric?: number
+  /** Pause at top position in seconds */
+  pauseTop?: number
+}
 
 export interface Exercise {
   id: string
@@ -37,6 +51,7 @@ export interface Exercise {
   difficulty?: DifficultyLevel
   section?: 'warmup' | 'main' | 'cooldown'
   stretchType?: 'dynamic' | 'static'
+  tempo?: ExerciseTempo
 }
 
 export interface Workout {
@@ -162,6 +177,9 @@ export interface Settings {
   pr_lsit?: number
   pr_pistol?: number
   pr_handstand?: number
+  /** Universal PRs: exerciseId → best achieved reps. Authoritative for ALL
+   *  exercises. The 5 pr_* fields above are kept in sync for legacy UI. */
+  prs?: Record<string, number>
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -323,6 +341,17 @@ export interface MealTemplate {
   lastUsedAt: string
 }
 
+/** Plantilla reutilizable de sesión libre: la lista de ejercicios que el
+ *  usuario armó, para re-lanzar el mismo entreno otra vez. */
+export interface FreeSessionTemplate {
+  id?: string
+  user?: string
+  title: string
+  exercises: Exercise[]
+  usageCount: number
+  lastUsedAt: string
+}
+
 export interface FoodHistoryItem {
   id?: string
   user?: string
@@ -371,6 +400,10 @@ export interface NutritionEntry {
   aiModel?: string
   source?: NutritionSource
   loggedAt: string
+  /** Wall-clock time the user finished the meal (PB datetime). Falls back to loggedAt when unset. */
+  eatenAt?: string
+  /** How long the meal took, in minutes. */
+  durationMin?: number
   qualityScore?: QualityScore
   qualityBreakdown?: QualityBreakdown
   qualityMessage?: string
@@ -478,6 +511,10 @@ export interface CardioSession {
   avg_speed_kmh?: number
   max_speed_kmh?: number
   splits?: KmSplit[]
+  /** Frecuencia cardíaca y calorías reales importadas del reloj (Health Connect / HealthKit). */
+  hr_avg?: number
+  hr_max?: number
+  calories_actual?: number
 }
 
 // ─── Challenges ──────────────────────────────────────────────────────────────

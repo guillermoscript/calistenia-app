@@ -32,8 +32,12 @@ export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
   // useNutrition
   'calistenia_nutrition_entries',
   'calistenia_nutrition_goals',
+  // meal logger — last meal type chosen (seeds the picker on next open)
+  'calistenia_last_meal_type',
   // useFavorites
   'calistenia_exercise_favorites',
+  // useHealthSync — last successful health-hub (Health Connect/HealthKit) sync, per data type
+  'calistenia_health_last_sync',
   // React Query persister (caché serializado offline)
   'calistenia_rq_cache',
 ]

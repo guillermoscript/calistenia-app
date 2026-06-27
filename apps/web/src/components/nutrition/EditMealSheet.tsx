@@ -5,6 +5,8 @@ import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
 import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS } from '@calistenia/core/lib/style-tokens'
+import { isMidnightEatenAt } from '@calistenia/core/lib/meal-time'
+import { todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
 import { toast } from 'sonner'
 import type { NutritionEntry, FoodItem, MealType } from '@calistenia/core/types'
 
@@ -26,12 +28,31 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
   const { t } = useTranslation()
   const [mealType, setMealType] = useState<MealType>('desayuno')
   const [foods, setFoods] = useState<FoodItem[]>([])
+  const [eatenHour, setEatenHour] = useState('')
+  const [eatenMinute, setEatenMinute] = useState('')
+  const [durationInput, setDurationInput] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (entry) {
       setMealType(entry.mealType)
       setFoods(entry.foods.map(f => ({ ...f })))
+
+      // Prefer eatenAt unless it is the midnight sentinel (legacy unset value).
+      // When it is midnight/unset, fall back to the creation time (loggedAt) so
+      // the edit sheet shows a sane default instead of 00:00.
+      const useFallback = !entry.eatenAt || entry.eatenAt.length < 16 || isMidnightEatenAt(entry.eatenAt)
+      if (!useFallback) {
+        setEatenHour(entry.eatenAt!.slice(11, 13))
+        setEatenMinute(entry.eatenAt!.slice(14, 16))
+      } else {
+        const hm = localHMFromPB(entry.loggedAt)
+        if (hm) {
+          setEatenHour(hm.hour)
+          setEatenMinute(hm.minute)
+        }
+      }
+      setDurationInput(entry.durationMin != null ? String(entry.durationMin) : '')
     }
   }, [entry])
 
@@ -85,6 +106,14 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
     const totalCarbs = foods.reduce((s, f) => s + (Number(f.carbs) || 0), 0)
     const totalFat = foods.reduce((s, f) => s + (Number(f.fat) || 0), 0)
 
+    // Keep the finish time on the meal's own day; digits stored verbatim.
+    const hNum = Math.min(23, Math.max(0, parseInt(eatenHour, 10) || 0))
+    const mNum = Math.min(59, Math.max(0, parseInt(eatenMinute, 10) || 0))
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const baseDate = entry.eatenAt?.slice(0, 10) || utcToLocalDateStr(entry.loggedAt) || todayStr()
+    const eatenAt = `${baseDate} ${pad(hNum)}:${pad(mNum)}:00`
+    const durNum = durationInput.trim() ? Math.max(0, parseInt(durationInput, 10) || 0) : 0
+
     try {
       await onSave(entry.id, {
         mealType,
@@ -93,6 +122,8 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
         totalProtein,
         totalCarbs,
         totalFat,
+        eatenAt,
+        durationMin: durNum > 0 ? durNum : undefined,
       })
       toast.success(t('nutrition.edit.mealUpdated'))
       onOpenChange(false)
@@ -138,6 +169,44 @@ export default function EditMealSheet({ entry, open, onOpenChange, onSave }: Edi
                 </button>
               )
             })}
+          </div>
+
+          {/* Meal timing: finish time + optional duration */}
+          <div className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
+            <div className="space-y-1">
+              <div className="text-[9px] text-muted-foreground tracking-widest uppercase">{t('nutrition.logger.finishedAt')}</div>
+              <div className="flex items-center">
+                <Input
+                  value={eatenHour}
+                  onChange={e => setEatenHour(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
+                  onBlur={() => { const n = parseInt(eatenHour, 10); setEatenHour(isNaN(n) ? '' : String(Math.min(23, Math.max(0, n))).padStart(2, '0')) }}
+                  inputMode="numeric"
+                  aria-label={t('nutrition.logger.finishedAt')}
+                  className="w-12 h-9 text-center font-bebas text-lg"
+                />
+                <span className="font-bebas text-lg text-muted-foreground mx-1">:</span>
+                <Input
+                  value={eatenMinute}
+                  onChange={e => setEatenMinute(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
+                  onBlur={() => { const n = parseInt(eatenMinute, 10); setEatenMinute(isNaN(n) ? '' : String(Math.min(59, Math.max(0, n))).padStart(2, '0')) }}
+                  inputMode="numeric"
+                  className="w-12 h-9 text-center font-bebas text-lg"
+                />
+              </div>
+            </div>
+            <div className="space-y-1 flex-1">
+              <div className="text-[9px] text-muted-foreground tracking-widest uppercase">{t('nutrition.logger.duration')}</div>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  value={durationInput}
+                  onChange={e => setDurationInput(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+                  inputMode="numeric"
+                  placeholder="—"
+                  className="w-16 h-9 text-center font-bebas text-lg"
+                />
+                <span className="text-[11px] text-muted-foreground">{t('nutrition.logger.durationUnit')}</span>
+              </div>
+            </div>
           </div>
 
           {/* Foods list */}

@@ -8,9 +8,10 @@ import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { useWorkoutState } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
-import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
-import { localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
-import type { SessionDone, WeekDay, CardioSession } from '@calistenia/core/types'
+import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { fetchMonthActivity } from '@calistenia/core/lib/monthActivity'
+import type { DayNutritionSummary, DayWaterSummary, CircuitSessionLite, WeightEntryLite, BodyMeasurementLite, DayPhotoSummary, LumbarCheckLite } from '@calistenia/core/lib/monthActivity'
+import type { SessionDone, WeekDay, CardioSession, SleepEntry } from '@calistenia/core/types'
 
 function getMonthDays(year: number, month: number) {
   const first = new Date(year, month, 1)
@@ -44,15 +45,6 @@ export interface CalendarEntry {
   circuitDurationSeconds?: number
 }
 
-interface DayNutritionSummary {
-  meals: number
-  calories: number
-}
-
-interface DayWaterSummary {
-  totalMl: number
-}
-
 export default function CalendarPage() {
   const { t } = useTranslation()
   const { progress, weekDays, activeProgram, settings } = useWorkoutState()
@@ -67,9 +59,14 @@ export default function CalendarPage() {
   const [viewMonth, setViewMonth] = useState(today.getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([])
-  const [circuitSessions, setCircuitSessions] = useState<any[]>([])
+  const [circuitSessions, setCircuitSessions] = useState<CircuitSessionLite[]>([])
   const [nutritionByDate, setNutritionByDate] = useState<Record<string, DayNutritionSummary>>({})
   const [waterByDate, setWaterByDate] = useState<Record<string, DayWaterSummary>>({})
+  const [sleepByDate, setSleepByDate] = useState<Record<string, SleepEntry>>({})
+  const [weightByDate, setWeightByDate] = useState<Record<string, WeightEntryLite>>({})
+  const [measurementByDate, setMeasurementByDate] = useState<Record<string, BodyMeasurementLite>>({})
+  const [photosByDate, setPhotosByDate] = useState<Record<string, DayPhotoSummary>>({})
+  const [lumbarByDate, setLumbarByDate] = useState<Record<string, LumbarCheckLite>>({})
 
   const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate())
   const days = useMemo(() => getMonthDays(viewYear, viewMonth), [viewYear, viewMonth])
@@ -82,97 +79,23 @@ export default function CalendarPage() {
     return () => document.removeEventListener('visibilitychange', handler)
   }, [])
 
-  // Fetch cardio, nutrition, and water data for this month
+  // Fetch every activity source for this month via the shared core util
+  // (TZ-correct bucketing lives there; reused by the native calendar).
   useEffect(() => {
     if (!userId) return
     let cancelled = false
-    const monthStart = formatDate(viewYear, viewMonth, 1)
-    const nextMonth = viewMonth === 11
-      ? formatDate(viewYear + 1, 0, 1)
-      : formatDate(viewYear, viewMonth + 1, 1)
-    const pbStart = localMidnightAsUTC(monthStart)
-    const pbEnd = localMidnightAsUTC(nextMonth)
-
-    const load = async () => {
-      const available = await isPocketBaseAvailable()
-      if (!available || cancelled) return
-
-      // Fetch all four in parallel
-      const [cardioRes, circuitRes, nutritionRes, waterRes] = await Promise.allSettled([
-        pb.collection('cardio_sessions').getList(1, 200, {
-          filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at < {:end}', {
-            uid: userId, start: pbStart, end: pbEnd,
-          }),
-          sort: '-started_at',
-          fields: 'id,activity_type,distance_km,duration_seconds,started_at,finished_at,note',
-        }),
-        pb.collection('circuit_sessions').getList(1, 200, {
-          filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at < {:end}', {
-            uid: userId, start: pbStart, end: pbEnd,
-          }),
-          sort: '-started_at',
-          fields: 'id,circuit_name,mode,rounds_completed,rounds_target,duration_seconds,started_at,finished_at,note',
-        }),
-        pb.collection('nutrition_entries').getList(1, 500, {
-          filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
-            uid: userId, start: pbStart, end: pbEnd,
-          }),
-          fields: 'id,logged_at,total_calories',
-        }),
-        pb.collection('water_entries').getList(1, 500, {
-          filter: pb.filter('user = {:uid} && logged_at >= {:start} && logged_at < {:end}', {
-            uid: userId, start: pbStart, end: pbEnd,
-          }),
-          fields: 'id,logged_at,amount_ml',
-        }),
-      ])
-
+    fetchMonthActivity(userId, viewYear, viewMonth).then(data => {
       if (cancelled) return
-
-      // Cardio
-      if (cardioRes.status === 'fulfilled') {
-        setCardioSessions(cardioRes.value.items as unknown as CardioSession[])
-      } else {
-        console.warn('Calendar: cardio fetch failed', cardioRes.reason)
-      }
-
-      // Circuit
-      if (circuitRes.status === 'fulfilled') {
-        setCircuitSessions(circuitRes.value.items)
-      } else {
-        console.warn('Calendar: circuit fetch failed', circuitRes.reason)
-      }
-
-      // Nutrition — aggregate by date (convert UTC timestamps to local dates)
-      if (nutritionRes.status === 'fulfilled') {
-        const map: Record<string, DayNutritionSummary> = {}
-        for (const item of nutritionRes.value.items) {
-          const date = utcToLocalDateStr((item as any).logged_at || '')
-          if (!date) continue
-          if (!map[date]) map[date] = { meals: 0, calories: 0 }
-          map[date].meals++
-          map[date].calories += (item as any).total_calories || 0
-        }
-        setNutritionByDate(map)
-      } else {
-        console.warn('Calendar: nutrition fetch failed', nutritionRes.reason)
-      }
-
-      // Water — aggregate by date (convert UTC timestamps to local dates)
-      if (waterRes.status === 'fulfilled') {
-        const map: Record<string, DayWaterSummary> = {}
-        for (const item of waterRes.value.items) {
-          const date = utcToLocalDateStr((item as any).logged_at || '')
-          if (!date) continue
-          if (!map[date]) map[date] = { totalMl: 0 }
-          map[date].totalMl += (item as any).amount_ml || 0
-        }
-        setWaterByDate(map)
-      } else {
-        console.warn('Calendar: water fetch failed', waterRes.reason)
-      }
-    }
-    load()
+      setCardioSessions(data.cardio)
+      setCircuitSessions(data.circuits)
+      setNutritionByDate(data.nutritionByDate)
+      setWaterByDate(data.waterByDate)
+      setSleepByDate(data.sleepByDate)
+      setWeightByDate(data.weightByDate)
+      setMeasurementByDate(data.measurementByDate)
+      setPhotosByDate(data.photosByDate)
+      setLumbarByDate(data.lumbarByDate)
+    })
     return () => { cancelled = true }
   }, [userId, viewYear, viewMonth, refreshKey])
 
@@ -245,10 +168,16 @@ export default function CalendarPage() {
       if (d === null) return
       const date = formatDate(viewYear, viewMonth, d)
       const count = sessionsByDate[date]?.length || 0
-      if (count > 0) { totalSessions += count; activeDays++ }
+      totalSessions += count
+      // "Active day" = any logged activity (session or wellness), so the count
+      // matches the dots painted in the grid.
+      const hasWellness = !!nutritionByDate[date] || !!waterByDate[date]
+        || !!sleepByDate[date] || !!weightByDate[date]
+        || !!measurementByDate[date] || !!photosByDate[date] || !!lumbarByDate[date]
+      if (count > 0 || hasWellness) activeDays++
     })
     return { totalSessions, activeDays }
-  }, [days, viewYear, viewMonth, sessionsByDate])
+  }, [days, viewYear, viewMonth, sessionsByDate, nutritionByDate, waterByDate, sleepByDate, weightByDate, measurementByDate, photosByDate, lumbarByDate])
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
@@ -332,10 +261,15 @@ export default function CalendarPage() {
               const sessions = sessionsByDate[date] || []
               const nutrition = nutritionByDate[date]
               const water = waterByDate[date]
+              const sleep = sleepByDate[date]
+              const weight = weightByDate[date]
+              const measurement = measurementByDate[date]
+              const photos = photosByDate[date]
+              const lumbar = lumbarByDate[date]
               const isToday = date === todayStr
               const isSelected = date === selectedDate
               const hasSession = sessions.length > 0
-              const hasAnyData = hasSession || !!nutrition || !!water
+              const hasAnyData = hasSession || !!nutrition || !!water || !!sleep || !!weight || !!measurement || !!photos || !!lumbar
               const isFuture = date > todayStr
 
               return (
@@ -369,6 +303,11 @@ export default function CalendarPage() {
                       ))}
                       {nutrition && <div className="size-1 rounded-full bg-amber-400" />}
                       {water && <div className="size-1 rounded-full bg-cyan-400" />}
+                      {sleep && <div className="size-1 rounded-full bg-indigo-400" />}
+                      {weight && <div className="size-1 rounded-full bg-rose-400" />}
+                      {measurement && <div className="size-1 rounded-full bg-teal-400" />}
+                      {photos && <div className="size-1 rounded-full bg-fuchsia-400" />}
+                      {lumbar && <div className="size-1 rounded-full bg-emerald-400" />}
                     </div>
                   )}
                 </button>
@@ -440,7 +379,8 @@ export default function CalendarPage() {
                       const circuitId = s.workoutKey.replace('circuit_', '')
                       navigate(`/circuit/history/${circuitId}`)
                     } else if (isCardio) {
-                      navigate('/cardio')
+                      const cardioId = s.workoutKey.replace('cardio_', '')
+                      navigate(cardioId ? `/cardio/session/${cardioId}` : '/cardio')
                     } else {
                       navigate(`/session/${s.date}/${s.workoutKey}`)
                     }
@@ -509,8 +449,8 @@ export default function CalendarPage() {
               <div className="text-xs text-muted-foreground">{t('calendar.upcoming')}</div>
             )}
 
-            {/* Nutrition & Water summary for selected day */}
-            {selectedDate && (nutritionByDate[selectedDate] || waterByDate[selectedDate]) && (
+            {/* Nutrition · Water · Sleep · Weight · Measurements · Photos · Lumbar summary for selected day */}
+            {selectedDate && (nutritionByDate[selectedDate] || waterByDate[selectedDate] || sleepByDate[selectedDate] || weightByDate[selectedDate] || measurementByDate[selectedDate] || photosByDate[selectedDate] || lumbarByDate[selectedDate]) && (
               <div className={cn('flex gap-4 flex-wrap', selectedSessions.length > 0 || selectedPlanned ? 'mt-4 pt-4 border-t border-border/60' : 'mt-2')}>
                 {nutritionByDate[selectedDate] && (
                   <button
@@ -530,6 +470,56 @@ export default function CalendarPage() {
                     <div className="text-[11px]">
                       <span className="text-cyan-400 font-medium">{waterByDate[selectedDate].totalMl} ml</span>
                       <span className="text-muted-foreground ml-1.5">{t('calendar.waterLabel')}</span>
+                    </div>
+                  </div>
+                )}
+                {sleepByDate[selectedDate] && (
+                  <button
+                    onClick={() => navigate('/sleep')}
+                    className="flex items-center gap-2 px-3 py-2 bg-indigo-400/5 border border-indigo-400/15 rounded-lg hover:border-indigo-400/30 transition-colors"
+                  >
+                    <div className="size-2 rounded-full bg-indigo-400" />
+                    <div className="text-[11px]">
+                      <span className="text-indigo-400 font-medium">
+                        {Math.floor((sleepByDate[selectedDate].duration_minutes || 0) / 60)}h {(sleepByDate[selectedDate].duration_minutes || 0) % 60}m
+                      </span>
+                      <span className="text-muted-foreground ml-1.5">{t('calendar.sleepLabel')}</span>
+                    </div>
+                  </button>
+                )}
+                {weightByDate[selectedDate] && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-rose-400/5 border border-rose-400/15 rounded-lg">
+                    <div className="size-2 rounded-full bg-rose-400" />
+                    <div className="text-[11px]">
+                      <span className="text-rose-400 font-medium">{weightByDate[selectedDate].weight_kg} kg</span>
+                      <span className="text-muted-foreground ml-1.5">{t('calendar.weightLabel')}</span>
+                    </div>
+                  </div>
+                )}
+                {measurementByDate[selectedDate] && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-teal-400/5 border border-teal-400/15 rounded-lg">
+                    <div className="size-2 rounded-full bg-teal-400" />
+                    <div className="text-[11px]">
+                      <span className="text-teal-400 font-medium capitalize">{t('calendar.measurementLabel')}</span>
+                    </div>
+                  </div>
+                )}
+                {photosByDate[selectedDate] && (
+                  <button
+                    onClick={() => navigate('/progress')}
+                    className="flex items-center gap-2 px-3 py-2 bg-fuchsia-400/5 border border-fuchsia-400/15 rounded-lg hover:border-fuchsia-400/30 transition-colors"
+                  >
+                    <div className="size-2 rounded-full bg-fuchsia-400" />
+                    <div className="text-[11px]">
+                      <span className="text-fuchsia-400 font-medium">{t('calendar.photoLabel', { count: photosByDate[selectedDate].count })}</span>
+                    </div>
+                  </button>
+                )}
+                {lumbarByDate[selectedDate] && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-emerald-400/5 border border-emerald-400/15 rounded-lg">
+                    <div className="size-2 rounded-full bg-emerald-400" />
+                    <div className="text-[11px]">
+                      <span className="text-emerald-400 font-medium capitalize">{t('calendar.lumbarLabel')} {lumbarByDate[selectedDate].lumbar_score}/5</span>
                     </div>
                   </div>
                 )}

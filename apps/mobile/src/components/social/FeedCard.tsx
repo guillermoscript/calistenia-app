@@ -1,5 +1,14 @@
 /** Tarjeta de actividad del feed social — muestra avatar, nombre, workout y reacciones. */
-import { View, Image, Pressable } from 'react-native'
+import { useEffect } from 'react'
+import { View, Pressable, StyleSheet } from 'react-native'
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  useReducedMotion,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated'
+import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
@@ -18,6 +27,11 @@ interface FeedCardProps {
   onReact: (emoji: string) => void
   commentCount: number
   onComment: () => void
+  /**
+   * Cuando pasa a true (deep-link de una notificación), la tarjeta hace un flash
+   * de fondo lime que se desvanece en ~1s para que el usuario la localice rápido.
+   */
+  highlight?: boolean
 }
 
 export function FeedCard({
@@ -27,10 +41,22 @@ export function FeedCard({
   onReact,
   commentCount,
   onComment,
+  highlight,
 }: FeedCardProps) {
   const router = useRouter()
   const phaseColor = PHASE_COLORS[item.phase]
   const isCardio = item.type === 'cardio'
+
+  // Flash de resaltado: aparece al instante y se desvanece. Una capa lime detrás
+  // del contenido; no intercepta toques. Honra "reducir movimiento" (sin fade).
+  const reduceMotion = useReducedMotion()
+  const flash = useSharedValue(0)
+  useEffect(() => {
+    if (!highlight) return
+    flash.set(1)
+    flash.set(withTiming(0, { duration: reduceMotion ? 1 : 1100, easing: Easing.out(Easing.quad) }))
+  }, [highlight, reduceMotion, flash])
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flash.get() }))
 
   const handleShare = () => {
     if (isCardio) {
@@ -50,14 +76,25 @@ export function FeedCard({
   }
 
   return (
-    <View className="px-4 py-3.5 bg-card border border-border rounded-xl">
+    <View className="px-4 py-3.5 bg-card border border-border rounded-xl overflow-hidden">
+      {/* Capa de flash de resaltado — detrás del contenido, no captura toques.
+          Tinte lime (alpha 0.3) cuyo opacity va de 1→0: glow sutil, on-brand. */}
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(163, 230, 53, 0.3)' }, flashStyle]}
+      />
+
       {/* Avatar + nombre + tiempo */}
       <View className="flex-row items-center gap-2.5 mb-2.5">
         <View className="size-9 rounded-full bg-accent items-center justify-center overflow-hidden shrink-0">
           {item.avatarUrl ? (
             <Image
               source={{ uri: item.avatarUrl }}
-              className="size-full"
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              transition={150}
+              cachePolicy="memory-disk"
+              recyclingKey={item.id}
               accessibilityLabel={item.displayName}
             />
           ) : (
@@ -104,7 +141,7 @@ export function FeedCard({
                 className="font-sans-italic text-[11px] text-muted-foreground truncate mt-1.5 border-t border-border/50 pt-1.5"
                 numberOfLines={2}
               >
-                "{item.note}"
+                &quot;{item.note}&quot;
               </Text>
             )}
           </View>
@@ -135,7 +172,7 @@ export function FeedCard({
               className="font-sans-italic text-[11px] text-muted-foreground truncate mt-1.5 border-t border-border/50 pt-1.5"
               numberOfLines={2}
             >
-              "{item.note}"
+              &quot;{item.note}&quot;
             </Text>
           )}
         </View>

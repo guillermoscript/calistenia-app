@@ -32,6 +32,7 @@ import { measureOffset, serverNow, msUntil } from '@/lib/race/raceClock'
 import { createRaceTracker, type RaceTracker, type RaceTrackerStats } from '@/lib/race/raceTracker'
 import { saveRaceSnapshot, loadRaceSnapshot, clearRaceSnapshot } from '@/lib/race/raceSnapshot'
 import { RaceAuthError, RaceNotFoundError } from '@/lib/race/errors'
+import { Sentry } from '@/lib/instrument'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -326,7 +327,7 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         retryCountRef.current = count
         const backoff = PUSH_RETRY_BACKOFF_MS[Math.min(count - 1, PUSH_RETRY_BACKOFF_MS.length - 1)]
         setTimeout(() => {
-          updateProgress(me.id, payload).catch(() => {})
+          updateProgress(me.id, payload).catch((e) => { Sentry.captureException(e, { tags: { feature: 'race', op: 'push_progress_retry' } }) })
         }, backoff)
         if (count >= 3) {
           setLastError({ kind: 'push', message: (err as Error)?.message || 'Push failed repeatedly' })
@@ -462,17 +463,23 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
 
   const clearError = useCallback(() => setLastError(null), [])
 
-  const value: RaceContextValue = {
-    phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError,
-    actions: {
-      join,
-      markReady: markReadyAction,
-      startCountdown: startCountdownAction,
-      cancelRace: cancelRaceAction,
-      finishRace: finishRaceAction,
-      leave: leaveAction,
-    },
-  }
+  // Memoizado: durante una carrera activa el provider re-renderiza hasta a 2 Hz
+  // (myStats cada 500ms, participants cada 3s). Sin memo, cada render recrea este
+  // objeto y re-renderiza a todos los consumidores de useRaceContext().
+  const value = useMemo<RaceContextValue>(
+    () => ({
+      phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError,
+      actions: {
+        join,
+        markReady: markReadyAction,
+        startCountdown: startCountdownAction,
+        cancelRace: cancelRaceAction,
+        finishRace: finishRaceAction,
+        leave: leaveAction,
+      },
+    }),
+    [phase, race, participants, me, isCreator, hasJoined, myStats, lastError, clearError, join, markReadyAction, startCountdownAction, cancelRaceAction, finishRaceAction, leaveAction],
+  )
 
   return <RaceContext.Provider value={value}>{children}</RaceContext.Provider>
 }

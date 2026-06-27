@@ -7,16 +7,19 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { X, Plus } from 'lucide-react-native'
+import { X, Plus, RotateCcw, Trash2 } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { COLORS } from '@/lib/theme'
+import { haptics } from '@/lib/haptics'
+import { useAuthUser } from '@/lib/use-auth-user'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { catalogToExercise } from '@/lib/catalog-to-exercise'
 import { moveItem, removeAt } from '@/lib/reorder'
@@ -25,16 +28,31 @@ import { useStartFreeSession } from '@/lib/start-free-session'
 import { WarmupCooldownPrompt } from '@/components/free-session/WarmupCooldownPrompt'
 import { ReorderControls } from '@/components/free-session/ReorderControls'
 import { AISessionTab } from '@/components/free-session/AISessionTab'
+import CircuitBuilder from '@/components/circuit/CircuitBuilder'
+import { useCircuitSession } from '@/contexts/CircuitSessionContext'
+import { useFreeSessionTemplates } from '@calistenia/core/hooks/useFreeSessionTemplates'
 import { localize } from '@calistenia/core/lib/i18n-db'
-import type { Exercise } from '@calistenia/core/types'
+import type { CircuitDefinition, Exercise, FreeSessionTemplate } from '@calistenia/core/types'
 
 export default function FreeSessionScreen() {
   const router = useRouter()
   const { i18n } = useTranslation()
   const locale = i18n.language || 'es'
   const startFreeSession = useStartFreeSession()
+  const { startCircuit } = useCircuitSession()
+  const authUser = useAuthUser()
+  const { templates, useTemplate, deleteTemplate } = useFreeSessionTemplates(authUser?.id ?? null)
 
-  const [mode, setMode] = useState<'manual' | 'ai'>('manual')
+  // Re-lanzar una plantilla guardada: arranca la misma sesión al instante y
+  // registra el uso en segundo plano (no bloquea la navegación).
+  const relaunchTemplate = (tpl: FreeSessionTemplate) => {
+    if (!tpl.exercises?.length) return
+    haptics.medium()
+    startFreeSession(tpl.exercises, tpl.title || 'Sesión libre')
+    if (tpl.id) void useTemplate(tpl.id)
+  }
+
+  const [mode, setMode] = useState<'manual' | 'circuit' | 'ai'>('manual')
   const [view, setView] = useState<'pick' | 'review'>('pick')
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('todos')
@@ -52,6 +70,8 @@ export default function FreeSessionScreen() {
   // ── Selection helpers ──────────────────────────────────────────────────────
 
   const selectedIds = useMemo(() => new Set(selected.map(e => e.id)), [selected])
+  // Posición 1-based por id → evita un findIndex O(n) por fila en la lista de 307.
+  const selectedPositions = useMemo(() => new Map(selected.map((e, i) => [e.id, i + 1])), [selected])
 
   function toggleExercise(ex: CatalogExercise) {
     setSelected(prev =>
@@ -72,9 +92,20 @@ export default function FreeSessionScreen() {
     startFreeSession([...warmup, ...main, ...cooldown], 'Sesión libre')
   }
 
+  // Circuito / Cronometrado: arranca el motor de circuitos y abre el runner.
+  function handleCircuitStart(circuit: CircuitDefinition) {
+    haptics.medium()
+    startCircuit(circuit, 'custom')
+    router.push('/circuit')
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const title = mode === 'ai' ? 'Coach IA' : view === 'pick' ? 'Sesión libre' : 'Tu sesión'
+  const title =
+    mode === 'ai' ? 'Coach IA'
+    : mode === 'circuit' ? 'Circuitos'
+    : view === 'pick' ? 'Sesión libre'
+    : 'Tu sesión'
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background">
@@ -103,12 +134,12 @@ export default function FreeSessionScreen() {
         </Pressable>
       </View>
 
-      {/* Manual | IA segmented control */}
+      {/* Manual | Circuito | IA segmented control */}
       <View className="mx-4 mb-3 flex-row rounded-xl bg-muted/40 p-1">
-        {(['manual', 'ai'] as const).map(m => (
+        {(['manual', 'circuit', 'ai'] as const).map(m => (
           <Pressable
             key={m}
-            onPress={() => setMode(m)}
+            onPress={() => { haptics.selection(); setMode(m) }}
             className={cn(
               'flex-1 items-center rounded-lg py-2 active:opacity-80',
               mode === m && 'bg-card',
@@ -120,7 +151,7 @@ export default function FreeSessionScreen() {
                 mode === m ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
-              {m === 'manual' ? 'Manual' : 'Coach IA'}
+              {m === 'manual' ? 'Manual' : m === 'circuit' ? 'Circuito' : 'IA'}
             </Text>
           </Pressable>
         ))}
@@ -134,6 +165,21 @@ export default function FreeSessionScreen() {
         >
           <AISessionTab />
         </KeyboardAvoidingView>
+      ) : mode === 'circuit' ? (
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+        >
+          <ScrollView
+            className="flex-1"
+            contentContainerClassName="px-4 pb-10"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+          >
+            <CircuitBuilder onStart={handleCircuitStart} />
+          </ScrollView>
+        </KeyboardAvoidingView>
       ) : view === 'pick' ? (
         <PickView
           locale={locale}
@@ -144,8 +190,12 @@ export default function FreeSessionScreen() {
           filtered={filtered}
           selectedIds={selectedIds}
           selected={selected}
+          selectedPositions={selectedPositions}
           onToggle={toggleExercise}
           onContinue={() => setView('review')}
+          templates={templates}
+          onRelaunchTemplate={relaunchTemplate}
+          onDeleteTemplate={deleteTemplate}
         />
       ) : (
         <ReviewView
@@ -169,6 +219,70 @@ export default function FreeSessionScreen() {
   )
 }
 
+// ── Saved templates (re-run a past free session) ────────────────────────────
+
+function SavedTemplates({
+  locale,
+  templates,
+  onRelaunch,
+  onDelete,
+}: {
+  locale: string
+  templates: FreeSessionTemplate[]
+  onRelaunch: (tpl: FreeSessionTemplate) => void
+  onDelete: (id: string) => void
+}) {
+  const { t } = useTranslation()
+
+  const confirmDelete = (tpl: FreeSessionTemplate) => {
+    if (!tpl.id) return
+    Alert.alert(t('freeSession.deleteTemplate'), tpl.title || '', [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('freeSession.delete'), style: 'destructive', onPress: () => onDelete(tpl.id!) },
+    ])
+  }
+
+  return (
+    <View className="mb-4">
+      <Text className="mb-2 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+        {t('freeSession.savedTemplates')}
+      </Text>
+      <View className="gap-1.5">
+        {templates.map(tpl => {
+          const count = tpl.exercises.filter(e => !e.section || e.section === 'main').length
+          return (
+            <Pressable
+              key={tpl.id}
+              onPress={() => onRelaunch(tpl)}
+              className="flex-row items-center gap-3 rounded-xl border border-lime/30 bg-lime/5 px-3 py-2.5 active:opacity-70"
+            >
+              <View className="h-7 w-7 items-center justify-center rounded-full bg-lime/15">
+                <RotateCcw size={14} color={COLORS.lime} />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+                  {tpl.title || t('freeSession.freeSessionTitle')}
+                </Text>
+                <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {t('freeSession.exerciseCount', { count })}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => confirmDelete(tpl)}
+                hitSlop={10}
+                className="p-1.5 active:opacity-60"
+                accessibilityLabel={t('freeSession.deleteTemplate')}
+              >
+                <Trash2 size={15} color={COLORS.mutedIcon} />
+              </Pressable>
+            </Pressable>
+          )
+        })}
+      </View>
+    </View>
+  )
+}
+
 // ── Pick view ──────────────────────────────────────────────────────────────
 
 function PickView({
@@ -180,8 +294,12 @@ function PickView({
   filtered,
   selectedIds,
   selected,
+  selectedPositions,
   onToggle,
   onContinue,
+  templates,
+  onRelaunchTemplate,
+  onDeleteTemplate,
 }: {
   locale: string
   search: string
@@ -191,10 +309,18 @@ function PickView({
   filtered: CatalogExercise[]
   selectedIds: Set<string>
   selected: CatalogExercise[]
+  selectedPositions: Map<string, number>
   onToggle: (ex: CatalogExercise) => void
   onContinue: () => void
+  templates: FreeSessionTemplate[]
+  onRelaunchTemplate: (tpl: FreeSessionTemplate) => void
+  onDeleteTemplate: (id: string) => void
 }) {
   const categories = ['todos', ...CATALOG_CATEGORIES]
+  // Las plantillas solo se muestran en la vista "limpia" (sin búsqueda ni
+  // filtro) para no estorbar al buscar ejercicios.
+  const showTemplates =
+    templates.length > 0 && search.trim() === '' && activeCategory === 'todos'
 
   return (
     <View className="flex-1">
@@ -245,9 +371,19 @@ function PickView({
         contentContainerClassName="px-4 pb-24 gap-1.5"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        ListHeaderComponent={
+          showTemplates ? (
+            <SavedTemplates
+              locale={locale}
+              templates={templates}
+              onRelaunch={onRelaunchTemplate}
+              onDelete={onDeleteTemplate}
+            />
+          ) : null
+        }
         renderItem={({ item }) => {
           const isSelected = selectedIds.has(item.id)
-          const position = isSelected ? selected.findIndex(e => e.id === item.id) + 1 : null
+          const position = selectedPositions.get(item.id) ?? null
           return (
             <Pressable
               onPress={() => onToggle(item)}

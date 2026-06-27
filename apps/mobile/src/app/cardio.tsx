@@ -30,6 +30,7 @@ import { formatDuration, formatPace, formatSpeed, assessTrackQuality } from '@ca
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import { op } from '@calistenia/core/lib/analytics'
 import type { CardioActivityType, CardioSession } from '@calistenia/core/types'
+import { Sentry } from '@/lib/instrument'
 
 const ACTIVITIES: CardioActivityType[] = ['running', 'walking', 'cycling']
 const LIME = 'hsl(74 90% 45%)'
@@ -67,7 +68,7 @@ export default function CardioScreen() {
   useEffect(() => {
     if (!isIdle && !savedSession) return
     setHistoryLoading(true)
-    getHistory(20).then(setHistory).catch(() => {}).finally(() => setHistoryLoading(false))
+    getHistory(20).then(setHistory).catch((e) => { Sentry.captureException(e, { tags: { feature: 'cardio', op: 'load_history' } }) }).finally(() => setHistoryLoading(false))
     void loadStats()
   }, [isIdle, getHistory, loadStats]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -76,7 +77,7 @@ export default function CardioScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await Promise.all([
-      getHistory(20).then(setHistory).catch(() => {}),
+      getHistory(20).then(setHistory).catch((e) => { Sentry.captureException(e, { tags: { feature: 'cardio', op: 'refresh_history' } }) }),
       loadStats(),
     ])
     setRefreshing(false)

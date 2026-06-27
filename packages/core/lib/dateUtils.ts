@@ -108,6 +108,26 @@ export function localMinutesSinceMidnight(): number {
   return n.hour() * 60 + n.minute()
 }
 
+/**
+ * Format a PocketBase UTC timestamp (e.g. "2026-06-24 13:30:00.000Z") as a
+ * 24-hour "HH:mm" label in the user's timezone. Returns '' on invalid input.
+ */
+export function formatTimeHHmm(pbTimestamp: string): string {
+  const d = dayjs.utc(pbTimestamp.replace(' ', 'T'))
+  return d.isValid() ? d.tz(_tz).format('HH:mm') : ''
+}
+
+/**
+ * Extract { hour, minute } as zero-padded 2-char strings in the user's timezone
+ * from a PocketBase UTC timestamp. Used to seed HH/MM editor inputs; null on bad input.
+ */
+export function localHMFromPB(pbTimestamp: string): { hour: string; minute: string } | null {
+  const d = dayjs.utc(pbTimestamp.replace(' ', 'T'))
+  if (!d.isValid()) return null
+  const local = d.tz(_tz)
+  return { hour: local.format('HH'), minute: local.format('mm') }
+}
+
 /** Convert a UTC timestamp string to YYYY-MM-DD in user's timezone. */
 export function utcToLocalDateStr(utcTimestamp: string): string {
   return dayjs.utc(utcTimestamp).tz(_tz).format('YYYY-MM-DD')

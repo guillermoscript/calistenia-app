@@ -47,6 +47,8 @@ function mapPBToEntry(r: any): NutritionEntry {
     aiModel: r.ai_model || undefined,
     source: (r.source as NutritionSource) || undefined,
     loggedAt: r.logged_at,
+    eatenAt: r.eaten_at || undefined,
+    durationMin: r.duration_min != null && r.duration_min !== '' ? Number(r.duration_min) : undefined,
     qualityScore: r.quality_score || undefined,
     qualityBreakdown: r.quality_breakdown || undefined,
     qualityMessage: r.quality_message || undefined,
@@ -167,6 +169,12 @@ export function useNutrition(userId: string | null) {
   const entries = entriesQuery.data ?? []
   const goals = goalsQuery.data ?? null
   const isReady = !userId || entriesQuery.isFetched
+
+  // Mirror entries into a ref so identity-stable callbacks (e.g. getRecentEntries)
+  // can read the latest cache without listing `entries` in their deps — otherwise
+  // every save/edit/delete churns their identity and re-fires dependent effects.
+  const entriesRef = useRef(entries)
+  entriesRef.current = entries
 
   // ─── Helpers de escritura sobre la caché + LS ─────────────────────────────
   const patchEntries = useCallback((updater: (prev: NutritionEntry[]) => NutritionEntry[]) => {
@@ -304,7 +312,10 @@ export function useNutrition(userId: string | null) {
   // ─── CRUD: saveEntry ──────────────────────────────────────────────────────
   const saveEntry = useCallback(async (
     entry: Omit<NutritionEntry, 'id'>,
-    photoFiles?: File[],
+    // Web passes File[]; mobile passes Blob[] (URIs read to Blob via XHR, since
+    // expo/fetch's FormData rejects RN's { uri, name, type } shape). Both append
+    // to the 'photos' multipart field so the record is created WITH photos.
+    photoFiles?: Array<File | Blob>,
   ): Promise<NutritionEntry> => {
     let saved: NutritionEntry = { ...entry, id: `local_${Date.now()}`, loggedAt: entry.loggedAt || nowLocalForPB() }
     if (usePB && userId) {
@@ -321,7 +332,11 @@ export function useNutrition(userId: string | null) {
           formData.append('total_fat', String(entry.totalFat || 0))
           if (entry.aiModel) formData.append('ai_model', entry.aiModel)
           if (entry.source) formData.append('source', entry.source)
-          for (const file of photoFiles) formData.append('photos', file)
+          if (entry.eatenAt) formData.append('eaten_at', entry.eatenAt)
+          if (entry.durationMin != null) formData.append('duration_min', String(entry.durationMin))
+          // Provide an explicit filename: File carries its own .name, but a bare
+          // Blob (mobile) has none, which some servers reject — fall back to one.
+          for (const file of photoFiles) formData.append('photos', file, (file as { name?: string }).name || 'photo.jpg')
           body = formData
         } else {
           body = {
@@ -330,6 +345,8 @@ export function useNutrition(userId: string | null) {
             total_carbs: entry.totalCarbs || 0, total_fat: entry.totalFat || 0,
             ...(entry.aiModel ? { ai_model: entry.aiModel } : {}),
             ...(entry.source ? { source: entry.source } : {}),
+            ...(entry.eatenAt ? { eaten_at: entry.eatenAt } : {}),
+            ...(entry.durationMin != null ? { duration_min: entry.durationMin } : {}),
           }
         }
         if (entry.qualityScore) {
@@ -349,7 +366,14 @@ export function useNutrition(userId: string | null) {
         const rec: any = await pb.collection('nutrition_entries').getOne(created.id, { $autoCancel: false })
         saved = mapPBToEntry(rec)
       } catch (e) {
+        // Surface the failure instead of masquerading a doomed local_ entry as a
+        // success: a today-dated local_ entry is silently dropped on the next
+        // accumulator refetch (the merge keeps only OTHER-day cached entries), so
+        // swallowing here = silent data loss. The caller (meal logger) shows a
+        // save error and lets the user retry. The local_ fallback stays valid only
+        // in logged-out / no-PB mode, where there is nothing to persist to.
         console.warn('PB nutrition_entries create error:', e)
+        if (usePB && userId) throw e
       }
     }
     patchEntries(prev => [saved, ...prev])
@@ -377,6 +401,8 @@ export function useNutrition(userId: string | null) {
       if (data.totalFat !== undefined) pbData.total_fat = data.totalFat
       if (data.aiModel !== undefined) pbData.ai_model = data.aiModel
       if (data.source !== undefined) pbData.source = data.source
+      if (data.eatenAt !== undefined) pbData.eaten_at = data.eatenAt
+      if (data.durationMin !== undefined) pbData.duration_min = data.durationMin
       if (data.qualityScore !== undefined) pbData.quality_score = data.qualityScore
       if (data.qualityBreakdown !== undefined) pbData.quality_breakdown = data.qualityBreakdown
       if (data.qualityMessage !== undefined) pbData.quality_message = data.qualityMessage
@@ -528,11 +554,11 @@ export function useNutrition(userId: string | null) {
         })
         return res.items.map(mapPBToEntry)
       } catch {
-        return entries.slice(0, limit)
+        return entriesRef.current.slice(0, limit)
       }
     }
-    return entries.slice(0, limit)
-  }, [usePB, userId, entries])
+    return entriesRef.current.slice(0, limit)
+  }, [usePB, userId])
 
   const getRemainingMacros = useCallback((date?: string): DailyTotals => {
     const totals = getDailyTotals(date)

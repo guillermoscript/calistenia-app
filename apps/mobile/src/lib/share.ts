@@ -151,3 +151,35 @@ export function shareReferralInvite(
   const message = `${displayName} te invita a entrenar en Calistenia App 🤸\nÚnete y empieza gratis:`
   return { message, url }
 }
+
+/** Deep link to the web nutrition page for a specific date. */
+export function nutritionUrl(date: string): string {
+  return `${BASE_URL}/nutrition?date=${date}`
+}
+
+export interface NutritionDayShareInput {
+  userName?: string
+  date: string
+  calories: number
+  goalCalories?: number
+  qualityScore?: string
+  referralCode?: string | null
+}
+
+export interface NutritionDayShareResult {
+  message: string
+  url: string
+}
+
+export function shareNutritionDay(input: NutritionDayShareInput): NutritionDayShareResult {
+  const { userName, date, calories, goalCalories, qualityScore, referralCode } = input
+  const url = referralCode ? inviteUrl(referralCode) : nutritionUrl(date)
+  let message = `${userName ? `${userName} · ` : ''}Mi nutrición del ${date}: ${calories} kcal`
+  if (goalCalories) {
+    message += ` / ${goalCalories}`
+  }
+  if (qualityScore) {
+    message += ` · Calidad ${qualityScore}`
+  }
+  return { message, url }
+}

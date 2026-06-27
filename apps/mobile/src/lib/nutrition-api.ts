@@ -15,6 +15,31 @@ export interface ImageAsset {
   fileName?: string
 }
 
+// El `fetch`/`FormData` globales en Expo SDK 56 son la implementación WinterCG
+// (expo/fetch). Esa implementación NO soporta el shape `{ uri, name, type }` de
+// React Native: convertFormDataAsync sólo acepta string | Blob | File y lanza
+// "Unsupported FormDataPart implementation" con cualquier otro objeto. Por eso
+// hay que leer el archivo local a un Blob real antes de adjuntarlo. XMLHttpRequest
+// usa la red nativa de RN, que sí resuelve los esquemas file:// / content:// / ph://.
+async function uriToBlob(uri: string, mimeType?: string): Promise<Blob> {
+  const blob: Blob = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.onload = () => resolve(xhr.response as Blob)
+    xhr.onerror = () => reject(new Error('No se pudo leer la imagen seleccionada'))
+    // Una lectura de archivo local es instantánea; el timeout sólo evita que un
+    // uri corrupto / sin permiso deje el spinner colgado para siempre.
+    xhr.timeout = 20_000
+    xhr.ontimeout = () => reject(new Error('La lectura de la imagen tardó demasiado'))
+    xhr.responseType = 'blob'
+    xhr.open('GET', uri, true)
+    xhr.send(null)
+  })
+  // Garantiza un content-type explícito (algunos uris devuelven type vacío → 415).
+  if (mimeType && blob.type !== mimeType) return new Blob([blob], { type: mimeType })
+  if (!blob.type) return new Blob([blob], { type: 'image/jpeg' })
+  return blob
+}
+
 export type AnalyzeResult = {
   foods: FoodItem[]
   meal_description?: string
@@ -39,11 +64,8 @@ export async function analyzeMealMobile(
 ): Promise<AnalyzeResult & { totals: DailyTotals; ai_model: string }> {
   const formData = new FormData()
   for (const img of images) {
-    formData.append('images', {
-      uri: img.uri,
-      name: img.fileName || 'photo.jpg',
-      type: img.mimeType || 'image/jpeg',
-    } as any)
+    const blob = await uriToBlob(img.uri, img.mimeType || 'image/jpeg')
+    formData.append('images', blob, img.fileName || 'photo.jpg')
   }
   formData.append('meal_type', mealType)
   if (description) formData.append('description', description)
@@ -79,19 +101,13 @@ export async function analyzeMealMobile(
   }
 }
 
-// Save photo URIs to a nutrition entry via PocketBase multipart upload
-export async function saveEntryWithPhotos(
-  entryId: string,
-  photoUris: string[],
-): Promise<void> {
-  if (photoUris.length === 0) return
-  const formData = new FormData()
-  photoUris.forEach((uri, i) => {
-    formData.append('photos', {
-      uri,
-      name: `meal_${i}.jpg`,
-      type: 'image/jpeg',
-    } as any)
-  })
-  await pb.collection('nutrition_entries').update(entryId, formData)
+/**
+ * Read local photo URIs into real Blobs so they can be attached to the
+ * `photos` multipart field when the nutrition entry is CREATED (one atomic
+ * request, matching the web File[] flow). Creating the record with photos
+ * means mapPBToEntry derives photoUrls immediately — no second update call and
+ * no cache-staleness window where the just-saved meal shows no image.
+ */
+export async function urisToBlobs(photoUris: string[]): Promise<Blob[]> {
+  return Promise.all(photoUris.map((uri) => uriToBlob(uri, 'image/jpeg')))
 }

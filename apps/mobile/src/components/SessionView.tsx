@@ -21,18 +21,21 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react-native'
 
+import { Image } from 'expo-image'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
-import { requestNotifPermission } from '@/lib/notifications'
+import { getExerciseMedia } from '@calistenia/core/lib/exerciseMedia'
+import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
+import { requestNotifPermission, scheduleRestEnd, cancelScheduled } from '@/lib/notifications'
 import { useLiveSession } from '@/lib/use-live-session'
 import * as sounds from '@/lib/sounds'
 import { haptics as haptic } from '@/lib/haptics'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
-import type { Exercise, Workout, ExerciseLog, SetData, ExerciseTiming } from '@calistenia/core/types'
+import type { Exercise, Workout, ExerciseLog, SetData, ExerciseTiming, ExerciseTempo } from '@calistenia/core/types'
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { getCelebrationTagline } from '@calistenia/core/lib/celebration'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
@@ -48,6 +51,20 @@ import { buildSteps, computeExerciseBoundaries, findCurrentExerciseIndex, nextPh
 import { LIME, MUTED } from '@/components/session/constants'
 import { RestScreen } from '@/components/session/RestScreen'
 import { ExerciseTimer } from '@/components/session/TimerScreen'
+
+/** Format a structured tempo object into a compact human-readable string.
+ *  e.g. { eccentric: 5, pauseTop: 2 } → "baja 5s · pausa 2s arriba"
+ *  Returns null if tempo is absent or all fields are undefined.
+ */
+function formatTempo(tempo: ExerciseTempo | undefined): string | null {
+  if (!tempo) return null
+  const parts: string[] = []
+  if (tempo.eccentric != null)   parts.push(`baja ${tempo.eccentric}s`)
+  if (tempo.pauseBottom != null) parts.push(`pausa ${tempo.pauseBottom}s abajo`)
+  if (tempo.concentric != null)  parts.push(tempo.concentric === 1 ? 'sube explosivo' : `sube ${tempo.concentric}s`)
+  if (tempo.pauseTop != null)    parts.push(`pausa ${tempo.pauseTop}s arriba`)
+  return parts.length > 0 ? parts.join(' · ') : null
+}
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 
@@ -71,6 +88,9 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
   const [customNote, setCustomNote] = useState('')
   const [customWeight, setCustomWeight] = useState('')
   const [customRpe, setCustomRpe] = useState('')
+  // [014] media viewer state
+  const [imgIdx, setImgIdx] = useState(0)
+  const [showImages, setShowImages] = useState(false)
 
   const { exercise, setNumber, totalSets } = step
   const recentLogs = logs.slice(0, 2)
@@ -103,6 +123,25 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
     const query = exercise.youtube?.trim() || exercise.name
     Linking.openURL(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`).catch(() => {})
   }
+
+  // [014+015] Resolve canonical media (program override → catalog static → catalog PB → youtube)
+  // mediaBaseUrl prefixes origin-relative static paths (/exercise-media/…) so they resolve
+  // as absolute HTTPS URLs on device (same origin as PocketBase / web).
+  const MEDIA_BASE = process.env.EXPO_PUBLIC_PB_URL || 'https://gym.guille.tech'
+  const resolvedMedia = getExerciseMedia(
+    {
+      pbRecordId: exercise.pbRecordId,
+      demoImages: exercise.demoImages,
+      demoVideo: exercise.demoVideo,
+      youtube: exercise.youtube,
+    },
+    { mediaBaseUrl: MEDIA_BASE, catalogRecord: { staticMedia: getCatalogStaticMedia(exercise.id) } },
+  )
+  // [015] Structured media fields
+  const mediaSequence = resolvedMedia.sequence
+  const mediaMuscles  = resolvedMedia.muscles
+  // Back-compat: legacy flat images (only used when no structured media)
+  const mediaImages = mediaSequence ? [] : resolvedMedia.images
 
   return (
     <ScrollView className="flex-1" contentContainerClassName="flex-grow px-5 pb-6 pt-4">
@@ -141,10 +180,101 @@ const ExerciseScreen = memo(function ExerciseScreen({ step, onLogged, logs = [] 
 
       {/* Nota del ejercicio */}
       {exercise.note ? (
-        <View className="mb-5 rounded-md border-l-[3px] border-lime/20 bg-muted/30 px-3.5 py-2.5">
+        <View className="mb-3 rounded-md border-l-[3px] border-lime/20 bg-muted/30 px-3.5 py-2.5">
           <Text className="font-sans-italic text-[13px] leading-5 text-muted-foreground">{exercise.note}</Text>
         </View>
       ) : null}
+
+      {/* Structured tempo cues (plan-013) */}
+      {formatTempo(exercise.tempo) ? (
+        <View className="mb-5 rounded-md border-l-[3px] border-cyan-400/20 bg-cyan-400/5 px-3 py-2">
+          <Text className="font-mono text-[12px] tracking-wide text-cyan-400/80">
+            Tempo: {formatTempo(exercise.tempo)}
+          </Text>
+        </View>
+      ) : null}
+      {/* [014+015] Demo media — structured (sequence + muscles) or legacy flat carousel */}
+      {(mediaSequence || mediaMuscles || mediaImages.length > 0) && (
+        <View className="mb-5">
+          <Pressable
+            onPress={() => setShowImages(v => !v)}
+            className="mb-2 flex-row items-center gap-1.5"
+            accessibilityLabel={showImages ? 'Ocultar demo' : 'Ver demo'}
+          >
+            <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
+              DEMO
+            </Text>
+            <Text className="font-mono text-[9px] text-muted-foreground/40">
+              {showImages ? '▲' : '▼'}
+            </Text>
+          </Pressable>
+          {showImages && (
+            <View className="gap-3">
+              {/* [015] Sequence — hero movement demo */}
+              {mediaSequence ? (
+                <View className="rounded-lg overflow-hidden bg-muted/30">
+                  <Image
+                    source={{ uri: mediaSequence }}
+                    style={{ width: '100%', aspectRatio: 16 / 9 }}
+                    contentFit="contain"
+                    accessibilityLabel={`${exercise.name} — secuencia`}
+                  />
+                </View>
+              ) : null}
+
+              {/* [015] Muscles — activation map with labeled section */}
+              {mediaMuscles ? (
+                <View>
+                  <Text className="mb-1 font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground/50">
+                    MÚSCULOS TRABAJADOS
+                  </Text>
+                  <View className="rounded-lg overflow-hidden bg-muted/30">
+                    <Image
+                      source={{ uri: mediaMuscles }}
+                      style={{ width: '100%', aspectRatio: 4 / 3 }}
+                      contentFit="contain"
+                      accessibilityLabel={`${exercise.name} — músculos trabajados`}
+                    />
+                  </View>
+                </View>
+              ) : null}
+
+              {/* Legacy flat carousel — only when no structured media */}
+              {!mediaSequence && mediaImages.length > 0 ? (
+                <View className="rounded-lg overflow-hidden bg-muted/30">
+                  <Image
+                    source={{ uri: mediaImages[imgIdx] }}
+                    style={{ width: '100%', aspectRatio: 4 / 3 }}
+                    contentFit="contain"
+                    accessibilityLabel={`${exercise.name} demo ${imgIdx + 1}`}
+                  />
+                  {mediaImages.length > 1 && (
+                    <View className="flex-row items-center justify-between px-3 py-2">
+                      <Pressable
+                        onPress={() => setImgIdx(i => (i - 1 + mediaImages.length) % mediaImages.length)}
+                        className="size-8 items-center justify-center rounded-full border border-border"
+                        accessibilityLabel="Imagen anterior"
+                      >
+                        <Text className="text-muted-foreground text-sm">‹</Text>
+                      </Pressable>
+                      <Text className="font-mono text-[10px] text-muted-foreground">
+                        {imgIdx + 1} / {mediaImages.length}
+                      </Text>
+                      <Pressable
+                        onPress={() => setImgIdx(i => (i + 1) % mediaImages.length)}
+                        className="size-8 items-center justify-center rounded-full border border-border"
+                        accessibilityLabel="Imagen siguiente"
+                      >
+                        <Text className="text-muted-foreground text-sm">›</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+              ) : null}
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Historial reciente */}
       {recentLogs.length > 0 && (
@@ -480,7 +610,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
 
       {quote && (
         <Animated.View entering={reduced ? undefined : FadeInDown.delay(420).duration(450)} className="max-w-[380px] items-center">
-          <Text className="mb-2.5 text-center font-sans-italic text-base leading-6 text-foreground/70">"{quote.q}"</Text>
+          <Text className="mb-2.5 text-center font-sans-italic text-base leading-6 text-foreground/70">&quot;{quote.q}&quot;</Text>
           <Text className="font-mono text-[11px] tracking-wide text-muted-foreground">— {quote.a}</Text>
         </Animated.View>
       )}

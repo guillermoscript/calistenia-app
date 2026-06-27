@@ -73,3 +73,8 @@ apps/mobile/google-services.json
 .env.sentry-build-plugin
 *firebase-adminsdk*.json
 apps/mobile/calistenia-*-firebase-adminsdk-*.json
+
+# Android signing keystores — NUNCA commitear (llave de firma privada)
+*.jks
+*.keystore
+!apps/mobile/android/app/debug.keystore
