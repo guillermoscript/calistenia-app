@@ -22,7 +22,7 @@ import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealTemplate
 const MAX_PHOTOS = 5
 
 export interface MealLoggerContentProps {
-  onAnalyze: (imageFiles: File[], mealType: string, description?: string) => Promise<{ foods: FoodItem[]; meal_description?: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }>
+  onAnalyze: (imageFiles: File[], mealType: string, description?: string, eatenHour?: number) => Promise<{ foods: FoodItem[]; meal_description?: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }>
   onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => Promise<void>
   userId: string | null
   dailyTotals: DailyTotals
@@ -131,6 +131,12 @@ export default function MealLoggerContent({
   const [eatenHour, setEatenHour] = useState<string>(() => nowLocalForPB().slice(11, 13))
   const [eatenMinute, setEatenMinute] = useState<string>(() => nowLocalForPB().slice(14, 16))
   const [durationInput, setDurationInput] = useState('')
+  // The hour the food was eaten (from the finish-time field / photo EXIF) — fed
+  // to the AI for timing-based quality scoring. undefined if not a valid number.
+  const eatenHourNum = (): number | undefined => {
+    const h = parseInt(eatenHour, 10)
+    return Number.isFinite(h) ? h : undefined
+  }
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [editingMacro, setEditingMacro] = useState<{ index: number; field: keyof FoodItem } | null>(null)
@@ -237,7 +243,7 @@ export default function MealLoggerContent({
     }
 
     try {
-      const result = await onAnalyze(imageFiles, mealType, imageDescription.trim() || undefined)
+      const result = await onAnalyze(imageFiles, mealType, imageDescription.trim() || undefined, eatenHourNum())
       if (cancelledRef.current) return
       const normalized = (result.foods || []).map(f => {
         if (!('baseCal100' in f) || !f.baseCal100) {
@@ -322,7 +328,7 @@ export default function MealLoggerContent({
     setError(null)
 
     try {
-      const result = await onAnalyze([], mealType, text)
+      const result = await onAnalyze([], mealType, text, eatenHourNum())
       if (cancelledRef.current) return
       const normalized = (result.foods || []).map(f => {
         if (!('baseCal100' in f) || !f.baseCal100) {

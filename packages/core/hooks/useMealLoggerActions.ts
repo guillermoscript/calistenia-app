@@ -54,7 +54,10 @@ export function useMealLoggerActions({
 }: UseMealLoggerActionsDeps) {
   const remaining = useMemo(() => getRemainingMacros(), [getRemainingMacros])
 
-  const buildUserContext = useCallback(() => {
+  // `eatenHour` is the hour the food was eaten (from the meal's finish time /
+  // photo EXIF), which the AI weighs for timing quality (e.g. late-night junk).
+  // Falls back to the current hour when the caller has no eaten time yet.
+  const buildUserContext = useCallback((eatenHour?: number) => {
     const recentScores = entries
       .filter(e => e.qualityScore)
       .slice(0, 5)
@@ -63,7 +66,7 @@ export function useMealLoggerActions({
       goal: goals?.goal,
       remainingMacros: remaining,
       recentScores: recentScores.length > 0 ? recentScores : undefined,
-      logHour: new Date().getHours(),
+      logHour: eatenHour != null && Number.isFinite(eatenHour) ? eatenHour : new Date().getHours(),
     }
   }, [goals, remaining, entries])
 
@@ -71,8 +74,9 @@ export function useMealLoggerActions({
     imageFiles: File[],
     mealType: string,
     description?: string,
+    eatenHour?: number,
   ): Promise<AnalyzeResult> => {
-    const result = await analyzeMeal(imageFiles, mealType, description, buildUserContext())
+    const result = await analyzeMeal(imageFiles, mealType, description, buildUserContext(eatenHour))
     return {
       foods: result.foods,
       meal_description: result.meal_description,

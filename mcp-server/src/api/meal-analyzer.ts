@@ -160,7 +160,7 @@ function buildUserContextBlock(ctx: UserContext): string {
     const r = ctx.remainingMacros;
     lines.push(`- Macros restantes hoy: ${r.calories}kcal, ${r.protein}g prot, ${r.carbs}g carbs, ${r.fat}g grasa`);
   }
-  if (ctx.logHour != null) lines.push(`- Hora del registro: ${ctx.logHour}:00`);
+  if (ctx.logHour != null) lines.push(`- Hora en que se comió: ${ctx.logHour}:00 (ten en cuenta el horario al evaluar la calidad — p. ej. comidas pesadas o chatarra a altas horas penalizan)`);
   if (ctx.recentScores?.length) {
     const recent = ctx.recentScores.slice(0, 7).map(s => `${s.mealType}:${s.score}`).join(", ");
     lines.push(`- Scores recientes (últimas comidas): ${recent}`);

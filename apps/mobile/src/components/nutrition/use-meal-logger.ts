@@ -256,6 +256,13 @@ export function useMealLogger({
   }
 
   // ── Analysis ───────────────────────────────────────────────────────────────
+  // The finish-time field (seeded from photo EXIF, else "now") = the hour the
+  // food was eaten; feed it to the AI for timing-based quality scoring.
+  const eatenHourNum = (): number | undefined => {
+    const h = parseInt(eatenHour, 10)
+    return Number.isFinite(h) ? h : undefined
+  }
+
   const handleAnalyzeImages = async () => {
     if (imageAssets.length === 0) return
     cancelledRef.current = false
@@ -263,7 +270,7 @@ export function useMealLogger({
     setError(null)
     haptics.medium()
     try {
-      const result = await onAnalyze(imageAssets, mealType, imageDescription.trim() || undefined)
+      const result = await onAnalyze(imageAssets, mealType, imageDescription.trim() || undefined, eatenHourNum())
       if (cancelledRef.current) return
       const normalized = normalizeEntryFoods(result.foods || [])
       if (normalized.length === 0) {
@@ -291,7 +298,7 @@ export function useMealLogger({
     setError(null)
     haptics.medium()
     try {
-      const result = await onAnalyze([], mealType, text)
+      const result = await onAnalyze([], mealType, text, eatenHourNum())
       if (cancelledRef.current) return
       const normalized = normalizeEntryFoods(result.foods || [])
       if (normalized.length === 0) {
@@ -315,6 +322,17 @@ export function useMealLogger({
   const cancelAnalysis = () => {
     cancelledRef.current = true
     setStep('capture')
+  }
+
+  // Clear AI-derived artifacts (quality panel + meal description) when the review
+  // step is re-entered WITHOUT a fresh analyze (Back → Manual / Repeat). Without
+  // this, the previous meal's quality would render over the new foods and — worse
+  // — get persisted on save (handleSave spreads analysisQuality), tagging a
+  // manually-entered meal with a stale AI score. Only AI-analyzed foods carry a
+  // quality score.
+  const clearAiAnalysis = () => {
+    setAnalysisQuality(undefined)
+    setMealDescription('')
   }
 
   // ── Food editing ─────────────────────────────────────────────────────────────
@@ -349,11 +367,13 @@ export function useMealLogger({
 
   // Manual entry: start blank, or seed from a comma-separated quick-text list.
   const startManualEntry = () => {
+    clearAiAnalysis()
     setFoods([createEmptyFood()])
     setStep('review')
   }
 
   const createManualFoodsFromText = () => {
+    clearAiAnalysis()
     const names = quickText.split(',').map((s) => s.trim()).filter(Boolean)
     const newFoods = names.map((name) => {
       const food = createEmptyFood()
@@ -384,6 +404,7 @@ export function useMealLogger({
   }
 
   const selectRecentEntry = (entry: NutritionEntry) => {
+    clearAiAnalysis()
     setMealType(entry.mealType)
     setFoods(normalizeEntryFoods(entry.foods))
     setCaptureSubView('main')
@@ -398,6 +419,7 @@ export function useMealLogger({
   }
 
   const backFromReview = () => {
+    clearAiAnalysis()
     setStep('capture')
     setFoods([])
     setImageAssets([])
@@ -510,6 +532,7 @@ export function useMealLogger({
     quickText,
     imageDescription,
     mealDescription,
+    analysisQuality,
     editingMacro,
     editingMacroValue,
     recentFoods,

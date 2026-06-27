@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 
 import { MAX_PHOTOS, MEAL_OPTIONS } from './meal-logger-shared'
 import type { MealLoggerModel } from './use-meal-logger'
+import QualityBreakdownPanel from './QualityBreakdownPanel'
 import {
   MealTypeSelector,
   MealTimingRow,
@@ -295,6 +296,20 @@ export function ReviewStep({ model }: StepProps) {
       {model.mealDescription ? (
         <View className="px-3 py-2.5 rounded-xl bg-lime-400/5 border border-lime-400/10">
           <Text className="font-sans text-xs text-muted-foreground leading-relaxed">{model.mealDescription}</Text>
+        </View>
+      ) : null}
+
+      {/* AI quality feedback — compact (score + summary + suggestion) mid-log;
+          the full positives/negatives breakdown shows on the saved meal card. */}
+      {model.analysisQuality?.score && model.analysisQuality.breakdown ? (
+        <View className="rounded-xl border border-border bg-card px-4 py-3.5">
+          <QualityBreakdownPanel
+            score={model.analysisQuality.score}
+            breakdown={model.analysisQuality.breakdown}
+            message={model.analysisQuality.message}
+            suggestion={model.analysisQuality.suggestion}
+            compact
+          />
         </View>
       ) : null}
 

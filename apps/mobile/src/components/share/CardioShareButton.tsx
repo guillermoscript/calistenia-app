@@ -94,11 +94,12 @@ export default function CardioShareButton({
         />
       </ShareCardCapture>
 
-      {/* Visible button */}
+      {/* Visible button — explicit dark: classes beat the outline variant's
+          `dark:bg-input/30`, which would otherwise render this near-black. */}
       <Button
         variant="outline"
         size="sm"
-        className="border-sky-500/30 bg-sky-500/5"
+        className="border-sky-500/30 bg-sky-500/5 dark:border-sky-500/30 dark:bg-sky-500/5 active:bg-sky-500/10 dark:active:bg-sky-500/10"
         onPress={() => void handleShare()}
       >
         <Text className="font-mono text-[10px] tracking-widest text-sky-400 uppercase">

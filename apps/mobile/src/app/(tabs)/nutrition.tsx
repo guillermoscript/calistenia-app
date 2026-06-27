@@ -41,7 +41,7 @@ import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
 
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { analyzeMealMobile, saveEntryWithPhotos } from '@/lib/nutrition-api'
+import { analyzeMealMobile, urisToBlobs } from '@/lib/nutrition-api'
 import { syncNutritionWidget } from '@/lib/sync-nutrition-widget'
 import NutritionDashboard from '@/components/nutrition/NutritionDashboard'
 import NutritionGoalSetup from '@/components/nutrition/NutritionGoalSetup'
@@ -161,6 +161,7 @@ export default function NutritionTab() {
     images: Array<{ uri: string; mimeType?: string; fileName?: string }>,
     mealType: string,
     description?: string,
+    eatenHour?: number,
   ) => {
     const remaining = getRemainingMacros()
     const recentScores = allEntries
@@ -171,7 +172,8 @@ export default function NutritionTab() {
       goal: goals?.goal,
       remainingMacros: remaining,
       recentScores: recentScores.length > 0 ? recentScores : undefined,
-      logHour: new Date().getHours(),
+      // Hour the food was eaten (photo EXIF / finish time), else current hour.
+      logHour: eatenHour != null && Number.isFinite(eatenHour) ? eatenHour : new Date().getHours(),
     })
   }, [goals, allEntries, getRemainingMacros])
 
@@ -187,10 +189,19 @@ export default function NutritionTab() {
       setEditingEntry(null)
       return
     }
-    const saved = await saveEntry({ ...entry, user: userId || undefined })
-    if (photoUris && photoUris.length > 0 && saved.id && !saved.id.startsWith('local_')) {
-      saveEntryWithPhotos(saved.id, photoUris).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'save_entry_photos' } }) })
+    // Read photo URIs to Blobs and create the entry WITH them in one request, so
+    // the cached entry carries populated photoUrls right away (mirrors web's
+    // File[] path). If a Blob read fails, fall back to saving without photos
+    // rather than losing the whole meal.
+    let photoFiles: Blob[] | undefined
+    if (photoUris && photoUris.length > 0) {
+      try {
+        photoFiles = await urisToBlobs(photoUris)
+      } catch (e) {
+        Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'read_meal_photos' } })
+      }
     }
+    const saved = await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
     // Async quality scoring for manual entries
     if (!saved.qualityScore && saved.foods.length > 0) {
       scoreMealQuality(
