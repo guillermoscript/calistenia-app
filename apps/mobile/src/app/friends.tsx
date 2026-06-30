@@ -25,6 +25,7 @@ import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { Sentry } from '@/lib/instrument'
 import type { FollowUser } from '@calistenia/core/hooks/useFollows'
+import { buildUserSearchFilter } from '@/lib/user-search-filter'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -174,17 +175,7 @@ export default function FriendsScreen() {
   // Derive followerIds for mutual detection
   const followerIds = useMemo(() => new Set(followers.map((f) => f.id)), [followers])
 
-  // ── Search (fetch all users, filter client-side — mirrors web approach) ──────
-  const allUsersRef = useRef<SearchResult[]>([])
-  const allUsersLoaded = useRef(false)
-
-  const loadAllUsers = useCallback(async (): Promise<SearchResult[]> => {
-    if (allUsersLoaded.current) return allUsersRef.current
-    const res = await pb.collection('users').getFullList({ $autoCancel: false } as any)
-    allUsersRef.current = mapPbItems(res, userId ?? '')
-    allUsersLoaded.current = true
-    return allUsersRef.current
-  }, [userId])
+  // ── Search (debounced, bounded server-side query — máx 20 resultados) ────────
 
   const query = search.trim()
 
@@ -201,15 +192,13 @@ export default function FriendsScreen() {
       setSearching(true)
       setSearchError(false)
       try {
-        const allUsers = await loadAllUsers()
+        const { raw, params } = buildUserSearchFilter(query)
+        const res = await pb.collection('users').getList(1, 20, {
+          filter: pb.filter(raw, params),
+          $autoCancel: true,
+        })
         if (queryRef.current !== query) return // stale
-        const q = query.toLowerCase()
-        const filtered = allUsers.filter(
-          (u) =>
-            u.displayName.toLowerCase().includes(q) ||
-            u.username.toLowerCase().includes(q),
-        )
-        setSearchResults(filtered)
+        setSearchResults(mapPbItems(res.items, userId ?? ''))
       } catch (e) {
         Sentry.captureException(e, { tags: { feature: 'social', op: 'search_users' } })
         setSearchError(true)
@@ -219,7 +208,7 @@ export default function FriendsScreen() {
       }
     }, 200)
     return () => clearTimeout(debounceRef.current)
-  }, [query, userId, retryTrigger, loadAllUsers])
+  }, [query, userId, retryTrigger])
 
   // Sort search results: already-followed first
   const sortedSearchResults = useMemo(

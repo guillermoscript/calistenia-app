@@ -41,7 +41,8 @@ export default function FreeSessionScreen() {
   const startFreeSession = useStartFreeSession()
   const { startCircuit } = useCircuitSession()
   const authUser = useAuthUser()
-  const { templates, useTemplate, deleteTemplate } = useFreeSessionTemplates(authUser?.id ?? null)
+  const { templates, useTemplate: markTemplateUsed, deleteTemplate } =
+    useFreeSessionTemplates(authUser?.id ?? null)
 
   // Re-lanzar una plantilla guardada: arranca la misma sesión al instante y
   // registra el uso en segundo plano (no bloquea la navegación).
@@ -49,7 +50,7 @@ export default function FreeSessionScreen() {
     if (!tpl.exercises?.length) return
     haptics.medium()
     startFreeSession(tpl.exercises, tpl.title || 'Sesión libre')
-    if (tpl.id) void useTemplate(tpl.id)
+    if (tpl.id) void markTemplateUsed(tpl.id)
   }
 
   const [mode, setMode] = useState<'manual' | 'circuit' | 'ai'>('manual')

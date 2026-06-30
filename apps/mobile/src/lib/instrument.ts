@@ -12,7 +12,7 @@ Sentry.init({
     'https://fb6f769a50d854890fb9a705b96ea4b2@o4507789962706944.ingest.us.sentry.io/4511572569161728',
   enabled: !__DEV__,
   environment: __DEV__ ? 'development' : 'production',
-  sendDefaultPii: true,
+  sendDefaultPii: false,
   tracesSampleRate: 0.2,
 })
 
