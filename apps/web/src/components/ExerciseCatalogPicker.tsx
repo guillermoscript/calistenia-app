@@ -123,9 +123,9 @@ export default function ExerciseCatalogPicker({ onAdd, onClose }: ExerciseCatalo
       const available = await isPocketBaseAvailable()
       if (available) {
         try {
-          const res = await pb.collection('exercises_catalog').getList(1, 500, { sort: 'name' })
-          if (res.items.length > 0) {
-            setCatalog(res.items.map(r => ({
+          const items = await pb.collection('exercises_catalog').getFullList({ batch: 500, sort: 'name', $autoCancel: false })
+          if (items.length > 0) {
+            setCatalog(items.map(r => ({
               exerciseId: r.exercise_id || r.id,
               name: r.name,
               sets: r.sets ?? 3,

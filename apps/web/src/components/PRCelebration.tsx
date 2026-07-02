@@ -77,7 +77,11 @@ export default function PRCelebration({ prEvent, userName, avatarUrl, referralCo
               <span className="text-muted-foreground/70">{prEvent.oldValue || '—'}</span>
               <span className="mx-1.5 text-lime">→</span>
               <span className="text-lime font-bold">{prEvent.newValue}</span>
-              <span className="ml-1 text-muted-foreground/70">{t('pr.reps', { count: prEvent.newValue })}</span>
+              <span className="ml-1 text-muted-foreground/70">
+                {prEvent.kind === 'weight'
+                  ? `kg × ${prEvent.reps ?? 1}`
+                  : t('pr.reps', { count: prEvent.newValue })}
+              </span>
             </div>
           </div>
 

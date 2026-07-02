@@ -180,6 +180,16 @@ export interface Settings {
   /** Universal PRs: exerciseId → best achieved reps. Authoritative for ALL
    *  exercises. The 5 pr_* fields above are kept in sync for legacy UI. */
   prs?: Record<string, number>
+  /** Weight PRs (gym/weighted exercises): exerciseId → best set by estimated
+   *  1RM. Like `prs`, localStorage-only — rebuilt from sets_log.weight_kg. */
+  weight_prs?: Record<string, WeightPR>
+}
+
+/** Best weighted set for an exercise: raw kg + reps and its estimated 1RM. */
+export interface WeightPR {
+  weight: number
+  reps: number
+  e1rm: number
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────

@@ -21,6 +21,7 @@ interface CatalogExercise {
   equipment?: string[];
   isTimer?: boolean;
   timerSeconds?: number;
+  source?: string;
 }
 
 let exerciseCatalog: CatalogExercise[] = [];
@@ -61,10 +62,25 @@ function getStr(val: { es?: string; en?: string } | string | undefined): string 
 
 // ── search_exercises tool ───────────────────────────────────────────────────
 
+// Gym-only equipment (ExerciseDB import). Excluded from searches unless the
+// user explicitly has gym access — this app is calisthenics-first.
+const GYM_EQUIPMENT = new Set([
+  "mancuernas", "barra", "polea", "maquina", "balon_medicinal", "bosu", "rodillo", "otro",
+]);
+
+const isGymExercise = (ex: { equipment?: string[] }): boolean =>
+  (ex.equipment ?? []).some((e) => GYM_EQUIPMENT.has(e));
+
+// Curated sources first (they carry tempo/media/hand-written descriptions),
+// imported ExerciseDB entries after. Stable within each group.
+const curationRank = (ex: { source?: string }): number =>
+  ex.source === "exercisedb" ? 1 : 0;
+
 const searchExercisesTool = tool({
   description:
     "Busca ejercicios en el catálogo por grupo muscular, equipamiento, dificultad o categoría. " +
-    "Usa esto para encontrar ejercicios reales del catálogo y construir la rutina.",
+    "Usa esto para encontrar ejercicios reales del catálogo y construir la rutina. " +
+    "Por defecto solo devuelve ejercicios de calistenia; usa include_gym o equipamiento de gym SOLO si el usuario entrena en gimnasio.",
   inputSchema: z.object({
     category: z
       .enum(["push", "pull", "legs", "core", "lumbar", "full", "skill", "movilidad", "yoga"])
@@ -72,19 +88,34 @@ const searchExercisesTool = tool({
       .describe("Categoría de ejercicio (incluye yoga para posturas de yoga)"),
     muscles: z.string().optional().describe("Grupo muscular a buscar (ej: 'pecho', 'espalda', 'piernas', 'caderas')"),
     equipment: z
-      .enum(["ninguno", "barra_dominadas", "banco", "paralelas", "anillas", "banda_elastica", "toalla", "pared", "lastre", "escalon", "cuerda"])
+      .enum([
+        "ninguno", "barra_dominadas", "banco", "paralelas", "anillas", "banda_elastica", "toalla", "pared", "lastre", "escalon", "cuerda",
+        // gym (solo si el usuario tiene acceso a gimnasio)
+        "mancuernas", "barra", "polea", "maquina", "balon_medicinal", "bosu", "rodillo",
+      ])
       .optional()
-      .describe("Equipamiento disponible (ninguno = solo peso corporal)"),
+      .describe("Equipamiento disponible (ninguno = solo peso corporal; mancuernas/barra/polea/maquina/... solo si el usuario entrena en gimnasio)"),
     difficulty: z
       .enum(["beginner", "intermediate", "advanced"])
       .optional()
       .describe("Nivel de dificultad"),
+    include_gym: z
+      .boolean()
+      .default(false)
+      .describe("Incluir ejercicios de gimnasio (mancuernas, barra, polea, máquinas). SOLO true si el usuario tiene acceso a gimnasio."),
     limit: z.number().int().min(1).max(20).default(10).describe("Máximo de resultados"),
   }),
-  execute: async ({ category, muscles, equipment, difficulty, limit }) => {
+  execute: async ({ category, muscles, equipment, difficulty, include_gym, limit }) => {
     loadCatalog();
 
     let results = [...exerciseCatalog];
+
+    // Calisthenics-first: drop gym exercises unless explicitly requested
+    // (either include_gym or searching by a gym equipment id).
+    const gymAllowed = include_gym || (equipment !== undefined && GYM_EQUIPMENT.has(equipment));
+    if (!gymAllowed) {
+      results = results.filter((ex) => !isGymExercise(ex));
+    }
 
     if (category) {
       results = results.filter((ex) => ex.category === category);
@@ -103,6 +134,9 @@ const searchExercisesTool = tool({
     if (difficulty) {
       results = results.filter((ex) => ex.difficulty === difficulty);
     }
+
+    // Curated catalog entries before imported ones so sessions favor them.
+    results.sort((a, b) => curationRank(a) - curationRank(b));
 
     const limited = results.slice(0, limit);
 
@@ -230,6 +264,12 @@ Si search_exercises no devuelve suficientes ejercicios, haz más búsquedas con 
 
 IMPORTANTE: SIEMPRE debes llamar a create_session al final. No uses bloques JSON en el texto.
 Si el usuario pide cambios, busca ejercicios nuevos si es necesario y llama a create_session otra vez con la sesión actualizada.
+
+## Ejercicios de gimnasio
+
+El catálogo también incluye ejercicios de gimnasio (mancuernas, barra, polea, máquinas), pero search_exercises los EXCLUYE por defecto.
+- Si el usuario entrena en gimnasio o menciona mancuernas/barra/máquinas en su equipamiento, usa include_gym: true o busca con equipment: "mancuernas"/"barra"/"polea"/"maquina".
+- Si NO menciona gimnasio, NO uses include_gym: la sesión debe ser 100% calistenia.
 
 ## Categorías para buscar
 
