@@ -1,0 +1,23 @@
+{
+  "_comment": "Curated map: ExerciseDB id -> existing catalog id. Used by build-exercise-catalog.mjs to ENRICH existing entries instead of creating near-duplicate new ones. Exact normalized-name matches are computed automatically at build time; this file only covers base movements whose names differ between the two catalogs (e.g. ExerciseDB 'push-up' = our 'pushup_std') plus one explicit disambiguation ('muscle up' normalizes to both muscle_up and the legacy jogging entry).",
+  "matches": {
+    "0662": "pushup_std",
+    "0652": "pullup_strict",
+    "1326": "chinup",
+    "0651": "neutral_grip_pull_up",
+    "0471": "hspu_wall",
+    "0630": "mountain_climbers",
+    "1160": "burpees",
+    "3296": "front_lever_full",
+    "3297": "full_back_lever",
+    "0631": "muscle_up",
+    "3470": "forward_lunge",
+    "3300": "planche_lean",
+    "1761": "oblique_hanging_knee_raise",
+    "0970": "assisted_pull_up_band",
+    "1759": "pistol_free",
+    "3302": "handstand_free",
+    "0814": "dips_parallel",
+    "0274": "crunch"
+  }
+}

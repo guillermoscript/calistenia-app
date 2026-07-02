@@ -108,6 +108,17 @@
   "equipment.pared": "Wall",
   "equipment.toalla": "Towel",
   "equipment.escalon": "Step",
+  "equipment.mancuernas": "Dumbbells",
+  "equipment.barra": "Barbell",
+  "equipment.polea": "Cable machine",
+  "equipment.maquina": "Machine",
+  "equipment.balon_medicinal": "Medicine ball",
+  "equipment.bosu": "Bosu ball",
+  "equipment.cuerda": "Rope",
+  "equipment.rodillo": "Foam roller",
+  "equipment.otro": "Other",
+
+  "exerciseLibrary.showMore": "Show more ({{count}})",
 
   "difficulty.beginner": "Beginner",
   "difficulty.intermediate": "Intermediate",

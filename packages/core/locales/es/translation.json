@@ -108,6 +108,17 @@
   "equipment.pared": "Pared",
   "equipment.toalla": "Toalla",
   "equipment.escalon": "Escalón",
+  "equipment.mancuernas": "Mancuernas",
+  "equipment.barra": "Barra",
+  "equipment.polea": "Polea",
+  "equipment.maquina": "Máquina",
+  "equipment.balon_medicinal": "Balón medicinal",
+  "equipment.bosu": "Bosu",
+  "equipment.cuerda": "Cuerda",
+  "equipment.rodillo": "Rodillo de espuma",
+  "equipment.otro": "Otro",
+
+  "exerciseLibrary.showMore": "Mostrar más ({{count}})",
 
   "difficulty.beginner": "Principiante",
   "difficulty.intermediate": "Intermedio",

@@ -38,6 +38,7 @@ interface CatalogExercise {
   demoImages?: string[]
   demoVideo?: string
   difficulty?: DifficultyLevel
+  equipment?: string[]
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -236,6 +237,7 @@ function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] 
         timerSeconds: ex.timerSeconds,
         demoImages: ex.images?.length ? ex.images : undefined,
         difficulty: ex.difficulty,
+        equipment: Array.isArray(ex.equipment) ? ex.equipment : undefined,
       })
     }
   }
@@ -435,9 +437,17 @@ export default function ExerciseLibraryPage() {
       result = result.filter(ex => favoriteIds.has(ex.id))
     }
 
-    // Category filter
+    // Category filter — UI ids and catalog JSON ids drifted historically
+    // (mobility/movilidad, skills/skill, glutes_lower_back/lumbar), so each
+    // button matches its aliases too.
     if (activeCategory !== 'todos') {
-      result = result.filter(ex => ex.category === activeCategory)
+      const CATEGORY_ALIASES: Record<string, string[]> = {
+        mobility: ['mobility', 'movilidad'],
+        skills: ['skills', 'skill'],
+        glutes_lower_back: ['glutes_lower_back', 'lumbar'],
+      }
+      const accepted = CATEGORY_ALIASES[activeCategory] ?? [activeCategory]
+      result = result.filter(ex => accepted.includes(ex.category))
     }
 
     // Muscle group filter
@@ -451,10 +461,10 @@ export default function ExerciseLibraryPage() {
       result = result.filter(ex => ex.difficulty === activeDifficulty)
     }
 
-    // Equipment filter
+    // Equipment filter (explicit catalog field wins; keyword detection as fallback)
     if (activeEquipment) {
       result = result.filter(ex => {
-        const equipmentIds = getExerciseEquipment({ name: l(ex.name), note: l(ex.note) })
+        const equipmentIds = getExerciseEquipment({ name: l(ex.name), note: l(ex.note), equipment: ex.equipment })
         return equipmentIds.includes(activeEquipment)
       })
     }
@@ -470,6 +480,15 @@ export default function ExerciseLibraryPage() {
 
     return result
   }, [exercises, showFavoritesOnly, favoriteIds, activeCategory, activeDifficulty, activeMuscle, activeEquipment, search])
+
+  // Incremental rendering — the catalog is ~1600 entries and the grid is not
+  // virtualized, so cap the DOM and grow on demand.
+  const PAGE_SIZE = 90
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+  }, [showFavoritesOnly, activeCategory, activeDifficulty, activeMuscle, activeEquipment, search])
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
 
   const getCategoryStyle = (cat: string) =>
     CATEGORY_COLORS[cat] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }
@@ -689,7 +708,7 @@ export default function ExerciseLibraryPage() {
       {/* ── Exercise grid ───────────────────────────────────────────────── */}
       {!loading && filtered.length > 0 && (
         <div id="tour-exercise-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(ex => {
+          {visible.map(ex => {
             const catStyle = getCategoryStyle(ex.category)
             const muscleList = l(ex.muscles).split(',').map(m => m.trim()).filter(Boolean)
             return (
@@ -788,6 +807,18 @@ export default function ExerciseLibraryPage() {
               </button>
             )
           })}
+        </div>
+      )}
+
+      {/* ── Show more (incremental rendering) ──────────────────────────── */}
+      {!loading && filtered.length > visibleCount && (
+        <div className="text-center mt-8">
+          <button
+            onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+            className="px-6 py-3 rounded-full text-[11px] font-mono tracking-widest uppercase border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all"
+          >
+            {t('exerciseLibrary.showMore', { count: filtered.length - visibleCount })}
+          </button>
         </div>
       )}
 

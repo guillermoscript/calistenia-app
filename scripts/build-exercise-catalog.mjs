@@ -7,6 +7,11 @@
  *   - Merges seeds/exercises/*.json using seeds/exercises/_id-map.json
  *   - Enriches existing entries where a seed maps to their id
  *   - Adds new entries for seeds that have no existing id
+ *   - Merges seeds/exercisedb/exercises.json (ExerciseDB v1 layer, es/en):
+ *     matched entries (curated seeds/exercisedb/_matches.json + exact
+ *     normalized-name equality) are enriched in place; the rest are added
+ *     as new `source: 'exercisedb'` entries. See
+ *     scripts/prepare-exercisedb-seed.mjs for the seed's provenance.
  *   - Writes identical JSON to all 3 catalog copies
  *
  * --refresh-wger flag = ONLINE: fetches from wger API (old behavior), THEN merges seeds.
@@ -29,6 +34,9 @@ const ROOT = resolve(import.meta.dirname, '..')
 const BASE_PATH = join(ROOT, 'packages/core/data/exercise-catalog.base.json')
 const SEEDS_DIR = join(ROOT, 'seeds/exercises')
 const ID_MAP_PATH = join(SEEDS_DIR, '_id-map.json')
+// ExerciseDB layer (seeds/exercisedb/) — see scripts/prepare-exercisedb-seed.mjs
+const EXDB_PATH = join(ROOT, 'seeds/exercisedb/exercises.json')
+const EXDB_MATCHES_PATH = join(ROOT, 'seeds/exercisedb/_matches.json')
 
 // 3 output copies — must always be byte-identical
 const OUTPUT_PATHS = [
@@ -719,6 +727,259 @@ function mergeSeeds(baseList, idMap, allSeeds) {
   return { enrichedCount, newCount }
 }
 
+// ── ExerciseDB layer ──────────────────────────────────────────────────────────
+// Merges seeds/exercisedb/exercises.json (ExerciseDB v1 data, es/en trimmed).
+// Matched entries (curated _matches.json + exact normalized-name equality)
+// are ENRICHED in place; the rest are added as new `source: 'exercisedb'`
+// entries. Skipped entirely when the seed file is absent.
+
+// Dataset equipment string → canonical equipment id
+const EXDB_EQUIP_MAP = {
+  'body weight': 'ninguno',
+  'band': 'banda_elastica',
+  'resistance band': 'banda_elastica',
+  'stability ball': 'fitball',
+  'bosu ball': 'bosu',
+  'kettlebell': 'kettlebell',
+  'weighted': 'lastre',
+  'medicine ball': 'balon_medicinal',
+  'dumbbell': 'mancuernas',
+  'barbell': 'barra',
+  'ez barbell': 'barra',
+  'olympic barbell': 'barra',
+  'trap bar': 'barra',
+  'cable': 'polea',
+  'rope': 'cuerda',
+  'wheel roller': 'rueda_abdominal',
+  'roller': 'rodillo',
+  'leverage machine': 'maquina',
+  'sled machine': 'maquina',
+  'smith machine': 'maquina',
+  'assisted': 'maquina',
+  'upper body ergometer': 'maquina',
+  'skierg machine': 'maquina',
+  'stationary bike': 'maquina',
+  'elliptical machine': 'maquina',
+  'stepmill machine': 'maquina',
+  'hammer': 'otro',
+  'tire': 'otro',
+}
+
+// Dataset target muscle → catalog category (movilidad handled by name override)
+const EXDB_TARGET_CATEGORY = {
+  'abs': 'core',
+  'pectorals': 'push',
+  'triceps': 'push',
+  'delts': 'push',
+  'serratus anterior': 'push',
+  'biceps': 'pull',
+  'lats': 'pull',
+  'upper back': 'pull',
+  'traps': 'pull',
+  'forearms': 'pull',
+  'levator scapulae': 'pull',
+  'quads': 'legs',
+  'hamstrings': 'legs',
+  'calves': 'legs',
+  'glutes': 'legs',
+  'adductors': 'legs',
+  'abductors': 'legs',
+  'spine': 'lumbar',
+  'cardiovascular system': 'full',
+}
+
+const EXDB_MOBILITY_RE = /\b(stretch|stretching|mobility|yoga|pose|dislocate|foam roll)\b/i
+
+// Muscle display names (en term → es). Covers every target + secondary_muscles
+// value in the dataset; unknown terms fall back to the capitalized en term.
+const EXDB_MUSCLE_ES = {
+  'abs': 'Abdominales', 'abdominals': 'Abdominales', 'lower abs': 'Abdominales inferiores',
+  'obliques': 'Oblicuos', 'core': 'Core',
+  'pectorals': 'Pecho', 'chest': 'Pecho', 'upper chest': 'Pecho superior',
+  'triceps': 'Tríceps', 'biceps': 'Bíceps', 'brachialis': 'Braquial',
+  'delts': 'Deltoides', 'deltoids': 'Deltoides', 'rear deltoids': 'Deltoides posterior',
+  'shoulders': 'Hombros', 'rotator cuff': 'Manguito rotador',
+  'serratus anterior': 'Serrato anterior', 'levator scapulae': 'Elevador de la escápula',
+  'lats': 'Dorsales', 'latissimus dorsi': 'Dorsal ancho', 'upper back': 'Espalda alta',
+  'back': 'Espalda', 'rhomboids': 'Romboides', 'traps': 'Trapecios', 'trapezius': 'Trapecio',
+  'spine': 'Columna', 'lower back': 'Zona lumbar',
+  'quads': 'Cuádriceps', 'quadriceps': 'Cuádriceps', 'hamstrings': 'Isquios',
+  'glutes': 'Glúteos', 'calves': 'Pantorrillas', 'soleus': 'Sóleo',
+  'adductors': 'Aductores', 'abductors': 'Abductores',
+  'hip flexors': 'Flexores de cadera', 'inner thighs': 'Cara interna del muslo',
+  'groin': 'Ingle', 'shins': 'Espinillas', 'ankles': 'Tobillos',
+  'ankle stabilizers': 'Estabilizadores de tobillo', 'feet': 'Pies',
+  'forearms': 'Antebrazos', 'wrists': 'Muñecas', 'hands': 'Manos',
+  'wrist extensors': 'Extensores de muñeca', 'wrist flexors': 'Flexores de muñeca',
+  'grip muscles': 'Agarre',
+  'sternocleidomastoid': 'Esternocleidomastoideo',
+  'cardiovascular system': 'Sistema cardiovascular',
+}
+
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
+}
+
+// Unlike legacy normalize() (strips punctuation), this folds punctuation into
+// spaces so "push-up" and "push up" produce the same key.
+function exdbNormalize(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function exdbMuscles(dbEx) {
+  const terms = [...new Set([dbEx.target, ...(dbEx.secondary_muscles || [])].filter(Boolean))]
+  const en = terms.map(capitalize).join(', ')
+  const es = terms.map(t => EXDB_MUSCLE_ES[t.toLowerCase()] || capitalize(t)).join(', ')
+  return { es: es || 'General', en: en || 'General' }
+}
+
+function exdbCategory(dbEx) {
+  if (EXDB_MOBILITY_RE.test(dbEx.name.en) || dbEx.body_part === 'neck') return 'movilidad'
+  return EXDB_TARGET_CATEGORY[dbEx.target] || 'full'
+}
+
+function mergeExercisedb(baseList) {
+  let exdbData, matchesData
+  try {
+    exdbData = JSON.parse(readFileSync(EXDB_PATH, 'utf8'))
+    matchesData = JSON.parse(readFileSync(EXDB_MATCHES_PATH, 'utf8'))
+  } catch {
+    console.log('  seeds/exercisedb/ not found — skipping ExerciseDB layer')
+    return { exdbEnriched: 0, exdbNew: 0 }
+  }
+
+  const curated = matchesData.matches || {}
+  const byId = new Map(baseList.map(ex => [ex.id, ex]))
+
+  // Normalized-name index of the current list. Keys claimed by 2+ distinct
+  // ids are ambiguous and excluded from auto-matching.
+  const nameIndex = new Map()
+  const ambiguous = new Set()
+  for (const ex of baseList) {
+    const keys = new Set()
+    for (const lang of ['en', 'es']) {
+      const n = ex.name?.[lang]
+      if (n) keys.add(exdbNormalize(n))
+    }
+    for (const key of keys) {
+      if (nameIndex.has(key) && nameIndex.get(key) !== ex.id) ambiguous.add(key)
+      else nameIndex.set(key, ex.id)
+    }
+  }
+
+  for (const [exdbId, targetId] of Object.entries(curated)) {
+    if (!byId.has(targetId)) {
+      throw new Error(`_matches.json maps ${exdbId} → "${targetId}" but that id is not in the catalog`)
+    }
+  }
+
+  const usedIds = new Set(baseList.map(ex => ex.id))
+  // Upstream dataset contains a handful of literally duplicated rows (same
+  // name + equipment under two ids). First row wins; later ones are skipped.
+  const addedKeys = new Set()
+  let exdbEnriched = 0
+  let exdbNew = 0
+  let exdbSkippedDup = 0
+
+  for (const dbEx of exdbData.exercises) {
+    const paragraph = {
+      es: (dbEx.steps?.es || []).join(' '),
+      en: (dbEx.steps?.en || []).join(' '),
+    }
+
+    // Resolve match: curated map first, then unambiguous exact name equality
+    let targetId = curated[dbEx.id]
+    if (!targetId) {
+      const key = exdbNormalize(dbEx.name.en)
+      if (!ambiguous.has(key)) targetId = nameIndex.get(key)
+    }
+
+    if (targetId && byId.has(targetId)) {
+      const ex = byId.get(targetId)
+      ex.exercisedb_id = dbEx.id
+      if (dbEx.media_id) ex.exercisedb_media_id = dbEx.media_id
+      if (dbEx.target) ex.target_muscle = dbEx.target
+      if (dbEx.secondary_muscles?.length) ex.secondary_muscles = dbEx.secondary_muscles
+      if (dbEx.body_part) ex.body_part = dbEx.body_part
+      // Fill missing description languages only — never overwrite curated text
+      if (paragraph.es || paragraph.en) {
+        const desc = typeof ex.description === 'object' && ex.description ? ex.description : {}
+        ex.description = {
+          es: desc.es || paragraph.es || paragraph.en,
+          en: desc.en || paragraph.en || paragraph.es,
+        }
+      }
+      exdbEnriched++
+      continue
+    }
+
+    // New entry
+    const equipId = EXDB_EQUIP_MAP[dbEx.equipment]
+    if (equipId === undefined) {
+      console.warn(`  WARN: unknown ExerciseDB equipment "${dbEx.equipment}" — using "otro"`)
+    }
+
+    const dupKey = `${exdbNormalize(dbEx.name.en)}|${equipId ?? 'otro'}`
+    if (addedKeys.has(dupKey)) {
+      console.warn(`  WARN: upstream duplicate row ${dbEx.id} ("${dbEx.name.en}") — skipping`)
+      exdbSkippedDup++
+      continue
+    }
+
+    let id = slugify(dbEx.name.en)
+    if (usedIds.has(id)) id = `${id}_exdb`
+    if (usedIds.has(id)) {
+      console.warn(`  WARN: id collision for ExerciseDB ${dbEx.id} ("${dbEx.name.en}") — skipping`)
+      continue
+    }
+
+    const category = exdbCategory(dbEx)
+    const isCardio = dbEx.target === 'cardiovascular system'
+    const isTimer = category === 'movilidad' || isCardio
+    const timerSeconds = isTimer ? (isCardio ? 60 : 30) : undefined
+
+    const newEx = {
+      id,
+      name: {
+        es: dbEx.name.es || capitalize(dbEx.name.en),
+        en: capitalize(dbEx.name.en) || dbEx.name.es,
+      },
+      muscles: exdbMuscles(dbEx),
+      sets: 3,
+      reps: isTimer ? `${timerSeconds}s` : '8-12',
+      rest: 60,
+      note: { es: '', en: '' },
+      description: {
+        es: paragraph.es || paragraph.en,
+        en: paragraph.en || paragraph.es,
+      },
+      priority: 'med',
+      isTimer,
+      ...(timerSeconds ? { timerSeconds } : {}),
+      category,
+      difficulty: inferDifficulty(dbEx.name.en),
+      equipment: [equipId ?? 'otro'],
+      source: 'exercisedb',
+      exercisedb_id: dbEx.id,
+      ...(dbEx.media_id ? { exercisedb_media_id: dbEx.media_id } : {}),
+      ...(dbEx.target ? { target_muscle: dbEx.target } : {}),
+      ...(dbEx.secondary_muscles?.length ? { secondary_muscles: dbEx.secondary_muscles } : {}),
+      ...(dbEx.body_part ? { body_part: dbEx.body_part } : {}),
+      youtube_search: youtubeUrl(dbEx.name.en),
+      youtube_query: `${dbEx.name.en} exercise tutorial`,
+      images: [],
+    }
+
+    baseList.push(newEx)
+    usedIds.add(id)
+    addedKeys.add(dupKey)
+    exdbNew++
+  }
+
+  if (exdbSkippedDup > 0) console.log(`  Skipped upstream duplicate rows: ${exdbSkippedDup}`)
+  return { exdbEnriched, exdbNew }
+}
+
 // ── HARD INVARIANT check ──────────────────────────────────────────────────────
 function assertInvariant(originalIds, finalList) {
   const finalIds = new Set(finalList.map(e => e.id))
@@ -777,6 +1038,7 @@ function rebuildCatalog(finalList) {
     total_count: totalCount,
     local_count: finalList.filter(e => e.source === 'local').length,
     wger_count: finalList.filter(e => e.source === 'wger').length,
+    exercisedb_count: finalList.filter(e => e.source === 'exercisedb').length,
     with_images: withImages,
     with_curated_video: withCuratedVideo,
     with_youtube_query: withYoutubeQuery,
@@ -826,6 +1088,12 @@ async function main() {
   const { enrichedCount, newCount } = mergeSeeds(baseList, idMap, allSeeds)
   console.log(`  Enriched: ${enrichedCount} existing entries`)
   console.log(`  New entries added: ${newCount}`)
+
+  // ExerciseDB layer (after seeds so seed enrichments are already in place)
+  console.log('\nMerging ExerciseDB layer...')
+  const { exdbEnriched, exdbNew } = mergeExercisedb(baseList)
+  console.log(`  Enriched with ExerciseDB data: ${exdbEnriched}`)
+  console.log(`  New ExerciseDB entries: ${exdbNew}`)
 
   // Log lossy equipment mappings
   if (LOSSY_MAP_LOG.length > 0) {
