@@ -5,7 +5,7 @@ import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import { METRIC_UNITS, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
+import { getMetricUnit, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { ShareButton } from '../components/ShareButton'
 import { shareChallenge } from '../lib/share'
@@ -64,8 +64,8 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
   const isCreator = challenge.creator === userId
   const isActive = challenge.status === 'active'
-  const unit = challenge.metric === 'custom' ? '' : METRIC_UNITS[challenge.metric]
-  const metricLabel = getMetricLabel(challenge.metric, challenge.custom_metric)
+  const unit = getMetricUnit(challenge.metric, challenge.exercise_slug)
+  const metricLabel = getMetricLabel(challenge.metric, challenge.custom_metric, challenge.exercise_slug)
   const invitableUsers = following.filter(u => !participantIds.has(u.id))
 
   const handleInvite = async (targetId: string) => {

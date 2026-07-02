@@ -535,6 +535,14 @@ export default function ExerciseDetailPage() {
               GOOGLE
               <ExternalLinkIcon className="size-3.5" />
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-lime/30 text-lime hover:border-lime/50 hover:bg-lime/5 font-mono text-[11px] tracking-widest"
+              onClick={() => navigate(`/challenges/new?exercise=${encodeURIComponent(exercise.id)}`)}
+            >
+              🎯 {t('exerciseDetail.createChallenge')}
+            </Button>
             {(() => {
               const u = getCurrentUser()
               const role = u?.role as string | undefined

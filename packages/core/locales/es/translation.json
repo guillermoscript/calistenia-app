@@ -136,6 +136,7 @@
 
   "exerciseLibrary.showMore": "Mostrar más ({{count}})",
   "exerciseDetail.variants": "Variantes",
+  "exerciseDetail.createChallenge": "CREAR RETO",
 
   "difficulty.beginner": "Principiante",
   "difficulty.intermediate": "Intermedio",
@@ -2135,6 +2136,7 @@
   "challenge.metricStreak": "Mayor racha",
   "challenge.metricLsit": "Mayor L-sit",
   "challenge.metricHandstand": "Mayor handstand",
+  "challenge.metricExercise": "Ejercicio",
   "challenge.metricCustom": "Personalizado",
   "challenge.unitDays": "días",
   "challenge.finished": "Finalizado",
@@ -2214,6 +2216,8 @@
   "challenge.metricDesc.longest_streak": "Mayor racha consecutiva",
   "challenge.metricDesc.most_lsit": "Mayor tiempo en L-sit",
   "challenge.metricDesc.most_handstand": "Mayor tiempo en handstand",
+  "challenge.metric.exercise": "Ejercicio",
+  "challenge.metricDesc.exercise": "Mejor set de un ejercicio del catálogo",
   "challenge.metricDesc.custom": "Define tu propia métrica",
   "challenge.duration.label": "Duración",
   "challenge.duration.1week": "1 semana",
@@ -2230,6 +2234,9 @@
   "challenge.createButton": "CREAR DESAFÍO",
   "challenge.titlePlaceholder": "Ej: Semana de pull-ups, Reto de 100 flexiones...",
   "challenge.customMetricPlaceholder": "Ej: Km corridos, minutos de plancha, vasos de agua...",
+  "challenge.exerciseSearchPlaceholder": "Busca un ejercicio (ej: dominadas)...",
+  "challenge.exerciseTitlePrefill": "PR de {{name}}",
+  "challenge.changeExercise": "Cambiar",
   "challenge.goalPlaceholder": "Ej: 100",
   "challenge.inviteFriends": "Invitar amigos",
 

@@ -16,6 +16,7 @@ export interface VariantEntry {
   equipment?: string[]
   source?: string
   family?: string
+  isTimer?: boolean
   [key: string]: unknown
 }
 
@@ -63,4 +64,14 @@ export function getVariants(exerciseId: string, limit = 12): VariantEntry[] {
 /** Family id of an exercise (null when it has none). */
 export function getFamily(exerciseId: string): string | null {
   return _byId.get(exerciseId)?.family ?? null
+}
+
+/** Catalog entry by id (undefined when unknown). */
+export function getCatalogEntry(exerciseId: string): VariantEntry | undefined {
+  return _byId.get(exerciseId)
+}
+
+/** Full flattened catalog (shared index — do not mutate). */
+export function getAllCatalogEntries(): VariantEntry[] {
+  return Array.from(_byId.values())
 }

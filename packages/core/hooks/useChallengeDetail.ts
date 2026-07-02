@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { op } from '../lib/analytics'
 import { localMidnightAsUTC, addDays, utcToLocalDateStr } from '../lib/dateUtils'
+import { parseRepsForPR } from '../lib/pr-utils'
 import { qk } from '../lib/query-keys'
 import type { Challenge, ChallengeMetric } from '../types'
 import type { LeaderboardEntry } from './useLeaderboard'
@@ -20,6 +21,7 @@ async function fetchChallenge(challengeId: string): Promise<Challenge> {
     title: ch.title,
     metric: ch.metric as ChallengeMetric,
     custom_metric: ch.custom_metric || '',
+    exercise_slug: ch.exercise_slug || '',
     description: ch.description || '',
     goal: ch.goal || 0,
     starts_at: ch.starts_at,
@@ -64,7 +66,7 @@ async function fetchLeaderboard(
 
       let value = 0
       try {
-        value = await getScore(uid, challenge.metric, startStr, endStr)
+        value = await getScore(uid, challenge.metric, startStr, endStr, challenge.exercise_slug)
       } catch { /* valor por defecto 0 */ }
 
       return {
@@ -160,8 +162,27 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
 
 // ── Cálculo de score por métrica ──────────────────────────────────────────────
 
-async function getScore(uid: string, metric: ChallengeMetric, startStr: string, endStr: string): Promise<number> {
+async function getScore(uid: string, metric: ChallengeMetric, startStr: string, endStr: string, exerciseSlug?: string): Promise<number> {
   switch (metric) {
+    case 'exercise': {
+      // Mejor set del ejercicio del reto dentro de la ventana (sets_log es
+      // legible por cualquier usuario autenticado desde la migración 1777000005).
+      if (!exerciseSlug) return 0
+      const sets = await pb.collection('sets_log').getFullList({
+        filter: pb.filter(
+          'user = {:uid} && exercise_id = {:eid} && logged_at >= {:start} && logged_at <= {:end}',
+          { uid, eid: exerciseSlug, start: startStr, end: endStr },
+        ),
+        fields: 'reps',
+        $autoCancel: false,
+      })
+      let best = 0
+      for (const s of sets) {
+        const n = parseRepsForPR((s as any).reps)
+        if (n != null && n > best) best = n
+      }
+      return best
+    }
     case 'most_sessions': {
       const res = await pb.collection('sessions').getList(1, 1, {
         filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: startStr, end: endStr }),

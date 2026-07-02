@@ -123,7 +123,7 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
 function ChallengeCard({ challenge: ch, onTap }: { challenge: ChallengeWithMeta; onTap: () => void }) {
   const { t } = useTranslation()
   const isActive = ch.status === 'active'
-  const metricLabel = getMetricLabel(ch.metric, ch.custom_metric)
+  const metricLabel = getMetricLabel(ch.metric, ch.custom_metric, ch.exercise_slug)
 
   return (
     <button

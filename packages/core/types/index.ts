@@ -529,7 +529,7 @@ export interface CardioSession {
 
 // ─── Challenges ──────────────────────────────────────────────────────────────
 
-export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand' | 'custom'
+export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand' | 'exercise' | 'custom'
 export type ChallengeStatus = 'active' | 'ended'
 
 export interface Challenge {
@@ -538,6 +538,8 @@ export interface Challenge {
   title: string
   metric: ChallengeMetric
   custom_metric?: string
+  /** Catalog slug when metric === 'exercise' (matches sets_log.exercise_id). */
+  exercise_slug?: string
   description?: string
   goal?: number
   starts_at: string

@@ -136,6 +136,7 @@
 
   "exerciseLibrary.showMore": "Show more ({{count}})",
   "exerciseDetail.variants": "Variations",
+  "exerciseDetail.createChallenge": "CREATE CHALLENGE",
 
   "difficulty.beginner": "Beginner",
   "difficulty.intermediate": "Intermediate",
@@ -2135,6 +2136,7 @@
   "challenge.metricStreak": "Longest streak",
   "challenge.metricLsit": "Longest L-sit",
   "challenge.metricHandstand": "Longest handstand",
+  "challenge.metricExercise": "Exercise",
   "challenge.metricCustom": "Custom",
   "challenge.unitDays": "days",
   "challenge.finished": "Finished",
@@ -2214,6 +2216,8 @@
   "challenge.metricDesc.longest_streak": "Longest consecutive streak",
   "challenge.metricDesc.most_lsit": "Longest L-sit hold",
   "challenge.metricDesc.most_handstand": "Longest handstand hold",
+  "challenge.metric.exercise": "Exercise",
+  "challenge.metricDesc.exercise": "Best set of any catalog exercise",
   "challenge.metricDesc.custom": "Define your own metric",
   "challenge.duration.label": "Duration",
   "challenge.duration.1week": "1 week",
@@ -2230,6 +2234,9 @@
   "challenge.createButton": "CREATE CHALLENGE",
   "challenge.titlePlaceholder": "E.g.: Pull-up week, 100 push-ups challenge...",
   "challenge.customMetricPlaceholder": "E.g.: Km run, minutes of plank, glasses of water...",
+  "challenge.exerciseSearchPlaceholder": "Search an exercise (e.g. pull-ups)...",
+  "challenge.exerciseTitlePrefill": "{{name}} PR",
+  "challenge.changeExercise": "Change",
   "challenge.goalPlaceholder": "E.g.: 100",
   "challenge.inviteFriends": "Invite friends",
 
