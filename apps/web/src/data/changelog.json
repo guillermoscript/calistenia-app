@@ -1,6 +1,82 @@
 {
-  "generated": "2026-03-26T00:39:15.869Z",
+  "generated": "2026-07-02T12:00:00.000Z",
   "versions": [
+    {
+      "version": "1.1.0",
+      "date": "2026-07-02",
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "order": 0,
+          "type": "feat",
+          "items": [
+            {
+              "description": "Bodyweight-only filter + related (non-variation) exercises",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "8d12a1c"
+            },
+            {
+              "description": "Variants grouped by level (easier/same/harder) + similar fallback",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "3d80317"
+            },
+            {
+              "description": "Per-exercise challenges targeting any catalog exercise",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "9880217"
+            },
+            {
+              "description": "Variation families + Variantes section on exercise detail",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "5fe8a70"
+            },
+            {
+              "description": "Canonical muscle-group taxonomy baked into every entry",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "8f92cfa"
+            },
+            {
+              "description": "Library filter parity — difficulty, equipment, muscle chips",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "a258447"
+            },
+            {
+              "description": "Calisthenics-first AI, weight PRs, PB reseed + cap fixes",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "21c9e13"
+            },
+            {
+              "description": "Import ExerciseDB dataset — 307 → 1,578 exercises",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "64da7fe"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "order": 1,
+          "type": "fix",
+          "items": [
+            {
+              "description": "Curated es descriptions for 8 wger entries leaking English",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "41d2182"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.0.0",
       "date": "2026-03-26",

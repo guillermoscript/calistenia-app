@@ -9,6 +9,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.0.9] - 2026-07-02
+
+_The catalog grows to 1,578 exercises, with filters and level-based variants, related exercises and per-exercise challenges._
+
+### Added
+
+- **Catalog expanded to 1,578 exercises** — The exercise catalog grows from 307 to 1,578 exercises, with Spanish names and instructions (98% with a description). No third-party GIFs for now.
+- **Library filters on mobile** — Filter the library by difficulty, equipment and muscle group — now matching the web.
+- **"No equipment" filter** — New filter to show only pure bodyweight exercises (454 in the catalog).
+- **Muscle groups and level-based variants** — Filter chips for 15 canonical muscle groups, plus a new "Variants" section on every exercise grouped by level — easier, same level, harder.
+- **Related exercises** — Every exercise now suggests "Related" picks — similar movements by muscle that aren't variations of the same exercise.
+- **Per-exercise challenges** — Create a challenge on any catalog exercise (e.g. "30-day pull-up PR") from the web; the leaderboard scores your best logged set.
+- **PRs with added weight** — Personal records now estimate your e1RM when you log added weight.
+- **AI free session skips gym by default** — The AI free session skips gym-equipment exercises unless you turn them on.
+
+### Fixed
+
+- **Translation fixes** — 8 exercises (like Muscle up) no longer show their description in English when the app is set to Spanish, and the difficulty chip on the exercise detail now translates correctly.
+
 ## [1.0.7] - 2026-06-24
 
 _When a meal-photo analysis fails, you now see the real error instead of a silent failure._
@@ -109,7 +128,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.7...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.9...HEAD
+[1.0.9]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.7...mobile-v1.0.9
 [1.0.7]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.6...mobile-v1.0.7
 [1.0.6]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.5...mobile-v1.0.6
 [1.0.5]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.4...mobile-v1.0.5

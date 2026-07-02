@@ -1,6 +1,194 @@
 {
-  "generated": "2026-06-24T18:25:54.674Z",
+  "generated": "2026-07-02T12:00:00.000Z",
   "versions": [
+    {
+      "version": "1.0.9",
+      "date": "2026-07-02",
+      "summary": {
+        "es": "El catálogo crece a 1,578 ejercicios, con filtros y variantes por nivel, ejercicios relacionados y retos por ejercicio.",
+        "en": "The catalog grows to 1,578 exercises, with filters and level-based variants, related exercises and per-exercise challenges."
+      },
+      "highlights": [
+        {
+          "icon": "📚",
+          "type": "feat",
+          "title": {
+            "es": "Catálogo ampliado a 1,578 ejercicios",
+            "en": "Catalog expanded to 1,578 exercises"
+          },
+          "body": {
+            "es": "El catálogo pasa de 307 a 1,578 ejercicios, con nombres e instrucciones en español (98% con descripción). Por ahora sin GIFs de terceros.",
+            "en": "The exercise catalog grows from 307 to 1,578 exercises, with Spanish names and instructions (98% with a description). No third-party GIFs for now."
+          }
+        },
+        {
+          "icon": "🔍",
+          "type": "feat",
+          "title": {
+            "es": "Filtros de biblioteca en móvil",
+            "en": "Library filters on mobile"
+          },
+          "body": {
+            "es": "Filtra la biblioteca por dificultad, equipo y grupo muscular — igual que en la web.",
+            "en": "Filter the library by difficulty, equipment and muscle group — now matching the web."
+          }
+        },
+        {
+          "icon": "🤸",
+          "type": "feat",
+          "title": {
+            "es": "Filtro \"Sin equipo\"",
+            "en": "\"No equipment\" filter"
+          },
+          "body": {
+            "es": "Nuevo filtro para ver solo ejercicios de puro peso corporal (454 en el catálogo).",
+            "en": "New filter to show only pure bodyweight exercises (454 in the catalog)."
+          }
+        },
+        {
+          "icon": "💪",
+          "type": "feat",
+          "title": {
+            "es": "Grupos musculares y variantes por nivel",
+            "en": "Muscle groups and level-based variants"
+          },
+          "body": {
+            "es": "Chips de filtro por 15 grupos musculares canónicos, y una nueva sección \"Variantes\" en cada ejercicio agrupada por nivel — más fáciles, mismo nivel, más difíciles.",
+            "en": "Filter chips for 15 canonical muscle groups, plus a new \"Variants\" section on every exercise grouped by level — easier, same level, harder."
+          }
+        },
+        {
+          "icon": "🔗",
+          "type": "feat",
+          "title": {
+            "es": "Ejercicios relacionados",
+            "en": "Related exercises"
+          },
+          "body": {
+            "es": "Cada ejercicio ahora sugiere \"Relacionados\" — movimientos parecidos por músculos que no son variaciones del mismo ejercicio.",
+            "en": "Every exercise now suggests \"Related\" picks — similar movements by muscle that aren't variations of the same exercise."
+          }
+        },
+        {
+          "icon": "🏆",
+          "type": "feat",
+          "title": {
+            "es": "Retos por ejercicio",
+            "en": "Per-exercise challenges"
+          },
+          "body": {
+            "es": "Crea un reto sobre cualquier ejercicio del catálogo (p. ej. \"PR de dominadas en 30 días\") desde la web; el leaderboard puntúa tu mejor set registrado.",
+            "en": "Create a challenge on any catalog exercise (e.g. \"30-day pull-up PR\") from the web; the leaderboard scores your best logged set."
+          }
+        },
+        {
+          "icon": "🏋️",
+          "type": "feat",
+          "title": {
+            "es": "PRs con peso extra",
+            "en": "PRs with added weight"
+          },
+          "body": {
+            "es": "Los récords personales ahora estiman tu e1RM al registrar peso extra (lastre).",
+            "en": "Personal records now estimate your e1RM when you log added weight."
+          }
+        },
+        {
+          "icon": "🚫",
+          "type": "feat",
+          "title": {
+            "es": "Sesión libre IA sin gimnasio por defecto",
+            "en": "AI free session skips gym by default"
+          },
+          "body": {
+            "es": "La sesión libre con IA excluye ejercicios de gimnasio salvo que actives incluirlos.",
+            "en": "The AI free session skips gym-equipment exercises unless you turn them on."
+          }
+        },
+        {
+          "icon": "🐛",
+          "type": "fix",
+          "title": {
+            "es": "Traducciones corregidas",
+            "en": "Translation fixes"
+          },
+          "body": {
+            "es": "8 ejercicios (como Muscle up) ya no muestran su descripción en inglés con la app en español, y el chip de dificultad en el detalle del ejercicio ahora se traduce correctamente.",
+            "en": "8 exercises (like Muscle up) no longer show their description in English when the app is set to Spanish, and the difficulty chip on the exercise detail now translates correctly."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Import masivo de ExerciseDB: catálogo de 307 a 1,578 ejercicios con nombres e instrucciones en español",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "64da7fe"
+            },
+            {
+              "description": "Sesión libre con IA prioriza calistenia y excluye gimnasio salvo activarlo; PRs con peso vía e1RM; reseed de catálogo",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "21c9e13"
+            },
+            {
+              "description": "Filtros de biblioteca en móvil por dificultad, equipo y grupo muscular",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "a258447"
+            },
+            {
+              "description": "Taxonomía muscular canónica de 15 grupos en cada ejercicio del catálogo",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "8f92cfa"
+            },
+            {
+              "description": "Familias de variaciones + sección Variantes en el detalle de ejercicio",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "5fe8a70"
+            },
+            {
+              "description": "Retos por ejercicio: crea un reto sobre cualquier ejercicio del catálogo",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "9880217"
+            },
+            {
+              "description": "Variantes agrupadas por nivel (más fáciles/mismo nivel/más difíciles) con fallback a similares",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "3d80317"
+            },
+            {
+              "description": "Filtro \"Sin equipo\" + sección de ejercicios relacionados (no variaciones)",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "8d12a1c"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "8 ejercicios (p. ej. Muscle up) mostraban su descripción en inglés con la app en español",
+              "scope": "catalog",
+              "breaking": false,
+              "hash": "41d2182"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.0.7",
       "date": "2026-06-24",
