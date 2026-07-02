@@ -12,34 +12,10 @@ import { cn } from '@/lib/utils'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import { EQUIPMENT_CATALOG, getEquipmentLabelKey, getExerciseEquipment } from '@calistenia/core/lib/equipment'
+import { MUSCLE_GROUPS, getMuscleGroupLabelKey, getMuscleGroups } from '@calistenia/core/lib/muscles'
 import type { DifficultyLevel } from '@calistenia/core/types'
 
 const DIFFICULTIES: DifficultyLevel[] = ['beginner', 'intermediate', 'advanced']
-
-/** Top muscle-group chips per locale, by frequency across the catalog.
- *  Case-insensitive identity, capitalized display, computed once per locale. */
-const muscleChipsCache = new Map<string, string[]>()
-function getMuscleChips(locale: string): string[] {
-  const cached = muscleChipsCache.get(locale)
-  if (cached) return cached
-  const freq = new Map<string, { label: string; n: number }>()
-  for (const ex of CATALOG) {
-    for (const raw of localize(ex.muscles, locale).split(',')) {
-      const label = raw.trim()
-      if (label.length < 3) continue
-      const key = label.toLowerCase()
-      const cur = freq.get(key)
-      if (cur) cur.n++
-      else freq.set(key, { label: label.charAt(0).toUpperCase() + label.slice(1), n: 1 })
-    }
-  }
-  const chips = [...freq.values()]
-    .sort((a, b) => b.n - a.n)
-    .slice(0, 16)
-    .map(m => m.label)
-  muscleChipsCache.set(locale, chips)
-  return chips
-}
 
 export default function LibraryScreen() {
   const { t, i18n } = useTranslation()
@@ -52,16 +28,14 @@ export default function LibraryScreen() {
   const [equipment, setEquipment] = useState<string | null>(null)
   const [muscle, setMuscle] = useState<string | null>(null)
 
-  const muscleChips = useMemo(() => getMuscleChips(locale), [locale])
   const activeCount = (difficulty ? 1 : 0) + (equipment ? 1 : 0) + (muscle ? 1 : 0)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const m = muscle?.toLowerCase()
     return CATALOG.filter(ex => {
       if (category !== 'todos' && ex.category !== category) return false
       if (difficulty && ex.difficulty !== difficulty) return false
-      if (m && !localize(ex.muscles, locale).toLowerCase().includes(m)) return false
+      if (muscle && !getMuscleGroups(ex).includes(muscle)) return false
       if (equipment) {
         const ids = getExerciseEquipment({
           name: localize(ex.name, locale),
@@ -172,7 +146,7 @@ export default function LibraryScreen() {
               })}
             </ScrollView>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
-              {muscleChips.map(mus => {
+              {MUSCLE_GROUPS.map(mus => {
                 const active = muscle === mus
                 return (
                   <Pressable
@@ -181,7 +155,7 @@ export default function LibraryScreen() {
                     className={cn('rounded-full border px-3 py-1.5', active ? 'border-lime/40 bg-lime/15' : 'border-border bg-card')}
                   >
                     <Text className={cn('font-mono text-[10px] uppercase tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
-                      {mus}
+                      {t(getMuscleGroupLabelKey(mus))}
                     </Text>
                   </Pressable>
                 )

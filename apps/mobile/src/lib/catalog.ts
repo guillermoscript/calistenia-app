@@ -20,6 +20,7 @@ export interface CatalogExercise {
   timerSeconds?: number
   difficulty?: DifficultyLevel
   equipment?: string[]
+  muscle_groups?: string[]
   youtube_query?: string
   youtube_search?: string
 }

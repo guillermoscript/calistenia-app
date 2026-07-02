@@ -118,6 +118,22 @@
   "equipment.rodillo": "Rodillo de espuma",
   "equipment.otro": "Otro",
 
+  "muscleGroup.pecho": "Pecho",
+  "muscleGroup.hombros": "Hombros",
+  "muscleGroup.triceps": "Tríceps",
+  "muscleGroup.biceps": "Bíceps",
+  "muscleGroup.antebrazos": "Antebrazos",
+  "muscleGroup.espalda": "Espalda",
+  "muscleGroup.core": "Core",
+  "muscleGroup.lumbar": "Lumbar",
+  "muscleGroup.gluteos": "Glúteos",
+  "muscleGroup.cuadriceps": "Cuádriceps",
+  "muscleGroup.isquios": "Isquios",
+  "muscleGroup.pantorrillas": "Pantorrillas",
+  "muscleGroup.cadera": "Cadera",
+  "muscleGroup.cuello": "Cuello",
+  "muscleGroup.cardio": "Cardio",
+
   "exerciseLibrary.showMore": "Mostrar más ({{count}})",
 
   "difficulty.beginner": "Principiante",

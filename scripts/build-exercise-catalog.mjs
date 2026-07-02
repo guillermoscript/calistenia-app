@@ -980,6 +980,141 @@ function mergeExercisedb(baseList) {
   return { exdbEnriched, exdbNew }
 }
 
+// ── Muscle-group taxonomy ─────────────────────────────────────────────────────
+// Canonical muscle groups baked into every entry as `muscle_groups` so apps
+// can filter on clean enum ids instead of free-text substring matching.
+// Labels live in i18n (muscleGroup.<id>). Derived from target_muscle +
+// secondary_muscles (ExerciseDB enums) plus tokens of the free-text `muscles`
+// field (both languages). Non-muscle qualities (balance, movilidad, etc.) are
+// intentionally unmapped.
+
+const MUSCLE_GROUP_ORDER = [
+  'pecho', 'hombros', 'triceps', 'biceps', 'antebrazos', 'espalda', 'core',
+  'lumbar', 'gluteos', 'cuadriceps', 'isquios', 'pantorrillas', 'cadera',
+  'cuello', 'cardio',
+]
+
+// token (lowercase, accent-stripped) → group id
+const MUSCLE_TOKEN_MAP = {
+  // pecho
+  'pecho': 'pecho', 'chest': 'pecho', 'pectorals': 'pecho', 'pectoral': 'pecho',
+  'pecho superior': 'pecho', 'upper chest': 'pecho',
+  'serrato anterior': 'pecho', 'serratus anterior': 'pecho', 'serrato': 'pecho',
+  // hombros
+  'hombros': 'hombros', 'shoulders': 'hombros', 'hombro': 'hombros',
+  'deltoides': 'hombros', 'delts': 'hombros', 'deltoids': 'hombros',
+  'deltoides posterior': 'hombros', 'rear deltoids': 'hombros', 'rear delts': 'hombros',
+  'manguito rotador': 'hombros', 'rotator cuff': 'hombros',
+  'elevador de la escapula': 'hombros', 'levator scapulae': 'hombros',
+  // triceps
+  'triceps': 'triceps',
+  // biceps
+  'biceps': 'biceps', 'braquial': 'biceps', 'brachialis': 'biceps',
+  // antebrazos
+  'antebrazos': 'antebrazos', 'forearms': 'antebrazos', 'antebrazo': 'antebrazos',
+  'agarre': 'antebrazos', 'grip': 'antebrazos', 'grip muscles': 'antebrazos',
+  'munecas': 'antebrazos', 'wrists': 'antebrazos',
+  'flexores de muneca': 'antebrazos', 'wrist flexors': 'antebrazos',
+  'extensores de muneca': 'antebrazos', 'wrist extensors': 'antebrazos',
+  'manos': 'antebrazos', 'hands': 'antebrazos',
+  // espalda (alta/dorsal/trapecios)
+  'espalda': 'espalda', 'back': 'espalda',
+  'espalda alta': 'espalda', 'upper back': 'espalda',
+  'dorsales': 'espalda', 'dorsal': 'espalda', 'lats': 'espalda',
+  'dorsal ancho': 'espalda', 'latissimus dorsi': 'espalda',
+  'dorsal unilateral': 'espalda', 'unilateral lats': 'espalda',
+  'romboides': 'espalda', 'rhomboids': 'espalda',
+  'trapecio': 'espalda', 'trapecios': 'espalda', 'traps': 'espalda', 'trapezius': 'espalda',
+  // core
+  'core': 'core', 'abdominales': 'core', 'abs': 'core', 'abdominals': 'core',
+  'oblicuos': 'core', 'obliques': 'core',
+  'core total': 'core', 'total core': 'core', 'core profundo': 'core', 'deep core': 'core',
+  'core inferior': 'core', 'lower core': 'core', 'lower abs': 'core',
+  'abdominales inferiores': 'core',
+  'recto abdominal': 'core', 'rectus abdominis': 'core',
+  'transverso abdominal': 'core', 'tva': 'core',
+  'core rotacional': 'core', 'rotational core': 'core', 'anti-rotation core': 'core',
+  'core anti-rotacion': 'core', 'core superior e inferior': 'core',
+  'core superior': 'core', 'upper and lower core': 'core', 'upper core': 'core',
+  // lumbar
+  'zona lumbar': 'lumbar', 'lower back': 'lumbar', 'espalda baja': 'lumbar',
+  'lumbar': 'lumbar', 'columna': 'lumbar', 'spine': 'lumbar',
+  'erectores': 'lumbar', 'erectors': 'lumbar', 'erector spinae': 'lumbar',
+  // gluteos
+  'gluteos': 'gluteos', 'glutes': 'gluteos', 'gluteo': 'gluteos',
+  'gluteo medio': 'gluteos', 'glute medius': 'gluteos',
+  'piriforme': 'gluteos', 'piriformis': 'gluteos',
+  // cuadriceps
+  'cuadriceps': 'cuadriceps', 'quadriceps': 'cuadriceps', 'quads': 'cuadriceps',
+  // isquios
+  'isquios': 'isquios', 'hamstrings': 'isquios', 'isquiotibiales': 'isquios',
+  // pantorrillas (+ tobillos/pies)
+  'pantorrillas': 'pantorrillas', 'calves': 'pantorrillas',
+  'soleo': 'pantorrillas', 'soleus': 'pantorrillas',
+  'tobillos': 'pantorrillas', 'ankles': 'pantorrillas',
+  'estabilizadores de tobillo': 'pantorrillas', 'ankle stabilizers': 'pantorrillas',
+  'pies': 'pantorrillas', 'feet': 'pantorrillas',
+  'espinillas': 'pantorrillas', 'shins': 'pantorrillas',
+  'tibial anterior': 'pantorrillas', 'tibialis anterior': 'pantorrillas',
+  // cadera
+  'flexores de cadera': 'cadera', 'hip flexors': 'cadera',
+  'caderas': 'cadera', 'hips': 'cadera', 'psoas': 'cadera',
+  'aductores': 'cadera', 'adductors': 'cadera',
+  'abductores': 'cadera', 'abductors': 'cadera',
+  'ingle': 'cadera', 'groin': 'cadera',
+  'cara interna del muslo': 'cadera', 'inner thighs': 'cadera',
+  // cuello
+  'cuello': 'cuello', 'neck': 'cuello',
+  'esternocleidomastoideo': 'cuello', 'sternocleidomastoid': 'cuello',
+  // cardio
+  'sistema cardiovascular': 'cardio', 'cardiovascular system': 'cardio', 'cardio': 'cardio',
+}
+
+function stripAccents(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+// 'cadena posterior' spans several groups — handled apart from the 1:1 map.
+const MUSCLE_TOKEN_MULTI = {
+  'cadena posterior': ['isquios', 'gluteos', 'lumbar'],
+  'posterior chain': ['isquios', 'gluteos', 'lumbar'],
+}
+
+function muscleTokenToGroups(raw) {
+  // Drop parenthetical qualifiers: "isquiotibiales (excéntrico)" → "isquiotibiales"
+  const tok = stripAccents(String(raw).toLowerCase().replace(/\([^)]*\)/g, '').trim())
+  if (MUSCLE_TOKEN_MULTI[tok]) return MUSCLE_TOKEN_MULTI[tok]
+  const g = MUSCLE_TOKEN_MAP[tok]
+  return g ? [g] : null
+}
+
+/** Stamp `muscle_groups` on every entry (union of enum fields + free text). */
+function stampMuscleGroups(baseList) {
+  let covered = 0
+  const unmapped = new Map()
+  for (const ex of baseList) {
+    const groups = new Set()
+    const terms = [
+      ex.target_muscle,
+      ...(ex.secondary_muscles ?? []),
+      ...str(ex.muscles, 'es').split(','),
+      ...(ex.muscles?.en ? ex.muscles.en.split(',') : []),
+    ]
+    for (const term of terms) {
+      if (!term || !String(term).trim()) continue
+      const gs = muscleTokenToGroups(term)
+      if (gs) gs.forEach(g => groups.add(g))
+      else {
+        const key = stripAccents(String(term).toLowerCase().trim())
+        unmapped.set(key, (unmapped.get(key) ?? 0) + 1)
+      }
+    }
+    ex.muscle_groups = MUSCLE_GROUP_ORDER.filter(g => groups.has(g))
+    if (ex.muscle_groups.length > 0) covered++
+  }
+  return { covered, unmapped }
+}
+
 // ── HARD INVARIANT check ──────────────────────────────────────────────────────
 function assertInvariant(originalIds, finalList) {
   const finalIds = new Set(finalList.map(e => e.id))
@@ -1039,6 +1174,7 @@ function rebuildCatalog(finalList) {
     local_count: finalList.filter(e => e.source === 'local').length,
     wger_count: finalList.filter(e => e.source === 'wger').length,
     exercisedb_count: finalList.filter(e => e.source === 'exercisedb').length,
+    with_muscle_groups: finalList.filter(e => e.muscle_groups?.length > 0).length,
     with_images: withImages,
     with_curated_video: withCuratedVideo,
     with_youtube_query: withYoutubeQuery,
@@ -1094,6 +1230,15 @@ async function main() {
   const { exdbEnriched, exdbNew } = mergeExercisedb(baseList)
   console.log(`  Enriched with ExerciseDB data: ${exdbEnriched}`)
   console.log(`  New ExerciseDB entries: ${exdbNew}`)
+
+  // Muscle-group taxonomy (last: needs merged muscles/target fields)
+  console.log('\nStamping muscle groups...')
+  const { covered, unmapped } = stampMuscleGroups(baseList)
+  console.log(`  Covered: ${covered}/${baseList.length}`)
+  const topUnmapped = [...unmapped.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12)
+  if (topUnmapped.length > 0) {
+    console.log(`  Unmapped muscle tokens (top): ${topUnmapped.map(([t, n]) => `${t}(${n})`).join(', ')}`)
+  }
 
   // Log lossy equipment mappings
   if (LOSSY_MAP_LOG.length > 0) {

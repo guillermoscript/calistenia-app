@@ -6,6 +6,7 @@ import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exe
 import catalogData from '@calistenia/core/data/exercise-catalog.json'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, EQUIPMENT_CATALOG, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
+import { MUSCLE_GROUPS, getMuscleGroupLabelKey, getMuscleGroups } from '@calistenia/core/lib/muscles'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
 import { useWorkout } from '../contexts/WorkoutContext'
@@ -39,6 +40,7 @@ interface CatalogExercise {
   demoVideo?: string
   difficulty?: DifficultyLevel
   equipment?: string[]
+  muscle_groups?: string[]
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -91,11 +93,6 @@ const DIFFICULTY_STYLE: Record<DifficultyLevel, { text: string; bg: string; bord
   advanced:     { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
 }
 
-const DEFAULT_MUSCLE_GROUPS = [
-  'Pecho', 'Hombros', 'Triceps', 'Dorsal', 'Biceps', 'Core',
-  'Cuadriceps', 'Gluteos', 'Isquios', 'Lumbar', 'Pantorrillas',
-  'Deltoides', 'Psoas', 'Columna',
-]
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -214,10 +211,16 @@ function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] 
   for (const catData of Object.values(catalogCategories) as any[]) {
     for (const ex of catData.exercises || []) {
       if (seen.has(ex.id)) {
-        // Enrich existing exercise with images/youtube from catalog
+        // Enrich existing exercise with images/taxonomy from catalog
         const existing = seen.get(ex.id)!
         if (!existing.demoImages?.length && ex.images?.length) {
           existing.demoImages = ex.images
+        }
+        if (!existing.muscle_groups?.length && Array.isArray(ex.muscle_groups)) {
+          existing.muscle_groups = ex.muscle_groups
+        }
+        if (!existing.equipment?.length && Array.isArray(ex.equipment)) {
+          existing.equipment = ex.equipment
         }
         continue
       }
@@ -238,6 +241,7 @@ function extractExercisesFromWorkouts(locale: string = 'es'): CatalogExercise[] 
         demoImages: ex.images?.length ? ex.images : undefined,
         difficulty: ex.difficulty,
         equipment: Array.isArray(ex.equipment) ? ex.equipment : undefined,
+        muscle_groups: Array.isArray(ex.muscle_groups) ? ex.muscle_groups : undefined,
       })
     }
   }
@@ -413,20 +417,6 @@ export default function ExerciseLibraryPage() {
     return () => { cancelled = true }
   }, [])
 
-  // Extract unique muscle groups from all exercises
-  const muscleGroups = useMemo(() => {
-    if (exercises.length === 0) return DEFAULT_MUSCLE_GROUPS
-    const allMuscles = new Set<string>()
-    exercises.forEach(ex => {
-      l(ex.muscles).split(',').forEach(m => {
-        const trimmed = m.trim()
-        if (trimmed) allMuscles.add(trimmed)
-      })
-    })
-    // Sort and return unique muscles, but limit to most common ones
-    const sorted = Array.from(allMuscles).sort((a, b) => a.localeCompare(b))
-    return sorted.length > 0 ? sorted : DEFAULT_MUSCLE_GROUPS
-  }, [exercises])
 
   // Filtered exercises
   const filtered = useMemo(() => {
@@ -450,10 +440,9 @@ export default function ExerciseLibraryPage() {
       result = result.filter(ex => accepted.includes(ex.category))
     }
 
-    // Muscle group filter
+    // Muscle group filter (canonical taxonomy ids baked into the catalog)
     if (activeMuscle) {
-      const muscle = activeMuscle.toLowerCase()
-      result = result.filter(ex => l(ex.muscles).toLowerCase().includes(muscle))
+      result = result.filter(ex => getMuscleGroups(ex).includes(activeMuscle))
     }
 
     // Difficulty filter
@@ -608,7 +597,10 @@ export default function ExerciseLibraryPage() {
         <span>{showMoreFilters ? '▾' : '▸'} {t('exerciseLibrary.equipmentAndMuscle')}</span>
         {(activeMuscle || activeEquipment) && (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-lime/10 text-lime border border-lime/20">
-            {[activeEquipment && t(getEquipmentLabelKey(activeEquipment)), activeMuscle].filter(Boolean).join(' + ')}
+            {[
+              activeEquipment && t(getEquipmentLabelKey(activeEquipment)),
+              activeMuscle && t(getMuscleGroupLabelKey(activeMuscle)),
+            ].filter(Boolean).join(' + ')}
           </span>
         )}
       </button>
@@ -650,7 +642,7 @@ export default function ExerciseLibraryPage() {
             >
               {t('exerciseLibrary.allMuscles')}
             </button>
-            {muscleGroups.map(muscle => (
+            {MUSCLE_GROUPS.map(muscle => (
               <button
                 key={muscle}
                 onClick={() => setActiveMuscle(activeMuscle === muscle ? null : muscle)}
@@ -661,7 +653,7 @@ export default function ExerciseLibraryPage() {
                     : 'text-muted-foreground/60 hover:text-muted-foreground'
                 )}
               >
-                {muscle.toUpperCase()}
+                {t(getMuscleGroupLabelKey(muscle)).toUpperCase()}
               </button>
             ))}
           </div>

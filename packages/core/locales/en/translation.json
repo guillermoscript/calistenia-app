@@ -118,6 +118,22 @@
   "equipment.rodillo": "Foam roller",
   "equipment.otro": "Other",
 
+  "muscleGroup.pecho": "Chest",
+  "muscleGroup.hombros": "Shoulders",
+  "muscleGroup.triceps": "Triceps",
+  "muscleGroup.biceps": "Biceps",
+  "muscleGroup.antebrazos": "Forearms",
+  "muscleGroup.espalda": "Back",
+  "muscleGroup.core": "Core",
+  "muscleGroup.lumbar": "Lower back",
+  "muscleGroup.gluteos": "Glutes",
+  "muscleGroup.cuadriceps": "Quads",
+  "muscleGroup.isquios": "Hamstrings",
+  "muscleGroup.pantorrillas": "Calves",
+  "muscleGroup.cadera": "Hips",
+  "muscleGroup.cuello": "Neck",
+  "muscleGroup.cardio": "Cardio",
+
   "exerciseLibrary.showMore": "Show more ({{count}})",
 
   "difficulty.beginner": "Beginner",
