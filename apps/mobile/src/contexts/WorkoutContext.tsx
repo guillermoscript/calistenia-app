@@ -38,7 +38,7 @@ interface WorkoutActions {
   getLongestStreak: () => number
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
-  checkAndUpdatePR: (exerciseId: string, reps: string) => Promise<PREvent | null>
+  checkAndUpdatePR: (exerciseId: string, reps: string, weight?: number) => Promise<PREvent | null>
   // Program actions
   getWorkout: (phaseNumber: number, dayId: string) => Workout | null
   selectProgram: (programId: string) => Promise<boolean>
@@ -91,7 +91,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   // Wrap logSet to auto-detect PRs
   const logSet = useCallback(async (exerciseId: string, workoutKey: string, setData: Partial<SetData>, date?: string): Promise<PREvent | null> => {
     await rawLogSet(exerciseId, workoutKey, setData, date)
-    if (setData.reps) return checkAndUpdatePR(exerciseId, setData.reps as string)
+    if (setData.reps) return checkAndUpdatePR(exerciseId, setData.reps as string, setData.weight ?? undefined)
     return null
   }, [rawLogSet, checkAndUpdatePR])
 

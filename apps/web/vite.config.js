@@ -53,6 +53,8 @@ export default defineConfig({
     },
     injectManifest: {
       globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      // exercise-catalog chunk (~3MB) exceeds the 2MB workbox default
+      maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
     },
   }), sentryVitePlugin({
     org: "guillermoscript",
@@ -107,10 +109,11 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          recharts: ['recharts'],
-          react: ['react', 'react-dom', 'react-router-dom'],
-          leaflet: ['leaflet'],
+        manualChunks(id) {
+          if (id.includes('data/exercise-catalog.json')) return 'exercise-catalog'
+          if (id.includes('node_modules/recharts')) return 'recharts'
+          if (id.includes('node_modules/react-router-dom') || id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) return 'react'
+          if (id.includes('node_modules/leaflet')) return 'leaflet'
         },
       },
     },

@@ -180,6 +180,16 @@ export interface Settings {
   /** Universal PRs: exerciseId → best achieved reps. Authoritative for ALL
    *  exercises. The 5 pr_* fields above are kept in sync for legacy UI. */
   prs?: Record<string, number>
+  /** Weight PRs (gym/weighted exercises): exerciseId → best set by estimated
+   *  1RM. Like `prs`, localStorage-only — rebuilt from sets_log.weight_kg. */
+  weight_prs?: Record<string, WeightPR>
+}
+
+/** Best weighted set for an exercise: raw kg + reps and its estimated 1RM. */
+export interface WeightPR {
+  weight: number
+  reps: number
+  e1rm: number
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -519,7 +529,7 @@ export interface CardioSession {
 
 // ─── Challenges ──────────────────────────────────────────────────────────────
 
-export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand' | 'custom'
+export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand' | 'exercise' | 'custom'
 export type ChallengeStatus = 'active' | 'ended'
 
 export interface Challenge {
@@ -528,6 +538,8 @@ export interface Challenge {
   title: string
   metric: ChallengeMetric
   custom_metric?: string
+  /** Catalog slug when metric === 'exercise' (matches sets_log.exercise_id). */
+  exercise_slug?: string
   description?: string
   goal?: number
   starts_at: string

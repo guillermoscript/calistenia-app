@@ -8,6 +8,7 @@ import { useProgressions } from '@calistenia/core/hooks/useProgressions'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, getEquipmentLabelKey, EQUIPMENT_CATALOG } from '@calistenia/core/lib/equipment'
 import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
+import { getVariantsByLevel, getRelatedExercises, type VariantEntry } from '@calistenia/core/lib/variants'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
@@ -51,6 +52,12 @@ interface RelatedProgram {
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
+
+const DIFFICULTY_STYLE_MAP: Record<string, { text: string; bg: string; border: string }> = {
+  beginner:     { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  intermediate: { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
+  advanced:     { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+}
 
 const CATEGORY_COLORS: Record<string, { text: string; bg: string; border: string }> = {
   push:      { text: 'text-lime-400',    bg: 'bg-lime-500/10',    border: 'border-lime-500/20' },
@@ -122,7 +129,7 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
         isTimer: found.isTimer || false,
         timerSeconds: found.timerSeconds,
         demoImages: found.images?.length ? found.images : undefined,
-        description: found.note || '',
+        description: found.description || found.note || '',
       }
     }
   }
@@ -198,67 +205,6 @@ function findRelatedWorkouts(exerciseId: string, t: (key: string, opts?: Record<
     }
   }
   return results
-}
-
-function findSimilarExercises(exercise: CatalogExercise): CatalogExercise[] {
-  const similar: CatalogExercise[] = []
-  const seen = new Set<string>([exercise.id])
-
-  for (const [_key, workout] of Object.entries(WORKOUTS)) {
-    const dayType = workout.day === 'lun' ? 'push'
-      : workout.day === 'mar' ? 'pull'
-      : workout.day === 'mie' ? 'lumbar'
-      : workout.day === 'jue' ? 'legs'
-      : 'full'
-
-    for (const ex of workout.exercises) {
-      if (seen.has(ex.id)) continue
-      const cat = inferCategory(ex, dayType)
-      if (cat === exercise.category) {
-        seen.add(ex.id)
-        similar.push({
-          id: ex.id,
-          slug: ex.id,
-          name: ex.name,
-          muscles: ex.muscles,
-          category: cat,
-          priority: ex.priority,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest: ex.rest,
-          note: ex.note,
-          youtube: ex.youtube,
-          isTimer: ex.isTimer,
-          timerSeconds: ex.timerSeconds,
-        })
-      }
-    }
-  }
-
-  // Also check supplementary exercises
-  for (const ex of SUPPLEMENTARY_EXERCISES) {
-    if (seen.has(ex.id)) continue
-    if (ex.category === exercise.category) {
-      seen.add(ex.id)
-      similar.push({
-        id: ex.id,
-        slug: ex.id,
-        name: ex.name,
-        muscles: ex.muscles,
-        category: ex.category,
-        priority: ex.priority,
-        sets: ex.sets,
-        reps: ex.reps,
-        rest: ex.rest,
-        note: ex.note,
-        youtube: ex.youtube,
-        isTimer: ex.isTimer,
-        timerSeconds: ex.timerSeconds,
-      })
-    }
-  }
-
-  return similar.slice(0, 6)
 }
 
 function mapPBRecord(rec: any): CatalogExercise {
@@ -379,10 +325,19 @@ export default function ExerciseDetailPage() {
     return findRelatedWorkouts(exercise.id, t)
   }, [exercise, t])
 
-  const similarExercises = useMemo(() => {
-    if (!exercise) return []
-    return findSimilarExercises(exercise)
-  }, [exercise])
+  // Related exercises: shared muscle groups, NOT variations (family excluded)
+  const relatedExercises = useMemo(
+    () => (exercise ? getRelatedExercises(exercise.id, 6) : []),
+    [exercise],
+  )
+
+  // Variation family grouped by difficulty relative to this exercise
+  // (easier progressions / same level / harder progressions)
+  const variantLevels = useMemo(
+    () => (exercise ? getVariantsByLevel(exercise.id, 6) : { easier: [], similar: [], harder: [] }),
+    [exercise],
+  )
+  const hasVariants = variantLevels.easier.length > 0 || variantLevels.similar.length > 0 || variantLevels.harder.length > 0
 
   const catStyle = exercise ? (CATEGORY_COLORS[exercise.category] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }) : null
   const prioStyle = exercise ? PRIORITY_COLORS[exercise.priority] : null
@@ -524,6 +479,14 @@ export default function ExerciseDetailPage() {
             >
               GOOGLE
               <ExternalLinkIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-lime/30 text-lime hover:border-lime/50 hover:bg-lime/5 font-mono text-[11px] tracking-widest"
+              onClick={() => navigate(`/challenges/new?exercise=${encodeURIComponent(exercise.id)}`)}
+            >
+              🎯 {t('exerciseDetail.createChallenge')}
             </Button>
             {(() => {
               const u = getCurrentUser()
@@ -827,39 +790,94 @@ export default function ExerciseDetailPage() {
         </div>
       )}
 
-      {/* ── Similar exercises ───────────────────────────────────────────── */}
-      {similarExercises.length > 0 && (
+      {/* ── Variation family (grouped by level vs this exercise) ────────── */}
+      {hasVariants && (
+        <div className="mb-10">
+          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">{t('exerciseDetail.variants')}</h2>
+          <div className="space-y-6">
+            {([
+              ['easier', variantLevels.easier, 'text-emerald-400'],
+              ['similar', variantLevels.similar, 'text-amber-400'],
+              ['harder', variantLevels.harder, 'text-red-400'],
+            ] as const).map(([level, list, accent]) => list.length > 0 && (
+              <div key={level}>
+                <h3 className={cn('font-mono text-[10px] uppercase tracking-[2px] mb-3', accent)}>
+                  {t(`exerciseDetail.variants${level === 'easier' ? 'Easier' : level === 'harder' ? 'Harder' : 'Similar'}`)}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {list.map((v: VariantEntry) => {
+                    const diffStyle = v.difficulty ? DIFFICULTY_STYLE_MAP[v.difficulty] : null
+                    return (
+                      <Link
+                        key={v.id}
+                        to={`/exercises/${v.id}`}
+                        className="group px-4 py-4 rounded-xl bg-muted/60 hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="font-bebas text-base tracking-wide leading-tight mb-1.5 group-hover:text-lime-400 transition-colors line-clamp-2 uppercase">
+                          {l(v.name as TranslatableField)}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground line-clamp-1 mb-2.5">
+                          {(v.equipment ?? []).map(eq => t(getEquipmentLabelKey(eq))).join(' · ')}
+                        </div>
+                        {v.difficulty && diffStyle && (
+                          <Badge
+                            variant="outline"
+                            className={cn('text-[8px] px-2 py-0.5 font-mono tracking-widest border', diffStyle.text, diffStyle.bg, diffStyle.border)}
+                          >
+                            {t(`difficulty.${v.difficulty}`).toUpperCase()}
+                          </Badge>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Related exercises (similar work, not variations) ────────────── */}
+      {relatedExercises.length > 0 && (
         <div className="mb-8">
-          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">{t('exerciseDetail.alsoInteresting')}</h2>
+          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">{t('exerciseDetail.related')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {similarExercises.map(sim => {
-              const simCatStyle = CATEGORY_COLORS[sim.category] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }
-              const simMuscles = l(sim.muscles).split(',').map(m => m.trim()).filter(Boolean)
+            {relatedExercises.map(rel => {
+              const relCatStyle = (rel.category && CATEGORY_COLORS[rel.category]) || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }
+              const relMuscles = l(rel.muscles as TranslatableField).split(',').map(m => m.trim()).filter(Boolean)
+              const relDiffStyle = rel.difficulty ? DIFFICULTY_STYLE_MAP[rel.difficulty] : null
               return (
                 <Link
-                  key={sim.id}
-                  to={`/exercises/${sim.slug || sim.id}`}
+                  key={rel.id}
+                  to={`/exercises/${rel.id}`}
                   className="group px-4 py-4 rounded-xl bg-muted/60 hover:bg-muted/60 transition-colors"
                 >
                   <div className="font-bebas text-base tracking-wide leading-tight mb-1.5 group-hover:text-lime-400 transition-colors line-clamp-2 uppercase">
-                    {l(sim.name)}
+                    {l(rel.name as TranslatableField)}
                   </div>
                   <div className="text-[11px] text-muted-foreground line-clamp-1 mb-2.5">
-                    {simMuscles.join(' · ')}
+                    {relMuscles.join(' · ')}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'text-[8px] px-2 py-0.5 font-mono tracking-widest border',
-                        simCatStyle.text, simCatStyle.bg, simCatStyle.border
-                      )}
-                    >
-                      {sim.category.toUpperCase()}
-                    </Badge>
-                    <span className="text-[11px] font-bebas text-lime-400 tracking-wide">
-                      {sim.sets} x {sim.reps}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    {rel.category && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'text-[8px] px-2 py-0.5 font-mono tracking-widest border',
+                          relCatStyle.text, relCatStyle.bg, relCatStyle.border
+                        )}
+                      >
+                        {rel.category.toUpperCase()}
+                      </Badge>
+                    )}
+                    {rel.difficulty && relDiffStyle && (
+                      <Badge
+                        variant="outline"
+                        className={cn('text-[8px] px-2 py-0.5 font-mono tracking-widest border', relDiffStyle.text, relDiffStyle.bg, relDiffStyle.border)}
+                      >
+                        {t(`difficulty.${rel.difficulty}`).toUpperCase()}
+                      </Badge>
+                    )}
                   </div>
                 </Link>
               )

@@ -16,10 +16,12 @@ export interface CatalogExercise {
   reps: string
   rest: number
   note: TranslatableField
+  description?: TranslatableField
   isTimer?: boolean
   timerSeconds?: number
   difficulty?: DifficultyLevel
   equipment?: string[]
+  muscle_groups?: string[]
   youtube_query?: string
   youtube_search?: string
 }

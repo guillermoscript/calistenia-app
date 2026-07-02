@@ -110,7 +110,9 @@ export default function PRCelebration({
               </Text>
               <Text className="font-mono text-xs text-lime-400 mx-1.5">→</Text>
               <Text className="font-mono-semibold text-xs text-lime-400">
-                {prEvent.newValue} reps
+                {prEvent.kind === 'weight'
+                  ? `${prEvent.newValue} kg × ${prEvent.reps ?? 1}`
+                  : `${prEvent.newValue} reps`}
               </Text>
             </View>
           </View>

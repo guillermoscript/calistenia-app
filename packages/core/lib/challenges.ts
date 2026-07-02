@@ -1,4 +1,6 @@
 import i18n from 'i18next'
+import { localize } from './i18n-db'
+import { getCatalogEntry } from './variants'
 import type { ChallengeMetric } from '../types'
 
 const METRIC_LABEL_KEYS: Record<ChallengeMetric, string> = {
@@ -8,6 +10,7 @@ const METRIC_LABEL_KEYS: Record<ChallengeMetric, string> = {
   longest_streak: 'challenge.metricStreak',
   most_lsit: 'challenge.metricLsit',
   most_handstand: 'challenge.metricHandstand',
+  exercise: 'challenge.metricExercise',
   custom: 'challenge.metricCustom',
 }
 
@@ -34,6 +37,7 @@ export const METRIC_UNITS: Record<ChallengeMetric, string> = {
   longest_streak: i18n.t('challenge.unitDays'),
   most_lsit: 's',
   most_handstand: 's',
+  exercise: 'reps',
   custom: '',
 }
 
@@ -44,7 +48,20 @@ export function daysRemaining(endsAt: string): string {
   return i18n.t('challenge.daysLeft', { count: diff })
 }
 
-export function getMetricLabel(metric: ChallengeMetric, customMetric?: string): string {
+export function getMetricLabel(metric: ChallengeMetric, customMetric?: string, exerciseSlug?: string): string {
   if (metric === 'custom' && customMetric) return customMetric
+  if (metric === 'exercise' && exerciseSlug) {
+    const entry = getCatalogEntry(exerciseSlug)
+    if (entry) return localize(entry.name, i18n.language)
+  }
   return i18n.t(METRIC_LABEL_KEYS[metric])
+}
+
+/** Score unit for a challenge; timer exercises score in seconds, the rest in reps. */
+export function getMetricUnit(metric: ChallengeMetric, exerciseSlug?: string): string {
+  if (metric === 'custom') return ''
+  if (metric === 'exercise') {
+    return exerciseSlug && getCatalogEntry(exerciseSlug)?.isTimer ? 's' : 'reps'
+  }
+  return METRIC_UNITS[metric] ?? ''
 }

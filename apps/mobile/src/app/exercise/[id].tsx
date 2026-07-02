@@ -2,14 +2,15 @@ import { View, ScrollView, Pressable, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, ExternalLink } from 'lucide-react-native'
+import { ArrowLeft, ChevronRight, ExternalLink } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { getCatalogExercise } from '@/lib/catalog'
-import { localize } from '@calistenia/core/lib/i18n-db'
+import { localize, type TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { getExerciseEquipment, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
+import { getVariantsByLevel, getRelatedExercises, type VariantEntry } from '@calistenia/core/lib/variants'
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -27,6 +28,14 @@ export default function ExerciseDetailScreen() {
   }
 
   const equipment = ex ? getExerciseEquipment({ id: ex.id, equipment: ex.equipment } as any) : []
+  const variantLevels = ex ? getVariantsByLevel(ex.id, 6) : { easier: [], similar: [], harder: [] }
+  const variantGroups = ([
+    ['easier', variantLevels.easier, 'text-emerald-400'],
+    ['similar', variantLevels.similar, 'text-amber-400'],
+    ['harder', variantLevels.harder, 'text-red-400'],
+  ] as const).filter(([, list]) => list.length > 0)
+  const related = ex ? getRelatedExercises(ex.id, 6) : []
+  const description = ex ? localize(ex.description as TranslatableField, locale) : ''
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -51,7 +60,7 @@ export default function ExerciseDetailScreen() {
 
                 <View className="flex-row flex-wrap gap-2">
                   <Chip label={ex.category.replace(/_/g, ' ')} />
-                  {ex.difficulty && <Chip label={ex.difficulty} />}
+                  {ex.difficulty && <Chip label={t(`difficulty.${ex.difficulty}`)} />}
                   {ex.isTimer && ex.timerSeconds ? <Chip label={`${ex.timerSeconds}s`} /> : null}
                 </View>
 
@@ -62,6 +71,15 @@ export default function ExerciseDetailScreen() {
                 </View>
               </CardContent>
             </Card>
+
+            {description ? (
+              <Card>
+                <CardContent className="py-4">
+                  <Text className="mb-1.5 font-mono text-[10px] uppercase tracking-[2px] text-lime">{t('exerciseDetail.tab.description')}</Text>
+                  <Text className="text-sm leading-5 text-muted-foreground">{description}</Text>
+                </CardContent>
+              </Card>
+            ) : null}
 
             {localize(ex.note, locale) ? (
               <Card>
@@ -86,6 +104,73 @@ export default function ExerciseDetailScreen() {
                 <Text className="text-sm text-red-500">YouTube</Text>
               </View>
             </Button>
+
+            {variantGroups.length > 0 && (
+              <View className="gap-2">
+                <Text className="mt-2 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                  {t('exerciseDetail.variants')}
+                </Text>
+                {variantGroups.map(([level, list, accent]) => (
+                  <View key={level} className="gap-2">
+                    <Text className={`mt-1 font-mono text-[9px] uppercase tracking-[2px] ${accent}`}>
+                      {t(`exerciseDetail.variants${level === 'easier' ? 'Easier' : level === 'harder' ? 'Harder' : 'Similar'}`)}
+                    </Text>
+                    {list.map((v: VariantEntry) => (
+                      <Pressable
+                        key={v.id}
+                        onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: v.id } })}
+                        className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
+                      >
+                        <View className="flex-1">
+                          <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+                            {localize(v.name as TranslatableField, locale)}
+                          </Text>
+                          <View className="mt-0.5 flex-row items-center gap-2">
+                            {v.difficulty && (
+                              <Text className="font-mono text-[9px] capitalize text-muted-foreground/70">{t(`difficulty.${v.difficulty}`)}</Text>
+                            )}
+                            <Text className="font-mono text-[9px] text-muted-foreground/70" numberOfLines={1}>
+                              {(v.equipment ?? []).map(eq => t(getEquipmentLabelKey(eq))).join(' · ')}
+                            </Text>
+                          </View>
+                        </View>
+                        <ChevronRight size={16} color="hsl(0 0% 55%)" />
+                      </Pressable>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {related.length > 0 && (
+              <View className="gap-2">
+                <Text className="mt-2 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                  {t('exerciseDetail.related')}
+                </Text>
+                {related.map((v: VariantEntry) => (
+                  <Pressable
+                    key={v.id}
+                    onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: v.id } })}
+                    className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
+                  >
+                    <View className="flex-1">
+                      <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+                        {localize(v.name as TranslatableField, locale)}
+                      </Text>
+                      <View className="mt-0.5 flex-row items-center gap-2">
+                        {v.difficulty && (
+                          <Text className="font-mono text-[9px] capitalize text-muted-foreground/70">{t(`difficulty.${v.difficulty}`)}</Text>
+                        )}
+                        <Text className="font-mono text-[9px] text-muted-foreground/70" numberOfLines={1}>
+                          {localize(v.muscles as TranslatableField, locale)}
+                        </Text>
+                      </View>
+                    </View>
+                    <ChevronRight size={16} color="hsl(0 0% 55%)" />
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </>
         )}
       </ScrollView>

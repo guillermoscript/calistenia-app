@@ -11,3 +11,13 @@ export function parseRepsForPR(reps: string | null | undefined): number | null {
   const max = Math.max(...nums.map(Number))
   return max > 0 ? max : null
 }
+
+/**
+ * Estimated 1-rep max (Epley): weight × (1 + reps/30), 1 decimal.
+ * reps ≤ 1 returns the weight itself. Returns null for non-positive weight.
+ */
+export function estimate1RM(weight: number | null | undefined, reps: number | null | undefined): number | null {
+  if (!weight || weight <= 0) return null
+  if (!reps || reps <= 1) return Math.round(weight * 10) / 10
+  return Math.round(weight * (1 + reps / 30) * 10) / 10
+}

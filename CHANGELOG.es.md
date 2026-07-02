@@ -9,6 +9,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.0.9] - 2026-07-02
+
+_El catálogo crece a 1,578 ejercicios, con filtros y variantes por nivel, ejercicios relacionados y retos por ejercicio._
+
+### Añadido
+
+- **Catálogo ampliado a 1,578 ejercicios** — El catálogo pasa de 307 a 1,578 ejercicios, con nombres e instrucciones en español (98% con descripción). Por ahora sin GIFs de terceros.
+- **Filtros de biblioteca en móvil** — Filtra la biblioteca por dificultad, equipo y grupo muscular — igual que en la web.
+- **Filtro "Sin equipo"** — Nuevo filtro para ver solo ejercicios de puro peso corporal (454 en el catálogo).
+- **Grupos musculares y variantes por nivel** — Chips de filtro por 15 grupos musculares canónicos, y una nueva sección "Variantes" en cada ejercicio agrupada por nivel — más fáciles, mismo nivel, más difíciles.
+- **Ejercicios relacionados** — Cada ejercicio ahora sugiere "Relacionados" — movimientos parecidos por músculos que no son variaciones del mismo ejercicio.
+- **Retos por ejercicio** — Crea un reto sobre cualquier ejercicio del catálogo (p. ej. "PR de dominadas en 30 días") desde la web; el leaderboard puntúa tu mejor set registrado.
+- **PRs con peso extra** — Los récords personales ahora estiman tu e1RM al registrar peso extra (lastre).
+- **Sesión libre IA sin gimnasio por defecto** — La sesión libre con IA excluye ejercicios de gimnasio salvo que actives incluirlos.
+
+### Corregido
+
+- **Traducciones corregidas** — 8 ejercicios (como Muscle up) ya no muestran su descripción en inglés con la app en español, y el chip de dificultad en el detalle del ejercicio ahora se traduce correctamente.
+
 ## [1.0.7] - 2026-06-24
 
 _Cuando el análisis de una foto de comida falla, ahora ves el error real en vez de un fallo silencioso._
@@ -109,7 +128,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.7...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.9...HEAD
+[1.0.9]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.7...mobile-v1.0.9
 [1.0.7]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.6...mobile-v1.0.7
 [1.0.6]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.5...mobile-v1.0.6
 [1.0.5]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.4...mobile-v1.0.5

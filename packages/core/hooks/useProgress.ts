@@ -5,8 +5,8 @@ import { pb } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
-import { parseRepsForPR } from '../lib/pr-utils'
-import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming } from '../types'
+import { parseRepsForPR, estimate1RM } from '../lib/pr-utils'
+import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, WeightPR } from '../types'
 
 const LS_KEY = 'calistenia_progress'
 const LS_SETTINGS = 'calistenia_settings'
@@ -18,6 +18,11 @@ export interface PREvent {
   prKey: string
   oldValue: number
   newValue: number
+  /** 'reps' (default, bodyweight) or 'weight' (gym/weighted: values are kg). */
+  kind?: 'reps' | 'weight'
+  /** For kind 'weight': reps performed at newValue kg and its estimated 1RM. */
+  reps?: number
+  e1rm?: number
 }
 
 // ─── PR pattern matching (module-level) ─────────────────────────────────────
@@ -40,13 +45,20 @@ const legacyPrKey = (id: string): keyof Settings | null =>
  */
 const computePRBackfill = (sets: any[], currentSettings: Settings): Partial<Settings> | null => {
   const bestById: Record<string, number> = { ...(currentSettings.prs ?? {}) }
+  const bestWeightById: Record<string, WeightPR> = { ...(currentSettings.weight_prs ?? {}) }
   let changed = false
+  let weightChanged = false
   for (const s of sets) {
-    const n = parseRepsForPR(s.reps)
-    if (n == null) continue
     const id = s.exercise_id
     if (!id) continue
-    if (n > (bestById[id] ?? 0)) { bestById[id] = n; changed = true }
+    const n = parseRepsForPR(s.reps)
+    if (n != null && n > (bestById[id] ?? 0)) { bestById[id] = n; changed = true }
+    // Weight PR: best set by estimated 1RM (sets_log.weight_kg)
+    const e1rm = estimate1RM(s.weight_kg, n)
+    if (e1rm != null && e1rm > (bestWeightById[id]?.e1rm ?? 0)) {
+      bestWeightById[id] = { weight: s.weight_kg, reps: n ?? 1, e1rm }
+      weightChanged = true
+    }
   }
   // Mirror into the 5 legacy fields from the best matching id(s).
   const legacy: Partial<Record<keyof Settings, number>> = {}
@@ -57,6 +69,7 @@ const computePRBackfill = (sets: any[], currentSettings: Settings): Partial<Sett
   const updates: Partial<Settings> = {}
   let hasUpdates = false
   if (changed) { (updates as any).prs = bestById; hasUpdates = true }
+  if (weightChanged) { (updates as any).weight_prs = bestWeightById; hasUpdates = true }
   for (const [k, v] of Object.entries(legacy)) {
     const stored = (currentSettings as unknown as Record<string, number>)[k] || 0
     if ((v as number) > stored) { (updates as any)[k] = v; hasUpdates = true }
@@ -105,7 +118,7 @@ interface UseProgressReturn {
   updateSettings: (newSettings: Partial<Settings>) => Promise<void>
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
-  checkAndUpdatePR: (exerciseId: string, reps: string) => Promise<PREvent | null>
+  checkAndUpdatePR: (exerciseId: string, reps: string, weight?: number) => Promise<PREvent | null>
 }
 
 /**
@@ -228,8 +241,8 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         const prUpdates = computePRBackfill(setsRes, s)
         if (prUpdates) {
           Object.assign(s, prUpdates)
-          // Strip prs (localStorage-only) before writing to PB typed columns.
-          const { prs: _prs, ...pbPrUpdates } = prUpdates as any
+          // Strip prs/weight_prs (localStorage-only) before writing to PB typed columns.
+          const { prs: _prs, weight_prs: _wprs, ...pbPrUpdates } = prUpdates as any
           if (Object.keys(pbPrUpdates).length > 0) {
             pb.collection('settings').update(settingsRec.id, pbPrUpdates).catch(() => {})
           }
@@ -570,10 +583,28 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   }, [usePB, userId, patchSettings])
 
   // ─── Auto-detect PRs ─────────────────────────────────────────────────────
-  const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string): Promise<PREvent | null> => {
+  const checkAndUpdatePR = useCallback(async (exerciseId: string, reps: string, weight?: number): Promise<PREvent | null> => {
+    if (!exerciseId) return null
     const n = parseRepsForPR(reps)
-    if (n == null || !exerciseId) return null
     const cur = qc.getQueryData<ProgressData>(key)?.settings ?? settings
+
+    // Weighted set → weight PR by estimated 1RM (kg). Takes precedence over
+    // the reps PR: with load, more reps at the same weight is already captured
+    // by the e1rm, and celebrating kg is the meaningful signal for gym work.
+    const e1rm = estimate1RM(weight, n)
+    if (e1rm != null) {
+      const prevW = cur.weight_prs?.[exerciseId]
+      if (e1rm > (prevW?.e1rm ?? 0)) {
+        const entry: WeightPR = { weight: weight as number, reps: n ?? 1, e1rm }
+        const patch: Partial<Settings> = { weight_prs: { ...(cur.weight_prs ?? {}), [exerciseId]: entry } }
+        await updateSettings(patch)
+        op.track('pr_achieved', { exercise_id: exerciseId, pr_key: exerciseId, kind: 'weight', old_value: prevW?.weight ?? 0, new_value: weight, e1rm })
+        return { exerciseId, prKey: exerciseId, oldValue: prevW?.weight ?? 0, newValue: weight as number, kind: 'weight', reps: n ?? 1, e1rm }
+      }
+      return null
+    }
+
+    if (n == null) return null
     const prevBest = (cur.prs?.[exerciseId]) ?? 0
     if (n <= prevBest) return null
     const lk = legacyPrKey(exerciseId)
@@ -583,7 +614,7 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     }
     await updateSettings(patch)
     op.track('pr_achieved', { exercise_id: exerciseId, pr_key: String(lk ?? exerciseId), old_value: prevBest, new_value: n })
-    return { exerciseId, prKey: String(lk ?? exerciseId), oldValue: prevBest, newValue: n }
+    return { exerciseId, prKey: String(lk ?? exerciseId), oldValue: prevBest, newValue: n, kind: 'reps' }
   }, [updateSettings, qc, key, settings])
 
   return {

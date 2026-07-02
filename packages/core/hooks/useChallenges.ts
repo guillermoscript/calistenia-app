@@ -14,6 +14,7 @@ interface CreateChallengeData {
   title: string
   metric: ChallengeMetric
   custom_metric?: string
+  exercise_slug?: string
   description?: string
   goal?: number
   starts_at: string
@@ -63,6 +64,7 @@ async function fetchChallenges(userId: string): Promise<ChallengesQueryResult> {
         title: c.title,
         metric: c.metric as ChallengeMetric,
         custom_metric: c.custom_metric || '',
+        exercise_slug: c.exercise_slug || '',
         description: c.description || '',
         goal: c.goal || 0,
         starts_at: c.starts_at,
@@ -149,6 +151,7 @@ export function useChallenges(userId: string | null) {
         title: createData.title,
         metric: createData.metric,
         custom_metric: createData.custom_metric || '',
+        exercise_slug: createData.exercise_slug || '',
         description: createData.description || '',
         goal: createData.goal || 0,
         starts_at: createData.starts_at,

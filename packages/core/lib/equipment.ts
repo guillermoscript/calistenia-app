@@ -4,7 +4,7 @@
  */
 
 export const EQUIPMENT_CATALOG: { id: string; icon: string }[] = [
-  { id: 'ninguno', icon: '🏋️' },
+  { id: 'ninguno', icon: '🤸' },
   { id: 'barra_dominadas', icon: '🔩' },
   { id: 'paralelas', icon: '🪜' },
   { id: 'anillas', icon: '⭕' },
@@ -18,6 +18,16 @@ export const EQUIPMENT_CATALOG: { id: string; icon: string }[] = [
   { id: 'pared', icon: '🧱' },
   { id: 'toalla', icon: '🧻' },
   { id: 'escalon', icon: '📦' },
+  // Gym equipment (ExerciseDB import)
+  { id: 'mancuernas', icon: '🏋️‍♀️' },
+  { id: 'barra', icon: '🏋️‍♂️' },
+  { id: 'polea', icon: '🎢' },
+  { id: 'maquina', icon: '⚙️' },
+  { id: 'balon_medicinal', icon: '🏀' },
+  { id: 'bosu', icon: '🔵' },
+  { id: 'cuerda', icon: '➰' },
+  { id: 'rodillo', icon: '🛢️' },
+  { id: 'otro', icon: '❓' },
 ]
 
 const EQUIPMENT_KEYWORDS: Record<string, string[]> = {

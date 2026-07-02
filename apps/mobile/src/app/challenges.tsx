@@ -153,7 +153,7 @@ interface ChallengeCardProps {
 
 function ChallengeCard({ challenge: ch, onJoin, isJoining, userId }: ChallengeCardProps) {
   const isActive = ch.status === 'active'
-  const metricLabel = getMetricLabel(ch.metric, ch.custom_metric)
+  const metricLabel = getMetricLabel(ch.metric, ch.custom_metric, ch.exercise_slug)
   const daysLeft = daysRemaining(ch.ends_at)
 
   return (

@@ -7,6 +7,11 @@
  *   - Merges seeds/exercises/*.json using seeds/exercises/_id-map.json
  *   - Enriches existing entries where a seed maps to their id
  *   - Adds new entries for seeds that have no existing id
+ *   - Merges seeds/exercisedb/exercises.json (ExerciseDB v1 layer, es/en):
+ *     matched entries (curated seeds/exercisedb/_matches.json + exact
+ *     normalized-name equality) are enriched in place; the rest are added
+ *     as new `source: 'exercisedb'` entries. See
+ *     scripts/prepare-exercisedb-seed.mjs for the seed's provenance.
  *   - Writes identical JSON to all 3 catalog copies
  *
  * --refresh-wger flag = ONLINE: fetches from wger API (old behavior), THEN merges seeds.
@@ -29,6 +34,12 @@ const ROOT = resolve(import.meta.dirname, '..')
 const BASE_PATH = join(ROOT, 'packages/core/data/exercise-catalog.base.json')
 const SEEDS_DIR = join(ROOT, 'seeds/exercises')
 const ID_MAP_PATH = join(SEEDS_DIR, '_id-map.json')
+// ExerciseDB layer (seeds/exercisedb/) — see scripts/prepare-exercisedb-seed.mjs
+const EXDB_PATH = join(ROOT, 'seeds/exercisedb/exercises.json')
+const EXDB_MATCHES_PATH = join(ROOT, 'seeds/exercisedb/_matches.json')
+// Curated es descriptions for wger entries whose upstream has no es translation
+// (the fetch falls back to `es: enDesc`, which leaks English into the Spanish UI)
+const WGER_ES_OVERRIDES_PATH = join(ROOT, 'seeds/wger-es-overrides.json')
 
 // 3 output copies — must always be byte-identical
 const OUTPUT_PATHS = [
@@ -719,6 +730,454 @@ function mergeSeeds(baseList, idMap, allSeeds) {
   return { enrichedCount, newCount }
 }
 
+// ── ExerciseDB layer ──────────────────────────────────────────────────────────
+// Merges seeds/exercisedb/exercises.json (ExerciseDB v1 data, es/en trimmed).
+// Matched entries (curated _matches.json + exact normalized-name equality)
+// are ENRICHED in place; the rest are added as new `source: 'exercisedb'`
+// entries. Skipped entirely when the seed file is absent.
+
+// Dataset equipment string → canonical equipment id
+const EXDB_EQUIP_MAP = {
+  'body weight': 'ninguno',
+  'band': 'banda_elastica',
+  'resistance band': 'banda_elastica',
+  'stability ball': 'fitball',
+  'bosu ball': 'bosu',
+  'kettlebell': 'kettlebell',
+  'weighted': 'lastre',
+  'medicine ball': 'balon_medicinal',
+  'dumbbell': 'mancuernas',
+  'barbell': 'barra',
+  'ez barbell': 'barra',
+  'olympic barbell': 'barra',
+  'trap bar': 'barra',
+  'cable': 'polea',
+  'rope': 'cuerda',
+  'wheel roller': 'rueda_abdominal',
+  'roller': 'rodillo',
+  'leverage machine': 'maquina',
+  'sled machine': 'maquina',
+  'smith machine': 'maquina',
+  'assisted': 'maquina',
+  'upper body ergometer': 'maquina',
+  'skierg machine': 'maquina',
+  'stationary bike': 'maquina',
+  'elliptical machine': 'maquina',
+  'stepmill machine': 'maquina',
+  'hammer': 'otro',
+  'tire': 'otro',
+}
+
+// Dataset target muscle → catalog category (movilidad handled by name override)
+const EXDB_TARGET_CATEGORY = {
+  'abs': 'core',
+  'pectorals': 'push',
+  'triceps': 'push',
+  'delts': 'push',
+  'serratus anterior': 'push',
+  'biceps': 'pull',
+  'lats': 'pull',
+  'upper back': 'pull',
+  'traps': 'pull',
+  'forearms': 'pull',
+  'levator scapulae': 'pull',
+  'quads': 'legs',
+  'hamstrings': 'legs',
+  'calves': 'legs',
+  'glutes': 'legs',
+  'adductors': 'legs',
+  'abductors': 'legs',
+  'spine': 'lumbar',
+  'cardiovascular system': 'full',
+}
+
+const EXDB_MOBILITY_RE = /\b(stretch|stretching|mobility|yoga|pose|dislocate|foam roll)\b/i
+
+// Muscle display names (en term → es). Covers every target + secondary_muscles
+// value in the dataset; unknown terms fall back to the capitalized en term.
+const EXDB_MUSCLE_ES = {
+  'abs': 'Abdominales', 'abdominals': 'Abdominales', 'lower abs': 'Abdominales inferiores',
+  'obliques': 'Oblicuos', 'core': 'Core',
+  'pectorals': 'Pecho', 'chest': 'Pecho', 'upper chest': 'Pecho superior',
+  'triceps': 'Tríceps', 'biceps': 'Bíceps', 'brachialis': 'Braquial',
+  'delts': 'Deltoides', 'deltoids': 'Deltoides', 'rear deltoids': 'Deltoides posterior',
+  'shoulders': 'Hombros', 'rotator cuff': 'Manguito rotador',
+  'serratus anterior': 'Serrato anterior', 'levator scapulae': 'Elevador de la escápula',
+  'lats': 'Dorsales', 'latissimus dorsi': 'Dorsal ancho', 'upper back': 'Espalda alta',
+  'back': 'Espalda', 'rhomboids': 'Romboides', 'traps': 'Trapecios', 'trapezius': 'Trapecio',
+  'spine': 'Columna', 'lower back': 'Zona lumbar',
+  'quads': 'Cuádriceps', 'quadriceps': 'Cuádriceps', 'hamstrings': 'Isquios',
+  'glutes': 'Glúteos', 'calves': 'Pantorrillas', 'soleus': 'Sóleo',
+  'adductors': 'Aductores', 'abductors': 'Abductores',
+  'hip flexors': 'Flexores de cadera', 'inner thighs': 'Cara interna del muslo',
+  'groin': 'Ingle', 'shins': 'Espinillas', 'ankles': 'Tobillos',
+  'ankle stabilizers': 'Estabilizadores de tobillo', 'feet': 'Pies',
+  'forearms': 'Antebrazos', 'wrists': 'Muñecas', 'hands': 'Manos',
+  'wrist extensors': 'Extensores de muñeca', 'wrist flexors': 'Flexores de muñeca',
+  'grip muscles': 'Agarre',
+  'sternocleidomastoid': 'Esternocleidomastoideo',
+  'cardiovascular system': 'Sistema cardiovascular',
+}
+
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
+}
+
+// Unlike legacy normalize() (strips punctuation), this folds punctuation into
+// spaces so "push-up" and "push up" produce the same key.
+function exdbNormalize(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function exdbMuscles(dbEx) {
+  const terms = [...new Set([dbEx.target, ...(dbEx.secondary_muscles || [])].filter(Boolean))]
+  const en = terms.map(capitalize).join(', ')
+  const es = terms.map(t => EXDB_MUSCLE_ES[t.toLowerCase()] || capitalize(t)).join(', ')
+  return { es: es || 'General', en: en || 'General' }
+}
+
+function exdbCategory(dbEx) {
+  if (EXDB_MOBILITY_RE.test(dbEx.name.en) || dbEx.body_part === 'neck') return 'movilidad'
+  return EXDB_TARGET_CATEGORY[dbEx.target] || 'full'
+}
+
+function mergeExercisedb(baseList) {
+  let exdbData, matchesData
+  try {
+    exdbData = JSON.parse(readFileSync(EXDB_PATH, 'utf8'))
+    matchesData = JSON.parse(readFileSync(EXDB_MATCHES_PATH, 'utf8'))
+  } catch {
+    console.log('  seeds/exercisedb/ not found — skipping ExerciseDB layer')
+    return { exdbEnriched: 0, exdbNew: 0 }
+  }
+
+  const curated = matchesData.matches || {}
+  const byId = new Map(baseList.map(ex => [ex.id, ex]))
+
+  // Normalized-name index of the current list. Keys claimed by 2+ distinct
+  // ids are ambiguous and excluded from auto-matching.
+  const nameIndex = new Map()
+  const ambiguous = new Set()
+  for (const ex of baseList) {
+    const keys = new Set()
+    for (const lang of ['en', 'es']) {
+      const n = ex.name?.[lang]
+      if (n) keys.add(exdbNormalize(n))
+    }
+    for (const key of keys) {
+      if (nameIndex.has(key) && nameIndex.get(key) !== ex.id) ambiguous.add(key)
+      else nameIndex.set(key, ex.id)
+    }
+  }
+
+  for (const [exdbId, targetId] of Object.entries(curated)) {
+    if (!byId.has(targetId)) {
+      throw new Error(`_matches.json maps ${exdbId} → "${targetId}" but that id is not in the catalog`)
+    }
+  }
+
+  const usedIds = new Set(baseList.map(ex => ex.id))
+  // Upstream dataset contains a handful of literally duplicated rows (same
+  // name + equipment under two ids). First row wins; later ones are skipped.
+  const addedKeys = new Set()
+  let exdbEnriched = 0
+  let exdbNew = 0
+  let exdbSkippedDup = 0
+
+  for (const dbEx of exdbData.exercises) {
+    const paragraph = {
+      es: (dbEx.steps?.es || []).join(' '),
+      en: (dbEx.steps?.en || []).join(' '),
+    }
+
+    // Resolve match: curated map first, then unambiguous exact name equality
+    let targetId = curated[dbEx.id]
+    if (!targetId) {
+      const key = exdbNormalize(dbEx.name.en)
+      if (!ambiguous.has(key)) targetId = nameIndex.get(key)
+    }
+
+    if (targetId && byId.has(targetId)) {
+      const ex = byId.get(targetId)
+      ex.exercisedb_id = dbEx.id
+      if (dbEx.media_id) ex.exercisedb_media_id = dbEx.media_id
+      if (dbEx.target) ex.target_muscle = dbEx.target
+      if (dbEx.secondary_muscles?.length) ex.secondary_muscles = dbEx.secondary_muscles
+      if (dbEx.body_part) ex.body_part = dbEx.body_part
+      // Fill missing description languages only — never overwrite curated text
+      if (paragraph.es || paragraph.en) {
+        const desc = typeof ex.description === 'object' && ex.description ? ex.description : {}
+        ex.description = {
+          es: desc.es || paragraph.es || paragraph.en,
+          en: desc.en || paragraph.en || paragraph.es,
+        }
+      }
+      exdbEnriched++
+      continue
+    }
+
+    // New entry
+    const equipId = EXDB_EQUIP_MAP[dbEx.equipment]
+    if (equipId === undefined) {
+      console.warn(`  WARN: unknown ExerciseDB equipment "${dbEx.equipment}" — using "otro"`)
+    }
+
+    const dupKey = `${exdbNormalize(dbEx.name.en)}|${equipId ?? 'otro'}`
+    if (addedKeys.has(dupKey)) {
+      console.warn(`  WARN: upstream duplicate row ${dbEx.id} ("${dbEx.name.en}") — skipping`)
+      exdbSkippedDup++
+      continue
+    }
+
+    let id = slugify(dbEx.name.en)
+    if (usedIds.has(id)) id = `${id}_exdb`
+    if (usedIds.has(id)) {
+      console.warn(`  WARN: id collision for ExerciseDB ${dbEx.id} ("${dbEx.name.en}") — skipping`)
+      continue
+    }
+
+    const category = exdbCategory(dbEx)
+    const isCardio = dbEx.target === 'cardiovascular system'
+    const isTimer = category === 'movilidad' || isCardio
+    const timerSeconds = isTimer ? (isCardio ? 60 : 30) : undefined
+
+    const newEx = {
+      id,
+      name: {
+        es: dbEx.name.es || capitalize(dbEx.name.en),
+        en: capitalize(dbEx.name.en) || dbEx.name.es,
+      },
+      muscles: exdbMuscles(dbEx),
+      sets: 3,
+      reps: isTimer ? `${timerSeconds}s` : '8-12',
+      rest: 60,
+      note: { es: '', en: '' },
+      description: {
+        es: paragraph.es || paragraph.en,
+        en: paragraph.en || paragraph.es,
+      },
+      priority: 'med',
+      isTimer,
+      ...(timerSeconds ? { timerSeconds } : {}),
+      category,
+      difficulty: inferDifficulty(dbEx.name.en),
+      equipment: [equipId ?? 'otro'],
+      source: 'exercisedb',
+      exercisedb_id: dbEx.id,
+      ...(dbEx.media_id ? { exercisedb_media_id: dbEx.media_id } : {}),
+      ...(dbEx.target ? { target_muscle: dbEx.target } : {}),
+      ...(dbEx.secondary_muscles?.length ? { secondary_muscles: dbEx.secondary_muscles } : {}),
+      ...(dbEx.body_part ? { body_part: dbEx.body_part } : {}),
+      youtube_search: youtubeUrl(dbEx.name.en),
+      youtube_query: `${dbEx.name.en} exercise tutorial`,
+      images: [],
+    }
+
+    baseList.push(newEx)
+    usedIds.add(id)
+    addedKeys.add(dupKey)
+    exdbNew++
+  }
+
+  if (exdbSkippedDup > 0) console.log(`  Skipped upstream duplicate rows: ${exdbSkippedDup}`)
+  return { exdbEnriched, exdbNew }
+}
+
+// ── Muscle-group taxonomy ─────────────────────────────────────────────────────
+// Canonical muscle groups baked into every entry as `muscle_groups` so apps
+// can filter on clean enum ids instead of free-text substring matching.
+// Labels live in i18n (muscleGroup.<id>). Derived from target_muscle +
+// secondary_muscles (ExerciseDB enums) plus tokens of the free-text `muscles`
+// field (both languages). Non-muscle qualities (balance, movilidad, etc.) are
+// intentionally unmapped.
+
+const MUSCLE_GROUP_ORDER = [
+  'pecho', 'hombros', 'triceps', 'biceps', 'antebrazos', 'espalda', 'core',
+  'lumbar', 'gluteos', 'cuadriceps', 'isquios', 'pantorrillas', 'cadera',
+  'cuello', 'cardio',
+]
+
+// token (lowercase, accent-stripped) → group id
+const MUSCLE_TOKEN_MAP = {
+  // pecho
+  'pecho': 'pecho', 'chest': 'pecho', 'pectorals': 'pecho', 'pectoral': 'pecho',
+  'pecho superior': 'pecho', 'upper chest': 'pecho',
+  'serrato anterior': 'pecho', 'serratus anterior': 'pecho', 'serrato': 'pecho',
+  // hombros
+  'hombros': 'hombros', 'shoulders': 'hombros', 'hombro': 'hombros',
+  'deltoides': 'hombros', 'delts': 'hombros', 'deltoids': 'hombros',
+  'deltoides posterior': 'hombros', 'rear deltoids': 'hombros', 'rear delts': 'hombros',
+  'manguito rotador': 'hombros', 'rotator cuff': 'hombros',
+  'elevador de la escapula': 'hombros', 'levator scapulae': 'hombros',
+  // triceps
+  'triceps': 'triceps',
+  // biceps
+  'biceps': 'biceps', 'braquial': 'biceps', 'brachialis': 'biceps',
+  // antebrazos
+  'antebrazos': 'antebrazos', 'forearms': 'antebrazos', 'antebrazo': 'antebrazos',
+  'agarre': 'antebrazos', 'grip': 'antebrazos', 'grip muscles': 'antebrazos',
+  'munecas': 'antebrazos', 'wrists': 'antebrazos',
+  'flexores de muneca': 'antebrazos', 'wrist flexors': 'antebrazos',
+  'extensores de muneca': 'antebrazos', 'wrist extensors': 'antebrazos',
+  'manos': 'antebrazos', 'hands': 'antebrazos',
+  // espalda (alta/dorsal/trapecios)
+  'espalda': 'espalda', 'back': 'espalda',
+  'espalda alta': 'espalda', 'upper back': 'espalda',
+  'dorsales': 'espalda', 'dorsal': 'espalda', 'lats': 'espalda',
+  'dorsal ancho': 'espalda', 'latissimus dorsi': 'espalda',
+  'dorsal unilateral': 'espalda', 'unilateral lats': 'espalda',
+  'romboides': 'espalda', 'rhomboids': 'espalda',
+  'trapecio': 'espalda', 'trapecios': 'espalda', 'traps': 'espalda', 'trapezius': 'espalda',
+  // core
+  'core': 'core', 'abdominales': 'core', 'abs': 'core', 'abdominals': 'core',
+  'oblicuos': 'core', 'obliques': 'core',
+  'core total': 'core', 'total core': 'core', 'core profundo': 'core', 'deep core': 'core',
+  'core inferior': 'core', 'lower core': 'core', 'lower abs': 'core',
+  'abdominales inferiores': 'core',
+  'recto abdominal': 'core', 'rectus abdominis': 'core',
+  'transverso abdominal': 'core', 'tva': 'core',
+  'core rotacional': 'core', 'rotational core': 'core', 'anti-rotation core': 'core',
+  'core anti-rotacion': 'core', 'core superior e inferior': 'core',
+  'core superior': 'core', 'upper and lower core': 'core', 'upper core': 'core',
+  // lumbar
+  'zona lumbar': 'lumbar', 'lower back': 'lumbar', 'espalda baja': 'lumbar',
+  'lumbar': 'lumbar', 'columna': 'lumbar', 'spine': 'lumbar',
+  'erectores': 'lumbar', 'erectors': 'lumbar', 'erector spinae': 'lumbar',
+  // gluteos
+  'gluteos': 'gluteos', 'glutes': 'gluteos', 'gluteo': 'gluteos',
+  'gluteo medio': 'gluteos', 'glute medius': 'gluteos',
+  'piriforme': 'gluteos', 'piriformis': 'gluteos',
+  // cuadriceps
+  'cuadriceps': 'cuadriceps', 'quadriceps': 'cuadriceps', 'quads': 'cuadriceps',
+  // isquios
+  'isquios': 'isquios', 'hamstrings': 'isquios', 'isquiotibiales': 'isquios',
+  // pantorrillas (+ tobillos/pies)
+  'pantorrillas': 'pantorrillas', 'calves': 'pantorrillas',
+  'soleo': 'pantorrillas', 'soleus': 'pantorrillas',
+  'tobillos': 'pantorrillas', 'ankles': 'pantorrillas',
+  'estabilizadores de tobillo': 'pantorrillas', 'ankle stabilizers': 'pantorrillas',
+  'pies': 'pantorrillas', 'feet': 'pantorrillas',
+  'espinillas': 'pantorrillas', 'shins': 'pantorrillas',
+  'tibial anterior': 'pantorrillas', 'tibialis anterior': 'pantorrillas',
+  // cadera
+  'flexores de cadera': 'cadera', 'hip flexors': 'cadera',
+  'caderas': 'cadera', 'hips': 'cadera', 'psoas': 'cadera',
+  'aductores': 'cadera', 'adductors': 'cadera',
+  'abductores': 'cadera', 'abductors': 'cadera',
+  'ingle': 'cadera', 'groin': 'cadera',
+  'cara interna del muslo': 'cadera', 'inner thighs': 'cadera',
+  // cuello
+  'cuello': 'cuello', 'neck': 'cuello',
+  'esternocleidomastoideo': 'cuello', 'sternocleidomastoid': 'cuello',
+  // cardio
+  'sistema cardiovascular': 'cardio', 'cardiovascular system': 'cardio', 'cardio': 'cardio',
+}
+
+function stripAccents(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+// 'cadena posterior' spans several groups — handled apart from the 1:1 map.
+const MUSCLE_TOKEN_MULTI = {
+  'cadena posterior': ['isquios', 'gluteos', 'lumbar'],
+  'posterior chain': ['isquios', 'gluteos', 'lumbar'],
+}
+
+function muscleTokenToGroups(raw) {
+  // Drop parenthetical qualifiers: "isquiotibiales (excéntrico)" → "isquiotibiales"
+  const tok = stripAccents(String(raw).toLowerCase().replace(/\([^)]*\)/g, '').trim())
+  if (MUSCLE_TOKEN_MULTI[tok]) return MUSCLE_TOKEN_MULTI[tok]
+  const g = MUSCLE_TOKEN_MAP[tok]
+  return g ? [g] : null
+}
+
+/** Stamp `muscle_groups` on every entry (union of enum fields + free text). */
+function stampMuscleGroups(baseList) {
+  let covered = 0
+  const unmapped = new Map()
+  for (const ex of baseList) {
+    const groups = new Set()
+    const terms = [
+      ex.target_muscle,
+      ...(ex.secondary_muscles ?? []),
+      ...str(ex.muscles, 'es').split(','),
+      ...(ex.muscles?.en ? ex.muscles.en.split(',') : []),
+    ]
+    for (const term of terms) {
+      if (!term || !String(term).trim()) continue
+      const gs = muscleTokenToGroups(term)
+      if (gs) gs.forEach(g => groups.add(g))
+      else {
+        const key = stripAccents(String(term).toLowerCase().trim())
+        unmapped.set(key, (unmapped.get(key) ?? 0) + 1)
+      }
+    }
+    ex.muscle_groups = MUSCLE_GROUP_ORDER.filter(g => groups.has(g))
+    if (ex.muscle_groups.length > 0) covered++
+  }
+  return { covered, unmapped }
+}
+
+// ── Variation families ────────────────────────────────────────────────────────
+// Deterministic `family` id per entry, from name patterns (en+es, accents
+// stripped). First match wins — specific families (front_lever) before broad
+// ones (push_up). Apps use it to list "variantes" of an exercise; entries
+// without a family simply show none. Labels are not needed: the family is an
+// internal grouping key, never rendered directly.
+
+const FAMILY_PATTERNS = [
+  ['front_lever', /front lever/],
+  ['back_lever', /back lever/],
+  ['planche', /planche/],
+  ['l_sit', /\bl[- ]?sit/],
+  ['handstand', /handstand|pino/],
+  ['muscle_up', /muscle[- ]?up/],
+  ['push_up', /push[- ]?up|pushup|flexion/],
+  ['pull_up', /pull[- ]?up|pullup|chin[- ]?up|chinup|dominada/],
+  ['dip', /\bdips?\b/],
+  ['row', /\brows?\b|remo/],
+  ['leg_press', /leg press/],
+  ['bench_press', /bench press/],
+  ['shoulder_press', /(overhead|shoulder|military|arnold) press/],
+  ['leg_curl', /leg curl|nordic/],
+  ['wrist_curl', /wrist curl/],
+  ['biceps_curl', /\bcurls?\b/],
+  ['squat', /squat|sentadilla/],
+  ['lunge', /lunge|zancada/],
+  ['deadlift', /deadlift|peso muerto|romanian|\brdl\b/],
+  ['lateral_raise', /lateral raise|side raise|elevaciones laterales/],
+  ['chest_fly', /\bfly\b|\bflye|crossover/],
+  ['pulldown', /pull[- ]?down|jalon/],
+  ['pullover', /pullover/],
+  ['shrug', /shrug|encogimiento/],
+  ['calf_raise', /calf raise/],
+  ['plank', /plank|plancha lateral/],
+  ['crunch', /crunch/],
+  ['sit_up', /sit[- ]?up/],
+  ['leg_raise', /leg raise|knee raise/],
+  ['glute_bridge', /hip thrust|bridge|puente/],
+  ['triceps_extension', /triceps extension|skull ?crusher|pushdown|kickback|extension de triceps/],
+  ['step_up', /step[- ]?up/],
+  ['burpee', /burpee/],
+  ['mountain_climber', /mountain climber|escalador/],
+]
+
+/** Stamp `family` on entries whose name matches a variation family. */
+function stampFamilies(baseList) {
+  let withFamily = 0
+  for (const ex of baseList) {
+    const name = stripAccents(`${ex.name?.en ?? ''} | ${ex.name?.es ?? ''}`.toLowerCase())
+    const hit = FAMILY_PATTERNS.find(([, re]) => re.test(name))
+    if (hit) {
+      ex.family = hit[0]
+      withFamily++
+    } else {
+      delete ex.family
+    }
+  }
+  return { withFamily }
+}
+
 // ── HARD INVARIANT check ──────────────────────────────────────────────────────
 function assertInvariant(originalIds, finalList) {
   const finalIds = new Set(finalList.map(e => e.id))
@@ -777,6 +1236,9 @@ function rebuildCatalog(finalList) {
     total_count: totalCount,
     local_count: finalList.filter(e => e.source === 'local').length,
     wger_count: finalList.filter(e => e.source === 'wger').length,
+    exercisedb_count: finalList.filter(e => e.source === 'exercisedb').length,
+    with_muscle_groups: finalList.filter(e => e.muscle_groups?.length > 0).length,
+    with_family: finalList.filter(e => !!e.family).length,
     with_images: withImages,
     with_curated_video: withCuratedVideo,
     with_youtube_query: withYoutubeQuery,
@@ -787,6 +1249,49 @@ function rebuildCatalog(finalList) {
       return obj
     }, {}),
   }
+}
+
+// ── wger es overrides ─────────────────────────────────────────────────────────
+// Applied to the base list in BOTH modes (after --refresh-wger rebuilds the
+// snapshot too), so curated translations survive future wger refreshes.
+function applyWgerEsOverrides(baseList) {
+  let overrides
+  try {
+    overrides = JSON.parse(readFileSync(WGER_ES_OVERRIDES_PATH, 'utf8'))
+  } catch {
+    console.log('  seeds/wger-es-overrides.json not found — skipping es overrides')
+    return 0
+  }
+  const byId = new Map(baseList.map(e => [e.id, e]))
+  let applied = 0
+  for (const [id, esDesc] of Object.entries(overrides)) {
+    if (id.startsWith('_')) continue
+    const entry = byId.get(id)
+    if (!entry) {
+      console.warn(`  WARN: es override for unknown id "${id}" — skipping`)
+      continue
+    }
+    entry.description = { ...(entry.description || {}), es: esDesc }
+    entry.note = { ...(entry.note || {}), es: esDesc.slice(0, 300) }
+    applied++
+  }
+  return applied
+}
+
+// Surface future leaks: wger entries whose es description is still the
+// untranslated English text (upstream had no es translation). Runs on the
+// FINAL merged list — seeds/exercisedb enrichments may fix an entry later.
+function warnRemainingEnglishEsDescriptions(finalList) {
+  const leaks = finalList.filter(e =>
+    e.source === 'wger' &&
+    e.description?.es && e.description?.en &&
+    e.description.es.trim() === e.description.en.trim() &&
+    e.description.en.trim().length > 40
+  )
+  for (const e of leaks) {
+    console.warn(`  WARN: wger entry "${e.id}" still has English text in description.es — add it to seeds/wger-es-overrides.json`)
+  }
+  return leaks.length
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -811,6 +1316,11 @@ async function main() {
     console.log(`Base list loaded: ${baseList.length} exercises from frozen base\n`)
   }
 
+  // Curated es translations for wger entries without upstream es
+  console.log('Applying wger es description overrides...')
+  const esOverridesApplied = applyWgerEsOverrides(baseList)
+  console.log(`  Applied: ${esOverridesApplied}\n`)
+
   // Capture original id set for invariant check
   const originalIds = new Set(baseList.map(e => e.id))
   console.log(`Original id set: ${originalIds.size} exercises`)
@@ -826,6 +1336,31 @@ async function main() {
   const { enrichedCount, newCount } = mergeSeeds(baseList, idMap, allSeeds)
   console.log(`  Enriched: ${enrichedCount} existing entries`)
   console.log(`  New entries added: ${newCount}`)
+
+  // ExerciseDB layer (after seeds so seed enrichments are already in place)
+  console.log('\nMerging ExerciseDB layer...')
+  const { exdbEnriched, exdbNew } = mergeExercisedb(baseList)
+  console.log(`  Enriched with ExerciseDB data: ${exdbEnriched}`)
+  console.log(`  New ExerciseDB entries: ${exdbNew}`)
+
+  // Muscle-group taxonomy (last: needs merged muscles/target fields)
+  console.log('\nStamping muscle groups...')
+  const { covered, unmapped } = stampMuscleGroups(baseList)
+  console.log(`  Covered: ${covered}/${baseList.length}`)
+  const topUnmapped = [...unmapped.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12)
+  if (topUnmapped.length > 0) {
+    console.log(`  Unmapped muscle tokens (top): ${topUnmapped.map(([t, n]) => `${t}(${n})`).join(', ')}`)
+  }
+
+  // Variation families (name-pattern based)
+  console.log('\nStamping variation families...')
+  const { withFamily } = stampFamilies(baseList)
+  console.log(`  With family: ${withFamily}/${baseList.length}`)
+
+  // i18n leak check (last: seeds/exercisedb may have fixed entries above)
+  console.log('\nChecking for English text in es descriptions...')
+  const leakCount = warnRemainingEnglishEsDescriptions(baseList)
+  console.log(`  Leaks: ${leakCount}`)
 
   // Log lossy equipment mappings
   if (LOSSY_MAP_LOG.length > 0) {

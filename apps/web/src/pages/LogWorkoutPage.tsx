@@ -109,19 +109,31 @@ export default function LogWorkoutPage() {
   useEffect(() => {
     let cancelled = false
     const load = async () => {
+      // The bundled JSON is the authoritative base (full catalog, offline);
+      // PB only ADDS records not present in it (user-created / promoted).
+      const base = extractCatalog()
+      const seen = new Set(base.map(item => item.id))
       try {
         const available = await isPocketBaseAvailable()
         if (available && !cancelled) {
           try {
-            const res = await pb.collection('exercises_catalog').getList(1, 200, { sort: 'name' })
-            if (!cancelled && res.items.length > 0) {
-              setCatalog(res.items.map(mapPBCatalog))
-              return
+            const items = await pb.collection('exercises_catalog').getFullList({
+              batch: 500, sort: 'name', fields: 'slug,name,muscles', $autoCancel: false,
+            })
+            for (const rec of items) {
+              const mapped = mapPBCatalog(rec)
+              const canonical = resolveExerciseId(mapped.id)
+              if (seen.has(canonical)) continue
+              seen.add(canonical)
+              base.push({ ...mapped, id: canonical })
             }
-          } catch { /* fall through */ }
+          } catch { /* PB list failed — bundled catalog is enough */ }
         }
       } catch { /* PB not available */ }
-      if (!cancelled) setCatalog(extractCatalog())
+      if (!cancelled) {
+        base.sort((a, b) => localize(a.name, 'es').localeCompare(localize(b.name, 'es')))
+        setCatalog(base)
+      }
     }
     load()
     return () => { cancelled = true }

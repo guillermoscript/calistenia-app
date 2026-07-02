@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useChallenges } from '@calistenia/core/hooks/useChallenges'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { todayStr, toLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { getMetricUnit } from '@calistenia/core/lib/challenges'
+import { getCatalogEntry, getAllCatalogEntries } from '@calistenia/core/lib/variants'
+import { localize } from '@calistenia/core/lib/i18n-db'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
@@ -17,8 +20,11 @@ const METRIC_IDS: { id: ChallengeMetric; icon: string }[] = [
   { id: 'longest_streak', icon: '🔥' },
   { id: 'most_lsit', icon: '🧘' },
   { id: 'most_handstand', icon: '🤸' },
+  { id: 'exercise', icon: '🎯' },
   { id: 'custom', icon: '✏️' },
 ]
+
+const stripAccents = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
 const DURATION_DAYS = [7, 14, 30, 0]
 
@@ -33,17 +39,26 @@ interface CreateChallengePageProps {
 }
 
 export default function CreateChallengePage({ userId }: CreateChallengePageProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { createChallenge } = useChallenges(userId)
   const { following } = useFollows(userId)
 
   const today = todayStr()
+  const locale = i18n.language
 
-  const [title, setTitle] = useState('')
+  // ?exercise=<slug> (desde el detalle de ejercicio) preselecciona la métrica
+  const prefilledExercise = getCatalogEntry(searchParams.get('exercise') ?? '')
+
+  const [title, setTitle] = useState(
+    prefilledExercise ? t('challenge.exerciseTitlePrefill', { name: localize(prefilledExercise.name, locale) }) : ''
+  )
   const [description, setDescription] = useState('')
-  const [metric, setMetric] = useState<ChallengeMetric>('most_sessions')
+  const [metric, setMetric] = useState<ChallengeMetric>(prefilledExercise ? 'exercise' : 'most_sessions')
   const [customMetric, setCustomMetric] = useState('')
+  const [exerciseSlug, setExerciseSlug] = useState<string | null>(prefilledExercise?.id ?? null)
+  const [exerciseQuery, setExerciseQuery] = useState('')
   const [goal, setGoal] = useState('')
   const [durationPreset, setDurationPreset] = useState(7)
   const [startsAt, setStartsAt] = useState(today)
@@ -83,7 +98,29 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   }
 
   const isCustomMetric = metric === 'custom'
-  const canSubmit = title.trim().length > 0 && startsAt && endsAt && endsAt >= startsAt && (!isCustomMetric || customMetric.trim().length > 0)
+  const isExerciseMetric = metric === 'exercise'
+  const selectedExercise = exerciseSlug ? getCatalogEntry(exerciseSlug) : undefined
+
+  const exerciseResults = useMemo(() => {
+    const q = stripAccents(exerciseQuery.trim())
+    if (q.length < 2) return []
+    return getAllCatalogEntries()
+      .filter(ex => stripAccents(ex.name.es ?? '').includes(q) || stripAccents(ex.name.en ?? '').includes(q))
+      .slice(0, 15)
+  }, [exerciseQuery])
+
+  const selectExercise = (slug: string) => {
+    setExerciseSlug(slug)
+    setExerciseQuery('')
+    if (!title.trim()) {
+      const entry = getCatalogEntry(slug)
+      if (entry) setTitle(t('challenge.exerciseTitlePrefill', { name: localize(entry.name, locale) }))
+    }
+  }
+
+  const canSubmit = title.trim().length > 0 && startsAt && endsAt && endsAt >= startsAt
+    && (!isCustomMetric || customMetric.trim().length > 0)
+    && (!isExerciseMetric || !!exerciseSlug)
 
   const handleSubmit = async () => {
     if (!canSubmit || creating) return
@@ -92,6 +129,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
       title: title.trim(),
       metric,
       custom_metric: isCustomMetric ? customMetric.trim() : undefined,
+      exercise_slug: isExerciseMetric ? (exerciseSlug ?? undefined) : undefined,
       description: description.trim() || undefined,
       goal: goal ? Number(goal) : undefined,
       starts_at: startsAt,
@@ -185,6 +223,58 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
             />
           </div>
         )}
+
+        {/* Exercise picker */}
+        {isExerciseMetric && (
+          <div className="mt-3 motion-safe:animate-fade-in">
+            {selectedExercise ? (
+              <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-lime/40 bg-lime/5">
+                <div className="min-w-0">
+                  <div className="text-sm truncate">{localize(selectedExercise.name, locale)}</div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    {localize(selectedExercise.muscles ?? {}, locale)}
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setExerciseSlug(null); setExerciseQuery('') }}
+                  className="text-[10px] text-lime hover:text-lime/80 transition-colors shrink-0"
+                >
+                  {t('challenge.changeExercise')}
+                </button>
+              </div>
+            ) : (
+              <>
+                <label htmlFor="challenge-exercise" className="sr-only">{t('challenge.metric.exercise')}</label>
+                <Input
+                  id="challenge-exercise"
+                  value={exerciseQuery}
+                  onChange={e => setExerciseQuery(e.target.value)}
+                  placeholder={t('challenge.exerciseSearchPlaceholder')}
+                  autoFocus
+                />
+                {exerciseResults.length > 0 && (
+                  <div className="mt-2 flex flex-col gap-1 max-h-64 overflow-y-auto" role="listbox">
+                    {exerciseResults.map(ex => (
+                      <button
+                        key={ex.id}
+                        role="option"
+                        aria-selected={false}
+                        onClick={() => selectExercise(ex.id)}
+                        className="px-3 py-2 rounded-md border border-border text-left hover:border-lime/40 hover:bg-lime/5 transition-colors"
+                      >
+                        <div className="text-xs">{localize(ex.name, locale)}</div>
+                        <div className="text-[9px] text-muted-foreground">
+                          {localize(ex.muscles ?? {}, locale)}
+                          {ex.isTimer ? ' · s' : ''}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </fieldset>
 
       {/* Goal */}
@@ -203,7 +293,11 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
             className="w-32"
           />
           <span className="text-xs text-muted-foreground">
-            {isCustomMetric ? (customMetric || t('challenge.units')) : t(`challenge.metric.${metric}`).toLowerCase()}
+            {isCustomMetric
+              ? (customMetric || t('challenge.units'))
+              : isExerciseMetric
+                ? getMetricUnit('exercise', exerciseSlug ?? undefined)
+                : t(`challenge.metric.${metric}`).toLowerCase()}
           </span>
         </div>
       </div>

@@ -78,3 +78,6 @@ apps/mobile/calistenia-*-firebase-adminsdk-*.json
 *.jks
 *.keystore
 !apps/mobile/android/app/debug.keystore
+
+# TypeScript incremental build artifacts
+*.tsbuildinfo
