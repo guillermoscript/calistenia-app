@@ -8,7 +8,7 @@ import { useProgressions } from '@calistenia/core/hooks/useProgressions'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, getEquipmentLabelKey, EQUIPMENT_CATALOG } from '@calistenia/core/lib/equipment'
 import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
-import { getVariants } from '@calistenia/core/lib/variants'
+import { getVariantsByLevel, type VariantEntry } from '@calistenia/core/lib/variants'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
@@ -391,8 +391,13 @@ export default function ExerciseDetailPage() {
     return findSimilarExercises(exercise)
   }, [exercise])
 
-  // Variation family (same base movement, e.g. every push-up variant)
-  const variants = useMemo(() => (exercise ? getVariants(exercise.id, 9) : []), [exercise])
+  // Variation family grouped by difficulty relative to this exercise
+  // (easier progressions / same level / harder progressions)
+  const variantLevels = useMemo(
+    () => (exercise ? getVariantsByLevel(exercise.id, 6) : { easier: [], similar: [], harder: [] }),
+    [exercise],
+  )
+  const hasVariants = variantLevels.easier.length > 0 || variantLevels.similar.length > 0 || variantLevels.harder.length > 0
 
   const catStyle = exercise ? (CATEGORY_COLORS[exercise.category] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }) : null
   const prioStyle = exercise ? PRIORITY_COLORS[exercise.priority] : null
@@ -845,36 +850,49 @@ export default function ExerciseDetailPage() {
         </div>
       )}
 
-      {/* ── Variation family ────────────────────────────────────────────── */}
-      {variants.length > 0 && (
+      {/* ── Variation family (grouped by level vs this exercise) ────────── */}
+      {hasVariants && (
         <div className="mb-10">
           <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">{t('exerciseDetail.variants')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {variants.map(v => {
-              const diffStyle = v.difficulty ? DIFFICULTY_STYLE_MAP[v.difficulty] : null
-              return (
-                <Link
-                  key={v.id}
-                  to={`/exercises/${v.id}`}
-                  className="group px-4 py-4 rounded-xl bg-muted/60 hover:bg-muted/60 transition-colors"
-                >
-                  <div className="font-bebas text-base tracking-wide leading-tight mb-1.5 group-hover:text-lime-400 transition-colors line-clamp-2 uppercase">
-                    {l(v.name as TranslatableField)}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground line-clamp-1 mb-2.5">
-                    {(v.equipment ?? []).map(eq => t(getEquipmentLabelKey(eq))).join(' · ')}
-                  </div>
-                  {v.difficulty && diffStyle && (
-                    <Badge
-                      variant="outline"
-                      className={cn('text-[8px] px-2 py-0.5 font-mono tracking-widest border', diffStyle.text, diffStyle.bg, diffStyle.border)}
-                    >
-                      {t(`difficulty.${v.difficulty}`).toUpperCase()}
-                    </Badge>
-                  )}
-                </Link>
-              )
-            })}
+          <div className="space-y-6">
+            {([
+              ['easier', variantLevels.easier, 'text-emerald-400'],
+              ['similar', variantLevels.similar, 'text-amber-400'],
+              ['harder', variantLevels.harder, 'text-red-400'],
+            ] as const).map(([level, list, accent]) => list.length > 0 && (
+              <div key={level}>
+                <h3 className={cn('font-mono text-[10px] uppercase tracking-[2px] mb-3', accent)}>
+                  {t(`exerciseDetail.variants${level === 'easier' ? 'Easier' : level === 'harder' ? 'Harder' : 'Similar'}`)}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {list.map((v: VariantEntry) => {
+                    const diffStyle = v.difficulty ? DIFFICULTY_STYLE_MAP[v.difficulty] : null
+                    return (
+                      <Link
+                        key={v.id}
+                        to={`/exercises/${v.id}`}
+                        className="group px-4 py-4 rounded-xl bg-muted/60 hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="font-bebas text-base tracking-wide leading-tight mb-1.5 group-hover:text-lime-400 transition-colors line-clamp-2 uppercase">
+                          {l(v.name as TranslatableField)}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground line-clamp-1 mb-2.5">
+                          {(v.equipment ?? []).map(eq => t(getEquipmentLabelKey(eq))).join(' · ')}
+                        </div>
+                        {v.difficulty && diffStyle && (
+                          <Badge
+                            variant="outline"
+                            className={cn('text-[8px] px-2 py-0.5 font-mono tracking-widest border', diffStyle.text, diffStyle.bg, diffStyle.border)}
+                          >
+                            {t(`difficulty.${v.difficulty}`).toUpperCase()}
+                          </Badge>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
