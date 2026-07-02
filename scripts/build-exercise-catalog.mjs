@@ -1115,6 +1115,66 @@ function stampMuscleGroups(baseList) {
   return { covered, unmapped }
 }
 
+// ── Variation families ────────────────────────────────────────────────────────
+// Deterministic `family` id per entry, from name patterns (en+es, accents
+// stripped). First match wins — specific families (front_lever) before broad
+// ones (push_up). Apps use it to list "variantes" of an exercise; entries
+// without a family simply show none. Labels are not needed: the family is an
+// internal grouping key, never rendered directly.
+
+const FAMILY_PATTERNS = [
+  ['front_lever', /front lever/],
+  ['back_lever', /back lever/],
+  ['planche', /planche/],
+  ['l_sit', /\bl[- ]?sit/],
+  ['handstand', /handstand|pino/],
+  ['muscle_up', /muscle[- ]?up/],
+  ['push_up', /push[- ]?up|pushup|flexion/],
+  ['pull_up', /pull[- ]?up|pullup|chin[- ]?up|chinup|dominada/],
+  ['dip', /\bdips?\b/],
+  ['row', /\brows?\b|remo/],
+  ['leg_press', /leg press/],
+  ['bench_press', /bench press/],
+  ['shoulder_press', /(overhead|shoulder|military|arnold) press/],
+  ['leg_curl', /leg curl|nordic/],
+  ['wrist_curl', /wrist curl/],
+  ['biceps_curl', /\bcurls?\b/],
+  ['squat', /squat|sentadilla/],
+  ['lunge', /lunge|zancada/],
+  ['deadlift', /deadlift|peso muerto|romanian|\brdl\b/],
+  ['lateral_raise', /lateral raise|side raise|elevaciones laterales/],
+  ['chest_fly', /\bfly\b|\bflye|crossover/],
+  ['pulldown', /pull[- ]?down|jalon/],
+  ['pullover', /pullover/],
+  ['shrug', /shrug|encogimiento/],
+  ['calf_raise', /calf raise/],
+  ['plank', /plank|plancha lateral/],
+  ['crunch', /crunch/],
+  ['sit_up', /sit[- ]?up/],
+  ['leg_raise', /leg raise|knee raise/],
+  ['glute_bridge', /hip thrust|bridge|puente/],
+  ['triceps_extension', /triceps extension|skull ?crusher|pushdown|kickback|extension de triceps/],
+  ['step_up', /step[- ]?up/],
+  ['burpee', /burpee/],
+  ['mountain_climber', /mountain climber|escalador/],
+]
+
+/** Stamp `family` on entries whose name matches a variation family. */
+function stampFamilies(baseList) {
+  let withFamily = 0
+  for (const ex of baseList) {
+    const name = stripAccents(`${ex.name?.en ?? ''} | ${ex.name?.es ?? ''}`.toLowerCase())
+    const hit = FAMILY_PATTERNS.find(([, re]) => re.test(name))
+    if (hit) {
+      ex.family = hit[0]
+      withFamily++
+    } else {
+      delete ex.family
+    }
+  }
+  return { withFamily }
+}
+
 // ── HARD INVARIANT check ──────────────────────────────────────────────────────
 function assertInvariant(originalIds, finalList) {
   const finalIds = new Set(finalList.map(e => e.id))
@@ -1175,6 +1235,7 @@ function rebuildCatalog(finalList) {
     wger_count: finalList.filter(e => e.source === 'wger').length,
     exercisedb_count: finalList.filter(e => e.source === 'exercisedb').length,
     with_muscle_groups: finalList.filter(e => e.muscle_groups?.length > 0).length,
+    with_family: finalList.filter(e => !!e.family).length,
     with_images: withImages,
     with_curated_video: withCuratedVideo,
     with_youtube_query: withYoutubeQuery,
@@ -1239,6 +1300,11 @@ async function main() {
   if (topUnmapped.length > 0) {
     console.log(`  Unmapped muscle tokens (top): ${topUnmapped.map(([t, n]) => `${t}(${n})`).join(', ')}`)
   }
+
+  // Variation families (name-pattern based)
+  console.log('\nStamping variation families...')
+  const { withFamily } = stampFamilies(baseList)
+  console.log(`  With family: ${withFamily}/${baseList.length}`)
 
   // Log lossy equipment mappings
   if (LOSSY_MAP_LOG.length > 0) {

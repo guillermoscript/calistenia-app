@@ -8,6 +8,7 @@ import { useProgressions } from '@calistenia/core/hooks/useProgressions'
 import { useTranslation } from 'react-i18next'
 import { getExerciseEquipment, getEquipmentLabelKey, EQUIPMENT_CATALOG } from '@calistenia/core/lib/equipment'
 import { getCatalogStaticMedia } from '@calistenia/core/lib/catalogMedia'
+import { getVariants } from '@calistenia/core/lib/variants'
 import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
 import { cn } from '../lib/utils'
 import { Badge } from '../components/ui/badge'
@@ -51,6 +52,12 @@ interface RelatedProgram {
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
+
+const DIFFICULTY_STYLE_MAP: Record<string, { text: string; bg: string; border: string }> = {
+  beginner:     { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  intermediate: { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
+  advanced:     { text: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20' },
+}
 
 const CATEGORY_COLORS: Record<string, { text: string; bg: string; border: string }> = {
   push:      { text: 'text-lime-400',    bg: 'bg-lime-500/10',    border: 'border-lime-500/20' },
@@ -383,6 +390,9 @@ export default function ExerciseDetailPage() {
     if (!exercise) return []
     return findSimilarExercises(exercise)
   }, [exercise])
+
+  // Variation family (same base movement, e.g. every push-up variant)
+  const variants = useMemo(() => (exercise ? getVariants(exercise.id, 9) : []), [exercise])
 
   const catStyle = exercise ? (CATEGORY_COLORS[exercise.category] || { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' }) : null
   const prioStyle = exercise ? PRIORITY_COLORS[exercise.priority] : null
@@ -823,6 +833,40 @@ export default function ExerciseDetailPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Variation family ────────────────────────────────────────────── */}
+      {variants.length > 0 && (
+        <div className="mb-10">
+          <h2 className="font-bebas text-2xl tracking-widest mb-5 uppercase">{t('exerciseDetail.variants')}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {variants.map(v => {
+              const diffStyle = v.difficulty ? DIFFICULTY_STYLE_MAP[v.difficulty] : null
+              return (
+                <Link
+                  key={v.id}
+                  to={`/exercises/${v.id}`}
+                  className="group px-4 py-4 rounded-xl bg-muted/60 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="font-bebas text-base tracking-wide leading-tight mb-1.5 group-hover:text-lime-400 transition-colors line-clamp-2 uppercase">
+                    {l(v.name as TranslatableField)}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground line-clamp-1 mb-2.5">
+                    {(v.equipment ?? []).map(eq => t(getEquipmentLabelKey(eq))).join(' · ')}
+                  </div>
+                  {v.difficulty && diffStyle && (
+                    <Badge
+                      variant="outline"
+                      className={cn('text-[8px] px-2 py-0.5 font-mono tracking-widest border', diffStyle.text, diffStyle.bg, diffStyle.border)}
+                    >
+                      {t(`difficulty.${v.difficulty}`).toUpperCase()}
+                    </Badge>
+                  )}
+                </Link>
+              )
+            })}
           </div>
         </div>
       )}

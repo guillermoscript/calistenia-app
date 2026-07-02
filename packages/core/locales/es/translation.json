@@ -135,6 +135,7 @@
   "muscleGroup.cardio": "Cardio",
 
   "exerciseLibrary.showMore": "Mostrar más ({{count}})",
+  "exerciseDetail.variants": "Variantes",
 
   "difficulty.beginner": "Principiante",
   "difficulty.intermediate": "Intermedio",

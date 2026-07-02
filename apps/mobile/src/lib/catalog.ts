@@ -16,6 +16,7 @@ export interface CatalogExercise {
   reps: string
   rest: number
   note: TranslatableField
+  description?: TranslatableField
   isTimer?: boolean
   timerSeconds?: number
   difficulty?: DifficultyLevel
