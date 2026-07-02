@@ -450,11 +450,14 @@ export default function ExerciseLibraryPage() {
       result = result.filter(ex => ex.difficulty === activeDifficulty)
     }
 
-    // Equipment filter (explicit catalog field wins; keyword detection as fallback)
+    // Equipment filter (explicit catalog field wins; keyword detection as fallback).
+    // "ninguno" means bodyweight-only: no other equipment involved at all.
     if (activeEquipment) {
       result = result.filter(ex => {
         const equipmentIds = getExerciseEquipment({ name: l(ex.name), note: l(ex.note), equipment: ex.equipment })
-        return equipmentIds.includes(activeEquipment)
+        return activeEquipment === 'ninguno'
+          ? equipmentIds.every(id => id === 'ninguno')
+          : equipmentIds.includes(activeEquipment)
       })
     }
 
@@ -610,7 +613,7 @@ export default function ExerciseLibraryPage() {
         <div className="mb-4 space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
           {/* Equipment */}
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
-            {EQUIPMENT_CATALOG.filter(e => e.id !== 'ninguno').map(eq => {
+            {EQUIPMENT_CATALOG.map(eq => {
               const isActive = activeEquipment === eq.id
               return (
                 <button

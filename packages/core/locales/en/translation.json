@@ -139,6 +139,7 @@
   "exerciseDetail.variantsEasier": "Easier",
   "exerciseDetail.variantsSimilar": "Same level",
   "exerciseDetail.variantsHarder": "Harder",
+  "exerciseDetail.related": "Related",
   "exerciseDetail.createChallenge": "CREATE CHALLENGE",
 
   "difficulty.beginner": "Beginner",

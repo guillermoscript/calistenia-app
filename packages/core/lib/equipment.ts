@@ -4,7 +4,7 @@
  */
 
 export const EQUIPMENT_CATALOG: { id: string; icon: string }[] = [
-  { id: 'ninguno', icon: '🏋️' },
+  { id: 'ninguno', icon: '🤸' },
   { id: 'barra_dominadas', icon: '🔩' },
   { id: 'paralelas', icon: '🪜' },
   { id: 'anillas', icon: '⭕' },

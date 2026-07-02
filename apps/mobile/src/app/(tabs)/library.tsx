@@ -42,7 +42,10 @@ export default function LibraryScreen() {
           note: localize(ex.note, locale),
           equipment: ex.equipment,
         })
-        if (!ids.includes(equipment)) return false
+        // 'ninguno' = solo peso corporal: sin ningún otro equipo
+        if (equipment === 'ninguno') {
+          if (!ids.every(id => id === 'ninguno')) return false
+        } else if (!ids.includes(equipment)) return false
       }
       if (!q) return true
       return (
@@ -130,7 +133,7 @@ export default function LibraryScreen() {
               })}
             </ScrollView>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
-              {EQUIPMENT_CATALOG.filter(e => e.id !== 'ninguno').map(eq => {
+              {EQUIPMENT_CATALOG.map(eq => {
                 const active = equipment === eq.id
                 return (
                   <Pressable

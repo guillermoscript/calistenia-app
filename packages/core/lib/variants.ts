@@ -25,7 +25,7 @@ export interface VariantEntry {
 export interface VariantsByLevel {
   /** Family members one difficulty level below (progresiones hacia abajo). */
   easier: VariantEntry[]
-  /** Same difficulty — or muscle/category-similar fallback when no family. */
+  /** Family members at the same difficulty level. */
   similar: VariantEntry[]
   /** Family members one difficulty level above (progresiones hacia arriba). */
   harder: VariantEntry[]
@@ -75,47 +75,51 @@ export function getVariants(exerciseId: string, limit = 12): VariantEntry[] {
 /**
  * Variants of an exercise grouped by difficulty relative to it — the
  * "no puedo hacer un muscle-up todavía" answer: easier progressions,
- * same-level alternatives, harder progressions.
- *
- * Family-based when the exercise has one. Without a family, `similar`
- * falls back to catalog entries sharing a muscle group and category
- * (same-equipment first), so every exercise offers alternatives.
+ * same-level alternatives, harder progressions. Family members only;
+ * see getRelatedExercises for non-variation alternatives.
  */
 export function getVariantsByLevel(exerciseId: string, limitPerLevel = 6): VariantsByLevel {
   const ex = _byId.get(exerciseId)
   const empty: VariantsByLevel = { easier: [], similar: [], harder: [] }
-  if (!ex) return empty
+  if (!ex?.family) return empty
   const ownDiff = DIFF_ORDER[ex.difficulty ?? 'intermediate'] ?? 1
 
-  const family = ex.family
-    ? (_byFamily.get(ex.family) ?? []).filter(v => v.id !== exerciseId)
-    : []
+  const family = (_byFamily.get(ex.family) ?? []).filter(v => v.id !== exerciseId)
+  if (family.length === 0) return empty
 
-  if (family.length > 0) {
-    const ownEquip = new Set(ex.equipment ?? [])
-    // Curated entries and same-equipment variants first within each level
-    const rank = (v: VariantEntry): number =>
-      (v.source === 'exercisedb' ? 100 : 0) +
-      ((v.equipment ?? []).some(e => ownEquip.has(e)) ? 0 : 10)
-    const sorted = [...family].sort(
-      (a, b) => rank(a) - rank(b) || (a.name.es ?? '').localeCompare(b.name.es ?? ''),
-    )
-    const level = (v: VariantEntry) => DIFF_ORDER[v.difficulty ?? 'intermediate'] ?? 1
-    return {
-      easier: sorted.filter(v => level(v) < ownDiff).slice(0, limitPerLevel),
-      similar: sorted.filter(v => level(v) === ownDiff).slice(0, limitPerLevel),
-      harder: sorted.filter(v => level(v) > ownDiff).slice(0, limitPerLevel),
-    }
-  }
-
-  // No family — muscle/category similarity fallback for `similar` only
-  // (easier/harder only make sense as progressions within a family).
-  const ownGroups = new Set(ex.muscle_groups ?? [])
-  if (ownGroups.size === 0 || !ex.category) return empty
   const ownEquip = new Set(ex.equipment ?? [])
+  // Curated entries and same-equipment variants first within each level
+  const rank = (v: VariantEntry): number =>
+    (v.source === 'exercisedb' ? 100 : 0) +
+    ((v.equipment ?? []).some(e => ownEquip.has(e)) ? 0 : 10)
+  const sorted = [...family].sort(
+    (a, b) => rank(a) - rank(b) || (a.name.es ?? '').localeCompare(b.name.es ?? ''),
+  )
+  const level = (v: VariantEntry) => DIFF_ORDER[v.difficulty ?? 'intermediate'] ?? 1
+  return {
+    easier: sorted.filter(v => level(v) < ownDiff).slice(0, limitPerLevel),
+    similar: sorted.filter(v => level(v) === ownDiff).slice(0, limitPerLevel),
+    harder: sorted.filter(v => level(v) > ownDiff).slice(0, limitPerLevel),
+  }
+}
+
+/**
+ * Related exercises — similar work (shared muscle groups) that is NOT a
+ * variation of the same movement: the exercise itself and its whole
+ * family are excluded. Same category and equipment score higher; close
+ * difficulty breaks ties.
+ */
+export function getRelatedExercises(exerciseId: string, limit = 6): VariantEntry[] {
+  const ex = _byId.get(exerciseId)
+  if (!ex) return []
+  const ownGroups = new Set(ex.muscle_groups ?? [])
+  if (ownGroups.size === 0) return []
+  const ownEquip = new Set(ex.equipment ?? [])
+  const ownDiff = DIFF_ORDER[ex.difficulty ?? 'intermediate'] ?? 1
+
   const candidates = getAllCatalogEntries().filter(v =>
     v.id !== exerciseId &&
-    v.category === ex.category &&
+    (!ex.family || v.family !== ex.family) &&
     (v.muscle_groups ?? []).some(g => ownGroups.has(g)),
   )
   const score = (v: VariantEntry): number => {
@@ -123,14 +127,11 @@ export function getVariantsByLevel(exerciseId: string, limitPerLevel = 6): Varia
     const sameEquip = (v.equipment ?? []).some(e => ownEquip.has(e)) ||
       ((v.equipment ?? []).length === 0 && ownEquip.size === 0)
     const diffGap = Math.abs((DIFF_ORDER[v.difficulty ?? 'intermediate'] ?? 1) - ownDiff)
-    return shared * 10 + (sameEquip ? 5 : 0) - diffGap * 2
+    return shared * 10 + (v.category === ex.category ? 4 : 0) + (sameEquip ? 3 : 0) - diffGap * 2
   }
-  return {
-    ...empty,
-    similar: candidates
-      .sort((a, b) => score(b) - score(a) || (a.name.es ?? '').localeCompare(b.name.es ?? ''))
-      .slice(0, limitPerLevel),
-  }
+  return candidates
+    .sort((a, b) => score(b) - score(a) || (a.name.es ?? '').localeCompare(b.name.es ?? ''))
+    .slice(0, limit)
 }
 
 /** Family id of an exercise (null when it has none). */

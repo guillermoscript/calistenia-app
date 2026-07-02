@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { getCatalogExercise } from '@/lib/catalog'
 import { localize, type TranslatableField } from '@calistenia/core/lib/i18n-db'
 import { getExerciseEquipment, getEquipmentLabelKey } from '@calistenia/core/lib/equipment'
-import { getVariantsByLevel, type VariantEntry } from '@calistenia/core/lib/variants'
+import { getVariantsByLevel, getRelatedExercises, type VariantEntry } from '@calistenia/core/lib/variants'
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -34,6 +34,7 @@ export default function ExerciseDetailScreen() {
     ['similar', variantLevels.similar, 'text-amber-400'],
     ['harder', variantLevels.harder, 'text-red-400'],
   ] as const).filter(([, list]) => list.length > 0)
+  const related = ex ? getRelatedExercises(ex.id, 6) : []
   const description = ex ? localize(ex.description as TranslatableField, locale) : ''
 
   return (
@@ -137,6 +138,36 @@ export default function ExerciseDetailScreen() {
                       </Pressable>
                     ))}
                   </View>
+                ))}
+              </View>
+            )}
+
+            {related.length > 0 && (
+              <View className="gap-2">
+                <Text className="mt-2 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                  {t('exerciseDetail.related')}
+                </Text>
+                {related.map((v: VariantEntry) => (
+                  <Pressable
+                    key={v.id}
+                    onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: v.id } })}
+                    className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:opacity-70"
+                  >
+                    <View className="flex-1">
+                      <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+                        {localize(v.name as TranslatableField, locale)}
+                      </Text>
+                      <View className="mt-0.5 flex-row items-center gap-2">
+                        {v.difficulty && (
+                          <Text className="font-mono text-[9px] capitalize text-muted-foreground/70">{t(`difficulty.${v.difficulty}`)}</Text>
+                        )}
+                        <Text className="font-mono text-[9px] text-muted-foreground/70" numberOfLines={1}>
+                          {localize(v.muscles as TranslatableField, locale)}
+                        </Text>
+                      </View>
+                    </View>
+                    <ChevronRight size={16} color="hsl(0 0% 55%)" />
+                  </Pressable>
                 ))}
               </View>
             )}

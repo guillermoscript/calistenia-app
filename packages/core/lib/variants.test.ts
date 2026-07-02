@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getVariants, getVariantsByLevel, getFamily, getCatalogEntry } from './variants'
+import { getVariants, getVariantsByLevel, getRelatedExercises, getFamily, getCatalogEntry } from './variants'
 
 describe('variation families', () => {
   it('pushup_std belongs to the push_up family', () => {
@@ -62,20 +62,36 @@ describe('getVariantsByLevel', () => {
     expect(harder.length).toBeLessThanOrEqual(2)
   })
 
-  it('family-less exercises fall back to muscle/category-similar entries', () => {
-    const entry = getCatalogEntry('ab_wheel_rollout')
-    expect(entry?.family).toBeUndefined()
-    const { easier, similar, harder } = getVariantsByLevel('ab_wheel_rollout')
-    expect(easier).toEqual([])
-    expect(harder).toEqual([])
-    expect(similar.length).toBeGreaterThan(0)
-    expect(similar.every(v => v.category === entry?.category)).toBe(true)
-    expect(similar.every(v =>
-      (v.muscle_groups ?? []).some(g => (entry?.muscle_groups ?? []).includes(g)),
-    )).toBe(true)
+  it('family-less exercises return empty groups (related covers them)', () => {
+    expect(getCatalogEntry('ab_wheel_rollout')?.family).toBeUndefined()
+    expect(getVariantsByLevel('ab_wheel_rollout')).toEqual({ easier: [], similar: [], harder: [] })
   })
 
   it('unknown ids return empty groups', () => {
     expect(getVariantsByLevel('nope_does_not_exist')).toEqual({ easier: [], similar: [], harder: [] })
+  })
+})
+
+describe('getRelatedExercises', () => {
+  it('shares a muscle group but excludes the whole family', () => {
+    const entry = getCatalogEntry('muscle_up')
+    const related = getRelatedExercises('muscle_up')
+    expect(related.length).toBeGreaterThan(0)
+    expect(related.some(v => v.id === 'muscle_up')).toBe(false)
+    expect(related.every(v => v.family !== 'muscle_up')).toBe(true)
+    expect(related.every(v =>
+      (v.muscle_groups ?? []).some(g => (entry?.muscle_groups ?? []).includes(g)),
+    )).toBe(true)
+  })
+
+  it('works for family-less exercises too', () => {
+    const related = getRelatedExercises('ab_wheel_rollout')
+    expect(related.length).toBeGreaterThan(0)
+    expect(related.some(v => v.id === 'ab_wheel_rollout')).toBe(false)
+  })
+
+  it('respects the limit and handles unknown ids', () => {
+    expect(getRelatedExercises('pushup_std', 4)).toHaveLength(4)
+    expect(getRelatedExercises('nope_does_not_exist')).toEqual([])
   })
 })
