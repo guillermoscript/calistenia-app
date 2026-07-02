@@ -11,6 +11,35 @@ import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
 import { localize } from '@calistenia/core/lib/i18n-db'
+import { EQUIPMENT_CATALOG, getEquipmentLabelKey, getExerciseEquipment } from '@calistenia/core/lib/equipment'
+import type { DifficultyLevel } from '@calistenia/core/types'
+
+const DIFFICULTIES: DifficultyLevel[] = ['beginner', 'intermediate', 'advanced']
+
+/** Top muscle-group chips per locale, by frequency across the catalog.
+ *  Case-insensitive identity, capitalized display, computed once per locale. */
+const muscleChipsCache = new Map<string, string[]>()
+function getMuscleChips(locale: string): string[] {
+  const cached = muscleChipsCache.get(locale)
+  if (cached) return cached
+  const freq = new Map<string, { label: string; n: number }>()
+  for (const ex of CATALOG) {
+    for (const raw of localize(ex.muscles, locale).split(',')) {
+      const label = raw.trim()
+      if (label.length < 3) continue
+      const key = label.toLowerCase()
+      const cur = freq.get(key)
+      if (cur) cur.n++
+      else freq.set(key, { label: label.charAt(0).toUpperCase() + label.slice(1), n: 1 })
+    }
+  }
+  const chips = [...freq.values()]
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 16)
+    .map(m => m.label)
+  muscleChipsCache.set(locale, chips)
+  return chips
+}
 
 export default function LibraryScreen() {
   const { t, i18n } = useTranslation()
@@ -18,18 +47,36 @@ export default function LibraryScreen() {
   const locale = i18n.language
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string>('todos')
+  const [showFilters, setShowFilters] = useState(false)
+  const [difficulty, setDifficulty] = useState<DifficultyLevel | null>(null)
+  const [equipment, setEquipment] = useState<string | null>(null)
+  const [muscle, setMuscle] = useState<string | null>(null)
+
+  const muscleChips = useMemo(() => getMuscleChips(locale), [locale])
+  const activeCount = (difficulty ? 1 : 0) + (equipment ? 1 : 0) + (muscle ? 1 : 0)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
+    const m = muscle?.toLowerCase()
     return CATALOG.filter(ex => {
       if (category !== 'todos' && ex.category !== category) return false
+      if (difficulty && ex.difficulty !== difficulty) return false
+      if (m && !localize(ex.muscles, locale).toLowerCase().includes(m)) return false
+      if (equipment) {
+        const ids = getExerciseEquipment({
+          name: localize(ex.name, locale),
+          note: localize(ex.note, locale),
+          equipment: ex.equipment,
+        })
+        if (!ids.includes(equipment)) return false
+      }
       if (!q) return true
       return (
         localize(ex.name, locale).toLowerCase().includes(q) ||
         localize(ex.muscles, locale).toLowerCase().includes(q)
       )
     })
-  }, [query, category, locale])
+  }, [query, category, difficulty, equipment, muscle, locale])
 
   const openExercise = useCallback(
     (id: string) => router.push({ pathname: '/exercise/[id]', params: { id } }),
@@ -72,6 +119,76 @@ export default function LibraryScreen() {
             </Pressable>
           ))}
         </ScrollView>
+
+        {/* Toggle: dificultad / equipo / músculo */}
+        <View className="flex-row items-center justify-between">
+          <Pressable onPress={() => setShowFilters(v => !v)} hitSlop={8} className="flex-row items-center gap-1.5">
+            <Text className={cn('font-mono text-[10px] uppercase tracking-[2px]', activeCount > 0 ? 'text-lime' : 'text-muted-foreground/70')}>
+              {showFilters ? '▾' : '▸'} {t('exerciseLibrary.equipmentAndMuscle')}
+            </Text>
+            {activeCount > 0 && (
+              <View className="rounded border border-lime/20 bg-lime/10 px-1.5 py-0.5">
+                <Text className="font-mono text-[9px] text-lime">{activeCount}</Text>
+              </View>
+            )}
+          </Pressable>
+          <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground/60">
+            {t('exerciseLibrary.exerciseCount', { count: filtered.length })}
+          </Text>
+        </View>
+
+        {showFilters && (
+          <View className="gap-2">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+              {DIFFICULTIES.map(level => {
+                const active = difficulty === level
+                return (
+                  <Pressable
+                    key={level}
+                    onPress={() => setDifficulty(active ? null : level)}
+                    className={cn('rounded-full border px-3 py-1.5', active ? 'border-lime/40 bg-lime/15' : 'border-border bg-card')}
+                  >
+                    <Text className={cn('font-mono text-[10px] uppercase tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
+                      {t(`difficulty.${level}`)}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+              {EQUIPMENT_CATALOG.filter(e => e.id !== 'ninguno').map(eq => {
+                const active = equipment === eq.id
+                return (
+                  <Pressable
+                    key={eq.id}
+                    onPress={() => setEquipment(active ? null : eq.id)}
+                    className={cn('rounded-full border px-3 py-1.5', active ? 'border-lime/40 bg-lime/15' : 'border-border bg-card')}
+                  >
+                    <Text className={cn('font-mono text-[10px] uppercase tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
+                      {eq.icon} {t(getEquipmentLabelKey(eq.id))}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+              {muscleChips.map(mus => {
+                const active = muscle === mus
+                return (
+                  <Pressable
+                    key={mus}
+                    onPress={() => setMuscle(active ? null : mus)}
+                    className={cn('rounded-full border px-3 py-1.5', active ? 'border-lime/40 bg-lime/15' : 'border-border bg-card')}
+                  >
+                    <Text className={cn('font-mono text-[10px] uppercase tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
+                      {mus}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+          </View>
+        )}
       </View>
 
       <FlatList
