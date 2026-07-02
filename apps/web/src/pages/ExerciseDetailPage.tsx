@@ -129,7 +129,7 @@ function findExerciseInWorkouts(idOrSlug: string): CatalogExercise | null {
         isTimer: found.isTimer || false,
         timerSeconds: found.timerSeconds,
         demoImages: found.images?.length ? found.images : undefined,
-        description: found.note || '',
+        description: found.description || found.note || '',
       }
     }
   }

@@ -37,6 +37,9 @@ const ID_MAP_PATH = join(SEEDS_DIR, '_id-map.json')
 // ExerciseDB layer (seeds/exercisedb/) — see scripts/prepare-exercisedb-seed.mjs
 const EXDB_PATH = join(ROOT, 'seeds/exercisedb/exercises.json')
 const EXDB_MATCHES_PATH = join(ROOT, 'seeds/exercisedb/_matches.json')
+// Curated es descriptions for wger entries whose upstream has no es translation
+// (the fetch falls back to `es: enDesc`, which leaks English into the Spanish UI)
+const WGER_ES_OVERRIDES_PATH = join(ROOT, 'seeds/wger-es-overrides.json')
 
 // 3 output copies — must always be byte-identical
 const OUTPUT_PATHS = [
@@ -1248,6 +1251,49 @@ function rebuildCatalog(finalList) {
   }
 }
 
+// ── wger es overrides ─────────────────────────────────────────────────────────
+// Applied to the base list in BOTH modes (after --refresh-wger rebuilds the
+// snapshot too), so curated translations survive future wger refreshes.
+function applyWgerEsOverrides(baseList) {
+  let overrides
+  try {
+    overrides = JSON.parse(readFileSync(WGER_ES_OVERRIDES_PATH, 'utf8'))
+  } catch {
+    console.log('  seeds/wger-es-overrides.json not found — skipping es overrides')
+    return 0
+  }
+  const byId = new Map(baseList.map(e => [e.id, e]))
+  let applied = 0
+  for (const [id, esDesc] of Object.entries(overrides)) {
+    if (id.startsWith('_')) continue
+    const entry = byId.get(id)
+    if (!entry) {
+      console.warn(`  WARN: es override for unknown id "${id}" — skipping`)
+      continue
+    }
+    entry.description = { ...(entry.description || {}), es: esDesc }
+    entry.note = { ...(entry.note || {}), es: esDesc.slice(0, 300) }
+    applied++
+  }
+  return applied
+}
+
+// Surface future leaks: wger entries whose es description is still the
+// untranslated English text (upstream had no es translation). Runs on the
+// FINAL merged list — seeds/exercisedb enrichments may fix an entry later.
+function warnRemainingEnglishEsDescriptions(finalList) {
+  const leaks = finalList.filter(e =>
+    e.source === 'wger' &&
+    e.description?.es && e.description?.en &&
+    e.description.es.trim() === e.description.en.trim() &&
+    e.description.en.trim().length > 40
+  )
+  for (const e of leaks) {
+    console.warn(`  WARN: wger entry "${e.id}" still has English text in description.es — add it to seeds/wger-es-overrides.json`)
+  }
+  return leaks.length
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   const args = process.argv.slice(2)
@@ -1269,6 +1315,11 @@ async function main() {
     baseList = loadBaseListFromCatalog()
     console.log(`Base list loaded: ${baseList.length} exercises from frozen base\n`)
   }
+
+  // Curated es translations for wger entries without upstream es
+  console.log('Applying wger es description overrides...')
+  const esOverridesApplied = applyWgerEsOverrides(baseList)
+  console.log(`  Applied: ${esOverridesApplied}\n`)
 
   // Capture original id set for invariant check
   const originalIds = new Set(baseList.map(e => e.id))
@@ -1305,6 +1356,11 @@ async function main() {
   console.log('\nStamping variation families...')
   const { withFamily } = stampFamilies(baseList)
   console.log(`  With family: ${withFamily}/${baseList.length}`)
+
+  // i18n leak check (last: seeds/exercisedb may have fixed entries above)
+  console.log('\nChecking for English text in es descriptions...')
+  const leakCount = warnRemainingEnglishEsDescriptions(baseList)
+  console.log(`  Leaks: ${leakCount}`)
 
   // Log lossy equipment mappings
   if (LOSSY_MAP_LOG.length > 0) {
