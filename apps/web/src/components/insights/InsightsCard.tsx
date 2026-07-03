@@ -1,13 +1,50 @@
-/** Cross-metric weekly insight card — web Dashboard section (épica #128 Fase 2, issues #131/#133). */
+/** Cross-metric weekly insight card — web Dashboard section (épica #128 Fase 2, issues #131/#133/#135/#136). */
 import { useCallback, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
+import { op } from '@calistenia/core/lib/analytics'
 import {
   useCrossInsights,
   MIN_INSIGHT_DAYS,
   type CrossInsightCorrelation,
+  type CrossInsightAction,
+  type CrossInsightActionType,
 } from '@calistenia/core/hooks/useCrossInsights'
+
+/**
+ * Ruta web más cercana para cada tipo de acción sugerida (issue #135). No hay
+ * ruta dedicada de "recordatorios" para sueño/agua en web — se usa la ruta
+ * real donde se registra/gestiona esa métrica:
+ * - log_nutrition        → /nutrition
+ * - start_free_session   → /free-session
+ * - reminder_sleep       → /sleep (registro de sueño)
+ * - reminder_water       → /nutrition (el WaterTracker con meta editable vive ahí)
+ * - none / desconocido   → / (dashboard)
+ */
+function actionRoute(type: CrossInsightActionType): string {
+  switch (type) {
+    case 'log_nutrition':
+      return '/nutrition'
+    case 'start_free_session':
+      return '/free-session'
+    case 'reminder_sleep':
+      return '/sleep'
+    case 'reminder_water':
+      return '/nutrition'
+    default:
+      return '/'
+  }
+}
+
+type Trend = 'improving' | 'steady' | 'declining'
+
+const TREND_CONFIG: Record<Trend, { icon: string; color: string; key: string; fallback: string }> = {
+  improving: { icon: '↑', color: 'text-lime', key: 'insights.card.trend.improving', fallback: 'Mejorando' },
+  steady: { icon: '→', color: 'text-muted-foreground', key: 'insights.card.trend.steady', fallback: 'Estable' },
+  declining: { icon: '↓', color: 'text-amber-400', key: 'insights.card.trend.declining', fallback: 'Bajando' },
+}
 
 const STRENGTH_LABEL: Record<CrossInsightCorrelation['strength'], string> = {
   weak: '●',
@@ -118,6 +155,7 @@ interface InsightsCardProps {
 
 export default function InsightsCard({ userId }: InsightsCardProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [triedOnce, setTriedOnce] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const { insight, isLoading, isGenerating, generate, needsMoreData } = useCrossInsights(userId, 'weekly')
@@ -126,6 +164,14 @@ export default function InsightsCard({ userId }: InsightsCardProps) {
     setTriedOnce(true)
     await generate()
   }, [generate])
+
+  const onActionTap = useCallback(
+    (action: CrossInsightAction) => {
+      op.track('insight_action_tap', { type: action.type, platform: 'web' })
+      navigate(actionRoute(action.type))
+    },
+    [navigate],
+  )
 
   if (!userId) return null
 
@@ -157,8 +203,23 @@ export default function InsightsCard({ userId }: InsightsCardProps) {
       ) : insight ? (
         <div className="space-y-4">
           <div>
-            <div className="font-bebas text-2xl md:text-3xl leading-none text-foreground">
-              {insight.payload.headline}
+            <div className="flex items-center gap-2">
+              <div className="font-bebas text-2xl md:text-3xl leading-none text-foreground">
+                {insight.payload.headline}
+              </div>
+              {insight.payload.trend && (
+                <span
+                  className={cn(
+                    'flex items-center gap-1 shrink-0 text-[10px] uppercase tracking-wide',
+                    TREND_CONFIG[insight.payload.trend].color,
+                  )}
+                >
+                  <span aria-hidden="true" className="text-sm leading-none">
+                    {TREND_CONFIG[insight.payload.trend].icon}
+                  </span>
+                  {t(TREND_CONFIG[insight.payload.trend].key, TREND_CONFIG[insight.payload.trend].fallback)}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground">
               {!!insight.payload.period && <span>{insight.payload.period}</span>}
@@ -248,6 +309,15 @@ export default function InsightsCard({ userId }: InsightsCardProps) {
                       {t('insights.card.tip', 'SUGERENCIA')}
                     </div>
                     <p className="text-sm font-medium text-foreground">{insight.payload.suggestion}</p>
+                    {!!insight.payload.suggestedAction && insight.payload.suggestedAction.type !== 'none' && (
+                      <Button
+                        size="sm"
+                        onClick={() => onActionTap(insight.payload.suggestedAction!)}
+                        className="mt-2.5 bg-lime hover:bg-lime/90 text-lime-foreground text-[10px] tracking-widest h-8"
+                      >
+                        {insight.payload.suggestedAction.label}
+                      </Button>
+                    )}
                   </div>
                 )}
 

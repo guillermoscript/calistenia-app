@@ -22,6 +22,7 @@ import LeaderboardWidget from '../components/friends/LeaderboardWidget'
 import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
 import PhasePhotoBanner from '../components/progress/PhasePhotoBanner'
 import InsightsCard from '../components/insights/InsightsCard'
+import InsightsHistory from '../components/insights/InsightsHistory'
 import { useWater } from '@calistenia/core/hooks/useWater'
 import { useSleep } from '@calistenia/core/hooks/useSleep'
 import { useLeaderboard } from '@calistenia/core/hooks/useLeaderboard'
@@ -499,8 +500,9 @@ export default function DashboardPage({
       </div>
 
       {/* ═══ CROSS-METRIC INSIGHTS ═══════════════════════════════════════════ */}
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
         <InsightsCard userId={userId ?? null} />
+        <InsightsHistory userId={userId ?? null} />
       </div>
 
       {/* Leaderboard widget — only if following someone */}
