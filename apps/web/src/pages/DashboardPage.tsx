@@ -21,6 +21,7 @@ import type { SleepLastEntry } from '../components/sleep/SleepDashboardWidget'
 import LeaderboardWidget from '../components/friends/LeaderboardWidget'
 import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
 import PhasePhotoBanner from '../components/progress/PhasePhotoBanner'
+import InsightsCard from '../components/insights/InsightsCard'
 import { useWater } from '@calistenia/core/hooks/useWater'
 import { useSleep } from '@calistenia/core/hooks/useSleep'
 import { useLeaderboard } from '@calistenia/core/hooks/useLeaderboard'
@@ -495,6 +496,11 @@ export default function DashboardPage({
           lastEntry={sleepLastEntry}
           onRegister={() => navigate('/sleep')}
         />
+      </div>
+
+      {/* ═══ CROSS-METRIC INSIGHTS ═══════════════════════════════════════════ */}
+      <div className="mb-6">
+        <InsightsCard userId={userId ?? null} />
       </div>
 
       {/* Leaderboard widget — only if following someone */}
