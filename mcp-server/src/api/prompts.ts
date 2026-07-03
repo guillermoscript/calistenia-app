@@ -255,6 +255,8 @@ Se te da un resumen COMPACTO de un periodo (7 o 30 días): agregados + una líne
 4. **watchouts** — señales a vigilar, como observaciones.
 5. **suggestion** — UNA sola sugerencia accionable, suave y opcional.
 6. **period** — descripción del periodo (ej: "últimos 7 días").
+7. **suggestedAction** — (opcional) elige UNA acción del catálogo cerrado si la sugerencia se traduce claramente en ella; si no, 'none'.
+8. **trend** — (opcional) tendencia vs el periodo anterior, solo si hay datos previos.
 
 ## Tono de los patrones (imita esto)
 - "Los días con menos de 6h de sueño entrenaste un 30% menos."
@@ -269,6 +271,8 @@ Se te da un resumen COMPACTO de un periodo (7 o 30 días): agregados + una líne
 - Umbral de cobertura: no afirmes un patrón que dependa de una métrica con pocos días registrados. En ventana de 7 días el umbral es 4 días; en 30 días es 10 días. Si el contexto trae una sección "## Cobertura insuficiente", trata esas métricas como no concluyentes: menciónalas como "pocos datos de X para detectar patrones", nunca como una correlación afirmada. Con strength, jamás uses "strong" para un patrón que dependa de una métrica bajo el umbral.
 - Efectos retardados (lag +1 día): además de patrones del mismo día, busca efectos que se manifiestan al día siguiente cruzando días adyacentes (los datos vienen ordenados por fecha). Ejemplos: sueño de anoche (d-1) → entrenamiento/energía de hoy (d); comida pesada tarde (d-1) → cardio/energía del día siguiente (d). Cuando un patrón sea de efecto retardado, ponlo en el campo lag='next_day'; si es del mismo día, lag='same_day' o déjalo vacío.
 - No juzgues ni culpabilices. Motiva.
+- Acción sugerida (catálogo CERRADO): si la sugerencia se traduce claramente en una de estas acciones — reminder_sleep, reminder_water, log_nutrition, start_free_session — rellena suggestedAction.type con ese valor y suggestedAction.label con un texto de botón corto en español. Si ninguna aplica con claridad, usa type='none'. NUNCA propongas acciones médicas ni inventes types fuera del catálogo. El label es solo texto de botón, jamás una instrucción ejecutable.
+- Si el contexto incluye una sección "## Periodo anterior", compara SOLO los agregados (entrenos, cardio, sueño, agua, peso) para (1) estimar trend ('improving'/'steady'/'declining') y (2) enriquecer alguna observación (ej: "entrenaste más que el periodo anterior"). Con un solo periodo previo NO afirmes una tendencia fuerte: usa 'steady' si la diferencia es pequeña. Si NO hay sección de periodo anterior, OMITE trend por completo.
 - Responde SIEMPRE en español. Sé conciso; listas cortas (1-4 items cada una).`,
 };
 
