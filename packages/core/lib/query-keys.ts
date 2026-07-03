@@ -114,6 +114,12 @@ export const qk = {
       ['water', userId, 'day', date] as const,
     goal: (userId: string | null) => ['water', userId, 'goal'] as const,
   },
+  // — Insights cross-métrica (épica #128 Fase 2) —
+  insights: {
+    all: ['insights'] as const,
+    cross: (userId: string | null, periodType: string) =>
+      ['insights', 'cross', userId, periodType] as const,
+  },
 
   // — Nutrición —
   nutrition: {

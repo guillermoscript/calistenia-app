@@ -1,14 +1,26 @@
 {
-  "generated": "2026-07-02T12:00:00.000Z",
+  "generated": "2026-07-03T00:00:00.000Z",
   "versions": [
     {
       "version": "1.0.9",
-      "date": "2026-07-02",
+      "date": "2026-07-03",
       "summary": {
-        "es": "El catálogo crece a 1,578 ejercicios, con filtros y variantes por nivel, ejercicios relacionados y retos por ejercicio.",
-        "en": "The catalog grows to 1,578 exercises, with filters and level-based variants, related exercises and per-exercise challenges."
+        "es": "Insights que cruzan tus métricas de la semana, y el catálogo crece a 1,578 ejercicios con filtros y retos.",
+        "en": "Weekly insights across your metrics, plus a 1,578-exercise catalog with filters and challenges."
       },
       "highlights": [
+        {
+          "icon": "🧠",
+          "type": "feat",
+          "title": {
+            "es": "Insights de tu semana",
+            "en": "Your weekly insights"
+          },
+          "body": {
+            "es": "La app cruza tu sueño, entrenos, nutrición, agua y peso para mostrarte patrones de tu semana con una sugerencia accionable. Tócalo en \"Generar resumen\" desde Inicio.",
+            "en": "The app cross-references your sleep, workouts, nutrition, water and weight to surface your week's patterns with one actionable tip. Tap \"Generate\" on Home."
+          }
+        },
         {
           "icon": "📚",
           "type": "feat",
@@ -124,6 +136,12 @@
           "emoji": "✨",
           "type": "feat",
           "items": [
+            {
+              "description": "Cross-metric AI insights — aggregator, endpoint, hook, Home card (epic #128 Fase 2)",
+              "scope": "insights",
+              "breaking": false,
+              "hash": "163d927"
+            },
             {
               "description": "Import masivo de ExerciseDB: catálogo de 307 a 1,578 ejercicios con nombres e instrucciones en español",
               "scope": "catalog",

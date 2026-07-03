@@ -9,12 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
-## [1.0.9] - 2026-07-02
+## [1.0.9] - 2026-07-03
 
-_The catalog grows to 1,578 exercises, with filters and level-based variants, related exercises and per-exercise challenges._
+_Weekly insights across your metrics, plus a 1,578-exercise catalog with filters and challenges._
 
 ### Added
 
+- **Your weekly insights** — The app cross-references your sleep, workouts, nutrition, water and weight to surface your week's patterns with one actionable tip. Tap "Generate" on Home.
 - **Catalog expanded to 1,578 exercises** — The exercise catalog grows from 307 to 1,578 exercises, with Spanish names and instructions (98% with a description). No third-party GIFs for now.
 - **Library filters on mobile** — Filter the library by difficulty, equipment and muscle group — now matching the web.
 - **"No equipment" filter** — New filter to show only pure bodyweight exercises (454 in the catalog).

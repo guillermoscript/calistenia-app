@@ -9,12 +9,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
-## [1.0.9] - 2026-07-02
+## [1.0.9] - 2026-07-03
 
-_El catálogo crece a 1,578 ejercicios, con filtros y variantes por nivel, ejercicios relacionados y retos por ejercicio._
+_Insights que cruzan tus métricas de la semana, y el catálogo crece a 1,578 ejercicios con filtros y retos._
 
 ### Añadido
 
+- **Insights de tu semana** — La app cruza tu sueño, entrenos, nutrición, agua y peso para mostrarte patrones de tu semana con una sugerencia accionable. Tócalo en "Generar resumen" desde Inicio.
 - **Catálogo ampliado a 1,578 ejercicios** — El catálogo pasa de 307 a 1,578 ejercicios, con nombres e instrucciones en español (98% con descripción). Por ahora sin GIFs de terceros.
 - **Filtros de biblioteca en móvil** — Filtra la biblioteca por dificultad, equipo y grupo muscular — igual que en la web.
 - **Filtro "Sin equipo"** — Nuevo filtro para ver solo ejercicios de puro peso corporal (454 en el catálogo).
