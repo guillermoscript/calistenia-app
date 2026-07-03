@@ -21,6 +21,7 @@ import { pb } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
 import { qk } from '../lib/query-keys'
 import { buildInsightContext } from '../lib/buildInsightContext'
+import { getPlatform } from '../platform'
 
 export type InsightPeriodType = 'weekly' | 'monthly'
 
@@ -67,6 +68,23 @@ function mapInsight(rec: any): CrossInsight {
   }
 }
 
+/**
+ * Reporta a Sentry (vía facade de plataforma) sin PII: solo la operación, el
+ * tipo de periodo y el código de status de PB (si lo hay). El error original
+ * se anexa como `cause` para que Sentry pueda inspeccionarlo, pero el mensaje
+ * visible nunca incluye datos de usuario.
+ */
+function reportInsightError(op: string, periodType: InsightPeriodType, err: unknown) {
+  // Sin PII: solo op + periodType + código de estado PB.
+  if ((err as any)?.isAbort) return
+  const status = (err as any)?.status ?? (err as any)?.response?.status
+  const wrapped = new Error(
+    `[cross-insights] ${op} failed (period=${periodType}${status != null ? `, pbStatus=${status}` : ''})`,
+  )
+  ;(wrapped as any).cause = err
+  getPlatform().reportError?.(wrapped)
+}
+
 // Fuera del hook para estabilidad referencial (igual que useNutritionCoach).
 async function fetchLatestInsight(
   userId: string,
@@ -78,8 +96,11 @@ async function fetchLatestInsight(
       { sort: '-generated_at', $autoCancel: false },
     )
     return mapInsight(rec)
-  } catch {
-    return null // sin insight todavía (404) o lectura fallida
+  } catch (err) {
+    // 404 = sin insight todavía (esperado, no reportar). Cualquier otro
+    // status/error sí es una lectura fallida real.
+    if ((err as any)?.status !== 404) reportInsightError('fetch-latest', periodType, err)
+    return null
   }
 }
 
@@ -89,6 +110,7 @@ export function useCrossInsights(
 ) {
   const qc = useQueryClient()
   const [needsMoreData, setNeedsMoreData] = useState(false)
+  const [notSaved, setNotSaved] = useState(false)
 
   const insightQuery = useQuery({
     queryKey: qk.insights.cross(userId, periodType),
@@ -120,6 +142,7 @@ export function useCrossInsights(
         return null
       }
       setNeedsMoreData(false)
+      setNotSaved(false) // nos comprometemos a generar — resetea el estado de guardado previo
 
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (pb.authStore.token) headers['Authorization'] = `Bearer ${pb.authStore.token}`
@@ -168,12 +191,30 @@ export function useCrossInsights(
         insight.id = rec.id
         insight.generatedAt = (rec as any).generated_at
       } catch {
+        // No existía fila (404 esperado) → crear.
         try {
           const rec = await pb.collection('user_insights').create(record)
           insight.id = rec.id
           insight.generatedAt = (rec as any).generated_at
-        } catch {
-          /* restricción unique por condición de carrera — ignorar */
+        } catch (createErr) {
+          // ¿carrera del índice único? Re-lee: si ya existe, otro proceso la creó → actualiza (recuperación silenciosa).
+          try {
+            const raced = await pb.collection('user_insights').getFirstListItem(
+              pb.filter('user = {:uid} && period_type = {:pt} && period_start = {:ps}', {
+                uid: userId,
+                pt: periodType,
+                ps: pbPeriodStart(periodStart),
+              }),
+              { $autoCancel: false },
+            )
+            const rec = await pb.collection('user_insights').update(raced.id, record)
+            insight.id = rec.id
+            insight.generatedAt = (rec as any).generated_at
+          } catch {
+            // Error real e irrecuperable de persistencia.
+            reportInsightError('persist', periodType, createErr)
+            setNotSaved(true)
+          }
         }
       }
 
@@ -197,5 +238,6 @@ export function useCrossInsights(
     generate,
     needsMoreData,
     periodType,
+    notSaved,
   }
 }

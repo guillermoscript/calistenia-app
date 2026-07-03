@@ -2518,5 +2518,22 @@
   "race.participantsFull": "participants",
   "race.sessionExpired": "Session expired — please sign in again",
   "race.cancelled": "Cancelled",
-  "race.findNearby": "🔍 Search"
+  "race.findNearby": "🔍 Search",
+  "insights.card.kicker": "YOUR WEEK",
+  "insights.card.generate": "Generate my summary",
+  "insights.card.generating": "Generating…",
+  "insights.card.refresh": "Refresh",
+  "insights.card.needMore": "Keep logging — you need at least {{n}} days with data.",
+  "insights.card.error": "Couldn't generate. Try again.",
+  "insights.card.emptyTitle": "Discover your patterns",
+  "insights.card.emptyBody": "Cross-reference your week's sleep, workouts, nutrition and more.",
+  "insights.card.wins": "WINS",
+  "insights.card.watch": "WATCH OUTS",
+  "insights.card.tip": "SUGGESTION",
+  "insights.card.notSaved": "Not saved — it'll regenerate next time",
+  "insights.card.disclaimer": "Observed patterns, not causes or medical advice.",
+  "insights.card.maybe": "POSSIBLE PATTERNS",
+  "insights.card.seeMore": "See more",
+  "insights.card.seeLess": "See less",
+  "insights.card.nextDay": "next day"
 }

@@ -17,6 +17,10 @@ const CorrelationSchema = z.object({
   strength: z
     .enum(["weak", "moderate", "strong"])
     .describe("Cuán marcado APARECE el patrón en los datos (no implica causalidad)"),
+  lag: z
+    .enum(["same_day", "next_day"])
+    .nullable()
+    .describe("'next_day' si el patrón es un efecto retardado (ej: sueño de anoche → entreno de hoy); 'same_day' o null si es del mismo día. (nullable, no optional: OpenAI strict exige todas las claves en 'required')"),
 });
 
 const CrossInsightSchema = z.object({
@@ -113,6 +117,24 @@ function buildUserText(ctx: InsightContext): string {
     lines.push(`- Reloj: ~${n0(s.watch.avgSteps)} pasos/día · FC reposo ~${n0(s.watch.avgRestingHr)} bpm · HRV ~${n0(s.watch.avgHrvMs)} ms.`);
   } else {
     lines.push(`- Reloj: sin datos (no hay reloj conectado). NO inventes correlaciones de pasos/FC/HRV.`);
+  }
+
+  const covMin = period.days <= 7 ? 4 : 10;
+  const lowCoverage: Array<{ label: string; count: number }> = [
+    { label: "sueño", count: s.sleep.daysLogged },
+    { label: "agua", count: s.water.daysLogged },
+    { label: "nutrición", count: s.nutrition.daysLogged },
+    { label: "fuerza", count: s.workouts.daysTrained },
+    { label: "cardio", count: s.cardio.sessions },
+    { label: "circuitos", count: s.circuits.sessions },
+  ].filter((d) => d.count > 0 && d.count < covMin);
+
+  if (lowCoverage.length) {
+    lines.push("");
+    lines.push('## Cobertura insuficiente (NO afirmes patrones que dependan de estas métricas — di "pocos datos de X")');
+    for (const d of lowCoverage) {
+      lines.push(`- ${d.label}: ${d.count}/${period.days} días`);
+    }
   }
 
   lines.push("");
