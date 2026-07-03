@@ -15,8 +15,10 @@ export interface BodyPhoto {
 interface UseBodyPhotosReturn {
   photos: BodyPhoto[]
   isReady: boolean
-  uploadPhoto: (file: File, date: string, category: string, note?: string, phase?: number) => Promise<void>
-  uploadPhotos: (files: { file: File; category: string }[], phase: number, date?: string) => Promise<BodyPhoto[]>
+  // File on web; Blob on native (URIs read to Blob via XHR, since expo/fetch's
+  // FormData rejects RN's { uri, name, type } shape — same union as saveEntry).
+  uploadPhoto: (file: File | Blob, date: string, category: string, note?: string, phase?: number) => Promise<void>
+  uploadPhotos: (files: { file: File | Blob; category: string }[], phase: number, date?: string) => Promise<BodyPhoto[]>
   getPhotos: (limit?: number) => BodyPhoto[]
   getPhotosByPhase: (phase: number) => BodyPhoto[]
   deletePhoto: (id: string) => Promise<void>
@@ -59,14 +61,15 @@ export function useBodyPhotos(userId: string | null = null): UseBodyPhotosReturn
   const uploadPhotoMutation = useMutation({
     mutationFn: async ({
       file, date, category, note, phase,
-    }: { file: File; date: string; category: string; note?: string; phase?: number }) => {
+    }: { file: File | Blob; date: string; category: string; note?: string; phase?: number }) => {
       if (!userId) {
         console.warn('Body photos require PocketBase')
         return
       }
       const formData = new FormData()
       formData.append('user', userId)
-      formData.append('photo', file)
+      // A bare Blob (native) has no .name, so pass a synthetic filename fallback.
+      formData.append('photo', file, (file as { name?: string }).name || 'photo.jpg')
       formData.append('date', date + ' 00:00:00')
       formData.append('category', category)
       formData.append('note', note || '')
@@ -96,7 +99,7 @@ export function useBodyPhotos(userId: string | null = null): UseBodyPhotosReturn
   const uploadPhotosMutation = useMutation({
     mutationFn: async ({
       files, phase, date,
-    }: { files: { file: File; category: string }[]; phase: number; date?: string }): Promise<BodyPhoto[]> => {
+    }: { files: { file: File | Blob; category: string }[]; phase: number; date?: string }): Promise<BodyPhoto[]> => {
       if (!userId) {
         console.warn('Body photos require PocketBase')
         return []
@@ -109,7 +112,7 @@ export function useBodyPhotos(userId: string | null = null): UseBodyPhotosReturn
         try {
           const formData = new FormData()
           formData.append('user', userId)
-          formData.append('photo', file)
+          formData.append('photo', file, (file as { name?: string }).name || 'photo.jpg')
           formData.append('date', d + ' 00:00:00')
           formData.append('category', category)
           formData.append('note', '')
@@ -154,14 +157,14 @@ export function useBodyPhotos(userId: string | null = null): UseBodyPhotosReturn
   // ─── Wrappers públicos — forma idéntica al hook original ───
 
   const uploadPhoto = useCallback(
-    async (file: File, date: string, category: string, note?: string, phase?: number): Promise<void> => {
+    async (file: File | Blob, date: string, category: string, note?: string, phase?: number): Promise<void> => {
       await uploadPhotoMutation.mutateAsync({ file, date, category, note, phase }).catch(() => {})
     },
     [uploadPhotoMutation],
   )
 
   const uploadPhotos = useCallback(
-    async (files: { file: File; category: string }[], phase: number, date?: string): Promise<BodyPhoto[]> => {
+    async (files: { file: File | Blob; category: string }[], phase: number, date?: string): Promise<BodyPhoto[]> => {
       return uploadPhotosMutation.mutateAsync({ files, phase, date }).catch(() => [])
     },
     [uploadPhotosMutation],
