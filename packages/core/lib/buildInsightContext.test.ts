@@ -16,7 +16,9 @@ initCore({
 })
 
 const { emptyMonthActivity } = await import('./monthActivity')
-const { monthsInRange, mergeMonthActivity, buildDayRows, summarizeRows } = await import('./buildInsightContext')
+const { monthsInRange, mergeMonthActivity, buildDayRows, summarizeRows, previousWindow } = await import(
+  './buildInsightContext'
+)
 
 beforeAll(() => {
   // Determinismo: las fechas de estos tests no deben depender del tz del runner.
@@ -118,6 +120,16 @@ describe('buildDayRows', () => {
     expect(byDate.get('2026-06-30')).toMatchObject({ sleepMinutes: 420, sleepQuality: 4 })
     expect(byDate.get('2026-06-25')).toMatchObject({ weightKg: 80.5 })
     expect(byDate.get('2026-07-01')).toMatchObject({ weightKg: 79.8 })
+  })
+})
+
+describe('previousWindow', () => {
+  it('weekly window: returns the 7 days immediately before start, no overlap', () => {
+    expect(previousWindow('2026-06-25', 7)).toEqual({ end: '2026-06-24', start: '2026-06-18' })
+  })
+
+  it('monthly window crossing a month boundary (Mar 1 → Feb 28, non-leap year)', () => {
+    expect(previousWindow('2026-03-01', 30)).toEqual({ end: '2026-02-28', start: '2026-01-30' })
   })
 })
 

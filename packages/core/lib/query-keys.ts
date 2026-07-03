@@ -119,6 +119,8 @@ export const qk = {
     all: ['insights'] as const,
     cross: (userId: string | null, periodType: string) =>
       ['insights', 'cross', userId, periodType] as const,
+    history: (userId: string | null, periodType: string) =>
+      ['insights', 'history', userId, periodType] as const,
   },
 
   // — Nutrición —

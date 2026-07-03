@@ -60,6 +60,10 @@ export interface InsightContext {
   rows: InsightDayRow[] // SOLO días con >=1 dato, orden ascendente por fecha (ahorra tokens)
   summary: InsightSummary
   watchAvailable: boolean
+  // Resumen agregado de la ventana INMEDIATAMENTE anterior (mismo tamaño), solo
+  // si se pidió `withPrevious`. Únicamente el summary — nunca las filas, para no
+  // inflar el presupuesto de tokens del prompt (épica #128 Fase 3, #136).
+  previousSummary?: InsightSummary
 }
 
 // Forma mínima de un registro `sessions` (entrenamiento de fuerza) — solo los
@@ -110,6 +114,15 @@ export function mergeMonthActivity(activities: MonthActivity[]): MonthActivity {
     Object.assign(merged.lumbarByDate, a.lumbarByDate)
   }
   return merged
+}
+
+/**
+ * Ventana [start, end] INMEDIATAMENTE anterior a una de `days` días que
+ * empieza en `start` (misma longitud, sin solape). Pura y testeable sin PB.
+ */
+export function previousWindow(start: string, days: number): { start: string; end: string } {
+  const end = addDays(start, -1)
+  return { start: addDays(end, -(days - 1)), end }
 }
 
 /**
@@ -300,16 +313,18 @@ export function summarizeRows(
 // ─── Orquestación (PB) ───────────────────────────────────────────────────────
 
 /**
- * Agrega la actividad de `userId` en los últimos `days` (7 o 30) días en un
- * InsightContext compacto para alimentar un LLM. Cada fuente degrada a "sin
- * datos" si falla — nunca lanza.
+ * Agrega toda la actividad de `userId` dentro de [start, end] (una ventana de
+ * `days` días) desde PB: calendario (cardio/circuitos/nutrición/agua/sueño/
+ * peso), entrenamientos de fuerza y reloj. Cada fuente degrada a "sin datos"
+ * si falla — nunca lanza. Extraído de buildInsightContext para poder llamarlo
+ * dos veces (ventana actual + anterior, #136) sin duplicar la orquestación.
  */
-export async function buildInsightContext(userId: string, opts: { days: 7 | 30 }): Promise<InsightContext> {
-  const { days } = opts
-  const end = todayStr()
-  const start = addDays(end, -(days - 1))
-  const period: InsightContext['period'] = { type: days === 7 ? 'weekly' : 'monthly', days, start, end }
-
+async function fetchWindow(
+  userId: string,
+  start: string,
+  end: string,
+  days: number,
+): Promise<{ rows: InsightDayRow[]; summary: InsightSummary; watchAvailable: boolean }> {
   // 1. Calendario (cardio/circuitos/nutrición/agua/sueño/peso), un fetch por
   // mes calendario que la ventana toca, combinados en uno solo.
   // SECUENCIAL a propósito: una ventana trailing puede tocar 2 meses; llamar a
@@ -380,5 +395,49 @@ export async function buildInsightContext(userId: string, opts: { days: 7 | 30 }
   const rows = buildDayRows(merged, strengthByDate, watchByDate, start, end)
   const summary = summarizeRows(rows, days, end, watchAvailable)
 
-  return { userId, period, rows, summary, watchAvailable }
+  return { rows, summary, watchAvailable }
+}
+
+/**
+ * Agrega la actividad de `userId` en los últimos `days` (7 o 30) días en un
+ * InsightContext compacto para alimentar un LLM. Cada fuente degrada a "sin
+ * datos" si falla — nunca lanza.
+ *
+ * `withPrevious` (#136): además calcula el summary (SOLO summary, no rows —
+ * presupuesto de tokens) de la ventana inmediatamente anterior, misma
+ * longitud, para que el LLM pueda razonar sobre tendencia. Se fetchea
+ * SECUENCIALMENTE después de la ventana actual (nunca en paralelo) — el mismo
+ * gotcha de auto-cancel de PocketBase que motiva el for-loop de meses aplica
+ * igual entre ventana actual y anterior.
+ */
+export async function buildInsightContext(
+  userId: string,
+  opts: { days: 7 | 30; withPrevious?: boolean },
+): Promise<InsightContext> {
+  const { days, withPrevious } = opts
+  const end = todayStr()
+  const start = addDays(end, -(days - 1))
+  const period: InsightContext['period'] = { type: days === 7 ? 'weekly' : 'monthly', days, start, end }
+
+  const current = await fetchWindow(userId, start, end, days)
+
+  let previousSummary: InsightSummary | undefined
+  if (withPrevious) {
+    const prev = previousWindow(start, days)
+    try {
+      const prevWindow = await fetchWindow(userId, prev.start, prev.end, days)
+      previousSummary = prevWindow.summary
+    } catch (err) {
+      console.warn('buildInsightContext: previous window fetch failed', err)
+    }
+  }
+
+  return {
+    userId,
+    period,
+    rows: current.rows,
+    summary: current.summary,
+    watchAvailable: current.watchAvailable,
+    ...(previousSummary ? { previousSummary } : {}),
+  }
 }
