@@ -19,8 +19,8 @@ const CorrelationSchema = z.object({
     .describe("Cuán marcado APARECE el patrón en los datos (no implica causalidad)"),
   lag: z
     .enum(["same_day", "next_day"])
-    .optional()
-    .describe("'next_day' si el patrón es un efecto retardado (ej: sueño de anoche → entreno de hoy); 'same_day' o ausente si es del mismo día"),
+    .nullable()
+    .describe("'next_day' si el patrón es un efecto retardado (ej: sueño de anoche → entreno de hoy); 'same_day' o null si es del mismo día. (nullable, no optional: OpenAI strict exige todas las claves en 'required')"),
 });
 
 const CrossInsightSchema = z.object({
@@ -41,12 +41,12 @@ const CrossInsightSchema = z.object({
       type: z.enum(["reminder_sleep", "reminder_water", "log_nutrition", "start_free_session", "none"]),
       label: z.string().describe("Texto corto del botón en español, ej. 'Crear recordatorio de sueño'. NUNCA una instrucción ejecutable."),
     })
-    .optional()
-    .describe("Acción sugerida de catálogo CERRADO. El modelo elige type de la lista; 'none' si ninguna aplica con claridad. NUNCA acción médica."),
+    .nullable()
+    .describe("Acción sugerida de catálogo CERRADO. El modelo elige type de la lista; 'none' (o null) si ninguna aplica con claridad. NUNCA acción médica. (nullable, no optional: OpenAI strict)"),
   trend: z
     .enum(["improving", "steady", "declining"])
-    .optional()
-    .describe("Tendencia vs el periodo anterior, SOLO si el contexto trae '## Periodo anterior' con datos. Ausente en el primer periodo."),
+    .nullable()
+    .describe("Tendencia vs el periodo anterior, SOLO si el contexto trae '## Periodo anterior' con datos; null en el primer periodo. (nullable, no optional: OpenAI strict)"),
 });
 
 export type CrossInsight = z.infer<typeof CrossInsightSchema>;
