@@ -4,12 +4,16 @@
  * The presentational layer (steps/views) consumes the returned model.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, type TextInput } from 'react-native'
+import { type TextInput } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
 
 import { haptics } from '@/lib/haptics'
 import { Sentry } from '@/lib/instrument'
+import {
+  requestCameraPermission as askCameraPermission,
+  requestMediaPermission as askMediaPermission,
+} from '@/lib/image-upload'
 import { localHour, nowLocalForPB, todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
 import { isMidnightEatenAt, parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
 import { createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
@@ -160,29 +164,19 @@ export function useMealLogger({
   }
 
   // ── Image Picker ───────────────────────────────────────────────────────────
-  const requestCameraPermission = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert(
-        t('common.permissionRequired') || 'Permiso requerido',
-        t('common.cameraPermissionMessage') || 'Se necesita acceso a la cámara para tomar fotos.',
-      )
-      return false
-    }
-    return true
-  }
+  // Thin i18n wrappers over the shared permission helpers (which own the actual
+  // expo-image-picker permission request + denied Alert).
+  const requestCameraPermission = () =>
+    askCameraPermission({
+      title: t('common.permissionRequired') || 'Permiso requerido',
+      message: t('common.cameraPermissionMessage') || 'Se necesita acceso a la cámara para tomar fotos.',
+    })
 
-  const requestMediaPermission = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert(
-        t('common.permissionRequired') || 'Permiso requerido',
-        t('common.galleryPermissionMessage') || 'Se necesita acceso a la galería.',
-      )
-      return false
-    }
-    return true
-  }
+  const requestMediaPermission = () =>
+    askMediaPermission({
+      title: t('common.permissionRequired') || 'Permiso requerido',
+      message: t('common.galleryPermissionMessage') || 'Se necesita acceso a la galería.',
+    })
 
   /**
    * Apply capture time from the first asset's EXIF metadata (fresh logs only).

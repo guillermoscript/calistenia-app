@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
-import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles } from 'lucide-react-native'
+import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Camera } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
@@ -157,6 +157,24 @@ export default function ProfileScreen() {
                 </Text>
                 <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
                   {t('profile.healthDesc', { defaultValue: 'Conecta tu reloj vía Health Connect' })}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="hsl(0 0% 45%)" />
+            </CardContent>
+          </Card>
+        </Pressable>
+
+        {/* Fotos de progreso */}
+        <Pressable onPress={() => router.push('/progress-photos')}>
+          <Card>
+            <CardContent className="flex-row items-center gap-3 py-4">
+              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+                <Camera size={18} color="hsl(74 90% 57%)" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground">{t('progress.bodyPhotos.title')}</Text>
+                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                  {t('progress.bodyPhotos.rowDesc')}
                 </Text>
               </View>
               <ChevronRight size={18} color="hsl(0 0% 45%)" />
