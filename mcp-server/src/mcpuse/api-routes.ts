@@ -432,6 +432,22 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     } catch (err) { return apiError(c, err); }
   });
 
+  // ── 13b. POST /api/generate-cross-insight (cross-metric patterns) ─────────
+  app.post("/api/generate-cross-insight", async (c) => {
+    const user = await getAuthUser(c, pbUrl);
+    if (!user) return c.json({ error: "Token de autenticación requerido" }, 401);
+    const rl = applyRateLimit(c, user.id);
+    if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
+    try {
+      const body = await c.req.json().catch(() => ({}));
+      const { context } = body ?? {};
+      if (!context?.summary || !context?.period) return c.json({ error: "Se requiere el contexto de métricas (context.summary/period)" }, 400);
+      const { generateCrossInsight } = await import("../api/cross-insight-generator.js");
+      const result = await generateCrossInsight({ context, tier: getTier(user) });
+      return c.json(result);
+    } catch (err) { return apiError(c, err); }
+  });
+
   // ── 14. POST /api/generate-free-session (SSE streaming) ──────────────────
   app.post("/api/generate-free-session", async (c) => {
     const user = await getAuthUser(c, pbUrl);

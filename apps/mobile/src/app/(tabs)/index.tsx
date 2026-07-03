@@ -17,6 +17,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
 import HomeActivity from '@/components/home/HomeActivity'
+import InsightsCard from '@/components/insights/InsightsCard'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
 import { NotificationBadge } from '@/components/social/NotificationBadge'
@@ -310,6 +311,8 @@ export default function TodayScreen() {
           <CommunityPill icon={<Trophy size={15} color="hsl(0 0% 55%)" />} label="Ranking" onPress={() => router.push('/leaderboard')} />
           <CommunityPill icon={<Flag size={15} color="hsl(0 0% 55%)" />} label="Retos" onPress={() => router.push('/challenges')} />
         </View>
+
+        <InsightsCard userId={milestoneUser?.id ?? null} />
 
         {/* Actividad reciente — amigos / tú */}
         <HomeActivity />
