@@ -23,7 +23,7 @@ const langfuse = enabled
 
 // ── Fallback prompts (used when Langfuse is down or not configured) ─────────
 
-const FALLBACKS: Record<string, string> = {
+export const FALLBACKS: Record<string, string> = {
   "meal-analyzer": `Eres un nutricionista experto especializado en análisis visual de comidas.
 Analiza la imagen de la comida proporcionada y devuelve información nutricional detallada.
 
