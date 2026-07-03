@@ -2518,5 +2518,22 @@
   "race.participantsFull": "participantes",
   "race.sessionExpired": "Sesión expirada — vuelve a iniciar sesión",
   "race.cancelled": "Cancelada",
-  "race.findNearby": "🔍 Buscar"
+  "race.findNearby": "🔍 Buscar",
+  "insights.card.kicker": "TU SEMANA",
+  "insights.card.generate": "Generar mi resumen",
+  "insights.card.generating": "Generando…",
+  "insights.card.refresh": "Actualizar",
+  "insights.card.needMore": "Sigue registrando — necesitas al menos {{n}} días con datos.",
+  "insights.card.error": "No se pudo generar. Reintenta.",
+  "insights.card.emptyTitle": "Descubre tus patrones",
+  "insights.card.emptyBody": "Cruza sueño, entrenos, nutrición y más de tu semana.",
+  "insights.card.wins": "LOGROS",
+  "insights.card.watch": "A VIGILAR",
+  "insights.card.tip": "SUGERENCIA",
+  "insights.card.notSaved": "No se guardó — se regenerará la próxima vez",
+  "insights.card.disclaimer": "Patrones observados, no causas ni consejo médico.",
+  "insights.card.maybe": "POSIBLES PATRONES",
+  "insights.card.seeMore": "Ver más",
+  "insights.card.seeLess": "Ver menos",
+  "insights.card.nextDay": "día sig."
 }
