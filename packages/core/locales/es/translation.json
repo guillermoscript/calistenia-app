@@ -2535,5 +2535,16 @@
   "insights.card.maybe": "POSIBLES PATRONES",
   "insights.card.seeMore": "Ver más",
   "insights.card.seeLess": "Ver menos",
-  "insights.card.nextDay": "día sig."
+  "insights.card.nextDay": "día sig.",
+  "insights.card.trend.improving": "Mejorando",
+  "insights.card.trend.steady": "Estable",
+  "insights.card.trend.declining": "Bajando",
+  "insights.card.history": "Ver historial",
+  "insights.history.title": "Tus semanas",
+  "insights.history.weekly": "Semanal",
+  "insights.history.monthly": "Mensual",
+  "insights.history.empty": "Aún no tienes resúmenes todavía",
+  "insights.history.error": "No se pudo cargar tu historial.",
+  "insights.history.weekOf": "Semana del {{date}}",
+  "insights.history.monthOf": "Mes de {{month}}"
 }
