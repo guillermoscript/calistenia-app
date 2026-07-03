@@ -205,36 +205,45 @@ function InsightsCard({ userId }: InsightsCardProps) {
 
   return (
     <View className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* Header */}
-      <Pressable
-        onPress={canToggle ? () => setExpanded((v) => !v) : undefined}
-        className={cn('flex-row items-center justify-between px-4 py-3', canToggle && 'active:bg-muted/30')}
-      >
-        <Text className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          {t('insights.card.kicker', 'TU SEMANA')}
-        </Text>
+      {/* Header — de-anidado: el toggle (kicker + caret) y "Ver historial" son
+          Pressables HERMANOS, nunca anidados. En Android un Pressable dentro de
+          otro Pressable deja que el externo capture el tap, así que el historial
+          nunca navegaba (solo colapsaba la card). Separarlos lo arregla. */}
+      <View className="flex-row items-center justify-between px-4 py-3">
+        <Pressable
+          onPress={canToggle ? () => setExpanded((v) => !v) : undefined}
+          className={cn('flex-1 flex-row items-center', canToggle && 'active:opacity-70')}
+          hitSlop={8}
+        >
+          <Text className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+            {t('insights.card.kicker', 'TU SEMANA')}
+          </Text>
+        </Pressable>
         <View className="flex-row items-center gap-3">
-          {/* #132 — entrada al historial "Tus semanas", visible siempre que haya un insight */}
+          {/* #132 — entrada al historial "Tus semanas". Lime + chevron para que
+              se lea como acción (antes pasaba desapercibido). */}
           {!!insight && (
             <Pressable
-              onPress={(e) => {
-                e.stopPropagation?.()
-                router.push('/insights')
-              }}
+              onPress={() => router.push('/insights')}
               hitSlop={8}
+              className="flex-row items-center gap-1 active:opacity-60"
+              accessibilityRole="button"
             >
-              <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground active:opacity-60">
+              <Text className="font-mono text-[10px] uppercase tracking-widest text-lime/80">
                 {t('insights.card.history', 'Ver historial')}
               </Text>
+              <Text className="font-mono text-[11px] text-lime/80">›</Text>
             </Pressable>
           )}
           {canToggle && (
-            <Animated.View style={caretStyle}>
-              <Text className="font-mono text-[11px] text-muted-foreground">▼</Text>
-            </Animated.View>
+            <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8}>
+              <Animated.View style={caretStyle}>
+                <Text className="font-mono text-[11px] text-muted-foreground">▼</Text>
+              </Animated.View>
+            </Pressable>
           )}
         </View>
-      </Pressable>
+      </View>
 
       {/* Cuerpo persistente — encabezado del insight + estados sin insight todavía */}
       <View className="gap-3 px-4 pb-4">
@@ -366,7 +375,7 @@ function InsightsCard({ userId }: InsightsCardProps) {
               {/* #135 — CTA accionable cuando el backend sugiere una acción concreta */}
               {!!insight.payload.suggestedAction && insight.payload.suggestedAction.type !== 'none' && (
                 <Button
-                  variant="lime"
+                  variant="limeSolid"
                   size="sm"
                   onPress={() => onActionPress(insight.payload.suggestedAction!)}
                   className="self-start"
