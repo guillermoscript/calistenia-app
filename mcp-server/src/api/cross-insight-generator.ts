@@ -19,8 +19,8 @@ const CorrelationSchema = z.object({
     .describe("Cuán marcado APARECE el patrón en los datos (no implica causalidad)"),
   lag: z
     .enum(["same_day", "next_day"])
-    .optional()
-    .describe("'next_day' si el patrón es un efecto retardado (ej: sueño de anoche → entreno de hoy); 'same_day' o ausente si es del mismo día"),
+    .nullable()
+    .describe("'next_day' si el patrón es un efecto retardado (ej: sueño de anoche → entreno de hoy); 'same_day' o null si es del mismo día. (nullable, no optional: OpenAI strict exige todas las claves en 'required')"),
 });
 
 const CrossInsightSchema = z.object({
