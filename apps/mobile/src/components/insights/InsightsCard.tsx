@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { View, Pressable, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useRouter } from 'expo-router'
 import Animated, {
   FadeIn,
   FadeOut,
@@ -14,10 +15,14 @@ import Animated, {
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { op } from '@calistenia/core/lib/analytics'
 import {
   useCrossInsights,
   MIN_INSIGHT_DAYS,
   type CrossInsightCorrelation,
+  type CrossInsightAction,
+  type CrossInsightActionType,
+  type CrossInsightPayload,
 } from '@calistenia/core/hooks/useCrossInsights'
 
 const STRENGTH_DOTS: Record<CrossInsightCorrelation['strength'], string> = {
@@ -28,7 +33,7 @@ const STRENGTH_DOTS: Record<CrossInsightCorrelation['strength'], string> = {
 
 // El backend aún no declara `lag` en el tipo compartido — se lee de forma
 // opcional y defensiva (issue #133, punto opcional 6).
-type Correlation = CrossInsightCorrelation & { lag?: string }
+export type Correlation = CrossInsightCorrelation & { lag?: string }
 
 // Fuerte primero: rankeo para ordenar de la señal más clara a la más tenue.
 const STRENGTH_RANK: Record<CrossInsightCorrelation['strength'], number> = {
@@ -38,7 +43,7 @@ const STRENGTH_RANK: Record<CrossInsightCorrelation['strength'], number> = {
 }
 
 /** Copia ordenada por fuerza (desc), estable — nunca muta el payload original. */
-function sortByStrength(list: CrossInsightCorrelation[]): Correlation[] {
+export function sortByStrength(list: CrossInsightCorrelation[]): Correlation[] {
   return list
     .map((c, index) => ({ c, index }))
     .sort((a, b) => STRENGTH_RANK[a.c.strength] - STRENGTH_RANK[b.c.strength] || a.index - b.index)
@@ -46,13 +51,53 @@ function sortByStrength(list: CrossInsightCorrelation[]): Correlation[] {
 }
 
 /** "hace 2h" / "ayer" / "hace 3d" — sin deps nuevas, granularidad de horas/días. */
-function relativeTime(iso?: string): string {
+export function relativeTime(iso?: string): string {
   if (!iso) return ''
   const hours = Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60))
   if (hours < 1) return 'ahora'
   if (hours < 24) return `hace ${hours}h`
   const days = Math.floor(hours / 24)
   return days === 1 ? 'ayer' : `hace ${days}d`
+}
+
+// #136 — badge de tendencia junto al headline. Sutil (spec-sheet, no ruidoso):
+// solo flecha + palabra corta en Mono, sin fondo ni borde.
+const TREND_META: Record<
+  NonNullable<CrossInsightPayload['trend']>,
+  { arrow: string; className: string; key: string; fallback: string }
+> = {
+  improving: { arrow: '↑', className: 'text-lime', key: 'insights.card.trend.improving', fallback: 'Mejorando' },
+  steady: { arrow: '→', className: 'text-muted-foreground', key: 'insights.card.trend.steady', fallback: 'Estable' },
+  declining: { arrow: '↓', className: 'text-amber-400', key: 'insights.card.trend.declining', fallback: 'Bajando' },
+}
+
+function TrendBadge({ trend }: { trend: NonNullable<CrossInsightPayload['trend']> }) {
+  const { t } = useTranslation()
+  const meta = TREND_META[trend]
+  return (
+    <View className="flex-row items-center gap-1">
+      <Text className={cn('font-mono text-xs', meta.className)}>{meta.arrow}</Text>
+      <Text className={cn('font-mono text-[9px] uppercase tracking-widest', meta.className)}>
+        {t(meta.key, meta.fallback)}
+      </Text>
+    </View>
+  )
+}
+
+// #135 — a dónde navega el CTA de la sugerencia según el tipo de acción sugerida.
+// `none` (y cualquier tipo futuro no mapeado) no navega.
+function actionRoute(type: CrossInsightActionType): '/reminders' | '/nutrition' | '/free-session' | null {
+  switch (type) {
+    case 'reminder_sleep':
+    case 'reminder_water':
+      return '/reminders'
+    case 'log_nutrition':
+      return '/nutrition'
+    case 'start_free_session':
+      return '/free-session'
+    default:
+      return null
+  }
 }
 
 function GenerateButton({ isGenerating, onGenerate }: { isGenerating: boolean; onGenerate: () => void }) {
@@ -68,7 +113,7 @@ function GenerateButton({ isGenerating, onGenerate }: { isGenerating: boolean; o
 }
 
 /** Disclaimer siempre visible (colapsado y expandido) — correlación ≠ causa. */
-function Disclaimer() {
+export function Disclaimer() {
   const { t } = useTranslation()
   return (
     <Text className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
@@ -78,7 +123,7 @@ function Disclaimer() {
 }
 
 /** Una fila de correlación. Las `weak` se atenúan — nunca se presentan como una certeza. */
-function CorrelationRow({ c }: { c: Correlation }) {
+export function CorrelationRow({ c }: { c: Correlation }) {
   const { t } = useTranslation()
   const isWeak = c.strength === 'weak'
   return (
@@ -111,6 +156,7 @@ interface InsightsCardProps {
 
 function InsightsCard({ userId }: InsightsCardProps) {
   const { t } = useTranslation()
+  const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [genError, setGenError] = useState(false)
   const { insight, isLoading, isGenerating, generate, needsMoreData, notSaved } = useCrossInsights(userId, 'weekly')
@@ -133,6 +179,16 @@ function InsightsCard({ userId }: InsightsCardProps) {
     if (!r && !needsMoreData) setGenError(true)
   }, [generate, needsMoreData])
 
+  // #135 — tap en el botón de acción de la sugerencia: trackea y navega.
+  const onActionPress = useCallback(
+    (action: CrossInsightAction) => {
+      op.track('insight_action_tap', { type: action.type, platform: 'mobile' })
+      const route = actionRoute(action.type)
+      if (route) router.push(route)
+    },
+    [router],
+  )
+
   if (!userId) return null
 
   const sortedCorrelations = insight ? sortByStrength(insight.payload.correlations) : []
@@ -149,20 +205,45 @@ function InsightsCard({ userId }: InsightsCardProps) {
 
   return (
     <View className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* Header */}
-      <Pressable
-        onPress={canToggle ? () => setExpanded((v) => !v) : undefined}
-        className={cn('flex-row items-center justify-between px-4 py-3', canToggle && 'active:bg-muted/30')}
-      >
-        <Text className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          {t('insights.card.kicker', 'TU SEMANA')}
-        </Text>
-        {canToggle && (
-          <Animated.View style={caretStyle}>
-            <Text className="font-mono text-[11px] text-muted-foreground">▼</Text>
-          </Animated.View>
-        )}
-      </Pressable>
+      {/* Header — de-anidado: el toggle (kicker + caret) y "Ver historial" son
+          Pressables HERMANOS, nunca anidados. En Android un Pressable dentro de
+          otro Pressable deja que el externo capture el tap, así que el historial
+          nunca navegaba (solo colapsaba la card). Separarlos lo arregla. */}
+      <View className="flex-row items-center justify-between px-4 py-3">
+        <Pressable
+          onPress={canToggle ? () => setExpanded((v) => !v) : undefined}
+          className={cn('flex-1 flex-row items-center', canToggle && 'active:opacity-70')}
+          hitSlop={8}
+        >
+          <Text className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+            {t('insights.card.kicker', 'TU SEMANA')}
+          </Text>
+        </Pressable>
+        <View className="flex-row items-center gap-3">
+          {/* #132 — entrada al historial "Tus semanas". Lime + chevron para que
+              se lea como acción (antes pasaba desapercibido). */}
+          {!!insight && (
+            <Pressable
+              onPress={() => router.push('/insights')}
+              hitSlop={8}
+              className="flex-row items-center gap-1 active:opacity-60"
+              accessibilityRole="button"
+            >
+              <Text className="font-mono text-[10px] uppercase tracking-widest text-lime/80">
+                {t('insights.card.history', 'Ver historial')}
+              </Text>
+              <Text className="font-mono text-[11px] text-lime/80">›</Text>
+            </Pressable>
+          )}
+          {canToggle && (
+            <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8}>
+              <Animated.View style={caretStyle}>
+                <Text className="font-mono text-[11px] text-muted-foreground">▼</Text>
+              </Animated.View>
+            </Pressable>
+          )}
+        </View>
+      </View>
 
       {/* Cuerpo persistente — encabezado del insight + estados sin insight todavía */}
       <View className="gap-3 px-4 pb-4">
@@ -178,7 +259,10 @@ function InsightsCard({ userId }: InsightsCardProps) {
           </View>
         ) : insight ? (
           <View className="gap-1">
-            <Text className="font-bebas text-2xl leading-none text-foreground">{insight.payload.headline}</Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="font-bebas text-2xl leading-none text-foreground">{insight.payload.headline}</Text>
+              {!!insight.payload.trend && <TrendBadge trend={insight.payload.trend} />}
+            </View>
             {!!insight.generatedAt && (
               <Text className="font-mono text-[9px] text-muted-foreground">{relativeTime(insight.generatedAt)}</Text>
             )}
@@ -283,11 +367,22 @@ function InsightsCard({ userId }: InsightsCardProps) {
           )}
 
           {!!insight.payload.suggestion && (
-            <View className="gap-1 border-t border-border pt-3">
+            <View className="gap-2 border-t border-border pt-3">
               <Text className="font-mono text-[9px] uppercase tracking-[0.3em] text-muted-foreground">
                 {t('insights.card.tip', 'SUGERENCIA')}
               </Text>
               <Text className="font-sans-medium text-sm text-foreground">{insight.payload.suggestion}</Text>
+              {/* #135 — CTA accionable cuando el backend sugiere una acción concreta */}
+              {!!insight.payload.suggestedAction && insight.payload.suggestedAction.type !== 'none' && (
+                <Button
+                  variant="limeSolid"
+                  size="sm"
+                  onPress={() => onActionPress(insight.payload.suggestedAction!)}
+                  className="self-start"
+                >
+                  <Text>{insight.payload.suggestedAction.label}</Text>
+                </Button>
+              )}
             </View>
           )}
 

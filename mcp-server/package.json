@@ -19,6 +19,7 @@
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@opentelemetry/sdk-node": "^0.213.0",
     "ai": "^6.0.116",
+    "dayjs": "^1.11.21",
     "dotenv": "^17.3.1",
     "expo-server-sdk": "^3.15.0",
     "google-auth-library": "^10.7.0",

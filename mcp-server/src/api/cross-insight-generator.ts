@@ -36,6 +36,17 @@ const CrossInsightSchema = z.object({
     .string()
     .describe("UNA sola sugerencia accionable, suave y opcional"),
   period: z.string().describe("Descripción del periodo analizado, ej: 'últimos 7 días'"),
+  suggestedAction: z
+    .object({
+      type: z.enum(["reminder_sleep", "reminder_water", "log_nutrition", "start_free_session", "none"]),
+      label: z.string().describe("Texto corto del botón en español, ej. 'Crear recordatorio de sueño'. NUNCA una instrucción ejecutable."),
+    })
+    .nullable()
+    .describe("Acción sugerida de catálogo CERRADO. El modelo elige type de la lista; 'none' (o null) si ninguna aplica con claridad. NUNCA acción médica. (nullable, no optional: OpenAI strict)"),
+  trend: z
+    .enum(["improving", "steady", "declining"])
+    .nullable()
+    .describe("Tendencia vs el periodo anterior, SOLO si el contexto trae '## Periodo anterior' con datos; null en el primer periodo. (nullable, no optional: OpenAI strict)"),
 });
 
 export type CrossInsight = z.infer<typeof CrossInsightSchema>;
@@ -81,6 +92,7 @@ export interface InsightContext {
   period: { type: "weekly" | "monthly"; days: number; start: string; end: string };
   rows: InsightDayRow[];
   summary: InsightSummary;
+  previousSummary?: InsightSummary;
   watchAvailable: boolean;
 }
 
@@ -135,6 +147,19 @@ function buildUserText(ctx: InsightContext): string {
     for (const d of lowCoverage) {
       lines.push(`- ${d.label}: ${d.count}/${period.days} días`);
     }
+  }
+
+  if (ctx.previousSummary) {
+    const p = ctx.previousSummary;
+    lines.push("");
+    lines.push("## Periodo anterior (para comparar — NO inventes una tendencia fuerte con un solo periodo previo)");
+    lines.push(`- Fuerza: ${p.workouts.total} entrenos en ${p.workouts.daysTrained} días.`);
+    lines.push(`- Cardio: ${p.cardio.sessions} sesiones, ${n1(p.cardio.totalKm)} km, ${n0(p.cardio.totalMinutes)} min.`);
+    lines.push(`- Circuitos: ${p.circuits.sessions} sesiones.`);
+    lines.push(`- Nutrición: ${p.nutrition.daysLogged} días · ~${n0(p.nutrition.avgCalories)} kcal/día.`);
+    lines.push(`- Agua: ${p.water.daysLogged} días · ~${n0(p.water.avgMl)} ml/día.`);
+    lines.push(`- Sueño: ${p.sleep.daysLogged} días · ~${n0(p.sleep.avgMinutes)} min/noche · calidad ~${n1(p.sleep.avgQuality)}/5.`);
+    lines.push(`- Peso: ${n1(p.weight.firstKg)} → ${n1(p.weight.lastKg)} kg (Δ ${p.weight.deltaKg == null ? "?" : n1(p.weight.deltaKg)} kg).`);
   }
 
   lines.push("");

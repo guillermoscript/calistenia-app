@@ -9,6 +9,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.1.0] - 2026-07-03
+
+_Tus insights semanales evolucionan: historial, tendencias, una sugerencia accionable y un resumen automático cada lunes._
+
+### Añadido
+
+- **Tus semanas: historial de insights** — Una nueva pantalla reúne tus resúmenes semanales anteriores para ver patrones a lo largo del tiempo. Fíltralos por semana o mes.
+- **Sugerencia accionable** — Cuando encaja, tu resumen propone una acción concreta y te lleva a ella de un toque (recordatorios, nutrición o una sesión libre).
+- **Tendencia de la semana** — Cada resumen muestra si vas mejor, igual o peor que la semana anterior con una señal ↑ / → / ↓.
+- **Resumen automático cada lunes** — Ya no hace falta generarlo a mano: cada lunes por la mañana preparamos tu resumen y te avisamos con una notificación.
+
 ## [1.0.9] - 2026-07-03
 
 _Insights que cruzan tus métricas de la semana, y el catálogo crece a 1,578 ejercicios con filtros y retos._
@@ -129,7 +140,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.9...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.1.0...HEAD
+[1.1.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.9...mobile-v1.1.0
 [1.0.9]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.7...mobile-v1.0.9
 [1.0.7]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.6...mobile-v1.0.7
 [1.0.6]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.5...mobile-v1.0.6

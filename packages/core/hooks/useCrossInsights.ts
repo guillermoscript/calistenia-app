@@ -35,6 +35,18 @@ export interface CrossInsightCorrelation {
   strength: 'weak' | 'moderate' | 'strong'
 }
 
+export type CrossInsightActionType =
+  | 'reminder_sleep'
+  | 'reminder_water'
+  | 'log_nutrition'
+  | 'start_free_session'
+  | 'none'
+
+export interface CrossInsightAction {
+  type: CrossInsightActionType
+  label: string
+}
+
 export interface CrossInsightPayload {
   headline: string
   correlations: CrossInsightCorrelation[]
@@ -43,6 +55,8 @@ export interface CrossInsightPayload {
   suggestion: string
   period: string
   model_used?: string
+  suggestedAction?: CrossInsightAction
+  trend?: 'improving' | 'steady' | 'declining'
 }
 
 export interface CrossInsight {
@@ -135,7 +149,7 @@ export function useCrossInsights(
       }
 
       const days = periodType === 'weekly' ? 7 : 30
-      const context = await buildInsightContext(userId, { days })
+      const context = await buildInsightContext(userId, { days, withPrevious: true })
 
       if (context.summary.daysWithAnyData < MIN_INSIGHT_DAYS) {
         setNeedsMoreData(true)
@@ -163,6 +177,8 @@ export function useCrossInsights(
         suggestion: data.suggestion ?? '',
         period: data.period ?? '',
         model_used: data.model_used,
+        ...(data.suggestedAction ? { suggestedAction: data.suggestedAction } : {}),
+        ...(data.trend ? { trend: data.trend } : {}),
       }
 
       const periodStart = context.period.start
@@ -240,4 +256,33 @@ export function useCrossInsights(
     periodType,
     notSaved,
   }
+}
+
+/**
+ * useInsightHistory — historial de insights cross-métrica ya generados
+ * (épica #128 Fase 3, #132), más recientes primero. Solo lectura: no genera
+ * nada nuevo (eso es responsabilidad de useCrossInsights.generate).
+ */
+export function useInsightHistory(
+  userId: string | null,
+  periodType: InsightPeriodType = 'weekly',
+) {
+  return useQuery({
+    queryKey: qk.insights.history(userId, periodType),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<CrossInsight[]> => {
+      try {
+        const res = await pb.collection('user_insights').getList(1, 30, {
+          filter: pb.filter('user = {:uid} && period_type = {:pt}', { uid: userId, pt: periodType }),
+          sort: '-period_start',
+          $autoCancel: false,
+        })
+        return res.items.map(mapInsight)
+      } catch (err) {
+        reportInsightError('history', periodType, err)
+        throw err
+      }
+    },
+  })
 }

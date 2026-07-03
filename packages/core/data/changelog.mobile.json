@@ -2,6 +2,64 @@
   "generated": "2026-07-03T00:00:00.000Z",
   "versions": [
     {
+      "version": "1.1.0",
+      "date": "2026-07-03",
+      "summary": {
+        "es": "Tus insights semanales evolucionan: historial, tendencias, una sugerencia accionable y un resumen automático cada lunes.",
+        "en": "Your weekly insights level up: history, trends, an actionable tip, and an automatic summary every Monday."
+      },
+      "highlights": [
+        {
+          "icon": "🗓️",
+          "type": "feat",
+          "title": {
+            "es": "Tus semanas: historial de insights",
+            "en": "Your weeks: insights history"
+          },
+          "body": {
+            "es": "Una nueva pantalla reúne tus resúmenes semanales anteriores para ver patrones a lo largo del tiempo. Fíltralos por semana o mes.",
+            "en": "A new screen collects your past weekly summaries so you can spot patterns over time. Filter them by week or month."
+          }
+        },
+        {
+          "icon": "✅",
+          "type": "feat",
+          "title": {
+            "es": "Sugerencia accionable",
+            "en": "Actionable suggestion"
+          },
+          "body": {
+            "es": "Cuando encaja, tu resumen propone una acción concreta y te lleva a ella de un toque (recordatorios, nutrición o una sesión libre).",
+            "en": "When it fits, your summary proposes a concrete next step and takes you there in one tap (reminders, nutrition, or a free session)."
+          }
+        },
+        {
+          "icon": "📈",
+          "type": "feat",
+          "title": {
+            "es": "Tendencia de la semana",
+            "en": "Weekly trend"
+          },
+          "body": {
+            "es": "Cada resumen muestra si vas mejor, igual o peor que la semana anterior con una señal ↑ / → / ↓.",
+            "en": "Each summary shows whether you're trending up, flat, or down versus last week with an ↑ / → / ↓ badge."
+          }
+        },
+        {
+          "icon": "🔔",
+          "type": "feat",
+          "title": {
+            "es": "Resumen automático cada lunes",
+            "en": "Automatic weekly summary"
+          },
+          "body": {
+            "es": "Ya no hace falta generarlo a mano: cada lunes por la mañana preparamos tu resumen y te avisamos con una notificación.",
+            "en": "No need to generate it by hand anymore — every Monday morning we prepare your summary and let you know with a notification."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.0.9",
       "date": "2026-07-03",
       "summary": {

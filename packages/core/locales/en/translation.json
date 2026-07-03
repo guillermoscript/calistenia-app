@@ -2535,5 +2535,16 @@
   "insights.card.maybe": "POSSIBLE PATTERNS",
   "insights.card.seeMore": "See more",
   "insights.card.seeLess": "See less",
-  "insights.card.nextDay": "next day"
+  "insights.card.nextDay": "next day",
+  "insights.card.trend.improving": "Improving",
+  "insights.card.trend.steady": "Steady",
+  "insights.card.trend.declining": "Declining",
+  "insights.card.history": "View history",
+  "insights.history.title": "Your weeks",
+  "insights.history.weekly": "Weekly",
+  "insights.history.monthly": "Monthly",
+  "insights.history.empty": "You don't have any summaries yet",
+  "insights.history.error": "Couldn't load your history.",
+  "insights.history.weekOf": "Week of {{date}}",
+  "insights.history.monthOf": "Month of {{month}}"
 }
