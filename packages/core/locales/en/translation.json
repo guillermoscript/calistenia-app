@@ -1632,6 +1632,12 @@
   "progress.bodyPhotos.selectTwo": "Pick 2 photos to compare",
   "progress.bodyPhotos.before": "Before",
   "progress.bodyPhotos.after": "After",
+  "progress.bodyPhotos.share": "Share",
+  "progress.bodyPhotos.transformation": "Transformation",
+  "progress.bodyPhotos.days": "days",
+  "progress.bodyPhotos.weeks": "weeks",
+  "progress.bodyPhotos.sameDay": "Same day",
+  "progress.bodyPhotos.shareError": "Couldn't share",
 
   "progress.phasePhotos.timelineTitle": "Your transformation",
   "progress.phasePhotos.phase": "Phase {{phase}}",
