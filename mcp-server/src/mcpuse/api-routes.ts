@@ -16,6 +16,7 @@ import { generateDailyMealPlan } from "../api/meal-plan-generator.js";
 import { sendPushToUser } from "../api/push-sender.js";
 import { processJob, getAdminPB } from "../api/job-processor.js";
 import { runFreeSession } from "../api/free-session-generator.js";
+import { buildInsightContextServer } from "../api/insight-context-server.js";
 import type { Tier } from "../api/model-resolver.js";
 
 // ── In-memory rate limiter (port of Express version) ─────────────────────────
@@ -445,6 +446,90 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
       const { generateCrossInsight } = await import("../api/cross-insight-generator.js");
       const result = await generateCrossInsight({ context, tier: getTier(user) });
       return c.json(result);
+    } catch (err) { return apiError(c, err); }
+  });
+
+  // ── 13c. POST /api/cron/generate-cross-insight (weekly cron, internal-key only) ─
+  // Server-side counterpart of /api/generate-cross-insight (#127): the
+  // pb_hooks/weekly_insights.pb.js cron calls this once per active user
+  // instead of relying on the client to build the context + call the AI +
+  // persist. Internal-key auth only — never user-facing.
+  app.post("/api/cron/generate-cross-insight", async (c) => {
+    const internalKey = process.env.INTERNAL_API_KEY;
+    const providedKey = c.req.header("x-internal-key");
+    if (!internalKey || providedKey !== internalKey) {
+      return c.json({ error: "unauthorized" }, 401);
+    }
+    try {
+      const body = await c.req.json().catch(() => ({}));
+      const { user_id, period_type = "weekly" } = body ?? {};
+      if (!user_id) return c.json({ error: "Se requiere user_id" }, 400);
+
+      const pb = await getAdminPB();
+      let user: any;
+      try {
+        user = await pb.collection("users").getOne(user_id);
+      } catch (err: any) {
+        if (err?.status === 404) return c.json({ error: "Usuario no encontrado" }, 404);
+        throw err;
+      }
+      const tz = user.timezone || "UTC";
+      const tier = getTier(user);
+      const days = period_type === "monthly" ? 30 : 7;
+
+      const context = await buildInsightContextServer(pb, user_id, tz, days, true);
+
+      // Cost gate: MIN_INSIGHT_DAYS, mirrors packages/core/hooks/useCrossInsights.ts
+      // (client-side generation gate) — not worth an AI call on near-empty windows.
+      const MIN_INSIGHT_DAYS = 3;
+      if (context.summary.daysWithAnyData < MIN_INSIGHT_DAYS) {
+        return c.json({ generated: false, reason: "insufficient_data" });
+      }
+
+      // Dedup: skip if an insight for this exact period already exists — the
+      // weekly cron shouldn't regenerate (and re-spend AI budget on) the same week.
+      const periodStart = `${context.period.start} 00:00:00.000Z`;
+      try {
+        await pb.collection("user_insights").getFirstListItem(
+          pb.filter("user = {:u} && period_type = {:pt} && period_start = {:ps}", {
+            u: user_id,
+            pt: period_type,
+            ps: periodStart,
+          }),
+          { $autoCancel: false },
+        );
+        return c.json({ generated: false, reason: "already_exists" });
+      } catch (err: any) {
+        if (err?.status !== 404) throw err;
+        // 404 = not found = proceed to generate.
+      }
+
+      const { generateCrossInsight } = await import("../api/cross-insight-generator.js");
+      const result = await generateCrossInsight({ context, tier });
+
+      try {
+        await pb.collection("user_insights").create({
+          user: user_id,
+          period_type,
+          period_start: periodStart,
+          payload: result,
+        });
+      } catch (err: any) {
+        console.error("[cron-cross-insight] persist error:", err?.message ?? err);
+        return c.json({ generated: false, reason: "persist_failed", error: err?.message ?? String(err) });
+      }
+
+      try {
+        await sendPushToUser(user_id, {
+          title: "Tu resumen semanal está listo",
+          body: result.headline,
+          url: "/",
+        });
+      } catch (err) {
+        console.error("[cron-cross-insight] push error:", err);
+      }
+
+      return c.json({ generated: true, headline: result.headline });
     } catch (err) { return apiError(c, err); }
   });
 
