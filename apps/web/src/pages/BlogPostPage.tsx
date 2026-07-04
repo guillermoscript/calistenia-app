@@ -7,6 +7,7 @@ import { useBlogPost, blogCoverUrl, blogAuthorAvatarUrl } from '@calistenia/core
 import { localize } from '@calistenia/core/lib/i18n-db'
 import BlogCTA from '../components/blog/BlogCTA'
 import { Loader } from '../components/ui/loader'
+import { sanitizeBlogHtml } from '../lib/sanitizeHtml'
 
 export default function BlogPostPage() {
   const { slug = '' } = useParams()
@@ -18,7 +19,7 @@ export default function BlogPostPage() {
   const bodyHtml = useMemo(() => {
     if (!post) return ''
     const md = localize(post.body, locale)
-    return marked.parse(md, { async: false }) as string
+    return sanitizeBlogHtml(marked.parse(md, { async: false }) as string)
   }, [post, locale])
 
   if (loading) {

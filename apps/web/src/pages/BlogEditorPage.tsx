@@ -5,6 +5,7 @@ import { Plus, Eye, EyeOff, Pencil, Trash2, Send, Save, ArrowLeft } from 'lucide
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { localize } from '@calistenia/core/lib/i18n-db'
 import type { BlogPost } from '@calistenia/core/hooks/useBlog'
+import { sanitizeBlogHtml } from '../lib/sanitizeHtml'
 
 const CATEGORIES = ['calistenia', 'tutoriales', 'nutricion', 'consejos', 'actualizaciones'] as const
 
@@ -171,7 +172,7 @@ export default function BlogEditorPage() {
   const previewHtml = useMemo(() => {
     if (!preview) return ''
     const md = preview === 'en' ? form.body_en : form.body_es
-    return marked.parse(md || '', { async: false }) as string
+    return sanitizeBlogHtml(marked.parse(md || '', { async: false }) as string)
   }, [preview, form.body_es, form.body_en])
 
   // ─── List view ────────────────────────────────────

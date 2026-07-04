@@ -48,6 +48,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "dayjs": "^1.11.20",
+    "dompurify": "^3.4.11",
     "driver.js": "^1.4.0",
     "embla-carousel-react": "^8.6.0",
     "html5-qrcode": "^2.3.8",
