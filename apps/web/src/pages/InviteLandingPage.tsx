@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { ShareButton } from '../components/ShareButton'
@@ -57,19 +57,15 @@ export default function InviteLandingPage() {
     const load = async () => {
       setLoading(true)
       try {
-        // Look up inviter by referral_code
-        const users = await pb.collection('users').getList(1, 1, {
-          filter: pb.filter('referral_code = {:code}', { code }),
-          $autoCancel: false,
-        })
-
-        if (users.items.length === 0) {
+        // Look up inviter by referral_code via the public lookup endpoint —
+        // the users collection itself requires auth (GHSA-wwj3-9h95-wcpf).
+        const res = await fetch(`${pb.baseUrl}/api/public/referral-lookup/${encodeURIComponent(code)}`)
+        if (!res.ok) {
           // Invalid code → redirect to registration
           navigate('/auth', { replace: true })
           return
         }
-
-        const user = users.items[0]
+        const user = await res.json() as { id: string; display_name: string; avatarUrl: string | null }
 
         // Check edge cases for logged-in users
         if (isLoggedIn && currentUserId) {
@@ -82,8 +78,7 @@ export default function InviteLandingPage() {
           }
         }
 
-        // Get avatar
-        const avatarUrl = getUserAvatarUrl(user as any, '200x200')
+        const avatarUrl = user.avatarUrl
 
         // Get user stats
         let level = 1
@@ -101,7 +96,7 @@ export default function InviteLandingPage() {
 
         setInviter({
           id: user.id,
-          displayName: user.display_name || user.email?.split('@')[0] || '',
+          displayName: user.display_name || '',
           avatarUrl,
           level,
           currentStreak,
