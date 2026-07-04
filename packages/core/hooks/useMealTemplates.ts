@@ -97,10 +97,10 @@ export function useMealTemplates(userId: string | null) {
   })
 
   /**
-   * Expone useTemplate como función async para mantener la firma pública
+   * Expone applyTemplate como función async para mantener la firma pública
    * original (id: string) => Promise<FoodItem[]>.
    */
-  const useTemplate = useCallback(
+  const applyTemplate = useCallback(
     (id: string): Promise<FoodItem[]> => useTemplateMutation.mutateAsync(id),
     [useTemplateMutation],
   )
@@ -114,5 +114,5 @@ export function useMealTemplates(userId: string | null) {
     [qc, key],
   )
 
-  return { getTemplates, saveTemplate, useTemplate, deleteTemplate }
+  return { getTemplates, saveTemplate, applyTemplate, deleteTemplate }
 }

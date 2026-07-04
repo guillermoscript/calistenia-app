@@ -104,7 +104,7 @@ export function useFreeSessionTemplates(userId: string | null) {
     },
   })
 
-  const useTemplate = useCallback(
+  const applyTemplate = useCallback(
     (id: string): Promise<Exercise[]> => touchMutation.mutateAsync(id),
     [touchMutation],
   )
@@ -127,5 +127,5 @@ export function useFreeSessionTemplates(userId: string | null) {
     [qc, key],
   )
 
-  return { templates, saveTemplate, useTemplate, renameTemplate, deleteTemplate }
+  return { templates, saveTemplate, applyTemplate, renameTemplate, deleteTemplate }
 }

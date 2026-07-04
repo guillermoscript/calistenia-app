@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Código compartido entre web y mobile: types, hooks, lib, data, locales. Sin dependencias de DOM ni React Native — lo específico de cada plataforma se inyecta vía initCore() (ver platform.ts).",
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "dayjs": "^1.11.20",
     "i18next": "^26.0.5",
@@ -20,6 +23,7 @@
     "@tanstack/query-sync-storage-persister": "^5.66.0",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-query-persist-client": "^5.66.0",
-    "@types/react": "^19.2.14"
+    "@types/react": "^19.2.14",
+    "vitest": "^4.1.8"
   }
 }

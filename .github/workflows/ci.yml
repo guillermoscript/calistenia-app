@@ -1,0 +1,33 @@
+name: CI Checks
+
+on:
+  workflow_call:
+
+jobs:
+  ci:
+    name: Typecheck, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (all workspaces)
+        run: pnpm -r typecheck
+
+      - name: Lint (mobile — only workspace with an ESLint config today)
+        run: pnpm --filter @calistenia/mobile lint
+
+      - name: Unit tests (packages/core + mobile)
+        run: pnpm -r test

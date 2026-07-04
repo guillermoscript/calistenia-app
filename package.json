@@ -6,8 +6,10 @@
   "packageManager": "pnpm@10.30.0",
   "scripts": {
     "dev": "pnpm --filter @calistenia/web dev",
+    "dev:all": "bash .devcontainer/dev-all.sh",
     "build": "pnpm --filter @calistenia/web build",
     "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
     "preview": "pnpm --filter @calistenia/web preview",
     "pb:serve": "./pocketbase serve",
     "pb:migrate": "node scripts/pb-migrate.js",
