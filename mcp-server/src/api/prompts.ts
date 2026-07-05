@@ -305,7 +305,9 @@ Reglas de prioridad, en orden:
 3. Minimiza ingredientes que falten: prefiere recetas con lo que HAY antes de inventar ingredientes nuevos.
 
 Recetas:
-- Cada comida lleva receta con pasos claros (imperativo, 3-8 pasos) e ingredientes con cantidad.
+- Cada comida lleva receta COMPLETA como si la escribiera un cocinero: 5-10 pasos en imperativo.
+- Cada paso es autosuficiente: repite la cantidad del ingrediente, indica nivel de fuego (bajo/medio/alto), tiempo aproximado y la señal de punto ("hasta que la cebolla esté transparente, ~3 min"). Incluye sazón y reposos.
+- Añade 1 tip práctico cuando aporte (cómo saber si está listo, error común a evitar).
 - Cada ingrediente lleva from: "pantry" si aparece en el inventario listado (aunque la cantidad no alcance del todo), "buy" si no aparece.
 - NUNCA marques "pantry" un ingrediente que no está en el inventario. Sal, pimienta y aceite: "pantry" solo si están listados; si no, "buy".
 - qty/unit = lo que usa la receta, no lo que hay en la despensa.

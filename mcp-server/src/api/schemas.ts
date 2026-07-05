@@ -133,7 +133,11 @@ export const RecipeIngredientSchema = z.object({
 });
 
 export const RecipeSchema = z.object({
-  steps: z.array(z.string()).describe("Pasos de preparación en orden, imperativo, concisos"),
+  steps: z
+    .array(z.string())
+    .describe(
+      "Pasos de preparación en orden, imperativo, DETALLADOS: cada paso con cantidades, nivel de fuego, tiempo aproximado y señal de punto (ej: 'Sella el pollo a fuego medio-alto 4-5 min por lado hasta que dore')"
+    ),
   ingredients: z.array(RecipeIngredientSchema),
   prep_minutes: z.number().nullable(),
   servings: z.number().nullable().describe("Porciones que rinde la receta tal como está escrita (normalmente 1)"),
