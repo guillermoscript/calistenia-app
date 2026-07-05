@@ -106,7 +106,7 @@ export default function MealLoggerContent({
   const { t } = useTranslation()
   const { saveFoodToCatalog, completeWithAI } = useFoodCatalog()
   const { getRecentFoods, getHourSuggestions, trackFood } = useFoodHistory(userId)
-  const { getTemplates, saveTemplate, useTemplate, deleteTemplate } = useMealTemplates(userId)
+  const { getTemplates, saveTemplate, applyTemplate, deleteTemplate } = useMealTemplates(userId)
   const { scanning, loading: barcodeLoading, error: barcodeError, startScan, handleBarcode, closeScan, reset: resetBarcode } = useBarcodeScanner({
     onIncompleteProduct: completeWithAI,
   })
@@ -500,7 +500,7 @@ export default function MealLoggerContent({
 
   const selectTemplate = async (template: MealTemplate) => {
     try {
-      const tmplFoods = await useTemplate(template.id!)
+      const tmplFoods = await applyTemplate(template.id!)
       setMealType(template.mealType)
       setFoods(tmplFoods)
       setCaptureSubView('main')

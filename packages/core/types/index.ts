@@ -645,3 +645,10 @@ export type {
   RaceParticipant,
   RaceGpsPoint,
 } from './race'
+
+// ─── Pantry ─────────────────────────────────────────────────────────────────
+export type {
+  PantryCategory, PantryUnit, PantryConfidence, PantryStatus, PantrySource,
+  PantryEventType, PantryIntent, PantryItem, PantryEvent,
+  PantryParsedItem, PantryParseResult,
+} from './pantry'

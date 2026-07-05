@@ -16,6 +16,7 @@ import { generateDailyMealPlan } from "../api/meal-plan-generator.js";
 import { sendPushToUser } from "../api/push-sender.js";
 import { processJob, getAdminPB } from "../api/job-processor.js";
 import { runFreeSession } from "../api/free-session-generator.js";
+import { parsePantryText } from "../api/pantry-parser.js";
 import { buildInsightContextServer } from "../api/insight-context-server.js";
 import type { Tier } from "../api/model-resolver.js";
 
@@ -549,5 +550,23 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     } catch (err) { return apiError(c, err); }
   });
 
-  console.error("[API] Hono routes mounted: /api/health + 13 /api/* endpoints");
+  // ── POST /api/pantry/parse ──────────────────────────────────────────────
+  app.post("/api/pantry/parse", async (c) => {
+    const user = await getAuthUser(c, pbUrl);
+    if (!user) return c.json({ error: "Token de autenticación requerido" }, 401);
+    const rl = applyRateLimit(c, user.id);
+    if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
+    try {
+      const body = await c.req.json().catch(() => ({}));
+      const { text, existing_items = [] } = body ?? {};
+      if (!text || typeof text !== "string") return c.json({ error: "Se requiere el texto a parsear" }, 400);
+      const result = await parsePantryText({
+        text: text.slice(0, 1000),
+        existingItems: Array.isArray(existing_items) ? existing_items.slice(0, 200).map(String) : [],
+      });
+      return c.json(result);
+    } catch (err) { return apiError(c, err); }
+  });
+
+  console.error("[API] Hono routes mounted: /api/health + 14 /api/* endpoints");
 }
