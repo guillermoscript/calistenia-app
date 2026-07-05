@@ -51,7 +51,7 @@
     "expo-image": "~56.0.10",
     "expo-image-picker": "^56.0.16",
     "expo-keep-awake": "~56.0.3",
-    "expo-linking": "~56.0.13",
+    "expo-linking": "~57.0.1",
     "expo-localization": "~56.0.6",
     "expo-location": "~56.0.16",
     "expo-notifications": "~56.0.16",
