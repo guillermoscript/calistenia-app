@@ -101,7 +101,7 @@ export default function PantryScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-row items-center gap-2 px-2 py-1">
         <Pressable onPress={() => router.back()} hitSlop={8} className="p-2" accessibilityRole="button">
           <ArrowLeft size={20} color="hsl(0 0% 55%)" />
@@ -110,13 +110,13 @@ export default function PantryScreen() {
           <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground">
             {t('pantry.kicker')}
           </Text>
-          <Text className="font-bebas text-3xl text-foreground">{t('pantry.title')}</Text>
+          <Text className="font-bebas text-4xl text-foreground">{t('pantry.title')}</Text>
         </View>
       </View>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View className="flex-1">
-          <PantryTable items={items} onPressItem={setEditing} onEmptyCta={() => {}} />
+          <PantryTable items={items} onPressItem={setEditing} onExample={handleSend} />
         </View>
         {reply && (
           <View className="mx-4 mb-2 self-start rounded-xl rounded-bl-none border border-border bg-card px-3 py-2">

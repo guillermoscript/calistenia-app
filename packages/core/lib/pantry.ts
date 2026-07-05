@@ -33,3 +33,12 @@ export function groupPantryByCategory(items: PantryItem[]): PantrySection[] {
     data: byCat.get(c)!.slice().sort((a, b) => a.name.localeCompare(b.name)),
   }))
 }
+
+/** Días enteros desde `today` hasta `date`; negativo = vencido. null si falta dato. */
+export function daysUntil(date: string | null, today: string): number | null {
+  if (!date || !today) return null
+  const a = new Date(`${today}T00:00:00`)
+  const b = new Date(`${date}T00:00:00`)
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return null
+  return Math.round((b.getTime() - a.getTime()) / 86400000)
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { expiryFromDays, groupPantryByCategory } from './pantry'
+import { daysUntil, expiryFromDays, groupPantryByCategory } from './pantry'
 import type { PantryItem } from '../types'
 
 describe('expiryFromDays', () => {
@@ -37,5 +37,17 @@ describe('groupPantryByCategory', () => {
   })
   it('vacío devuelve []', () => {
     expect(groupPantryByCategory([])).toEqual([])
+  })
+})
+
+describe('daysUntil', () => {
+  it('días hacia adelante', () => {
+    expect(daysUntil('2026-07-08', '2026-07-05')).toBe(3)
+  })
+  it('negativo si ya venció', () => {
+    expect(daysUntil('2026-07-01', '2026-07-05')).toBe(-4)
+  })
+  it('null sin fecha', () => {
+    expect(daysUntil(null, '2026-07-05')).toBeNull()
   })
 })

@@ -27,12 +27,12 @@ export function PantryChatInput({ onSend, busy }: {
         returnKeyType="send"
         onSubmitEditing={send}
         editable={!busy}
-        className="h-11 flex-1 rounded-full border border-input bg-card px-4 text-sm text-foreground"
+        className="h-11 flex-1 rounded-md border border-input bg-card px-4 text-sm text-foreground"
       />
       <Pressable
         onPress={send}
         disabled={!canSend}
-        className={`size-11 items-center justify-center rounded-full ${canSend ? 'bg-lime' : 'bg-muted/40'}`}
+        className={`size-11 items-center justify-center rounded-md ${canSend ? 'bg-lime' : 'bg-muted/40'}`}
       >
         {busy
           ? <ActivityIndicator size="small" color="#000" />

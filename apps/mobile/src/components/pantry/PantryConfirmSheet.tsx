@@ -43,6 +43,8 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
     setDraft(d => d.map((it, i) => (i === idx ? { ...it, ...patch } : it)))
   }
 
+  const removeDraft = (idx: number) => setDraft(d => d.filter((_, i) => i !== idx))
+
   const confirm = () => {
     if (isAdd) onConfirmAdd(draft)
     else onConfirmConsume(matched.map(m => m.match!))
@@ -77,9 +79,14 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                   <View key={`${it.name_normalized}-${i}`} className="border-b border-border py-3">
                     <View className="flex-row items-center justify-between">
                       <Text className="font-sans-medium text-foreground" numberOfLines={1}>{it.name}</Text>
-                      <Text className="font-mono text-[10px] uppercase text-muted-foreground">
-                        {t(`pantry.categories.${it.category}`)}
-                      </Text>
+                      <View className="flex-row items-center gap-2">
+                        <Text className="font-mono text-[10px] uppercase text-muted-foreground">
+                          {t(`pantry.categories.${it.category}`)}
+                        </Text>
+                        <Pressable onPress={() => removeDraft(i)} hitSlop={8} className="p-1">
+                          <X size={14} color="hsl(0 0% 55%)" />
+                        </Pressable>
+                      </View>
                     </View>
                     <View className="mt-2 flex-row items-center gap-2">
                       <TextInput

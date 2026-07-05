@@ -29,6 +29,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useQueryClient } from '@tanstack/react-query'
 import { todayStr, addDays, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
+import { usePantryItems } from '@calistenia/core/hooks/usePantry'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
 import { useWater } from '@calistenia/core/hooks/useWater'
@@ -132,6 +133,9 @@ export default function NutritionTab() {
   } = nutrition
 
   const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
+
+  const { data: pantryItems = [] } = usePantryItems(userId)
+  const pantryCount = pantryItems.length
 
   const {
     activePlan: weeklyPlan,
@@ -535,20 +539,6 @@ export default function NutritionTab() {
           <MenuButton className="mt-1" />
         </View>
 
-        {/* Despensa entry point */}
-        <Pressable
-          onPress={() => router.push('/pantry')}
-          className="mt-3 flex-row items-center justify-between rounded-xl border border-border bg-card px-4 py-3 active:border-lime-400/40"
-        >
-          <View>
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
-              {t('pantry.kicker')}
-            </Text>
-            <Text className="font-bebas text-xl text-foreground">{t('pantry.title')}</Text>
-          </View>
-          <ChevronRight size={16} color="hsl(0 0% 55%)" />
-        </Pressable>
-
         {/* Phase change banner (US-14) */}
         {phaseChangeBanner && (
           <Card className="border-lime-400/30 bg-lime-400/5 mb-4">
@@ -656,6 +646,23 @@ export default function NutritionTab() {
             adding={waterAdding}
           />
         </View>
+
+        {/* Despensa utility row */}
+        <Pressable
+          onPress={() => router.push('/pantry')}
+          className="mb-4 flex-row items-center justify-between border-b border-border pb-3 active:opacity-70"
+        >
+          <View className="flex-row items-center gap-2">
+            <View className="size-1.5 bg-lime" />
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              {t('pantry.title')}
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-2">
+            {pantryCount > 0 && <Text className="font-mono text-xs text-foreground">{pantryCount}</Text>}
+            <ChevronRight size={14} color="hsl(0 0% 55%)" />
+          </View>
+        </Pressable>
 
         {/* Frequent meals quick-tap */}
         {isToday && frequentMeals.length > 0 && (
