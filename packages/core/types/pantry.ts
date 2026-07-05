@@ -53,3 +53,43 @@ export interface PantryParseResult {
   reply: string
   model_used?: string
 }
+
+// ─── F2: plan pantry-aware (#171) ────────────────────────────────────────────
+
+export interface RecipeIngredient {
+  name: string
+  name_normalized: string
+  qty: number | null
+  unit: PantryUnit | null
+  from: 'pantry' | 'buy'
+}
+
+export interface Recipe {
+  steps: string[]
+  ingredients: RecipeIngredient[]
+  prep_minutes: number | null
+}
+
+// Subset de PantryItem que viaja al AI API al generar (snake_case: wire)
+export interface PantrySnapshotItem {
+  name: string
+  name_normalized: string
+  category: PantryCategory
+  quantity: number | null
+  unit: PantryUnit | null
+  expiry_estimate: string | null
+}
+
+export interface HowManyMealsBreakdownRow {
+  meal_label: string
+  times_possible: number
+  limiting_ingredient: string
+}
+
+export interface HowManyMealsResult {
+  total_meals: number
+  days_covered: number
+  breakdown: HowManyMealsBreakdownRow[]
+  summary: string
+  model_used?: string
+}
