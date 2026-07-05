@@ -8,12 +8,28 @@
 import { analyzeMealImage } from "./meal-analyzer.js";
 import { lookupFoodByName } from "./food-lookup.js";
 import { generateDailyMealPlan, generateWeeklyMealPlan } from "./meal-plan-generator.js";
+import { generatePantryPlan } from "./pantry-plan-generator.js";
 import { sendPushToUser } from "./push-sender.js";
 import { getAdminPB } from "./admin-pb.js";
 import type { Tier } from "./model-resolver.js";
 
 // Re-export for any existing consumers
 export { getAdminPB } from "./admin-pb.js";
+
+// Monday of current or specified week (input.week_start, or today if absent).
+function resolveWeekStart(input: any): Date {
+  let weekStart: Date;
+  if (input.week_start) {
+    weekStart = new Date(input.week_start);
+  } else {
+    weekStart = new Date();
+    const dow = weekStart.getDay(); // 0=Sun
+    const diff = dow === 0 ? -6 : 1 - dow;
+    weekStart.setDate(weekStart.getDate() + diff);
+  }
+  weekStart.setHours(0, 0, 0, 0);
+  return weekStart;
+}
 
 // ── Job processor ────────────────────────────────────────────────────────────
 
@@ -112,16 +128,7 @@ export async function processJob(jobId: string): Promise<void> {
         } catch { /* no active plans, that's fine */ }
 
         // Compute week_start (Monday of current or specified week)
-        let weekStart: Date;
-        if (input.week_start) {
-          weekStart = new Date(input.week_start);
-        } else {
-          weekStart = new Date();
-          const dow = weekStart.getDay(); // 0=Sun
-          const diff = dow === 0 ? -6 : 1 - dow;
-          weekStart.setDate(weekStart.getDate() + diff);
-        }
-        weekStart.setHours(0, 0, 0, 0);
+        const weekStart = resolveWeekStart(input);
 
         // Create the plan record
         const planRecord = await pb.collection("weekly_meal_plans").create({
@@ -164,6 +171,63 @@ export async function processJob(jobId: string): Promise<void> {
         break;
       }
 
+      case "generate-pantry-plan": {
+        const pantryItems = Array.isArray(input.pantry_items) ? input.pantry_items : [];
+        const goals = input.goals ?? null;
+
+        const weekResult = await generatePantryPlan({
+          horizon: "week",
+          pantryItems,
+          goals,
+          targetDate: input.week_start ?? null,
+          tier,
+        });
+
+        // Archive any existing active plan for this user
+        try {
+          const activePlans = await pb.collection("weekly_meal_plans").getFullList({
+            filter: pb.filter("user = {:uid} && status = 'active'", { uid: job.user }),
+          });
+          for (const p of activePlans) {
+            await pb.collection("weekly_meal_plans").update(p.id, { status: "archived" });
+          }
+        } catch { /* no active plans, that's fine */ }
+
+        const weekStart = resolveWeekStart(input);
+
+        const planRecord = await pb.collection("weekly_meal_plans").create({
+          user: job.user,
+          week_start: weekStart.toISOString(),
+          status: "active",
+          goal_snapshot: goals,
+          ai_model: (weekResult as any).model_used,
+          pantry_snapshot: pantryItems,
+        });
+
+        for (const day of (weekResult as any).days) {
+          const dayDate = new Date(weekStart);
+          dayDate.setDate(dayDate.getDate() + day.day_index);
+          const meals = day.meals.map((m: any, i: number) => ({
+            ...m,
+            id: `${planRecord.id}_d${day.day_index}_${i}`,
+            logged: false,
+          }));
+          await pb.collection("weekly_plan_days").create({
+            plan: planRecord.id,
+            user: job.user,
+            date: dayDate.toISOString(),
+            day_index: day.day_index,
+            meals,
+            notes: day.notes,
+          });
+        }
+
+        result = { plan_id: planRecord.id, ...(weekResult as Record<string, unknown>) };
+        notifTitle = "Plan desde tu despensa listo";
+        notifBody = "Toca para ver tu plan de comidas de la semana.";
+        break;
+      }
+
       default:
         throw new Error(`Tipo de trabajo desconocido: ${job.type}`);
     }
@@ -173,7 +237,7 @@ export async function processJob(jobId: string): Promise<void> {
       result,
     });
 
-    const notifUrl = job.type === "generate-weekly-meal-plan"
+    const notifUrl = job.type === "generate-weekly-meal-plan" || job.type === "generate-pantry-plan"
       ? "/nutrition?tab=weekly"
       : `/nutrition/log?job=${jobId}`;
 
