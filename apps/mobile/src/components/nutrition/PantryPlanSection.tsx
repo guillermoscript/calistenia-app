@@ -21,6 +21,12 @@ function isoDate(offsetDays: number): string {
   return addDays(todayStr(), offsetDays)
 }
 
+// El LLM a veces devuelve la frase entera ("te limita el pollo (2 kg)...") aunque el
+// prompt pida solo el nombre — sin esto la UI muestra "te limita: te limita el pollo".
+function cleanLimiting(raw: string): string {
+  return raw.replace(/^te\s+limita:?\s*/i, '').trim()
+}
+
 // "2026-07-06" → "dom, 6 jul" (misma convención que formatWeekRange en WeeklyMealPlan)
 function formatDayLabel(dateStr: string, lang: string): string {
   try {
@@ -186,16 +192,21 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
               {t('pantryPlan.mealsUnit')} · {t('pantryPlan.daysCovered', { days: howMany.days_covered })}
             </Text>
           </View>
-          {howMany.breakdown.map((row, i) => (
-            <View key={`${row.meal_label}-${i}`} className="flex-row items-center justify-between border-t border-border py-2 mt-2">
-              <Text className="font-sans text-sm text-foreground flex-1" numberOfLines={1}>
-                {row.meal_label} <Text className="font-mono text-xs text-muted-foreground">×{row.times_possible}</Text>
-              </Text>
-              <Text className="font-mono text-[10px] text-amber-400 shrink pl-2 text-right" numberOfLines={1}>
-                {t('pantryPlan.limitedBy', { ingredient: row.limiting_ingredient })}
-              </Text>
-            </View>
-          ))}
+          <View className="mt-3">
+            {howMany.breakdown.map((row, i) => (
+              <View key={`${row.meal_label}-${i}`} className="border-t border-border py-2.5 gap-1">
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Text className="font-sans-medium text-sm text-foreground flex-1" numberOfLines={1}>
+                    {row.meal_label}
+                  </Text>
+                  <Text className="font-bebas text-base leading-none text-lime-400">×{row.times_possible}</Text>
+                </View>
+                <Text className="font-mono text-[10px] text-amber-400" numberOfLines={2}>
+                  {t('pantryPlan.limitedBy', { ingredient: cleanLimiting(row.limiting_ingredient) })}
+                </Text>
+              </View>
+            ))}
+          </View>
           <Text className="font-sans text-xs text-muted-foreground mt-2">{howMany.summary}</Text>
         </View>
       )}

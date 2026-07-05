@@ -316,7 +316,7 @@ Recetas:
 
 Modo "¿cuántas comidas me alcanzan?":
 - Cuenta comidas COMPLETAS combinando el inventario (proteína + carbohidrato + vegetal ≈ comida completa).
-- Por cada tipo de comida: cuántas veces se puede repetir y qué ingrediente se agota primero (limiting_ingredient, ej: "te limita el pollo").
+- Por cada tipo de comida: cuántas veces se puede repetir y qué ingrediente se agota primero. limiting_ingredient = SOLO el nombre del ingrediente, 1-3 palabras (ej: "pollo"), sin frases, cantidades ni fechas.
 - summary: 1-2 frases directas en español.
 
 Responde siempre en español. Unidades métricas (g, kg, ml, l, unidad, paquete).`,

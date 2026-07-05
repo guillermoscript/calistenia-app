@@ -154,7 +154,9 @@ export const HowManyMealsSchema = z.object({
     z.object({
       meal_label: z.string(),
       times_possible: z.number(),
-      limiting_ingredient: z.string().describe("Qué ingrediente limita, ej: 'te limita el pollo'"),
+      limiting_ingredient: z
+        .string()
+        .describe("SOLO el nombre del ingrediente que se agota primero, 1-3 palabras (ej: 'pollo'). SIN la frase 'te limita', sin cantidades ni fechas"),
     })
   ),
   summary: z.string().describe("1-2 frases en español"),

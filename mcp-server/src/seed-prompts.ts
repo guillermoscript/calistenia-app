@@ -98,7 +98,13 @@ Tu tarea es diseñar comidas para completar los macros restantes del día del us
 
 async function main() {
   const only = process.argv.slice(2);
-  const selected = only.length ? prompts.filter((p) => only.includes(p.name)) : prompts;
+  // Sin args NO se re-seedea todo: re-seedear un prompt editado en la UI de Langfuse
+  // crea una versión nueva con texto viejo Y le roba el label "production".
+  if (!only.length) {
+    console.error(`Pasa nombres explícitos o --all. Disponibles: ${prompts.map((p) => p.name).join(", ")}`);
+    process.exit(1);
+  }
+  const selected = only.includes("--all") ? prompts : prompts.filter((p) => only.includes(p.name));
   if (!selected.length) {
     console.error(`No prompts match ${only.join(", ")}. Available: ${prompts.map((p) => p.name).join(", ")}`);
     process.exit(1);
