@@ -147,7 +147,8 @@ export default function PantryScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView className="flex-1" behavior="padding">
+      {/* enabled=false con sheet abierto: el teclado del sheet no debe empujar el chat de fondo */}
+      <KeyboardAvoidingView className="flex-1" behavior="padding" enabled={parseResult == null && editing == null}>
         <View className="flex-1">
           <PantryTable items={items} onPressItem={setEditing} onExample={handleSend} />
         </View>

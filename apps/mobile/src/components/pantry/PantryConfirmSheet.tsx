@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { KeyboardAvoidingView, KeyboardProvider } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
@@ -53,9 +54,11 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
-      <View style={{ flex: 1 }}>
-        <Pressable onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
-        <View style={{ flex: 1, justifyContent: 'flex-end' }} pointerEvents="box-none">
+      {/* KeyboardProvider dentro del Modal: es otra ventana nativa (patrón CommentsSheet) */}
+      <KeyboardProvider>
+        <View style={{ flex: 1 }}>
+          <Pressable onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
+          <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end' }} pointerEvents="box-none">
           <View
             className="border-t border-border bg-card"
             style={{ maxHeight: '80%', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 14 }}
@@ -165,8 +168,9 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
               </Pressable>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
-      </View>
+      </KeyboardProvider>
     </Modal>
   )
 }
