@@ -87,3 +87,37 @@ const BaseMealAnalysisSchema = z.object({
 export const MealAnalysisSchema = BaseMealAnalysisSchema.extend({
   quality: QualityBlockSchema.nullable().describe("Evaluación de calidad nutricional de la comida completa. Incluir cuando se proporcione contexto del usuario, null si no hay contexto."),
 });
+
+// ── Pantry parser (despensa F1, issue #170) ─────────────────────────────────
+
+export const PANTRY_CATEGORIES = [
+  "proteina", "vegetal", "fruta", "carbohidrato", "lacteo",
+  "grasa", "condimento", "bebida", "otro",
+] as const;
+
+export const PANTRY_UNITS = ["g", "kg", "ml", "l", "unidad", "paquete"] as const;
+
+// ⚠️ OpenAI strict mode: SIEMPRE .nullable(), NUNCA .optional()
+export const PantryParsedItemSchema = z.object({
+  name: z.string().describe("Nombre tal como lo dijo el usuario, ej: 'pechuga de pollo'"),
+  name_normalized: z
+    .string()
+    .describe("lowercase, sin acentos, singular; para matching contra el inventario"),
+  category: z.enum(PANTRY_CATEGORIES).describe("Categoría del alimento"),
+  quantity: z.number().nullable().describe("Cantidad; null si no se puede inferir"),
+  unit: z.enum(PANTRY_UNITS).nullable().describe("Unidad; null si no se puede inferir"),
+  price_total: z.number().nullable().describe("Precio TOTAL pagado si se mencionó; null si no"),
+  expiry_days: z
+    .number()
+    .nullable()
+    .describe("Días estimados hasta vencer según la categoría; null si desconocido"),
+  confidence: z.enum(["high", "med", "low"]).describe("Qué tan segura es la extracción"),
+});
+
+export const PantryParseSchema = z.object({
+  intent: z
+    .enum(["add", "consume", "discard", "query", "unknown"])
+    .describe("Qué quiere hacer el usuario con su despensa"),
+  items: z.array(PantryParsedItemSchema).describe("Items mencionados en el mensaje"),
+  reply: z.string().describe("Respuesta corta y natural en español para mostrar en el chat"),
+});
