@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ai-sdk/react": "^3.0.164",
+    "@ai-sdk/react": "^4.0.16",
     "@calistenia/core": "workspace:*",
     "@openpanel/web": "^1.3.0",
     "@tanstack/query-sync-storage-persister": "^5.66.0",

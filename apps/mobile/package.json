@@ -17,7 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/react": "^3.0.201",
+    "@ai-sdk/react": "^4.0.16",
     "@bacons/apple-targets": "^4.0.7",
     "@calistenia/core": "workspace:*",
     "@expo-google-fonts/bebas-neue": "^0.4.1",
