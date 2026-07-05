@@ -47,7 +47,7 @@
     "expo-constants": "~56.0.17",
     "expo-device": "~56.0.4",
     "expo-font": "~56.0.5",
-    "expo-haptics": "~56.0.3",
+    "expo-haptics": "~57.0.0",
     "expo-image": "~56.0.10",
     "expo-image-picker": "^56.0.16",
     "expo-keep-awake": "~56.0.3",
