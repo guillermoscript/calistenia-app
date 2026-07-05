@@ -49,10 +49,28 @@ export function RecipeDetailSheet({ visible, mealLabel, recipe: recipeProp, onCl
           </View>
 
           <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
-            {/* Ingredientes */}
-            <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-              {t('pantryPlan.ingredients')}
-            </Text>
+            {/* Ingredientes — tally spec-sheet: de un vistazo, ¿hay que comprar algo? */}
+            {(() => {
+              const haveCount = recipe.ingredients.filter((ing) => ing.from === 'pantry').length
+              const buyCount = recipe.ingredients.length - haveCount
+              return (
+                <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+                  {t('pantryPlan.ingredients')}
+                  {' · '}
+                  <Text className="font-mono text-[10px] uppercase tracking-widest text-lime-400">
+                    {haveCount} {t('pantryPlan.haveIt')}
+                  </Text>
+                  {buyCount > 0 && (
+                    <>
+                      {' · '}
+                      <Text className="font-mono text-[10px] uppercase tracking-widest text-amber-400">
+                        {buyCount} {t('pantryPlan.toBuy')}
+                      </Text>
+                    </>
+                  )}
+                </Text>
+              )
+            })()}
             <View className="mb-5">
               {recipe.ingredients.map((ing, i) => (
                 <View key={`${ing.name_normalized}-${i}`} className="flex-row items-center justify-between border-b border-border py-2">
