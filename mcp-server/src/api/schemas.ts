@@ -121,3 +121,32 @@ export const PantryParseSchema = z.object({
   items: z.array(PantryParsedItemSchema).describe("Items mencionados en el mensaje"),
   reply: z.string().describe("Respuesta corta y natural en español para mostrar en el chat"),
 });
+
+// ─── Despensa F2: plan pantry-aware (#171) ───────────────────────────────────
+
+export const RecipeIngredientSchema = z.object({
+  name: z.string().describe("Ingrediente tal como se usa en la receta"),
+  name_normalized: z.string().describe("minúsculas, sin acentos"),
+  qty: z.number().nullable().describe("Cantidad que usa la receta; null si es al gusto"),
+  unit: z.enum(PANTRY_UNITS).nullable(),
+  from: z.enum(["pantry", "buy"]).describe("pantry = está en el inventario listado; buy = falta comprarlo"),
+});
+
+export const RecipeSchema = z.object({
+  steps: z.array(z.string()).describe("Pasos de preparación en orden, imperativo, concisos"),
+  ingredients: z.array(RecipeIngredientSchema),
+  prep_minutes: z.number().nullable(),
+});
+
+export const HowManyMealsSchema = z.object({
+  total_meals: z.number().describe("Total de comidas completas posibles con el inventario actual"),
+  days_covered: z.number().describe("Días aproximados que cubre (3-4 comidas/día)"),
+  breakdown: z.array(
+    z.object({
+      meal_label: z.string(),
+      times_possible: z.number(),
+      limiting_ingredient: z.string().describe("Qué ingrediente limita, ej: 'te limita el pollo'"),
+    })
+  ),
+  summary: z.string().describe("1-2 frases en español"),
+});
