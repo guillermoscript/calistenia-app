@@ -76,8 +76,9 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
             </View>
             <ScrollView className="px-4" keyboardShouldPersistTaps="handled">
               {isAdd ? (
+                // key estable por índice: name_normalized cambia con cada tecla y remontaría la fila (cierra el teclado)
                 draft.map((it, i) => (
-                  <View key={`${it.name_normalized}-${i}`} className="border-b border-border py-3">
+                  <View key={`row-${i}`} className="border-b border-border py-3">
                     <View className="flex-row items-center justify-between">
                       <TextInput
                         value={it.name}
