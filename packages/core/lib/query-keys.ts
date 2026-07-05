@@ -175,4 +175,9 @@ export const qk = {
     ['blog_posts', page, category] as const,
   blogPost: (slug: string, locale: string) =>
     ['blog_post', slug, locale] as const,
+
+  // — Despensa (pantry, épica #153/#170) —
+  pantry: {
+    list: (userId: string | null) => ['pantry', 'list', userId] as const,
+  },
 } as const
