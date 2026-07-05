@@ -1,5 +1,5 @@
 import { addDays } from './dateUtils'
-import type { PantryCategory, PantryItem } from '../types'
+import type { PantryCategory, PantryItem, PantrySnapshotItem } from '../types'
 
 export const PANTRY_CATEGORY_ORDER: PantryCategory[] = [
   'proteina', 'vegetal', 'fruta', 'carbohidrato', 'lacteo',
@@ -46,4 +46,18 @@ export function daysUntil(date: string | null, today: string): number | null {
 /** lowercase, sin acentos, trim — mismo criterio que name_normalized del parser. */
 export function normalizePantryName(name: string): string {
   return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+
+/** Proyecta los items activos al shape wire que consume el AI API (#171). */
+export function buildPantrySnapshot(items: PantryItem[]): PantrySnapshotItem[] {
+  return items
+    .filter((it) => it.status === 'active')
+    .map((it) => ({
+      name: it.name,
+      name_normalized: it.nameNormalized,
+      category: it.category,
+      quantity: it.quantity,
+      unit: it.unit,
+      expiry_estimate: it.expiryEstimate,
+    }))
 }

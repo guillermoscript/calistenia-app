@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { daysUntil, expiryFromDays, groupPantryByCategory, normalizePantryName } from './pantry'
+import { buildPantrySnapshot, daysUntil, expiryFromDays, groupPantryByCategory, normalizePantryName } from './pantry'
 import type { PantryItem } from '../types'
 
 describe('normalizePantryName', () => {
@@ -55,5 +55,30 @@ describe('daysUntil', () => {
   })
   it('null sin fecha', () => {
     expect(daysUntil(null, '2026-07-05')).toBeNull()
+  })
+})
+
+describe('buildPantrySnapshot', () => {
+  const base: PantryItem = {
+    id: 'x1', name: 'Pollo', nameNormalized: 'pollo', category: 'proteina',
+    quantity: 2, unit: 'kg', priceTotal: null, currency: 'USD', priceSource: null,
+    purchaseDate: '2026-07-01', expiryEstimate: '2026-07-08',
+    confidence: 'high', status: 'active', source: 'chat',
+  }
+
+  it('mapea camelCase → snake_case del wire', () => {
+    expect(buildPantrySnapshot([base])).toEqual([{
+      name: 'Pollo', name_normalized: 'pollo', category: 'proteina',
+      quantity: 2, unit: 'kg', expiry_estimate: '2026-07-08',
+    }])
+  })
+
+  it('filtra items no activos', () => {
+    const depleted = { ...base, id: 'x2', status: 'depleted' as const }
+    expect(buildPantrySnapshot([base, depleted])).toHaveLength(1)
+  })
+
+  it('array vacío → array vacío', () => {
+    expect(buildPantrySnapshot([])).toEqual([])
   })
 })
