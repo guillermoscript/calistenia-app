@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { usePantryItems } from './usePantry'
 import { buildPantrySnapshot } from '../lib/pantry'
@@ -24,6 +24,13 @@ export function usePantryPlan(userId: string | null) {
   const { data: items = [] } = usePantryItems(userId)
   const qc = useQueryClient()
 
+  // Corta el polling de generateWeek si el componente se desmonta a mitad.
+  const alive = useRef(true)
+  useEffect(() => {
+    alive.current = true
+    return () => { alive.current = false }
+  }, [])
+
   const generateDay = useCallback(
     (targetDate: string, goals: PantryPlanGoals | null): Promise<PantryDayPlanResult> =>
       generatePantryDayPlan({ targetDate, items: buildPantrySnapshot(items), goals }),
@@ -46,6 +53,7 @@ export function usePantryPlan(userId: string | null) {
       const started = Date.now()
       while (Date.now() - started < MAX_POLL_MS) {
         await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
+        if (!alive.current) return
         const job = await fetchJobStatus(jobId)
         if (job.status === 'completed') {
           await qc.invalidateQueries({ queryKey: qk.weeklyMealPlan.active(userId) })

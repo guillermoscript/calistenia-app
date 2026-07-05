@@ -207,11 +207,27 @@ export default function WeeklyMealPlan({
     try { await onGenerate() } finally { setGenerating(false) }
   }, [onGenerate])
 
+  const [pantryError, setPantryError] = useState(false)
+
   const handleGenerateFromPantry = useCallback(async () => {
     if (!onGenerateFromPantry) return
     setGeneratingPantry(true)
-    try { await onGenerateFromPantry() } finally { setGeneratingPantry(false) }
+    setPantryError(false)
+    try {
+      await onGenerateFromPantry()
+    } catch {
+      // generateWeek puede rechazar (job failed / timeout de polling) — sin esto el spinner muere en silencio.
+      setPantryError(true)
+    } finally {
+      setGeneratingPantry(false)
+    }
   }, [onGenerateFromPantry])
+
+  const pantryErrorBanner = pantryError ? (
+    <View className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 mt-2">
+      <Text className="font-sans text-sm text-red-400">{t('pantryPlan.error')}</Text>
+    </View>
+  ) : null
 
   const handleRegenerateDay = useCallback(async (dayId: string) => {
     setRegeneratingDay(true)
@@ -295,6 +311,7 @@ export default function WeeklyMealPlan({
               )}
             </Pressable>
           )}
+          {pantryErrorBanner}
         </View>
       </View>
     )
@@ -363,6 +380,8 @@ export default function WeeklyMealPlan({
           </Pressable>
         </View>
       </View>
+
+      {pantryErrorBanner}
 
       {/* Day tabs — horizontal scroll */}
       <ScrollView

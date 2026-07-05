@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/text'
 import { Chip } from '@/components/ui/chip'
 import { RecipeDetailSheet } from '@/components/pantry/RecipeDetailSheet'
 import { usePantryPlan } from '@calistenia/core/hooks/usePantryPlan'
+import { todayStr, addDays } from '@calistenia/core/lib/dateUtils'
 import type { PantryPlanGoals } from '@calistenia/core/lib/pantry-api'
 import type { HowManyMealsResult, PantryDayPlanResult, PantryPlannedMeal } from '@calistenia/core/types'
 
@@ -15,10 +16,9 @@ const MEAL_TYPE_COLORS: Record<string, string> = {
   snack: 'bg-lime-400',
 }
 
+// tz-aware — new Date().toISOString() corre el día en la tarde para tz al oeste de UTC.
 function isoDate(offsetDays: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() + offsetDays)
-  return d.toISOString().slice(0, 10)
+  return addDays(todayStr(), offsetDays)
 }
 
 interface PantryPlanSectionProps {
