@@ -2583,5 +2583,22 @@
   "pantry.categories.grasa": "Fats",
   "pantry.categories.condimento": "Condiments",
   "pantry.categories.bebida": "Drinks",
-  "pantry.categories.otro": "Other"
+  "pantry.categories.otro": "Other",
+  "pantryPlan.recipe": "Recipe",
+  "pantryPlan.ingredients": "Ingredients",
+  "pantryPlan.steps": "Steps",
+  "pantryPlan.haveIt": "Have it",
+  "pantryPlan.toBuy": "To buy",
+  "pantryPlan.prepMinutes": "{{min}} min",
+  "pantryPlan.kicker": "FROM YOUR PANTRY",
+  "pantryPlan.generateDay": "Generate day plan",
+  "pantryPlan.today": "Today",
+  "pantryPlan.tomorrow": "Tomorrow",
+  "pantryPlan.howMany": "How many meals can I make?",
+  "pantryPlan.mealsUnit": "meals",
+  "pantryPlan.daysCovered": "≈ {{days}} days",
+  "pantryPlan.limitedBy": "limited by: {{ingredient}}",
+  "pantryPlan.planFor": "Plan for {{date}}",
+  "pantryPlan.viewRecipe": "View recipe",
+  "pantryPlan.error": "Could not generate. Try again."
 }
