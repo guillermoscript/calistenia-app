@@ -11,7 +11,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { Langfuse } from "langfuse";
-import { FALLBACKS } from "./api/prompts";
+import { FALLBACKS } from "./api/prompts.js";
 
 const langfuse = new Langfuse({
   secretKey: process.env.LANGFUSE_SECRET_KEY!,
