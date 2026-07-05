@@ -2602,5 +2602,7 @@
   "pantryPlan.viewRecipe": "View recipe",
   "pantryPlan.error": "Could not generate. Try again.",
   "pantryPlan.fromPantry": "From my pantry",
-  "pantryPlan.generatingWeek": "Generating plan from your pantry…"
+  "pantryPlan.fromPantryShort": "Pantry",
+  "pantryPlan.generatingWeek": "Generating plan from your pantry…",
+  "pantryPlan.total": "Total"
 }

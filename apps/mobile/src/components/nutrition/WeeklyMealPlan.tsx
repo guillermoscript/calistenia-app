@@ -345,7 +345,7 @@ export default function WeeklyMealPlan({
                 <ActivityIndicator size="small" color="#a3e635" />
               ) : (
                 <Text className="font-bebas text-sm tracking-widest text-lime-400">
-                  {t('pantryPlan.fromPantry')}
+                  {t('pantryPlan.fromPantryShort')}
                 </Text>
               )}
             </Pressable>

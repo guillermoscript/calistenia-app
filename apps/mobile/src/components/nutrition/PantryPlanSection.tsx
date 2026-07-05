@@ -21,13 +21,26 @@ function isoDate(offsetDays: number): string {
   return addDays(todayStr(), offsetDays)
 }
 
+// "2026-07-06" → "dom, 6 jul" (misma convención que formatWeekRange en WeeklyMealPlan)
+function formatDayLabel(dateStr: string, lang: string): string {
+  try {
+    return new Date(`${dateStr}T12:00:00`).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    })
+  } catch {
+    return dateStr
+  }
+}
+
 interface PantryPlanSectionProps {
   userId: string | null
   goals: PantryPlanGoals
 }
 
 export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { hasPantry, generateDay, howManyMeals } = usePantryPlan(userId)
   const [target, setTarget] = useState<'today' | 'tomorrow'>('tomorrow') // default Mañana (caso de uso: qué cocino mañana)
   const [loading, setLoading] = useState<'day' | 'howmany' | null>(null)
@@ -68,8 +81,8 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
 
       {/* Controles: Hoy/Mañana + CTAs */}
       <View className="flex-row items-center gap-2 mb-3">
-        <Chip label={t('pantryPlan.tomorrow')} active={target === 'tomorrow'} onPress={() => setTarget('tomorrow')} />
-        <Chip label={t('pantryPlan.today')} active={target === 'today'} onPress={() => setTarget('today')} />
+        <Chip label={t('pantryPlan.tomorrow')} active={target === 'tomorrow'} onPress={() => loading === null && setTarget('tomorrow')} />
+        <Chip label={t('pantryPlan.today')} active={target === 'today'} onPress={() => loading === null && setTarget('today')} />
       </View>
       <Pressable
         onPress={onGenerateDay}
@@ -77,9 +90,9 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
         className={loading ? 'rounded-lg bg-lime-400/50 py-2.5 items-center' : 'rounded-lg bg-lime-400 py-2.5 items-center'}
       >
         {loading === 'day' ? (
-          <ActivityIndicator size="small" color="#000" />
+          <ActivityIndicator size="small" color="#18181b" />
         ) : (
-          <Text className="font-bebas text-base tracking-wide text-black">{t('pantryPlan.generateDay')}</Text>
+          <Text className="font-bebas text-base tracking-wide text-zinc-900">{t('pantryPlan.generateDay')}</Text>
         )}
       </Pressable>
       <Pressable onPress={onHowMany} disabled={loading !== null} className="py-2.5 items-center">
@@ -100,12 +113,15 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
       {dayPlan && (
         <View className="mt-3">
           <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-            {t('pantryPlan.planFor', { date: dayPlan.target_date ?? isoDate(target === 'tomorrow' ? 1 : 0) })}
+            {t('pantryPlan.planFor', {
+              date: formatDayLabel(dayPlan.target_date ?? isoDate(target === 'tomorrow' ? 1 : 0), i18n.language),
+            })}
           </Text>
           {dayPlan.meals.map((meal, i) => (
             <Pressable
               key={`${meal.meal_type}-${i}`}
               onPress={() => meal.recipe && setRecipeMeal(meal)}
+              disabled={!meal.recipe}
               className="border-b border-border py-3"
             >
               <View className="flex-row items-center gap-2">
@@ -127,13 +143,37 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
               </View>
             </Pressable>
           ))}
+          {(() => {
+            const total = dayPlan.meals.reduce(
+              (a, m) => ({ calories: a.calories + m.calories, protein: a.protein + m.protein, carbs: a.carbs + m.carbs, fat: a.fat + m.fat }),
+              { calories: 0, protein: 0, carbs: 0, fat: 0 },
+            )
+            return (
+              <View className="py-3">
+                <View className="flex-row items-center justify-between">
+                  <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {t('pantryPlan.total')}
+                  </Text>
+                  <Text className="font-bebas text-lg leading-none text-foreground">
+                    {total.calories}
+                    <Text className="font-mono text-[10px] text-muted-foreground"> / {goals.calories} kcal</Text>
+                  </Text>
+                </View>
+                <View className="flex-row justify-end mt-1">
+                  <Text className="font-mono text-[10px] text-muted-foreground">
+                    P{total.protein} · C{total.carbs} · G{total.fat}
+                  </Text>
+                </View>
+              </View>
+            )
+          })()}
           {dayPlan.notes ? <Text className="font-sans text-xs text-muted-foreground mt-2">{dayPlan.notes}</Text> : null}
         </View>
       )}
 
-      {/* Resultado: cuántas comidas */}
+      {/* Resultado: cuántas comidas — hairline, no card (idioma spec-sheet) */}
       {howMany && (
-        <View className="mt-3 rounded-lg border border-border p-4">
+        <View className="mt-4 border-t border-border pt-3">
           <View className="flex-row items-baseline gap-2">
             <Text className="font-bebas text-4xl text-lime-400">{howMany.total_meals}</Text>
             <Text className="font-mono text-xs uppercase tracking-wide text-muted-foreground">

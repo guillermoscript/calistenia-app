@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
@@ -11,13 +12,18 @@ interface RecipeDetailSheetProps {
   onClose: () => void
 }
 
-export function RecipeDetailSheet({ visible, mealLabel, recipe, onClose }: RecipeDetailSheetProps) {
+export function RecipeDetailSheet({ visible, mealLabel, recipe: recipeProp, onClose }: RecipeDetailSheetProps) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
-  if (!recipe) return null
+  // Los callers cierran nulificando el meal (recipe y visible caen juntos); cachear el
+  // último contenido mantiene el Modal montado para que el slide-out sí se vea.
+  const lastContent = useRef<{ recipe: Recipe; mealLabel: string } | null>(null)
+  if (recipeProp) lastContent.current = { recipe: recipeProp, mealLabel }
+  if (!lastContent.current) return null
+  const { recipe, mealLabel: shownLabel } = lastContent.current
 
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal visible={visible && recipeProp != null} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
         <View
@@ -35,7 +41,7 @@ export function RecipeDetailSheet({ visible, mealLabel, recipe, onClose }: Recip
                 {t('pantryPlan.recipe')}
                 {recipe.prep_minutes != null ? `  ·  ${t('pantryPlan.prepMinutes', { min: recipe.prep_minutes })}` : ''}
               </Text>
-              <Text className="font-bebas text-2xl text-foreground">{mealLabel}</Text>
+              <Text className="font-bebas text-2xl text-foreground">{shownLabel}</Text>
             </View>
             <Pressable onPress={onClose} hitSlop={12}>
               <Text className="text-lg text-muted-foreground">✕</Text>
