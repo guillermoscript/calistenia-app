@@ -672,4 +672,6 @@ export type {
   PantryCategory, PantryUnit, PantryConfidence, PantryStatus, PantrySource,
   PantryEventType, PantryIntent, PantryItem, PantryEvent,
   PantryParsedItem, PantryParseResult,
+  PantrySnapshotItem, Recipe, RecipeIngredient,
+  HowManyMealsBreakdownRow, HowManyMealsResult,
 } from './pantry'
