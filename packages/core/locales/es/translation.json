@@ -2606,5 +2606,6 @@
   "pantryPlan.generatingWeek": "Generando plan desde tu despensa…",
   "pantryPlan.total": "Total",
   "pantryPlan.itemCount_one": "{{count}} ítem",
-  "pantryPlan.itemCount_other": "{{count}} ítems"
+  "pantryPlan.itemCount_other": "{{count}} ítems",
+  "pantryPlan.servings": "Porciones"
 }

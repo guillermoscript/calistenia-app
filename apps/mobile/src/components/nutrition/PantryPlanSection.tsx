@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { ActivityIndicator, Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useRouter } from 'expo-router'
 import { Text } from '@/components/ui/text'
 import { Chip } from '@/components/ui/chip'
-import { RecipeDetailSheet } from '@/components/pantry/RecipeDetailSheet'
 import { usePantryPlan } from '@calistenia/core/hooks/usePantryPlan'
 import { todayStr, addDays } from '@calistenia/core/lib/dateUtils'
 import type { PantryPlanGoals } from '@calistenia/core/lib/pantry-api'
-import type { HowManyMealsResult, PantryDayPlanResult, PantryPlannedMeal } from '@calistenia/core/types'
+import type { HowManyMealsResult, PantryDayPlanResult } from '@calistenia/core/types'
 
 const MEAL_TYPE_COLORS: Record<string, string> = {
   desayuno: 'bg-amber-400',
@@ -41,13 +41,13 @@ interface PantryPlanSectionProps {
 
 export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
   const { t, i18n } = useTranslation()
+  const router = useRouter()
   const { hasPantry, pantryCount, generateDay, howManyMeals } = usePantryPlan(userId)
   const [target, setTarget] = useState<'today' | 'tomorrow'>('tomorrow') // default Mañana (caso de uso: qué cocino mañana)
   const [loading, setLoading] = useState<'day' | 'howmany' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [dayPlan, setDayPlan] = useState<PantryDayPlanResult | null>(null)
   const [howMany, setHowMany] = useState<HowManyMealsResult | null>(null)
-  const [recipeMeal, setRecipeMeal] = useState<PantryPlannedMeal | null>(null)
 
   if (!hasPantry) return null
 
@@ -123,7 +123,10 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
           {dayPlan.meals.map((meal, i) => (
             <Pressable
               key={`${meal.meal_type}-${i}`}
-              onPress={() => meal.recipe && setRecipeMeal(meal)}
+              onPress={() =>
+                meal.recipe &&
+                router.push({ pathname: '/recipe-detail', params: { label: meal.label, recipe: JSON.stringify(meal.recipe) } })
+              }
               disabled={!meal.recipe}
               className="border-b border-border py-3"
             >
@@ -197,12 +200,6 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
         </View>
       )}
 
-      <RecipeDetailSheet
-        visible={recipeMeal != null}
-        mealLabel={recipeMeal?.label ?? ''}
-        recipe={recipeMeal?.recipe ?? null}
-        onClose={() => setRecipeMeal(null)}
-      />
     </View>
   )
 }

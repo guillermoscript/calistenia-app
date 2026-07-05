@@ -309,6 +309,8 @@ Recetas:
 - Cada ingrediente lleva from: "pantry" si aparece en el inventario listado (aunque la cantidad no alcance del todo), "buy" si no aparece.
 - NUNCA marques "pantry" un ingrediente que no está en el inventario. Sal, pimienta y aceite: "pantry" solo si están listados; si no, "buy".
 - qty/unit = lo que usa la receta, no lo que hay en la despensa.
+- servings = porciones que rinde la receta tal como está escrita (normalmente 1, la comida es para una persona).
+- photo_query = nombre simple del plato en INGLÉS, 2-3 palabras genéricas para buscar una foto (ej: "chicken rice", "scrambled eggs", "oatmeal"). Sin adjetivos raros.
 
 Modo "¿cuántas comidas me alcanzan?":
 - Cuenta comidas COMPLETAS combinando el inventario (proteína + carbohidrato + vegetal ≈ comida completa).

@@ -68,6 +68,10 @@ export interface Recipe {
   steps: string[]
   ingredients: RecipeIngredient[]
   prep_minutes: number | null
+  /** Porciones que rinde la receta tal como está escrita (normalmente 1). Opcional: planes viejos no lo traen. */
+  servings?: number | null
+  /** Nombre del plato en inglés para buscar foto (TheMealDB). Opcional: planes viejos no lo traen. */
+  photo_query?: string | null
 }
 
 // Subset de PantryItem que viaja al AI API al generar (snake_case: wire)

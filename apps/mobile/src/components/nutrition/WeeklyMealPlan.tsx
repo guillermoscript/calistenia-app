@@ -2,9 +2,9 @@
 import { useState, useCallback } from 'react'
 import { View, Pressable, ScrollView, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useRouter } from 'expo-router'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
-import { RecipeDetailSheet } from '@/components/pantry/RecipeDetailSheet'
 import type {
   WeeklyMealPlan as WeeklyMealPlanType,
   WeeklyPlanDay,
@@ -194,13 +194,13 @@ export default function WeeklyMealPlan({
   onGenerateFromPantry,
 }: WeeklyMealPlanProps) {
   const { t } = useTranslation()
+  const router = useRouter()
   const todayIndex = getTodayDayIndex()
   const [selectedDayIndex, setSelectedDayIndex] = useState(todayIndex)
   const [generating, setGenerating] = useState(false)
   const [generatingPantry, setGeneratingPantry] = useState(false)
   const [regeneratingDay, setRegeneratingDay] = useState(false)
   const [archiving, setArchiving] = useState(false)
-  const [recipeMeal, setRecipeMeal] = useState<WeeklyPlannedMeal | null>(null)
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true)
@@ -463,7 +463,10 @@ export default function WeeklyMealPlan({
                 dayId={selectedDay.id}
                 onLog={onLogMeal}
                 onDelete={onDeleteMeal}
-                onOpenRecipe={setRecipeMeal}
+                onOpenRecipe={(m) =>
+                  m.recipe &&
+                  router.push({ pathname: '/recipe-detail', params: { label: m.label, recipe: JSON.stringify(m.recipe) } })
+                }
               />
             ))
           ) : (
@@ -505,12 +508,6 @@ export default function WeeklyMealPlan({
         </View>
       )}
 
-      <RecipeDetailSheet
-        visible={recipeMeal != null}
-        mealLabel={recipeMeal?.label ?? ''}
-        recipe={recipeMeal?.recipe ?? null}
-        onClose={() => setRecipeMeal(null)}
-      />
     </View>
   )
 }

@@ -136,6 +136,11 @@ export const RecipeSchema = z.object({
   steps: z.array(z.string()).describe("Pasos de preparación en orden, imperativo, concisos"),
   ingredients: z.array(RecipeIngredientSchema),
   prep_minutes: z.number().nullable(),
+  servings: z.number().nullable().describe("Porciones que rinde la receta tal como está escrita (normalmente 1)"),
+  photo_query: z
+    .string()
+    .nullable()
+    .describe("Nombre simple del plato en INGLÉS para buscar foto, 2-3 palabras (ej: 'chicken rice', 'oatmeal')"),
 });
 
 export const HowManyMealsSchema = z.object({
