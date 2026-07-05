@@ -267,7 +267,7 @@ export default function WeeklyMealPlan({
           </Text>
           <Pressable
             onPress={handleGenerate}
-            disabled={generating}
+            disabled={generating || generatingPantry}
             className={cn(
               // active: estático — evita el upgrade View→Pressable de css-interop.
               'rounded-lg border border-lime-400/30 px-4 py-2 active:bg-lime-400/10',
@@ -291,7 +291,7 @@ export default function WeeklyMealPlan({
           {hasPantry && onGenerateFromPantry && (
             <Pressable
               onPress={handleGenerateFromPantry}
-              disabled={generatingPantry}
+              disabled={generating || generatingPantry}
               className={cn(
                 'mt-2 rounded-lg border border-lime-400/30 px-4 py-2.5 items-center active:bg-lime-400/10',
                 generatingPantry ? 'opacity-50' : '',
@@ -338,7 +338,7 @@ export default function WeeklyMealPlan({
           {hasPantry && onGenerateFromPantry && (
             <Pressable
               onPress={handleGenerateFromPantry}
-              disabled={generatingPantry}
+              disabled={generating || generatingPantry}
               className="rounded-lg border border-lime-400/30 px-3 py-1.5 active:bg-lime-400/10"
             >
               {generatingPantry ? (
@@ -353,7 +353,7 @@ export default function WeeklyMealPlan({
 
           <Pressable
             onPress={handleGenerate}
-            disabled={generating}
+            disabled={generating || generatingPantry}
             className="rounded-lg bg-lime-400 px-3 py-1.5 active:bg-lime-300"
           >
             {generating ? (

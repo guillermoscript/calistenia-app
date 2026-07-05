@@ -54,7 +54,10 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
   const onGenerateDay = async () => {
     setLoading('day'); setError(null); setHowMany(null)
     try {
-      setDayPlan(await generateDay(isoDate(target === 'tomorrow' ? 1 : 0), goals))
+      const plan = await generateDay(isoDate(target === 'tomorrow' ? 1 : 0), goals)
+      // LLM degenerado sin comidas = fallo, no un plan vacío con TOTAL 0.
+      if (!plan.meals?.length) throw new Error('empty plan')
+      setDayPlan(plan)
     } catch {
       setError(t('pantryPlan.error'))
     } finally {
@@ -185,7 +188,7 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
               <Text className="font-sans text-sm text-foreground flex-1" numberOfLines={1}>
                 {row.meal_label} <Text className="font-mono text-xs text-muted-foreground">×{row.times_possible}</Text>
               </Text>
-              <Text className="font-mono text-[10px] text-amber-400">
+              <Text className="font-mono text-[10px] text-amber-400 shrink pl-2 text-right" numberOfLines={1}>
                 {t('pantryPlan.limitedBy', { ingredient: row.limiting_ingredient })}
               </Text>
             </View>

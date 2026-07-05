@@ -54,7 +54,13 @@ export function usePantryPlan(userId: string | null) {
       while (Date.now() - started < MAX_POLL_MS) {
         await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
         if (!alive.current) return
-        const job = await fetchJobStatus(jobId)
+        let job
+        try {
+          job = await fetchJobStatus(jobId)
+        } catch {
+          // Blip transitorio de red: el job sigue corriendo server-side; el cap de 180s acota.
+          continue
+        }
         if (job.status === 'completed') {
           await qc.invalidateQueries({ queryKey: qk.weeklyMealPlan.active(userId) })
           return

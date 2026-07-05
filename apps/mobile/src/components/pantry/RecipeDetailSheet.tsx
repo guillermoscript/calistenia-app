@@ -50,7 +50,7 @@ export function RecipeDetailSheet({ visible, mealLabel, recipe: recipeProp, onCl
 
           <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
             {/* Ingredientes — tally spec-sheet: de un vistazo, ¿hay que comprar algo? */}
-            {(() => {
+            {recipe.ingredients.length > 0 && (() => {
               const haveCount = recipe.ingredients.filter((ing) => ing.from === 'pantry').length
               const buyCount = recipe.ingredients.length - haveCount
               return (
@@ -71,11 +71,12 @@ export function RecipeDetailSheet({ visible, mealLabel, recipe: recipeProp, onCl
                 </Text>
               )
             })()}
+            {recipe.ingredients.length > 0 && (
             <View className="mb-5">
               {recipe.ingredients.map((ing, i) => (
                 <View key={`${ing.name_normalized}-${i}`} className="flex-row items-center justify-between border-b border-border py-2">
                   <View className="flex-1 flex-row items-center gap-2 pr-2">
-                    <Text className="font-sans text-sm text-foreground" numberOfLines={1}>
+                    <Text className="font-sans text-sm text-foreground shrink" numberOfLines={1}>
                       {ing.name}
                     </Text>
                     {ing.qty != null && (
@@ -104,19 +105,24 @@ export function RecipeDetailSheet({ visible, mealLabel, recipe: recipeProp, onCl
                 </View>
               ))}
             </View>
+            )}
 
             {/* Pasos */}
-            <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-              {t('pantryPlan.steps')}
-            </Text>
-            <View className="mb-6">
-              {recipe.steps.map((step, i) => (
-                <View key={i} className="flex-row gap-3 py-1.5">
-                  <Text className="font-bebas text-base text-lime-400 w-5">{i + 1}</Text>
-                  <Text className="font-sans text-sm text-foreground flex-1">{step}</Text>
+            {recipe.steps.length > 0 && (
+              <>
+                <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+                  {t('pantryPlan.steps')}
+                </Text>
+                <View className="mb-6">
+                  {recipe.steps.map((step, i) => (
+                    <View key={i} className="flex-row gap-3 py-1.5">
+                      <Text className="font-bebas text-base text-lime-400 w-5">{i + 1}</Text>
+                      <Text className="font-sans text-sm text-foreground flex-1">{step}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
+              </>
+            )}
           </ScrollView>
         </View>
       </View>
