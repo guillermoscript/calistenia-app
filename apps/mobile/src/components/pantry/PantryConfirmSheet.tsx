@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { PANTRY_CATEGORY_ORDER, normalizePantryName } from '@calistenia/core/lib/pantry'
+import { Chip } from '@/components/ui/chip'
 import type { PantryItem, PantryParsedItem, PantryParseResult, PantryUnit } from '@calistenia/core/types'
 
 const UNITS: (PantryUnit | null)[] = [null, 'g', 'kg', 'ml', 'l', 'unidad', 'paquete']
@@ -113,12 +114,6 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                         placeholderTextColor="hsl(0 0% 45%)"
                         className="h-9 w-16 rounded-md border border-input bg-background px-2 text-center font-mono text-xs text-foreground"
                       />
-                      <Pressable
-                        onPress={() => updateDraft(i, { unit: UNITS[(UNITS.indexOf(it.unit) + 1) % UNITS.length] })}
-                        className="h-9 min-w-16 items-center justify-center rounded-md border border-border px-2 active:bg-lime/10"
-                      >
-                        <Text className="font-mono text-xs text-muted-foreground">{it.unit ?? '—'}</Text>
-                      </Pressable>
                       <TextInput
                         value={it.price_total == null ? '' : String(it.price_total)}
                         onChangeText={v => updateDraft(i, { price_total: parseNum(v) })}
@@ -128,6 +123,24 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                         className="h-9 w-20 rounded-md border border-input bg-background px-2 text-center font-mono text-xs text-foreground"
                       />
                     </View>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      keyboardShouldPersistTaps="handled"
+                      className="mt-2"
+                    >
+                      <View className="flex-row gap-1.5">
+                        {UNITS.map(u => (
+                          <Chip
+                            key={u ?? 'none'}
+                            label={u ?? '—'}
+                            active={it.unit === u}
+                            onPress={() => updateDraft(i, { unit: u })}
+                            className="px-2.5 py-1.5"
+                          />
+                        ))}
+                      </View>
+                    </ScrollView>
                   </View>
                 ))
               ) : (
