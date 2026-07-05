@@ -4,6 +4,7 @@ import { View, Pressable, ScrollView, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { RecipeDetailSheet } from '@/components/pantry/RecipeDetailSheet'
 import type {
   WeeklyMealPlan as WeeklyMealPlanType,
   WeeklyPlanDay,
@@ -24,6 +25,8 @@ interface WeeklyMealPlanProps {
   onDeleteMeal: (planDayId: string, mealId: string) => Promise<void>
   onArchive: () => Promise<void>
   onRefresh: () => Promise<void>
+  hasPantry?: boolean
+  onGenerateFromPantry?: () => Promise<void>
 }
 
 const DAY_NAMES_SHORT = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -59,9 +62,10 @@ interface MealCardProps {
   dayId: string
   onLog: (dayId: string, mealId: string) => Promise<void>
   onDelete: (dayId: string, mealId: string) => Promise<void>
+  onOpenRecipe?: (meal: WeeklyPlannedMeal) => void
 }
 
-function MealCard({ meal, dayId, onLog, onDelete }: MealCardProps) {
+function MealCard({ meal, dayId, onLog, onDelete, onOpenRecipe }: MealCardProps) {
   const { t } = useTranslation()
   const [logging, setLogging] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -96,11 +100,20 @@ function MealCard({ meal, dayId, onLog, onDelete }: MealCardProps) {
         </Text>
       )}
 
-      {/* Macros */}
-      <View className="flex-row gap-3 pt-1">
-        <Text className="font-mono text-[11px] text-sky-500">{meal.protein}g P</Text>
-        <Text className="font-mono text-[11px] text-amber-400">{meal.carbs}g C</Text>
-        <Text className="font-mono text-[11px] text-pink-500">{meal.fat}g G</Text>
+      {/* Macros + receta */}
+      <View className="flex-row items-center justify-between pt-1">
+        <View className="flex-row gap-3">
+          <Text className="font-mono text-[11px] text-sky-500">{meal.protein}g P</Text>
+          <Text className="font-mono text-[11px] text-amber-400">{meal.carbs}g C</Text>
+          <Text className="font-mono text-[11px] text-pink-500">{meal.fat}g G</Text>
+        </View>
+        {meal.recipe && onOpenRecipe && (
+          <Pressable onPress={() => onOpenRecipe(meal)} hitSlop={8}>
+            <Text className="font-mono text-[10px] uppercase tracking-wide text-lime-400">
+              {t('pantryPlan.viewRecipe')} →
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Actions */}
@@ -177,18 +190,28 @@ export default function WeeklyMealPlan({
   onDeleteMeal,
   onArchive,
   onRefresh,
+  hasPantry,
+  onGenerateFromPantry,
 }: WeeklyMealPlanProps) {
   const { t } = useTranslation()
   const todayIndex = getTodayDayIndex()
   const [selectedDayIndex, setSelectedDayIndex] = useState(todayIndex)
   const [generating, setGenerating] = useState(false)
+  const [generatingPantry, setGeneratingPantry] = useState(false)
   const [regeneratingDay, setRegeneratingDay] = useState(false)
   const [archiving, setArchiving] = useState(false)
+  const [recipeMeal, setRecipeMeal] = useState<WeeklyPlannedMeal | null>(null)
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true)
     try { await onGenerate() } finally { setGenerating(false) }
   }, [onGenerate])
+
+  const handleGenerateFromPantry = useCallback(async () => {
+    if (!onGenerateFromPantry) return
+    setGeneratingPantry(true)
+    try { await onGenerateFromPantry() } finally { setGeneratingPantry(false) }
+  }, [onGenerateFromPantry])
 
   const handleRegenerateDay = useCallback(async (dayId: string) => {
     setRegeneratingDay(true)
@@ -248,6 +271,30 @@ export default function WeeklyMealPlan({
               </Text>
             )}
           </Pressable>
+
+          {hasPantry && onGenerateFromPantry && (
+            <Pressable
+              onPress={handleGenerateFromPantry}
+              disabled={generatingPantry}
+              className={cn(
+                'mt-2 rounded-lg border border-lime-400/30 px-4 py-2.5 items-center active:bg-lime-400/10',
+                generatingPantry ? 'opacity-50' : '',
+              )}
+            >
+              {generatingPantry ? (
+                <View className="flex-row items-center gap-2">
+                  <ActivityIndicator size="small" color="#a3e635" />
+                  <Text className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+                    {t('pantryPlan.generatingWeek')}
+                  </Text>
+                </View>
+              ) : (
+                <Text className="font-bebas text-base tracking-wide text-lime-400">
+                  {t('pantryPlan.fromPantry')}
+                </Text>
+              )}
+            </Pressable>
+          )}
         </View>
       </View>
     )
@@ -271,6 +318,22 @@ export default function WeeklyMealPlan({
         </View>
 
         <View className="flex-row gap-2 items-center mt-1">
+          {hasPantry && onGenerateFromPantry && (
+            <Pressable
+              onPress={handleGenerateFromPantry}
+              disabled={generatingPantry}
+              className="rounded-lg border border-lime-400/30 px-3 py-1.5 active:bg-lime-400/10"
+            >
+              {generatingPantry ? (
+                <ActivityIndicator size="small" color="#a3e635" />
+              ) : (
+                <Text className="font-bebas text-sm tracking-widest text-lime-400">
+                  {t('pantryPlan.fromPantry')}
+                </Text>
+              )}
+            </Pressable>
+          )}
+
           <Pressable
             onPress={handleGenerate}
             disabled={generating}
@@ -381,6 +444,7 @@ export default function WeeklyMealPlan({
                 dayId={selectedDay.id}
                 onLog={onLogMeal}
                 onDelete={onDeleteMeal}
+                onOpenRecipe={setRecipeMeal}
               />
             ))
           ) : (
@@ -421,6 +485,13 @@ export default function WeeklyMealPlan({
           </Text>
         </View>
       )}
+
+      <RecipeDetailSheet
+        visible={recipeMeal != null}
+        mealLabel={recipeMeal?.label ?? ''}
+        recipe={recipeMeal?.recipe ?? null}
+        onClose={() => setRecipeMeal(null)}
+      />
     </View>
   )
 }

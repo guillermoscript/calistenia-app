@@ -2600,5 +2600,7 @@
   "pantryPlan.limitedBy": "te limita: {{ingredient}}",
   "pantryPlan.planFor": "Plan para {{date}}",
   "pantryPlan.viewRecipe": "Ver receta",
-  "pantryPlan.error": "No se pudo generar. Intenta de nuevo."
+  "pantryPlan.error": "No se pudo generar. Intenta de nuevo.",
+  "pantryPlan.fromPantry": "Desde mi despensa",
+  "pantryPlan.generatingWeek": "Generando plan desde tu despensa…"
 }
