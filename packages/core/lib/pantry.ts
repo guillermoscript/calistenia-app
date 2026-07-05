@@ -42,3 +42,8 @@ export function daysUntil(date: string | null, today: string): number | null {
   if (isNaN(a.getTime()) || isNaN(b.getTime())) return null
   return Math.round((b.getTime() - a.getTime()) / 86400000)
 }
+
+/** lowercase, sin acentos, trim — mismo criterio que name_normalized del parser. */
+export function normalizePantryName(name: string): string {
+  return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}

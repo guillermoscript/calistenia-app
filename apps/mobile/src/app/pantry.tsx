@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
-import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import {
-  useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, usePantryItems,
+  useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, usePantryHistory, usePantryItems,
 } from '@calistenia/core/hooks/usePantry'
 import { parsePantry } from '@calistenia/core/lib/pantry-api'
+import { daysUntil } from '@calistenia/core/lib/pantry'
 import type { PantryItem, PantryParsedItem, PantryParseResult } from '@calistenia/core/types'
 import { PantryTable } from '@/components/pantry/PantryTable'
 import { PantryChatInput } from '@/components/pantry/PantryChatInput'
@@ -23,6 +25,7 @@ export default function PantryScreen() {
   const userId = authUser?.id ?? null
 
   const { data: items = [] } = usePantryItems(userId)
+  const { data: history = [] } = usePantryHistory(userId)
   const addItems = useAddPantryItems(userId)
   const adjustItem = useAdjustPantryItem(userId)
   const deleteItem = useDeletePantryItem(userId)
@@ -100,6 +103,36 @@ export default function PantryScreen() {
     }
   }
 
+  const openManualDraft = (draftItems: PantryParsedItem[]) => {
+    setParseResult({ intent: 'add', items: draftItems, reply: '' })
+  }
+
+  const quickReAdd = (h: PantryItem) => {
+    openManualDraft([{
+      name: h.name,
+      name_normalized: h.nameNormalized,
+      category: h.category,
+      quantity: h.quantity,
+      unit: h.unit,
+      price_total: null,
+      expiry_days: daysUntil(h.expiryEstimate, h.purchaseDate ?? ''), // vida útil histórica como nueva estimación
+      confidence: 'high',
+    }])
+  }
+
+  const handleManualAdd = () => {
+    openManualDraft([{
+      name: '',
+      name_normalized: '',
+      category: 'otro',
+      quantity: null,
+      unit: null,
+      price_total: null,
+      expiry_days: null,
+      confidence: 'high',
+    }])
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-row items-center gap-2 px-2 py-1">
@@ -114,7 +147,7 @@ export default function PantryScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView className="flex-1" behavior="padding">
         <View className="flex-1">
           <PantryTable items={items} onPressItem={setEditing} onExample={handleSend} />
         </View>
@@ -123,7 +156,27 @@ export default function PantryScreen() {
             <Text className="text-sm text-foreground">{reply}</Text>
           </View>
         )}
-        <PantryChatInput onSend={handleSend} busy={busy} />
+        {history.length > 0 && (
+          <View className="border-t border-border px-3 pt-2">
+            <Text className="mb-1 font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">
+              {t('pantry.recentKicker')}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <View className="flex-row gap-2 pb-1">
+                {history.map(h => (
+                  <Pressable
+                    key={h.nameNormalized}
+                    onPress={() => quickReAdd(h)}
+                    className="border border-border px-3 py-1.5 active:border-lime/40 active:bg-lime/10"
+                  >
+                    <Text className="font-mono text-xs text-foreground">{h.name}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        )}
+        <PantryChatInput onSend={handleSend} busy={busy} onManualAdd={handleManualAdd} />
       </KeyboardAvoidingView>
 
       <PantryConfirmSheet

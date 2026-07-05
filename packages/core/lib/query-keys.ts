@@ -179,5 +179,6 @@ export const qk = {
   // — Despensa (pantry, épica #153/#170) —
   pantry: {
     list: (userId: string | null) => ['pantry', 'list', userId] as const,
+    history: (userId: string | null) => ['pantry', 'history', userId] as const,
   },
 } as const

@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
+import { PANTRY_CATEGORY_ORDER, normalizePantryName } from '@calistenia/core/lib/pantry'
 import type { PantryItem, PantryParsedItem, PantryParseResult, PantryUnit } from '@calistenia/core/types'
 
 const UNITS: (PantryUnit | null)[] = [null, 'g', 'kg', 'ml', 'l', 'unidad', 'paquete']
@@ -37,7 +38,7 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
   if (!result) return null
   const isAdd = result.intent === 'add'
   const matched = matches.filter(m => m.match != null)
-  const canConfirm = isAdd ? draft.length > 0 : matched.length > 0
+  const canConfirm = isAdd ? (draft.length > 0 && draft.every(d => d.name.trim().length > 0)) : matched.length > 0
 
   const updateDraft = (idx: number, patch: Partial<PantryParsedItem>) => {
     setDraft(d => d.map((it, i) => (i === idx ? { ...it, ...patch } : it)))
@@ -78,11 +79,22 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                 draft.map((it, i) => (
                   <View key={`${it.name_normalized}-${i}`} className="border-b border-border py-3">
                     <View className="flex-row items-center justify-between">
-                      <Text className="font-sans-medium text-foreground" numberOfLines={1}>{it.name}</Text>
+                      <TextInput
+                        value={it.name}
+                        onChangeText={v => updateDraft(i, { name: v, name_normalized: normalizePantryName(v) })}
+                        placeholder={t('pantry.namePlaceholder')}
+                        placeholderTextColor="hsl(0 0% 45%)"
+                        className="flex-1 p-0 font-sans-medium text-foreground"
+                      />
                       <View className="flex-row items-center gap-2">
-                        <Text className="font-mono text-[10px] uppercase text-muted-foreground">
-                          {t(`pantry.categories.${it.category}`)}
-                        </Text>
+                        <Pressable
+                          onPress={() => updateDraft(i, { category: PANTRY_CATEGORY_ORDER[(PANTRY_CATEGORY_ORDER.indexOf(it.category) + 1) % PANTRY_CATEGORY_ORDER.length] })}
+                          hitSlop={6}
+                        >
+                          <Text className="font-mono text-[10px] uppercase text-muted-foreground">
+                            {t(`pantry.categories.${it.category}`)}
+                          </Text>
+                        </Pressable>
                         <Pressable onPress={() => removeDraft(i)} hitSlop={8} className="p-1">
                           <X size={14} color="hsl(0 0% 55%)" />
                         </Pressable>

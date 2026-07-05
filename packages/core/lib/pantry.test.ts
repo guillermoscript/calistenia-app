@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { daysUntil, expiryFromDays, groupPantryByCategory } from './pantry'
+import { daysUntil, expiryFromDays, groupPantryByCategory, normalizePantryName } from './pantry'
 import type { PantryItem } from '../types'
+
+describe('normalizePantryName', () => {
+  it('minúsculas, sin acentos, trim', () => {
+    expect(normalizePantryName('  Plátano Maduro ')).toBe('platano maduro')
+  })
+})
 
 describe('expiryFromDays', () => {
   it('suma días a la fecha base', () => {

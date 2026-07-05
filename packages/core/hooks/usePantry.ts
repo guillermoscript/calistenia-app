@@ -42,6 +42,30 @@ export function usePantryItems(userId: string | null) {
   })
 }
 
+/** Historial dedupe por name_normalized (todas las status) para quick re-add. */
+export function usePantryHistory(userId: string | null) {
+  return useQuery({
+    queryKey: qk.pantry.history(userId),
+    enabled: !!userId,
+    queryFn: async (): Promise<PantryItem[]> => {
+      const res = await pb.collection('pantry_items').getFullList({
+        filter: pb.filter('user = {:uid}', { uid: userId! }),
+        sort: '-created',
+      })
+      const seen = new Set<string>()
+      const out: PantryItem[] = []
+      for (const r of res) {
+        const it = mapRecord(r)
+        if (seen.has(it.nameNormalized)) continue
+        seen.add(it.nameNormalized)
+        out.push(it)
+        if (out.length >= 8) break
+      }
+      return out
+    },
+  })
+}
+
 /** Batch: crea items + su evento add. REGLA DE ORO: nunca qty sin evento. */
 export function useAddPantryItems(userId: string | null) {
   const qc = useQueryClient()
@@ -77,7 +101,10 @@ export function useAddPantryItems(userId: string | null) {
       }
       return created
     },
-    onSettled: () => { qc.invalidateQueries({ queryKey: qk.pantry.list(userId) }) },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
+      qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
+    },
   })
 }
 
@@ -117,7 +144,10 @@ export function useAdjustPantryItem(userId: string | null) {
       const rec = await pb.collection('pantry_items').update(item.id, patch)
       return mapRecord(rec)
     },
-    onSettled: () => { qc.invalidateQueries({ queryKey: qk.pantry.list(userId) }) },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
+      qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
+    },
   })
 }
 
@@ -127,6 +157,9 @@ export function useDeletePantryItem(userId: string | null) {
     mutationFn: async (itemId: string): Promise<void> => {
       await pb.collection('pantry_items').delete(itemId)  // events cascadean
     },
-    onSettled: () => { qc.invalidateQueries({ queryKey: qk.pantry.list(userId) }) },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
+      qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
+    },
   })
 }

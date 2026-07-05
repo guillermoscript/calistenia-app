@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { ActivityIndicator, Pressable, TextInput, View } from 'react-native'
-import { Send } from 'lucide-react-native'
+import { Plus, Send } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-export function PantryChatInput({ onSend, busy }: {
+export function PantryChatInput({ onSend, busy, onManualAdd }: {
   onSend: (text: string) => void
   busy: boolean
+  onManualAdd: () => void
 }) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
@@ -19,6 +20,14 @@ export function PantryChatInput({ onSend, busy }: {
 
   return (
     <View className="flex-row items-center gap-2 border-t border-border bg-background px-3 py-2">
+      <Pressable
+        onPress={onManualAdd}
+        disabled={busy}
+        accessibilityLabel={t('pantry.manualAdd')}
+        className="size-11 items-center justify-center rounded-md border border-border active:bg-lime/10"
+      >
+        <Plus size={18} color="hsl(0 0% 55%)" />
+      </Pressable>
       <TextInput
         value={text}
         onChangeText={v => setText(v.slice(0, 500))}
