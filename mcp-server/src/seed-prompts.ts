@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * Seeds the three AI prompts into Langfuse Prompt Management.
- * Run once: npx tsx src/seed-prompts.ts
+ * Seeds AI prompts into Langfuse Prompt Management.
+ * Todos: npx tsx src/seed-prompts.ts
+ * Solo algunos: npx tsx src/seed-prompts.ts pantry-parser pantry-plan-generator
+ * (re-seedear un prompt existente crea una versión nueva en Langfuse)
  */
 
 import dotenv from "dotenv";
 dotenv.config();
 
 import { Langfuse } from "langfuse";
+import { FALLBACKS } from "./api/prompts";
 
 const langfuse = new Langfuse({
   secretKey: process.env.LANGFUSE_SECRET_KEY!,
@@ -80,10 +83,27 @@ Tu tarea es diseñar comidas para completar los macros restantes del día del us
 - El campo "notes" debe dar un consejo breve y útil relacionado con los macros o el objetivo del día.
 - Responde siempre en español.`,
   },
+  // Despensa (#170/#171): el texto vive en FALLBACKS (api/prompts.ts) — única fuente de verdad.
+  {
+    name: "pantry-parser",
+    labels: ["production", "latest"],
+    prompt: FALLBACKS["pantry-parser"],
+  },
+  {
+    name: "pantry-plan-generator",
+    labels: ["production", "latest"],
+    prompt: FALLBACKS["pantry-plan-generator"],
+  },
 ];
 
 async function main() {
-  for (const { name, prompt, labels } of prompts) {
+  const only = process.argv.slice(2);
+  const selected = only.length ? prompts.filter((p) => only.includes(p.name)) : prompts;
+  if (!selected.length) {
+    console.error(`No prompts match ${only.join(", ")}. Available: ${prompts.map((p) => p.name).join(", ")}`);
+    process.exit(1);
+  }
+  for (const { name, prompt, labels } of selected) {
     try {
       await langfuse.createPrompt({
         name,
