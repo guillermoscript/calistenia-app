@@ -535,6 +535,20 @@ export default function NutritionTab() {
           <MenuButton className="mt-1" />
         </View>
 
+        {/* Despensa entry point */}
+        <Pressable
+          onPress={() => router.push('/pantry')}
+          className="mt-3 flex-row items-center justify-between rounded-xl border border-border bg-card px-4 py-3 active:border-lime-400/40"
+        >
+          <View>
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              {t('pantry.kicker')}
+            </Text>
+            <Text className="font-bebas text-xl text-foreground">{t('pantry.title')}</Text>
+          </View>
+          <ChevronRight size={16} color="hsl(0 0% 55%)" />
+        </Pressable>
+
         {/* Phase change banner (US-14) */}
         {phaseChangeBanner && (
           <Card className="border-lime-400/30 bg-lime-400/5 mb-4">
