@@ -144,13 +144,36 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
               <Plus size={12} color="hsl(0 0% 55%)" />
             </Pressable>
             <Text className="font-mono text-[10px] text-muted-foreground">{t('shopping.daysSuffix')}</Text>
-            <View className="ml-auto">
-              <Button size="sm" variant="lime" onPress={onGenerate} disabled={generate.isPending}>
-                <Text>{list ? t('shopping.regenerate') : t('shopping.generate')}</Text>
-              </Button>
-            </View>
+            {list && (
+              <View className="ml-auto">
+                <Button size="sm" variant="lime" onPress={onGenerate} disabled={generate.isPending}>
+                  <Text>{t('shopping.regenerate')}</Text>
+                </Button>
+              </View>
+            )}
           </View>
         </View>
+
+        {/* ── Errores visibles (lección F2: nada de fallos silenciosos) ── */}
+        {(generate.isError || complete.isError || toggle.isError) && (
+          <View className="border-b border-red-500/40 bg-red-500/10 px-3 py-2">
+            <Text className="font-mono text-[10px] uppercase tracking-[2px] text-red-500">
+              {t('shopping.error')}
+            </Text>
+          </View>
+        )}
+
+        {/* ── First run: CTA primario con contexto ── */}
+        {!list && (
+          <View className="py-10 px-2">
+            <Text className="text-center font-sans text-sm text-muted-foreground">
+              {t('shopping.firstRun')}
+            </Text>
+            <Button className="mt-5" variant="limeSolid" onPress={onGenerate} disabled={generate.isPending}>
+              <Text>{t('shopping.generate')}</Text>
+            </Button>
+          </View>
+        )}
 
         {/* ── Lista ── */}
         {list && list.items.length === 0 && (
@@ -179,7 +202,7 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                   {it.name}
                 </Text>
                 {it.reasons.map((r) => (
-                  <Text key={r} className={`rounded border px-1 py-0.5 font-mono text-[8px] uppercase ${REASON_CLS[r]}`}>
+                  <Text key={r} className={`rounded border px-1 py-0.5 font-mono text-[9px] uppercase ${REASON_CLS[r]}`}>
                     {t(`shopping.reason.${r}`)}
                   </Text>
                 ))}
@@ -196,7 +219,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                   />
                 ) : (
                   it.est_price != null && (
-                    <Text className="font-mono text-xs text-lime">~${formatMoney(it.est_price)}</Text>
+                    // muted, no lime: precio estimado es dato, no interacción
+                    <Text className="font-mono text-xs text-muted-foreground">~${formatMoney(it.est_price)}</Text>
                   )
                 )}
               </View>
@@ -217,7 +241,7 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           <View className="border-t border-border py-3">
             <View className="flex-row justify-between">
               <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
-                {t('shopping.totalEst')} <Text className="font-bebas text-lg text-foreground">~${formatMoney(totals.est)}</Text>
+                {t('shopping.totalEst')} <Text className="font-bebas text-lg text-foreground">{totals.est > 0 ? `~$${formatMoney(totals.est)}` : '—'}</Text>
               </Text>
               <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
                 {t('shopping.totalReal')} <Text className="font-bebas text-lg text-lime">${formatMoney(totals.actual)}</Text>

@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft } from 'lucide-react-native'
+import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
@@ -233,9 +233,16 @@ export default function RecipeDetailScreen() {
           {hasAnyPrice && (
             <Pressable onPress={() => setShowBreakdown((v) => !v)} className="border-t border-border py-3">
               <View className="flex-row items-baseline justify-between">
-                <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {t('shopping.costPerServing')}
-                </Text>
+                <View className="flex-row items-center gap-1">
+                  <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {t('shopping.costPerServing')}
+                  </Text>
+                  {showBreakdown ? (
+                    <ChevronUp size={12} color={MUTED} />
+                  ) : (
+                    <ChevronDown size={12} color={MUTED} />
+                  )}
+                </View>
                 <Text className="font-bebas text-2xl text-lime-400">
                   {cost!.hasEstimates ? '~' : ''}${formatMoney(cost!.perServing)}
                 </Text>
