@@ -188,4 +188,9 @@ export const qk = {
     lastDone: (userId: string | null) => ['shopping', 'lastDone', userId] as const,
     cadence: (userId: string | null) => ['shopping', 'cadence', userId] as const,
   },
+
+  // — Recetas guardadas (issue #179) —
+  savedRecipes: {
+    list: (userId: string | null) => ['savedRecipes', 'list', userId] as const,
+  },
 } as const

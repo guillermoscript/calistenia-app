@@ -133,3 +133,17 @@ export interface ShoppingList {
   total_actual: number | null
   updated?: string
 }
+
+// ── Recetas guardadas (F4-ready, issue #179) ────────────────────────────────
+
+/** Receta guardada por el usuario (#179). Identidad = label_normalized (único por user). */
+export interface SavedRecipe {
+  id: string
+  user: string
+  label: string
+  labelNormalized: string
+  recipe: Recipe
+  timesUsed: number
+  created: string
+  updated: string
+}
