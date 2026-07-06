@@ -55,23 +55,38 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
     [planDays],
   )
 
-  const onGenerate = () =>
-    generate.mutate({
-      planIngredients,
-      linkedPlan: activePlan?.id ?? null,
-      horizonDays: next.daysLeft > 0 ? next.daysLeft : cadence,
-      lastPurchaseDate: lastDone,
-    })
+  const doGenerate = () =>
+    generate.mutate(
+      {
+        planIngredients,
+        linkedPlan: activePlan?.id ?? null,
+        horizonDays: next.daysLeft > 0 ? next.daysLeft : cadence,
+        lastPurchaseDate: lastDone,
+      },
+      { onSuccess: () => setPriceDrafts({}) }, // drafts viejos no aplican a la lista nueva
+    )
+
+  const onGenerate = () => {
+    // Regenerar descarta checks y precios ya cargados — confirmar si hay progreso
+    if (list?.items.some((i) => i.checked)) {
+      Alert.alert(t('shopping.regenConfirmTitle'), t('shopping.regenConfirmMsg'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.confirm'), style: 'destructive', onPress: doGenerate },
+      ])
+      return
+    }
+    doGenerate()
+  }
 
   const onToggle = (index: number, it: ShoppingListItem) => {
     if (!list) return
-    toggle.mutate({ list, index, checked: !it.checked })
+    toggle.mutate({ listId: list.id, index, checked: !it.checked })
   }
 
   const onPriceCommit = (index: number) => {
     if (!list) return
     const price = parseNum(priceDrafts[index] ?? '')
-    toggle.mutate({ list, index, checked: true, actualPrice: price })
+    toggle.mutate({ listId: list.id, index, checked: true, actualPrice: price })
   }
 
   const onDone = () => {

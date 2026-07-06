@@ -2594,6 +2594,8 @@
   "shopping.daysSuffix": "days",
   "shopping.generate": "Generate list",
   "shopping.regenerate": "Regenerate",
+  "shopping.regenConfirmTitle": "Regenerate the list?",
+  "shopping.regenConfirmMsg": "Checked items and entered prices will be lost.",
   "shopping.empty": "Nothing to buy — your pantry covers the plan",
   "shopping.reason.plan": "PLAN",
   "shopping.reason.se_acabo": "OUT",

@@ -1,10 +1,11 @@
+import { useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr } from '../lib/dateUtils'
 import { buildCycleShoppingList, shoppingTotals } from '../lib/shopping'
 import { mapPantryRecord } from './usePantry'
-import type { RecipeIngredient, ShoppingList, ShoppingListItem } from '../types'
+import type { RecipeIngredient, ShoppingList } from '../types'
 
 const DEFAULT_CADENCE = 7
 
@@ -145,30 +146,38 @@ export function useGenerateShoppingList(userId: string | null) {
 }
 
 interface ToggleInput {
-  list: ShoppingList
+  listId: string
   index: number
   checked: boolean
   actualPrice?: number | null
 }
 
-/** Marca/desmarca un item y opcionalmente fija precio real; recalcula total_actual. */
+/**
+ * Marca/desmarca un item y opcionalmente fija precio real; recalcula total_actual.
+ * Los PATCH van SERIALIZADOS y cada uno persiste el estado ACUMULADO de la cache
+ * (onMutate corre antes que mutationFn): dos toggles rápidos no se pisan, y el
+ * invalidate solo dispara cuando no queda otro toggle en vuelo (si no, el
+ * refetch intermedio revertiría los optimistas pendientes).
+ */
 export function useToggleShoppingItem(userId: string | null) {
   const qc = useQueryClient()
+  const chain = useRef<Promise<unknown>>(Promise.resolve())
   return useMutation({
-    mutationFn: async ({ list, index, checked, actualPrice }: ToggleInput): Promise<ShoppingList> => {
-      const items: ShoppingListItem[] = list.items.map((it, i) =>
-        i === index
-          ? { ...it, checked, actual_price: actualPrice === undefined ? it.actual_price : actualPrice }
-          : it,
-      )
-      const totals = shoppingTotals(items)
-      const rec = await pb.collection('shopping_lists').update(list.id, {
-        items,
-        total_actual: totals.actual,
-      })
-      return mapList(rec)
+    mutationKey: ['shopping-toggle', userId],
+    mutationFn: async ({ listId }: ToggleInput): Promise<void> => {
+      const run = async () => {
+        const current = qc.getQueryData<ShoppingList | null>(qk.shopping.active(userId))
+        if (!current || current.id !== listId) return
+        await pb.collection('shopping_lists').update(listId, {
+          items: current.items,
+          total_actual: shoppingTotals(current.items).actual,
+        })
+      }
+      const p = chain.current.then(run, run)
+      chain.current = p
+      await p
     },
-    onMutate: async ({ list, index, checked, actualPrice }) => {
+    onMutate: async ({ index, checked, actualPrice }) => {
       // Optimista: la UI de checklist no puede esperar el roundtrip
       qc.setQueryData<ShoppingList | null>(qk.shopping.active(userId), (prev) => {
         if (!prev) return prev
@@ -181,7 +190,9 @@ export function useToggleShoppingItem(userId: string | null) {
       })
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: qk.shopping.active(userId) })
+      if (qc.isMutating({ mutationKey: ['shopping-toggle', userId] }) === 1) {
+        qc.invalidateQueries({ queryKey: qk.shopping.active(userId) })
+      }
     },
   })
 }

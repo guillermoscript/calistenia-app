@@ -2594,6 +2594,8 @@
   "shopping.daysSuffix": "días",
   "shopping.generate": "Generar lista",
   "shopping.regenerate": "Regenerar",
+  "shopping.regenConfirmTitle": "¿Regenerar la lista?",
+  "shopping.regenConfirmMsg": "Perderás los items marcados y los precios cargados.",
   "shopping.empty": "Nada que comprar — tu despensa cubre el plan",
   "shopping.reason.plan": "PLAN",
   "shopping.reason.se_acabo": "SE ACABÓ",
