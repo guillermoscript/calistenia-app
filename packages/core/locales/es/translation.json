@@ -2593,6 +2593,7 @@
   "shopping.cadenceLabel": "Compro cada",
   "shopping.daysSuffix": "días",
   "shopping.generate": "Generar lista",
+  "shopping.addPlaceholder": "Agregar producto…",
   "shopping.firstRun": "Tu lista sale del plan activo, lo que se acabó y lo que vence antes de tu próxima compra.",
   "shopping.error": "No se pudo guardar. Reintenta.",
   "shopping.regenerate": "Regenerar",

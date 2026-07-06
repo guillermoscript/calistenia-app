@@ -4,8 +4,9 @@ import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr } from '../lib/dateUtils'
 import { buildCycleShoppingList, shoppingTotals } from '../lib/shopping'
+import { normalizePantryName } from '../lib/pantry'
 import { mapPantryRecord } from './usePantry'
-import type { RecipeIngredient, ShoppingList } from '../types'
+import type { RecipeIngredient, ShoppingList, ShoppingListItem } from '../types'
 
 const DEFAULT_CADENCE = 7
 
@@ -115,6 +116,16 @@ export function useGenerateShoppingList(userId: string | null) {
         today: todayStr(),
         sinceDate: lastPurchaseDate,
       })
+      // Los items agregados A MANO (reasons vacío) sobreviven al regenerar
+      const prev = qc.getQueryData<ShoppingList | null>(qk.shopping.active(userId))
+      if (prev) {
+        const seen = new Set(items.map((it) => `${it.name_normalized}|${it.unit ?? '?'}`))
+        for (const it of prev.items) {
+          if (it.reasons.length === 0 && !seen.has(`${it.name_normalized}|${it.unit ?? '?'}`)) {
+            items.push(it)
+          }
+        }
+      }
       const totals = shoppingTotals(items)
       const payload = {
         user: userId,
@@ -137,6 +148,49 @@ export function useGenerateShoppingList(userId: string | null) {
       const rec = existing
         ? await pb.collection('shopping_lists').update(existing.id, payload)
         : await pb.collection('shopping_lists').create(payload)
+      return mapList(rec)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.shopping.active(userId) })
+    },
+  })
+}
+
+/**
+ * Alta manual a la lista (sin razón: badges vacíos, sobrevive al regenerar).
+ * Si no hay lista activa la crea con ese único item.
+ */
+export function useAddShoppingItem(userId: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ name }: { name: string }): Promise<ShoppingList> => {
+      if (!userId) throw new Error('No user')
+      const item: ShoppingListItem = {
+        name: name.trim(),
+        name_normalized: normalizePantryName(name),
+        qty: null,
+        unit: null,
+        est_price: null,
+        currency: 'USD',
+        checked: false,
+        actual_price: null,
+        reasons: [],
+        incompatible_have: null,
+      }
+      const current = qc.getQueryData<ShoppingList | null>(qk.shopping.active(userId))
+      if (current) {
+        const rec = await pb.collection('shopping_lists').update(current.id, {
+          items: [...current.items, item],
+        })
+        return mapList(rec)
+      }
+      const rec = await pb.collection('shopping_lists').create({
+        user: userId,
+        status: 'active',
+        items: [item],
+        total_est: 0,
+        total_actual: 0,
+      })
       return mapList(rec)
     },
     onSettled: () => {

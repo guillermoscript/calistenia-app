@@ -8,6 +8,7 @@ import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import {
   useActiveShoppingList,
+  useAddShoppingItem,
   useGenerateShoppingList,
   useToggleShoppingItem,
   useCompletePurchase,
@@ -46,7 +47,9 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
   const generate = useGenerateShoppingList(userId)
   const toggle = useToggleShoppingItem(userId)
   const complete = useCompletePurchase(userId)
+  const addItem = useAddShoppingItem(userId)
   const [priceDrafts, setPriceDrafts] = useState<Record<number, string>>({})
+  const [draftName, setDraftName] = useState('')
 
   const today = todayStr()
   const next = nextPurchaseInfo(lastDone, cadence, today)
@@ -87,6 +90,11 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
     if (!list) return
     const price = parseNum(priceDrafts[index] ?? '')
     toggle.mutate({ listId: list.id, index, checked: true, actualPrice: price })
+  }
+
+  const onAdd = () => {
+    if (!draftName.trim()) return
+    addItem.mutate({ name: draftName }, { onSuccess: () => setDraftName('') })
   }
 
   const onDone = () => {
@@ -184,17 +192,19 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           keyExtractor={(_, i) => String(i)}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item: it, index }) => (
-            <View className="border-b border-border py-3">
+            <Pressable
+              onPress={() => onToggle(index, it)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: it.checked }}
+              className="border-b border-border py-3 active:opacity-70"
+            >
               <View className="flex-row items-center gap-3">
-                <Pressable
-                  onPress={() => onToggle(index, it)}
-                  hitSlop={8}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: it.checked }}
-                  className={`size-5 items-center justify-center rounded border ${it.checked ? 'border-lime bg-lime' : 'border-border'}`}
+                {/* checkbox visual — el toggle es la FILA entera (target grande) */}
+                <View
+                  className={`h-6 w-6 items-center justify-center rounded border-2 ${it.checked ? 'border-lime bg-lime' : 'border-muted-foreground/50'}`}
                 >
-                  {it.checked && <Check size={14} color="black" strokeWidth={3} />}
-                </Pressable>
+                  {it.checked && <Check size={15} color="black" strokeWidth={3} />}
+                </View>
                 <Text
                   className={`flex-1 font-sans-medium ${it.checked ? 'text-muted-foreground line-through' : 'text-foreground'}`}
                   numberOfLines={1}
@@ -232,9 +242,32 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                   })}
                 </Text>
               )}
-            </View>
+            </Pressable>
           )}
         />
+
+        {/* ── Alta manual ── */}
+        <View className="flex-row items-center gap-2 border-t border-border py-2">
+          <TextInput
+            placeholder={t('shopping.addPlaceholder')}
+            placeholderTextColor="hsl(0 0% 40%)"
+            value={draftName}
+            onChangeText={setDraftName}
+            onSubmitEditing={onAdd}
+            returnKeyType="done"
+            className="h-10 flex-1 rounded-md border border-input bg-background px-3 font-sans text-sm text-foreground"
+          />
+          <Pressable
+            onPress={onAdd}
+            disabled={!draftName.trim() || addItem.isPending}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('shopping.addPlaceholder')}
+            className={`h-10 w-10 items-center justify-center rounded-md border ${draftName.trim() ? 'border-lime/40 active:bg-lime/10' : 'border-border'}`}
+          >
+            <Plus size={18} color={draftName.trim() ? 'hsl(74 90% 45%)' : 'hsl(0 0% 40%)'} />
+          </Pressable>
+        </View>
 
         {/* ── Footer: totales + Compra hecha ── */}
         {list && list.items.length > 0 && (

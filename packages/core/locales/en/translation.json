@@ -2593,6 +2593,7 @@
   "shopping.cadenceLabel": "I shop every",
   "shopping.daysSuffix": "days",
   "shopping.generate": "Generate list",
+  "shopping.addPlaceholder": "Add product…",
   "shopping.firstRun": "Your list comes from the active plan, what ran out, and what expires before your next purchase.",
   "shopping.error": "Could not save. Try again.",
   "shopping.regenerate": "Regenerate",
