@@ -242,6 +242,19 @@ describe('computeRecipeCost', () => {
     const r = computeRecipeCost([ing({ name_normalized: 'pollo', qty: 1, unit: 'kg' })], pantry, 1)
     expect(r).toMatchObject({ total: 4, perServing: 4, hasEstimates: false })
   })
+  it('real + sin_precio (sin ningún estimada) → hasEstimates true: total incompleto lleva ~', () => {
+    const r = computeRecipeCost(
+      [
+        ing({ name_normalized: 'pollo', qty: 1, unit: 'kg' }),
+        ing({ name: 'Sal', name_normalized: 'sal', qty: 5, unit: 'g' }),
+      ],
+      pantry,
+      1,
+    )
+    expect(r.total).toBe(4)
+    expect(r.hasEstimates).toBe(true)
+    expect(r.breakdown[1].source).toBe('sin_precio')
+  })
   it('estFallback aplica cuando no hay match y marca estimada', () => {
     const r = computeRecipeCost(
       [ing({ name: 'Curry', name_normalized: 'curry', qty: 10, unit: 'g' })],

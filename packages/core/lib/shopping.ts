@@ -315,10 +315,9 @@ export function computeRecipeCost(
       source = 'estimada'
     }
 
-    if (cost != null) {
-      total += cost
-      if (source === 'estimada') hasEstimates = true
-    }
+    if (cost != null) total += cost
+    // sin_precio también fuerza ~: el total está incompleto, no es "real"
+    if (source !== 'real') hasEstimates = true
     breakdown.push({ name: ing.name, cost, source })
   }
 
