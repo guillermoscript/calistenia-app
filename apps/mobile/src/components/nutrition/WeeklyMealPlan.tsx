@@ -196,6 +196,9 @@ export default function WeeklyMealPlan({
   const { t } = useTranslation()
   const router = useRouter()
   const todayIndex = getTodayDayIndex()
+  const hasBuyItems = planDays.some((d) =>
+    (d.meals ?? []).some((m) => m.recipe?.ingredients?.some((i) => i.from === 'buy')),
+  )
   const [selectedDayIndex, setSelectedDayIndex] = useState(todayIndex)
   const [generating, setGenerating] = useState(false)
   const [generatingPantry, setGeneratingPantry] = useState(false)
@@ -335,6 +338,17 @@ export default function WeeklyMealPlan({
         </View>
 
         <View className="flex-row gap-2 items-center mt-1">
+          {hasBuyItems && (
+            <Pressable
+              onPress={() => router.push('/shopping-list')}
+              className="rounded-lg border border-lime-400/30 px-3 py-1.5 active:bg-lime-400/10"
+            >
+              <Text className="font-bebas text-sm tracking-widest text-lime-400">
+                {t('shopping.listButton')}
+              </Text>
+            </Pressable>
+          )}
+
           {hasPantry && onGenerateFromPantry && (
             <Pressable
               onPress={handleGenerateFromPantry}
