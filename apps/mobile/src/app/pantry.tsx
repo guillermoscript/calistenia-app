@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { useRouter } from 'expo-router'
 import { ArrowLeft, ChefHat, ShoppingCart } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +15,7 @@ import { PantryTable } from '@/components/pantry/PantryTable'
 import { PantryChatInput } from '@/components/pantry/PantryChatInput'
 import { PantryConfirmSheet, type ConsumeMatch } from '@/components/pantry/PantryConfirmSheet'
 import { PantryEditSheet } from '@/components/pantry/PantryEditSheet'
+import { KeyboardSpacer } from '@/components/ui/keyboard-spacer'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { Sentry } from '@/lib/instrument'
 
@@ -23,6 +24,7 @@ export default function PantryScreen() {
   const { t } = useTranslation()
   const authUser = useAuthUser()
   const userId = authUser?.id ?? null
+  const insets = useSafeAreaInsets()
 
   const { data: items = [] } = usePantryItems(userId)
   const { data: history = [] } = usePantryHistory(userId)
@@ -187,8 +189,12 @@ export default function PantryScreen() {
         </Pressable>
       </View>
 
-      {/* enabled=false con sheet abierto: el teclado del sheet no debe empujar el chat de fondo */}
-      <KeyboardAvoidingView className="flex-1" behavior="padding" enabled={parseResult == null && editing == null}>
+      {/* KeyboardProvider LOCAL: en MIUI el provider del root (montado al arrancar) pierde
+          el callback de insets de la ventana principal; montarlo al abrir la pantalla lo
+          re-registra (mismo idiom que los sheets en Modal). El KeyboardSpacer del fondo
+          encoge TODO el contenido al abrir el teclado (KAV manual vía Reanimated). */}
+      <KeyboardProvider>
+      <View className="flex-1">
         <View className="flex-1">
           <PantryTable items={items} onPressItem={setEditing} onExample={handleSend} onDeleteItem={handleDelete} />
         </View>
@@ -218,7 +224,9 @@ export default function PantryScreen() {
           </View>
         )}
         <PantryChatInput onSend={handleSend} busy={busy} onManualAdd={handleManualAdd} />
-      </KeyboardAvoidingView>
+        <KeyboardSpacer offset={insets.bottom} />
+      </View>
+      </KeyboardProvider>
 
       <PantryConfirmSheet
         visible={parseResult != null}

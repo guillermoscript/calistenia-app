@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Alert, FlatList, Pressable, TextInput, View } from 'react-native'
-import { KeyboardAvoidingView, KeyboardStickyView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Check, Minus, Plus, X } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
+import { KeyboardSpacer } from '@/components/ui/keyboard-spacer'
 import {
   useActiveShoppingList,
   useAddShoppingItem,
@@ -130,8 +130,10 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
   const totals = list ? shoppingTotals(list.items) : { est: 0, actual: 0 }
   const checkedCount = list?.items.filter((i) => i.checked).length ?? 0
 
+  // KeyboardSpacer al fondo: encoge todo el contenido con el teclado (KAV manual vía
+  // Reanimated) — la lista queda scrolleable completa y el add-bar + footer suben juntos
   return (
-    <KeyboardAvoidingView className="flex-1" behavior="padding">
+    <View className="flex-1">
       <View className="flex-1 px-4">
         {/* ── PRÓXIMA COMPRA · en N días · M items + cadencia ── */}
         <View className="border-b border-border py-3">
@@ -273,9 +275,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           )}
         />
 
-        {/* ── Alta manual: sticky sobre el teclado (KAV no alcanzaba en MIUI) ── */}
-        <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
-          <View className="flex-row items-center gap-2 border-t border-border bg-background py-2">
+        {/* ── Alta manual ── */}
+        <View className="flex-row items-center gap-2 border-t border-border bg-background py-2">
             <TextInput
               placeholder={t('shopping.addPlaceholder')}
               placeholderTextColor="hsl(0 0% 40%)"
@@ -294,9 +295,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
               className={`h-10 w-10 items-center justify-center rounded-md border ${draftName.trim() ? 'border-lime/40 active:bg-lime/10' : 'border-border'}`}
             >
               <Plus size={18} color={draftName.trim() ? 'hsl(74 90% 45%)' : 'hsl(0 0% 40%)'} />
-            </Pressable>
-          </View>
-        </KeyboardStickyView>
+          </Pressable>
+        </View>
 
         {/* ── Footer: totales + Compra hecha ── */}
         {list && list.items.length > 0 && (
@@ -321,6 +321,7 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           </View>
         )}
       </View>
-    </KeyboardAvoidingView>
+      <KeyboardSpacer offset={insets.bottom} />
+    </View>
   )
 }
