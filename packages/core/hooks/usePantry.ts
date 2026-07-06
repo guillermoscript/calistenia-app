@@ -242,3 +242,25 @@ export function useDeletePantryItem(userId: string | null) {
     },
   })
 }
+
+/** Borrado multi-select: fallos aislados por item, se borra lo posible y se reporta al final. */
+export function useDeletePantryItems(userId: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (itemIds: string[]): Promise<void> => {
+      const errors: unknown[] = []
+      for (const id of itemIds) {
+        try {
+          await pb.collection('pantry_items').delete(id)  // events cascadean
+        } catch (e) {
+          errors.push(e)
+        }
+      }
+      if (errors.length > 0) throw errors[0]
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
+      qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
+    },
+  })
+}

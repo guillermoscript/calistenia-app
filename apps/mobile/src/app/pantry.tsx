@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { useCallback, useMemo, useState } from 'react'
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { useRouter } from 'expo-router'
 import { ArrowLeft, ChefHat, ShoppingCart } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import {
-  useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, usePantryHistory, usePantryItems,
+  useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, useDeletePantryItems,
+  usePantryHistory, usePantryItems,
 } from '@calistenia/core/hooks/usePantry'
 import { parsePantry } from '@calistenia/core/lib/pantry-api'
 import { daysUntil } from '@calistenia/core/lib/pantry'
@@ -15,6 +16,7 @@ import { PantryTable } from '@/components/pantry/PantryTable'
 import { PantryChatInput } from '@/components/pantry/PantryChatInput'
 import { PantryConfirmSheet, type ConsumeMatch } from '@/components/pantry/PantryConfirmSheet'
 import { PantryEditSheet } from '@/components/pantry/PantryEditSheet'
+import { SelectionBar } from '@/components/pantry/SelectionBar'
 import { KeyboardSpacer } from '@/components/ui/keyboard-spacer'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { Sentry } from '@/lib/instrument'
@@ -31,11 +33,13 @@ export default function PantryScreen() {
   const addItems = useAddPantryItems(userId)
   const adjustItem = useAdjustPantryItem(userId)
   const deleteItem = useDeletePantryItem(userId)
+  const deleteItems = useDeletePantryItems(userId)
 
   const [busy, setBusy] = useState(false)
   const [reply, setReply] = useState<string | null>(null)
   const [parseResult, setParseResult] = useState<PantryParseResult | null>(null)
   const [editing, setEditing] = useState<PantryItem | null>(null)
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
 
   const matches: ConsumeMatch[] = useMemo(() => {
     if (!parseResult || parseResult.intent === 'add') return []
@@ -114,6 +118,36 @@ export default function PantryScreen() {
       Sentry.captureException(e, { tags: { feature: 'pantry', op: 'still_have_gone' } })
       setReply(t('pantry.saveError'))
     }
+  }
+
+  // estable (funcional) para no romper el memo de las filas de PantryTable
+  const toggleSelect = useCallback((item: PantryItem) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(item.id)) next.delete(item.id)
+      else next.add(item.id)
+      return next
+    })
+  }, [])
+
+  const handleBulkDelete = () => {
+    const ids = [...selectedIds]
+    Alert.alert(t('common.deleteCountTitle', { count: ids.length }), '', [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          setSelectedIds(new Set())
+          try {
+            await deleteItems.mutateAsync(ids)
+          } catch (e) {
+            Sentry.captureException(e, { tags: { feature: 'pantry', op: 'bulk_delete' } })
+            setReply(t('pantry.saveError'))
+          }
+        },
+      },
+    ])
   }
 
   const handleDelete = async (item: PantryItem) => {
@@ -196,7 +230,14 @@ export default function PantryScreen() {
       <KeyboardProvider>
       <View className="flex-1">
         <View className="flex-1">
-          <PantryTable items={items} onPressItem={setEditing} onExample={handleSend} onDeleteItem={handleDelete} />
+          <PantryTable
+            items={items}
+            onPressItem={setEditing}
+            onExample={handleSend}
+            onDeleteItem={handleDelete}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+          />
         </View>
         {reply && (
           <View className="mx-4 mb-2 self-start rounded-xl rounded-bl-none border border-border bg-card px-3 py-2">
@@ -223,7 +264,15 @@ export default function PantryScreen() {
             </ScrollView>
           </View>
         )}
-        <PantryChatInput onSend={handleSend} busy={busy} onManualAdd={handleManualAdd} />
+        {selectedIds.size > 0 ? (
+          <SelectionBar
+            count={selectedIds.size}
+            onDelete={handleBulkDelete}
+            onCancel={() => setSelectedIds(new Set())}
+          />
+        ) : (
+          <PantryChatInput onSend={handleSend} busy={busy} onManualAdd={handleManualAdd} />
+        )}
         <KeyboardSpacer offset={insets.bottom} />
       </View>
       </KeyboardProvider>

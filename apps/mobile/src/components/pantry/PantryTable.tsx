@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { Alert, Pressable, SectionList, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react-native'
+import { Check, X } from 'lucide-react-native'
 import { daysUntil, groupPantryByCategory } from '@calistenia/core/lib/pantry'
 import { formatMoney, roundQty } from '@calistenia/core/lib/shopping'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
@@ -29,19 +29,29 @@ function expiryLabel(item: PantryItem, today: string, expiredText: string): { te
   return null
 }
 
-const Row = memo(function Row({ item, today, expiredText, onPress, onDelete }: {
+const Row = memo(function Row({ item, today, expiredText, selecting, selected, onPress, onToggleSelect, onDelete }: {
   item: PantryItem
   today: string
   expiredText: string
+  selecting: boolean
+  selected: boolean
   onPress: (item: PantryItem) => void
+  onToggleSelect: (item: PantryItem) => void
   onDelete?: (item: PantryItem) => void
 }) {
   const expiry = expiryLabel(item, today, expiredText)
   return (
     <Pressable
-      onPress={() => onPress(item)}
-      className="flex-row items-center gap-3 border-b border-border px-1 py-3 active:opacity-70"
+      onPress={() => (selecting ? onToggleSelect(item) : onPress(item))}
+      onLongPress={() => onToggleSelect(item)}
+      accessibilityState={selecting ? { selected } : undefined}
+      className={`flex-row items-center gap-3 border-b border-border px-1 py-3 active:opacity-70 ${selected ? 'bg-lime/10' : ''}`}
     >
+      {selecting ? (
+        <View className={`h-5 w-5 items-center justify-center rounded border-2 ${selected ? 'border-lime bg-lime' : 'border-muted-foreground/50'}`}>
+          {selected ? <Check size={13} color="black" strokeWidth={3} /> : null}
+        </View>
+      ) : null}
       <View className={`size-1.5 rounded-full ${CONFIDENCE_DOT[item.confidence] ?? 'bg-muted-foreground'}`} />
       <Text className="flex-1 font-sans-medium text-foreground" numberOfLines={1}>{item.name}</Text>
       {expiry && <Text className={`font-mono text-[10px] ${expiry.cls}`}>{expiry.text}</Text>}
@@ -49,7 +59,7 @@ const Row = memo(function Row({ item, today, expiredText, onPress, onDelete }: {
       {item.priceTotal != null && (
         <Text className="font-mono text-xs text-lime">${formatMoney(item.priceTotal)}</Text>
       )}
-      {onDelete && (
+      {onDelete && !selecting ? (
         <Pressable
           onPress={() => onDelete(item)}
           hitSlop={6}
@@ -58,7 +68,7 @@ const Row = memo(function Row({ item, today, expiredText, onPress, onDelete }: {
         >
           <X size={16} color="hsl(0 0% 40%)" />
         </Pressable>
-      )}
+      ) : null}
     </Pressable>
   )
 })
@@ -73,11 +83,13 @@ function SectionHeader({ label }: { label: string }) {
   )
 }
 
-export function PantryTable({ items, onPressItem, onExample, onDeleteItem }: {
+export function PantryTable({ items, onPressItem, onExample, onDeleteItem, selectedIds, onToggleSelect }: {
   items: PantryItem[]
   onPressItem: (item: PantryItem) => void
   onExample: (text: string) => void
   onDeleteItem?: (item: PantryItem) => void
+  selectedIds: ReadonlySet<string>
+  onToggleSelect: (item: PantryItem) => void
 }) {
   const { t } = useTranslation()
   const today = todayStr()
@@ -103,8 +115,18 @@ export function PantryTable({ items, onPressItem, onExample, onDeleteItem }: {
         <SectionHeader label={t(`pantry.categories.${section.category}`)} />
       )}
       renderItem={({ item }) => (
-        <Row item={item} today={today} expiredText={expiredText} onPress={onPressItem} onDelete={confirmDelete} />
+        <Row
+          item={item}
+          today={today}
+          expiredText={expiredText}
+          selecting={selectedIds.size > 0}
+          selected={selectedIds.has(item.id)}
+          onPress={onPressItem}
+          onToggleSelect={onToggleSelect}
+          onDelete={confirmDelete}
+        />
       )}
+      extraData={selectedIds}
       ListEmptyComponent={
         <View className="items-center px-6 py-14">
           <Text className="font-bebas text-2xl text-foreground">{t('pantry.emptyTitle')}</Text>

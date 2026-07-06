@@ -278,6 +278,33 @@ export function useRemoveShoppingItem(userId: string | null) {
   })
 }
 
+/** Quita varias líneas de una vez (multi-select) — un solo update al record. */
+export function useRemoveShoppingItems(userId: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ listId }: { listId: string; indices: number[] }): Promise<void> => {
+      // mismo contrato que el remove unitario: onMutate YA filtró la cache, aquí se persiste
+      const current = qc.getQueryData<ShoppingList | null>(qk.shopping.active(userId))
+      if (!current || current.id !== listId) return
+      await pb.collection('shopping_lists').update(listId, {
+        items: current.items,
+        total_actual: shoppingTotals(current.items).actual,
+      })
+    },
+    onMutate: async ({ indices }) => {
+      const drop = new Set(indices)
+      qc.setQueryData<ShoppingList | null>(qk.shopping.active(userId), (prev) => {
+        if (!prev) return prev
+        const items = prev.items.filter((_, i) => !drop.has(i))
+        return { ...prev, items, total_actual: shoppingTotals(items).actual }
+      })
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.shopping.active(userId) })
+    },
+  })
+}
+
 /**
  * Compra hecha — transaccional en orden (issue #172): (1) mete cada item
  * checked a la despensa, (2) SOLO al final marca la lista done. Si algo falla
