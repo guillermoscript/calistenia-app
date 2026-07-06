@@ -1,6 +1,9 @@
 import { AI_API_URL } from './ai-api'
 import { pb } from './pocketbase'
-import type { HowManyMealsResult, PantryDayPlanResult, PantryParseResult, PantrySnapshotItem } from '../types'
+import type {
+  HowManyMealsResult, MatchConsumptionResult, PantryDayPlanResult, PantryParseResult,
+  PantrySnapshotItem, PantryUnit,
+} from '../types'
 
 export interface PantryPlanGoals {
   calories: number
@@ -62,4 +65,19 @@ export async function submitPantryWeekPlanJob(params: {
     goals: params.goals,
   })
   return data.job_id
+}
+
+// ── F4: matcher de consumo (#173) ────────────────────────────────────────────
+
+export interface MatchConsumptionFood { name: string; quantity: number | null; unit: string | null }
+export interface MatchConsumptionPantryItem {
+  id: string; name_normalized: string; quantity: number | null; unit: PantryUnit | null
+}
+
+/** Stateless: el cliente manda foods + inventario. Con despensa vacía NO llamar (short-circuit). */
+export async function matchConsumption(
+  foods: MatchConsumptionFood[],
+  pantryItems: MatchConsumptionPantryItem[],
+): Promise<MatchConsumptionResult> {
+  return postPantryJson('/api/pantry/match-consumption', { foods, pantry_items: pantryItems })
 }

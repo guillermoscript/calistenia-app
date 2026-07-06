@@ -41,6 +41,7 @@ export interface PantrySnapshotItem {
   quantity: number | null;
   unit: string | null;
   expiry_estimate: string | null;
+  confidence?: string | null;
 }
 
 export interface PantryPlanGoals {
@@ -69,7 +70,8 @@ function inventoryBlock(items: PantrySnapshotItem[]): string {
   const lines = items.map((it) => {
     const qty = it.quantity != null ? `${it.quantity} ${it.unit ?? ""}`.trim() : "cantidad desconocida";
     const exp = it.expiry_estimate ? ` (vence ~${it.expiry_estimate})` : "";
-    return `- ${it.name} [${it.category}]: ${qty}${exp}`;
+    const conf = it.confidence === "low" ? " (dato viejo: puede que ya no esté)" : "";
+    return `- ${it.name} [${it.category}]: ${qty}${exp}${conf}`;
   });
   return `Hoy es ${today}. Inventario actual de la despensa:\n${lines.join("\n")}`;
 }

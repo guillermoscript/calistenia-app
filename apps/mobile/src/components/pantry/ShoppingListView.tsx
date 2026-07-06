@@ -1,17 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Alert, FlatList, Pressable, TextInput, View } from 'react-native'
-import { KeyboardAvoidingView, KeyboardStickyView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Check, Minus, Plus, X } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
+import { KeyboardSpacer } from '@/components/ui/keyboard-spacer'
+import { SelectionBar } from '@/components/pantry/SelectionBar'
 import {
   useActiveShoppingList,
   useAddShoppingItem,
   useGenerateShoppingList,
   useRemoveShoppingItem,
+  useRemoveShoppingItems,
   useToggleShoppingItem,
   useCompletePurchase,
   useLastPurchaseDate,
@@ -52,8 +54,11 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
   const complete = useCompletePurchase(userId)
   const addItem = useAddShoppingItem(userId)
   const removeItem = useRemoveShoppingItem(userId)
+  const removeItems = useRemoveShoppingItems(userId)
   const [priceDrafts, setPriceDrafts] = useState<Record<number, string>>({})
   const [draftName, setDraftName] = useState('')
+  const [selected, setSelected] = useState<ReadonlySet<number>>(new Set())
+  const selecting = selected.size > 0
 
   const today = todayStr()
   const next = nextPurchaseInfo(lastDone, cadence, today)
@@ -70,7 +75,12 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
         horizonDays: next.daysLeft > 0 ? next.daysLeft : cadence,
         lastPurchaseDate: lastDone,
       },
-      { onSuccess: () => setPriceDrafts({}) }, // drafts viejos no aplican a la lista nueva
+      {
+        onSuccess: () => {
+          setPriceDrafts({}) // drafts viejos no aplican a la lista nueva
+          setSelected(new Set()) // índices de la lista vieja tampoco
+        },
+      },
     )
 
   const onGenerate = () => {
@@ -107,6 +117,34 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
     removeItem.mutate({ listId: list.id, index })
   }
 
+  // estable (funcional): el modo selección se activa con long-press en una fila
+  const toggleSelect = useCallback((index: number) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
+    })
+  }, [])
+
+  const onBulkRemove = () => {
+    if (!list) return
+    const indices = [...selected]
+    // plural manual: ver nota en SelectionBar (Intl.PluralRules puede faltar en Hermes)
+    Alert.alert(indices.length === 1 ? t('common.deleteOneTitle') : t('common.deleteManyTitle', { n: indices.length }), '', [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: () => {
+          setSelected(new Set())
+          setPriceDrafts({}) // los drafts van por índice; al borrar se corren
+          removeItems.mutate({ listId: list.id, indices })
+        },
+      },
+    ])
+  }
+
   const onDone = () => {
     if (!list) return
     const count = list.items.filter((i) => i.checked).length
@@ -130,8 +168,10 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
   const totals = list ? shoppingTotals(list.items) : { est: 0, actual: 0 }
   const checkedCount = list?.items.filter((i) => i.checked).length ?? 0
 
+  // KeyboardSpacer al fondo: encoge todo el contenido con el teclado (KAV manual vía
+  // Reanimated) — la lista queda scrolleable completa y el add-bar + footer suben juntos
   return (
-    <KeyboardAvoidingView className="flex-1" behavior="padding">
+    <View className="flex-1">
       <View className="flex-1 px-4">
         {/* ── PRÓXIMA COMPRA · en N días · M items + cadencia ── */}
         <View className="border-b border-border py-3">
@@ -177,7 +217,7 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
         </View>
 
         {/* ── Errores visibles (lección F2: nada de fallos silenciosos) ── */}
-        {(generate.isError || complete.isError || toggle.isError || addItem.isError || removeItem.isError) && (
+        {(generate.isError || complete.isError || toggle.isError || addItem.isError || removeItem.isError || removeItems.isError) && (
           <View className="border-b border-red-500/40 bg-red-500/10 px-3 py-2">
             <Text className="font-mono text-[10px] uppercase tracking-[2px] text-red-500">
               {t('shopping.error')}
@@ -210,10 +250,11 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           keyboardShouldPersistTaps="handled"
           renderItem={({ item: it, index }) => (
             <Pressable
-              onPress={() => onToggle(index, it)}
+              onPress={() => (selecting ? toggleSelect(index) : onToggle(index, it))}
+              onLongPress={() => toggleSelect(index)}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: it.checked }}
-              className="border-b border-border py-3 active:opacity-70"
+              accessibilityState={{ checked: it.checked, selected: selected.has(index) }}
+              className={`border-b border-border py-3 active:opacity-70 ${selected.has(index) ? 'bg-lime/10' : ''}`}
             >
               <View className="flex-row items-center gap-3">
                 {/* checkbox visual — el toggle es la FILA entera (target grande) */}
@@ -251,15 +292,17 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                     <Text className="font-mono text-xs text-muted-foreground">~${formatMoney(it.est_price)}</Text>
                   )
                 )}
-                <Pressable
-                  onPress={() => onRemove(index)}
-                  hitSlop={6}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('common.delete')}
-                  className="-my-2 -mr-1 p-2 ml-1"
-                >
-                  <X size={16} color="hsl(0 0% 40%)" />
-                </Pressable>
+                {selecting ? null : (
+                  <Pressable
+                    onPress={() => onRemove(index)}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.delete')}
+                    className="-my-2 -mr-1 p-2 ml-1"
+                  >
+                    <X size={16} color="hsl(0 0% 40%)" />
+                  </Pressable>
+                )}
               </View>
               {it.incompatible_have && (
                 <Text className="mt-1 pl-8 font-mono text-[10px] text-amber-500">
@@ -273,9 +316,11 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           )}
         />
 
-        {/* ── Alta manual: sticky sobre el teclado (KAV no alcanzaba en MIUI) ── */}
-        <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
-          <View className="flex-row items-center gap-2 border-t border-border bg-background py-2">
+        {/* ── Alta manual (o barra de selección si hay filas marcadas) ── */}
+        {selecting ? (
+          <SelectionBar count={selected.size} onDelete={onBulkRemove} onCancel={() => setSelected(new Set())} />
+        ) : (
+        <View className="flex-row items-center gap-2 border-t border-border bg-background py-2">
             <TextInput
               placeholder={t('shopping.addPlaceholder')}
               placeholderTextColor="hsl(0 0% 40%)"
@@ -294,9 +339,9 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
               className={`h-10 w-10 items-center justify-center rounded-md border ${draftName.trim() ? 'border-lime/40 active:bg-lime/10' : 'border-border'}`}
             >
               <Plus size={18} color={draftName.trim() ? 'hsl(74 90% 45%)' : 'hsl(0 0% 40%)'} />
-            </Pressable>
-          </View>
-        </KeyboardStickyView>
+          </Pressable>
+        </View>
+        )}
 
         {/* ── Footer: totales + Compra hecha ── */}
         {list && list.items.length > 0 && (
@@ -321,6 +366,7 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           </View>
         )}
       </View>
-    </KeyboardAvoidingView>
+      <KeyboardSpacer offset={insets.bottom} />
+    </View>
   )
 }

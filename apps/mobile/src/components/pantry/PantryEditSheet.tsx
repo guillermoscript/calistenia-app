@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { KeyboardAvoidingView, KeyboardProvider } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -12,16 +12,19 @@ function parseNum(v: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-export function PantryEditSheet({ item, onSave, onDelete, onClose }: {
+export function PantryEditSheet({ item, onSave, onDelete, onClose, onVerify, onGone }: {
   item: PantryItem | null
   onSave: (item: PantryItem, newQuantity: number | null, newPriceTotal: number | null) => void
   onDelete: (item: PantryItem) => void
   onClose: () => void
+  onVerify: (item: PantryItem) => void
+  onGone: (item: PantryItem) => void
 }) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const [qty, setQty] = useState('')
   const [price, setPrice] = useState('')
+  const qtyRef = useRef<TextInput>(null)
 
   useEffect(() => {
     if (item) {
@@ -68,6 +71,7 @@ export function PantryEditSheet({ item, onSave, onDelete, onClose }: {
                   {t('pantry.quantity')}{item.unit ? ` (${item.unit})` : ''}
                 </Text>
                 <TextInput
+                  ref={qtyRef}
                   value={qty}
                   onChangeText={setQty}
                   keyboardType="numeric"
@@ -90,6 +94,33 @@ export function PantryEditSheet({ item, onSave, onDelete, onClose }: {
                 />
               </View>
             </View>
+            {item.confidence === 'low' && (
+              <View className="mx-4 mt-4 border border-border">
+                <Text className="border-b border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                  {t('pantry.stillHave.question')}
+                </Text>
+                <View className="flex-row">
+                  <Pressable
+                    onPress={() => onVerify(item)}
+                    className="h-11 flex-1 items-center justify-center border-r border-border active:bg-lime/10"
+                  >
+                    <Text className="font-mono text-[11px] uppercase tracking-[1px] text-lime">{t('pantry.stillHave.same')}</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => qtyRef.current?.focus()}
+                    className="h-11 flex-1 items-center justify-center border-r border-border active:bg-muted/20"
+                  >
+                    <Text className="font-mono text-[11px] uppercase tracking-[1px] text-foreground">{t('pantry.stillHave.less')}</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => onGone(item)}
+                    className="h-11 flex-1 items-center justify-center active:bg-muted/20"
+                  >
+                    <Text className="font-mono text-[11px] uppercase tracking-[1px] text-muted-foreground">{t('pantry.stillHave.gone')}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
             <View className="flex-row gap-2 px-4 pt-4">
               <Pressable
                 onPress={confirmDelete}

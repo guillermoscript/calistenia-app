@@ -84,6 +84,8 @@ export interface PantrySnapshotItem {
   quantity: number | null
   unit: PantryUnit | null
   expiry_estimate: string | null
+  /** Confianza COMPUTADA (decay F4) al momento del snapshot. */
+  confidence: PantryConfidence
 }
 
 export interface HowManyMealsBreakdownRow {
@@ -97,6 +99,22 @@ export interface HowManyMealsResult {
   days_covered: number
   breakdown: HowManyMealsBreakdownRow[]
   summary: string
+  model_used?: string
+}
+
+// ── F4: matcher de consumo (#173) ────────────────────────────────────────────
+
+export interface ConsumptionMatch {
+  pantry_item_id: string
+  matched_food: string
+  /** En la UNIDAD del pantry item. null = el LLM no pudo estimar. */
+  qty_consumed: number | null
+  confidence: PantryConfidence
+}
+
+export interface MatchConsumptionResult {
+  matches: ConsumptionMatch[]
+  unmatched_foods: string[]
   model_used?: string
 }
 

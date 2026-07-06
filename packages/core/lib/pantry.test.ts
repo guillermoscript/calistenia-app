@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildPantrySnapshot, daysUntil, expiryFromDays, groupPantryByCategory, normalizePantryName } from './pantry'
+import { buildPantrySnapshot, computePantryConfidence, daysUntil, expiryFromDays, groupPantryByCategory, normalizePantryName } from './pantry'
 import type { PantryItem } from '../types'
 
 describe('normalizePantryName', () => {
@@ -69,7 +69,7 @@ describe('buildPantrySnapshot', () => {
   it('mapea camelCase → snake_case del wire', () => {
     expect(buildPantrySnapshot([base])).toEqual([{
       name: 'Pollo', name_normalized: 'pollo', category: 'proteina',
-      quantity: 2, unit: 'kg', expiry_estimate: '2026-07-08',
+      quantity: 2, unit: 'kg', expiry_estimate: '2026-07-08', confidence: 'high',
     }])
   })
 
@@ -80,5 +80,54 @@ describe('buildPantrySnapshot', () => {
 
   it('array vacío → array vacío', () => {
     expect(buildPantrySnapshot([])).toEqual([])
+  })
+})
+
+const baseItem = (over: Partial<PantryItem> = {}): PantryItem => ({
+  id: 'x1', name: 'Pollo', nameNormalized: 'pollo', category: 'proteina',
+  quantity: 1, unit: 'kg', priceTotal: null, currency: 'USD', priceSource: null,
+  purchaseDate: null, expiryEstimate: null, confidence: 'high', status: 'active',
+  source: 'chat', ...over,
+})
+
+describe('computePantryConfidence', () => {
+  const today = '2026-07-06'
+  it('actividad reciente (<4d) → high', () => {
+    expect(computePantryConfidence(baseItem(), '2026-07-04', today)).toBe('high')
+    expect(computePantryConfidence(baseItem(), '2026-07-06', today)).toBe('high')
+  })
+  it('4-10 días → med', () => {
+    expect(computePantryConfidence(baseItem(), '2026-07-02', today)).toBe('med')
+    expect(computePantryConfidence(baseItem(), '2026-06-26', today)).toBe('med')
+  })
+  it('>10 días → low', () => {
+    expect(computePantryConfidence(baseItem(), '2026-06-25', today)).toBe('low')
+  })
+  it('vencido sin actividad posterior al vencimiento → low', () => {
+    expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-01' }), '2026-06-30', today)).toBe('low')
+    expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-01' }), null, today)).toBe('low')
+  })
+  it('vencido con actividad POSTERIOR → el usuario lo confirmó, decay normal', () => {
+    expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-01' }), today, today)).toBe('high')
+  })
+  it('vence hoy o después NO es vencido', () => {
+    expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-06' }), today, today)).toBe('high')
+  })
+  it('sin lastEventDate → conserva la confianza guardada (parseo inicial)', () => {
+    expect(computePantryConfidence(baseItem({ confidence: 'med' }), null, today)).toBe('med')
+  })
+  it('fecha inválida → conserva la guardada', () => {
+    expect(computePantryConfidence(baseItem({ confidence: 'med' }), 'garbage', today)).toBe('med')
+  })
+  it('la computada nunca SUPERA la guardada: parseo low reciente sigue low', () => {
+    expect(computePantryConfidence(baseItem({ confidence: 'low' }), today, today)).toBe('low')
+    expect(computePantryConfidence(baseItem({ confidence: 'med' }), today, today)).toBe('med')
+  })
+})
+
+describe('buildPantrySnapshot confidence', () => {
+  it('incluye confidence en el shape wire', () => {
+    const snap = buildPantrySnapshot([baseItem({ confidence: 'low' })])
+    expect(snap[0].confidence).toBe('low')
   })
 })

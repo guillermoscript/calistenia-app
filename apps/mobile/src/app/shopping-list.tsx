@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router'
 import { Pressable, View } from 'react-native'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react-native'
@@ -26,7 +27,10 @@ export default function ShoppingListScreen() {
           <Text className="font-bebas text-4xl text-foreground">{t('shopping.title')}</Text>
         </View>
       </View>
-      <ShoppingListView userId={userId} />
+      {/* KeyboardProvider LOCAL: re-registra el callback de insets en MIUI (ver pantry.tsx) */}
+      <KeyboardProvider>
+        <ShoppingListView userId={userId} />
+      </KeyboardProvider>
     </SafeAreaView>
   )
 }
