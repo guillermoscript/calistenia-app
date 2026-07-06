@@ -120,7 +120,7 @@ export async function regeneratePlanDay(planDayId: string): Promise<any> {
 
 export interface AIJob {
   id: string
-  type: 'analyze-meal' | 'lookup-food' | 'generate-meal-plan' | 'generate-weekly-meal-plan'
+  type: 'analyze-meal' | 'lookup-food' | 'generate-meal-plan' | 'generate-weekly-meal-plan' | 'generate-pantry-plan'
   status: 'pending' | 'processing' | 'completed' | 'failed'
   result: any
   error: string | null

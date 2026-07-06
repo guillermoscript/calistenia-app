@@ -17,6 +17,7 @@ import { sendPushToUser } from "../api/push-sender.js";
 import { processJob, getAdminPB } from "../api/job-processor.js";
 import { runFreeSession } from "../api/free-session-generator.js";
 import { parsePantryText } from "../api/pantry-parser.js";
+import { generatePantryPlan } from "../api/pantry-plan-generator.js";
 import { buildInsightContextServer } from "../api/insight-context-server.js";
 import type { Tier } from "../api/model-resolver.js";
 
@@ -343,6 +344,43 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     } catch (err) { return apiError(c, err); }
   });
 
+  // #171 F2: plan semanal pantry-aware — async job (patrón generate-weekly-meal-plan)
+  app.post("/api/jobs/generate-pantry-plan", async (c) => {
+    const user = await getAuthUser(c, pbUrl);
+    if (!user) return c.json({ error: "Token de autenticación requerido" }, 401);
+    const rl = applyRateLimit(c, user.id);
+    if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
+    try {
+      const body = await c.req.json().catch(() => ({}));
+      const { week_start, pantry_items = [], goals } = body ?? {};
+      if (!Array.isArray(pantry_items) || pantry_items.length === 0) {
+        return c.json({ error: "Se requiere pantry_items con al menos un item" }, 400);
+      }
+      if (!goals || goals.calories == null) {
+        return c.json({ error: "Se requieren las metas de macros (goals)" }, 400);
+      }
+      if (!(await checkJobLimit(user.id))) {
+        return c.json({ error: `Solo puedes tener ${MAX_PENDING_JOBS} analisis en proceso a la vez. Espera a que termine uno.` }, 429);
+      }
+      const pb = await getAdminPB();
+      const record = await pb.collection("ai_jobs").create({
+        user: user.id,
+        type: "generate-pantry-plan",
+        status: "pending",
+        input: {
+          week_start: week_start || null,
+          pantry_items: pantry_items.slice(0, 200),
+          goals,
+          tier: getTier(user),
+        },
+      });
+      processJob(record.id).catch((err) => console.error("[job-processor-error]", record.id, err));
+      return c.json({ job_id: record.id }, 202);
+    } catch (err) {
+      return apiError(c, err);
+    }
+  });
+
   // ── 10. POST /api/weekly-plan/regenerate-day ─────────────────────────────
   app.post("/api/weekly-plan/regenerate-day", async (c) => {
     const user = await getAuthUser(c, pbUrl);
@@ -566,6 +604,34 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
       });
       return c.json(result);
     } catch (err) { return apiError(c, err); }
+  });
+
+  // #171 F2: plan pantry-aware síncrono (day / how_many_meals). Week va por job.
+  app.post("/api/generate-pantry-plan", async (c) => {
+    const user = await getAuthUser(c, pbUrl);
+    if (!user) return c.json({ error: "Token de autenticación requerido" }, 401);
+    const rl = applyRateLimit(c, user.id);
+    if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
+    try {
+      const body = await c.req.json().catch(() => ({}));
+      const { horizon, target_date = null, pantry_items = [], goals = null } = body ?? {};
+      if (horizon !== "day" && horizon !== "how_many_meals") {
+        return c.json({ error: "horizon debe ser 'day' o 'how_many_meals' (week: usa /api/jobs/generate-pantry-plan)" }, 400);
+      }
+      if (!Array.isArray(pantry_items) || pantry_items.length === 0) {
+        return c.json({ error: "Se requiere pantry_items con al menos un item" }, 400);
+      }
+      const result = await generatePantryPlan({
+        horizon,
+        targetDate: typeof target_date === "string" ? target_date : null,
+        pantryItems: pantry_items.slice(0, 200),
+        goals,
+        tier: getTier(user),
+      });
+      return c.json({ ...result, target_date });
+    } catch (err) {
+      return apiError(c, err);
+    }
   });
 
   console.error("[API] Hono routes mounted: /api/health + 14 /api/* endpoints");

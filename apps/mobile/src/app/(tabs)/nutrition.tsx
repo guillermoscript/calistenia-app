@@ -30,6 +30,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { todayStr, addDays, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
+import { usePantryPlan } from '@calistenia/core/hooks/usePantryPlan'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
 import { useWater } from '@calistenia/core/hooks/useWater'
@@ -51,6 +52,7 @@ import WaterTracker from '@/components/nutrition/WaterTracker'
 import WeeklyNutritionChart from '@/components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan from '@/components/nutrition/DailyMealPlan'
 import WeeklyMealPlan from '@/components/nutrition/WeeklyMealPlan'
+import { PantryPlanSection } from '@/components/nutrition/PantryPlanSection'
 import CoachInsights from '@/components/nutrition/CoachInsights'
 import NutritionShareButton from '@/components/share/NutritionShareButton'
 import { Sentry } from '@/lib/instrument'
@@ -136,6 +138,15 @@ export default function NutritionTab() {
 
   const { data: pantryItems = [] } = usePantryItems(userId)
   const pantryCount = pantryItems.length
+
+  const pantryPlan = usePantryPlan(userId)
+  // Solo se usa en JSX tras el early-return de !goals; el ?? 0 es para el narrow de TS.
+  const pantryGoals = {
+    calories: goals?.dailyCalories ?? 0,
+    protein: goals?.dailyProtein ?? 0,
+    carbs: goals?.dailyCarbs ?? 0,
+    fat: goals?.dailyFat ?? 0,
+  }
 
   const {
     activePlan: weeklyPlan,
@@ -769,18 +780,23 @@ export default function NutritionTab() {
               onDeleteMeal={deleteWeeklyMeal}
               onArchive={archiveWeeklyPlan}
               onRefresh={refreshWeeklyPlan}
+              hasPantry={pantryPlan.hasPantry}
+              onGenerateFromPantry={() => pantryPlan.generateWeek(pantryGoals)}
             />
           </View>
-        ) : isToday ? (
-          <View className="mb-5">
-            <DailyMealPlan
-              remaining={remaining}
-              goals={{ calories: goals.dailyCalories, protein: goals.dailyProtein, carbs: goals.dailyCarbs, fat: goals.dailyFat }}
-              loggedMealTypes={loggedMealTypes}
-              onSaveMeal={handleSavePlannedMeal}
-            />
+        ) : (
+          <View className="mb-5 gap-5">
+            {isToday && (
+              <DailyMealPlan
+                remaining={remaining}
+                goals={pantryGoals}
+                loggedMealTypes={loggedMealTypes}
+                onSaveMeal={handleSavePlannedMeal}
+              />
+            )}
+            <PantryPlanSection userId={userId} goals={pantryGoals} />
           </View>
-        ) : null}
+        )}
 
         {/* Coach & Insights (collapsible) */}
         <View className="mb-5">

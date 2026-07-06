@@ -1,4 +1,5 @@
 import type { TranslatableField } from '../lib/i18n-db'
+import type { Recipe } from './pantry'
 
 // Integración smartwatch / hub de salud (Health Connect / HealthKit)
 export * from './health'
@@ -623,6 +624,26 @@ export interface WeeklyPlannedMeal {
   fat: number
   logged: boolean
   logged_entry_id?: string
+  recipe?: Recipe | null   // F2 #171: solo presente en planes pantry-aware; planes viejos no lo traen
+}
+
+// Comida de un plan pantry-aware ANTES de persistir (sin id/logged — los agrega el job)
+export interface PantryPlannedMeal {
+  meal_type: MealType
+  label: string
+  description: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  recipe: Recipe | null
+}
+
+export interface PantryDayPlanResult {
+  target_date: string | null
+  meals: PantryPlannedMeal[]
+  notes: string
+  model_used?: string
 }
 
 export interface WeeklyPlanDay {
@@ -651,4 +672,6 @@ export type {
   PantryCategory, PantryUnit, PantryConfidence, PantryStatus, PantrySource,
   PantryEventType, PantryIntent, PantryItem, PantryEvent,
   PantryParsedItem, PantryParseResult,
+  PantrySnapshotItem, Recipe, RecipeIngredient,
+  HowManyMealsBreakdownRow, HowManyMealsResult,
 } from './pantry'

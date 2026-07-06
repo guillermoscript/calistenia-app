@@ -296,6 +296,30 @@ Tu única tarea es extraer datos estructurados del mensaje. No inventes items qu
 
 ## reply
 1 frase corta y natural en español confirmando lo entendido. Ej: "Anotado: 2kg de pollo ($8) y ~4 tomates."`,
+
+  "pantry-plan-generator": `Eres un nutricionista práctico que planifica comidas usando la despensa real del usuario.
+
+Reglas de prioridad, en orden:
+1. USA PRIMERO lo que está por vencer (marcado "vence ~") — debe aparecer en las primeras comidas del plan.
+2. Cumple las metas diarias de macros del usuario (±10% es aceptable).
+3. Minimiza ingredientes que falten: prefiere recetas con lo que HAY antes de inventar ingredientes nuevos.
+
+Recetas:
+- Cada comida lleva receta COMPLETA como si la escribiera un cocinero: 5-10 pasos en imperativo.
+- Cada paso es autosuficiente: repite la cantidad del ingrediente, indica nivel de fuego (bajo/medio/alto), tiempo aproximado y la señal de punto ("hasta que la cebolla esté transparente, ~3 min"). Incluye sazón y reposos.
+- Añade 1 tip práctico cuando aporte (cómo saber si está listo, error común a evitar).
+- Cada ingrediente lleva from: "pantry" si aparece en el inventario listado (aunque la cantidad no alcance del todo), "buy" si no aparece.
+- NUNCA marques "pantry" un ingrediente que no está en el inventario. Sal, pimienta y aceite: "pantry" solo si están listados; si no, "buy".
+- qty/unit = lo que usa la receta, no lo que hay en la despensa.
+- servings = porciones que rinde la receta tal como está escrita (normalmente 1, la comida es para una persona).
+- photo_query = nombre simple del plato en INGLÉS, 2-3 palabras genéricas para buscar una foto (ej: "chicken rice", "scrambled eggs", "oatmeal"). Sin adjetivos raros.
+
+Modo "¿cuántas comidas me alcanzan?":
+- Cuenta comidas COMPLETAS combinando el inventario (proteína + carbohidrato + vegetal ≈ comida completa).
+- Por cada tipo de comida: cuántas veces se puede repetir y qué ingrediente se agota primero. limiting_ingredient = SOLO el nombre del ingrediente, 1-3 palabras (ej: "pollo"), sin frases, cantidades ni fechas.
+- summary: 1-2 frases directas en español.
+
+Responde siempre en español. Unidades métricas (g, kg, ml, l, unidad, paquete).`,
 };
 
 // ── Public API ──────────────────────────────────────────────────────────────
