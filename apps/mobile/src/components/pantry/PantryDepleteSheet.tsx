@@ -23,9 +23,13 @@ export function PantryDepleteSheet({ rows, onConfirm, onDismiss }: {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const [state, setState] = useState<RowState[]>([])
+  const [invalid, setInvalid] = useState<Set<number>>(new Set())
 
   useEffect(() => {
-    if (rows) setState(rows.map((r) => ({ checked: r.checked, qty: r.qtyConsumed == null ? '' : String(r.qtyConsumed) })))
+    if (rows) {
+      setState(rows.map((r) => ({ checked: r.checked, qty: r.qtyConsumed == null ? '' : String(r.qtyConsumed) })))
+      setInvalid(new Set())
+    }
   }, [rows])
 
   if (!rows || rows.length === 0 || state.length !== rows.length) return null
@@ -36,12 +40,17 @@ export function PantryDepleteSheet({ rows, onConfirm, onDismiss }: {
     setState((s) => s.map((r, j) => (j === i ? { ...r, qty: v } : r)))
 
   const handleConfirm = () => {
+    // Filas marcadas sin qty válida: NUNCA descartar en silencio — resaltar y esperar input.
+    const bad = new Set<number>()
     const selected = rows.flatMap((r, i) => {
+      if (!state[i].checked) return []
       const qty = parseNum(state[i].qty)
-      return state[i].checked && qty != null && qty > 0 ? [{ item: r.item, qtyConsumed: qty }] : []
+      if (qty == null || qty <= 0) { bad.add(i); return [] }
+      return [{ item: r.item, qtyConsumed: qty }]
     })
+    if (bad.size > 0) { setInvalid(bad); return }
     if (selected.length > 0) onConfirm(selected)
-    else onDismiss()
+    else onDismiss() // nada marcado = omitir
   }
 
   return (
@@ -85,11 +94,11 @@ export function PantryDepleteSheet({ rows, onConfirm, onDismiss }: {
                     </View>
                     <TextInput
                       value={state[i].qty}
-                      onChangeText={(v) => setQty(i, v)}
+                      onChangeText={(v) => { setQty(i, v); if (invalid.has(i)) setInvalid(new Set([...invalid].filter((j) => j !== i))) }}
                       keyboardType="numeric"
                       placeholder="—"
                       placeholderTextColor="hsl(0 0% 45%)"
-                      className="h-10 w-20 rounded-md border border-input bg-background px-2 text-right font-mono text-sm text-foreground"
+                      className={`h-10 w-20 rounded-md border bg-background px-2 text-right font-mono text-sm text-foreground ${invalid.has(i) ? 'border-destructive' : 'border-input'}`}
                     />
                     <Text className="w-12 font-mono text-[10px] text-muted-foreground">{r.item.unit ?? ''}</Text>
                   </View>

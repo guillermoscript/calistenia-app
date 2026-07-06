@@ -43,10 +43,16 @@ export function daysUntil(date: string | null, today: string): number | null {
   return Math.round((b.getTime() - a.getTime()) / 86400000)
 }
 
+const CONF_RANK: Record<PantryConfidence, number> = { high: 2, med: 1, low: 0 }
+
 /**
- * Confianza mostrada = SIEMPRE la computada (decay temporal), no la guardada.
- * `lastEventDate` = proxy `item.updated` (todo evento bumpea el autodate de PB).
- * Vencido → siempre low. Sin fecha válida → confianza del parseo inicial.
+ * Confianza mostrada = computada con decay temporal desde la última actividad
+ * del ITEM (`lastEventDate` = proxy `item.updated`: los flujos de consumo/ajuste
+ * SIEMPRE tocan el record, no solo el ledger). Reglas:
+ * - Vencido → low, salvo actividad POSTERIOR al vencimiento (el usuario lo confirmó).
+ * - La computada nunca SUPERA la guardada: un parseo dudoso no se vuelve high solo
+ *   por ser reciente; verificación/consumo suben la guardada a high explícitamente.
+ * - Sin fecha válida → confianza guardada tal cual.
  * Pura: `today` inyectado (YYYY-MM-DD), sin Date.now().
  */
 export function computePantryConfidence(
@@ -55,12 +61,12 @@ export function computePantryConfidence(
   today: string,
 ): PantryConfidence {
   const untilExpiry = daysUntil(item.expiryEstimate, today)
-  if (untilExpiry != null && untilExpiry < 0) return 'low'
+  const expired = untilExpiry != null && untilExpiry < 0
+  if (expired && (!lastEventDate || lastEventDate <= item.expiryEstimate!)) return 'low'
   const since = lastEventDate ? daysUntil(today, lastEventDate) : null
   if (since == null) return item.confidence
-  if (since < 4) return 'high'
-  if (since <= 10) return 'med'
-  return 'low'
+  const decayed: PantryConfidence = since < 4 ? 'high' : since <= 10 ? 'med' : 'low'
+  return CONF_RANK[decayed] < CONF_RANK[item.confidence] ? decayed : item.confidence
 }
 
 /** lowercase, sin acentos, trim — mismo criterio que name_normalized del parser. */

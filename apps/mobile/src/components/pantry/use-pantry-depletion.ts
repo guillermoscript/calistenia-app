@@ -19,7 +19,7 @@ export interface DepleteRow {
   matchedFood: string
   qtyConsumed: number | null
   confidence: PantryConfidence
-  /** high/med pre-marcado; low des-marcado (regla de la issue). */
+  /** high/med CON qty pre-marcado; low o sin qty des-marcado (regla de la issue). */
   checked: boolean
 }
 
@@ -50,7 +50,8 @@ export function usePantryDepletion(userId: string | null) {
           matchedFood: m.matched_food,
           qtyConsumed: m.qty_consumed,
           confidence: m.confidence,
-          checked: m.confidence !== 'low',
+          // Sin qty estimada no hay descuento posible: exige input explícito del usuario
+          checked: m.confidence !== 'low' && m.qty_consumed != null,
         }]
       })
       if (rows.length > 0) setPending({ rows, entryId })
@@ -67,6 +68,8 @@ export function usePantryDepletion(userId: string | null) {
       await consumeMatches.mutateAsync({ matches: selected, linkedEntry: entryId })
       haptics.success()
     } catch (e) {
+      // Descuento parcial posible (la mutation aísla fallos por item): avisar con haptic
+      haptics.error()
       Sentry.captureException(e, { tags: { feature: 'pantry', op: 'deplete-confirm' } })
     }
   }, [pending, consumeMatches])

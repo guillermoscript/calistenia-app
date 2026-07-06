@@ -862,8 +862,10 @@ export default function NutritionTab() {
         getRecentEntries={getRecentEntries}
         editEntry={editingEntry}
       />
+      {/* Se presenta recién al CERRAR el logger: iOS no soporta dos Modals hermanos
+          visibles a la vez, y así el sheet aparece después de la pantalla de éxito. */}
       <PantryDepleteSheet
-        rows={pantryDepletion.rows}
+        rows={loggerVisible ? null : pantryDepletion.rows}
         onConfirm={pantryDepletion.confirm}
         onDismiss={pantryDepletion.dismiss}
       />

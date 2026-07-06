@@ -103,8 +103,12 @@ describe('computePantryConfidence', () => {
   it('>10 días → low', () => {
     expect(computePantryConfidence(baseItem(), '2026-06-25', today)).toBe('low')
   })
-  it('vencido → siempre low aunque haya actividad reciente', () => {
-    expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-01' }), today, today)).toBe('low')
+  it('vencido sin actividad posterior al vencimiento → low', () => {
+    expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-01' }), '2026-06-30', today)).toBe('low')
+    expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-01' }), null, today)).toBe('low')
+  })
+  it('vencido con actividad POSTERIOR → el usuario lo confirmó, decay normal', () => {
+    expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-01' }), today, today)).toBe('high')
   })
   it('vence hoy o después NO es vencido', () => {
     expect(computePantryConfidence(baseItem({ expiryEstimate: '2026-07-06' }), today, today)).toBe('high')
@@ -114,6 +118,10 @@ describe('computePantryConfidence', () => {
   })
   it('fecha inválida → conserva la guardada', () => {
     expect(computePantryConfidence(baseItem({ confidence: 'med' }), 'garbage', today)).toBe('med')
+  })
+  it('la computada nunca SUPERA la guardada: parseo low reciente sigue low', () => {
+    expect(computePantryConfidence(baseItem({ confidence: 'low' }), today, today)).toBe('low')
+    expect(computePantryConfidence(baseItem({ confidence: 'med' }), today, today)).toBe('med')
   })
 })
 

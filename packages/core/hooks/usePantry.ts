@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
-import { todayStr } from '../lib/dateUtils'
+import { todayStr, utcToLocalDateStr } from '../lib/dateUtils'
 import { computePantryConfidence, expiryFromDays } from '../lib/pantry'
 import type { PantryEventType, PantryItem, PantryParsedItem } from '../types'
 
@@ -38,7 +38,8 @@ export async function fetchActivePantryItems(userId: string): Promise<PantryItem
   const today = todayStr()
   return res.map((r) => {
     const it = mapPantryRecord(r)
-    const lastEvent = it.updated ? String(it.updated).slice(0, 10) : null
+    // updated es UTC de PB → convertir a fecha LOCAL antes de comparar con todayStr()
+    const lastEvent = it.updated ? utcToLocalDateStr(String(it.updated)) : null
     return { ...it, confidence: computePantryConfidence(it, lastEvent, today) }
   })
 }
@@ -122,7 +123,11 @@ interface AdjustInput {
   type: Exclude<PantryEventType, 'add'>   // 'consume' | 'adjust' | 'discard'
   newQuantity?: number | null              // solo para adjust
   newPriceTotal?: number | null            // edición de precio (sin evento propio)
-  /** F4 "¿Sigue habiendo?": fuerza evento adjust aun con delta 0 (resetea decay). */
+  /**
+   * F4 "¿Sigue habiendo?": fuerza evento adjust aun con delta 0 y sube la
+   * confianza GUARDADA a high (verificación explícita del usuario; la computada
+   * nunca supera la guardada, así que sin esto el reset no surtiría efecto).
+   */
   forceEvent?: boolean
 }
 
@@ -145,6 +150,7 @@ export function useAdjustPantryItem(userId: string | null) {
         patch.status = type === 'discard' ? 'discarded' : 'depleted'
       }
       if (newPriceTotal !== undefined) patch.price_total = newPriceTotal ?? 0
+      if (forceEvent) patch.confidence = 'high'
       // Evento SIEMPRE antes de tocar quantity (ledger = fuente de historial).
       // adjust con delta 0 (solo cambió precio) no genera evento.
       if (type !== 'adjust' || delta !== 0 || forceEvent) {
@@ -172,25 +178,50 @@ export interface ConsumeMatchesInput {
  * Descuento parcial batch post meal-log (F4). Distinto del consume manual
  * (que vacía el item): aquí delta = -qtyConsumed y el item queda active
  * mientras tenga qty. REGLA DE ORO: evento SIEMPRE antes de tocar quantity.
+ * - Matches duplicados al mismo item se AGREGAN (un evento por match, un solo
+ *   update de quantity con el total) — sin esto se pisarían entre sí.
+ * - El update SIEMPRE toca el item (aun con qty null) para bumpear `updated`
+ *   (proxy del decay) y sube confidence a high (el usuario confirmó consumo).
+ * - Fallos por item se aíslan (los demás siguen); si alguno falló, throw al
+ *   final para que el caller avise.
  */
 export function useConsumePantryMatches(userId: string | null) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ matches, linkedEntry }: ConsumeMatchesInput): Promise<void> => {
       if (!userId) throw new Error('No user')
+      const byItem = new Map<string, { item: PantryItem; total: number }>()
       for (const { item, qtyConsumed } of matches) {
         if (!(qtyConsumed > 0)) continue
-        await pb.collection('pantry_events').create({
-          user: userId, item: item.id, type: 'consume',
-          delta_qty: -qtyConsumed, linked_entry: linkedEntry,
-        })
-        // qty null = "sin dato": queda el evento en el ledger, no inventamos depleción.
-        if (item.quantity == null) continue
-        const next = Math.max(0, item.quantity - qtyConsumed)
-        await pb.collection('pantry_items').update(item.id, {
-          quantity: next, ...(next <= 0 ? { status: 'depleted' } : {}),
-        })
+        const acc = byItem.get(item.id)
+        if (acc) acc.total += qtyConsumed
+        else byItem.set(item.id, { item, total: qtyConsumed })
       }
+      const errors: unknown[] = []
+      for (const { item, total } of byItem.values()) {
+        try {
+          // Un evento por match original (granularidad del ledger para F5)
+          for (const m of matches) {
+            if (m.item.id !== item.id || !(m.qtyConsumed > 0)) continue
+            await pb.collection('pantry_events').create({
+              user: userId, item: item.id, type: 'consume',
+              delta_qty: -m.qtyConsumed, linked_entry: linkedEntry,
+            })
+          }
+          // qty null = "sin dato": no inventamos depleción, pero igual tocamos el
+          // record (bump de updated = reset del decay) y confirmamos existencia.
+          const patch: Record<string, unknown> = { confidence: 'high' }
+          if (item.quantity != null) {
+            const next = Math.max(0, item.quantity - total)
+            patch.quantity = next
+            if (next <= 0) patch.status = 'depleted'
+          }
+          await pb.collection('pantry_items').update(item.id, patch)
+        } catch (e) {
+          errors.push(e)
+        }
+      }
+      if (errors.length > 0) throw errors[0]
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
