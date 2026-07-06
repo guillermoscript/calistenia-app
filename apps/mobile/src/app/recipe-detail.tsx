@@ -12,14 +12,17 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react-native'
+import { ArrowLeft, ChevronDown, ChevronUp, Star } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
+import { useSavedRecipes, useToggleSavedRecipe } from '@calistenia/core/hooks/useSavedRecipes'
 import { computeRecipeCost, formatMoney, roundQty } from '@calistenia/core/lib/shopping'
+import { normalizePantryName } from '@calistenia/core/lib/pantry'
 import type { Recipe } from '@calistenia/core/types'
 
 const MUTED = 'hsl(0 0% 55%)'
+const LIME = 'hsl(74 90% 57%)' // mismo tono que health.tsx/cardio.tsx para iconos
 const MAX_SERVINGS = 8
 
 // Cache in-module: misma query no se re-busca al navegar entre recetas.
@@ -110,6 +113,14 @@ export default function RecipeDetailScreen() {
 
   const authUser = useAuthUser()
   const { data: pantryItems = [] } = usePantryItems(authUser?.id ?? null)
+  const { data: savedRecipes = [] } = useSavedRecipes(authUser?.id ?? null)
+  const toggleSaved = useToggleSavedRecipe(authUser?.id ?? null)
+  const isSaved = useMemo(
+    () => savedRecipes.some((s) => s.labelNormalized === normalizePantryName(label)),
+    [savedRecipes, label],
+  )
+  // Feedback inmediato: mientras la mutación viaja, mostrar el estado destino.
+  const showSaved = toggleSaved.isPending ? !isSaved : isSaved
   const [showBreakdown, setShowBreakdown] = useState(false)
   const cost = useMemo(
     () => (recipe ? computeRecipeCost(recipe.ingredients, pantryItems, baseServings) : null),
@@ -146,6 +157,18 @@ export default function RecipeDetailScreen() {
         >
           <ArrowLeft size={20} color={MUTED} />
         </Pressable>
+        {recipe != null && authUser != null && (
+          <Pressable
+            onPress={() => toggleSaved.mutate({ label, recipe })}
+            disabled={toggleSaved.isPending}
+            hitSlop={8}
+            className="ml-auto p-2"
+            accessibilityRole="button"
+            accessibilityLabel={showSaved ? t('savedRecipes.unsave') : t('savedRecipes.save')}
+          >
+            <Star size={20} color={showSaved ? LIME : MUTED} fill={showSaved ? LIME : 'transparent'} />
+          </Pressable>
+        )}
       </View>
 
       {!recipe ? (
