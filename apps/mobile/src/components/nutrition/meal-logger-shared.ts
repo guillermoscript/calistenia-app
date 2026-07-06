@@ -62,7 +62,9 @@ export interface MealLoggerSheetProps {
   onSave: (
     entry: Omit<NutritionEntry, 'id' | 'user'>,
     photoUris?: string[],
-  ) => Promise<void>
+  ) => Promise<string | void>
+  /** F4: entry guardado con éxito (id de servidor, no edit) — dispara match de despensa. */
+  onSaved?: (entryId: string, foods: FoodItem[]) => void
   userId: string | null
   dailyTotals: DailyTotals
   goals: NutritionGoal | null

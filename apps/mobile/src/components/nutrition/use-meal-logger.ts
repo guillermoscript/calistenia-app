@@ -41,6 +41,7 @@ export function useMealLogger({
   initialMode,
   onAnalyze,
   onSave,
+  onSaved,
   userId,
   dailyTotals,
   goals,
@@ -440,7 +441,7 @@ export function useMealLogger({
 
     setStep('saving')
     try {
-      await onSave(
+      const savedId = await onSave(
         {
           mealType,
           foods: validFoods,
@@ -467,6 +468,11 @@ export function useMealLogger({
       setLastMealType(mealType)
       haptics.success()
       setStep('success')
+      // F4: match de despensa DESPUÉS del éxito — nunca bloquea ni afecta el log.
+      // Saves offline (local_*) y ediciones no disparan (sin id de servidor / doble descuento).
+      if (typeof savedId === 'string' && !savedId.startsWith('local_') && !editEntry) {
+        onSaved?.(savedId, validFoods)
+      }
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'save-meal' } })
       setError(t('nutrition.logger.saveError'))

@@ -53,6 +53,8 @@ import WeeklyNutritionChart from '@/components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan from '@/components/nutrition/DailyMealPlan'
 import WeeklyMealPlan from '@/components/nutrition/WeeklyMealPlan'
 import { PantryPlanSection } from '@/components/nutrition/PantryPlanSection'
+import { usePantryDepletion } from '@/components/pantry/use-pantry-depletion'
+import { PantryDepleteSheet } from '@/components/pantry/PantryDepleteSheet'
 import CoachInsights from '@/components/nutrition/CoachInsights'
 import NutritionShareButton from '@/components/share/NutritionShareButton'
 import { Sentry } from '@/lib/instrument'
@@ -114,6 +116,7 @@ export default function NutritionTab() {
 
   // ─── Core hooks ─────────────────────────────────────────────────────────────
   const nutrition = useNutrition(userId)
+  const pantryDepletion = usePantryDepletion(userId)
   const {
     goals,
     entries: allEntries,
@@ -196,7 +199,7 @@ export default function NutritionTab() {
   const handleSaveMobileEntry = useCallback(async (
     entry: Omit<NutritionEntry, 'id' | 'user'>,
     photoUris?: string[],
-  ) => {
+  ): Promise<string | void> => {
     // Edit flow: update the existing record in place, preserving its original loggedAt.
     if (editingEntry?.id) {
       const { loggedAt: _loggedAt, ...patch } = entry
@@ -241,6 +244,7 @@ export default function NutritionTab() {
         }
       }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'score_meal_quality' } }) })
     }
+    return saved.id
   }, [saveEntry, userId, scoreMealQuality, goals, getRemainingMacros, updateEntry, editingEntry])
 
   // ─── Load user profile ───────────────────────────────────────────────────────
@@ -851,11 +855,17 @@ export default function NutritionTab() {
         onClose={() => { setLoggerVisible(false); setEditingEntry(null) }}
         onAnalyze={handleAnalyze}
         onSave={handleSaveMobileEntry}
+        onSaved={pantryDepletion.runMatch}
         userId={userId}
         dailyTotals={dailyTotals}
         goals={goals}
         getRecentEntries={getRecentEntries}
         editEntry={editingEntry}
+      />
+      <PantryDepleteSheet
+        rows={pantryDepletion.rows}
+        onConfirm={pantryDepletion.confirm}
+        onDismiss={pantryDepletion.dismiss}
       />
     </SafeAreaView>
   )
