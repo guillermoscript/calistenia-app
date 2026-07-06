@@ -195,7 +195,10 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
         {list && list.items.length === 0 && (
           <Text className="py-8 text-center font-sans text-sm text-muted-foreground">{t('shopping.empty')}</Text>
         )}
+        {/* flex-1 wrapper: la lista se ENCOGE cuando el teclado mete padding
+            (patrón pantry.tsx) — sin esto el add-bar queda tapado */}
         <FlatList
+          className="flex-1"
           data={list?.items ?? []}
           keyExtractor={(_, i) => String(i)}
           keyboardShouldPersistTaps="handled"
