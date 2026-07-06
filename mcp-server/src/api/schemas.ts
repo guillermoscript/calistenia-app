@@ -122,6 +122,24 @@ export const PantryParseSchema = z.object({
   reply: z.string().describe("Respuesta corta y natural en español para mostrar en el chat"),
 });
 
+// ─── Despensa F4: matcher de consumo (#173) ──────────────────────────────────
+// ⚠️ OpenAI strict mode: SIEMPRE .nullable(), NUNCA .optional()
+
+export const MatchConsumptionSchema = z.object({
+  matches: z.array(
+    z.object({
+      pantry_item_id: z.string().describe("id EXACTO de un item del inventario listado; nunca inventar"),
+      matched_food: z.string().describe("Alimento logueado que matchea, tal como vino"),
+      qty_consumed: z
+        .number()
+        .nullable()
+        .describe("Cantidad consumida EN LA UNIDAD del pantry item (250g logueados de un item en kg → 0.25); null si no se puede estimar"),
+      confidence: z.enum(["high", "med", "low"]).describe("Qué tan seguro es el match"),
+    })
+  ),
+  unmatched_foods: z.array(z.string()).describe("Alimentos logueados sin match razonable en la despensa"),
+});
+
 // ─── Despensa F2: plan pantry-aware (#171) ───────────────────────────────────
 
 export const RecipeIngredientSchema = z.object({

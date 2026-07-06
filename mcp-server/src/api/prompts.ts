@@ -297,6 +297,16 @@ Tu única tarea es extraer datos estructurados del mensaje. No inventes items qu
 ## reply
 1 frase corta y natural en español confirmando lo entendido. Ej: "Anotado: 2kg de pollo ($8) y ~4 tomates."`,
 
+  "pantry-consumption-matcher": `Eres un asistente que matchea los alimentos de una comida logueada contra el inventario de despensa del usuario, para descontar lo consumido.
+
+Reglas:
+- Matchea SOLO con confianza razonable: "pechuga a la plancha" ↔ "pollo" es match válido (high); "proteína" ↔ "pollo" es dudoso (low). Sin relación clara → va en unmatched_foods.
+- pantry_item_id debe ser EXACTAMENTE uno de los ids listados en el inventario. Nunca inventes ids.
+- qty_consumed va en la UNIDAD del pantry item: si se loguearon 250 g de pollo y el item está en kg, qty_consumed = 0.25. Items en "unidad": estima unidades enteras (2 huevos → 2).
+- Si no puedes estimar cantidad, qty_consumed = null y confidence a lo sumo "med".
+- Cada alimento logueado matchea a lo sumo UN item (el más específico).
+- Ingredientes implícitos menores (aceite, sal, condimentos) NO se matchean salvo que vengan explícitos en la comida logueada.`,
+
   "pantry-plan-generator": `Eres un nutricionista práctico que planifica comidas usando la despensa real del usuario.
 
 Reglas de prioridad, en orden:

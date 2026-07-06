@@ -16,7 +16,7 @@ import { generateDailyMealPlan } from "../api/meal-plan-generator.js";
 import { sendPushToUser } from "../api/push-sender.js";
 import { processJob, getAdminPB } from "../api/job-processor.js";
 import { runFreeSession } from "../api/free-session-generator.js";
-import { parsePantryText } from "../api/pantry-parser.js";
+import { parsePantryText, matchConsumption } from "../api/pantry-parser.js";
 import { generatePantryPlan } from "../api/pantry-plan-generator.js";
 import { buildInsightContextServer } from "../api/insight-context-server.js";
 import type { Tier } from "../api/model-resolver.js";
@@ -606,6 +606,25 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     } catch (err) { return apiError(c, err); }
   });
 
+  // #173 F4: matcher de consumo — la despensa se descuenta al loguear comida
+  app.post("/api/pantry/match-consumption", async (c) => {
+    const user = await getAuthUser(c, pbUrl);
+    if (!user) return c.json({ error: "Token de autenticación requerido" }, 401);
+    const rl = applyRateLimit(c, user.id);
+    if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
+    try {
+      const body = await c.req.json().catch(() => ({}));
+      const { foods = [], pantry_items = [] } = body ?? {};
+      if (!Array.isArray(foods) || foods.length === 0) return c.json({ error: "Se requiere foods con al menos un alimento" }, 400);
+      if (!Array.isArray(pantry_items) || pantry_items.length === 0) return c.json({ error: "Se requiere pantry_items con al menos un item" }, 400);
+      const result = await matchConsumption({
+        foods: foods.slice(0, 30),
+        pantryItems: pantry_items.slice(0, 200),
+      });
+      return c.json(result);
+    } catch (err) { return apiError(c, err); }
+  });
+
   // #171 F2: plan pantry-aware síncrono (day / how_many_meals). Week va por job.
   app.post("/api/generate-pantry-plan", async (c) => {
     const user = await getAuthUser(c, pbUrl);
@@ -634,5 +653,5 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     }
   });
 
-  console.error("[API] Hono routes mounted: /api/health + 14 /api/* endpoints");
+  console.error("[API] Hono routes mounted: /api/health + 15 /api/* endpoints");
 }

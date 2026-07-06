@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { resolveModel } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
-import { PantryParseSchema } from "./schemas.js";
+import { PantryParseSchema, MatchConsumptionSchema } from "./schemas.js";
 
 interface PantryParseInput {
   text: string;
@@ -34,6 +34,54 @@ export async function parsePantryText({ text, existingItems }: PantryParseInput)
 
   return {
     ...object,
+    model_used: modelName,
+    usage: {
+      prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
+      completion_tokens: (usage as any)?.completionTokens ?? (usage as any)?.completion_tokens,
+      total_tokens: (usage as any)?.totalTokens ?? (usage as any)?.total_tokens,
+    },
+  };
+}
+
+interface MatchConsumptionInput {
+  foods: { name: string; quantity?: number | null; unit?: string | null }[];
+  pantryItems: { id: string; name_normalized: string; quantity: number | null; unit: string | null }[];
+}
+
+// #173 F4: matching barato → free tier siempre (misma decisión que el parser)
+export async function matchConsumption({ foods, pantryItems }: MatchConsumptionInput) {
+  const { model, name: modelName } = resolveModel("free");
+  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("pantry-consumption-matcher");
+
+  const pantryBlock = pantryItems
+    .map((it) => {
+      const qty = it.quantity != null ? `${it.quantity} ${it.unit ?? ""}`.trim() : "cantidad desconocida";
+      return `- id=${it.id} | ${it.name_normalized} | ${qty}`;
+    })
+    .join("\n");
+  const foodsBlock = foods
+    .map((f) => `- ${f.name}${f.quantity != null ? ` (${`${f.quantity} ${f.unit ?? ""}`.trim()})` : ""}`)
+    .join("\n");
+
+  const { object, usage } = await generateObject({
+    model,
+    schema: MatchConsumptionSchema,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "pantry-consumption-matcher",
+      metadata: { modelName, ...(langfusePrompt && { langfusePrompt }) },
+    },
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Inventario de la despensa:\n${pantryBlock}\n\nComida logueada:\n${foodsBlock}` },
+    ],
+  });
+
+  // Blindaje: ids alucinados fuera del inventario no llegan al cliente
+  const validIds = new Set(pantryItems.map((it) => it.id));
+  return {
+    ...object,
+    matches: object.matches.filter((m) => validIds.has(m.pantry_item_id)),
     model_used: modelName,
     usage: {
       prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
