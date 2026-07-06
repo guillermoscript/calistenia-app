@@ -11,7 +11,9 @@ function mapSavedRecipeRecord(r: RecordModel): SavedRecipe {
     user: r.user as string,
     label: (r.label as string) ?? '',
     labelNormalized: (r.label_normalized as string) ?? '',
-    recipe: (r.recipe ?? { steps: [], ingredients: [], prep_minutes: null }) as Recipe,
+    // Spread sobre defaults: cubre json null Y shape parcial (p.ej. {} sin ingredients),
+    // que crashearía recipe-detail (accede .ingredients/.steps sin guard).
+    recipe: { steps: [], ingredients: [], prep_minutes: null, ...((r.recipe ?? {}) as Partial<Recipe>) } as Recipe,
     timesUsed: (r.times_used as number) ?? 0,
     created: r.created,
     updated: r.updated,

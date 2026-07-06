@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useRouter } from 'expo-router'
-import { ArrowLeft, BookMarked, ShoppingCart } from 'lucide-react-native'
+import { ArrowLeft, ChefHat, ShoppingCart } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import {
   useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, usePantryHistory, usePantryItems,
@@ -145,18 +145,19 @@ export default function PantryScreen() {
           </Text>
           <Text className="font-bebas text-4xl text-foreground">{t('pantry.title')}</Text>
         </View>
+        {/* hitSlop 4 en los dos íconos adyacentes: con 8 las zonas táctiles se solapan */}
         <Pressable
           onPress={() => router.push('/saved-recipes')}
-          hitSlop={8}
+          hitSlop={4}
           className="ml-auto p-2"
           accessibilityRole="button"
           accessibilityLabel={t('savedRecipes.title')}
         >
-          <BookMarked size={20} color="hsl(0 0% 55%)" />
+          <ChefHat size={20} color="hsl(0 0% 55%)" />
         </Pressable>
         <Pressable
           onPress={() => router.push('/shopping-list')}
-          hitSlop={8}
+          hitSlop={4}
           className="p-2"
           accessibilityRole="button"
           accessibilityLabel={t('shopping.title')}

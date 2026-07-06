@@ -77,7 +77,7 @@ const RecipeRow = memo(function RecipeRow({
         accessibilityRole="button"
         accessibilityLabel={t('savedRecipes.delete')}
       >
-        <X size={14} color={MUTED} />
+        <X size={16} color={MUTED} />
       </Pressable>
     </Pressable>
   )
@@ -108,7 +108,7 @@ export default function SavedRecipesScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-row items-center gap-2 px-2 py-1">
         <Pressable
           onPress={() => router.back()}
@@ -140,7 +140,7 @@ export default function SavedRecipesScreen() {
         <FlatList
           data={recipes}
           keyExtractor={(r) => r.id}
-          className="px-5"
+          className="px-4"
           contentContainerStyle={{ paddingBottom: 40 }}
           renderItem={({ item }) => (
             <RecipeRow

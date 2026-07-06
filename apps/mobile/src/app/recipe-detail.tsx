@@ -22,7 +22,7 @@ import { normalizePantryName } from '@calistenia/core/lib/pantry'
 import type { Recipe } from '@calistenia/core/types'
 
 const MUTED = 'hsl(0 0% 55%)'
-const LIME = 'hsl(74 90% 57%)' // mismo tono que health.tsx/cardio.tsx para iconos
+const LIME = '#a3e635' // = text-lime-400: mismo tono que los acentos lime de esta pantalla
 const MAX_SERVINGS = 8
 
 // Cache in-module: misma query no se re-busca al navegar entre recetas.
