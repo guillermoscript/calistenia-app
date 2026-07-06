@@ -220,7 +220,16 @@ export function buildCycleShoppingList(params: CycleParams): ShoppingListItem[] 
   const since = params.sinceDate ?? addDaysISO(today, -14)
 
   const items = buildShoppingList(planIngredients, pantryItems)
-  const byName = new Map(items.map((it) => [it.name_normalized, it]))
+
+  // Fusiona por nombre Y unidad compatible: el plan puede tener 2 líneas del
+  // mismo ingrediente en unidades no convertibles (unidad vs paquete) — la
+  // razón vence/se_acabo debe caer en la línea correcta, no en la última
+  const findLine = (nameNormalized: string, unit: PantryUnit | null) =>
+    items.find(
+      (it) =>
+        it.name_normalized === nameNormalized &&
+        (unit == null || it.unit == null || TO_BASE[it.unit].base === TO_BASE[unit].base),
+    )
 
   const addReason = (
     p: PantryItem,
@@ -228,14 +237,12 @@ export function buildCycleShoppingList(params: CycleParams): ShoppingListItem[] 
     qty: number | null,
     unit: PantryUnit | null,
   ) => {
-    const existing = byName.get(p.nameNormalized)
+    const existing = findLine(p.nameNormalized, unit)
     if (existing) {
       if (!existing.reasons.includes(reason)) existing.reasons.push(reason)
       return
     }
-    const it = mkItem(p.name, p.nameNormalized, qty, unit, [reason], null)
-    byName.set(p.nameNormalized, it)
-    items.push(it)
+    items.push(mkItem(p.name, p.nameNormalized, qty, unit, [reason], null))
   }
 
   for (const p of pantryItems) {

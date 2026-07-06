@@ -116,6 +116,8 @@ export interface ShoppingListItem {
   currency: string
   checked: boolean
   actual_price: number | null
+  /** true = ya ingresado a despensa por "compra hecha" (progreso persistido; un retry no lo re-crea). */
+  purchased?: boolean
   reasons: ShoppingReason[]
   /** Existe el item en despensa pero en unidad no convertible (ej. plan pide 200 g, hay 4 unidad). */
   incompatible_have: { qty: number; unit: PantryUnit } | null

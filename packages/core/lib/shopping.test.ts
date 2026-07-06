@@ -202,6 +202,23 @@ describe('buildCycleShoppingList', () => {
     expect(out).toHaveLength(1)
     expect(out[0].reasons.sort()).toEqual(['plan', 'vence'])
   })
+  it('vence cae en la línea de unidad compatible, no en otra línea del mismo nombre', () => {
+    const out = buildCycleShoppingList({
+      planIngredients: [
+        ing({ name: 'Huevo', name_normalized: 'huevo', qty: 6, unit: 'unidad' }),
+        ing({ name: 'Huevo', name_normalized: 'huevo', qty: 1, unit: 'paquete' }),
+      ],
+      pantryItems: [
+        pi({ nameNormalized: 'huevo', quantity: 2, unit: 'unidad', expiryEstimate: '2026-07-07' }),
+      ],
+      horizonDays: 7,
+      today,
+    })
+    const porUnidad = out.find((it) => it.unit === 'unidad')
+    const porPaquete = out.find((it) => it.unit === 'paquete')
+    expect(porUnidad?.reasons.sort()).toEqual(['plan', 'vence'])
+    expect(porPaquete?.reasons).toEqual(['plan'])
+  })
   it('est_price se llena desde el histórico', () => {
     const out = buildCycleShoppingList({
       planIngredients: [ing({ name_normalized: 'pollo', qty: 1, unit: 'kg' })],

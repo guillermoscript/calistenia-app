@@ -33,8 +33,11 @@ export function useActiveShoppingList(userId: string | null) {
           pb.filter('user = {:uid} && status = "active"', { uid: userId! }),
         )
         return mapList(rec)
-      } catch {
-        return null // 404 = no hay lista activa
+      } catch (err) {
+        // Solo 404 = no hay lista activa; otros errores (auth/red) deben subir,
+        // no disfrazarse de "sin lista" (patrón useCrossInsights)
+        if ((err as { status?: number })?.status === 404) return null
+        throw err
       }
     },
   })
@@ -120,15 +123,19 @@ export function useGenerateShoppingList(userId: string | null) {
         total_est: totals.est,
         total_actual: 0,
       }
-      let rec: Record<string, unknown>
+      // Invariante: a lo sumo UNA lista active. Solo un 404 real cae a create;
+      // un error transitorio (auth/red) sube en vez de crear una duplicada.
+      let existing: { id: string } | null = null
       try {
-        const existing = await pb.collection('shopping_lists').getFirstListItem(
+        existing = await pb.collection('shopping_lists').getFirstListItem(
           pb.filter('user = {:uid} && status = "active"', { uid: userId }),
         )
-        rec = await pb.collection('shopping_lists').update(existing.id, payload)
-      } catch {
-        rec = await pb.collection('shopping_lists').create(payload)
+      } catch (err) {
+        if ((err as { status?: number })?.status !== 404) throw err
       }
+      const rec = existing
+        ? await pb.collection('shopping_lists').update(existing.id, payload)
+        : await pb.collection('shopping_lists').create(payload)
       return mapList(rec)
     },
     onSettled: () => {
@@ -191,8 +198,11 @@ export function useCompletePurchase(userId: string | null) {
     mutationFn: async (list: ShoppingList): Promise<number> => {
       if (!userId) throw new Error('No user')
       const today = todayStr()
-      const bought = list.items.filter((it) => it.checked)
-      for (const it of bought) {
+      // purchased persiste el progreso item a item: un retry tras fallo a mitad
+      // NO re-crea (ni re-eventúa) lo que ya entró a la despensa
+      const items = list.items.map((it) => ({ ...it }))
+      const pending = items.filter((it) => it.checked && !it.purchased)
+      for (const it of pending) {
         const price = it.actual_price ?? it.est_price
         const rec = await pb.collection('pantry_items').create({
           user: userId,
@@ -215,13 +225,15 @@ export function useCompletePurchase(userId: string | null) {
           type: 'add',
           delta_qty: it.qty ?? 0,
         })
+        it.purchased = true
+        await pb.collection('shopping_lists').update(list.id, { items })
       }
-      const totals = shoppingTotals(list.items)
+      const totals = shoppingTotals(items)
       await pb.collection('shopping_lists').update(list.id, {
         status: 'done',
         total_actual: totals.actual,
       })
-      return bought.length
+      return pending.length
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.shopping.active(userId) })
