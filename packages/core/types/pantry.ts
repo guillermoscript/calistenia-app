@@ -84,6 +84,8 @@ export interface PantrySnapshotItem {
   quantity: number | null
   unit: PantryUnit | null
   expiry_estimate: string | null
+  /** Confianza COMPUTADA (decay F4) al momento del snapshot. */
+  confidence: PantryConfidence
 }
 
 export interface HowManyMealsBreakdownRow {

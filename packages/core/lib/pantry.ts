@@ -1,5 +1,5 @@
 import { addDays } from './dateUtils'
-import type { PantryCategory, PantryItem, PantrySnapshotItem } from '../types'
+import type { PantryCategory, PantryConfidence, PantryItem, PantrySnapshotItem } from '../types'
 
 export const PANTRY_CATEGORY_ORDER: PantryCategory[] = [
   'proteina', 'vegetal', 'fruta', 'carbohidrato', 'lacteo',
@@ -43,6 +43,26 @@ export function daysUntil(date: string | null, today: string): number | null {
   return Math.round((b.getTime() - a.getTime()) / 86400000)
 }
 
+/**
+ * Confianza mostrada = SIEMPRE la computada (decay temporal), no la guardada.
+ * `lastEventDate` = proxy `item.updated` (todo evento bumpea el autodate de PB).
+ * Vencido → siempre low. Sin fecha válida → confianza del parseo inicial.
+ * Pura: `today` inyectado (YYYY-MM-DD), sin Date.now().
+ */
+export function computePantryConfidence(
+  item: PantryItem,
+  lastEventDate: string | null,
+  today: string,
+): PantryConfidence {
+  const untilExpiry = daysUntil(item.expiryEstimate, today)
+  if (untilExpiry != null && untilExpiry < 0) return 'low'
+  const since = lastEventDate ? daysUntil(today, lastEventDate) : null
+  if (since == null) return item.confidence
+  if (since < 4) return 'high'
+  if (since <= 10) return 'med'
+  return 'low'
+}
+
 /** lowercase, sin acentos, trim — mismo criterio que name_normalized del parser. */
 export function normalizePantryName(name: string): string {
   return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
@@ -59,5 +79,6 @@ export function buildPantrySnapshot(items: PantryItem[]): PantrySnapshotItem[] {
       quantity: it.quantity,
       unit: it.unit,
       expiry_estimate: it.expiryEstimate,
+      confidence: it.confidence,
     }))
 }
