@@ -675,4 +675,5 @@ export type {
   PantrySnapshotItem, Recipe, RecipeIngredient,
   HowManyMealsBreakdownRow, HowManyMealsResult,
   ShoppingReason, ShoppingListItem, ShoppingList,
+  SavedRecipe,
 } from './pantry'
