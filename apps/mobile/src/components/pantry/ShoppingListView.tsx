@@ -117,8 +117,10 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
         onPress: () =>
           complete.mutate(list, {
             onSuccess: (n) => {
-              Alert.alert('', t('shopping.doneSuccess', { count: n }))
-              router.replace('/pantry')
+              // navegar al CERRAR el alert, no en paralelo (jank)
+              Alert.alert('', t('shopping.doneSuccess', { count: n }), [
+                { text: t('common.confirm'), onPress: () => router.replace('/pantry') },
+              ])
             },
           }),
       },
@@ -142,22 +144,24 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
               {list ? ` · ${t('shopping.itemCount', { count: list.items.length })}` : ''}
             </Text>
           </View>
-          <View className="mt-2 flex-row items-center gap-3">
+          <View className="mt-2 flex-row flex-wrap items-center gap-3">
             <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
               {t('shopping.cadenceLabel')}
             </Text>
             <Pressable
               onPress={() => setCadence(Math.max(1, cadence - 1))}
+              disabled={cadence <= 1}
               hitSlop={10}
-              className="h-7 w-7 items-center justify-center rounded border border-border active:bg-lime/10"
+              className={`h-7 w-7 items-center justify-center rounded border ${cadence <= 1 ? 'border-border/50 opacity-40' : 'border-border active:bg-lime/10'}`}
             >
               <Minus size={12} color="hsl(0 0% 55%)" />
             </Pressable>
             <Text className="font-bebas text-lg text-foreground">{cadence}</Text>
             <Pressable
               onPress={() => setCadence(Math.min(90, cadence + 1))}
+              disabled={cadence >= 90}
               hitSlop={10}
-              className="h-7 w-7 items-center justify-center rounded border border-border active:bg-lime/10"
+              className={`h-7 w-7 items-center justify-center rounded border ${cadence >= 90 ? 'border-border/50 opacity-40' : 'border-border active:bg-lime/10'}`}
             >
               <Plus size={12} color="hsl(0 0% 55%)" />
             </Pressable>
@@ -173,7 +177,7 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
         </View>
 
         {/* ── Errores visibles (lección F2: nada de fallos silenciosos) ── */}
-        {(generate.isError || complete.isError || toggle.isError) && (
+        {(generate.isError || complete.isError || toggle.isError || addItem.isError || removeItem.isError) && (
           <View className="border-b border-red-500/40 bg-red-500/10 px-3 py-2">
             <Text className="font-mono text-[10px] uppercase tracking-[2px] text-red-500">
               {t('shopping.error')}
@@ -248,12 +252,12 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                 )}
                 <Pressable
                   onPress={() => onRemove(index)}
-                  hitSlop={10}
+                  hitSlop={6}
                   accessibilityRole="button"
                   accessibilityLabel={t('common.delete')}
-                  className="pl-1"
+                  className="-my-2 -mr-1 p-2 ml-1"
                 >
-                  <X size={14} color="hsl(0 0% 40%)" />
+                  <X size={16} color="hsl(0 0% 40%)" />
                 </Pressable>
               </View>
               {it.incompatible_have && (
