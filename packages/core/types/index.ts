@@ -676,4 +676,5 @@ export type {
   HowManyMealsBreakdownRow, HowManyMealsResult,
   ShoppingReason, ShoppingListItem, ShoppingList,
   SavedRecipe,
+  ConsumptionMatch, MatchConsumptionResult,
 } from './pantry'

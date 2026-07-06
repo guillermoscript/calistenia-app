@@ -102,6 +102,22 @@ export interface HowManyMealsResult {
   model_used?: string
 }
 
+// ── F4: matcher de consumo (#173) ────────────────────────────────────────────
+
+export interface ConsumptionMatch {
+  pantry_item_id: string
+  matched_food: string
+  /** En la UNIDAD del pantry item. null = el LLM no pudo estimar. */
+  qty_consumed: number | null
+  confidence: PantryConfidence
+}
+
+export interface MatchConsumptionResult {
+  matches: ConsumptionMatch[]
+  unmatched_foods: string[]
+  model_used?: string
+}
+
 // ── Shopping list (F3, issue #172) ──────────────────────────────────────────
 
 /** Razón por la que un item está en la lista (ciclo de compra). */

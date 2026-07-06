@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr } from '../lib/dateUtils'
-import { expiryFromDays } from '../lib/pantry'
+import { computePantryConfidence, expiryFromDays } from '../lib/pantry'
 import type { PantryEventType, PantryItem, PantryParsedItem } from '../types'
 
 // PB devuelve 0 para numbers vacíos: 0 se trata como "sin dato" (F1 no distingue
@@ -29,17 +29,25 @@ export function mapPantryRecord(r: Record<string, unknown>): PantryItem {
   }
 }
 
+/** Lee items activos y aplica la confianza computada (decay F4) al vuelo. */
+export async function fetchActivePantryItems(userId: string): Promise<PantryItem[]> {
+  const res = await pb.collection('pantry_items').getFullList({
+    filter: pb.filter('user = {:uid} && status = "active"', { uid: userId }),
+    sort: '-created',
+  })
+  const today = todayStr()
+  return res.map((r) => {
+    const it = mapPantryRecord(r)
+    const lastEvent = it.updated ? String(it.updated).slice(0, 10) : null
+    return { ...it, confidence: computePantryConfidence(it, lastEvent, today) }
+  })
+}
+
 export function usePantryItems(userId: string | null) {
   return useQuery({
     queryKey: qk.pantry.list(userId),
     enabled: !!userId,
-    queryFn: async (): Promise<PantryItem[]> => {
-      const res = await pb.collection('pantry_items').getFullList({
-        filter: pb.filter('user = {:uid} && status = "active"', { uid: userId! }),
-        sort: '-created',
-      })
-      return res.map(mapPantryRecord)
-    },
+    queryFn: () => fetchActivePantryItems(userId!),
   })
 }
 
@@ -114,12 +122,14 @@ interface AdjustInput {
   type: Exclude<PantryEventType, 'add'>   // 'consume' | 'adjust' | 'discard'
   newQuantity?: number | null              // solo para adjust
   newPriceTotal?: number | null            // edición de precio (sin evento propio)
+  /** F4 "¿Sigue habiendo?": fuerza evento adjust aun con delta 0 (resetea decay). */
+  forceEvent?: boolean
 }
 
 export function useAdjustPantryItem(userId: string | null) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ item, type, newQuantity, newPriceTotal }: AdjustInput): Promise<PantryItem> => {
+    mutationFn: async ({ item, type, newQuantity, newPriceTotal, forceEvent }: AdjustInput): Promise<PantryItem> => {
       if (!userId) throw new Error('No user')
       const prevQty = item.quantity ?? 0
       const patch: Record<string, unknown> = {}
@@ -137,13 +147,50 @@ export function useAdjustPantryItem(userId: string | null) {
       if (newPriceTotal !== undefined) patch.price_total = newPriceTotal ?? 0
       // Evento SIEMPRE antes de tocar quantity (ledger = fuente de historial).
       // adjust con delta 0 (solo cambió precio) no genera evento.
-      if (type !== 'adjust' || delta !== 0) {
+      if (type !== 'adjust' || delta !== 0 || forceEvent) {
         await pb.collection('pantry_events').create({
           user: userId, item: item.id, type, delta_qty: delta,
         })
       }
       const rec = await pb.collection('pantry_items').update(item.id, patch)
       return mapPantryRecord(rec)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
+      qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
+    },
+  })
+}
+
+export interface ConsumeMatchesInput {
+  matches: { item: PantryItem; qtyConsumed: number }[]
+  /** id del nutrition_entry — atribución $/comida F5. NUNCA omitir. */
+  linkedEntry: string
+}
+
+/**
+ * Descuento parcial batch post meal-log (F4). Distinto del consume manual
+ * (que vacía el item): aquí delta = -qtyConsumed y el item queda active
+ * mientras tenga qty. REGLA DE ORO: evento SIEMPRE antes de tocar quantity.
+ */
+export function useConsumePantryMatches(userId: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ matches, linkedEntry }: ConsumeMatchesInput): Promise<void> => {
+      if (!userId) throw new Error('No user')
+      for (const { item, qtyConsumed } of matches) {
+        if (!(qtyConsumed > 0)) continue
+        await pb.collection('pantry_events').create({
+          user: userId, item: item.id, type: 'consume',
+          delta_qty: -qtyConsumed, linked_entry: linkedEntry,
+        })
+        // qty null = "sin dato": queda el evento en el ledger, no inventamos depleción.
+        if (item.quantity == null) continue
+        const next = Math.max(0, item.quantity - qtyConsumed)
+        await pb.collection('pantry_items').update(item.id, {
+          quantity: next, ...(next <= 0 ? { status: 'depleted' } : {}),
+        })
+      }
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
