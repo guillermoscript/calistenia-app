@@ -28,6 +28,14 @@ export function normalizeQty(qty: number, unit: PantryUnit): { qty: number; base
   return { qty: qty * factor, baseUnit: base }
 }
 
+/** Convierte entre unidades de la misma dimensión (kg↔g, l↔ml). null si no convertible. */
+export function convertQty(qty: number, from: PantryUnit, to: PantryUnit): number | null {
+  const a = TO_BASE[from]
+  const b = TO_BASE[to]
+  if (a.base !== b.base) return null
+  return (qty * a.factor) / b.factor
+}
+
 const trimNum = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
 /** qty viene en unidad base; ≥1000 g/ml se humaniza a kg/l. */

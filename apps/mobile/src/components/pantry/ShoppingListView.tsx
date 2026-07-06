@@ -3,13 +3,14 @@ import { Alert, FlatList, Pressable, TextInput, View } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Check, Minus, Plus } from 'lucide-react-native'
+import { Check, Minus, Plus, X } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import {
   useActiveShoppingList,
   useAddShoppingItem,
   useGenerateShoppingList,
+  useRemoveShoppingItem,
   useToggleShoppingItem,
   useCompletePurchase,
   useLastPurchaseDate,
@@ -48,6 +49,7 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
   const toggle = useToggleShoppingItem(userId)
   const complete = useCompletePurchase(userId)
   const addItem = useAddShoppingItem(userId)
+  const removeItem = useRemoveShoppingItem(userId)
   const [priceDrafts, setPriceDrafts] = useState<Record<number, string>>({})
   const [draftName, setDraftName] = useState('')
 
@@ -95,6 +97,12 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
   const onAdd = () => {
     if (!draftName.trim()) return
     addItem.mutate({ name: draftName }, { onSuccess: () => setDraftName('') })
+  }
+
+  const onRemove = (index: number) => {
+    if (!list) return
+    setPriceDrafts({}) // los drafts van por índice; al borrar se corren
+    removeItem.mutate({ listId: list.id, index })
   }
 
   const onDone = () => {
@@ -233,6 +241,15 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                     <Text className="font-mono text-xs text-muted-foreground">~${formatMoney(it.est_price)}</Text>
                   )
                 )}
+                <Pressable
+                  onPress={() => onRemove(index)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.delete')}
+                  className="pl-1"
+                >
+                  <X size={14} color="hsl(0 0% 40%)" />
+                </Pressable>
               </View>
               {it.incompatible_have && (
                 <Text className="mt-1 pl-8 font-mono text-[10px] text-amber-500">

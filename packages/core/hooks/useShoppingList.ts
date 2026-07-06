@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr } from '../lib/dateUtils'
-import { buildCycleShoppingList, shoppingTotals } from '../lib/shopping'
-import { normalizePantryName } from '../lib/pantry'
+import { buildCycleShoppingList, convertQty, shoppingTotals } from '../lib/shopping'
+import { daysUntil, expiryFromDays, normalizePantryName } from '../lib/pantry'
 import { mapPantryRecord } from './usePantry'
 import type { RecipeIngredient, ShoppingList, ShoppingListItem } from '../types'
 
@@ -251,11 +251,42 @@ export function useToggleShoppingItem(userId: string | null) {
   })
 }
 
+/** Quita una línea de la lista activa. */
+export function useRemoveShoppingItem(userId: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ listId, index }: { listId: string; index: number }): Promise<void> => {
+      const current = qc.getQueryData<ShoppingList | null>(qk.shopping.active(userId))
+      if (!current || current.id !== listId) return
+      const items = current.items.filter((_, i) => i !== index)
+      await pb.collection('shopping_lists').update(listId, {
+        items,
+        total_actual: shoppingTotals(items).actual,
+      })
+    },
+    onMutate: async ({ index }) => {
+      qc.setQueryData<ShoppingList | null>(qk.shopping.active(userId), (prev) => {
+        if (!prev) return prev
+        const items = prev.items.filter((_, i) => i !== index)
+        return { ...prev, items, total_actual: shoppingTotals(items).actual }
+      })
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.shopping.active(userId) })
+    },
+  })
+}
+
 /**
- * Compra hecha — transaccional en orden (issue #172): (1) crea pantry_items +
- * evento add por cada item checked, (2) SOLO al final marca la lista done con
- * total_actual. Si algo falla a mitad, la lista queda active (reintentable;
- * los items ya creados quedan en despensa — aceptado V1, single-user).
+ * Compra hecha — transaccional en orden (issue #172): (1) mete cada item
+ * checked a la despensa, (2) SOLO al final marca la lista done. Si algo falla
+ * a mitad, la lista queda active (reintentable sin duplicar vía `purchased`).
+ *
+ * Anti-datos-chapuceros (feedback device 2026-07-06):
+ * - Si YA existe un item ACTIVO con mismo nombre y unidad convertible → se le
+ *   SUMA la cantidad (evento add + update), no se crea un duplicado.
+ * - Si se crea nuevo → hereda categoría y vida útil del histórico del mismo
+ *   nombre (nada de category 'otro' si ya compraste arroz antes).
  */
 export function useCompletePurchase(userId: string | null) {
   const qc = useQueryClient()
@@ -263,33 +294,63 @@ export function useCompletePurchase(userId: string | null) {
     mutationFn: async (list: ShoppingList): Promise<number> => {
       if (!userId) throw new Error('No user')
       const today = todayStr()
+      const pantryAll = (
+        await pb.collection('pantry_items').getFullList({
+          filter: pb.filter('user = {:uid}', { uid: userId }),
+          sort: '-created',
+        })
+      ).map(mapPantryRecord)
       // purchased persiste el progreso item a item: un retry tras fallo a mitad
       // NO re-crea (ni re-eventúa) lo que ya entró a la despensa
       const items = list.items.map((it) => ({ ...it }))
       const pending = items.filter((it) => it.checked && !it.purchased)
       for (const it of pending) {
         const price = it.actual_price ?? it.est_price
-        const rec = await pb.collection('pantry_items').create({
-          user: userId,
-          name: it.name,
-          name_normalized: it.name_normalized,
-          category: 'otro',
-          quantity: it.qty ?? undefined,
-          unit: it.unit ?? undefined,
-          price_total: price ?? undefined,
-          currency: it.currency || 'USD',
-          price_source: it.actual_price != null ? 'real' : price != null ? 'estimada' : undefined,
-          purchase_date: today,
-          confidence: 'high',
-          status: 'active',
-          source: 'shopping',
-        })
-        await pb.collection('pantry_events').create({
-          user: userId,
-          item: rec.id,
-          type: 'add',
-          delta_qty: it.qty ?? 0,
-        })
+        const priceSource = it.actual_price != null ? 'real' : price != null ? 'estimada' : undefined
+        const match = pantryAll.find((p) => p.status === 'active' && p.nameNormalized === it.name_normalized)
+        const delta =
+          match && it.qty != null && it.unit != null && match.quantity != null && match.unit != null
+            ? convertQty(it.qty, it.unit, match.unit)
+            : null
+        if (match && delta != null) {
+          // Merge: sumar al item existente (evento SIEMPRE antes de tocar qty)
+          await pb.collection('pantry_events').create({
+            user: userId, item: match.id, type: 'add', delta_qty: delta,
+          })
+          await pb.collection('pantry_items').update(match.id, {
+            quantity: (match.quantity as number) + delta,
+            price_total: price ?? undefined,
+            price_source: priceSource,
+            purchase_date: today,
+          })
+          match.quantity = (match.quantity as number) + delta
+        } else {
+          // Nuevo: heredar categoría y vida útil del histórico (como el re-add de F1)
+          const hist = pantryAll.find((p) => p.nameNormalized === it.name_normalized)
+          const span =
+            hist?.purchaseDate && hist?.expiryEstimate
+              ? daysUntil(hist.expiryEstimate, hist.purchaseDate)
+              : null
+          const rec = await pb.collection('pantry_items').create({
+            user: userId,
+            name: it.name,
+            name_normalized: it.name_normalized,
+            category: hist?.category ?? 'otro',
+            quantity: it.qty ?? undefined,
+            unit: it.unit ?? undefined,
+            price_total: price ?? undefined,
+            currency: it.currency || 'USD',
+            price_source: priceSource,
+            purchase_date: today,
+            expiry_estimate: span != null && span > 0 ? expiryFromDays(span, today) ?? undefined : undefined,
+            confidence: 'high',
+            status: 'active',
+            source: 'shopping',
+          })
+          await pb.collection('pantry_events').create({
+            user: userId, item: rec.id, type: 'add', delta_qty: it.qty ?? 0,
+          })
+        }
         it.purchased = true
         await pb.collection('shopping_lists').update(list.id, { items })
       }

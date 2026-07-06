@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   normalizeQty,
+  convertQty,
   formatQty,
   addDaysISO,
   unitCost,
@@ -44,6 +45,19 @@ describe('normalizeQty', () => {
     expect(normalizeQty(200, 'g')).toEqual({ qty: 200, baseUnit: 'g' })
     expect(normalizeQty(4, 'unidad')).toEqual({ qty: 4, baseUnit: 'unidad' })
     expect(normalizeQty(2, 'paquete')).toEqual({ qty: 2, baseUnit: 'paquete' })
+  })
+})
+
+describe('convertQty', () => {
+  it('convierte dentro de la misma dimensión', () => {
+    expect(convertQty(1500, 'g', 'kg')).toBe(1.5)
+    expect(convertQty(2, 'kg', 'g')).toBe(2000)
+    expect(convertQty(500, 'ml', 'l')).toBe(0.5)
+    expect(convertQty(3, 'unidad', 'unidad')).toBe(3)
+  })
+  it('null entre dimensiones incompatibles', () => {
+    expect(convertQty(200, 'g', 'unidad')).toBeNull()
+    expect(convertQty(1, 'paquete', 'kg')).toBeNull()
   })
 })
 
