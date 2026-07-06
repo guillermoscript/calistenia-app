@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   normalizeQty,
   convertQty,
+  roundQty,
   formatQty,
   addDaysISO,
   unitCost,
@@ -45,6 +46,21 @@ describe('normalizeQty', () => {
     expect(normalizeQty(200, 'g')).toEqual({ qty: 200, baseUnit: 'g' })
     expect(normalizeQty(4, 'unidad')).toEqual({ qty: 4, baseUnit: 'unidad' })
     expect(normalizeQty(2, 'paquete')).toEqual({ qty: 2, baseUnit: 'paquete' })
+  })
+})
+
+describe('roundQty', () => {
+  it('mata colas IEEE a 3 decimales', () => {
+    expect(roundQty(0.1 + 0.2)).toBe(0.3)
+    expect(roundQty(1.2000000000000002)).toBe(1.2)
+    expect(roundQty(0.125)).toBe(0.125)
+  })
+  it('el diff del plan sale sin colas de float', () => {
+    const out = buildShoppingList(
+      [ing({ name_normalized: 'arroz', qty: 2, unit: 'kg' })],
+      [pi({ nameNormalized: 'arroz', quantity: 300.00000000000006, unit: 'g' })],
+    )
+    expect(out[0].qty).toBe(1700)
   })
 })
 

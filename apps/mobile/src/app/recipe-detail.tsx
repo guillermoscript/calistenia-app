@@ -16,7 +16,7 @@ import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
-import { computeRecipeCost, formatMoney } from '@calistenia/core/lib/shopping'
+import { computeRecipeCost, formatMoney, roundQty } from '@calistenia/core/lib/shopping'
 import type { Recipe } from '@calistenia/core/types'
 
 const MUTED = 'hsl(0 0% 55%)'
@@ -84,10 +84,9 @@ async function fetchMealMedia(query: string): Promise<MealMedia | null> {
   }
 }
 
-// 3 × 1.5 → "4.5", 100 × 2 → "200" — sin colas de float.
+// 3 × 1.5 → "4.5", 100 × 2 → "200" — sin colas de float (roundQty de core).
 function scaleQty(qty: number, factor: number): string {
-  const v = Math.round(qty * factor * 10) / 10
-  return Number.isInteger(v) ? String(v) : String(v)
+  return String(roundQty(qty * factor))
 }
 
 export default function RecipeDetailScreen() {

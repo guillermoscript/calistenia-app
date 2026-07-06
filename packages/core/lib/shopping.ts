@@ -36,6 +36,15 @@ export function convertQty(qty: number, from: PantryUnit, to: PantryUnit): numbe
   return (qty * a.factor) / b.factor
 }
 
+/**
+ * Redondeo de CANTIDADES a 3 decimales — para lo que se persiste o muestra.
+ * Mata las colas IEEE de sumas/conversiones (0.1+0.2 → 0.30000000000000004).
+ * El dinero NO usa esto: acumula en precisión completa y redondea en formatMoney.
+ */
+export function roundQty(n: number): number {
+  return Math.round(n * 1000) / 1000
+}
+
 const trimNum = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
 /** qty viene en unidad base; ≥1000 g/ml se humaniza a kg/l. */
@@ -171,7 +180,7 @@ export function buildShoppingList(
       (acc, p) => acc + normalizeQty(p.quantity as number, p.unit as PantryUnit).qty,
       0,
     )
-    const missing = need.qty - have
+    const missing = roundQty(need.qty - have)
     if (missing <= 0) continue
 
     const incomp = matches.find((p) => !compatible.includes(p) && p.quantity != null && p.unit != null)

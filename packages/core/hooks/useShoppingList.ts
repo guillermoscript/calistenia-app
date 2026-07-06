@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr } from '../lib/dateUtils'
-import { buildCycleShoppingList, convertQty, shoppingTotals } from '../lib/shopping'
+import { buildCycleShoppingList, convertQty, roundQty, shoppingTotals } from '../lib/shopping'
 import { daysUntil, expiryFromDays, normalizePantryName } from '../lib/pantry'
 import { mapPantryRecord } from './usePantry'
 import type { RecipeIngredient, ShoppingList, ShoppingListItem } from '../types'
@@ -314,17 +314,19 @@ export function useCompletePurchase(userId: string | null) {
             ? convertQty(it.qty, it.unit, match.unit)
             : null
         if (match && delta != null) {
-          // Merge: sumar al item existente (evento SIEMPRE antes de tocar qty)
+          // Merge: sumar al item existente (evento SIEMPRE antes de tocar qty).
+          // roundQty: sin colas IEEE persistidas (1.2000000000000002 kg)
+          const newQty = roundQty((match.quantity as number) + delta)
           await pb.collection('pantry_events').create({
-            user: userId, item: match.id, type: 'add', delta_qty: delta,
+            user: userId, item: match.id, type: 'add', delta_qty: roundQty(delta),
           })
           await pb.collection('pantry_items').update(match.id, {
-            quantity: (match.quantity as number) + delta,
+            quantity: newQty,
             price_total: price ?? undefined,
             price_source: priceSource,
             purchase_date: today,
           })
-          match.quantity = (match.quantity as number) + delta
+          match.quantity = newQty
         } else {
           // Nuevo: heredar categoría y vida útil del histórico (como el re-add de F1)
           const hist = pantryAll.find((p) => p.nameNormalized === it.name_normalized)
