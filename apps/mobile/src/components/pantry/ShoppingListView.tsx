@@ -228,7 +228,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                 >
                   {it.name}
                 </Text>
-                {it.reasons.map((r) => (
+                {/* silencio = plan (default); solo se etiqueta lo excepcional */}
+                {it.reasons.filter((r) => r !== 'plan').map((r) => (
                   <Text key={r} className={`rounded border px-1 py-0.5 font-mono text-[9px] uppercase ${REASON_CLS[r]}`}>
                     {t(`shopping.reason.${r}`)}
                   </Text>
@@ -305,7 +306,13 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
                 {t('shopping.totalEst')} <Text className="font-bebas text-lg text-foreground">{totals.est > 0 ? `~$${formatMoney(totals.est)}` : '—'}</Text>
               </Text>
               <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
-                {t('shopping.totalReal')} <Text className="font-bebas text-lg text-lime">${formatMoney(totals.actual)}</Text>
+                {t('shopping.totalReal')}{' '}
+                {checkedCount > 0 ? (
+                  <Text className="font-bebas text-lg text-lime">${formatMoney(totals.actual)}</Text>
+                ) : (
+                  // cero sin items marcados no es dato: — muted hasta que empiece la compra
+                  <Text className="font-bebas text-lg text-muted-foreground">—</Text>
+                )}
               </Text>
             </View>
             <Button className="mt-3" variant="limeSolid" onPress={onDone} disabled={checkedCount === 0 || complete.isPending}>
