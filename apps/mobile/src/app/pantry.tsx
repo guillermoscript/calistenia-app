@@ -93,6 +93,27 @@ export default function PantryScreen() {
     }
   }
 
+  const handleVerifyStillHave = async (item: PantryItem) => {
+    setEditing(null)
+    try {
+      // adjust delta 0 + forceEvent: resetea el decay (evento + bump de updated)
+      await adjustItem.mutateAsync({ item, type: 'adjust', newQuantity: item.quantity, forceEvent: true })
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'pantry', op: 'still_have' } })
+      setReply(t('pantry.saveError'))
+    }
+  }
+
+  const handleGone = async (item: PantryItem) => {
+    setEditing(null)
+    try {
+      await adjustItem.mutateAsync({ item, type: 'consume' })
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'pantry', op: 'still_have_gone' } })
+      setReply(t('pantry.saveError'))
+    }
+  }
+
   const handleDelete = async (item: PantryItem) => {
     setEditing(null)
     try {
@@ -212,6 +233,8 @@ export default function PantryScreen() {
         onSave={handleEditSave}
         onDelete={handleDelete}
         onClose={() => setEditing(null)}
+        onVerify={handleVerifyStillHave}
+        onGone={handleGone}
       />
     </SafeAreaView>
   )
