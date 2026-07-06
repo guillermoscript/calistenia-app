@@ -255,13 +255,14 @@ export function useToggleShoppingItem(userId: string | null) {
 export function useRemoveShoppingItem(userId: string | null) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ listId, index }: { listId: string; index: number }): Promise<void> => {
+    mutationFn: async ({ listId }: { listId: string; index: number }): Promise<void> => {
+      // onMutate YA quitó el índice de la cache — aquí solo se PERSISTE tal cual.
+      // Re-filtrar aquí borraba también al item siguiente (doble aplicación).
       const current = qc.getQueryData<ShoppingList | null>(qk.shopping.active(userId))
       if (!current || current.id !== listId) return
-      const items = current.items.filter((_, i) => i !== index)
       await pb.collection('shopping_lists').update(listId, {
-        items,
-        total_actual: shoppingTotals(items).actual,
+        items: current.items,
+        total_actual: shoppingTotals(current.items).actual,
       })
     },
     onMutate: async ({ index }) => {

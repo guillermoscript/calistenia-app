@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Alert, FlatList, Pressable, TextInput, View } from 'react-native'
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
+import { KeyboardAvoidingView, KeyboardStickyView } from 'react-native-keyboard-controller'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Check, Minus, Plus, X } from 'lucide-react-native'
@@ -41,6 +42,7 @@ function parseNum(s: string): number | null {
 export function ShoppingListView({ userId }: { userId: string | null }) {
   const router = useRouter()
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const { data: list } = useActiveShoppingList(userId)
   const { data: lastDone = null } = useLastPurchaseDate(userId)
   const { cadence, setCadence } = useShoppingCadence(userId)
@@ -266,28 +268,30 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
           )}
         />
 
-        {/* ── Alta manual ── */}
-        <View className="flex-row items-center gap-2 border-t border-border py-2">
-          <TextInput
-            placeholder={t('shopping.addPlaceholder')}
-            placeholderTextColor="hsl(0 0% 40%)"
-            value={draftName}
-            onChangeText={setDraftName}
-            onSubmitEditing={onAdd}
-            returnKeyType="done"
-            className="h-10 flex-1 rounded-md border border-input bg-background px-3 font-sans text-sm text-foreground"
-          />
-          <Pressable
-            onPress={onAdd}
-            disabled={!draftName.trim() || addItem.isPending}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t('shopping.addPlaceholder')}
-            className={`h-10 w-10 items-center justify-center rounded-md border ${draftName.trim() ? 'border-lime/40 active:bg-lime/10' : 'border-border'}`}
-          >
-            <Plus size={18} color={draftName.trim() ? 'hsl(74 90% 45%)' : 'hsl(0 0% 40%)'} />
-          </Pressable>
-        </View>
+        {/* ── Alta manual: sticky sobre el teclado (KAV no alcanzaba en MIUI) ── */}
+        <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+          <View className="flex-row items-center gap-2 border-t border-border bg-background py-2">
+            <TextInput
+              placeholder={t('shopping.addPlaceholder')}
+              placeholderTextColor="hsl(0 0% 40%)"
+              value={draftName}
+              onChangeText={setDraftName}
+              onSubmitEditing={onAdd}
+              returnKeyType="done"
+              className="h-10 flex-1 rounded-md border border-input bg-background px-3 font-sans text-sm text-foreground"
+            />
+            <Pressable
+              onPress={onAdd}
+              disabled={!draftName.trim() || addItem.isPending}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('shopping.addPlaceholder')}
+              className={`h-10 w-10 items-center justify-center rounded-md border ${draftName.trim() ? 'border-lime/40 active:bg-lime/10' : 'border-border'}`}
+            >
+              <Plus size={18} color={draftName.trim() ? 'hsl(74 90% 45%)' : 'hsl(0 0% 40%)'} />
+            </Pressable>
+          </View>
+        </KeyboardStickyView>
 
         {/* ── Footer: totales + Compra hecha ── */}
         {list && list.items.length > 0 && (
