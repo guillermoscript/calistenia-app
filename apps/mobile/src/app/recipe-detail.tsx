@@ -22,11 +22,36 @@ const MAX_SERVINGS = 8
 // Cache in-module: misma query no se re-busca al navegar entre recetas.
 const photoCache = new Map<string, string | null>()
 
-async function mealDbFirstThumb(url: string): Promise<string | null> {
-  const res = await fetch(url)
+type MealDbHit = { strMeal?: string; strMealThumb?: string }
+
+async function mealDbSearch(q: string): Promise<MealDbHit[]> {
+  const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(q)}`)
   if (!res.ok) throw new Error(`${res.status}`)
-  const data = (await res.json()) as { meals?: { strMealThumb?: string }[] | null }
-  return data.meals?.[0]?.strMealThumb ?? null
+  const data = (await res.json()) as { meals?: MealDbHit[] | null }
+  return data.meals ?? []
+}
+
+const sameWord = (a: string, b: string) => a === b || a === `${b}s` || `${a}s` === b
+
+/**
+ * Solo acepta una foto si el NOMBRE del plato coincide de verdad con la query:
+ * todas las palabras de la query presentes y máx 1 palabra extra (0 si la query
+ * es de una sola palabra). Una foto de otro plato es peor que ninguna foto.
+ */
+function pickPreciseThumb(query: string, candidates: MealDbHit[]): string | null {
+  const qwords = query.split(/\s+/).filter((w) => w.length >= 3)
+  if (!qwords.length) return null
+  const maxExtras = qwords.length === 1 ? 0 : 1
+  let best: { thumb: string; extras: number } | null = null
+  for (const m of candidates) {
+    if (!m.strMealThumb) continue
+    const nwords = (m.strMeal ?? '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean)
+    if (!nwords.length) continue
+    if (!qwords.every((w) => nwords.some((n) => sameWord(n, w)))) continue
+    const extras = nwords.filter((n) => !qwords.some((w) => sameWord(n, w))).length
+    if (extras <= maxExtras && (!best || extras < best.extras)) best = { thumb: m.strMealThumb, extras }
+  }
+  return best?.thumb ?? null
 }
 
 async function fetchMealPhoto(query: string): Promise<string | null> {
@@ -34,16 +59,13 @@ async function fetchMealPhoto(query: string): Promise<string | null> {
   if (!key) return null
   if (photoCache.has(key)) return photoCache.get(key) ?? null
   try {
-    // search.php matchea nombres exactos de plato — suele fallar con queries genéricas
-    // ("chicken rice"); el fallback por ingrediente casi siempre encuentra algo.
-    let url = await mealDbFirstThumb(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(key)}`)
-    if (!url) {
-      for (const word of key.split(/\s+/)) {
-        if (word.length < 3) continue
-        url = await mealDbFirstThumb(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(word)}`)
-        if (url) break
-      }
+    // search.php matchea por nombre de plato; buscamos la query completa y cada
+    // palabra para juntar candidatos, y filtramos con matching estricto.
+    const seen = new Map<string, MealDbHit>()
+    for (const q of new Set([key, ...key.split(/\s+/).filter((w) => w.length >= 3)])) {
+      for (const m of await mealDbSearch(q)) seen.set(m.strMealThumb ?? m.strMeal ?? '', m)
     }
+    const url = pickPreciseThumb(key, [...seen.values()])
     photoCache.set(key, url)
     return url
   } catch {
