@@ -181,4 +181,11 @@ export const qk = {
     list: (userId: string | null) => ['pantry', 'list', userId] as const,
     history: (userId: string | null) => ['pantry', 'history', userId] as const,
   },
+
+  // — Shopping list (F3, issue #172) —
+  shopping: {
+    active: (userId: string | null) => ['shopping', 'active', userId] as const,
+    lastDone: (userId: string | null) => ['shopping', 'lastDone', userId] as const,
+    cadence: (userId: string | null) => ['shopping', 'cadence', userId] as const,
+  },
 } as const

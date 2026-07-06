@@ -1,7 +1,9 @@
 import { memo } from 'react'
-import { Pressable, SectionList, Text, View } from 'react-native'
+import { Alert, Pressable, SectionList, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { X } from 'lucide-react-native'
 import { daysUntil, groupPantryByCategory } from '@calistenia/core/lib/pantry'
+import { formatMoney, roundQty } from '@calistenia/core/lib/shopping'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import type { PantryItem } from '@calistenia/core/types'
 
@@ -14,7 +16,8 @@ const CONFIDENCE_DOT: Record<string, string> = {
 function fmtQty(item: PantryItem): string {
   if (item.quantity == null) return '—'
   const approx = item.confidence !== 'high' ? '~' : ''
-  return `${approx}${item.quantity}${item.unit ? ` ${item.unit}` : ''}`
+  // roundQty: qty puede venir de merges de compra (sumas float) — sin colas IEEE
+  return `${approx}${roundQty(item.quantity)}${item.unit ? ` ${item.unit}` : ''}`
 }
 
 function expiryLabel(item: PantryItem, today: string, expiredText: string): { text: string; cls: string } | null {
@@ -26,11 +29,12 @@ function expiryLabel(item: PantryItem, today: string, expiredText: string): { te
   return null
 }
 
-const Row = memo(function Row({ item, today, expiredText, onPress }: {
+const Row = memo(function Row({ item, today, expiredText, onPress, onDelete }: {
   item: PantryItem
   today: string
   expiredText: string
   onPress: (item: PantryItem) => void
+  onDelete?: (item: PantryItem) => void
 }) {
   const expiry = expiryLabel(item, today, expiredText)
   return (
@@ -43,7 +47,17 @@ const Row = memo(function Row({ item, today, expiredText, onPress }: {
       {expiry && <Text className={`font-mono text-[10px] ${expiry.cls}`}>{expiry.text}</Text>}
       <Text className="font-mono text-xs text-muted-foreground">{fmtQty(item)}</Text>
       {item.priceTotal != null && (
-        <Text className="font-mono text-xs text-lime">${item.priceTotal}</Text>
+        <Text className="font-mono text-xs text-lime">${formatMoney(item.priceTotal)}</Text>
+      )}
+      {onDelete && (
+        <Pressable
+          onPress={() => onDelete(item)}
+          hitSlop={6}
+          accessibilityRole="button"
+          className="-my-2 p-2"
+        >
+          <X size={16} color="hsl(0 0% 40%)" />
+        </Pressable>
       )}
     </Pressable>
   )
@@ -59,14 +73,23 @@ function SectionHeader({ label }: { label: string }) {
   )
 }
 
-export function PantryTable({ items, onPressItem, onExample }: {
+export function PantryTable({ items, onPressItem, onExample, onDeleteItem }: {
   items: PantryItem[]
   onPressItem: (item: PantryItem) => void
   onExample: (text: string) => void
+  onDeleteItem?: (item: PantryItem) => void
 }) {
   const { t } = useTranslation()
   const today = todayStr()
   const expiredText = t('pantry.expired')
+  const confirmDelete = onDeleteItem
+    ? (item: PantryItem) => {
+        Alert.alert(t('pantry.deleteTitle'), item.name, [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.delete'), style: 'destructive', onPress: () => onDeleteItem(item) },
+        ])
+      }
+    : undefined
   const sections = groupPantryByCategory(items)
   const examples = [t('pantry.example1'), t('pantry.example2')]
   return (
@@ -80,7 +103,7 @@ export function PantryTable({ items, onPressItem, onExample }: {
         <SectionHeader label={t(`pantry.categories.${section.category}`)} />
       )}
       renderItem={({ item }) => (
-        <Row item={item} today={today} expiredText={expiredText} onPress={onPressItem} />
+        <Row item={item} today={today} expiredText={expiredText} onPress={onPressItem} onDelete={confirmDelete} />
       )}
       ListEmptyComponent={
         <View className="items-center px-6 py-14">

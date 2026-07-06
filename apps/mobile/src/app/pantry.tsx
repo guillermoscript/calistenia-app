@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useRouter } from 'expo-router'
-import { ArrowLeft } from 'lucide-react-native'
+import { ArrowLeft, ShoppingCart } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import {
   useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, usePantryHistory, usePantryItems,
@@ -145,12 +145,21 @@ export default function PantryScreen() {
           </Text>
           <Text className="font-bebas text-4xl text-foreground">{t('pantry.title')}</Text>
         </View>
+        <Pressable
+          onPress={() => router.push('/shopping-list')}
+          hitSlop={8}
+          className="ml-auto p-2"
+          accessibilityRole="button"
+          accessibilityLabel={t('shopping.title')}
+        >
+          <ShoppingCart size={20} color="hsl(0 0% 55%)" />
+        </Pressable>
       </View>
 
       {/* enabled=false con sheet abierto: el teclado del sheet no debe empujar el chat de fondo */}
       <KeyboardAvoidingView className="flex-1" behavior="padding" enabled={parseResult == null && editing == null}>
         <View className="flex-1">
-          <PantryTable items={items} onPressItem={setEditing} onExample={handleSend} />
+          <PantryTable items={items} onPressItem={setEditing} onExample={handleSend} onDeleteItem={handleDelete} />
         </View>
         {reply && (
           <View className="mx-4 mb-2 self-start rounded-xl rounded-bl-none border border-border bg-card px-3 py-2">

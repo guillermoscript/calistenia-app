@@ -12,8 +12,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft } from 'lucide-react-native'
+import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
+import { useAuthUser } from '@/lib/use-auth-user'
+import { usePantryItems } from '@calistenia/core/hooks/usePantry'
+import { computeRecipeCost, formatMoney, roundQty } from '@calistenia/core/lib/shopping'
 import type { Recipe } from '@calistenia/core/types'
 
 const MUTED = 'hsl(0 0% 55%)'
@@ -81,10 +84,9 @@ async function fetchMealMedia(query: string): Promise<MealMedia | null> {
   }
 }
 
-// 3 × 1.5 → "4.5", 100 × 2 → "200" — sin colas de float.
+// 3 × 1.5 → "4.5", 100 × 2 → "200" — sin colas de float (roundQty de core).
 function scaleQty(qty: number, factor: number): string {
-  const v = Math.round(qty * factor * 10) / 10
-  return Number.isInteger(v) ? String(v) : String(v)
+  return String(roundQty(qty * factor))
 }
 
 export default function RecipeDetailScreen() {
@@ -105,6 +107,15 @@ export default function RecipeDetailScreen() {
   const baseServings = Math.max(1, recipe?.servings ?? 1)
   const [servings, setServings] = useState(baseServings)
   const factor = servings / baseServings
+
+  const authUser = useAuthUser()
+  const { data: pantryItems = [] } = usePantryItems(authUser?.id ?? null)
+  const [showBreakdown, setShowBreakdown] = useState(false)
+  const cost = useMemo(
+    () => (recipe ? computeRecipeCost(recipe.ingredients, pantryItems, baseServings) : null),
+    [recipe, pantryItems, baseServings],
+  )
+  const hasAnyPrice = cost != null && cost.breakdown.some((b) => b.source !== 'sin_precio')
 
   const [media, setMedia] = useState<MealMedia | null>(null)
   useEffect(() => {
@@ -217,6 +228,35 @@ export default function RecipeDetailScreen() {
               </Pressable>
             </View>
           </View>
+
+          {hasAnyPrice && (
+            <Pressable onPress={() => setShowBreakdown((v) => !v)} className="border-t border-border py-3">
+              <View className="flex-row items-baseline justify-between">
+                <View className="flex-row items-center gap-1">
+                  <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {t('shopping.costPerServing')}
+                  </Text>
+                  {showBreakdown ? (
+                    <ChevronUp size={12} color={MUTED} />
+                  ) : (
+                    <ChevronDown size={12} color={MUTED} />
+                  )}
+                </View>
+                <Text className="font-bebas text-2xl text-lime-400">
+                  {cost!.hasEstimates ? '~' : ''}${formatMoney(cost!.perServing)}
+                </Text>
+              </View>
+              {showBreakdown &&
+                cost!.breakdown.map((b, i) => (
+                  <View key={i} className="mt-1 flex-row justify-between">
+                    <Text className="font-sans text-xs text-muted-foreground">{b.name}</Text>
+                    <Text className={`font-mono text-xs ${b.source === 'sin_precio' ? 'text-muted-foreground' : b.source === 'estimada' ? 'text-amber-500' : 'text-foreground'}`}>
+                      {b.cost != null ? `${b.source === 'estimada' ? '~' : ''}$${formatMoney(b.cost)}` : t('shopping.noPrice')}
+                    </Text>
+                  </View>
+                ))}
+            </Pressable>
+          )}
 
           {/* Ingredientes — tally + filas con cantidad escalada */}
           {recipe.ingredients.length > 0 && (

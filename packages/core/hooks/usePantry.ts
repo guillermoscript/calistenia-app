@@ -7,7 +7,7 @@ import type { PantryEventType, PantryItem, PantryParsedItem } from '../types'
 
 // PB devuelve 0 para numbers vacíos: 0 se trata como "sin dato" (F1 no distingue
 // qty 0 real de blank; un item agotado se marca por status, no por qty).
-function mapRecord(r: Record<string, unknown>): PantryItem {
+export function mapPantryRecord(r: Record<string, unknown>): PantryItem {
   const rec = r as Record<string, any>
   return {
     id: rec.id,
@@ -25,6 +25,7 @@ function mapRecord(r: Record<string, unknown>): PantryItem {
     confidence: rec.confidence || 'med',
     status: rec.status || 'active',
     source: rec.source || 'manual',
+    updated: rec.updated ?? null,
   }
 }
 
@@ -37,7 +38,7 @@ export function usePantryItems(userId: string | null) {
         filter: pb.filter('user = {:uid} && status = "active"', { uid: userId! }),
         sort: '-created',
       })
-      return res.map(mapRecord)
+      return res.map(mapPantryRecord)
     },
   })
 }
@@ -55,7 +56,7 @@ export function usePantryHistory(userId: string | null) {
       const seen = new Set<string>()
       const out: PantryItem[] = []
       for (const r of res) {
-        const it = mapRecord(r)
+        const it = mapPantryRecord(r)
         if (seen.has(it.nameNormalized)) continue
         seen.add(it.nameNormalized)
         out.push(it)
@@ -97,7 +98,7 @@ export function useAddPantryItems(userId: string | null) {
           type: 'add',
           delta_qty: it.quantity ?? 0,
         })
-        created.push(mapRecord(rec))
+        created.push(mapPantryRecord(rec))
       }
       return created
     },
@@ -142,7 +143,7 @@ export function useAdjustPantryItem(userId: string | null) {
         })
       }
       const rec = await pb.collection('pantry_items').update(item.id, patch)
-      return mapRecord(rec)
+      return mapPantryRecord(rec)
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
