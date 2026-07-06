@@ -132,7 +132,8 @@ export default function PantryScreen() {
 
   const handleBulkDelete = () => {
     const ids = [...selectedIds]
-    Alert.alert(t('common.deleteCountTitle', { count: ids.length }), '', [
+    // plural manual: ver nota en SelectionBar (Intl.PluralRules puede faltar en Hermes)
+    Alert.alert(ids.length === 1 ? t('common.deleteOneTitle') : t('common.deleteManyTitle', { n: ids.length }), '', [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('common.delete'),

@@ -23,7 +23,8 @@ export function SelectionBar({ count, onDelete, onCancel }: {
         <X size={18} color="hsl(0 0% 55%)" />
       </Pressable>
       <Text className="flex-1 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
-        {t('common.selectedCount', { count })}
+        {/* plural manual: Hermes puede no traer Intl.PluralRules y los sufijos _one/_other no resuelven */}
+        {count === 1 ? t('common.selectedOne') : t('common.selectedMany', { n: count })}
       </Text>
       <Button size="sm" variant="destructive" onPress={onDelete}>
         <Text>{t('common.delete')}</Text>

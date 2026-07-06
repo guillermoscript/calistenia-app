@@ -130,7 +130,8 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
   const onBulkRemove = () => {
     if (!list) return
     const indices = [...selected]
-    Alert.alert(t('common.deleteCountTitle', { count: indices.length }), '', [
+    // plural manual: ver nota en SelectionBar (Intl.PluralRules puede faltar en Hermes)
+    Alert.alert(indices.length === 1 ? t('common.deleteOneTitle') : t('common.deleteManyTitle', { n: indices.length }), '', [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('common.delete'),
