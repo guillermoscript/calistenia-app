@@ -31,6 +31,7 @@ const REASON_CLS: Record<ShoppingReason, string> = {
 }
 
 function parseNum(s: string): number | null {
+  if (s.trim() === '') return null // blur sin escribir ≠ precio $0
   const n = Number(s.replace(',', '.'))
   return Number.isFinite(n) && n >= 0 ? n : null
 }
@@ -77,9 +78,9 @@ export function ShoppingListView({ userId }: { userId: string | null }) {
     if (!list) return
     const count = list.items.filter((i) => i.checked).length
     Alert.alert(t('shopping.doneConfirmTitle'), t('shopping.doneConfirmMsg', { count }), [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'OK',
+        text: t('common.confirm'),
         onPress: () =>
           complete.mutate(list, {
             onSuccess: (n) => {
