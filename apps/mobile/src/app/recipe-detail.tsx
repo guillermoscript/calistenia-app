@@ -7,7 +7,7 @@
  * Ruta: /recipe-detail?label=...&recipe=<json>
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Linking, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -20,9 +20,10 @@ const MUTED = 'hsl(0 0% 55%)'
 const MAX_SERVINGS = 8
 
 // Cache in-module: misma query no se re-busca al navegar entre recetas.
-const photoCache = new Map<string, string | null>()
+const mediaCache = new Map<string, MealMedia | null>()
 
-type MealDbHit = { strMeal?: string; strMealThumb?: string }
+type MealDbHit = { strMeal?: string; strMealThumb?: string; strYoutube?: string | null; strSource?: string | null }
+type MealMedia = { thumb: string; youtube: string | null; source: string | null }
 
 async function mealDbSearch(q: string): Promise<MealDbHit[]> {
   const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(q)}`)
@@ -38,26 +39,31 @@ const sameWord = (a: string, b: string) => a === b || a === `${b}s` || `${a}s` =
  * todas las palabras de la query presentes y máx 1 palabra extra (0 si la query
  * es de una sola palabra). Una foto de otro plato es peor que ninguna foto.
  */
-function pickPreciseThumb(query: string, candidates: MealDbHit[]): string | null {
+function pickPreciseMeal(query: string, candidates: MealDbHit[]): MealMedia | null {
   const qwords = query.split(/\s+/).filter((w) => w.length >= 3)
   if (!qwords.length) return null
   const maxExtras = qwords.length === 1 ? 0 : 1
-  let best: { thumb: string; extras: number } | null = null
+  let best: { meal: MealDbHit; extras: number } | null = null
   for (const m of candidates) {
     if (!m.strMealThumb) continue
     const nwords = (m.strMeal ?? '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean)
     if (!nwords.length) continue
     if (!qwords.every((w) => nwords.some((n) => sameWord(n, w)))) continue
     const extras = nwords.filter((n) => !qwords.some((w) => sameWord(n, w))).length
-    if (extras <= maxExtras && (!best || extras < best.extras)) best = { thumb: m.strMealThumb, extras }
+    if (extras <= maxExtras && (!best || extras < best.extras)) best = { meal: m, extras }
   }
-  return best?.thumb ?? null
+  if (!best) return null
+  return {
+    thumb: best.meal.strMealThumb!,
+    youtube: best.meal.strYoutube || null,
+    source: best.meal.strSource || null,
+  }
 }
 
-async function fetchMealPhoto(query: string): Promise<string | null> {
+async function fetchMealMedia(query: string): Promise<MealMedia | null> {
   const key = query.trim().toLowerCase()
   if (!key) return null
-  if (photoCache.has(key)) return photoCache.get(key) ?? null
+  if (mediaCache.has(key)) return mediaCache.get(key) ?? null
   try {
     // search.php matchea por nombre de plato; buscamos la query completa y cada
     // palabra para juntar candidatos, y filtramos con matching estricto.
@@ -65,12 +71,12 @@ async function fetchMealPhoto(query: string): Promise<string | null> {
     for (const q of new Set([key, ...key.split(/\s+/).filter((w) => w.length >= 3)])) {
       for (const m of await mealDbSearch(q)) seen.set(m.strMealThumb ?? m.strMeal ?? '', m)
     }
-    const url = pickPreciseThumb(key, [...seen.values()])
-    photoCache.set(key, url)
-    return url
+    const media = pickPreciseMeal(key, [...seen.values()])
+    mediaCache.set(key, media)
+    return media
   } catch {
     // Sin foto no pasa nada — la receta es el contenido.
-    photoCache.set(key, null)
+    mediaCache.set(key, null)
     return null
   }
 }
@@ -100,13 +106,13 @@ export default function RecipeDetailScreen() {
   const [servings, setServings] = useState(baseServings)
   const factor = servings / baseServings
 
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [media, setMedia] = useState<MealMedia | null>(null)
   useEffect(() => {
     const query = recipe?.photo_query ?? label
     if (!query) return
     let active = true
-    fetchMealPhoto(query).then((url) => {
-      if (active) setPhotoUrl(url)
+    fetchMealMedia(query).then((m) => {
+      if (active) setMedia(m)
     })
     return () => {
       active = false
@@ -144,14 +150,42 @@ export default function RecipeDetailScreen() {
           </Text>
           <Text className="font-bebas text-3xl leading-tight text-foreground mt-1 mb-3">{label}</Text>
 
-          {/* Foto (si TheMealDB encuentra el plato) */}
-          {photoUrl && (
-            <Image
-              source={{ uri: photoUrl }}
-              style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 12, marginBottom: 16 }}
-              contentFit="cover"
-              transition={200}
-            />
+          {/* Foto + video/fuente (solo con match preciso en TheMealDB) */}
+          {media && (
+            <View className="mb-4">
+              <Image
+                source={{ uri: media.thumb }}
+                style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 12 }}
+                contentFit="cover"
+                transition={200}
+              />
+              {(media.youtube || media.source) && (
+                <View className="flex-row items-center gap-5 mt-2">
+                  {media.youtube && (
+                    <Pressable
+                      onPress={() => Linking.openURL(media.youtube!).catch(() => {})}
+                      hitSlop={8}
+                      accessibilityRole="link"
+                    >
+                      <Text className="font-mono text-[10px] uppercase tracking-widest text-lime-400">
+                        ▶ {t('pantryPlan.watchVideo')}
+                      </Text>
+                    </Pressable>
+                  )}
+                  {media.source && (
+                    <Pressable
+                      onPress={() => Linking.openURL(media.source!).catch(() => {})}
+                      hitSlop={8}
+                      accessibilityRole="link"
+                    >
+                      <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {t('pantryPlan.source')} ↗
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+            </View>
           )}
 
           {/* Porciones — escala las cantidades */}

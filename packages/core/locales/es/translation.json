@@ -2607,5 +2607,7 @@
   "pantryPlan.total": "Total",
   "pantryPlan.itemCount_one": "{{count}} ítem",
   "pantryPlan.itemCount_other": "{{count}} ítems",
-  "pantryPlan.servings": "Porciones"
+  "pantryPlan.servings": "Porciones",
+  "pantryPlan.watchVideo": "Ver video",
+  "pantryPlan.source": "Fuente"
 }
