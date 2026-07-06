@@ -674,4 +674,5 @@ export type {
   PantryParsedItem, PantryParseResult,
   PantrySnapshotItem, Recipe, RecipeIngredient,
   HowManyMealsBreakdownRow, HowManyMealsResult,
+  ShoppingReason, ShoppingListItem, ShoppingList,
 } from './pantry'

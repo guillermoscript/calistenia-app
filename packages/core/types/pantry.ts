@@ -24,6 +24,8 @@ export interface PantryItem {
   confidence: PantryConfidence
   status: PantryStatus
   source: PantrySource
+  /** Autodate de PB — usado por la ventana SE ACABÓ del ciclo de compra. */
+  updated?: string | null
 }
 
 export interface PantryEvent {
@@ -96,4 +98,36 @@ export interface HowManyMealsResult {
   breakdown: HowManyMealsBreakdownRow[]
   summary: string
   model_used?: string
+}
+
+// ── Shopping list (F3, issue #172) ──────────────────────────────────────────
+
+/** Razón por la que un item está en la lista (ciclo de compra). */
+export type ShoppingReason = 'plan' | 'se_acabo' | 'vence'
+
+export interface ShoppingListItem {
+  name: string
+  name_normalized: string
+  /** Cantidad faltante en unidad BASE (g/ml/unidad/paquete). null = sin dato, el usuario decide. */
+  qty: number | null
+  unit: PantryUnit | null
+  /** Derivado del histórico de precios de la despensa. Nunca de un LLM. */
+  est_price: number | null
+  currency: string
+  checked: boolean
+  actual_price: number | null
+  reasons: ShoppingReason[]
+  /** Existe el item en despensa pero en unidad no convertible (ej. plan pide 200 g, hay 4 unidad). */
+  incompatible_have: { qty: number; unit: PantryUnit } | null
+}
+
+export interface ShoppingList {
+  id: string
+  user?: string
+  status: 'active' | 'done'
+  items: ShoppingListItem[]
+  linked_plan: string | null
+  total_est: number | null
+  total_actual: number | null
+  updated?: string
 }
