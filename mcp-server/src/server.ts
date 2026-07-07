@@ -34,6 +34,8 @@ import { registerSmartTools } from "./tools/smart.js";
 import { registerGamificationTools } from "./tools/gamification.js";
 import { registerMediaTools } from "./tools/media.js";
 import { registerCircuitTools } from "./tools/circuits.js";
+import { registerPantryTools } from "./tools/pantry.js";
+import { registerRecipeTools } from "./tools/recipes.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
 
@@ -112,7 +114,7 @@ server.tool(
   }
 );
 
-// ── Tools (71) — auth resolved per request from ctx.auth ─────────────────────
+// ── Tools (85) — auth resolved per request from ctx.auth ─────────────────────
 registerExerciseTools(server, PB_URL);
 registerWorkoutTools(server, PB_URL);
 registerProgramTools(server, PB_URL);
@@ -123,6 +125,8 @@ registerSmartTools(server, PB_URL);
 registerGamificationTools(server, PB_URL);
 registerMediaTools(server, PB_URL);
 registerCircuitTools(server, PB_URL);
+registerPantryTools(server, PB_URL);
+registerRecipeTools(server, PB_URL);
 
 // ── Resources (3) + Prompts (3) ───────────────────────────────────────────────
 registerResources(server, PB_URL);
