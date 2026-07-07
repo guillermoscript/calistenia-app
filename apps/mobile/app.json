@@ -3,7 +3,7 @@
     "name": "Calistenia",
     "slug": "calistenia",
     "owner": "guillermouser",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "calistenia",
@@ -27,7 +27,7 @@
     "android": {
       "package": "tech.guille.calistenia",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 12,
+      "versionCode": 13,
       "intentFilters": [
         {
           "action": "VIEW",
