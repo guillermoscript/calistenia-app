@@ -29,12 +29,11 @@ describe('estimateCalories', () => {
     )
   })
 
-  // OJO: weightKg=0 es un valor "falsy" en JS, así que `weightKg || DEFAULT_WEIGHT_KG`
-  // ignora el 0 explícito y usa 70kg en su lugar. Documentamos el comportamiento
-  // actual (no lo arreglamos) — un caller que pase peso 0 no obtiene 0 calorías.
-  it('OJO: weightKg=0 no se respeta, cae al peso por defecto (70kg)', () => {
-    expect(estimateCalories('running', 3600, 0)).toBe(estimateCalories('running', 3600))
+  it('un peso no válido (0, negativo, NaN) se trata como "no configurado" → default 70kg', () => {
+    // Intencional: 0 kg no es un peso corporal posible, así que no produce 0 kcal.
     expect(estimateCalories('running', 3600, 0)).toBe(686)
+    expect(estimateCalories('running', 3600, -5)).toBe(686)
+    expect(estimateCalories('running', 3600, NaN)).toBe(686)
   })
 
   it('weightKg undefined usa el peso por defecto (70kg)', () => {

@@ -16,7 +16,10 @@ export function parsePortionString(str: string): { amount: number; unit: Portion
   // Try to match number + unit (flexible: supports "175g", "175 g", "175gr", "175 gramos", etc.)
   const match = s.match(/([\d.,]+)\s*(g(?:r(?:amos)?)?|kg|ml|l(?:itros?)?|oz|unidad(?:es)?)?/i)
   if (match) {
-    const amount = parseFloat(match[1].replace(',', '.')) || 100
+    const parsed = parseFloat(match[1].replace(',', '.'))
+    // Solo caer al default cuando NO hay número parseable: "0g" es un 0 explícito
+    // y debe respetarse (normalizeToBase100 ya protege la división por 0).
+    const amount = Number.isFinite(parsed) ? parsed : 100
     let unit: PortionUnit = 'g'
     const rawUnit = (match[2] || 'g').toLowerCase()
     if (rawUnit === 'kg') unit = 'kg'
