@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr, utcToLocalDateStr } from '../lib/dateUtils'
-import { computePantryConfidence, expiryFromDays } from '../lib/pantry'
-import type { PantryEventType, PantryItem, PantryParsedItem } from '../types'
+import { computePantryConfidence, expiryFromDays, normalizePantryName } from '../lib/pantry'
+import { canonCurrency, toUSD } from '../lib/money'
+import type { PantryEventType, PantryItem, PantryParsedItem, PantrySource } from '../types'
 
 // PB devuelve 0 para numbers vacíos: 0 se trata como "sin dato" (F1 no distingue
 // qty 0 real de blank; un item agotado se marca por status, no por qty).
@@ -19,6 +20,9 @@ export function mapPantryRecord(r: Record<string, unknown>): PantryItem {
     unit: rec.unit || null,
     priceTotal: rec.price_total ? Number(rec.price_total) : null,
     currency: rec.currency || 'USD',
+    priceOriginal: rec.price_original ? Number(rec.price_original) : null,
+    currencyOriginal: rec.currency_original || null,
+    exchangeRate: rec.exchange_rate ? Number(rec.exchange_rate) : null,
     priceSource: rec.price_source || null,
     purchaseDate: rec.purchase_date ? String(rec.purchase_date).slice(0, 10) : null,
     expiryEstimate: rec.expiry_estimate ? String(rec.expiry_estimate).slice(0, 10) : null,
@@ -76,30 +80,57 @@ export function usePantryHistory(userId: string | null) {
   })
 }
 
+export interface AddPantryItemsInput {
+  items: PantryParsedItem[]
+  /** Origen del alta. Default 'chat' (flujo F1). */
+  source?: PantrySource
+  /** YYYY-MM-DD del recibo (F5). Default hoy. También es la base del expiry. */
+  purchaseDate?: string | null
+  /** Moneda ORIGINAL de los precios (factura o default del user). Default USD. */
+  currency?: string | null
+  /** Unidades de `currency` por 1 USD al momento de la compra. Requerida si currency ≠ USD. */
+  exchangeRate?: number | null
+}
+
+/** purchase_date viene de un LLM: sin validar, una fecha corrupta tumba TODO el alta con un 400 de PB. */
+const isValidISODate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s))
+
 /** Batch: crea items + su evento add. REGLA DE ORO: nunca qty sin evento. */
 export function useAddPantryItems(userId: string | null) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (items: PantryParsedItem[]): Promise<PantryItem[]> => {
+    mutationFn: async ({ items, source = 'chat', purchaseDate, currency, exchangeRate }: AddPantryItemsInput): Promise<PantryItem[]> => {
       if (!userId) throw new Error('No user')
-      const today = todayStr()
+      const baseDate = purchaseDate && isValidISODate(purchaseDate) ? purchaseDate : todayStr()
+      // USD = moneda funcional: price_total SIEMPRE en USD; la factura conserva
+      // su moneda y la tasa DEL MOMENTO en price_original/currency_original/exchange_rate
+      const curr = canonCurrency(currency) ?? 'USD'
+      const rate = curr !== 'USD' ? (exchangeRate ?? null) : null
       const created: PantryItem[] = []
       for (const it of items) {
+        const isForeign = curr !== 'USD' && it.price_total != null
+        // sin tasa no se inventa el USD: el item queda sin precio de referencia
+        const priceUsd = isForeign ? (rate != null ? toUSD(it.price_total!, rate) : null) : it.price_total
         const rec = await pb.collection('pantry_items').create({
           user: userId,
           name: it.name,
-          name_normalized: it.name_normalized,
+          // SIEMPRE recalculado al persistir: un name_normalized con mayúsculas o
+          // acentos (LLM) rompería el matching y duplicaría items a futuro
+          name_normalized: normalizePantryName(it.name_normalized || it.name),
           category: it.category,
           quantity: it.quantity ?? undefined,
           unit: it.unit ?? undefined,
-          price_total: it.price_total ?? undefined,
+          price_total: priceUsd ?? undefined,
           currency: 'USD',
-          price_source: it.price_total != null ? 'real' : undefined,
-          purchase_date: today,
-          expiry_estimate: expiryFromDays(it.expiry_days, today) ?? undefined,
+          price_original: isForeign ? it.price_total! : undefined,
+          currency_original: isForeign ? curr : undefined,
+          exchange_rate: isForeign && rate != null ? rate : undefined,
+          price_source: priceUsd != null ? 'real' : undefined,
+          purchase_date: baseDate,
+          expiry_estimate: expiryFromDays(it.expiry_days, baseDate) ?? undefined,
           confidence: it.confidence,
           status: 'active',
-          source: 'chat',
+          source,
         })
         await pb.collection('pantry_events').create({
           user: userId,
@@ -164,6 +195,7 @@ export function useAdjustPantryItem(userId: string | null) {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
       qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
+      qc.invalidateQueries({ queryKey: ['pantry', 'spend'] })
     },
   })
 }
@@ -226,6 +258,7 @@ export function useConsumePantryMatches(userId: string | null) {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.pantry.list(userId) })
       qc.invalidateQueries({ queryKey: qk.pantry.history(userId) })
+      qc.invalidateQueries({ queryKey: ['pantry', 'spend'] })
     },
   })
 }

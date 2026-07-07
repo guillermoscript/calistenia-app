@@ -165,6 +165,35 @@ export const RecipeSchema = z.object({
     .describe("Nombre simple del plato en INGLÉS para buscar foto, 2-3 palabras (ej: 'chicken rice', 'oatmeal')"),
 });
 
+// ─── Despensa F5: parser de recibos (#174) ───────────────────────────────────
+// ⚠️ OpenAI strict mode: SIEMPRE .nullable(), NUNCA .optional()
+
+export const ReceiptItemSchema = PantryParsedItemSchema.extend({
+  raw_line: z
+    .string()
+    .describe('Línea original del recibo tal cual aparece, ej: "POLLO ENT KG 2.145 8.58"'),
+});
+
+export const ReceiptParseSchema = z.object({
+  store_name: z.string().nullable().describe("Nombre de la tienda si se lee en el recibo; null si no"),
+  purchase_date: z
+    .string()
+    .nullable()
+    .describe("Fecha de compra en formato YYYY-MM-DD si se lee del recibo; null si no"),
+  currency: z
+    .string()
+    .nullable()
+    .describe("Moneda del recibo como código o símbolo (USD, Bs, EUR); null si no se distingue"),
+  exchange_rate_usd: z
+    .number()
+    .nullable()
+    .describe("Tasa de cambio a USD IMPRESA en el recibo (ej. 'TASA BCV 143.50' → 143.5, unidades de la moneda local por 1 USD); null si no aparece. NUNCA la inventes"),
+  items: z.array(ReceiptItemSchema).describe("SOLO líneas de comida/bebida, con su precio de línea"),
+  ignored_lines: z
+    .array(z.string())
+    .describe("Líneas ignoradas: subtotales, IVA, descuentos, no-comida (detergente, etc.)"),
+});
+
 export const HowManyMealsSchema = z.object({
   total_meals: z.number().describe("Total de comidas completas posibles con el inventario actual"),
   days_covered: z.number().describe("Días aproximados que cubre (3-4 comidas/día)"),

@@ -1,7 +1,8 @@
 import { generateObject } from "ai";
-import { resolveModel } from "./model-resolver.js";
+import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
-import { PantryParseSchema, MatchConsumptionSchema } from "./schemas.js";
+import { PantryParseSchema, MatchConsumptionSchema, ReceiptParseSchema } from "./schemas.js";
+import { canonCurrency, sanitizeReceiptItems } from "./receipt-sanitizer.js";
 
 interface PantryParseInput {
   text: string;
@@ -82,6 +83,59 @@ export async function matchConsumption({ foods, pantryItems }: MatchConsumptionI
   return {
     ...object,
     matches: object.matches.filter((m) => validIds.has(m.pantry_item_id)),
+    model_used: modelName,
+    usage: {
+      prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
+      completion_tokens: (usage as any)?.completionTokens ?? (usage as any)?.completion_tokens,
+      total_tokens: (usage as any)?.totalTokens ?? (usage as any)?.total_tokens,
+    },
+  };
+}
+
+interface ReceiptParseInput {
+  images: { buffer: Buffer; mimeType: string }[];
+  tier: Tier;
+}
+
+// #174 F5: visión sobre recibo (borroso, abreviado) = tarea dura → tier del
+// usuario, como analyze-meal. NO fijar "free" (eso es solo para parsing de texto).
+export async function parseReceipt({ images, tier }: ReceiptParseInput) {
+  const { model, name: modelName } = resolveModel(tier);
+  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("receipt-parser");
+
+  const imageContent = images.map((img) => ({
+    type: "image" as const,
+    image: new Uint8Array(img.buffer),
+    mediaType: img.mimeType as any,
+  }));
+  const userText =
+    images.length > 1
+      ? `Estas ${images.length} fotos son partes del MISMO recibo de supermercado (recibo largo). Extrae todos los items de comida con sus precios, sin duplicar los del solape entre fotos.`
+      : "Extrae los items de comida y sus precios de esta foto de recibo de supermercado.";
+
+  const { object, usage } = await generateObject({
+    model,
+    schema: ReceiptParseSchema,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "receipt-parser",
+      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
+    },
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: [...imageContent, { type: "text" as const, text: userText }] },
+    ],
+  });
+
+  // Post-proceso determinista: nombres limpios, name_normalized recalculado,
+  // qty/unit rescatados, duplicados fusionados — no confiar en el LLM para esto.
+  const sanitized = sanitizeReceiptItems(object.items, object.ignored_lines);
+
+  return {
+    ...object,
+    currency: canonCurrency(object.currency),
+    items: sanitized.items,
+    ignored_lines: sanitized.ignored_lines,
     model_used: modelName,
     usage: {
       prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,

@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, KeyboardProvider } from 'react-native-keyboard-co
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
+import { currencySymbol } from '@calistenia/core/lib/money'
 import type { PantryItem } from '@calistenia/core/types'
 
 function parseNum(v: string): number | null {
@@ -82,7 +83,7 @@ export function PantryEditSheet({ item, onSave, onDelete, onClose, onVerify, onG
               </View>
               <View className="flex-1">
                 <Text className="mb-1 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
-                  {t('pantry.price')}
+                  {t('pantry.price')} $
                 </Text>
                 <TextInput
                   value={price}
@@ -92,6 +93,13 @@ export function PantryEditSheet({ item, onSave, onDelete, onClose, onVerify, onG
                   placeholderTextColor="hsl(0 0% 45%)"
                   className="h-11 rounded-md border border-input bg-background px-3 font-mono text-sm text-foreground"
                 />
+                {/* multimoneda: lo que dice la factura, tasa del día de la compra */}
+                {item.priceOriginal != null && item.currencyOriginal && item.currencyOriginal !== 'USD' && (
+                  <Text className="mt-1 font-mono text-[9px] tracking-wide text-muted-foreground/70" numberOfLines={1}>
+                    {currencySymbol(item.currencyOriginal)} {item.priceOriginal}
+                    {item.exchangeRate != null ? ` @ ${item.exchangeRate}` : ''}
+                  </Text>
+                )}
               </View>
             </View>
             {item.confidence === 'low' && (

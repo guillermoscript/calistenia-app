@@ -180,6 +180,9 @@ export const qk = {
   pantry: {
     list: (userId: string | null) => ['pantry', 'list', userId] as const,
     history: (userId: string | null) => ['pantry', 'history', userId] as const,
+    spend: (userId: string | null, weekStart: string) =>
+      ['pantry', 'spend', userId, weekStart] as const,
+    currency: (userId: string | null) => ['pantry', 'currency', userId] as const,
   },
 
   // — Shopping list (F3, issue #172) —

@@ -27,7 +27,8 @@ import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { todayStr, addDays, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
+import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
+import { useSpendSummary } from '@calistenia/core/hooks/useSpend'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
 import { usePantryPlan } from '@calistenia/core/hooks/usePantryPlan'
@@ -141,6 +142,9 @@ export default function NutritionTab() {
 
   const { data: pantryItems = [] } = usePantryItems(userId)
   const pantryCount = pantryItems.length
+
+  // F5 (#174): gasto de la semana ACTUAL (V1; días fuera de esta semana no traen badge)
+  const spendData = useSpendSummary(userId, startOfWeekStr()).data
 
   const pantryPlan = usePantryPlan(userId)
   // Solo se usa en JSX tras el early-return de !goals; el ?? 0 es para el narrow de TS.
@@ -747,6 +751,8 @@ export default function NutritionTab() {
             selectedDate={selectedDate}
             dailyQualityScore={dailyQualityScore}
             activeCalories={activeCalories}
+            spend={spendData?.summary}
+            entryCosts={spendData?.costByEntry}
           />
         </View>
 

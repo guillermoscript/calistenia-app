@@ -16,8 +16,16 @@ export interface PantryItem {
   category: PantryCategory
   quantity: number | null
   unit: PantryUnit | null
+  /** SIEMPRE en USD (moneda funcional de referencia). */
   priceTotal: number | null
+  /** Legacy: congelado en 'USD' desde multimoneda (la referencia es priceTotal). */
   currency: string
+  /** Monto tal cual la factura, en su moneda. null = nació en USD. */
+  priceOriginal: number | null
+  /** Código canónico de la moneda de la factura (VES/EUR/USD). */
+  currencyOriginal: string | null
+  /** Unidades de currencyOriginal por 1 USD AL MOMENTO de la compra. */
+  exchangeRate: number | null
   priceSource: 'real' | 'estimada' | null
   purchaseDate: string | null       // YYYY-MM-DD
   expiryEstimate: string | null     // YYYY-MM-DD
@@ -53,6 +61,25 @@ export interface PantryParseResult {
   intent: PantryIntent
   items: PantryParsedItem[]
   reply: string
+  model_used?: string
+}
+
+// ── F5: parser de recibos (#174) — snake_case: viene del wire ────────────────
+
+export interface ReceiptParsedItem extends PantryParsedItem {
+  /** Línea original del recibo ("POLLO ENT KG 2.145 8.58"). */
+  raw_line: string
+}
+
+export interface ReceiptParseResult {
+  store_name: string | null
+  purchase_date: string | null   // YYYY-MM-DD
+  /** Código canónico (el server la canonicaliza: "Bs" → "VES"). */
+  currency: string | null
+  /** Tasa a USD IMPRESA en el recibo (ej. TASA BCV); null si no aparece. */
+  exchange_rate_usd: number | null
+  items: ReceiptParsedItem[]
+  ignored_lines: string[]
   model_used?: string
 }
 

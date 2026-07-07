@@ -12,6 +12,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { todayStr, localHour } from '@calistenia/core/lib/dateUtils'
 import { getMealTimeLabel } from '@calistenia/core/lib/meal-time'
+import { formatMoney } from '@calistenia/core/lib/shopping'
+import type { EntryCost, SpendSummary } from '@calistenia/core/lib/spend'
 import type { NutritionEntry, DailyTotals, QualityScore } from '@calistenia/core/types'
 import MacroRing from './MacroRing'
 import MacroBar from './MacroBar'
@@ -38,6 +40,10 @@ interface NutritionDashboardProps {
   dailyQualityScore?: QualityScore
   /** Calorías activas quemadas (reloj/Health Connect) que amplían el budget del día. */
   activeCalories?: number
+  /** F5 (#174): resumen de gasto semanal. Ausente/sin datos → bloque oculto. */
+  spend?: SpendSummary
+  /** F5 (#174): costo por entry id para el badge $ de cada comida. */
+  entryCosts?: Record<string, EntryCost>
 }
 
 // ─── Meal color tokens (NativeWind safe — no dynamic class generation) ───────
@@ -123,6 +129,8 @@ interface MealCardProps {
   onDelete: (entry: NutritionEntry) => void
   onDuplicate: (entry: NutritionEntry) => void
   onEdit: (entry: NutritionEntry) => void
+  /** F5 (#174): costo real de la comida, si hay eventos de despensa vinculados. */
+  cost?: EntryCost
 }
 
 // Memoized + entry-arg callbacks: rows only re-render when their own entry /
@@ -139,6 +147,7 @@ const MealCard = memo(function MealCard({
   onDelete,
   onDuplicate,
   onEdit,
+  cost,
 }: MealCardProps) {
   const { t } = useTranslation()
 
@@ -228,6 +237,13 @@ const MealCard = memo(function MealCard({
               score={entry.qualityScore}
               pending={!entry.qualityScore && entry.foods.length > 0}
             />
+
+            {/* F5: costo real de la comida (≥ = cobertura parcial) */}
+            {cost && cost.coverage !== 'none' && cost.total > 0 && (
+              <Text className="font-mono text-[9px] text-lime-400">
+                {cost.coverage === 'partial' ? '≥' : ''}${formatMoney(cost.total)}
+              </Text>
+            )}
 
             {/* Finish time + optional duration */}
             <View className="flex-row items-center gap-1.5 ml-auto">
@@ -402,6 +418,8 @@ function NutritionDashboard({
   selectedDate,
   dailyQualityScore,
   activeCalories = 0,
+  spend,
+  entryCosts,
 }: NutritionDashboardProps) {
   const { t } = useTranslation()
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -499,6 +517,47 @@ function NutritionDashboard({
         </CardContent>
       </Card>
 
+      {/* ── F5 (#174): gasto — solo con datos reales, nunca $0 falso ──────── */}
+      {isToday && spend && spend.mealsWithCost > 0 && (
+        <Card>
+          <CardContent className="py-4">
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground mb-3">
+              {t('nutrition.spend.kicker', { defaultValue: 'Gasto' })}
+            </Text>
+            <View className="flex-row justify-between">
+              <View>
+                <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+                  {t('nutrition.spend.today', { defaultValue: 'Hoy' })}
+                </Text>
+                <Text className="font-bebas text-2xl text-foreground">
+                  {/* ≥ del día, no de la semana: un parcial del lunes no vuelve incierto el "Hoy" */}
+                  {(() => {
+                    const today = spend.byDay.find(d => d.date === todayStr())
+                    return `${today?.hasPartial ? '≥' : ''}$${formatMoney(today?.total ?? 0)}`
+                  })()}
+                </Text>
+              </View>
+              <View>
+                <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+                  {t('nutrition.spend.week', { defaultValue: 'Semana' })}
+                </Text>
+                <Text className="font-bebas text-2xl text-foreground">
+                  {spend.hasPartial ? '≥' : ''}${formatMoney(spend.weekTotal)}
+                </Text>
+              </View>
+              <View>
+                <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+                  {t('nutrition.spend.perMeal', { defaultValue: 'Prom/comida' })}
+                </Text>
+                <Text className="font-bebas text-2xl text-foreground">
+                  ${formatMoney(spend.avgPerMeal)}
+                </Text>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Meal entries ──────────────────────────────────────────────────── */}
       <View>
         {/* Section label */}
@@ -541,6 +600,7 @@ function NutritionDashboard({
                   onDelete={handleDelete}
                   onDuplicate={handleDuplicate}
                   onEdit={handleEdit}
+                  cost={entry.id ? entryCosts?.[entry.id] : undefined}
                 />
               )
             })}
