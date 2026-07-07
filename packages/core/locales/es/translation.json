@@ -2340,6 +2340,11 @@
   "nutrition.weeklyPlan.iAteThis": "COMÍ ESTO",
   "nutrition.weeklyPlan.deleteMeal": "Eliminar",
 
+  "nutrition.spend.kicker": "Gasto",
+  "nutrition.spend.today": "Hoy",
+  "nutrition.spend.week": "Semana",
+  "nutrition.spend.perMeal": "Prom/comida",
+
   "weekday.short.mon": "Lun",
   "weekday.short.tue": "Mar",
   "weekday.short.wed": "Mie",

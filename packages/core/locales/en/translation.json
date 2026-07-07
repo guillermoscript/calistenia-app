@@ -2340,6 +2340,11 @@
   "nutrition.weeklyPlan.iAteThis": "I ATE THIS",
   "nutrition.weeklyPlan.deleteMeal": "Delete",
 
+  "nutrition.spend.kicker": "Spend",
+  "nutrition.spend.today": "Today",
+  "nutrition.spend.week": "Week",
+  "nutrition.spend.perMeal": "Avg/meal",
+
   "weekday.short.mon": "Mon",
   "weekday.short.tue": "Tue",
   "weekday.short.wed": "Wed",
