@@ -21,20 +21,24 @@ function parseNum(v: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onConfirmConsume, onClose }: {
+export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onConfirmConsume, onClose, receipt }: {
   visible: boolean
   result: PantryParseResult | null
   matches: ConsumeMatch[]
   onConfirmAdd: (items: PantryParsedItem[]) => void
   onConfirmConsume: (items: PantryItem[]) => void
   onClose: () => void
+  /** F5 (#174): metadata de recibo. null/ausente = flujo chat de F1 sin cambios. */
+  receipt?: { storeName: string | null; purchaseDate: string | null; ignoredLines: string[] } | null
 }) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const [draft, setDraft] = useState<PantryParsedItem[]>([])
+  const [showRaw, setShowRaw] = useState(false)
+  const [showIgnored, setShowIgnored] = useState(false)
 
   useEffect(() => {
-    if (result?.intent === 'add') setDraft(result.items)
+    if (result?.intent === 'add') { setDraft(result.items); setShowRaw(false); setShowIgnored(false) }
   }, [result])
 
   if (!result) return null
@@ -73,12 +77,24 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                 <Text className="font-bebas text-2xl text-foreground">
                   {isAdd ? t('pantry.confirmAddTitle') : t('pantry.confirmConsumeTitle')}
                 </Text>
+                {receipt && (receipt.storeName || receipt.purchaseDate) && (
+                  <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                    {[receipt.storeName, receipt.purchaseDate].filter(Boolean).join(' · ')}
+                  </Text>
+                )}
               </View>
               <Pressable onPress={onClose} hitSlop={8} className="p-2">
                 <X size={18} color="hsl(0 0% 55%)" />
               </Pressable>
             </View>
             <ScrollView className="px-4" keyboardShouldPersistTaps="handled">
+              {isAdd && receipt && draft.some(d => (d as { raw_line?: string }).raw_line) && (
+                <Pressable onPress={() => setShowRaw(v => !v)} hitSlop={6} className="pb-1 pt-2">
+                  <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime-400/80">
+                    {showRaw ? t('pantry.receipt.hideRaw') : t('pantry.receipt.showRaw')}
+                  </Text>
+                </Pressable>
+              )}
               {isAdd ? (
                 // key estable por índice: name_normalized cambia con cada tecla y remontaría la fila (cierra el teclado)
                 draft.map((it, i) => (
@@ -141,6 +157,11 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                         ))}
                       </View>
                     </ScrollView>
+                    {showRaw && (it as { raw_line?: string }).raw_line ? (
+                      <Text className="mt-1 font-mono text-[9px] text-muted-foreground/70" numberOfLines={1}>
+                        {(it as { raw_line?: string }).raw_line}
+                      </Text>
+                    ) : null}
                   </View>
                 ))
               ) : (
@@ -161,6 +182,23 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                     </View>
                   ))}
                 </>
+              )}
+              {receipt && receipt.ignoredLines.length > 0 && (
+                <View className="py-3">
+                  <Pressable onPress={() => setShowIgnored(v => !v)} hitSlop={6}>
+                    <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+                      {receipt.ignoredLines.length === 1
+                        ? t('pantry.receipt.ignoredOne')
+                        : t('pantry.receipt.ignoredMany', { n: receipt.ignoredLines.length })}
+                      {'  '}{showIgnored ? '▴' : '▾'}
+                    </Text>
+                  </Pressable>
+                  {showIgnored && receipt.ignoredLines.map((line, i) => (
+                    <Text key={`ig-${i}`} className="mt-1 font-mono text-[9px] text-muted-foreground/60" numberOfLines={1}>
+                      {line}
+                    </Text>
+                  ))}
+                </View>
               )}
             </ScrollView>
             <View className="flex-row gap-2 px-4 pt-3">
