@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { useRouter } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
-import { ArrowLeft, ChefHat, ReceiptText, ShoppingCart } from 'lucide-react-native'
+import { ArrowLeft, Camera, ChefHat, Images, ReceiptText, ShoppingCart } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import {
   useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, useDeletePantryItems,
@@ -19,6 +19,7 @@ import { PantryConfirmSheet, type ConsumeMatch } from '@/components/pantry/Pantr
 import { PantryEditSheet } from '@/components/pantry/PantryEditSheet'
 import { SelectionBar } from '@/components/pantry/SelectionBar'
 import { KeyboardSpacer } from '@/components/ui/keyboard-spacer'
+import { OptionSheet } from '@/components/ui/option-sheet'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { parseReceiptMobile } from '@/lib/receipt-api'
 import { Sentry } from '@/lib/instrument'
@@ -130,13 +131,7 @@ export default function PantryScreen() {
     }
   }
 
-  const handleScanReceipt = () => {
-    Alert.alert(t('pantry.receipt.scanTitle'), '', [
-      { text: t('pantry.receipt.camera'), onPress: () => pickReceipt('camera') },
-      { text: t('pantry.receipt.gallery'), onPress: () => pickReceipt('gallery') },
-      { text: t('common.cancel'), style: 'cancel' },
-    ])
-  }
+  const [scanPickerOpen, setScanPickerOpen] = useState(false)
 
   const handleConfirmAdd = async (draft: PantryParsedItem[]) => {
     const meta = receiptMeta
@@ -283,7 +278,7 @@ export default function PantryScreen() {
         </View>
         {/* hitSlop 4 en los íconos adyacentes: con 8 las zonas táctiles se solapan */}
         <Pressable
-          onPress={handleScanReceipt}
+          onPress={() => setScanPickerOpen(true)}
           disabled={busy}
           hitSlop={4}
           className="ml-auto p-2"
@@ -382,6 +377,17 @@ export default function PantryScreen() {
         onClose={() => setEditing(null)}
         onVerify={handleVerifyStillHave}
         onGone={handleGone}
+      />
+      <OptionSheet
+        visible={scanPickerOpen}
+        kicker={t('pantry.title')}
+        title={t('pantry.receipt.scanTitle')}
+        cancelLabel={t('common.cancel')}
+        onClose={() => setScanPickerOpen(false)}
+        options={[
+          { key: 'camera', label: t('pantry.receipt.camera'), icon: Camera, onPress: () => pickReceipt('camera') },
+          { key: 'gallery', label: t('pantry.receipt.gallery'), icon: Images, onPress: () => pickReceipt('gallery') },
+        ]}
       />
     </SafeAreaView>
   )

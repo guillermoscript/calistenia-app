@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
 import { PantryParseSchema, MatchConsumptionSchema, ReceiptParseSchema } from "./schemas.js";
+import { sanitizeReceiptItems } from "./receipt-sanitizer.js";
 
 interface PantryParseInput {
   text: string;
@@ -126,8 +127,14 @@ export async function parseReceipt({ images, tier }: ReceiptParseInput) {
     ],
   });
 
+  // Post-proceso determinista: nombres limpios, name_normalized recalculado,
+  // qty/unit rescatados, duplicados fusionados — no confiar en el LLM para esto.
+  const sanitized = sanitizeReceiptItems(object.items, object.ignored_lines);
+
   return {
     ...object,
+    items: sanitized.items,
+    ignored_lines: sanitized.ignored_lines,
     model_used: modelName,
     usage: {
       prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,

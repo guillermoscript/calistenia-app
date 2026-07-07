@@ -50,6 +50,10 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
     setDraft(d => d.map((it, i) => (i === idx ? { ...it, ...patch } : it)))
   }
 
+  // F5: fila de recibo con datos incompletos → pedir revisión explícita del usuario
+  const needsReview = (it: PantryParsedItem) =>
+    receipt != null && (it.confidence === 'low' || it.price_total == null || it.quantity == null || it.unit == null)
+
   const removeDraft = (idx: number) => setDraft(d => d.filter((_, i) => i !== idx))
 
   const confirm = () => {
@@ -108,6 +112,11 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                         className="flex-1 p-0 font-sans-medium text-foreground"
                       />
                       <View className="flex-row items-center gap-2">
+                        {needsReview(it) && (
+                          <Text className="font-mono text-[9px] uppercase tracking-[2px] text-amber-400">
+                            {t('pantry.receipt.review')}
+                          </Text>
+                        )}
                         <Pressable
                           onPress={() => updateDraft(i, { category: PANTRY_CATEGORY_ORDER[(PANTRY_CATEGORY_ORDER.indexOf(it.category) + 1) % PANTRY_CATEGORY_ORDER.length] })}
                           hitSlop={6}

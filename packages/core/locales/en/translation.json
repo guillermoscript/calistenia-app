@@ -2610,6 +2610,7 @@
   "pantry.receipt.noItems": "No food items found on the receipt.",
   "pantry.receipt.error": "Couldn't read the receipt. Try a clearer photo.",
   "pantry.receipt.cameraDenied": "Camera permission denied. Enable it in Settings or use the gallery.",
+  "pantry.receipt.review": "Review",
   "pantry.receipt.showRaw": "Show receipt lines",
   "pantry.receipt.hideRaw": "Hide receipt lines",
   "pantry.receipt.ignoredOne": "1 line ignored",

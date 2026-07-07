@@ -2610,6 +2610,7 @@
   "pantry.receipt.noItems": "No encontré items de comida en el recibo.",
   "pantry.receipt.error": "No se pudo leer el recibo. Intenta con una foto más clara.",
   "pantry.receipt.cameraDenied": "Sin permiso de cámara. Actívalo en Ajustes o usa la galería.",
+  "pantry.receipt.review": "Revisar",
   "pantry.receipt.showRaw": "Ver líneas del recibo",
   "pantry.receipt.hideRaw": "Ocultar líneas del recibo",
   "pantry.receipt.ignoredOne": "1 línea ignorada",

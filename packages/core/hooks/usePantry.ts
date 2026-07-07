@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr, utcToLocalDateStr } from '../lib/dateUtils'
-import { computePantryConfidence, expiryFromDays } from '../lib/pantry'
+import { computePantryConfidence, expiryFromDays, normalizePantryName } from '../lib/pantry'
 import type { PantryEventType, PantryItem, PantryParsedItem, PantrySource } from '../types'
 
 // PB devuelve 0 para numbers vacíos: 0 se trata como "sin dato" (F1 no distingue
@@ -101,7 +101,9 @@ export function useAddPantryItems(userId: string | null) {
         const rec = await pb.collection('pantry_items').create({
           user: userId,
           name: it.name,
-          name_normalized: it.name_normalized,
+          // SIEMPRE recalculado al persistir: un name_normalized con mayúsculas o
+          // acentos (LLM) rompería el matching y duplicaría items a futuro
+          name_normalized: normalizePantryName(it.name_normalized || it.name),
           category: it.category,
           quantity: it.quantity ?? undefined,
           unit: it.unit ?? undefined,

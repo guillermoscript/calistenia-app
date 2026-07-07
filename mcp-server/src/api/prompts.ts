@@ -317,9 +317,9 @@ Reglas:
 
 ## Por cada item
 - raw_line: la línea ORIGINAL del recibo tal cual ("POLLO ENT KG 2.145 8.58").
-- name: nombre legible expandiendo abreviaciones de recibo: "POLLO ENT" → "pollo entero", "LCH DESC" → "leche descremada", "QSO BLANCO" → "queso blanco".
+- name: nombre legible EN MINÚSCULAS expandiendo abreviaciones de recibo: "POLLO ENT" → "pollo entero", "LCH DESC" → "leche descremada", "QSO BLANCO" → "queso blanco". El nombre NUNCA incluye cantidades, unidades ni tamaños de empaque: "HARINA PAN 1KG" → name "harina pan", quantity 1, unit "kg"; "COCA COLA 1.5LT" → name "coca cola", quantity 1.5, unit "l". La cantidad SIEMPRE va en quantity/unit, jamás dentro del nombre.
 - name_normalized: lowercase, sin acentos, singular.
-- quantity + unit: infiérelos del formato peso×precio si existe ("KG 2.145" → 2.145/kg; "3 X 1.50" → 3/unidad). Sin pista → null/null.
+- quantity + unit: infiérelos del formato peso×precio si existe ("KG 2.145" → 2.145/kg; "3 X 1.50" → 3/unidad) o del tamaño en el nombre ("900GR" → 900/g). Alias de recibo: GR/GRS → g, LT/LTS → l, CC → ml, UND/UN/UNID → unidad, PAQ/PACK → paquete. Sin pista → null/null.
 - price_total: el precio DE LA LÍNEA (lo pagado por ese item, con descuento de línea aplicado si lo hay). Es el dato más importante: si un precio no se lee con claridad, null — NUNCA lo inventes.
 - expiry_days: días estimados hasta vencer según categoría (comprado en la fecha del recibo, refrigerado): proteína fresca 3, vegetal 7, fruta 7, carbohidrato seco (arroz/pasta/avena) 365, pan 5, lácteo 10, grasa/aceite 180, condimento 365, bebida 30, congelado 90. Si no aplica → null.
 - confidence: high = nombre y precio claros; med = abreviación interpretada o cantidad inferida; low = línea borrosa o dudosa.
