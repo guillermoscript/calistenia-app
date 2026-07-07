@@ -56,6 +56,22 @@ export interface PantryParseResult {
   model_used?: string
 }
 
+// ── F5: parser de recibos (#174) — snake_case: viene del wire ────────────────
+
+export interface ReceiptParsedItem extends PantryParsedItem {
+  /** Línea original del recibo ("POLLO ENT KG 2.145 8.58"). */
+  raw_line: string
+}
+
+export interface ReceiptParseResult {
+  store_name: string | null
+  purchase_date: string | null   // YYYY-MM-DD
+  currency: string | null
+  items: ReceiptParsedItem[]
+  ignored_lines: string[]
+  model_used?: string
+}
+
 // ─── F2: plan pantry-aware (#171) ────────────────────────────────────────────
 
 export interface RecipeIngredient {
