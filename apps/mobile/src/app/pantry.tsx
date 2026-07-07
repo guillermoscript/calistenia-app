@@ -69,7 +69,7 @@ export default function PantryScreen() {
   const handleConfirmAdd = async (draft: PantryParsedItem[]) => {
     setParseResult(null)
     try {
-      await addItems.mutateAsync(draft)
+      await addItems.mutateAsync({ items: draft })
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'pantry', op: 'add_items' } })
       setReply(t('pantry.saveError'))
