@@ -1,7 +1,8 @@
 import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
-import { useAppColors, FONT } from "./lib/theme";
-import { WidgetLoading } from "./lib/ui";
+import { useAppColors, FONT, FONT_DISPLAY, trafficColor } from "./lib/theme";
+import { WidgetLoading, Kicker, ghostButtonStyle, primaryButtonStyle } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 const macroSchema = z.object({ consumed: z.number(), goal: z.number() });
 
@@ -47,7 +48,8 @@ function Ring({ value, max, color, label, unit = "", size = 64 }: { value: numbe
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={8}
           strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{ transition: "stroke-dasharray 0.5s" }} />
         <text x={size / 2} y={size / 2} textAnchor="middle" dominantBaseline="middle" fill="currentColor"
-          fontSize={size < 64 ? 9 : 11} fontWeight={700} style={{ transform: "rotate(90deg)", transformOrigin: `${size / 2}px ${size / 2}px` }}>
+          fontFamily={FONT_DISPLAY} fontSize={size < 64 ? 12 : 15} fontWeight={400}
+          style={{ transform: "rotate(90deg)", transformOrigin: `${size / 2}px ${size / 2}px` }}>
           {Math.round(value)}{unit}
         </text>
       </svg>
@@ -57,7 +59,8 @@ function Ring({ value, max, color, label, unit = "", size = 64 }: { value: numbe
 }
 
 function ReadinessBadge({ score }: { score: number }) {
-  const color = score >= 8 ? "#22c55e" : score >= 5 ? "#f59e0b" : "#ef4444"; // semantic traffic-light
+  const c = useAppColors();
+  const color = trafficColor(score, 5, 8, c);
   const size = 52;
   const r = (size - 8) / 2;
   const circ = 2 * Math.PI * r;
@@ -69,7 +72,8 @@ function ReadinessBadge({ score }: { score: number }) {
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={8}
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
       <text x={size / 2} y={size / 2} textAnchor="middle" dominantBaseline="middle" fill={color}
-        fontSize={13} fontWeight={800} style={{ transform: "rotate(90deg)", transformOrigin: `${size / 2}px ${size / 2}px` }}>
+        fontFamily={FONT_DISPLAY} fontSize={16} fontWeight={400}
+        style={{ transform: "rotate(90deg)", transformOrigin: `${size / 2}px ${size / 2}px` }}>
         {score}
       </text>
     </svg>
@@ -94,7 +98,10 @@ export default function TodayDashboard() {
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: FONT, maxWidth: 480 }}>
+
+        <Kicker style={{ marginBottom: 10 }}>Hoy</Kicker>
 
         {/* Top row: readiness + streak */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -108,19 +115,19 @@ export default function TodayDashboard() {
             </div>
           </div>
           {streak > 0 && (
-            <div style={{ textAlign: "center", backgroundColor: card, borderRadius: 10, padding: "8px 12px", border: `1px solid ${border}` }}>
-              <div style={{ fontSize: 20 }}>🔥</div>
-              <div style={{ fontWeight: 800, fontSize: 16 }}>{streak}</div>
+            <div style={{ textAlign: "center", backgroundColor: card, borderRadius: 8, padding: "8px 12px", border: `1px solid ${border}` }}>
+              <div style={{ fontSize: 18 }}>🔥</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 22, color: textColor }}>{streak}</div>
               <div style={{ fontSize: 10, color: sub }}>días</div>
             </div>
           )}
         </div>
 
         {/* Nutrition rings */}
-        <div style={{ backgroundColor: card, borderRadius: 10, padding: "12px 16px", marginBottom: 12, border: `1px solid ${border}` }}>
-          <div style={{ fontSize: 11, color: sub, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
-            Nutrición hoy · {nutrition.meals_logged} comida{nutrition.meals_logged !== 1 ? "s" : ""}
-          </div>
+        <div style={{ backgroundColor: card, borderRadius: 8, padding: "12px 16px", marginBottom: 12, border: `1px solid ${border}` }}>
+          <Kicker style={{ marginBottom: 10 }}>
+            Nutrición · {nutrition.meals_logged} comida{nutrition.meals_logged !== 1 ? "s" : ""}
+          </Kicker>
           <div style={{ display: "flex", justifyContent: "space-around" }}>
             <Ring value={nutrition.calories.consumed} max={nutrition.calories.goal} color={c.kcal} label="Kcal" size={68} />
             <Ring value={nutrition.protein.consumed} max={nutrition.protein.goal} color={c.protein} label="Prot" unit="g" size={56} />
@@ -131,10 +138,10 @@ export default function TodayDashboard() {
 
         {/* Workout card */}
         {workout && (
-          <div style={{ backgroundColor: card, borderRadius: 10, padding: "12px 16px", marginBottom: 14, border: `1px solid ${border}` }}>
-            <div style={{ fontSize: 11, color: sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
-              {workout.program_name} · {workout.week_progress.completed}/{workout.week_progress.total} días esta semana
-            </div>
+          <div style={{ backgroundColor: card, borderRadius: 8, padding: "12px 16px", marginBottom: 14, border: `1px solid ${border}` }}>
+            <Kicker style={{ marginBottom: 6 }}>
+              {workout.program_name} · {workout.week_progress.completed}/{workout.week_progress.total} días
+            </Kicker>
             {workout.has_workout ? (
               <>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{workout.day_name}</div>
@@ -153,7 +160,7 @@ export default function TodayDashboard() {
                 </div>
               </>
             ) : (
-              <div style={{ color: sub, fontSize: 14 }}>🎉 Semana completa — descansa o haz movilidad</div>
+              <div style={{ color: sub, fontSize: 14 }}>Semana completa — descansa o haz movilidad.</div>
             )}
           </div>
         )}
@@ -163,22 +170,22 @@ export default function TodayDashboard() {
           {workout?.has_workout && (
             <button
               onClick={() => sendFollowUpMessage("Muéstrame el entrenamiento de hoy con cal_todays_workout")}
-              style={{ flex: 1, padding: "8px 12px", borderRadius: 8, backgroundColor: accent, color: c.limeText, fontWeight: 700, fontSize: 12, border: "none", cursor: "pointer" }}
+              style={primaryButtonStyle(c, { flex: true })}
             >
-              ▶ Empezar sesión
+              Empezar sesión
             </button>
           )}
           <button
             onClick={() => sendFollowUpMessage("Registra mi comida — describe lo que comí o comparte una foto")}
-            style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1px solid ${border}`, backgroundColor: "transparent", color: textColor, fontSize: 12, cursor: "pointer" }}
+            style={ghostButtonStyle(c, { flex: true })}
           >
-            🍽 Registrar comida
+            Registrar comida
           </button>
           <button
             onClick={() => sendFollowUpMessage("Dame recomendaciones para completar mis metas de nutrición y entrenamiento de hoy")}
-            style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid ${border}`, backgroundColor: "transparent", color: textColor, fontSize: 12, cursor: "pointer" }}
+            style={ghostButtonStyle(c)}
           >
-            💡
+            Consejos
           </button>
         </div>
       </div>

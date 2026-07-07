@@ -8,17 +8,82 @@
  */
 import type { CSSProperties } from "react";
 import { McpUseProvider } from "mcp-use/react";
-import { useAppColors, FONT, type AppColors } from "./theme";
+import { useAppColors, FONT, FONT_DISPLAY, FONT_MONO, type AppColors } from "./theme";
+import { WidgetFonts } from "./fonts";
 
 /** Standard loading state — matches the host surface (bg + muted text + font). */
 export function WidgetLoading({ text }: { text: string }) {
   const c = useAppColors();
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.sub, fontFamily: FONT, fontSize: 13 }}>
         {text}
       </div>
     </McpUseProvider>
+  );
+}
+
+/**
+ * Small uppercase mono label that sits above a `DisplayTitle` — the app's
+ * header idiom (e.g. "HOY" above a Bebas title). Never bold: JetBrains Mono
+ * is a single loaded weight per case, and the wide tracking already reads as
+ * emphasis.
+ */
+export function Kicker({ children, color, style }: { children: React.ReactNode; color?: string; style?: CSSProperties }) {
+  const c = useAppColors();
+  return (
+    <div
+      style={{
+        fontFamily: FONT_MONO,
+        fontSize: 10,
+        fontWeight: 400,
+        textTransform: "uppercase",
+        letterSpacing: 2.5,
+        color: color ?? c.sub,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Big condensed Bebas title/number — the app's display idiom. Always normal weight: Bebas is a single loaded face, and faux-bold on a condensed display font looks broken. */
+export function DisplayTitle({ children, size = 28, color, style }: { children: React.ReactNode; size?: number; color?: string; style?: CSSProperties }) {
+  const c = useAppColors();
+  return (
+    <div
+      style={{
+        fontFamily: FONT_DISPLAY,
+        fontWeight: 400,
+        fontSize: size,
+        lineHeight: 1,
+        color: color ?? c.text,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Inline Bebas stat number (kcal, %, counts) — same rules as `DisplayTitle` but for use inline/in SVG-adjacent stat tiles. */
+export function StatNumber({ children, size = 20, color, style }: { children: React.ReactNode; size?: number; color?: string; style?: CSSProperties }) {
+  const c = useAppColors();
+  return (
+    <span
+      style={{
+        fontFamily: FONT_DISPLAY,
+        fontWeight: 400,
+        fontSize: size,
+        lineHeight: 1,
+        color: color ?? c.text,
+        ...style,
+      }}
+    >
+      {children}
+    </span>
   );
 }
 

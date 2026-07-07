@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
-import { useAppColors, FONT } from "./lib/theme";
-import { WidgetLoading } from "./lib/ui";
+import { useAppColors, FONT, FONT_DISPLAY, FONT_MONO } from "./lib/theme";
+import { WidgetLoading, Kicker, DisplayTitle, ghostButtonStyle } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 const achievementSchema = z.object({
   id: z.string(),
@@ -78,8 +79,8 @@ export default function AchievementsGrid() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "todos", label: "Todos" },
-    { id: "desbloqueados", label: "✅ Desbloqueados" },
-    { id: "en_progreso", label: "⏳ En progreso" },
+    { id: "desbloqueados", label: "Desbloqueados" },
+    { id: "en_progreso", label: "En progreso" },
   ];
 
   const tabStyle = (t: Tab): React.CSSProperties => ({
@@ -87,12 +88,13 @@ export default function AchievementsGrid() {
     padding: "6px 4px",
     borderRadius: 8,
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     cursor: "pointer",
     border: `1px solid ${tab === t ? c.lime : c.border}`,
     backgroundColor: tab === t ? c.lime : "transparent",
     color: tab === t ? c.limeText : c.text,
     transition: "all 0.15s",
+    fontFamily: FONT,
   });
 
   // Group by category
@@ -112,20 +114,19 @@ export default function AchievementsGrid() {
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 480 }}>
 
         {/* Header: unlock count + XP/level */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 16 }}>Logros</div>
-            <div style={{ fontSize: 12, color: c.sub, marginTop: 2 }}>
-              {total_unlocked} / {total} desbloqueados
-            </div>
+            <Kicker>{total_unlocked} / {total} desbloqueados</Kicker>
+            <DisplayTitle size={26} style={{ marginTop: 2 }}>Logros</DisplayTitle>
           </div>
           {level !== undefined && (
-            <div style={{ backgroundColor: c.card, borderRadius: 10, padding: "8px 12px", border: `1px solid ${c.border}`, textAlign: "center" }}>
-              <div style={{ fontSize: 11, color: c.sub, marginBottom: 2 }}>Nivel</div>
-              <div style={{ fontWeight: 800, fontSize: 18, color: c.lime }}>{level}</div>
+            <div style={{ backgroundColor: c.card, borderRadius: 8, padding: "8px 12px", border: `1px solid ${c.border}`, textAlign: "center" }}>
+              <Kicker style={{ marginBottom: 2 }}>Nivel</Kicker>
+              <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 22, color: c.lime }}>{level}</div>
               {xp !== undefined && (
                 <div style={{ fontSize: 10, color: c.sub }}>{xp.toLocaleString()} XP</div>
               )}
@@ -166,14 +167,12 @@ export default function AchievementsGrid() {
         {/* Badge grid by category */}
         {Object.keys(grouped).length === 0 ? (
           <div style={{ textAlign: "center", color: c.sub, padding: "24px 0", fontSize: 13 }}>
-            Sin logros en esta categoría 🫥
+            Sin logros en esta categoría.
           </div>
         ) : (
           Object.entries(grouped).map(([cat, achs]) => (
             <div key={cat} style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                {categoryLabels[cat] ?? cat}
-              </div>
+              <Kicker style={{ marginBottom: 8 }}>{categoryLabels[cat] ?? cat}</Kicker>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 8 }}>
                 {achs.map((a) => {
                   const tierColor = TIER_COLORS[a.tier] ?? c.sub;
@@ -186,7 +185,7 @@ export default function AchievementsGrid() {
                       key={a.id}
                       style={{
                         backgroundColor: badgeBg,
-                        borderRadius: 10,
+                        borderRadius: 8,
                         border: `1px solid ${a.unlocked ? tierColor + "55" : c.border}`,
                         padding: "10px 8px",
                         display: "flex",
@@ -224,11 +223,12 @@ export default function AchievementsGrid() {
 
                       {/* Tier badge */}
                       <div style={{
+                        fontFamily: FONT_MONO,
                         fontSize: 9,
-                        fontWeight: 700,
+                        fontWeight: 400,
                         color: tierColor,
                         textTransform: "uppercase",
-                        letterSpacing: 0.5,
+                        letterSpacing: 1.5,
                       }}>
                         {a.tier}
                       </div>
@@ -267,20 +267,10 @@ export default function AchievementsGrid() {
         {/* Follow-up button */}
         <div style={{ marginTop: 14 }}>
           <button
-            onClick={() => sendFollowUpMessage("🎯 ¿Cómo desbloqueo los logros que me faltan? Dame un plan específico según mi progreso actual")}
-            style={{
-              width: "100%",
-              padding: "9px 12px",
-              borderRadius: 8,
-              border: `1px solid ${c.border}`,
-              backgroundColor: "transparent",
-              color: c.text,
-              fontSize: 12,
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
+            onClick={() => sendFollowUpMessage("¿Cómo desbloqueo los logros que me faltan? Dame un plan específico según mi progreso actual")}
+            style={{ ...ghostButtonStyle(c), width: "100%" }}
           >
-            🎯 ¿Cómo desbloqueo los que faltan?
+            ¿Cómo desbloqueo los que faltan?
           </button>
         </div>
       </div>

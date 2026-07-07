@@ -1,7 +1,8 @@
 import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
-import { useAppColors, FONT } from "./lib/theme";
-import { WidgetLoading } from "./lib/ui";
+import { useAppColors, FONT, FONT_DISPLAY } from "./lib/theme";
+import { WidgetLoading, Kicker, DisplayTitle, primaryButtonStyle, ghostButtonStyle } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ function ProgressionLine({
   if (points.length < 2) {
     return (
       <div style={{ padding: 28, textAlign: "center", color: sub, fontSize: 13 }}>
-        Necesitas al menos 2 sesiones con datos numéricos para ver la progresión 📈
+        Necesitas al menos 2 sesiones con datos numéricos para ver la progresión.
       </div>
     );
   }
@@ -212,6 +213,7 @@ export default function ExerciseHistory() {
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div
         style={{
           padding: 16,
@@ -222,16 +224,9 @@ export default function ExerciseHistory() {
         }}
       >
         {/* ── Header ──────────────────────────────────────────────── */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            marginBottom: 4,
-          }}
-        >
-          <div style={{ fontWeight: 800, fontSize: 15 }}>{displayName}</div>
-          <div style={{ fontSize: 11, color: c.sub }}>últimos {days} días</div>
+        <div style={{ marginBottom: 8 }}>
+          <Kicker>Últimos {days} días</Kicker>
+          <DisplayTitle size={24} style={{ marginTop: 2 }}>{displayName}</DisplayTitle>
         </div>
 
         {/* ── Stats row ───────────────────────────────────────────── */}
@@ -245,7 +240,7 @@ export default function ExerciseHistory() {
               border: `1px solid ${c.border}`,
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 800, color: c.lime }}>{total_sets}</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 22, color: c.lime }}>{total_sets}</div>
             <div style={{ fontSize: 10, color: c.sub }}>series totales</div>
           </div>
           <div
@@ -257,7 +252,7 @@ export default function ExerciseHistory() {
               border: `1px solid ${c.border}`,
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 800, color: c.lime }}>{sessionCount}</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 22, color: c.lime }}>{sessionCount}</div>
             <div style={{ fontSize: 10, color: c.sub }}>sesiones</div>
           </div>
           {bestRep !== null && (
@@ -270,7 +265,7 @@ export default function ExerciseHistory() {
                 border: `1px solid ${c.border}`,
               }}
             >
-              <div style={{ fontSize: 18, fontWeight: 800, color: c.success }}>
+              <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 22, color: c.lime }}>
                 {bestRep}
               </div>
               <div style={{ fontSize: 10, color: c.sub }}>mejor marca</div>
@@ -290,14 +285,14 @@ export default function ExerciseHistory() {
           <div
             style={{
               backgroundColor: c.card,
-              borderRadius: 10,
+              borderRadius: 8,
               padding: "12px 10px 8px",
               border: `1px solid ${c.border}`,
               marginBottom: 12,
             }}
           >
-            <div style={{ fontSize: 11, color: c.sub, marginBottom: 6, paddingLeft: 4 }}>
-              Progresión — máx. reps por sesión
+            <div style={{ paddingLeft: 4, marginBottom: 6 }}>
+              <Kicker>Progresión — máx. reps por sesión</Kicker>
             </div>
             <ProgressionLine sessions={sessions} stroke={c.lime} grid={c.grid} sub={c.sub} />
           </div>
@@ -305,7 +300,7 @@ export default function ExerciseHistory() {
           <div
             style={{
               backgroundColor: c.card,
-              borderRadius: 10,
+              borderRadius: 8,
               padding: 12,
               border: `1px solid ${c.border}`,
               marginBottom: 12,
@@ -316,7 +311,7 @@ export default function ExerciseHistory() {
           >
             {sessionCount === 0
               ? "Sin sesiones registradas en este periodo."
-              : "Con 2 o más sesiones aparecerá el gráfico de progresión. ¡Sigue entrenando! 💪"}
+              : "Con 2 o más sesiones aparecerá el gráfico de progresión. Sigue entrenando."}
           </div>
         )}
 
@@ -325,7 +320,7 @@ export default function ExerciseHistory() {
           <div
             style={{
               backgroundColor: c.card,
-              borderRadius: 10,
+              borderRadius: 8,
               border: `1px solid ${c.border}`,
               overflow: "hidden",
               marginBottom: 12,
@@ -333,15 +328,11 @@ export default function ExerciseHistory() {
           >
             <div
               style={{
-                fontSize: 11,
-                color: c.sub,
                 padding: "8px 12px 6px",
                 borderBottom: `1px solid ${c.border}`,
-                textTransform: "uppercase",
-                letterSpacing: 1,
               }}
             >
-              Sesiones recientes
+              <Kicker>Sesiones recientes</Kicker>
             </div>
             {recentSessions.map((session, idx) => (
               <div
@@ -398,22 +389,12 @@ export default function ExerciseHistory() {
           <button
             onClick={() =>
               sendFollowUpMessage(
-                `📈 ¿Estoy listo para progresar en ${displayName}? Usa cal_check_progression_readiness con exercise_id "${exercise_id}"`
+                `¿Estoy listo para progresar en ${displayName}? Usa cal_check_progression_readiness con exercise_id "${exercise_id}"`
               )
             }
-            style={{
-              flex: 1,
-              padding: "8px 12px",
-              borderRadius: 8,
-              backgroundColor: c.lime,
-              color: c.limeText,
-              fontWeight: 700,
-              fontSize: 12,
-              border: "none",
-              cursor: "pointer",
-            }}
+            style={primaryButtonStyle(c, { flex: true })}
           >
-            📈 ¿Listo para progresar?
+            ¿Listo para progresar?
           </button>
           <button
             onClick={() =>
@@ -421,17 +402,9 @@ export default function ExerciseHistory() {
                 `Analiza mi historial de ${displayName} y dame 2-3 recomendaciones concretas para mejorar`
               )
             }
-            style={{
-              padding: "8px 12px",
-              borderRadius: 8,
-              border: `1px solid ${c.border}`,
-              backgroundColor: "transparent",
-              color: c.text,
-              fontSize: 12,
-              cursor: "pointer",
-            }}
+            style={ghostButtonStyle(c)}
           >
-            💡
+            Consejos
           </button>
         </div>
       </div>
