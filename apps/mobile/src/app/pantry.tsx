@@ -3,7 +3,8 @@ import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { useRouter } from 'expo-router'
-import { ArrowLeft, ChefHat, ShoppingCart } from 'lucide-react-native'
+import * as ImagePicker from 'expo-image-picker'
+import { ArrowLeft, ChefHat, ReceiptText, ShoppingCart } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import {
   useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, useDeletePantryItems,
@@ -11,7 +12,7 @@ import {
 } from '@calistenia/core/hooks/usePantry'
 import { parsePantry } from '@calistenia/core/lib/pantry-api'
 import { daysUntil } from '@calistenia/core/lib/pantry'
-import type { PantryItem, PantryParsedItem, PantryParseResult } from '@calistenia/core/types'
+import type { PantryItem, PantryParsedItem, PantryParseResult, ReceiptParseResult } from '@calistenia/core/types'
 import { PantryTable } from '@/components/pantry/PantryTable'
 import { PantryChatInput } from '@/components/pantry/PantryChatInput'
 import { PantryConfirmSheet, type ConsumeMatch } from '@/components/pantry/PantryConfirmSheet'
@@ -19,6 +20,7 @@ import { PantryEditSheet } from '@/components/pantry/PantryEditSheet'
 import { SelectionBar } from '@/components/pantry/SelectionBar'
 import { KeyboardSpacer } from '@/components/ui/keyboard-spacer'
 import { useAuthUser } from '@/lib/use-auth-user'
+import { parseReceiptMobile } from '@/lib/receipt-api'
 import { Sentry } from '@/lib/instrument'
 
 export default function PantryScreen() {
@@ -40,6 +42,9 @@ export default function PantryScreen() {
   const [parseResult, setParseResult] = useState<PantryParseResult | null>(null)
   const [editing, setEditing] = useState<PantryItem | null>(null)
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
+  const [receiptMeta, setReceiptMeta] = useState<
+    { storeName: string | null; purchaseDate: string | null; ignoredLines: string[] } | null
+  >(null)
 
   const matches: ConsumeMatch[] = useMemo(() => {
     if (!parseResult || parseResult.intent === 'add') return []
@@ -66,10 +71,76 @@ export default function PantryScreen() {
     }
   }
 
-  const handleConfirmAdd = async (draft: PantryParsedItem[]) => {
-    setParseResult(null)
+  const runReceiptParse = async (assets: { uri: string; mimeType?: string; fileName?: string }[]) => {
+    setBusy(true)
+    setReply(t('pantry.receipt.analyzing'))
     try {
-      await addItems.mutateAsync({ items: draft })
+      const result: ReceiptParseResult = await parseReceiptMobile(assets)
+      if (result.items.length === 0) {
+        setReply(t('pantry.receipt.noItems'))
+        return
+      }
+      setReceiptMeta({
+        storeName: result.store_name,
+        purchaseDate: result.purchase_date,
+        ignoredLines: result.ignored_lines,
+      })
+      setReply(null)
+      // ReceiptParsedItem extiende PantryParsedItem: raw_line viaja dentro del draft
+      setParseResult({ intent: 'add', items: result.items, reply: '' })
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'pantry', op: 'parse_receipt' } })
+      // mensaje REAL del servidor si existe (lección del bug analyze-meal en release)
+      setReply(e instanceof Error && e.message ? e.message : t('pantry.receipt.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const pickReceipt = async (mode: 'camera' | 'gallery') => {
+    try {
+      if (mode === 'camera') {
+        const perm = await ImagePicker.requestCameraPermissionsAsync()
+        if (!perm.granted) return
+        const res = await ImagePicker.launchCameraAsync({ quality: 0.7 })
+        const a = res.assets?.[0]
+        if (!res.canceled && a) {
+          await runReceiptParse([{ uri: a.uri, mimeType: a.mimeType, fileName: a.fileName ?? undefined }])
+        }
+      } else {
+        const res = await ImagePicker.launchImageLibraryAsync({
+          quality: 0.7, allowsMultipleSelection: true, selectionLimit: 3,
+        })
+        if (!res.canceled && res.assets.length > 0) {
+          await runReceiptParse(
+            res.assets.map(a => ({ uri: a.uri, mimeType: a.mimeType, fileName: a.fileName ?? undefined })),
+          )
+        }
+      }
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'pantry', op: 'receipt_picker' } })
+      setReply(t('pantry.receipt.error'))
+    }
+  }
+
+  const handleScanReceipt = () => {
+    Alert.alert(t('pantry.receipt.scanTitle'), '', [
+      { text: t('pantry.receipt.camera'), onPress: () => pickReceipt('camera') },
+      { text: t('pantry.receipt.gallery'), onPress: () => pickReceipt('gallery') },
+      { text: t('common.cancel'), style: 'cancel' },
+    ])
+  }
+
+  const handleConfirmAdd = async (draft: PantryParsedItem[]) => {
+    const meta = receiptMeta
+    setParseResult(null)
+    setReceiptMeta(null)
+    try {
+      await addItems.mutateAsync(
+        meta
+          ? { items: draft, source: 'receipt', purchaseDate: meta.purchaseDate }
+          : { items: draft },
+      )
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'pantry', op: 'add_items' } })
       setReply(t('pantry.saveError'))
@@ -203,11 +274,20 @@ export default function PantryScreen() {
           </Text>
           <Text className="font-bebas text-4xl text-foreground">{t('pantry.title')}</Text>
         </View>
-        {/* hitSlop 4 en los dos íconos adyacentes: con 8 las zonas táctiles se solapan */}
+        {/* hitSlop 4 en los íconos adyacentes: con 8 las zonas táctiles se solapan */}
+        <Pressable
+          onPress={handleScanReceipt}
+          hitSlop={4}
+          className="ml-auto p-2"
+          accessibilityRole="button"
+          accessibilityLabel={t('pantry.receipt.scan')}
+        >
+          <ReceiptText size={20} color="hsl(0 0% 55%)" />
+        </Pressable>
         <Pressable
           onPress={() => router.push('/saved-recipes')}
           hitSlop={4}
-          className="ml-auto p-2"
+          className="p-2"
           accessibilityRole="button"
           accessibilityLabel={t('savedRecipes.title')}
         >
@@ -284,7 +364,8 @@ export default function PantryScreen() {
         matches={matches}
         onConfirmAdd={handleConfirmAdd}
         onConfirmConsume={handleConfirmConsume}
-        onClose={() => setParseResult(null)}
+        onClose={() => { setParseResult(null); setReceiptMeta(null) }}
+        receipt={receiptMeta}
       />
       <PantryEditSheet
         item={editing}
