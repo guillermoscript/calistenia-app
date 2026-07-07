@@ -3,7 +3,7 @@ import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { todayStr, utcToLocalDateStr } from '../lib/dateUtils'
 import { computePantryConfidence, expiryFromDays } from '../lib/pantry'
-import type { PantryEventType, PantryItem, PantryParsedItem } from '../types'
+import type { PantryEventType, PantryItem, PantryParsedItem, PantrySource } from '../types'
 
 // PB devuelve 0 para numbers vacíos: 0 se trata como "sin dato" (F1 no distingue
 // qty 0 real de blank; un item agotado se marca por status, no por qty).
@@ -76,13 +76,21 @@ export function usePantryHistory(userId: string | null) {
   })
 }
 
+export interface AddPantryItemsInput {
+  items: PantryParsedItem[]
+  /** Origen del alta. Default 'chat' (flujo F1). */
+  source?: PantrySource
+  /** YYYY-MM-DD del recibo (F5). Default hoy. También es la base del expiry. */
+  purchaseDate?: string | null
+}
+
 /** Batch: crea items + su evento add. REGLA DE ORO: nunca qty sin evento. */
 export function useAddPantryItems(userId: string | null) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (items: PantryParsedItem[]): Promise<PantryItem[]> => {
+    mutationFn: async ({ items, source = 'chat', purchaseDate }: AddPantryItemsInput): Promise<PantryItem[]> => {
       if (!userId) throw new Error('No user')
-      const today = todayStr()
+      const baseDate = purchaseDate ?? todayStr()
       const created: PantryItem[] = []
       for (const it of items) {
         const rec = await pb.collection('pantry_items').create({
@@ -95,11 +103,11 @@ export function useAddPantryItems(userId: string | null) {
           price_total: it.price_total ?? undefined,
           currency: 'USD',
           price_source: it.price_total != null ? 'real' : undefined,
-          purchase_date: today,
-          expiry_estimate: expiryFromDays(it.expiry_days, today) ?? undefined,
+          purchase_date: baseDate,
+          expiry_estimate: expiryFromDays(it.expiry_days, baseDate) ?? undefined,
           confidence: it.confidence,
           status: 'active',
-          source: 'chat',
+          source,
         })
         await pb.collection('pantry_events').create({
           user: userId,
