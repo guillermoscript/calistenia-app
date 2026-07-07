@@ -16,6 +16,17 @@ import type { Tier } from "./model-resolver.js";
 // Re-export for any existing consumers
 export { getAdminPB } from "./admin-pb.js";
 
+// Mirrors mcpuse/api-routes.ts MAX_PENDING_JOBS.
+export const MAX_PENDING_JOBS = 2;
+
+export async function hasJobCapacity(userId: string): Promise<boolean> {
+  const pb = await getAdminPB();
+  const active = await pb.collection("ai_jobs").getList(1, 1, {
+    filter: pb.filter("user = {:uid} && (status = 'pending' || status = 'processing')", { uid: userId }),
+  });
+  return active.totalItems < MAX_PENDING_JOBS;
+}
+
 // Monday of current or specified week (input.week_start, or today if absent).
 function resolveWeekStart(input: any): Date {
   let weekStart: Date;

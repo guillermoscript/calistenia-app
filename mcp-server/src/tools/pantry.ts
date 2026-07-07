@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import type PocketBase from "pocketbase";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, today } from "../utils.js";
@@ -7,28 +8,11 @@ import {
   type PantryPlanGoals,
   type PantrySnapshotItem,
 } from "../api/pantry-plan-generator.js";
-import { getAdminPB, processJob } from "../api/job-processor.js";
-import type { Tier } from "../api/model-resolver.js";
+import { getAdminPB, hasJobCapacity, MAX_PENDING_JOBS, processJob } from "../api/job-processor.js";
+import { resolveTier } from "../api/model-resolver.js";
 import { parsePantryText, matchConsumption, parseReceipt } from "../api/pantry-parser.js";
 import { normalizeName, canonCurrency } from "../api/receipt-sanitizer.js";
 import { PANTRY_CATEGORIES, PANTRY_UNITS } from "../api/schemas.js";
-
-// Mirrors mcpuse/api-routes.ts MAX_PENDING_JOBS — not exported there, so duplicated here.
-const MAX_PENDING_JOBS = 2;
-
-async function checkPendingJobLimit(userId: string): Promise<boolean> {
-  const pb = await getAdminPB();
-  const active = await pb.collection("ai_jobs").getList(1, 1, {
-    filter: pb.filter("user = {:uid} && (status = 'pending' || status = 'processing')", { uid: userId }),
-  });
-  return active.totalItems < MAX_PENDING_JOBS;
-}
-
-// Mirrors mcpuse/api-routes.ts getTier() — not exported there, so duplicated here.
-function getTierFromUser(user: Record<string, unknown> | null): Tier {
-  const t = user?.tier;
-  return t === "pro" || t === "premium" ? "pro" : "free";
-}
 
 function mapPantryItems(records: Array<Record<string, unknown>>): PantrySnapshotItem[] {
   return records.slice(0, 200).map((r) => ({
@@ -54,6 +38,34 @@ function mapGoals(goals: Record<string, unknown> | null): PantryPlanGoals | null
   };
 }
 
+/** Active pantry_items for a user, most recent first. Used by every plan/parse/match tool. */
+async function getActivePantryItems(pb: PocketBase, userId: string): Promise<Array<Record<string, unknown>>> {
+  return pb.collection("pantry_items").getFullList({
+    filter: pb.filter('user = {:uid} && status = "active"', { uid: userId }),
+    sort: "-created",
+    requestKey: null,
+  });
+}
+
+interface PantryPlanInputs {
+  pantryRecords: Array<Record<string, unknown>>;
+  goals: PantryPlanGoals | null;
+  userRecord: Record<string, unknown> | null;
+}
+
+/** Shared preamble for the 3 plan tools (day / how_many_meals / week). */
+async function loadPantryPlanInputs(pb: PocketBase, userId: string): Promise<PantryPlanInputs> {
+  const [pantryRecords, goalsRecord, userRecord] = await Promise.all([
+    getActivePantryItems(pb, userId),
+    pb
+      .collection("nutrition_goals")
+      .getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null })
+      .catch(() => null),
+    pb.collection("users").getOne(userId, { requestKey: null }).catch(() => null),
+  ]);
+  return { pantryRecords, goals: mapGoals(goalsRecord), userRecord };
+}
+
 const MEAL_EMOJI: Record<string, string> = { desayuno: "🌅", almuerzo: "☀️", cena: "🌙", snack: "🍎" };
 
 const EMPTY_PANTRY_MSG =
@@ -68,6 +80,17 @@ function toUSD(amount: number, rate: number): number | null {
 
 const isValidISODate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
 
+// Copia local de expiryFromDays (packages/core/lib/pantry.ts — mcp-server está fuera del
+// workspace pnpm y no puede importarlo). Calendario puro (sin zona horaria) para evitar
+// depender de dayjs/tz aquí; mantener en sync con el core si cambia la semántica.
+function expiryFromDays(days: number | null | undefined, base: string): string | null {
+  if (days == null || !base) return null;
+  const [y, m, d] = base.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.toISOString().slice(0, 10);
+}
+
 const PantryItemInputSchema = z
   .object({
     name: z.string().min(1).max(120).describe("Item name as the user said it, e.g. 'pechuga de pollo'"),
@@ -75,7 +98,17 @@ const PantryItemInputSchema = z
     quantity: z.number().optional().describe("Quantity; omit if unknown"),
     unit: z.enum(PANTRY_UNITS).optional().describe("Unit; omit if unknown"),
     price_total: z.number().optional().describe("Total price paid for this item, in the batch's `currency`"),
-    expiry_estimate: z.string().optional().describe("Estimated expiry date (YYYY-MM-DD); omit if unknown"),
+    expiry_estimate: z
+      .string()
+      .optional()
+      .describe("Estimated expiry date (YYYY-MM-DD); omit if unknown. Wins over expiry_days if both are set."),
+    expiry_days: z
+      .number()
+      .nullable()
+      .optional()
+      .describe(
+        "Estimated days until expiry, relative to purchase_date (as emitted by cal_parse_pantry_message/cal_scan_receipt). Ignored if expiry_estimate is also set."
+      ),
     confidence: z.enum(["high", "med", "low"]).optional().describe("Extraction confidence"),
   })
   .strict();
@@ -109,26 +142,14 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         const pb = auth.getClient();
         const userId = auth.getUserId();
 
-        const [pantryRecords, goalsRecord, userRecord] = await Promise.all([
-          pb.collection("pantry_items").getFullList({
-            filter: pb.filter('user = {:uid} && status = "active"', { uid: userId }),
-            sort: "-created",
-            requestKey: null,
-          }),
-          pb
-            .collection("nutrition_goals")
-            .getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null })
-            .catch(() => null),
-          pb.collection("users").getOne(userId, { requestKey: null }).catch(() => null),
-        ]);
+        const { pantryRecords, goals, userRecord } = await loadPantryPlanInputs(pb, userId);
 
         if (pantryRecords.length === 0) {
           return errorResult(EMPTY_PANTRY_MSG);
         }
 
         const pantryItems = mapPantryItems(pantryRecords);
-        const goals = mapGoals(goalsRecord);
-        const tier = getTierFromUser(userRecord);
+        const tier = resolveTier(userRecord);
 
         const result: Record<string, any> = await generatePantryPlan({
           horizon: "day",
@@ -194,26 +215,14 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         const pb = auth.getClient();
         const userId = auth.getUserId();
 
-        const [pantryRecords, goalsRecord, userRecord] = await Promise.all([
-          pb.collection("pantry_items").getFullList({
-            filter: pb.filter('user = {:uid} && status = "active"', { uid: userId }),
-            sort: "-created",
-            requestKey: null,
-          }),
-          pb
-            .collection("nutrition_goals")
-            .getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null })
-            .catch(() => null),
-          pb.collection("users").getOne(userId, { requestKey: null }).catch(() => null),
-        ]);
+        const { pantryRecords, goals, userRecord } = await loadPantryPlanInputs(pb, userId);
 
         if (pantryRecords.length === 0) {
           return errorResult(EMPTY_PANTRY_MSG);
         }
 
         const pantryItems = mapPantryItems(pantryRecords);
-        const goals = mapGoals(goalsRecord);
-        const tier = getTierFromUser(userRecord);
+        const tier = resolveTier(userRecord);
 
         const result: Record<string, any> = await generatePantryPlan({
           horizon: "how_many_meals",
@@ -266,32 +275,28 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
     },
     async ({ week_start }, ctx) => {
       try {
+        // Sin validar, una fecha corrupta llega hasta resolveWeekStart().toISOString()
+        // en el job processor y lo tumba DESPUÉS de gastar la llamada a IA y archivar
+        // el plan activo del usuario — cortar aquí, antes de encolar nada.
+        if (week_start && !isValidISODate(week_start)) {
+          return errorResult("week_start inválido, usa formato YYYY-MM-DD.");
+        }
+
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
 
-        const [pantryRecords, goalsRecord] = await Promise.all([
-          pb.collection("pantry_items").getFullList({
-            filter: pb.filter('user = {:uid} && status = "active"', { uid: userId }),
-            sort: "-created",
-            requestKey: null,
-          }),
-          pb
-            .collection("nutrition_goals")
-            .getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null })
-            .catch(() => null),
-        ]);
+        const { pantryRecords, goals, userRecord } = await loadPantryPlanInputs(pb, userId);
 
         if (pantryRecords.length === 0) {
           return errorResult(EMPTY_PANTRY_MSG);
         }
 
-        const goals = mapGoals(goalsRecord);
         if (!goals) {
           return errorResult("No tienes metas de macros configuradas. Usa `cal_update_nutrition_goals` primero.");
         }
 
-        const canQueue = await checkPendingJobLimit(userId);
+        const canQueue = await hasJobCapacity(userId);
         if (!canQueue) {
           return errorResult(
             `Solo puedes tener ${MAX_PENDING_JOBS} análisis en proceso a la vez. Espera a que termine uno (revisa con \`cal_get_job_status\`).`
@@ -299,13 +304,16 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         }
 
         const pantryItems = mapPantryItems(pantryRecords);
+        const tier = resolveTier(userRecord);
 
         const adminPb = await getAdminPB();
         const record = await adminPb.collection("ai_jobs").create({
           user: userId,
           type: "generate-pantry-plan",
           status: "pending",
-          input: { week_start: week_start || null, pantry_items: pantryItems, goals },
+          // tier resuelto aquí, igual que getTier(user) en las rutas REST — sin esto
+          // el job processor cae a "free" por default y un usuario pro pierde su tier.
+          input: { week_start: week_start || null, pantry_items: pantryItems, goals, tier },
         });
 
         processJob(record.id).catch((err) => console.error("[job-processor-error]", record.id, err));
@@ -410,11 +418,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         const pb = auth.getClient();
         const userId = auth.getUserId();
 
-        const activeItems = await pb.collection("pantry_items").getFullList({
-          filter: pb.filter('user = {:uid} && status = "active"', { uid: userId }),
-          sort: "-created",
-          requestKey: null,
-        });
+        const activeItems = await getActivePantryItems(pb, userId);
         const existingItems = activeItems.slice(0, 200).map((r) => String(r.name_normalized ?? ""));
 
         const result = await parsePantryText({ text, existingItems });
@@ -491,6 +495,13 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
             const isForeign = curr !== "USD" && it.price_total != null;
             const priceUsd = isForeign ? (rate != null ? toUSD(it.price_total!, rate) : null) : (it.price_total ?? null);
 
+            // Absoluta (validada) siempre gana; si no, se deriva de expiry_days
+            // relativo a la fecha de compra (misma precedencia que expiryFromDays en el core).
+            const expiryEstimate =
+              it.expiry_estimate && isValidISODate(it.expiry_estimate)
+                ? it.expiry_estimate
+                : expiryFromDays(it.expiry_days ?? null, baseDate);
+
             const rec = await pb.collection("pantry_items").create({
               user: userId,
               name: it.name,
@@ -507,19 +518,25 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
               exchange_rate: isForeign && rate != null ? rate : undefined,
               price_source: priceUsd != null ? "real" : undefined,
               purchase_date: baseDate,
-              expiry_estimate: it.expiry_estimate ?? undefined,
+              expiry_estimate: expiryEstimate ?? undefined,
               confidence: it.confidence ?? undefined,
               status: "active",
               source,
             });
 
             // REGLA DE ORO: pantry_items.quantity nunca se toca sin su evento.
-            await pb.collection("pantry_events").create({
-              user: userId,
-              item: rec.id,
-              type: "add",
-              delta_qty: it.quantity ?? 0,
-            });
+            try {
+              await pb.collection("pantry_events").create({
+                user: userId,
+                item: rec.id,
+                type: "add",
+                delta_qty: it.quantity ?? 0,
+              });
+            } catch (eventErr) {
+              // Compensar: sin evento, el item quedaría huérfano — no dejarlo a medias.
+              await pb.collection("pantry_items").delete(rec.id).catch(() => {});
+              throw eventErr;
+            }
 
             created.push({
               id: rec.id,
@@ -591,7 +608,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         }
 
         const userRecord = await pb.collection("users").getOne(userId, { requestKey: null }).catch(() => null);
-        const tier = getTierFromUser(userRecord);
+        const tier = resolveTier(userRecord);
 
         const result = await parseReceipt({ images: decoded, tier });
 
@@ -655,11 +672,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         const pb = auth.getClient();
         const userId = auth.getUserId();
 
-        const activeItems = await pb.collection("pantry_items").getFullList({
-          filter: pb.filter('user = {:uid} && status = "active"', { uid: userId }),
-          sort: "-created",
-          requestKey: null,
-        });
+        const activeItems = await getActivePantryItems(pb, userId);
         if (activeItems.length === 0) {
           return errorResult(EMPTY_PANTRY_MSG);
         }

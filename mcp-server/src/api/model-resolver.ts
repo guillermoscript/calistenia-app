@@ -98,3 +98,9 @@ export function resolveWebSearchTool(provider: Provider): ToolSet {
 export function getAvailableProviders() {
   return { ...config.providers };
 }
+
+/** Mirrors mcpuse/api-routes.ts getTier() — the shared resolution rule for user.tier → Tier. */
+export function resolveTier(user: Record<string, unknown> | null | undefined): Tier {
+  const t = (user as { tier?: unknown } | null | undefined)?.tier;
+  return t === "pro" || t === "premium" ? "pro" : "free";
+}

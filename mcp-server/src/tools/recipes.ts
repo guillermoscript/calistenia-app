@@ -125,21 +125,34 @@ export function registerRecipeTools(server: MCPServer, pbUrl: string) {
         const userId = auth.getUserId();
 
         const labelNormalized = normalizeName(label);
-        const existing = await pb.collection("saved_recipes").getFullList({
-          filter: pb.filter("user = {:uid} && label_normalized = {:norm}", { uid: userId, norm: labelNormalized }),
-          requestKey: null,
-        });
-        if (existing.length > 0) {
+        const existing = await pb
+          .collection("saved_recipes")
+          .getFirstListItem(
+            pb.filter("user = {:uid} && label_normalized = {:norm}", { uid: userId, norm: labelNormalized }),
+            { requestKey: null }
+          )
+          .catch(() => null);
+        if (existing) {
           return errorResult("Ya existe una receta guardada con ese nombre.");
         }
 
-        const rec = await pb.collection("saved_recipes").create({
-          user: userId,
-          label,
-          label_normalized: labelNormalized,
-          recipe,
-          times_used: 0,
-        });
+        let rec: Record<string, any>;
+        try {
+          rec = await pb.collection("saved_recipes").create({
+            user: userId,
+            label,
+            label_normalized: labelNormalized,
+            recipe,
+            times_used: 0,
+          });
+        } catch (err: any) {
+          // Carrera: dos guardados concurrentes con el mismo nombre chocan contra el
+          // índice único (user, label_normalized) — mismo mensaje amable que el check previo.
+          if (err?.status === 400) {
+            return errorResult("Ya existe una receta guardada con ese nombre.");
+          }
+          throw err;
+        }
 
         return {
           content: [{ type: "text", text: `Receta **${label}** guardada (\`${rec.id}\`).` }],
@@ -176,7 +189,13 @@ export function registerRecipeTools(server: MCPServer, pbUrl: string) {
         try {
           rec = await pb.collection("saved_recipes").getOne(recipe_id, { requestKey: null });
         } catch (err: any) {
-          if (err?.status === 404) return errorResult("Receta no encontrada.");
+          // 404 = ya borrada, no es error (mismo patrón que useDeleteSavedRecipe / useShoppingList).
+          if (err?.status === 404) {
+            return {
+              content: [{ type: "text", text: "La receta ya no existe (posiblemente ya fue eliminada)." }],
+              structuredContent: { deleted: true, recipe_id, already_gone: true },
+            };
+          }
           throw err;
         }
         // Defense in depth: saved_recipes viewRule already restricts to the
