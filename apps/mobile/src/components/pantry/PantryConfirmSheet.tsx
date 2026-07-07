@@ -29,7 +29,7 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
   onConfirmConsume: (items: PantryItem[]) => void
   onClose: () => void
   /** F5 (#174): metadata de recibo. null/ausente = flujo chat de F1 sin cambios. */
-  receipt?: { storeName: string | null; purchaseDate: string | null; ignoredLines: string[] } | null
+  receipt?: { storeName: string | null; purchaseDate: string | null; currency: string | null; ignoredLines: string[] } | null
 }) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
@@ -74,7 +74,7 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
           >
             <View className="items-center pb-2 pt-3"><View className="h-1 w-9 rounded-full bg-lime/40" /></View>
             <View className="flex-row items-center justify-between px-4 pb-2">
-              <View>
+              <View className="flex-1 pr-2">
                 <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
                   {t('pantry.title')}
                 </Text>
@@ -82,7 +82,7 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                   {isAdd ? t('pantry.confirmAddTitle') : t('pantry.confirmConsumeTitle')}
                 </Text>
                 {receipt && (receipt.storeName || receipt.purchaseDate) && (
-                  <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                  <Text numberOfLines={1} className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
                     {[receipt.storeName, receipt.purchaseDate].filter(Boolean).join(' · ')}
                   </Text>
                 )}
@@ -112,11 +112,6 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                         className="flex-1 p-0 font-sans-medium text-foreground"
                       />
                       <View className="flex-row items-center gap-2">
-                        {needsReview(it) && (
-                          <Text className="font-mono text-[9px] uppercase tracking-[2px] text-amber-400">
-                            {t('pantry.receipt.review')}
-                          </Text>
-                        )}
                         <Pressable
                           onPress={() => updateDraft(i, { category: PANTRY_CATEGORY_ORDER[(PANTRY_CATEGORY_ORDER.indexOf(it.category) + 1) % PANTRY_CATEGORY_ORDER.length] })}
                           hitSlop={6}
@@ -145,8 +140,17 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                         keyboardType="numeric"
                         placeholder="$"
                         placeholderTextColor="hsl(0 0% 45%)"
-                        className="h-9 w-20 rounded-md border border-input bg-background px-2 text-center font-mono text-xs text-foreground"
+                        className="h-9 w-24 rounded-md border border-input bg-background px-2 text-center font-mono text-xs text-foreground"
                       />
+                      {/* moneda del recibo pegada al precio: 2251.29 sin "Bs" parece un error */}
+                      {receipt?.currency ? (
+                        <Text className="font-mono text-[10px] text-muted-foreground">{receipt.currency}</Text>
+                      ) : null}
+                      {needsReview(it) && (
+                        <Text className="ml-auto font-mono text-[9px] uppercase tracking-[2px] text-amber-400">
+                          {t('pantry.receipt.review', { defaultValue: 'Revisar' })}
+                        </Text>
+                      )}
                     </View>
                     <ScrollView
                       horizontal

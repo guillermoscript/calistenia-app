@@ -34,9 +34,10 @@ export function OptionSheet({ visible, kicker, title, options, cancelLabel, onCl
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
-      <View style={{ flex: 1 }}>
+      {/* anclaje al fondo por style inline: mt-auto de NativeWind no aplicó en device */}
+      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
-        <View className="mt-auto border-t border-border bg-card" style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 14 }}>
+        <View className="border-t border-border bg-card" style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 14 }}>
           <View className="items-center pb-2 pt-3"><View className="h-1 w-9 rounded-full bg-lime/40" /></View>
           <View className="px-4 pb-2">
             {kicker ? (
