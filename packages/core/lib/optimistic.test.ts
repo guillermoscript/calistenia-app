@@ -71,18 +71,16 @@ describe('makeOptimisticListHandlers', () => {
     expect(qc.getQueryData(['list', 'u2'])).toEqual([7])
   })
 
-  it('OJO: onError NO revierte si ctx.prev es un valor "falsy" válido (p.ej. un contador en 0)', () => {
-    // El guard `if (!ctx?.prev) return` en optimistic.ts trata 0 igual que
-    // "sin contexto". Si un consumidor usa este helper para un valor escalar
-    // que puede legítimamente ser 0 (o '' / false), el rollback se salta en
-    // silencio y la caché se queda con el valor optimista tras un error.
+  it('onError revierte también cuando ctx.prev es un valor "falsy" válido (p.ej. un contador en 0)', () => {
+    // El guard es `if (!ctx) return` (no `!ctx?.prev`): un prev de 0 / '' /
+    // false es un snapshot legítimo y debe restaurarse tras un error.
     const key = ['counter', 'u1']
     const handlers = makeOptimisticListHandlers<number, number>(
       qc, () => key, () => 0, (curr, v) => curr + v, lsWrite,
     )
     qc.setQueryData(key, 5) // valor optimista aplicado
     handlers.onError(new Error('fail'), 5, { prev: 0, resolvedKey: key })
-    expect(qc.getQueryData(key)).toBe(5) // no revirtió a 0
-    expect(lsWrite).not.toHaveBeenCalled()
+    expect(qc.getQueryData(key)).toBe(0) // revirtió al snapshot
+    expect(lsWrite).toHaveBeenCalledWith(0)
   })
 })

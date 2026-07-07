@@ -24,7 +24,9 @@ export function calculateWorkoutDuration(exercises: ExerciseDuration[]): number 
   for (const ex of exercises) {
     const sets = typeof ex.sets === 'number' ? ex.sets : 3 // fallback for "multiples" etc.
     const timePerSet = ex.isTimer && ex.timerSeconds ? ex.timerSeconds : 30
-    const rest = ex.rest || 60
+    // rest=0 es un descanso explícito de 0s (circuitos/HIIT); solo caer al
+    // default cuando el dato no es un número válido.
+    const rest = Number.isFinite(ex.rest) && ex.rest >= 0 ? ex.rest : 60
 
     // sets * working time + (sets - 1) * rest (no rest after last set)
     totalSeconds += sets * timePerSet + Math.max(0, sets - 1) * rest

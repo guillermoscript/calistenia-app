@@ -54,10 +54,8 @@ describe('parsePortionString', () => {
     expect(parsePortionString('')).toEqual({ amount: 100, unit: 'g' })
   })
 
-  // OJO: parseFloat('0') es 0, y `0 || 100` cae al default 100 porque 0 es
-  // falsy en JS. Un porción explícita de "0g" NO da amount:0, da amount:100.
-  it('OJO: "0g" no respeta el 0 explícito, cae al default 100', () => {
-    expect(parsePortionString('0g')).toEqual({ amount: 100, unit: 'g' })
+  it('"0g" respeta el 0 explícito (solo cae al default cuando no hay número)', () => {
+    expect(parsePortionString('0g')).toEqual({ amount: 0, unit: 'g' })
   })
 })
 

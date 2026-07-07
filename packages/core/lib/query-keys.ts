@@ -163,11 +163,12 @@ export const qk = {
 
   // — Cardio / carreras —
   races: {
+    all: ['races'] as const,
     discover: (params: Record<string, unknown>) =>
       ['races', 'discover', params] as const,
     prsFinished: (userId: string | null) =>
-      ['race_participants', 'finished', userId] as const,
-    wins: (userId: string | null) => ['race_wins', userId] as const,
+      ['races', 'prs', 'finished', userId] as const,
+    wins: (userId: string | null) => ['races', 'wins', userId] as const,
   },
 
   // — Contenido —

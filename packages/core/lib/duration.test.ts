@@ -28,12 +28,15 @@ describe('calculateWorkoutDuration', () => {
     expect(withFallback).toBe(explicit3)
   })
 
-  it('rest en 0 (falsy) usa el fallback de 60s por el operador `||`', () => {
-    // OJO: `ex.rest || 60` trata rest=0 igual que rest ausente, así que un
-    // descanso EXPLÍCITO de 0s no se puede representar: siempre cae a 60s.
-    const restZero = calculateWorkoutDuration([{ sets: 3, reps: '10', rest: 0 }])
+  it('rest=0 explícito se respeta (sin descanso, típico de circuitos)', () => {
+    // 3 sets * 30s + 2 * 0s = 90s → round(1.5) = 2
+    expect(calculateWorkoutDuration([{ sets: 3, reps: '10', rest: 0 }])).toBe(2)
+  })
+
+  it('rest no numérico (NaN/undefined en datos legacy) cae al default de 60s', () => {
+    const restNaN = calculateWorkoutDuration([{ sets: 3, reps: '10', rest: NaN }])
     const restSixty = calculateWorkoutDuration([{ sets: 3, reps: '10', rest: 60 }])
-    expect(restZero).toBe(restSixty)
+    expect(restNaN).toBe(restSixty)
   })
 
   it('no aplica descanso después del último set (sets=1 -> sin rest)', () => {
