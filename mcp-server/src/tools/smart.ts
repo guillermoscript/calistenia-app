@@ -675,6 +675,10 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             day_completion: dayGaps,
             neglected_exercises: neglectedExercises,
             muscle_volume: sortedMuscles.map(([muscle, sets]) => ({ muscle, total_sets: sets })),
+            // scheduledDays is empty when the phase-filtered program_exercises
+            // query returns 0 rows (e.g. phase/program mismatch) — completion_pct
+            // would otherwise show a misleading "0% · bajando" against 0 expected.
+            no_schedule: scheduledDays.size === 0,
           },
           output: text(gapSummaryText),
         });
@@ -1186,15 +1190,13 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         const nextDay = allDays.find(([dayId]) => !completedDays.has(dayId));
 
         if (!nextDay) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `All ${allDays.length} workout days completed this week! Rest or do active recovery.`,
-              },
-            ],
-            structuredContent: { all_complete: true, completed: completedDays.size, total: allDays.length },
-          };
+          return widget({
+            props: {
+              all_complete: true,
+              week_progress: { completed: completedDays.size, total: allDays.length },
+            },
+            output: text(`All ${allDays.length} workout days completed this week! Rest or do active recovery.`),
+          });
         }
 
         const [dayId, day] = nextDay;

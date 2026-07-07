@@ -1,7 +1,8 @@
 import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
-import { useAppColors, FONT, trafficColor, type AppColors } from "./lib/theme";
-import { WidgetLoading } from "./lib/ui";
+import { useAppColors, FONT, FONT_DISPLAY, trafficColor, type AppColors } from "./lib/theme";
+import { WidgetLoading, Kicker, DisplayTitle, ghostButtonStyle } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 const propsSchema = z.object({
   from: z.string(),
@@ -106,14 +107,15 @@ export default function NutritionSummary() {
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 480 }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15 }}>Resumen nutricional</div>
-            <div style={{ fontSize: 12, color: c.sub, marginTop: 2 }}>{dateLabel}</div>
-            <div style={{ fontSize: 12, color: c.sub }}>
+            <Kicker>{dateLabel}</Kicker>
+            <DisplayTitle size={22} style={{ marginTop: 2 }}>Resumen nutricional</DisplayTitle>
+            <div style={{ fontSize: 12, color: c.sub, marginTop: 2 }}>
               {days_logged} día{days_logged !== 1 ? "s" : ""} registrado{days_logged !== 1 ? "s" : ""} · {total_entries} comida{total_entries !== 1 ? "s" : ""}
             </div>
           </div>
@@ -124,13 +126,13 @@ export default function NutritionSummary() {
               style={{
                 backgroundColor: c.card,
                 border: `1px solid ${c.border}`,
-                borderRadius: 10,
+                borderRadius: 8,
                 padding: "8px 14px",
                 textAlign: "center",
                 minWidth: 64,
               }}
             >
-              <div style={{ fontSize: 22, fontWeight: 800, color: adherenceColor, lineHeight: 1 }}>
+              <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 26, color: adherenceColor, lineHeight: 1 }}>
                 {adherence_pct}%
               </div>
               <div style={{ fontSize: 10, color: c.sub, marginTop: 2 }}>adherencia</div>
@@ -142,23 +144,15 @@ export default function NutritionSummary() {
         <div
           style={{
             backgroundColor: c.card,
-            borderRadius: 10,
+            borderRadius: 8,
             padding: "12px 16px",
             marginBottom: 12,
             border: `1px solid ${c.border}`,
           }}
         >
-          <div
-            style={{
-              fontSize: 11,
-              color: c.sub,
-              textTransform: "uppercase",
-              letterSpacing: 1,
-              marginBottom: 10,
-            }}
-          >
+          <Kicker style={{ marginBottom: 10 }}>
             Promedio diario{goals ? " vs meta" : ""}
-          </div>
+          </Kicker>
 
           <MacroBar
             label="Calorías"
@@ -199,23 +193,13 @@ export default function NutritionSummary() {
           <div
             style={{
               backgroundColor: c.card,
-              borderRadius: 10,
+              borderRadius: 8,
               padding: "12px 16px",
               marginBottom: 14,
               border: `1px solid ${c.border}`,
             }}
           >
-            <div
-              style={{
-                fontSize: 11,
-                color: c.sub,
-                textTransform: "uppercase",
-                letterSpacing: 1,
-                marginBottom: 8,
-              }}
-            >
-              Más registrados
-            </div>
+            <Kicker style={{ marginBottom: 8 }}>Más registrados</Kicker>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {most_logged_meals.map((meal, i) => (
                 <span
@@ -249,21 +233,10 @@ export default function NutritionSummary() {
 
         {/* Action button */}
         <button
-          onClick={() => sendFollowUpMessage("🍽 Dame consejos para mejorar mi nutrición basándote en este resumen")}
-          style={{
-            width: "100%",
-            padding: "9px 12px",
-            borderRadius: 8,
-            border: `1px solid ${c.border}`,
-            backgroundColor: "transparent",
-            color: c.text,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            textAlign: "left",
-          }}
+          onClick={() => sendFollowUpMessage("Dame consejos para mejorar mi nutrición basándote en este resumen")}
+          style={{ ...ghostButtonStyle(c), width: "100%", textAlign: "left" }}
         >
-          🍽 Dame consejos para mejorar mi nutrición
+          Dame consejos para mejorar mi nutrición
         </button>
       </div>
     </McpUseProvider>

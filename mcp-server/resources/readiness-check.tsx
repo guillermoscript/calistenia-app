@@ -1,7 +1,8 @@
 import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
-import { useAppColors, FONT, trafficColor } from "./lib/theme";
-import { WidgetLoading } from "./lib/ui";
+import { useAppColors, FONT, FONT_DISPLAY, trafficColor } from "./lib/theme";
+import { WidgetLoading, Kicker, DisplayTitle, primaryButtonStyle } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 export const propsSchema = z.object({
   score: z.number(),
@@ -43,7 +44,7 @@ function ReadinessGauge({ score }: { score: number }) {
         <text
           x={size / 2} y={size / 2 - 6}
           textAnchor="middle" dominantBaseline="middle" fill={color}
-          fontSize={26} fontWeight={800}
+          fontFamily={FONT_DISPLAY} fontSize={30} fontWeight={400}
           style={{ transform: "rotate(90deg)", transformOrigin: `${size / 2}px ${size / 2}px` }}
         >
           {score}
@@ -76,19 +77,24 @@ export default function ReadinessCheck() {
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 420 }}>
 
         {/* Header: gauge + label */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
           <ReadinessGauge score={score} />
           <div>
-            <div style={{
-              fontSize: 15, fontWeight: 800, color: scoreColor,
-              backgroundColor: bgLabel, borderRadius: 8,
-              padding: "4px 10px", display: "inline-block", marginBottom: 6,
-            }}>
+            <Kicker>Readiness</Kicker>
+            <DisplayTitle
+              size={20}
+              color={scoreColor}
+              style={{
+                backgroundColor: bgLabel, borderRadius: 8,
+                padding: "4px 10px", display: "inline-block", marginTop: 4, marginBottom: 6,
+              }}
+            >
               {label}
-            </div>
+            </DisplayTitle>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {weekly_goal > 0 && (
                 <div style={{ fontSize: 11, color: c.sub }}>
@@ -96,7 +102,7 @@ export default function ReadinessCheck() {
                 </div>
               )}
               {already_trained_today && (
-                <div style={{ fontSize: 11, color: c.success }}>✅ Ya entrenaste hoy</div>
+                <div style={{ fontSize: 11, color: c.success }}>Ya entrenaste hoy</div>
               )}
               {days_since_last_workout !== null && !already_trained_today && (
                 <div style={{ fontSize: 11, color: c.sub }}>
@@ -109,10 +115,8 @@ export default function ReadinessCheck() {
 
         {/* Factors */}
         {factors.length > 0 && (
-          <div style={{ backgroundColor: c.card, borderRadius: 10, padding: "10px 14px", marginBottom: 10, border: `1px solid ${c.border}` }}>
-            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-              Factores
-            </div>
+          <div style={{ backgroundColor: c.card, borderRadius: 8, padding: "10px 14px", marginBottom: 10, border: `1px solid ${c.border}` }}>
+            <Kicker style={{ marginBottom: 8 }}>Factores</Kicker>
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
               {factors.map((f, i) => (
                 <div key={i} style={{ fontSize: 12, color: c.text }}>{f}</div>
@@ -123,10 +127,8 @@ export default function ReadinessCheck() {
 
         {/* Recommendations */}
         {recommendations.length > 0 && (
-          <div style={{ backgroundColor: c.card, borderRadius: 10, padding: "10px 14px", marginBottom: 12, border: `1px solid ${c.border}` }}>
-            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-              Recomendaciones
-            </div>
+          <div style={{ backgroundColor: c.card, borderRadius: 8, padding: "10px 14px", marginBottom: 12, border: `1px solid ${c.border}` }}>
+            <Kicker style={{ marginBottom: 8 }}>Recomendaciones</Kicker>
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
               {recommendations.map((r, i) => (
                 <div key={i} style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
@@ -141,13 +143,9 @@ export default function ReadinessCheck() {
         {/* Follow-up button */}
         <button
           onClick={() => sendFollowUpMessage("¿Qué entreno hoy? Usa cal_todays_workout para mostrarme el entrenamiento del día")}
-          style={{
-            width: "100%", padding: "9px 14px", borderRadius: 8,
-            backgroundColor: c.lime, color: c.limeText,
-            fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer",
-          }}
+          style={{ ...primaryButtonStyle(c), width: "100%" }}
         >
-          🏋️ ¿Qué entreno hoy?
+          ¿Qué entreno hoy?
         </button>
       </div>
     </McpUseProvider>

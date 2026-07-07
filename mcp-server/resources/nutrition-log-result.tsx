@@ -1,7 +1,8 @@
 import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
-import { useAppColors, FONT, type AppColors } from "./lib/theme";
-import { WidgetLoading } from "./lib/ui";
+import { useAppColors, FONT, FONT_DISPLAY, type AppColors } from "./lib/theme";
+import { WidgetLoading, Kicker } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 const foodSchema = z.object({
   name: z.string(),
@@ -34,13 +35,6 @@ const MEAL_LABELS: Record<string, string> = {
   almuerzo: "Almuerzo",
   cena: "Cena",
   snack: "Snack",
-};
-
-const MEAL_EMOJI: Record<string, string> = {
-  desayuno: "🌅",
-  almuerzo: "☀️",
-  cena: "🌙",
-  snack: "🍎",
 };
 
 function MacroBar({
@@ -92,16 +86,17 @@ export default function NutritionLogResult() {
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 480 }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-          <span style={{ fontSize: 20 }}>{MEAL_EMOJI[meal_type] ?? "🍽️"}</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>{MEAL_LABELS[meal_type] ?? meal_type} — registrado</div>
+            <Kicker>Registrado</Kicker>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>{MEAL_LABELS[meal_type] ?? meal_type}</div>
             <div style={{ fontSize: 12, color: c.sub }}>{foods.length} alimento{foods.length !== 1 ? "s" : ""}</div>
           </div>
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
-            <div style={{ fontWeight: 700, fontSize: 18, color: c.kcal }}>{totals.calories}</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 22, color: c.kcal }}>{totals.calories}</div>
             <div style={{ fontSize: 11, color: c.sub }}>kcal</div>
           </div>
         </div>
@@ -133,21 +128,21 @@ export default function NutritionLogResult() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => sendFollowUpMessage("Las macros están mal, corrígelas. Te explico qué era realmente.")}
-            style={{ fontSize: 12, padding: "6px 12px", borderRadius: 6, border: `1px solid ${c.border}`, backgroundColor: c.chip, color: c.text, cursor: "pointer" }}
+            style={{ fontSize: 12, padding: "6px 12px", borderRadius: 6, border: `1px solid ${c.border}`, backgroundColor: c.chip, color: c.text, cursor: "pointer", fontFamily: FONT }}
           >
-            ✏️ Corregir macros
+            Corregir macros
           </button>
           <button
             onClick={() => sendFollowUpMessage("Quiero registrar otra comida. Analiza la imagen que te muestro ahora.")}
-            style={{ fontSize: 12, padding: "6px 12px", borderRadius: 6, border: `1px solid ${c.border}`, backgroundColor: c.chip, color: c.text, cursor: "pointer" }}
+            style={{ fontSize: 12, padding: "6px 12px", borderRadius: 6, border: `1px solid ${c.border}`, backgroundColor: c.chip, color: c.text, cursor: "pointer", fontFamily: FONT }}
           >
             + Agregar otra
           </button>
           <button
             onClick={() => sendFollowUpMessage("¿Cómo va mi nutrición hoy? Dame un resumen y qué me falta para llegar a mis metas.")}
-            style={{ fontSize: 12, padding: "6px 12px", borderRadius: 6, border: `1px solid ${c.border}`, backgroundColor: c.chip, color: c.text, cursor: "pointer" }}
+            style={{ fontSize: 12, padding: "6px 12px", borderRadius: 6, border: `1px solid ${c.border}`, backgroundColor: c.chip, color: c.text, cursor: "pointer", fontFamily: FONT }}
           >
-            📊 Ver resumen diario
+            Ver resumen diario
           </button>
         </div>
       </div>

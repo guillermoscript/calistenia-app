@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
-import { useAppColors, FONT } from "./lib/theme";
-import { WidgetLoading } from "./lib/ui";
+import { useAppColors, FONT, FONT_DISPLAY } from "./lib/theme";
+import { WidgetLoading, Kicker, DisplayTitle, ghostButtonStyle } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 const propsSchema = z.object({
   period_days: z.number(),
@@ -35,7 +36,7 @@ function WeightLine({ points, min, max, stroke, grid, sub }: {
   points: { date: string; kg: number }[]; min: number; max: number; stroke: string; grid: string; sub: string;
 }) {
   if (points.length < 2) {
-    return <div style={{ padding: 28, textAlign: "center", color: sub, fontSize: 13 }}>Registra peso al menos 2 días para ver la línea 📉</div>;
+    return <div style={{ padding: 28, textAlign: "center", color: sub, fontSize: 13 }}>Registra peso al menos 2 días para ver la línea.</div>;
   }
   const innerW = W - PAD.l - PAD.r;
   const innerH = H - PAD.t - PAD.b;
@@ -82,7 +83,7 @@ function Bars({ data, color, grid, sub, unit }: {
   const step = Math.ceil(data.length / 8);
 
   if (data.every((d) => d.value === 0)) {
-    return <div style={{ padding: 28, textAlign: "center", color: sub, fontSize: 13 }}>Sin datos en el periodo 🫥</div>;
+    return <div style={{ padding: 28, textAlign: "center", color: sub, fontSize: 13 }}>Sin datos en el periodo.</div>;
   }
 
   return (
@@ -131,9 +132,9 @@ export default function TrendsChart() {
   const { period_days, weight, weekly, totals } = props;
 
   const tabs: { id: Tab; label: string; color: string }[] = [
-    { id: "peso", label: "⚖️ Peso", color: c.lime },
-    { id: "volumen", label: "💪 Volumen", color: c.success },
-    { id: "sesiones", label: "🔥 Sesiones", color: c.kcal },
+    { id: "peso", label: "Peso", color: c.lime },
+    { id: "volumen", label: "Volumen", color: c.protein },
+    { id: "sesiones", label: "Sesiones", color: c.lime },
   ];
   const active = tabs.find((t) => t.id === tab)!;
 
@@ -149,27 +150,31 @@ export default function TrendsChart() {
   }
 
   const tabStyle = (t: { id: Tab; color: string }): React.CSSProperties => ({
-    flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer",
+    flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
     border: `1px solid ${tab === t.id ? t.color : border}`,
     backgroundColor: tab === t.id ? t.color : "transparent",
-    color: tab === t.id ? (t.id === "peso" ? c.limeText : "#fff") : textColor,
+    color: tab === t.id ? (t.id === "volumen" ? "#fff" : c.limeText) : textColor,
     transition: "all 0.15s",
+    fontFamily: FONT,
   });
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: bg, color: textColor, fontFamily: FONT, maxWidth: 480 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
-          <div style={{ fontWeight: 800, fontSize: 15 }}>Tendencias</div>
-          <div style={{ fontSize: 11, color: sub }}>últimos {period_days} días</div>
+          <div>
+            <Kicker>Últimos {period_days} días</Kicker>
+            <DisplayTitle size={26}>Tendencias</DisplayTitle>
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           {tabs.map((t) => <button key={t.id} onClick={() => setTab(t.id)} style={tabStyle(t)}>{t.label}</button>)}
         </div>
 
-        <div style={{ backgroundColor: card, borderRadius: 10, padding: "12px 10px 8px", border: `1px solid ${border}` }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: active.color, marginBottom: 6, paddingLeft: 4 }}>{summary}</div>
+        <div style={{ backgroundColor: card, borderRadius: 8, padding: "12px 10px 8px", border: `1px solid ${border}` }}>
+          <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 18, color: active.color, marginBottom: 6, paddingLeft: 4 }}>{summary}</div>
           {tab === "peso" && <WeightLine points={weight.points} min={weight.min} max={weight.max} stroke={active.color} grid={grid} sub={sub} />}
           {tab === "volumen" && <Bars data={weekly.map((w) => ({ label: w.label, value: w.sets }))} color={active.color} grid={grid} sub={sub} unit="series/sem" />}
           {tab === "sesiones" && <Bars data={weekly.map((w) => ({ label: w.label, value: w.sessions }))} color={active.color} grid={grid} sub={sub} unit="ses/sem" />}
@@ -178,15 +183,15 @@ export default function TrendsChart() {
         <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
           <button
             onClick={() => sendFollowUpMessage("Compara este periodo con el anterior usando cal_compare_periods")}
-            style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1px solid ${border}`, backgroundColor: "transparent", color: textColor, fontSize: 12, cursor: "pointer" }}
+            style={ghostButtonStyle(c, { flex: true })}
           >
-            ↔ Comparar periodos
+            Comparar periodos
           </button>
           <button
             onClick={() => sendFollowUpMessage("Analiza mis tendencias y dame 3 recomendaciones accionables")}
-            style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1px solid ${border}`, backgroundColor: "transparent", color: textColor, fontSize: 12, cursor: "pointer" }}
+            style={ghostButtonStyle(c, { flex: true })}
           >
-            💡 Analizar
+            Analizar
           </button>
         </div>
       </div>

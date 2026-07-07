@@ -1,8 +1,9 @@
 import { McpUseProvider, useWidget, useCallTool, type WidgetMetadata } from "mcp-use/react";
 import { useState } from "react";
 import { z } from "zod";
-import { useAppColors, FONT } from "./lib/theme";
-import { WidgetLoading, Banner, primaryButtonStyle, ghostButtonStyle } from "./lib/ui";
+import { useAppColors, FONT, FONT_MONO } from "./lib/theme";
+import { WidgetLoading, Banner, Kicker, DisplayTitle, primaryButtonStyle, ghostButtonStyle } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 const exerciseSchema = z.object({
   name: z.string(),
@@ -13,13 +14,18 @@ const exerciseSchema = z.object({
 });
 
 const propsSchema = z.object({
-  day_id: z.string(),
-  day_name: z.string(),
-  day_focus: z.string(),
-  phase: z.number(),
-  program_name: z.string(),
-  workout_key: z.string(),
-  exercises: z.array(exerciseSchema),
+  // All-complete variant: every workout day this week is already logged.
+  // There's no "next" day to track, so most fields below are irrelevant —
+  // the widget renders a dedicated rest-day state instead of a broken
+  // exercise tracker. See mcp-server/src/tools/smart.ts cal_todays_workout.
+  all_complete: z.boolean().optional(),
+  day_id: z.string().optional(),
+  day_name: z.string().optional(),
+  day_focus: z.string().optional(),
+  phase: z.number().optional(),
+  program_name: z.string().optional(),
+  workout_key: z.string().optional(),
+  exercises: z.array(exerciseSchema).optional(),
   week_progress: z.object({ completed: z.number(), total: z.number() }),
 });
 
@@ -31,6 +37,26 @@ export const widgetMetadata: WidgetMetadata = {
 
 type Props = z.infer<typeof propsSchema>;
 
+function AllCompleteState({ weekProgress }: { weekProgress: { completed: number; total: number } }) {
+  const c = useAppColors();
+  return (
+    <McpUseProvider autoSize>
+      <WidgetFonts />
+      <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 500 }}>
+        <Kicker>Semana completa</Kicker>
+        <DisplayTitle size={30} style={{ marginTop: 2, marginBottom: 8 }}>Todo hecho</DisplayTitle>
+        <div style={{
+          display: "inline-block", fontSize: 13, fontWeight: 700, color: c.lime,
+          backgroundColor: c.limeSoft, borderRadius: 8, padding: "4px 10px", marginBottom: 12,
+        }}>
+          {weekProgress.completed}/{weekProgress.total} días
+        </div>
+        <div style={{ fontSize: 13, color: c.sub }}>Descansa o haz movilidad.</div>
+      </div>
+    </McpUseProvider>
+  );
+}
+
 export default function SessionTracker() {
   const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
   const c = useAppColors();
@@ -41,7 +67,12 @@ export default function SessionTracker() {
     return <WidgetLoading text="Cargando entrenamiento…" />;
   }
 
-  const totalSets = props.exercises.reduce((s, e) => s + e.sets, 0);
+  if (props.all_complete) {
+    return <AllCompleteState weekProgress={props.week_progress} />;
+  }
+
+  const exercises = props.exercises ?? [];
+  const totalSets = exercises.reduce((s, e) => s + e.sets, 0);
   const doneSets = Object.values(completedSets).filter(Boolean).length;
   const pct = totalSets > 0 ? doneSets / totalSets : 0;
 
@@ -55,18 +86,19 @@ export default function SessionTracker() {
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 500 }}>
         {/* Header */}
         <div style={{ marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
-              <div style={{ fontSize: 11, color: c.sub, textTransform: "uppercase", letterSpacing: 1 }}>{props.program_name} · Fase {props.phase}</div>
-              <div style={{ fontWeight: 700, fontSize: 17, marginTop: 2 }}>{props.day_name}</div>
+              <Kicker>{props.program_name} · Fase {props.phase}</Kicker>
+              <DisplayTitle size={24} style={{ marginTop: 2 }}>{props.day_name}</DisplayTitle>
               <div style={{ fontSize: 13, color: c.lime, fontWeight: 600 }}>{props.day_focus}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 11, color: c.sub }}>Esta semana</div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>{props.week_progress.completed}/{props.week_progress.total} días</div>
+              <Kicker>Esta semana</Kicker>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 15, fontWeight: 700, marginTop: 2 }}>{props.week_progress.completed}/{props.week_progress.total} días</div>
             </div>
           </div>
 
@@ -79,7 +111,7 @@ export default function SessionTracker() {
 
         {/* Exercise list */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-          {props.exercises.map((ex, ei) => (
+          {exercises.map((ex, ei) => (
             <div key={ei} style={{ backgroundColor: c.card, borderRadius: 8, padding: 10, border: `1px solid ${c.border}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                 <div>
@@ -108,6 +140,7 @@ export default function SessionTracker() {
                         fontSize: 13, fontWeight: 700, cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         transition: "all 0.15s",
+                        fontFamily: FONT,
                       }}
                     >
                       {done ? "✓" : si + 1}
@@ -130,7 +163,7 @@ export default function SessionTracker() {
             disabled={isLogging || isLogged}
             style={primaryButtonStyle(c, { flex: true, disabled: isLogging || isLogged })}
           >
-            {isLogging ? "Guardando…" : isLogged ? "✓ Registrada" : pct === 1 ? "Registrar sesión" : `Registrar sesión (${doneSets}/${totalSets})`}
+            {isLogging ? "Guardando…" : isLogged ? "Registrada" : pct === 1 ? "Registrar sesión" : `Registrar sesión (${doneSets}/${totalSets})`}
           </button>
           <button
             onClick={() => sendFollowUpMessage("Cambia el orden o reemplaza algún ejercicio de este entrenamiento")}

@@ -53,33 +53,40 @@ export interface AppColors {
 }
 
 export function getAppColors(dark: boolean): AppColors {
+  const text = dark ? "#fafafa" : "#141414";
+  const lime = dark ? "#c6f42f" : "#8fb80a";
+
   return {
     bg: dark ? "#0a0a0a" : "#f7f7f5",
     card: dark ? "#121212" : "#ffffff",
     raised: dark ? "#1e1e1e" : "#f1f1ef",
     border: dark ? "#262626" : "#e4e4e1",
-    text: dark ? "#fafafa" : "#141414",
+    text,
     sub: dark ? "#a3a3a3" : "#666666",
     chip: dark ? "#262626" : "#ededeb",
     grid: dark ? "#ffffff14" : "#00000010",
     axis: dark ? "#a1a1aa" : "#71717a",
 
-    lime: dark ? "#c6f42f" : "#8fb80a",
+    lime,
     limeText: dark ? "#0a0a0a" : "#ffffff",
     limeSoft: dark ? "#c6f42f24" : "#8fb80a1f",
 
     primary: dark ? "#fafafa" : "#141414",
     primaryText: dark ? "#0a0a0a" : "#fafafa",
 
-    success: dark ? "#22c55e" : "#16a34a",
+    // Lime is the single accent — "success" is not a distinct hue, it IS the
+    // accent (interact/complete/done). Kills green-as-success across widgets.
+    success: lime,
     warn: "#f59e0b",
     danger: dark ? "#ef4444" : "#dc2626",
     dangerSoft: dark ? "#ef444422" : "#ef44441a",
 
-    kcal: "#f97316",
-    protein: "#3b82f6",
-    carbs: "#eab308",
-    fat: "#a855f7",
+    // kcal has no hue — the big number does the work, not color (matches
+    // packages/core/lib/style-tokens.ts MACRO_COLORS, which has no kcal entry).
+    kcal: text,
+    protein: "#0ea5e9", // sky-500
+    carbs: "#fbbf24",   // amber-400
+    fat: "#ec4899",     // pink-500
 
     gold: "#ffd700",
     silver: "#a8a9ad",
@@ -107,10 +114,12 @@ export function trafficColor(value: number, ok: number, good: number, c: AppColo
 }
 
 /**
- * Font stacks. The app uses DM Sans (body) + Bebas Neue (display headings).
- * Those webfonts aren't guaranteed inside the host iframe, so we lead with them
- * and fall back to the system stack. Use FONT_DISPLAY + uppercase/letterSpacing
- * for titles to evoke the condensed Bebas look even on the fallback.
+ * Font stacks. The app uses DM Sans (body), Bebas Neue (display headings/big
+ * numbers) and JetBrains Mono (uppercase kickers/labels). The actual webfonts
+ * are self-hosted and loaded via [[lib/fonts]]'s <WidgetFonts/> — every widget
+ * renders it once at its root so these families resolve instead of falling
+ * back to the system stack.
  */
 export const FONT = "'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
-export const FONT_DISPLAY = "'Bebas Neue', 'DM Sans', ui-sans-serif, system-ui, sans-serif";
+export const FONT_DISPLAY = "'Bebas Neue', 'Arial Narrow', sans-serif";
+export const FONT_MONO = "'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace";

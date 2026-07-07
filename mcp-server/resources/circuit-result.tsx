@@ -1,7 +1,8 @@
 import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { z } from "zod";
-import { useAppColors, FONT } from "./lib/theme";
-import { WidgetLoading } from "./lib/ui";
+import { useAppColors, FONT, FONT_DISPLAY, FONT_MONO } from "./lib/theme";
+import { WidgetLoading, Kicker, ghostButtonStyle } from "./lib/ui";
+import { WidgetFonts } from "./lib/fonts";
 
 const exerciseSchema = z.object({
   name: z.string(),
@@ -39,18 +40,13 @@ type Props = z.infer<typeof propsSchema>;
 // Accent colour per mode — resolved against the live palette
 function getModeColor(mode: string, c: ReturnType<typeof useAppColors>): string {
   if (mode === "circuit") return c.lime;
-  if (mode === "timed") return c.kcal; // orange (#f97316) — HIIT/Tabata
+  if (mode === "timed") return c.fat; // pink — HIIT/Tabata
   return c.lime;
 }
 
 const MODE_LABELS: Record<string, string> = {
   circuit: "Circuit",
   timed: "HIIT",
-};
-
-const MODE_ICONS: Record<string, string> = {
-  circuit: "⚡",
-  timed: "🔥",
 };
 
 function formatDuration(seconds: number): string {
@@ -91,7 +87,7 @@ function RoundsRing({ completed, target, color }: { completed: number; target: n
         <text
           x={size / 2} y={size / 2}
           textAnchor="middle" dominantBaseline="middle"
-          fill={color} fontSize={11} fontWeight={800}
+          fill={color} fontFamily={FONT_DISPLAY} fontSize={14} fontWeight={400}
           style={{ transform: "rotate(90deg)", transformOrigin: `${size / 2}px ${size / 2}px` }}
         >
           {completed}/{target}
@@ -109,9 +105,9 @@ function ModeBadge({ mode, color }: { mode: string; color: string }) {
       display: "inline-flex", alignItems: "center", gap: 4,
       padding: "2px 10px", borderRadius: 20,
       backgroundColor: color + "22", border: `1px solid ${color}55`,
-      color: color, fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+      color: color, fontSize: 10, fontFamily: FONT_MONO, fontWeight: 400, letterSpacing: 1.5, textTransform: "uppercase",
     }}>
-      {MODE_ICONS[mode] ?? "⚙"} {MODE_LABELS[mode] ?? mode.toUpperCase()}
+      {MODE_LABELS[mode] ?? mode.toUpperCase()}
     </span>
   );
 }
@@ -140,6 +136,7 @@ export default function CircuitResult() {
 
   return (
     <McpUseProvider autoSize>
+      <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 480 }}>
 
         {/* ── Header: name + mode badge ── */}
@@ -154,13 +151,13 @@ export default function CircuitResult() {
         {/* ── Stats row: duration + rounds ring ── */}
         <div style={{
           display: "flex", alignItems: "center", gap: 12,
-          backgroundColor: c.card, borderRadius: 10, padding: "12px 16px",
+          backgroundColor: c.card, borderRadius: 8, padding: "12px 16px",
           border: `1px solid ${c.border}`, marginBottom: 12,
         }}>
           {/* Duration block */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, color: c.sub, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Duración</div>
-            <div style={{ fontWeight: 800, fontSize: 26, color: accent }}>{formatDuration(duration_seconds)}</div>
+            <Kicker style={{ marginBottom: 2 }}>Duración</Kicker>
+            <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 30, color: accent }}>{formatDuration(duration_seconds)}</div>
           </div>
 
           {/* Rounds ring */}
@@ -194,11 +191,11 @@ export default function CircuitResult() {
         {/* ── Exercises list ── */}
         {exercises.length > 0 && (
           <div style={{
-            backgroundColor: c.card, borderRadius: 10,
+            backgroundColor: c.card, borderRadius: 8,
             border: `1px solid ${c.border}`, marginBottom: 14, overflow: "hidden",
           }}>
-            <div style={{ fontSize: 10, color: c.sub, textTransform: "uppercase", letterSpacing: 1, padding: "10px 14px 6px" }}>
-              Ejercicios · {exercises.length}
+            <div style={{ padding: "10px 14px 6px" }}>
+              <Kicker>Ejercicios · {exercises.length}</Kicker>
             </div>
             {exercises.map((ex, i) => (
               <div
@@ -236,10 +233,10 @@ export default function CircuitResult() {
                 display: "flex", gap: 16, flexWrap: "wrap",
               }}>
                 {config.rest_between_exercises != null && config.rest_between_exercises > 0 && (
-                  <span style={{ fontSize: 11, color: c.sub }}>⏱ Descanso entre ejercicios: {config.rest_between_exercises}s</span>
+                  <span style={{ fontSize: 11, color: c.sub }}>Descanso entre ejercicios: {config.rest_between_exercises}s</span>
                 )}
                 {config.rest_between_rounds != null && config.rest_between_rounds > 0 && (
-                  <span style={{ fontSize: 11, color: c.sub }}>⏱ Descanso entre rondas: {config.rest_between_rounds}s</span>
+                  <span style={{ fontSize: 11, color: c.sub }}>Descanso entre rondas: {config.rest_between_rounds}s</span>
                 )}
               </div>
             )}
@@ -248,15 +245,10 @@ export default function CircuitResult() {
 
         {/* ── Follow-up button ── */}
         <button
-          onClick={() => sendFollowUpMessage("🔥 Ver mis estadísticas de circuitos con cal_circuit_stats")}
-          style={{
-            width: "100%", padding: "9px 12px", borderRadius: 8,
-            border: `1px solid ${c.border}`, backgroundColor: "transparent",
-            color: c.text, fontSize: 12, cursor: "pointer",
-            fontFamily: FONT,
-          }}
+          onClick={() => sendFollowUpMessage("Ver mis estadísticas de circuitos con cal_circuit_stats")}
+          style={{ ...ghostButtonStyle(c), width: "100%" }}
         >
-          🔥 Ver mis estadísticas de circuitos
+          Ver mis estadísticas de circuitos
         </button>
 
       </div>
