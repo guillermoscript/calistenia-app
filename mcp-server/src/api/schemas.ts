@@ -184,6 +184,10 @@ export const ReceiptParseSchema = z.object({
     .string()
     .nullable()
     .describe("Moneda del recibo como código o símbolo (USD, Bs, EUR); null si no se distingue"),
+  exchange_rate_usd: z
+    .number()
+    .nullable()
+    .describe("Tasa de cambio a USD IMPRESA en el recibo (ej. 'TASA BCV 143.50' → 143.5, unidades de la moneda local por 1 USD); null si no aparece. NUNCA la inventes"),
   items: z.array(ReceiptItemSchema).describe("SOLO líneas de comida/bebida, con su precio de línea"),
   ignored_lines: z
     .array(z.string())

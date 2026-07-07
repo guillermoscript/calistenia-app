@@ -49,6 +49,23 @@ export function normalizeName(name: string): string {
   return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 }
 
+// Copia local de canonCurrency (packages/core/lib/money.ts — mcp-server está
+// fuera del workspace pnpm y no puede importarlo). Mantener en sync.
+const CURRENCY_CANON: Record<string, string> = {
+  usd: "USD", us$: "USD", $: "USD", dolar: "USD", dolares: "USD", dollar: "USD",
+  ves: "VES", bs: "VES", "bs.": "VES", bss: "VES", bsd: "VES", bsf: "VES",
+  bolivar: "VES", bolivares: "VES",
+  eur: "EUR", "€": "EUR", euro: "EUR", euros: "EUR",
+};
+
+/** Código canónico de moneda ("Bs" → "VES"); desconocido → uppercase tal cual. */
+export function canonCurrency(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  const key = raw.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  if (key.length === 0) return null;
+  return CURRENCY_CANON[key] ?? raw.trim().toUpperCase();
+}
+
 function parseNum(s: string): number | null {
   const n = Number(s.replace(",", "."));
   return Number.isFinite(n) && n > 0 ? n : null;

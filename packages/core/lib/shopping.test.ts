@@ -21,6 +21,7 @@ function pi(over: Partial<PantryItem>): PantryItem {
   return {
     id: `it${++seq}`, name: 'x', nameNormalized: 'x', category: 'otro',
     quantity: null, unit: null, priceTotal: null, currency: 'USD',
+    priceOriginal: null, currencyOriginal: null, exchangeRate: null,
     priceSource: null, purchaseDate: null, expiryEstimate: null,
     confidence: 'high', status: 'active', source: 'manual',
     ...over,

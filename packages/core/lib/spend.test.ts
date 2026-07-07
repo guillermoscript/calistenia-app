@@ -4,7 +4,8 @@ import type { PantryEvent, PantryItem } from '../types'
 
 const item = (over: Partial<PantryItem>): PantryItem => ({
   id: 'x', name: 'a', nameNormalized: 'a', category: 'otro', quantity: 1,
-  unit: 'unidad', priceTotal: null, currency: 'USD', priceSource: null,
+  unit: 'unidad', priceTotal: null, currency: 'USD', priceOriginal: null,
+  currencyOriginal: null, exchangeRate: null, priceSource: null,
   purchaseDate: null, expiryEstimate: null, confidence: 'high',
   status: 'active', source: 'chat', ...over,
 })

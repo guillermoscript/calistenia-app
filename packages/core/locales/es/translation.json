@@ -287,6 +287,8 @@
   "profile.saved": "¡GUARDADO!",
   "profile.saveChanges": "GUARDAR CAMBIOS",
   "profile.language": "Idioma",
+  "profile.currency": "Moneda",
+  "profile.currencyDesc": "El gasto se muestra siempre en $ (USD de referencia).",
   "profile.theme": "Tema",
   "profile.themeSystem": "Sistema",
   "profile.themeLight": "Claro",

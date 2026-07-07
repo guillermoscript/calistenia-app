@@ -10,6 +10,8 @@ import {
   useAddPantryItems, useAdjustPantryItem, useDeletePantryItem, useDeletePantryItems,
   usePantryHistory, usePantryItems,
 } from '@calistenia/core/hooks/usePantry'
+import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
+import { canonCurrency } from '@calistenia/core/lib/money'
 import { parsePantry } from '@calistenia/core/lib/pantry-api'
 import { daysUntil } from '@calistenia/core/lib/pantry'
 import type { PantryItem, PantryParsedItem, PantryParseResult, ReceiptParseResult } from '@calistenia/core/types'
@@ -44,8 +46,18 @@ export default function PantryScreen() {
   const [editing, setEditing] = useState<PantryItem | null>(null)
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
   const [receiptMeta, setReceiptMeta] = useState<
-    { storeName: string | null; purchaseDate: string | null; currency: string | null; ignoredLines: string[] } | null
+    { storeName: string | null; purchaseDate: string | null; currency: string | null; exchangeRate: number | null; ignoredLines: string[] } | null
   >(null)
+
+  // Multimoneda (USD de referencia): moneda de los precios del sheet =
+  // la del recibo si se leyó, si no la default del user. Prefill de tasa:
+  // impresa en el recibo > última usada por el user.
+  const { prefs: currencyPrefs, saveRate } = useUserCurrency(userId)
+  const pricingCurrency = canonCurrency(receiptMeta?.currency) ?? currencyPrefs.defaultCurrency
+  const pricing = {
+    currency: pricingCurrency,
+    prefillRate: receiptMeta?.exchangeRate ?? currencyPrefs.rates[pricingCurrency] ?? null,
+  }
 
   const matches: ConsumeMatch[] = useMemo(() => {
     if (!parseResult || parseResult.intent === 'add') return []
@@ -88,6 +100,7 @@ export default function PantryScreen() {
         storeName: result.store_name,
         purchaseDate: result.purchase_date,
         currency: result.currency,
+        exchangeRate: result.exchange_rate_usd,
         ignoredLines: result.ignored_lines,
       })
       setReply(null)
@@ -133,16 +146,20 @@ export default function PantryScreen() {
 
   const [scanPickerOpen, setScanPickerOpen] = useState(false)
 
-  const handleConfirmAdd = async (draft: PantryParsedItem[]) => {
+  const handleConfirmAdd = async (draft: PantryParsedItem[], exchangeRate: number | null) => {
     const meta = receiptMeta
+    const currency = pricingCurrency
     setParseResult(null)
     setReceiptMeta(null)
     try {
-      await addItems.mutateAsync(
-        meta
-          ? { items: draft, source: 'receipt', purchaseDate: meta.purchaseDate, currency: meta.currency }
-          : { items: draft },
-      )
+      await addItems.mutateAsync({
+        items: draft,
+        ...(meta ? { source: 'receipt' as const, purchaseDate: meta.purchaseDate } : {}),
+        currency,
+        exchangeRate,
+      })
+      // recordar la tasa para el próximo recibo/chat en esa moneda
+      if (exchangeRate != null && currency !== 'USD') saveRate({ code: currency, rate: exchangeRate })
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'pantry', op: 'add_items' } })
       setReply(t('pantry.saveError'))
@@ -369,6 +386,7 @@ export default function PantryScreen() {
         onConfirmConsume={handleConfirmConsume}
         onClose={() => { setParseResult(null); setReceiptMeta(null) }}
         receipt={receiptMeta}
+        pricing={pricing}
       />
       <PantryEditSheet
         item={editing}

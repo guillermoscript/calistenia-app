@@ -20,6 +20,8 @@ import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
+import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
 import { Sentry } from '@/lib/instrument'
 
 type SaveState = 'idle' | 'saving' | 'saved'
@@ -37,6 +39,8 @@ export default function ProfileScreen() {
   const muted = 'hsl(0 0% 45%)'
 
   const [name, setName] = useState((user?.display_name as string) || (user?.name as string) || '')
+  // Multimoneda (USD de referencia): moneda en la que el user habla en la despensa
+  const { prefs: currencyPrefs, setDefaultCurrency } = useUserCurrency((user?.id as string) ?? null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [themeMode, setThemeModeState] = useState<ThemeMode>(getThemeMode)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -222,6 +226,37 @@ export default function ProfileScreen() {
                 </Pressable>
               ))}
             </View>
+          </CardContent>
+        </Card>
+
+        {/* Moneda (despensa: en qué moneda hablas; el gasto siempre se muestra en $) */}
+        <Card>
+          <CardContent className="gap-3 py-4">
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              {t('profile.currency', { defaultValue: 'Moneda' })}
+            </Text>
+            <View className="flex-row gap-2">
+              {SUPPORTED_CURRENCIES.map(code => {
+                const active = currencyPrefs.defaultCurrency === code
+                return (
+                  <Pressable
+                    key={code}
+                    onPress={() => setDefaultCurrency(code)}
+                    className={cn(
+                      'h-11 flex-1 items-center justify-center rounded-md border',
+                      active ? 'border-lime/40 bg-lime/10' : 'border-border',
+                    )}
+                  >
+                    <Text className={cn('font-mono text-xs tracking-wide', active ? 'text-lime' : 'text-muted-foreground')}>
+                      {currencySymbol(code)} {code}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+            <Text className="font-mono text-[9px] tracking-wide text-muted-foreground/70">
+              {t('profile.currencyDesc', { defaultValue: 'El gasto se muestra siempre en $ (USD de referencia).' })}
+            </Text>
           </CardContent>
         </Card>
 

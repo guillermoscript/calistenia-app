@@ -314,6 +314,7 @@ Reglas:
 - store_name: nombre de la tienda si se lee (encabezado del recibo); si no, null.
 - purchase_date: fecha del recibo en formato YYYY-MM-DD si aparece; si no, null. NUNCA inventes la fecha.
 - currency: código o símbolo de la moneda del recibo ("USD", "Bs", "EUR"); null si no se distingue.
+- exchange_rate_usd: si el recibo tiene impresa la tasa de cambio a dólar (muy común en Venezuela: "TASA BCV: 143.50", "TIPO DE CAMBIO 143,50 Bs/USD") → el número tal cual (unidades de la moneda local por 1 USD). Si no está impresa → null. NUNCA la inventes ni la estimes.
 
 ## Por cada item
 - raw_line: la línea ORIGINAL del recibo tal cual ("POLLO ENT KG 2.145 8.58").

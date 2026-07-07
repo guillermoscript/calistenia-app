@@ -287,6 +287,8 @@
   "profile.saved": "SAVED!",
   "profile.saveChanges": "SAVE CHANGES",
   "profile.language": "Language",
+  "profile.currency": "Currency",
+  "profile.currencyDesc": "Spending is always shown in $ (USD as reference).",
   "profile.theme": "Theme",
   "profile.themeSystem": "System",
   "profile.themeLight": "Light",

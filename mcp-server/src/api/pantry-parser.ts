@@ -2,7 +2,7 @@ import { generateObject } from "ai";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
 import { PantryParseSchema, MatchConsumptionSchema, ReceiptParseSchema } from "./schemas.js";
-import { sanitizeReceiptItems } from "./receipt-sanitizer.js";
+import { canonCurrency, sanitizeReceiptItems } from "./receipt-sanitizer.js";
 
 interface PantryParseInput {
   text: string;
@@ -133,6 +133,7 @@ export async function parseReceipt({ images, tier }: ReceiptParseInput) {
 
   return {
     ...object,
+    currency: canonCurrency(object.currency),
     items: sanitized.items,
     ignored_lines: sanitized.ignored_lines,
     model_used: modelName,

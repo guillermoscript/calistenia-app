@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { PANTRY_CATEGORY_ORDER, normalizePantryName } from '@calistenia/core/lib/pantry'
+import { currencySymbol } from '@calistenia/core/lib/money'
+import { formatMoney } from '@calistenia/core/lib/shopping'
 import { Chip } from '@/components/ui/chip'
 import type { PantryItem, PantryParsedItem, PantryParseResult, PantryUnit } from '@calistenia/core/types'
 
@@ -21,30 +23,46 @@ function parseNum(v: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onConfirmConsume, onClose, receipt }: {
+export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onConfirmConsume, onClose, receipt, pricing }: {
   visible: boolean
   result: PantryParseResult | null
   matches: ConsumeMatch[]
-  onConfirmAdd: (items: PantryParsedItem[]) => void
+  /** exchangeRate: unidades de pricing.currency por 1 USD; null si los precios ya son USD. */
+  onConfirmAdd: (items: PantryParsedItem[], exchangeRate: number | null) => void
   onConfirmConsume: (items: PantryItem[]) => void
   onClose: () => void
   /** F5 (#174): metadata de recibo. null/ausente = flujo chat de F1 sin cambios. */
-  receipt?: { storeName: string | null; purchaseDate: string | null; currency: string | null; ignoredLines: string[] } | null
+  receipt?: { storeName: string | null; purchaseDate: string | null; currency: string | null; exchangeRate: number | null; ignoredLines: string[] } | null
+  /** Multimoneda: moneda ORIGINAL de los precios del draft + prefill de tasa a USD. */
+  pricing?: { currency: string; prefillRate: number | null } | null
 }) {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const [draft, setDraft] = useState<PantryParsedItem[]>([])
   const [showRaw, setShowRaw] = useState(false)
   const [showIgnored, setShowIgnored] = useState(false)
+  const [rateStr, setRateStr] = useState('')
 
   useEffect(() => {
-    if (result?.intent === 'add') { setDraft(result.items); setShowRaw(false); setShowIgnored(false) }
+    if (result?.intent === 'add') {
+      setDraft(result.items); setShowRaw(false); setShowIgnored(false)
+      setRateStr(pricing?.prefillRate != null ? String(pricing.prefillRate) : '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prefill solo al abrir un result nuevo
   }, [result])
 
   if (!result) return null
   const isAdd = result.intent === 'add'
   const matched = matches.filter(m => m.match != null)
-  const canConfirm = isAdd ? (draft.length > 0 && draft.every(d => d.name.trim().length > 0)) : matched.length > 0
+  const currency = pricing?.currency ?? 'USD'
+  const rate = parseNum(rateStr)
+  const hasPrices = draft.some(d => d.price_total != null)
+  // precios en moneda ≠ USD exigen tasa: sin ella el $ de referencia sería inventado
+  const needsRate = isAdd && currency !== 'USD' && hasPrices
+  const rateOk = !needsRate || (rate != null && rate > 0)
+  const totalOriginal = draft.reduce((acc, d) => acc + (d.price_total ?? 0), 0)
+  const totalUsd = needsRate && rate != null && rate > 0 ? totalOriginal / rate : null
+  const canConfirm = (isAdd ? (draft.length > 0 && draft.every(d => d.name.trim().length > 0)) : matched.length > 0) && rateOk
 
   const updateDraft = (idx: number, patch: Partial<PantryParsedItem>) => {
     setDraft(d => d.map((it, i) => (i === idx ? { ...it, ...patch } : it)))
@@ -57,7 +75,7 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
   const removeDraft = (idx: number) => setDraft(d => d.filter((_, i) => i !== idx))
 
   const confirm = () => {
-    if (isAdd) onConfirmAdd(draft)
+    if (isAdd) onConfirmAdd(draft, needsRate ? rate : null)
     else onConfirmConsume(matched.map(m => m.match!))
   }
 
@@ -92,6 +110,27 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
               </Pressable>
             </View>
             <ScrollView className="px-4" keyboardShouldPersistTaps="handled">
+              {needsRate && (
+                <View className="flex-row items-center gap-2 border-b border-border py-3">
+                  <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
+                    1 USD =
+                  </Text>
+                  <TextInput
+                    value={rateStr}
+                    onChangeText={setRateStr}
+                    keyboardType="numeric"
+                    placeholder="—"
+                    placeholderTextColor="hsl(0 0% 45%)"
+                    className={`h-9 w-24 rounded-md border bg-background px-2 text-center font-mono text-xs text-foreground ${rateOk ? 'border-input' : 'border-amber-400/60'}`}
+                  />
+                  <Text className="font-mono text-[10px] text-muted-foreground">{currencySymbol(currency)}</Text>
+                  {totalUsd != null && (
+                    <Text className="ml-auto font-mono text-[11px] text-lime-400">
+                      ≈ ${formatMoney(totalUsd)}
+                    </Text>
+                  )}
+                </View>
+              )}
               {isAdd && receipt && draft.some(d => (d as { raw_line?: string }).raw_line) && (
                 <Pressable onPress={() => setShowRaw(v => !v)} hitSlop={6} className="pb-1 pt-2">
                   <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime-400/80">
@@ -142,9 +181,9 @@ export function PantryConfirmSheet({ visible, result, matches, onConfirmAdd, onC
                         placeholderTextColor="hsl(0 0% 45%)"
                         className="h-9 w-24 rounded-md border border-input bg-background px-2 text-center font-mono text-xs text-foreground"
                       />
-                      {/* moneda del recibo pegada al precio: 2251.29 sin "Bs" parece un error */}
-                      {receipt?.currency ? (
-                        <Text className="font-mono text-[10px] text-muted-foreground">{receipt.currency}</Text>
+                      {/* moneda original pegada al precio: 2251.29 sin "Bs" parece un error */}
+                      {currency !== 'USD' ? (
+                        <Text className="font-mono text-[10px] text-muted-foreground">{currencySymbol(currency)}</Text>
                       ) : null}
                       {needsReview(it) && (
                         <Text className="ml-auto font-mono text-[9px] uppercase tracking-[2px] text-amber-400">

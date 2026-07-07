@@ -23,7 +23,8 @@ describe('expiryFromDays', () => {
 describe('groupPantryByCategory', () => {
   const item = (over: Partial<PantryItem>): PantryItem => ({
     id: 'x', name: 'a', nameNormalized: 'a', category: 'otro', quantity: 1,
-    unit: 'unidad', priceTotal: null, currency: 'USD', priceSource: null,
+    unit: 'unidad', priceTotal: null, currency: 'USD', priceOriginal: null,
+    currencyOriginal: null, exchangeRate: null, priceSource: null,
     purchaseDate: null, expiryEstimate: null, confidence: 'high',
     status: 'active', source: 'chat', ...over,
   })
@@ -61,7 +62,8 @@ describe('daysUntil', () => {
 describe('buildPantrySnapshot', () => {
   const base: PantryItem = {
     id: 'x1', name: 'Pollo', nameNormalized: 'pollo', category: 'proteina',
-    quantity: 2, unit: 'kg', priceTotal: null, currency: 'USD', priceSource: null,
+    quantity: 2, unit: 'kg', priceTotal: null, currency: 'USD', priceOriginal: null,
+    currencyOriginal: null, exchangeRate: null, priceSource: null,
     purchaseDate: '2026-07-01', expiryEstimate: '2026-07-08',
     confidence: 'high', status: 'active', source: 'chat',
   }
