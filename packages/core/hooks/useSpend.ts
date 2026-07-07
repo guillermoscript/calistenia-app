@@ -10,7 +10,7 @@ import { utcToLocalDateStr } from '../lib/dateUtils'
 import { addDaysISO } from '../lib/shopping'
 import { mapPantryRecord } from './usePantry'
 import {
-  computeEntryCost, computeSpendSummary,
+  buildUnitCosts, computeEntryCost, computeSpendSummary,
   type EntryCost, type SpendEntryLite, type SpendSummary,
 } from '../lib/spend'
 import type { PantryEvent, PantryItem } from '../types'
@@ -42,10 +42,14 @@ export function useSpendSummary(userId: string | null, weekStart: string) {
         foodsCount: Array.isArray(r.foods) ? r.foods.length : 0,
       }))
 
+      // Los eventos add (SIN cota de fecha: la compra puede ser muy anterior)
+      // dan la cantidad ORIGINAL comprada — el costo/base se calcula sobre ella,
+      // no sobre quantity actual que F4 decrementa (ver buildUnitCosts).
       const evRecs = await pb.collection('pantry_events').getFullList({
-        filter: pb.filter('user = {:uid} && type = "consume" && linked_entry != "" && created >= {:from}', {
-          uid: userId!, from: `${from} 00:00:00`,
-        }),
+        filter: pb.filter(
+          'user = {:uid} && (type = "add" || (type = "consume" && linked_entry != "" && created >= {:from}))',
+          { uid: userId!, from: `${from} 00:00:00` },
+        ),
         expand: 'item',
       })
       const itemsById = new Map<string, PantryItem>()
@@ -58,8 +62,9 @@ export function useSpendSummary(userId: string | null, weekStart: string) {
         }
       })
 
+      const unitCosts = buildUnitCosts(events, itemsById)
       const costByEntry: Record<string, EntryCost> = {}
-      for (const e of entries) costByEntry[e.id] = computeEntryCost(e.id, e.foodsCount, events, itemsById)
+      for (const e of entries) costByEntry[e.id] = computeEntryCost(e.id, e.foodsCount, events, itemsById, unitCosts)
 
       const weekEnd = addDaysISO(weekStart, 7)
       const weekEntries = entries.filter((e) => e.date >= weekStart && e.date < weekEnd)

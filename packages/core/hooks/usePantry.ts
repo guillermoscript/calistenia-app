@@ -82,15 +82,20 @@ export interface AddPantryItemsInput {
   source?: PantrySource
   /** YYYY-MM-DD del recibo (F5). Default hoy. También es la base del expiry. */
   purchaseDate?: string | null
+  /** Moneda del recibo (F5) — sin ella los precios en Bs/EUR se guardarían como USD. */
+  currency?: string | null
 }
+
+/** purchase_date viene de un LLM: sin validar, una fecha corrupta tumba TODO el alta con un 400 de PB. */
+const isValidISODate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s))
 
 /** Batch: crea items + su evento add. REGLA DE ORO: nunca qty sin evento. */
 export function useAddPantryItems(userId: string | null) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ items, source = 'chat', purchaseDate }: AddPantryItemsInput): Promise<PantryItem[]> => {
+    mutationFn: async ({ items, source = 'chat', purchaseDate, currency }: AddPantryItemsInput): Promise<PantryItem[]> => {
       if (!userId) throw new Error('No user')
-      const baseDate = purchaseDate ?? todayStr()
+      const baseDate = purchaseDate && isValidISODate(purchaseDate) ? purchaseDate : todayStr()
       const created: PantryItem[] = []
       for (const it of items) {
         const rec = await pb.collection('pantry_items').create({
@@ -101,7 +106,7 @@ export function useAddPantryItems(userId: string | null) {
           quantity: it.quantity ?? undefined,
           unit: it.unit ?? undefined,
           price_total: it.price_total ?? undefined,
-          currency: 'USD',
+          currency: currency?.trim() || 'USD',
           price_source: it.price_total != null ? 'real' : undefined,
           purchase_date: baseDate,
           expiry_estimate: expiryFromDays(it.expiry_days, baseDate) ?? undefined,

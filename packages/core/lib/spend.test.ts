@@ -52,6 +52,40 @@ describe('computeEntryCost', () => {
     const events = [ev({ item: 'p1', deltaQty: -0.5 })]
     expect(computeEntryCost('entry1', 1, events, new Map([['p1', p]])).coverage).toBe('none')
   })
+
+  // ── Regresiones flujo F4 real: quantity YA decrementada al leer el item ────
+  it('flujo F4 real: quantity decrementada a 1.5 tras consumir 0.5 → sigue $2.00 (base = evento add)', () => {
+    // Compra 2kg por $8; F4 escribe el evento Y baja quantity a 1.5 antes del refetch
+    const pollo = item({ id: 'p1', quantity: 1.5, unit: 'kg', priceTotal: 8 })
+    const events = [
+      ev({ id: 'add1', item: 'p1', type: 'add', deltaQty: 2, linkedEntry: null }),
+      ev({ item: 'p1', deltaQty: -0.5 }),
+    ]
+    const cost = computeEntryCost('entry1', 1, events, new Map([['p1', pollo]]))
+    expect(cost.total).toBeCloseTo(2, 5) // NO $2.67 ($8/1.5kg)
+    expect(cost.coverage).toBe('full')
+  })
+
+  it('item agotado (quantity 0/null) sigue aportando su costo vía evento add', () => {
+    const agotado = item({ id: 'p1', quantity: null, unit: 'kg', priceTotal: 8, status: 'depleted' })
+    const events = [
+      ev({ id: 'add1', item: 'p1', type: 'add', deltaQty: 2, linkedEntry: null }),
+      ev({ item: 'p1', deltaQty: -2 }),
+    ]
+    const cost = computeEntryCost('entry1', 1, events, new Map([['p1', agotado]]))
+    expect(cost.total).toBeCloseTo(8, 5)
+    expect(cost.coverage).toBe('full')
+  })
+
+  it('sin evento add (o con delta 0) → fallback a quantity actual', () => {
+    const p = item({ id: 'p1', quantity: 2, unit: 'kg', priceTotal: 8 })
+    const events = [
+      ev({ id: 'add0', item: 'p1', type: 'add', deltaQty: 0, linkedEntry: null }), // alta sin qty
+      ev({ item: 'p1', deltaQty: -0.5 }),
+    ]
+    const cost = computeEntryCost('entry1', 1, events, new Map([['p1', p]]))
+    expect(cost.total).toBeCloseTo(2, 5) // $8 / 2kg actuales
+  })
 })
 
 describe('computeSpendSummary', () => {
@@ -71,7 +105,7 @@ describe('computeSpendSummary', () => {
     const s = computeSpendSummary(entries, events, itemsById, '2026-07-06')
     expect(s.weekTotal).toBeCloseTo(3, 5)
     expect(s.byDay).toHaveLength(7)
-    expect(s.byDay[0]).toEqual({ date: '2026-07-06', total: 2 })
+    expect(s.byDay[0]).toEqual({ date: '2026-07-06', total: 2, hasPartial: false })
     expect(s.byDay[1].total).toBeCloseTo(1, 5)
     expect(s.mealsWithCost).toBe(2)
     expect(s.avgPerMeal).toBeCloseTo(1.5, 5)
@@ -91,6 +125,9 @@ describe('computeSpendSummary', () => {
     expect(s.weekTotal).toBeCloseTo(2, 5)
     expect(s.mealsWithCost).toBe(1)
     expect(s.hasPartial).toBe(true)
+    // el parcial es del miércoles: los otros días NO heredan el "≥"
+    expect(s.byDay[2].hasPartial).toBe(true)
+    expect(s.byDay[0].hasPartial).toBe(false)
   })
 
   it('semana vacía → todo en cero', () => {

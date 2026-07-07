@@ -530,7 +530,11 @@ function NutritionDashboard({
                   {t('nutrition.spend.today', { defaultValue: 'Hoy' })}
                 </Text>
                 <Text className="font-bebas text-2xl text-foreground">
-                  {spend.hasPartial ? '≥' : ''}${formatMoney(spend.byDay.find(d => d.date === todayStr())?.total ?? 0)}
+                  {/* ≥ del día, no de la semana: un parcial del lunes no vuelve incierto el "Hoy" */}
+                  {(() => {
+                    const today = spend.byDay.find(d => d.date === todayStr())
+                    return `${today?.hasPartial ? '≥' : ''}$${formatMoney(today?.total ?? 0)}`
+                  })()}
                 </Text>
               </View>
               <View>

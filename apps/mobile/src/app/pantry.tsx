@@ -43,7 +43,7 @@ export default function PantryScreen() {
   const [editing, setEditing] = useState<PantryItem | null>(null)
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
   const [receiptMeta, setReceiptMeta] = useState<
-    { storeName: string | null; purchaseDate: string | null; ignoredLines: string[] } | null
+    { storeName: string | null; purchaseDate: string | null; currency: string | null; ignoredLines: string[] } | null
   >(null)
 
   const matches: ConsumeMatch[] = useMemo(() => {
@@ -57,6 +57,9 @@ export default function PantryScreen() {
   const handleSend = async (text: string) => {
     setBusy(true)
     setReply(null)
+    // Un parse de chat invalida cualquier recibo pendiente: si quedara receiptMeta,
+    // los items del chat se guardarían como source 'receipt' con fecha/moneda ajenas.
+    setReceiptMeta(null)
     try {
       const result = await parsePantry(text, items.map(it => it.nameNormalized))
       setReply(result.reply)
@@ -83,6 +86,7 @@ export default function PantryScreen() {
       setReceiptMeta({
         storeName: result.store_name,
         purchaseDate: result.purchase_date,
+        currency: result.currency,
         ignoredLines: result.ignored_lines,
       })
       setReply(null)
@@ -101,7 +105,10 @@ export default function PantryScreen() {
     try {
       if (mode === 'camera') {
         const perm = await ImagePicker.requestCameraPermissionsAsync()
-        if (!perm.granted) return
+        if (!perm.granted) {
+          setReply(t('pantry.receipt.cameraDenied'))
+          return
+        }
         const res = await ImagePicker.launchCameraAsync({ quality: 0.7 })
         const a = res.assets?.[0]
         if (!res.canceled && a) {
@@ -138,7 +145,7 @@ export default function PantryScreen() {
     try {
       await addItems.mutateAsync(
         meta
-          ? { items: draft, source: 'receipt', purchaseDate: meta.purchaseDate }
+          ? { items: draft, source: 'receipt', purchaseDate: meta.purchaseDate, currency: meta.currency }
           : { items: draft },
       )
     } catch (e) {
@@ -277,6 +284,7 @@ export default function PantryScreen() {
         {/* hitSlop 4 en los íconos adyacentes: con 8 las zonas táctiles se solapan */}
         <Pressable
           onPress={handleScanReceipt}
+          disabled={busy}
           hitSlop={4}
           className="ml-auto p-2"
           accessibilityRole="button"

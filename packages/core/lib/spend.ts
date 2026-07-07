@@ -5,7 +5,7 @@
  * precisión completa; redondear SOLO al presentar (formatMoney).
  */
 import type { PantryEvent, PantryItem } from '../types'
-import { addDaysISO, normalizeQty, unitCost } from './shopping'
+import { addDaysISO, normalizeQty, unitCost, type UnitCost } from './shopping'
 
 export type SpendCoverage = 'full' | 'partial' | 'none'
 
@@ -25,7 +25,8 @@ export interface SpendEntryLite {
 
 export interface SpendSummary {
   weekTotal: number
-  byDay: { date: string; total: number }[]
+  /** hasPartial por día — el "≥" de "Hoy" no debe heredar parciales de otros días. */
+  byDay: { date: string; total: number; hasPartial: boolean }[]
   avgPerMeal: number
   mealsWithCost: number
   currency: string
@@ -33,8 +34,36 @@ export interface SpendSummary {
 }
 
 /**
- * Costo real de un nutrition_entry: Σ |delta_qty| × unitCost(item) de sus
- * eventos consume (linked_entry). delta_qty viene en la UNIDAD del item
+ * Costo por unidad base de cada item usando la CANTIDAD ORIGINAL comprada
+ * (evento add del ledger), NO la quantity actual: F4 decrementa quantity tras
+ * cada consumo, así que price_total / quantity-actual inflaría el costo comida
+ * a comida y lo perdería del todo al agotarse el item (quantity 0 → null).
+ * Sin evento add con qty > 0 → fallback a unitCost(item) (quantity actual).
+ */
+export function buildUnitCosts(
+  events: PantryEvent[],
+  itemsById: Map<string, PantryItem>,
+): Map<string, UnitCost> {
+  const out = new Map<string, UnitCost>()
+  for (const [id, item] of itemsById) {
+    if (item.priceTotal == null || item.unit == null) continue
+    const addEv = events.find((e) => e.type === 'add' && e.item === id && e.deltaQty != null && e.deltaQty > 0)
+    if (addEv) {
+      const { qty, baseUnit } = normalizeQty(addEv.deltaQty as number, item.unit)
+      if (qty > 0) {
+        out.set(id, { costPerBase: item.priceTotal / qty, currency: item.currency || 'USD', baseUnit })
+        continue
+      }
+    }
+    const uc = unitCost(item)
+    if (uc) out.set(id, uc)
+  }
+  return out
+}
+
+/**
+ * Costo real de un nutrition_entry: Σ |delta_qty| × costo/base ORIGINAL del
+ * item (buildUnitCosts) de sus eventos consume (linked_entry). delta_qty viene en la UNIDAD del item
  * (contrato F4) → se normaliza a base antes de multiplicar por costPerBase.
  * Cobertura (proxy determinista, F4 crea un evento por food matcheado):
  * - none: sin eventos, o ningún evento con precio (no mostrar $0 falso)
@@ -46,18 +75,20 @@ export function computeEntryCost(
   foodsCount: number,
   events: PantryEvent[],
   itemsById: Map<string, PantryItem>,
+  unitCosts?: Map<string, UnitCost>,
 ): EntryCost {
   const evs = events.filter(
     (e) => e.type === 'consume' && e.linkedEntry === entryId && e.deltaQty != null && e.deltaQty < 0,
   )
   if (evs.length === 0) return { total: 0, currency: 'USD', coverage: 'none' }
 
+  const ucs = unitCosts ?? buildUnitCosts(events, itemsById)
   let total = 0
   let currency = 'USD'
   let priced = 0
   for (const e of evs) {
     const item = itemsById.get(e.item)
-    const uc = item ? unitCost(item) : null
+    const uc = ucs.get(e.item)
     if (!item || !uc || item.unit == null) continue
     total += normalizeQty(Math.abs(e.deltaQty as number), item.unit).qty * uc.costPerBase
     currency = uc.currency
@@ -76,7 +107,8 @@ export function computeSpendSummary(
   weekStart: string,
 ): SpendSummary {
   const days = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i))
-  const byDay = days.map((date) => ({ date, total: 0 }))
+  const byDay = days.map((date) => ({ date, total: 0, hasPartial: false }))
+  const unitCosts = buildUnitCosts(events, itemsById)
   let weekTotal = 0
   let mealsWithCost = 0
   let hasPartial = false
@@ -85,13 +117,16 @@ export function computeSpendSummary(
   for (const entry of entries) {
     const di = days.indexOf(entry.date)
     if (di === -1) continue
-    const cost = computeEntryCost(entry.id, entry.foodsCount, events, itemsById)
+    const cost = computeEntryCost(entry.id, entry.foodsCount, events, itemsById, unitCosts)
     if (cost.coverage === 'none') continue
     weekTotal += cost.total
     byDay[di].total += cost.total
     mealsWithCost++
     currency = cost.currency
-    if (cost.coverage === 'partial') hasPartial = true
+    if (cost.coverage === 'partial') {
+      hasPartial = true
+      byDay[di].hasPartial = true
+    }
   }
 
   return {
