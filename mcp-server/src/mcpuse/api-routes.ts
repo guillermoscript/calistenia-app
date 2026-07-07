@@ -16,7 +16,7 @@ import { generateDailyMealPlan } from "../api/meal-plan-generator.js";
 import { sendPushToUser } from "../api/push-sender.js";
 import { processJob, getAdminPB } from "../api/job-processor.js";
 import { runFreeSession } from "../api/free-session-generator.js";
-import { parsePantryText, matchConsumption } from "../api/pantry-parser.js";
+import { parsePantryText, matchConsumption, parseReceipt } from "../api/pantry-parser.js";
 import { generatePantryPlan } from "../api/pantry-plan-generator.js";
 import { buildInsightContextServer } from "../api/insight-context-server.js";
 import type { Tier } from "../api/model-resolver.js";
@@ -653,5 +653,33 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     }
   });
 
-  console.error("[API] Hono routes mounted: /api/health + 15 /api/* endpoints");
+  // #174 F5: parser de recibos — multipart con hasta 3 fotos (recibos largos)
+  app.post("/api/pantry/parse-receipt", async (c) => {
+    const user = await getAuthUser(c, pbUrl);
+    if (!user) return c.json({ error: "Token de autenticación requerido" }, 401);
+    const rl = applyRateLimit(c, user.id);
+    if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
+    try {
+      let formData: FormData;
+      try { formData = await c.req.formData(); } catch { return c.json({ error: "Se requiere multipart/form-data" }, 400); }
+      const fileEntries = formData.getAll("images") as File[];
+      if (fileEntries.length === 0) {
+        return c.json({ error: "Se requiere al menos una imagen del recibo" }, 400);
+      }
+      for (const f of fileEntries.slice(0, 3)) {
+        if (!config.upload.allowedMimeTypes.includes(f.type))
+          return c.json({ error: `Tipo de archivo no soportado: ${f.type}` }, 400);
+        if (f.size > config.upload.maxSizeMb * 1024 * 1024)
+          return c.json({ error: "La imagen excede el tamaño máximo permitido" }, 413);
+      }
+      const images = await Promise.all(fileEntries.slice(0, 3).map(async (f) => ({
+        buffer: Buffer.from(await f.arrayBuffer()),
+        mimeType: f.type,
+      })));
+      const result = await parseReceipt({ images, tier: getTier(user) });
+      return c.json(result);
+    } catch (err) { return apiError(c, err); }
+  });
+
+  console.error("[API] Hono routes mounted: /api/health + 16 /api/* endpoints");
 }
