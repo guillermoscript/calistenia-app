@@ -47,7 +47,9 @@ export function makeOptimisticListHandlers<T, TVariables>(
       return { prev, resolvedKey }
     },
     onError: (_err, _variables, ctx) => {
-      if (!ctx?.prev) return
+      // Chequear solo ctx (no ctx.prev): un prev "falsy" válido (0, '', false)
+      // también debe revertirse, o la caché queda pegada al valor optimista.
+      if (!ctx) return
       lsWrite(ctx.prev)
       qc.setQueryData(ctx.resolvedKey, ctx.prev)
     },

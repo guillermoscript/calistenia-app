@@ -112,15 +112,19 @@ describe('qk — dominios sin "all" explícito pero con prefijo interno consiste
   })
 })
 
-describe('qk — OJO: inconsistencia de prefijo dentro del dominio "races"', () => {
-  // races.discover usa el prefijo 'races', pero prsFinished/wins usan prefijos
-  // completamente distintos ('race_participants' / 'race_wins'). Se documenta
-  // el comportamiento actual: invalidar por queryKey: ['races'] NO alcanza a
-  // prsFinished ni a wins (a diferencia de los demás dominios de este archivo).
-  it('discover no comparte prefijo con prsFinished ni wins', () => {
+describe('qk — dominio "races" unificado bajo el prefijo "races"', () => {
+  // Como el resto de dominios: invalidar por queryKey: ['races'] (qk.races.all)
+  // alcanza a discover, prsFinished y wins.
+  it('all/discover/prsFinished/wins comparten el prefijo "races"', () => {
+    expect(qk.races.all).toEqual(['races'])
     expect(qk.races.discover({})[0]).toBe('races')
-    expect(qk.races.prsFinished('u1')[0]).toBe('race_participants')
-    expect(qk.races.wins('u1')[0]).toBe('race_wins')
+    expect(qk.races.prsFinished('u1')[0]).toBe('races')
+    expect(qk.races.wins('u1')[0]).toBe('races')
+  })
+
+  it('las keys concretas siguen siendo distinguibles entre sí', () => {
+    expect(qk.races.prsFinished('u1')).toEqual(['races', 'prs', 'finished', 'u1'])
+    expect(qk.races.wins('u1')).toEqual(['races', 'wins', 'u1'])
   })
 })
 
