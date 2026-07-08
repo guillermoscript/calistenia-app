@@ -75,6 +75,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-ai-api]
     if: github.event_name != 'pull_request'
+    # Requires manual approval via the "production" environment (required reviewer).
+    environment: production
     steps:
       - name: Trigger deploy
         run: |
