@@ -55,7 +55,10 @@ interface Step {
 function buildSteps(exercises: Exercise[]): Step[] {
   const steps: Step[] = []
   exercises.forEach(ex => {
-    const total = ex.sets === 'múltiples' ? 3 : (parseInt(String(ex.sets)) || 1)
+    // sets=0 explícito → 0 steps; fallback de 1 solo para sets no parseable.
+    // Mantener en sync con flatSteps de ActiveSessionContext.tsx.
+    const parsed = parseInt(String(ex.sets), 10)
+    const total = ex.sets === 'múltiples' ? 3 : Number.isFinite(parsed) ? Math.max(0, parsed) : 1
     for (let s = 1; s <= total; s++) {
       steps.push({ exercise: ex, setNumber: s, totalSets: total, section: ex.section || 'main' })
     }

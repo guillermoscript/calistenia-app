@@ -213,7 +213,11 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     if (!workout) return []
     const steps: { exercise: Exercise }[] = []
     workout.exercises.forEach(ex => {
-      const total = ex.sets === 'múltiples' ? 3 : (parseInt(String(ex.sets)) || 1)
+      // sets=0 explícito → 0 steps (el ejercicio no participa); el fallback de 1
+      // queda solo para sets no parseable. Debe coincidir con buildSteps de
+      // SessionView.tsx para que los índices de skipWarmup no se desincronicen.
+      const parsed = parseInt(String(ex.sets), 10)
+      const total = ex.sets === 'múltiples' ? 3 : Number.isFinite(parsed) ? Math.max(0, parsed) : 1
       for (let s = 1; s <= total; s++) steps.push({ exercise: ex })
     })
     return steps

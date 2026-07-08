@@ -12,6 +12,8 @@ import { ScoreCriteriaDialog } from './ScoreCriteriaDialog'
 import { useTranslation } from 'react-i18next'
 import { MEAL_TYPE_COLORS, BADGE_COLORS, MACRO_COLORS } from '@calistenia/core/lib/style-tokens'
 import { getMealTimeLabel } from '@calistenia/core/lib/meal-time'
+import { formatMoney } from '@calistenia/core/lib/shopping'
+import type { EntryCost, SpendSummary } from '@calistenia/core/lib/spend'
 import type { NutritionEntry, QualityScore } from '@calistenia/core/types'
 
 interface NutritionDashboardProps {
@@ -22,6 +24,10 @@ interface NutritionDashboardProps {
   onEditEntry?: (id: string, data: Partial<NutritionEntry>) => Promise<void>
   onDuplicateEntry?: (entry: NutritionEntry) => void
   selectedDate?: string
+  /** F5 (#174): resumen de gasto semanal de despensa. */
+  spend?: SpendSummary
+  /** F5 (#174): costo por entry id para el badge $ de cada comida. */
+  entryCosts?: Record<string, EntryCost>
 }
 
 
@@ -77,7 +83,7 @@ function CalorieGauge({ consumed, target, dailyScore, onScoreInfoClick }: { cons
   )
 }
 
-export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry, onDuplicateEntry, selectedDate }: NutritionDashboardProps) {
+export default function NutritionDashboard({ dailyTotals, goals, entries, onDeleteEntry, onEditEntry, onDuplicateEntry, selectedDate, spend, entryCosts }: NutritionDashboardProps) {
   const { t } = useTranslation()
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -122,6 +128,45 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
         <ScoreCriteriaDialog open={showScoreCriteria} onOpenChange={setShowScoreCriteria} />
       </div>
 
+      {/* ── F5 (#174): gasto — solo con datos reales, nunca $0 falso ──────── */}
+      {isToday && spend && spend.mealsWithCost > 0 && (
+        <div className="bg-card border border-border rounded-xl p-5">
+          <div className="text-[10px] font-mono text-muted-foreground tracking-[3px] uppercase mb-3">
+            {t('nutrition.spend.kicker', { defaultValue: 'Gasto' })}
+          </div>
+          <div className="flex justify-between gap-4">
+            <div>
+              <div className="text-[9px] font-mono text-muted-foreground tracking-[2px] uppercase">
+                {t('nutrition.spend.today', { defaultValue: 'Hoy' })}
+              </div>
+              <div className="font-bebas text-2xl text-foreground">
+                {/* ≥ del día, no de la semana: un parcial del lunes no vuelve incierto el "Hoy" */}
+                {(() => {
+                  const today = spend.byDay.find(d => d.date === todayStr())
+                  return `${today?.hasPartial ? '≥' : ''}$${formatMoney(today?.total ?? 0)}`
+                })()}
+              </div>
+            </div>
+            <div>
+              <div className="text-[9px] font-mono text-muted-foreground tracking-[2px] uppercase">
+                {t('nutrition.spend.week', { defaultValue: 'Semana' })}
+              </div>
+              <div className="font-bebas text-2xl text-foreground">
+                {spend.hasPartial ? '≥' : ''}${formatMoney(spend.weekTotal)}
+              </div>
+            </div>
+            <div>
+              <div className="text-[9px] font-mono text-muted-foreground tracking-[2px] uppercase">
+                {t('nutrition.spend.perMeal', { defaultValue: 'Prom/comida' })}
+              </div>
+              <div className="font-bebas text-2xl text-foreground">
+                ${formatMoney(spend.avgPerMeal)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Meal timeline */}
       <div>
         <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">
@@ -148,6 +193,7 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
               {entries.map((entry, idx) => {
                 const mealInfo = MEAL_TYPE_COLORS[entry.mealType] || MEAL_TYPE_COLORS.snack
                 const entryId = entry.id || `entry-${idx}`
+                const cost = entry.id ? entryCosts?.[entry.id] : undefined
                 const isExpanded = expandedEntry === entryId
                 const weight = getEntryWeight(entry.totalCalories)
 
@@ -215,6 +261,12 @@ export default function NutritionDashboard({ dailyTotals, goals, entries, onDele
                               size="sm"
                               pending={!entry.qualityScore && entry.foods.length > 0}
                             />
+                            {/* F5: costo real de la comida (≥ = cobertura parcial) */}
+                            {cost && cost.coverage !== 'none' && cost.total > 0 && (
+                              <span className="font-mono text-[9px] text-lime-400 shrink-0">
+                                {cost.coverage === 'partial' ? '≥' : ''}${formatMoney(cost.total)}
+                              </span>
+                            )}
                             {entry.durationMin ? (
                               <span className="text-[9px] text-muted-foreground/50 shrink-0">{entry.durationMin} {t('nutrition.logger.durationUnit')}</span>
                             ) : null}

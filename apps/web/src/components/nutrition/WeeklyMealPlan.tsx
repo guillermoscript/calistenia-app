@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import WeeklyPlanHeader from './WeeklyPlanHeader'
 import WeeklyPlanDayView from './WeeklyPlanDayView'
+import { RecipeDetailDialog } from '../pantry/RecipeDetailDialog'
 import { useBackgroundJobs } from '../../hooks/useBackgroundJobs'
-import type { WeeklyMealPlan as WeeklyMealPlanType, WeeklyPlanDay, NutritionGoal, DailyTotals } from '@calistenia/core/types'
+import type { WeeklyMealPlan as WeeklyMealPlanType, WeeklyPlanDay, WeeklyPlannedMeal, NutritionGoal, DailyTotals, Recipe } from '@calistenia/core/types'
 
 interface Props {
   activePlan: WeeklyMealPlanType | null
@@ -20,6 +22,10 @@ interface Props {
   onDeleteMeal: (dayId: string, mealId: string) => Promise<void>
   onArchive: () => Promise<void>
   onRefresh: () => Promise<void>
+  /** F2 (#171): generación pantry-aware — solo si hay despensa. */
+  userId?: string | null
+  hasPantry?: boolean
+  onGenerateFromPantry?: () => Promise<void>
 }
 
 function getTodayDayIndex(): number {
@@ -39,12 +45,57 @@ export default function WeeklyMealPlan({
   onDeleteMeal,
   onArchive,
   onRefresh,
+  userId = null,
+  hasPantry,
+  onGenerateFromPantry,
 }: Props) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const todayIndex = getTodayDayIndex()
   const [selectedDayIndex, setSelectedDayIndex] = useState(todayIndex)
   const [generating, setGenerating] = useState(false)
+  const [generatingPantry, setGeneratingPantry] = useState(false)
+  const [pantryError, setPantryError] = useState(false)
+  const [openRecipe, setOpenRecipe] = useState<{ label: string; recipe: Recipe } | null>(null)
   const { addJob, canSubmit, pending } = useBackgroundJobs()
+
+  // Plan pantry-aware: si alguna comida trae ingredientes "buy", ofrecer la shopping list
+  const hasBuyItems = planDays.some(d =>
+    (d.meals ?? []).some(m => m.recipe?.ingredients?.some(i => i.from === 'buy')),
+  )
+
+  const handleGenerateFromPantry = useCallback(async () => {
+    if (!onGenerateFromPantry) return
+    setGeneratingPantry(true)
+    setPantryError(false)
+    try {
+      await onGenerateFromPantry()
+    } catch {
+      setPantryError(true)
+    } finally {
+      setGeneratingPantry(false)
+    }
+  }, [onGenerateFromPantry])
+
+  const handleOpenRecipe = useCallback((meal: WeeklyPlannedMeal) => {
+    if (meal.recipe) setOpenRecipe({ label: meal.label, recipe: meal.recipe })
+  }, [])
+
+  const pantryErrorBanner = pantryError ? (
+    <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">
+      {t('pantryPlan.error')}
+    </div>
+  ) : null
+
+  const recipeDialog = (
+    <RecipeDetailDialog
+      open={openRecipe !== null}
+      onOpenChange={(v) => { if (!v) setOpenRecipe(null) }}
+      label={openRecipe?.label ?? ''}
+      recipe={openRecipe?.recipe ?? null}
+      userId={userId}
+    />
+  )
 
   // Check if there's a pending weekly plan job
   const hasPendingJob = pending.some(j => j.type === 'generate-weekly-meal-plan')
@@ -133,13 +184,25 @@ export default function WeeklyMealPlan({
               </div>
               <Button
                 onClick={handleGenerate}
-                disabled={generating || !goals}
+                disabled={generating || generatingPantry || !goals}
                 variant="outline"
                 size="sm"
                 className="mt-3 border-lime-400/30 text-lime-400 hover:bg-lime-400/10 font-bebas tracking-widest"
               >
                 {generating ? '...' : t('nutrition.weeklyPlan.generate')}
               </Button>
+              {hasPantry && onGenerateFromPantry && (
+                <Button
+                  onClick={handleGenerateFromPantry}
+                  disabled={generating || generatingPantry}
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 ml-2 border-lime-400/30 text-lime-400 hover:bg-lime-400/10 font-bebas tracking-widest"
+                >
+                  {generatingPantry ? t('pantryPlan.generatingWeek') : t('pantryPlan.fromPantry')}
+                </Button>
+              )}
+              {pantryErrorBanner && <div className="mt-3 text-left">{pantryErrorBanner}</div>}
             </CardContent>
           </Card>
         )}
@@ -155,10 +218,31 @@ export default function WeeklyMealPlan({
           <div className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase">{t('nutrition.weeklyPlan.aiLabel')}</div>
           <div className="font-bebas text-2xl mt-0.5">{t('nutrition.weeklyPlan.title')}</div>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 flex-wrap justify-end">
+          {hasBuyItems && (
+            <Button
+              onClick={() => navigate('/pantry/shopping')}
+              size="sm"
+              variant="outline"
+              className="border-lime-400/30 text-lime-400 hover:bg-lime-400/10 font-bebas tracking-widest h-9 px-3"
+            >
+              {t('shopping.listButton')}
+            </Button>
+          )}
+          {hasPantry && onGenerateFromPantry && (
+            <Button
+              onClick={handleGenerateFromPantry}
+              disabled={generating || generatingPantry || hasPendingJob}
+              size="sm"
+              variant="outline"
+              className="border-lime-400/30 text-lime-400 hover:bg-lime-400/10 font-bebas tracking-widest h-9 px-3"
+            >
+              {generatingPantry ? '...' : t('pantryPlan.fromPantryShort')}
+            </Button>
+          )}
           <Button
             onClick={handleGenerate}
-            disabled={generating || hasPendingJob || !canSubmit}
+            disabled={generating || generatingPantry || hasPendingJob || !canSubmit}
             size="sm"
             className="bg-lime-400 hover:bg-lime-300 text-zinc-900 font-bebas tracking-widest h-9 px-4"
           >
@@ -166,6 +250,8 @@ export default function WeeklyMealPlan({
           </Button>
         </div>
       </div>
+
+      {pantryErrorBanner}
 
       <div className="space-y-3">
         <WeeklyPlanHeader
@@ -182,6 +268,7 @@ export default function WeeklyMealPlan({
             onLogMeal={onLogMeal}
             onDeleteMeal={onDeleteMeal}
             onRegenerateDay={onRegenerateDay}
+            onOpenRecipe={handleOpenRecipe}
           />
         ) : (
           <Card>
@@ -191,6 +278,8 @@ export default function WeeklyMealPlan({
           </Card>
         )}
       </div>
+
+      {recipeDialog}
     </div>
   )
 }

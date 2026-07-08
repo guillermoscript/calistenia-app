@@ -248,8 +248,18 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
             return { ...prev, phase: 'celebrate', completedExercises: prev.completedExercises + 1 }
           }
           if (isLastExercise) {
-            // End of round — go to roundRest
-            return { ...prev, phase: 'roundRest', completedExercises: prev.completedExercises + 1 }
+            // Fin de ronda — igual que en modo circuit: roundRest solo si hay
+            // descanso configurado; con restBetweenRounds=0 pasa directo.
+            if (circuit.restBetweenRounds > 0) {
+              return { ...prev, phase: 'roundRest', completedExercises: prev.completedExercises + 1 }
+            }
+            return {
+              ...prev,
+              phase: 'work',
+              currentRound: prev.currentRound + 1,
+              currentExerciseIndex: 0,
+              completedExercises: prev.completedExercises + 1,
+            }
           }
           // More exercises in this round — go to rest (if restSeconds > 0) or next work
           const restSec = circuit.restSeconds ?? 0
@@ -362,14 +372,19 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
       note,
     )
 
+    let saved = true
     try {
       await pb.collection('circuit_sessions').create(data)
     } catch (e) {
       console.warn('Failed to save circuit session, queuing for retry:', e)
       pushUnsaved(data)
       setUnsavedCount(loadUnsaved().length)
+      saved = false
     }
 
+    // El circuito SÍ se completó físicamente aunque el guardado falle (queda
+    // encolado); `saved` permite segmentar en analytics las sesiones que aún
+    // no llegaron al backend.
     op.track('circuit_completed', {
       mode: circuit.mode,
       rounds_completed: data.rounds_completed as number,
@@ -377,6 +392,7 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
       exercise_count: circuit.exercises.length,
       duration_seconds: data.duration_seconds as number,
       source,
+      saved,
     })
 
     clearStorage()

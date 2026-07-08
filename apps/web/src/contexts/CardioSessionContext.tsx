@@ -281,6 +281,9 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
+        // Un fix en vuelo puede llegar después de pause()/finish() (clearWatch
+        // no es instantáneo): fuera de 'tracking' no debe mutar distancia/puntos.
+        if (stateRef.current !== 'tracking') return
         const { latitude, longitude, altitude, speed, accuracy } = pos.coords
         setGpsAccuracy(accuracy)
         if (accuracy > MAX_ACCURACY_M) return

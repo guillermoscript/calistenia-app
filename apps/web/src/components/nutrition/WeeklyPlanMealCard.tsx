@@ -10,9 +10,11 @@ interface Props {
   meal: WeeklyPlannedMeal
   onLog: () => Promise<void>
   onDelete: () => Promise<void>
+  /** F2 (#171): presente solo cuando el plan trae recetas pantry-aware. */
+  onOpenRecipe?: (meal: WeeklyPlannedMeal) => void
 }
 
-export default function WeeklyPlanMealCard({ meal, onLog, onDelete }: Props) {
+export default function WeeklyPlanMealCard({ meal, onLog, onDelete, onOpenRecipe }: Props) {
   const { t } = useTranslation()
   const [logging, setLogging] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -34,6 +36,15 @@ export default function WeeklyPlanMealCard({ meal, onLog, onDelete }: Props) {
         <div className="text-xs text-muted-foreground leading-relaxed">
           {meal.description}
         </div>
+
+        {meal.recipe && onOpenRecipe && (
+          <button
+            onClick={() => onOpenRecipe(meal)}
+            className="mt-1.5 font-mono text-[10px] uppercase tracking-wide text-lime-400 hover:text-lime-300 transition-colors"
+          >
+            {t('pantryPlan.viewRecipe')} →
+          </button>
+        )}
 
         <div className="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-border">
           <div className="flex gap-3 sm:gap-4 text-[11px] min-w-0">

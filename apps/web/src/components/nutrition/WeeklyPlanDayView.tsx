@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import WeeklyPlanMealCard from './WeeklyPlanMealCard'
-import type { WeeklyPlanDay, DailyTotals } from '@calistenia/core/types'
+import type { WeeklyPlanDay, WeeklyPlannedMeal, DailyTotals } from '@calistenia/core/types'
 
 interface Props {
   day: WeeklyPlanDay
@@ -10,9 +10,11 @@ interface Props {
   onLogMeal: (dayId: string, mealId: string) => Promise<void>
   onDeleteMeal: (dayId: string, mealId: string) => Promise<void>
   onRegenerateDay: (dayId: string) => Promise<void>
+  /** F2 (#171): abre el detalle de receta de planes pantry-aware. */
+  onOpenRecipe?: (meal: WeeklyPlannedMeal) => void
 }
 
-export default function WeeklyPlanDayView({ day, actualTotals, onLogMeal, onDeleteMeal, onRegenerateDay }: Props) {
+export default function WeeklyPlanDayView({ day, actualTotals, onLogMeal, onDeleteMeal, onRegenerateDay, onOpenRecipe }: Props) {
   const { t } = useTranslation()
   const [regenerating, setRegenerating] = useState(false)
 
@@ -72,6 +74,7 @@ export default function WeeklyPlanDayView({ day, actualTotals, onLogMeal, onDele
           meal={meal}
           onLog={() => onLogMeal(day.id, meal.id)}
           onDelete={() => onDeleteMeal(day.id, meal.id)}
+          onOpenRecipe={onOpenRecipe}
         />
       ))}
 

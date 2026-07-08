@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
-import { todayStr, addDays, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
@@ -15,6 +15,12 @@ import WeeklyMealPlan from '../components/nutrition/WeeklyMealPlan'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
+import { usePantryItems } from '@calistenia/core/hooks/usePantry'
+import { usePantryPlan } from '@calistenia/core/hooks/usePantryPlan'
+import { useSpendSummary } from '@calistenia/core/hooks/useSpend'
+import { PantryPlanSection } from '../components/nutrition/PantryPlanSection'
+import { usePantryDepletion } from '../components/pantry/use-pantry-depletion'
+import { PantryDepleteDialog } from '../components/pantry/PantryDepleteDialog'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
 import { submitAnalyzeMealJob } from '@calistenia/core/lib/ai-jobs-api'
 import { toast } from 'sonner'
@@ -140,6 +146,14 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     refresh: refreshWeeklyPlan,
   } = useWeeklyMealPlan(userId)
   const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
+
+  // ── Despensa (F1-F5) ───────────────────────────────────────────────────────
+  const navigate = useNavigate()
+  const { data: pantryItems = [] } = usePantryItems(userId)
+  const pantryCount = pantryItems.length
+  const pantryPlan = usePantryPlan(userId)
+  const spendData = useSpendSummary(userId, startOfWeekStr()).data
+  const pantryDepletion = usePantryDepletion(userId)
 
   const nutrition = useNutrition(userId)
   const {
@@ -317,6 +331,14 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
   const isToday = selectedDate === todayStr()
 
+  // Metas simplificadas para la generación pantry-aware (mismo shape que mobile)
+  const pantryGoals = useMemo(() => ({
+    calories: goals?.dailyCalories ?? 0,
+    protein: goals?.dailyProtein ?? 0,
+    carbs: goals?.dailyCarbs ?? 0,
+    fat: goals?.dailyFat ?? 0,
+  }), [goals])
+
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Header */}
@@ -396,6 +418,25 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             {t('nutrition.tabs.weekly')}
           </button>
         </div>
+      )}
+
+      {/* Entrada a Despensa (F1 #170) — misma fila compacta que el tab nativo */}
+      {isReady && goals && (
+        <button
+          onClick={() => navigate('/pantry')}
+          className="w-full flex items-center justify-between border border-border rounded-lg px-4 py-3 mb-6 hover:border-lime/40 transition-colors group"
+        >
+          <span className="flex items-center gap-2">
+            <span className="size-1.5 bg-lime-400" aria-hidden />
+            <span className="font-bebas text-lg tracking-wide text-foreground group-hover:text-lime-400 transition-colors">
+              {t('pantry.title')}
+            </span>
+          </span>
+          <span className="flex items-center gap-2 text-muted-foreground">
+            {pantryCount > 0 && <span className="font-mono text-xs text-foreground">{pantryCount}</span>}
+            <span aria-hidden>›</span>
+          </span>
+        </button>
       )}
 
       {!isReady ? (
@@ -522,6 +563,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               entries={entries}
               onDeleteEntry={deleteEntry}
               onEditEntry={updateEntry}
+              spend={spendData?.summary}
+              entryCosts={spendData?.costByEntry}
               onDuplicateEntry={async (entry) => {
                 try {
                   await saveEntry({
@@ -557,6 +600,9 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               onDeleteMeal={deleteWeeklyMeal}
               onArchive={archiveWeeklyPlan}
               onRefresh={refreshWeeklyPlan}
+              userId={userId}
+              hasPantry={pantryPlan.hasPantry}
+              onGenerateFromPantry={() => pantryPlan.generateWeek(pantryGoals)}
             />
           ) : isToday ? (
             <DailyMealPlan
@@ -566,6 +612,9 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               onSaveMeal={handleSavePlannedMeal}
             />
           ) : null}
+
+          {/* F2 (#171): plan del día / cuántas comidas desde la despensa (null si está vacía) */}
+          <PantryPlanSection userId={userId} goals={pantryGoals} />
 
           {/* Coach & Insights tab */}
           <div>
@@ -639,8 +688,16 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               goals={goals}
               getRecentEntries={getRecentEntries}
               onSendToBackground={canSubmit ? handleSendToBackground : undefined}
+              onSaved={pantryDepletion.runMatch}
             />
           </div>
+
+          {/* F4 (#173): confirmación de descuento de despensa post meal-log */}
+          <PantryDepleteDialog
+            rows={pantryDepletion.rows}
+            onConfirm={pantryDepletion.confirm}
+            onDismiss={pantryDepletion.dismiss}
+          />
         </div>
       )}
     </div>
