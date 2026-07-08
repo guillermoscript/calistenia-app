@@ -10,6 +10,7 @@
     "build": "pnpm --filter @calistenia/web build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "outdated": "pnpm -r outdated",
     "preview": "pnpm --filter @calistenia/web preview",
     "pb:serve": "./pocketbase serve",
     "pb:migrate": "node scripts/pb-migrate.js",
