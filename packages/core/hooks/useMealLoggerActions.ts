@@ -114,6 +114,8 @@ export function useMealLoggerActions({
         }
       }).catch(() => { /* non-blocking — entry already saved, quality is best-effort */ })
     }
+    // F4 (#173): la depleción de despensa necesita el id/foods de la entry recién guardada
+    return saved
   }, [saveEntry, userId, scoreMealQuality, goals, remaining, updateEntry])
 
   return { handleAnalyze, handleSave }

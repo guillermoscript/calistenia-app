@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import MealLoggerContent from '../components/nutrition/MealLoggerContent'
+import { usePantryDepletion } from '../components/pantry/use-pantry-depletion'
+import { PantryDepleteDialog } from '../components/pantry/PantryDepleteDialog'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
+import type { FoodItem } from '@calistenia/core/types'
 import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
 import { submitAnalyzeMealJob, fetchJobStatus } from '@calistenia/core/lib/ai-jobs-api'
@@ -120,9 +123,26 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
       })
   }, [addJob, clearJob])
 
+  // ── F4 (#173): depleción de despensa post-log ──────────────────────────────
+  // La página navega a /nutrition tras guardar; si hay match en vuelo o filas
+  // pendientes, la navegación espera a que el usuario confirme/omita el dialog
+  // (si no, el dialog se desmontaría antes de mostrarse).
+  const pantryDepletion = usePantryDepletion(userId)
+  const [matchPending, setMatchPending] = useState(false)
+  const [wantNav, setWantNav] = useState(false)
+
+  const handleSaved = useCallback((entryId: string, foods: FoodItem[]) => {
+    setMatchPending(true)
+    pantryDepletion.runMatch(entryId, foods).finally(() => setMatchPending(false))
+  }, [pantryDepletion])
+
   const handleSaveSuccess = useCallback(() => {
-    setTimeout(() => navigate('/nutrition'), 1200)
-  }, [navigate])
+    setTimeout(() => setWantNav(true), 1200)
+  }, [])
+
+  useEffect(() => {
+    if (wantNav && !matchPending && !pantryDepletion.rows) navigate('/nutrition')
+  }, [wantNav, matchPending, pantryDepletion.rows, navigate])
 
   return (
     <div className="max-w-lg mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -167,8 +187,16 @@ export default function MealLoggerPage({ userId }: MealLoggerPageProps) {
           onSaveSuccess={handleSaveSuccess}
           onSendToBackground={canSubmit ? handleSendToBackground : undefined}
           initialAnalysis={initialAnalysis}
+          onSaved={handleSaved}
         />
       )}
+
+      {/* F4 (#173): confirmación de descuento de despensa post meal-log */}
+      <PantryDepleteDialog
+        rows={pantryDepletion.rows}
+        onConfirm={pantryDepletion.confirm}
+        onDismiss={pantryDepletion.dismiss}
+      />
     </div>
   )
 }

@@ -17,6 +17,9 @@ import LandingPage from './pages/LandingPage'
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const NutritionPage = lazy(() => import('./pages/NutritionPage'))
 const MealLoggerPage = lazy(() => import('./pages/MealLoggerPage'))
+const PantryPage = lazy(() => import('./pages/PantryPage'))
+const ShoppingListPage = lazy(() => import('./pages/ShoppingListPage'))
+const SavedRecipesPage = lazy(() => import('./pages/SavedRecipesPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const CalendarPage = lazy(() => import('./pages/CalendarPage'))
 const LumbarPage = lazy(() => import('./pages/LumbarPage'))
@@ -662,6 +665,9 @@ function AuthenticatedApp({
             <Route path="/lumbar" element={<LumbarPage user={user!} />} />
             <Route path="/nutrition" element={<NutritionPage userId={userId!} trainingPhase={settings.phase} />} />
             <Route path="/nutrition/log" element={<MealLoggerPage userId={userId!} />} />
+            <Route path="/pantry" element={<PantryPage userId={userId!} />} />
+            <Route path="/pantry/shopping" element={<ShoppingListPage userId={userId!} />} />
+            <Route path="/pantry/recipes" element={<SavedRecipesPage userId={userId!} />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/progress/free" element={<FreeProgressPage />} />
             <Route path="/calendar" element={<CalendarPage />} />

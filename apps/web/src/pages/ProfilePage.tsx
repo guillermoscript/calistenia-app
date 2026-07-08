@@ -10,6 +10,8 @@ import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/li
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { setTimezone as setGlobalTimezone, getTimezone, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { CONDITION_IDS, INJURY_IDS, type ConditionId, type InjuryId } from '../components/onboarding/StepHealth'
+import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
+import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
 import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity } from '../components/onboarding/StepTraining'
 import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
 
@@ -44,6 +46,8 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [timezone, setTimezone] = useState(() => getTimezone())
   const [tzSearch, setTzSearch] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Moneda de despensa (F5 #174): en qué moneda habla el user; el gasto siempre en $ USD
+  const { prefs: currencyPrefs, setDefaultCurrency } = useUserCurrency(user?.id ?? null)
 
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
 
@@ -500,6 +504,39 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                   )
                 })}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Moneda (despensa F5: en qué moneda hablas; el gasto siempre se muestra en $) */}
+        <Card>
+          <CardContent className="p-5 flex flex-col gap-3">
+            <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase">
+              {t('profile.currency', { defaultValue: 'Moneda' })}
+            </div>
+            <div className="flex gap-2">
+              {SUPPORTED_CURRENCIES.map(code => {
+                const active = currencyPrefs.defaultCurrency === code
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => setDefaultCurrency(code)}
+                    aria-pressed={active}
+                    className={cn(
+                      'h-11 flex-1 flex items-center justify-center rounded-md border font-mono text-xs tracking-wide transition-colors',
+                      active
+                        ? 'border-lime/40 bg-lime/10 text-lime'
+                        : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground',
+                    )}
+                  >
+                    {currencySymbol(code)} {code}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="font-mono text-[9px] tracking-wide text-muted-foreground/70">
+              {t('profile.currencyDesc', { defaultValue: 'El gasto se muestra siempre en $ (USD de referencia).' })}
             </div>
           </CardContent>
         </Card>

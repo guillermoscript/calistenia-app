@@ -23,13 +23,15 @@ const MAX_PHOTOS = 5
 
 export interface MealLoggerContentProps {
   onAnalyze: (imageFiles: File[], mealType: string, description?: string, eatenHour?: number) => Promise<{ foods: FoodItem[]; meal_description?: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }>
-  onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => Promise<void>
+  onSave: (entry: Omit<NutritionEntry, 'id' | 'user'>, photoFiles?: File[]) => Promise<NutritionEntry | void>
   userId: string | null
   dailyTotals: DailyTotals
   goals: NutritionGoal | null
   getRecentEntries: () => Promise<NutritionEntry[]>
   /** Called after successful save (e.g. to navigate away or close modal) */
   onSaveSuccess?: () => void
+  /** F4 (#173): tras guardar con id de servidor, dispara el match de despensa. */
+  onSaved?: (entryId: string, foods: FoodItem[]) => void
   /** Send current analysis to background processing */
   onSendToBackground?: (imageFiles: File[], mealType: string, description?: string) => void
   /** Pre-populated analysis from a completed background job */
@@ -100,7 +102,7 @@ function compressImage(file: File, maxSize = 1536): Promise<File> {
 }
 
 export default function MealLoggerContent({
-  onAnalyze, onSave, userId, dailyTotals, goals, getRecentEntries, onSaveSuccess,
+  onAnalyze, onSave, userId, dailyTotals, goals, getRecentEntries, onSaveSuccess, onSaved,
   onSendToBackground, initialAnalysis,
 }: MealLoggerContentProps) {
   const { t } = useTranslation()
@@ -404,7 +406,7 @@ export default function MealLoggerContent({
 
     setStep('saving')
     try {
-      await onSave({
+      const saved = await onSave({
         mealType,
         foods: validFoods,
         totalCalories: totals.calories,
@@ -427,6 +429,12 @@ export default function MealLoggerContent({
       try { storage.setItem(LS_LAST_MEAL_TYPE, mealType) } catch { /* best-effort */ }
       op.track('meal_logged', { meal_type: mealType, food_count: validFoods.length, calories: totals.calories })
       setStep('success')
+      // F4: match de despensa DESPUÉS del éxito — nunca bloquea ni afecta el log.
+      // Saves offline (local_*) no disparan (sin id de servidor).
+      const savedId = saved && typeof saved === 'object' ? saved.id : undefined
+      if (savedId && !savedId.startsWith('local_')) {
+        onSaved?.(savedId, validFoods)
+      }
     } catch {
       setError(t('nutrition.logger.saveError'))
       setStep('review')
