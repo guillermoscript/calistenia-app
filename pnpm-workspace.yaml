@@ -9,3 +9,8 @@ onlyBuiltDependencies:
 
 patchedDependencies:
   react-native-css-interop@0.2.5: patches/react-native-css-interop@0.2.5.patch
+
+# Security override: ansi-to-react pins linkify-it ^3 (ReDoS GHSA-22p9-wv53-3rq4,
+# patched in >=5.0.1). v5 keeps the CJS build and the factory/.tlds() API it uses.
+overrides:
+  linkify-it: ^5.0.2
