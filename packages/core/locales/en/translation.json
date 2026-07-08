@@ -2494,6 +2494,7 @@
   "race.exportGpx": "Export GPX (Strava)",
   "race.backToCardio": "Cardio",
   "race.winner": "Winner",
+  "race.winnerTime": "Most distance",
   "race.remaining": "Left",
   "race.pace": "Pace",
   "race.km": "Km",

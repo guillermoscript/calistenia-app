@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
-import { playRankUp, playRankDown, vibrate } from '../../lib/sounds'
+import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
+import { playRankUp, playRankDown, playCountdownTick, vibrate } from '../../lib/sounds'
 import { serverNow } from '../../lib/race/raceClock'
 import { useRaceContext } from '../../contexts/RaceContext'
 import RaceMap from './RaceMap'
@@ -18,24 +19,7 @@ export default function RaceLive() {
   const hasDistanceTarget = race?.mode === 'distance' && race.target_distance_km > 0
   const hasTimeTarget = race?.mode === 'time' && race.target_duration_seconds > 0
 
-  const sorted = useMemo(() => {
-    const list = [...participants]
-    list.sort((a, b) => {
-      const aFin = a.status === 'finished' && a.finished_at
-      const bFin = b.status === 'finished' && b.finished_at
-      if (aFin && bFin) {
-        return new Date(a.finished_at!).getTime() - new Date(b.finished_at!).getTime()
-      }
-      if (aFin) return -1
-      if (bFin) return 1
-      // Primary: distance. Ties broken by less elapsed time (better pace),
-      // then by display_name for stable order.
-      if (b.distance_km !== a.distance_km) return b.distance_km - a.distance_km
-      if (a.duration_seconds !== b.duration_seconds) return a.duration_seconds - b.duration_seconds
-      return a.display_name.localeCompare(b.display_name)
-    })
-    return list
-  }, [participants])
+  const sorted = useMemo(() => sortRaceParticipants(participants, race), [participants, race])
 
   const leaderId = sorted[0]?.id
   const leaderDistance = sorted[0]?.distance_km ?? 0
@@ -109,6 +93,17 @@ export default function RaceLive() {
   }, [race?.starts_at])
   const myDuration = elapsedNow
 
+  // Últimos 10s de una carrera por tiempo → tick + vibración por segundo,
+  // como el 3-2-1 de salida. Sin ticks en carreras muy cortas (<30s).
+  const remainingCeil = hasTimeTarget ? Math.ceil((race?.target_duration_seconds ?? 0) - elapsedNow) : 0
+  const inFinalCountdown = hasTimeTarget && me?.status !== 'finished'
+    && remainingCeil > 0 && remainingCeil <= 10 && (race?.target_duration_seconds ?? 0) >= 30
+  useEffect(() => {
+    if (!inFinalCountdown) return
+    playCountdownTick()
+    vibrate(60)
+  }, [inFinalCountdown, remainingCeil])
+
   if (!race) return null
 
   return (
@@ -161,7 +156,7 @@ export default function RaceLive() {
           <Stat
             label={t('race.remaining').toUpperCase()}
             value={formatDuration(Math.max(0, Math.floor(race.target_duration_seconds - myDuration)))}
-            highlight={race.target_duration_seconds - myDuration < 30}
+            highlight={inFinalCountdown}
           />
         ) : (
           <Stat

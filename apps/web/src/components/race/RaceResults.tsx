@@ -7,6 +7,7 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration, pointsToGPX } from '@calistenia/core/lib/geo'
+import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
 import RaceShareCard from './RaceShareCard'
 
 export default function RaceResults() {
@@ -68,26 +69,7 @@ export default function RaceResults() {
     }
   }
 
-  const sorted = useMemo(() => {
-    const list = [...participants]
-    list.sort((a, b) => {
-      const aFin = a.status === 'finished'
-      const bFin = b.status === 'finished'
-      if (aFin && bFin) {
-        const af = a.finished_at ? new Date(a.finished_at).getTime() : Infinity
-        const bf = b.finished_at ? new Date(b.finished_at).getTime() : Infinity
-        return af - bf
-      }
-      if (aFin) return -1
-      if (bFin) return 1
-      if (a.status === 'dnf' && b.status !== 'dnf') return 1
-      if (b.status === 'dnf' && a.status !== 'dnf') return -1
-      if (b.distance_km !== a.distance_km) return b.distance_km - a.distance_km
-      if (a.duration_seconds !== b.duration_seconds) return a.duration_seconds - b.duration_seconds
-      return a.display_name.localeCompare(b.display_name)
-    })
-    return list
-  }, [participants])
+  const sorted = useMemo(() => sortRaceParticipants(participants, race), [participants, race])
 
   const winner = sorted[0]
   const totalElapsed = race?.starts_at && race?.finished_at
@@ -110,7 +92,9 @@ export default function RaceResults() {
 
       {winner && (
         <div className="rounded-2xl border border-lime/30 bg-lime/5 px-4 py-5 text-center">
-          <div className="text-[10px] font-mono tracking-[0.3em] text-lime mb-1">{t('race.winner').toUpperCase()}</div>
+          <div className="text-[10px] font-mono tracking-[0.3em] text-lime mb-1">
+            {(race.mode === 'time' ? t('race.winnerTime') : t('race.winner')).toUpperCase()}
+          </div>
           <div className="font-bebas text-3xl">{winner.display_name}</div>
           <div className="mt-2 text-sm font-mono text-muted-foreground">
             {winner.distance_km.toFixed(2)} km · {formatDuration(winner.duration_seconds)} · {formatPace(winner.avg_pace)} /km
