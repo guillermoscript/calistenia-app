@@ -148,12 +148,9 @@ describe('ActiveSessionContext', () => {
       expect(result.current.progress.stepIdx).toBe(1)
     })
 
-    // OJO: ActiveSessionContext.tsx ~línea 216 usa `parseInt(String(ex.sets)) || 1`.
-    // Si ex.sets es el número 0, parseInt('0') = 0, y `0 || 1` cae al fallback de 1
-    // por ser falsy, en vez de tratarlo como "0 steps". Un ejercicio con sets=0
-    // termina aportando 1 step fantasma a flatSteps. No se corrige, solo se fija
-    // el comportamiento actual (mismo patrón de quirks falsy-zero visto en core).
-    it('OJO: sets=0 produce 1 step fantasma en vez de 0 (bug de falsy `|| 1`)', () => {
+    it('sets=0 explícito aporta 0 steps (no genera step fantasma)', () => {
+      // El fallback de 1 queda solo para sets no parseable; un 0 explícito
+      // significa que el ejercicio no participa en el flujo.
       const workout = makeWorkout([
         makeExercise({ id: 'w1', section: 'warmup', sets: 0 }),
         makeExercise({ id: 'm1', section: 'main', sets: 1 }),
@@ -163,8 +160,8 @@ describe('ActiveSessionContext', () => {
 
       act(() => { result.current.skipWarmup() })
 
-      // Si no existiera el bug, sets=0 aportaría 0 steps y el main quedaría en stepIdx 0.
-      expect(result.current.progress.stepIdx).toBe(1)
+      // El warmup con sets=0 no aporta steps: el main queda en stepIdx 0.
+      expect(result.current.progress.stepIdx).toBe(0)
     })
 
     it('resetea sectionStartTime al momento actual', () => {

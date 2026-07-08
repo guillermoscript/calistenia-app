@@ -247,13 +247,10 @@ describe('CardioSessionContext', () => {
       expect(clearWatchMock).toHaveBeenCalledTimes(1)
     })
 
-    // OJO: el callback de watchPosition capturado antes de pause() no revisa
-    // stateRef — si llegara un fix tardío (condición de carrera real-GPS)
-    // seguiría sumando distancia aunque el estado ya sea 'paused'. clearWatch
-    // debería evitarlo en el navegador real, pero la lógica de negocio en sí
-    // no tiene guarda de estado. Se caracteriza el comportamiento actual, no
-    // se arregla la fuente.
-    it('OJO: un fix tardío tras pause() todavía muta la distancia (sin guarda de estado)', () => {
+    it('un fix tardío tras pause() se descarta (guarda de estado en el callback)', () => {
+      // Condición de carrera real-GPS: un fix en vuelo puede llegar después de
+      // pause() aunque clearWatch ya se haya llamado. El callback consulta
+      // stateRef y fuera de 'tracking' no muta distancia ni puntos.
       const { wrapper } = makeWrapper()
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
       act(() => result.current.start('running'))
@@ -263,7 +260,8 @@ describe('CardioSessionContext', () => {
       act(() => lastWatchCallback().success(makePosition(40.001, -3.0, 10_000)))
 
       expect(result.current.state).toBe('paused')
-      expect(result.current.distance).toBeGreaterThan(0)
+      expect(result.current.distance).toBe(0)
+      expect(result.current.pointsCount).toBe(1)
     })
 
     it('resume vuelve a tracking y reinicia el watch de GPS', () => {

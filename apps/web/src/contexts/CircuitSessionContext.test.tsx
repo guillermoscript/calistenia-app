@@ -268,14 +268,7 @@ describe('modo timed — máquina de estados (advanceExercise)', () => {
     expect(result.current.progress.phase).toBe('roundRest')
   })
 
-  // OJO: en modo timed, el fin de ronda SIEMPRE pasa por 'roundRest' sin
-  // consultar restBetweenRounds (a diferencia del modo circuit, que si
-  // restBetweenRounds===0 salta directo a la siguiente ronda). Si el usuario
-  // configura un circuito timed con restBetweenRounds=0 esperando "sin pausa
-  // entre rondas", igual verá la pantalla de roundRest. Puede ser intencional
-  // (roundRest en timed usa su propio breather) pero la asimetría entre modos
-  // no está documentada — la caracterizamos, no la arreglamos.
-  it('OJO: fin de ronda en timed ignora restBetweenRounds=0 (asimetría vs modo circuit)', () => {
+  it('fin de ronda en timed con restBetweenRounds=0 salta directo a la siguiente ronda (simétrico al modo circuit)', () => {
     const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
     act(() => {
       result.current.startCircuit(
@@ -292,7 +285,9 @@ describe('modo timed — máquina de estados (advanceExercise)', () => {
 
     act(() => { result.current.advanceExercise() })
 
-    expect(result.current.progress.phase).toBe('roundRest') // no salta a la siguiente ronda como haría modo circuit
+    expect(result.current.progress.phase).toBe('work')
+    expect(result.current.progress.currentRound).toBe(1)
+    expect(result.current.progress.currentExerciseIndex).toBe(0)
   })
 
   it('último ejercicio de la última ronda pasa a celebrate', () => {
@@ -447,19 +442,26 @@ describe('completeCircuit', () => {
     expect(result.current.isActive).toBe(false)
   })
 
-  // OJO: si pb.create falla, doComplete igual llama a op.track('circuit_completed')
-  // (ver CircuitSessionContext.tsx tras el catch) — el evento de analítica se
-  // dispara aunque la sesión sólo haya quedado en cola local sin confirmarse
-  // guardada en PocketBase. Si el flush posterior también falla, analytics
-  // registra una sesión "completada" que nunca llegó al backend.
-  it('OJO: circuit_completed se trackea igual aunque el guardado en PB haya fallado', async () => {
+  // El circuito se completó físicamente aunque el guardado remoto falle (la
+  // sesión queda encolada): el evento se trackea igual, pero con `saved` para
+  // poder segmentar en analytics las sesiones que aún no llegaron al backend.
+  it('circuit_completed se trackea con saved:false si el guardado en PB falló', async () => {
     mockCreate.mockRejectedValueOnce(new Error('network down'))
     const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
     act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
 
     await act(async () => { await result.current.completeCircuit() })
 
-    expect(mockTrack).toHaveBeenCalledWith('circuit_completed', expect.anything())
+    expect(mockTrack).toHaveBeenCalledWith('circuit_completed', expect.objectContaining({ saved: false }))
+  })
+
+  it('circuit_completed se trackea con saved:true cuando PB guarda bien', async () => {
+    const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+    act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
+
+    await act(async () => { await result.current.completeCircuit() })
+
+    expect(mockTrack).toHaveBeenCalledWith('circuit_completed', expect.objectContaining({ saved: true }))
   })
 
   it('sin userId (guard): no llama a PB ni cambia el estado', async () => {
