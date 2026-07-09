@@ -100,3 +100,13 @@ test('signup → primera sesión completada y persistida en PocketBase', async (
     page.getByText(/racha|streak|sesiones|sessions|objetivo|goal/i).first(),
   ).toBeVisible({ timeout: 8000 })
 })
+
+// En CI, scripts/seed-program.mjs siembra "Intermedio – Balance Total" en el
+// PB efímero antes de correr Playwright. Este test verifica el pipeline
+// completo de datos: seed → API de PB → catálogo renderizado en la UI.
+test('el catálogo de programas sembrado es visible en /programs', async ({ page }) => {
+  await register(page)
+  await navigateTo(page, '/programs')
+  await expect(page.getByText(/^PROGRAMAS$|^PROGRAMS$/i).first()).toBeVisible({ timeout: 8000 })
+  await expect(page.getByText(/Balance Total/i).first()).toBeVisible({ timeout: 8000 })
+})

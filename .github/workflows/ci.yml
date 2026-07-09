@@ -87,10 +87,25 @@ jobs:
             sleep 1
           done
 
+      # Seed determinista sobre la DB desechable: superuser efímero + programa
+      # "Intermedio – Balance Total" (el smoke verifica que aparece en la UI).
+      - name: Seed PocketBase
+        run: |
+          /tmp/pb/pocketbase superuser upsert e2e@ci.test E2eCiPass123! --dir=/tmp/pb_data
+          node scripts/seed-program.mjs http://127.0.0.1:8090 e2e@ci.test E2eCiPass123!
+
+      # Se testea el bundle real de producción (no el dev server): mismo output
+      # minificado que se despliega, con el PB efímero baked como backend.
+      # Detecta bugs que solo existen en build (p.ej. purge de Tailwind).
+      - name: Build production bundle (apuntando al PB efímero)
+        run: pnpm --filter @calistenia/web exec vite build
+        env:
+          VITE_POCKETBASE_URL: http://127.0.0.1:8090
+
       - name: Install Playwright Chromium
         run: pnpm --filter @calistenia/web exec playwright install --with-deps chromium
 
-      - name: Run smoke test
+      - name: Run smoke test (contra vite preview del build)
         run: pnpm --filter @calistenia/web run test:e2e:smoke
 
       - name: Upload failure artifacts (screenshots + PB log)
