@@ -82,7 +82,7 @@ export function clearQueue(): void {
  * respuesta (red caída, DNS, timeout). Un 4xx/5xx con status es respuesta del
  * server: determinista, NO se encola (lo revierte onError de la mutación).
  */
-function isNetworkError(error: unknown): boolean {
+export function isNetworkError(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
     const s = (error as { status?: unknown }).status
     return s === 0 || s === undefined
@@ -141,12 +141,42 @@ export async function persistOrQueue(pb: PocketBase, spec: WriteSpec): Promise<a
 }
 
 /**
+ * Serializa una pasada de drenado entre pestañas (Web Locks). En RN no existe
+ * navigator.locks: hay un solo contexto JS, así que el guard en memoria de
+ * processQueue basta.
+ */
+function runExclusive<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = (globalThis as any).navigator?.locks
+  if (locks?.request) return locks.request('calistenia_offline_queue', fn)
+  return fn()
+}
+
+let drainInFlight: Promise<boolean> | null = null
+
+/**
  * Vacía la cola contra PocketBase. Conserva los items que fallen por red (para
  * el próximo intento) y descarta los que fallen con respuesta del server (4xx/5xx
  * "poison" — reintentarlos colgaría la cola para siempre). Devuelve true si
  * procesó al menos un item (para que el llamador invalide queries y reconcilie).
+ *
+ * Concurrencia: dos drenados simultáneos (StrictMode monta efectos dos veces;
+ * boot + evento online; varias pestañas) leerían el mismo snapshot de la cola y
+ * replicarían cada create DOS veces en PB. El guard en memoria comparte la
+ * pasada dentro del mismo contexto JS y runExclusive serializa entre pestañas.
  */
-export async function processQueue(pb: PocketBase): Promise<boolean> {
+export function processQueue(pb: PocketBase): Promise<boolean> {
+  if (drainInFlight) return drainInFlight
+  drainInFlight = runExclusive(() => drainQueue(pb)).finally(() => { drainInFlight = null })
+  return drainInFlight
+}
+
+async function drainQueue(pb: PocketBase): Promise<boolean> {
+  // Sin sesión válida NO se drena: los replays llegarían sin token, PB los
+  // rechazaría con 400/403 y el camino "poison" los descartaría para siempre
+  // (pérdida de datos). Se conserva la cola hasta que haya login (setupAutoSync
+  // drena al recuperar sesión).
+  if (!pb.authStore.isValid) return false
+
   const queue = getQueue()
   if (queue.length === 0) return false
 
@@ -202,8 +232,17 @@ export function setupAutoSync(pb: PocketBase, onDrained?: () => void): () => voi
   const { connectivity } = getPlatform()
   const unsubscribe = connectivity.onOnline(handler)
 
+  // Drenar también al recuperar sesión: si el arranque fue offline (sin auth)
+  // la cola queda retenida; el login posterior es el momento de sincronizarla.
+  const unsubAuth = pb.authStore.onChange(() => {
+    if (pb.authStore.isValid) handler()
+  })
+
   // Procesar lo pendiente ahora mismo si ya estamos online.
   if (connectivity.isOnline()) handler()
 
-  return unsubscribe
+  return () => {
+    unsubscribe()
+    unsubAuth()
+  }
 }

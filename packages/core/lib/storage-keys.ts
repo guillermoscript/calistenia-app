@@ -43,18 +43,13 @@ export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
 ]
 
 /**
- * Prefijos de claves per-usuario (clave = prefijo + userId).
- * Se limpian en signOut buscando la clave exacta con el userId dado.
+ * NOTA: las claves ya suffijadas por userId (p.ej. `calistenia_onboarding_done_<id>`,
+ * `calistenia_tour_*_<id>`) NO se limpian aquí: no filtran datos a otro usuario
+ * (cada quien lee solo su clave) y borrarlas re-mostraba el onboarding/tours a
+ * usuarios que ya los completaron cada vez que cerraban sesión.
  */
-const USER_SCOPED_KEY_PREFIXES = [
-  // onboarding-state
-  'calistenia_onboarding_done_',
-] as const
 
 /** Elimina todas las entradas de localStorage vinculadas al usuario activo. */
-export function clearUserStorage(userId?: string): void {
+export function clearUserStorage(_userId?: string): void {
   USER_SCOPED_STORAGE_KEYS.forEach((key) => storage.removeItem(key))
-  if (userId) {
-    USER_SCOPED_KEY_PREFIXES.forEach((prefix) => storage.removeItem(`${prefix}${userId}`))
-  }
 }

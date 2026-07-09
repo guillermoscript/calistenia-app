@@ -49,11 +49,17 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED 
 
 ## Runtime testing still owed (NOT covered by these plans)
 
-These plans are static fixes. The original handoff's runtime verification is still unaddressed and needs a live PocketBase:
+> **DONE 2026-07-09** — runtime pass ejecutado en navegador (web comparte los hooks de core) contra PB local, issue #151. Resultados:
+>
+> - **Logout / account-switch (001)**: PASS en single-tab. A→signout→B: claves user-scoped + rq_cache limpiadas, B no ve datos de A ni en memoria ni tras reload. **Residual encontrado y corregido**: con OTRA pestaña abierta, su caché en memoria re-persistía queries del usuario anterior a `calistenia_rq_cache` (leak at-rest, nunca renderizado). Fix: `qc.clear()` en el onChange de authStore cuando record=null (sincroniza cross-tab).
+> - **Offline write-through (002/005)**: PASS el camino optimista (UI instantánea + localStorage + cola durable + sobrevive reload offline). **3 bugs encontrados y corregidos** en el ciclo completo: (1) `tryRefreshAuth` cerraba sesión ante error de RED → arranque offline = deslogueado; (2) tras eso la cola drenaba SIN auth → PB 400 → poison-discard = **pérdida de datos** (reproducido); (3) drenados concurrentes (StrictMode / multi-tab) duplicaban cada create en PB (reproducido: 2 registros idénticos). Ver rama `fix/151-offline-auth-queue`.
+> - **003 (meal reminders rollback)**: mecanismo compartido con 002/005 vía `makeOptimisticListHandlers` (plan 010) + camino 4xx-rollback cubierto por unit tests de offlineQueue; no se ejercitó la UI de recordatorios específicamente.
+> - **011 (isPending)**: PASS en web — /feed, /leaderboard y /notifications cargan y el spinner se resuelve. El pull-to-refresh de mobile social.tsx sigue pendiente de test en dispositivo.
+> - UX menor corregida: signOut borraba `calistenia_onboarding_done_<uid>` → el wizard reaparecía en cada re-login.
 
-- **Logout / account-switch leak** (validates plan 001): log in as A → view nutrition/progress → sign out → log in as B → confirm NO A data leaks (in-memory AND after reload, since localStorage is the vector).
-- **Offline write-through**: mutate offline → instant UI + survives reload → reconnect syncs → failed write rolls back. (Plans 002/003/005 harden this path but it still needs exercising.)
-- useProgress / usePrograms cascade, useNotifications realtime, useActivityFeed infinite scroll, useNutrition cross-date accumulator. Drive via Playwright MCP (maintainer's preferred web-test path).
+- ~~**Logout / account-switch leak** (validates plan 001)~~ DONE (ver arriba).
+- ~~**Offline write-through**~~ DONE (ver arriba).
+- useProgress / usePrograms cascade, useNotifications realtime, useActivityFeed infinite scroll, useNutrition cross-date accumulator: feed/notifications se cargaron OK de pasada; el resto sigue sin ejercitarse específicamente.
 
 ## Findings considered and rejected (do not re-audit)
 

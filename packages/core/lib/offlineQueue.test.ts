@@ -31,7 +31,7 @@ type Resp = { ok: true; rec?: any } | { ok: false; status: number }
 let responses: Record<string, Resp> = {}
 const calls: Array<{ collection: string; action: string; arg: any }> = []
 
-function makePb() {
+function makePb({ authed = true }: { authed?: boolean } = {}) {
   const handle = (collection: string, action: string) => async (arg: any) => {
     calls.push({ collection, action, arg })
     const r = responses[collection] ?? { ok: true }
@@ -43,6 +43,7 @@ function makePb() {
     return r.rec ?? { id: `srv_${collection}` }
   }
   return {
+    authStore: { isValid: authed },
     collection: (name: string) => ({
       create: handle(name, 'create'),
       update: (id: string, data: any) => handle(name, 'update')({ id, data }),
@@ -158,5 +159,25 @@ describe('processQueue', () => {
   it('cola vacía → no-op, devuelve false', async () => {
     const pb = makePb()
     expect(await processQueue(pb)).toBe(false)
+  })
+
+  it('sin sesión válida NO drena: conserva la cola (evita descartes 400 sin auth)', async () => {
+    enqueue({ collection: 'water_entries', action: 'create', data: { amount_ml: 500 } })
+    const pb = makePb({ authed: false })
+    const did = await processQueue(pb)
+    expect(did).toBe(false)
+    expect(calls).toHaveLength(0) // ni siquiera intenta el replay
+    expect(getQueue()).toHaveLength(1) // sigue ahí para después del login
+  })
+
+  it('drenados concurrentes comparten una sola pasada (sin replays duplicados)', async () => {
+    enqueue({ collection: 'water_entries', action: 'create', data: { amount_ml: 350 } })
+    const pb = makePb()
+    // StrictMode / boot + evento online: dos llamadas sin await intermedio.
+    const [a, b] = await Promise.all([processQueue(pb), processQueue(pb)])
+    expect(a).toBe(true)
+    expect(b).toBe(true) // misma promesa compartida
+    expect(calls.filter(c => c.action === 'create')).toHaveLength(1) // UN solo create en PB
+    expect(getQueue()).toHaveLength(0)
   })
 })
