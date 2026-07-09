@@ -58,7 +58,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Cachear el binario evita depender de GitHub releases en cada run
+      # (su CDN devuelve 504s intermitentes de vez en cuando).
+      - name: Cache PocketBase binary
+        id: pb-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/pb
+          key: pocketbase-${{ env.PB_VERSION }}-linux-amd64
+
       - name: Download PocketBase
+        if: steps.pb-cache.outputs.cache-hit != 'true'
         run: |
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
             "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" -o /tmp/pb.zip
