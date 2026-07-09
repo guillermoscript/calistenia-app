@@ -1,5 +1,5 @@
 import { storage } from '../platform'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
@@ -286,7 +286,14 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
   const progress = query.data?.progress ?? {}
   const settings = query.data?.settings ?? { ...DEFAULT_SETTINGS }
   const usePB = !!userId
-  const pbReady = !userId || query.isFetched
+  // pbReady no debe regresar a false cuando cambia el programa activo (la key
+  // incluye activeProgramId, y una key nueva arranca con isFetched=false): App
+  // desmontaría el árbol entero hacia el AppLoader — en onboarding eso resetea
+  // el wizard justo al elegir programa. Una vez cargado para este usuario,
+  // queda listo hasta que cambie de usuario.
+  const readyForUserRef = useRef<string | null>(null)
+  if (userId && query.isFetched) readyForUserRef.current = userId
+  const pbReady = !userId || query.isFetched || readyForUserRef.current === userId
 
   // ─── Helpers de escritura sobre la caché + LS ─────────────────────────────
   const patchProgress = useCallback((updater: (prev: ProgressMap) => ProgressMap) => {
