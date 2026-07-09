@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
@@ -88,7 +88,10 @@ export function useNutritionCoach(userId: string | null) {
   const [currentWeekStart, setCurrentWeekStart] = useState<string | null>(null)
 
   // ─── Badges: staleTime Infinity — no cambian a menos que se ganen nuevos ──
-  const badgesKey = qk.nutrition.badges(userId)
+  // Memoizada: badgesKey es dep de useCallbacks (loadBadges, tryAward…); un
+  // array recreado por render los haría inestables — el useEffect([loadBadges])
+  // de NutritionPage entraba en bucle infinito de refetches por esto.
+  const badgesKey = useMemo(() => qk.nutrition.badges(userId), [userId])
   const { data: badges = [] } = useQuery<NutritionBadge[]>({
     queryKey: badgesKey,
     queryFn: () => fetchBadges(userId!),
@@ -116,15 +119,10 @@ export function useNutritionCoach(userId: string | null) {
 
   // ─── loadBadges: dispara refetch de la query de badges ───────────────────
   // Mantiene la firma pública () => Promise<void> del hook original.
-  // OJO: la key se construye inline — badgesKey es un array nuevo en cada
-  // render y como dep haría inestable a loadBadges. NutritionPage lo usa en un
-  // useEffect([loadBadges]): con la dep inestable, cada refetch re-renderiza y
-  // re-dispara el efecto → invalidate → refetch → bucle infinito de requests
-  // a nutrition_badges (lo cazó la suite E2E: ERR_INSUFFICIENT_RESOURCES).
   const loadBadges = useCallback(async () => {
     if (!userId) return
-    await qc.invalidateQueries({ queryKey: qk.nutrition.badges(userId) })
-  }, [userId, qc])
+    await qc.invalidateQueries({ queryKey: badgesKey })
+  }, [userId, qc, badgesKey])
 
   // ─── getDailyInsight: activa la fecha y devuelve el resultado de caché ────
   const getDailyInsight = useCallback(async (date: string): Promise<NutritionCoachInsight | null> => {
