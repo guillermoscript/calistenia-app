@@ -103,8 +103,12 @@ const isTransient = (e: any) => {
 export function useNutrition(userId: string | null) {
   const qc = useQueryClient()
   const usePB = !!userId
-  const entriesKey = qk.nutrition.today(userId)
-  const goalsKey = qk.nutrition.goals(userId)
+  // Memoizadas: como deps de useCallback (patchEntries, saveGoals) un array
+  // recreado por render haría inestables a esos callbacks y a todo lo que
+  // dependa de ellos — el mismo antipatrón que causó el bucle infinito de
+  // nutrition_badges en useNutritionCoach.
+  const entriesKey = useMemo(() => qk.nutrition.today(userId), [userId])
+  const goalsKey = useMemo(() => qk.nutrition.goals(userId), [userId])
   const loadedDates = useRef<Set<string>>(new Set())
 
   // ─── Query: entries (acumulador, arranca con merge hoy+LS) ────────────────

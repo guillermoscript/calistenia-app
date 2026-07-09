@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { register, navigateTo, dismissOverlays } from './helpers.js'
 import path from 'path'
+import { fileURLToPath } from 'url'
 
 /**
  * Navigate through the 6-step nutrition goal wizard.
@@ -73,7 +74,8 @@ test.describe('Nutrition Quality Scoring via Image Analysis', () => {
     await dismissOverlays(page)
 
     // 4. Upload test image
-    const imagePath = path.resolve('pan.jpg')
+    // Fixture propio del spec (resuelto relativo a este archivo, no al cwd).
+    const imagePath = path.resolve(fileURLToPath(import.meta.url), '../fixtures/pan.jpg')
     const fileInput = page.locator('input[type="file"][accept*="image"]').first()
     await fileInput.setInputFiles(imagePath)
     await page.waitForTimeout(1500)

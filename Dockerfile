@@ -39,10 +39,12 @@ RUN pnpm --filter @calistenia/web build
 # ─────────────────────────────────────────────
 FROM alpine:3.19 AS pb-downloader
 
-ARG PB_VERSION=0.36.7
+# Mantener en sync con Dockerfile.pb-dev y el job e2e-smoke de ci.yml — el
+# smoke E2E corre contra esta misma versión de PocketBase.
+ARG PB_VERSION=0.36.8
 
 RUN apk add --no-cache curl unzip \
-    && curl -fsSL \
+    && curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
        "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" \
        -o /tmp/pocketbase.zip \
     && unzip /tmp/pocketbase.zip -d /tmp/pb \

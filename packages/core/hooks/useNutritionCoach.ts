@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
@@ -88,7 +88,10 @@ export function useNutritionCoach(userId: string | null) {
   const [currentWeekStart, setCurrentWeekStart] = useState<string | null>(null)
 
   // ─── Badges: staleTime Infinity — no cambian a menos que se ganen nuevos ──
-  const badgesKey = qk.nutrition.badges(userId)
+  // Memoizada: badgesKey es dep de useCallbacks (loadBadges, tryAward…); un
+  // array recreado por render los haría inestables — el useEffect([loadBadges])
+  // de NutritionPage entraba en bucle infinito de refetches por esto.
+  const badgesKey = useMemo(() => qk.nutrition.badges(userId), [userId])
   const { data: badges = [] } = useQuery<NutritionBadge[]>({
     queryKey: badgesKey,
     queryFn: () => fetchBadges(userId!),
