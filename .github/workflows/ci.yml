@@ -60,7 +60,8 @@ jobs:
 
       - name: Download PocketBase
         run: |
-          curl -fsSL "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" -o /tmp/pb.zip
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
+            "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" -o /tmp/pb.zip
           unzip -o /tmp/pb.zip -d /tmp/pb
 
       - name: Start PocketBase (fresh data, migrations + hooks del repo)
