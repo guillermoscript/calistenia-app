@@ -344,9 +344,16 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
         pb.collection('user_programs').update(rec.id, { is_current: false }),
       ))
 
-      // Optimista: fijamos el programId activo → la detail query corre para el nuevo.
+      // Precargar el detail ANTES de voltear el enrollment: si la detail query
+      // del nuevo programa nunca se fetcheó, programsReady caería a false y
+      // App desmontaría el árbol entero hacia el AppLoader — en onboarding eso
+      // resetea el wizard al paso 0 tras elegir programa.
+      await qc.fetchQuery({
+        queryKey: qk.programs.detail(programId),
+        queryFn: () => fetchProgramDetail(programId),
+        staleTime: 0,
+      }).catch(() => { /* sin detail fresco seguimos: el enrollment ya está en PB */ })
       qc.setQueryData(qk.programs.activeEnrollment(userId), programId)
-      await qc.invalidateQueries({ queryKey: qk.programs.detail(programId) })
 
       const newActive = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).find(p => p.id === programId) || null
       op.track('program_selected', { program_id: programId, program_name: newActive?.name || '' })

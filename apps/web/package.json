@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:smoke": "playwright test tests/smoke.spec.js",
+    "test:e2e:smoke": "playwright test tests/smoke.spec.js tests/onboarding.spec.js",
     "preview": "vite preview"
   },
   "dependencies": {
