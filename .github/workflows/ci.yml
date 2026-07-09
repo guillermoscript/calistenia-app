@@ -31,3 +31,64 @@ jobs:
 
       - name: Unit tests (packages/core + mobile)
         run: pnpm -r test
+
+  # Smoke E2E del golden path (#145): signup → primera sesión de entrenamiento.
+  # Corre contra un PocketBase efímero recién migrado (sin seeds — el flujo usa
+  # los workouts de fallback) + el dev server de Vite que levanta Playwright.
+  # Ambos workflows de deploy hacen `needs: [ci]` sobre este workflow reusable,
+  # así que un smoke rojo bloquea el deploy de web y de AI-API.
+  e2e-smoke:
+    name: E2E smoke (signup → primera sesión)
+    runs-on: ubuntu-latest
+    env:
+      PB_VERSION: 0.36.8 # mantener en sync con Dockerfile.pb-dev
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download PocketBase
+        run: |
+          curl -fsSL "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" -o /tmp/pb.zip
+          unzip -o /tmp/pb.zip -d /tmp/pb
+
+      - name: Start PocketBase (fresh data, migrations + hooks del repo)
+        run: |
+          /tmp/pb/pocketbase serve \
+            --http=127.0.0.1:8090 \
+            --dir=/tmp/pb_data \
+            --migrationsDir=pb_migrations \
+            --hooksDir=pb_hooks > /tmp/pb.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8090/api/health && break
+            [ "$i" = 30 ] && { echo 'PocketBase no arrancó'; cat /tmp/pb.log; exit 1; }
+            sleep 1
+          done
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @calistenia/web exec playwright install --with-deps chromium
+
+      - name: Run smoke test
+        run: pnpm --filter @calistenia/web run test:e2e:smoke
+
+      - name: Upload failure artifacts (screenshots + PB log)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-smoke-failure
+          path: |
+            apps/web/test-results/
+            /tmp/pb.log
+          if-no-files-found: ignore
+          retention-days: 7
