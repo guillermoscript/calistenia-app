@@ -42,7 +42,7 @@ FROM alpine:3.19 AS pb-downloader
 ARG PB_VERSION=0.36.7
 
 RUN apk add --no-cache curl unzip \
-    && curl -fsSL \
+    && curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
        "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" \
        -o /tmp/pocketbase.zip \
     && unzip /tmp/pocketbase.zip -d /tmp/pb \
