@@ -116,10 +116,15 @@ export function useNutritionCoach(userId: string | null) {
 
   // ─── loadBadges: dispara refetch de la query de badges ───────────────────
   // Mantiene la firma pública () => Promise<void> del hook original.
+  // OJO: la key se construye inline — badgesKey es un array nuevo en cada
+  // render y como dep haría inestable a loadBadges. NutritionPage lo usa en un
+  // useEffect([loadBadges]): con la dep inestable, cada refetch re-renderiza y
+  // re-dispara el efecto → invalidate → refetch → bucle infinito de requests
+  // a nutrition_badges (lo cazó la suite E2E: ERR_INSUFFICIENT_RESOURCES).
   const loadBadges = useCallback(async () => {
     if (!userId) return
-    await qc.invalidateQueries({ queryKey: badgesKey })
-  }, [userId, qc, badgesKey])
+    await qc.invalidateQueries({ queryKey: qk.nutrition.badges(userId) })
+  }, [userId, qc])
 
   // ─── getDailyInsight: activa la fecha y devuelve el resultado de caché ────
   const getDailyInsight = useCallback(async (date: string): Promise<NutritionCoachInsight | null> => {
