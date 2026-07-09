@@ -1,7 +1,9 @@
 import { test, expect, request as pwRequest } from '@playwright/test'
 import { register } from './helpers.js'
 
-const PB = 'http://127.0.0.1:8090'
+// Mismo PB que usa el navegador (VITE_POCKETBASE_URL del server bajo test);
+// PB_URL permite apuntar a un stack efímero en otro puerto.
+const PB = process.env.PB_URL || 'http://127.0.0.1:8090'
 
 // Create + auth a user straight against PocketBase (no browser needed).
 async function makeUser(api, tag) {
