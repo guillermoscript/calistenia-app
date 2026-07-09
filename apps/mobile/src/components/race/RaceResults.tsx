@@ -13,18 +13,7 @@ import { Sentry } from '@/lib/instrument'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { estimateCalories } from '@calistenia/core/lib/calories'
-import type { RaceParticipant } from '@calistenia/core/types/race'
-
-function sortResults(participants: RaceParticipant[]): RaceParticipant[] {
-  return [...participants].sort((a, b) => {
-    const rank = (p: RaceParticipant) => (p.status === 'finished' ? 0 : 1)
-    if (rank(a) !== rank(b)) return rank(a) - rank(b)
-    if (a.status === 'finished' && b.status === 'finished') {
-      return (a.finished_at || '').localeCompare(b.finished_at || '')
-    }
-    return b.distance_km - a.distance_km
-  })
-}
+import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
 
 export default function RaceResults({ celebrate = false }: { celebrate?: boolean }) {
   const { t } = useTranslation()
@@ -33,7 +22,7 @@ export default function RaceResults({ celebrate = false }: { celebrate?: boolean
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const sorted = useMemo(() => sortResults(participants), [participants])
+  const sorted = useMemo(() => sortRaceParticipants(participants, race), [participants, race])
   const winner = sorted[0]?.status === 'finished' ? sorted[0] : null
 
   // Gané y vengo de correrla (no de abrir una carrera vieja) → fanfarria una vez
@@ -89,7 +78,9 @@ export default function RaceResults({ celebrate = false }: { celebrate?: boolean
       {/* Podio */}
       {winner && (
         <View className="items-center rounded-xl border border-amber-400/30 bg-amber-400/5 p-5">
-          <Text className="font-mono text-[9px] uppercase tracking-[3px] text-amber-400">{t('race.winner')}</Text>
+          <Text className="font-mono text-[9px] uppercase tracking-[3px] text-amber-400">
+            {race.mode === 'time' ? t('race.winnerTime') : t('race.winner')}
+          </Text>
           <Text className="mt-1 font-bebas text-3xl text-foreground">{winner.display_name}</Text>
           <Text className="mt-1 font-mono text-xs text-muted-foreground">
             {winner.distance_km.toFixed(2)} km · {formatDuration(winner.duration_seconds)} · {formatPace(winner.avg_pace)} /km

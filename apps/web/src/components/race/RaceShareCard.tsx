@@ -4,6 +4,7 @@ import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
 import { op } from '@calistenia/core/lib/analytics'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
+import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
 import { fillRRect, CARD_COLORS } from '../../lib/canvas-helpers'
 import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
@@ -48,23 +49,7 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
       const logo = await loadLogo()
       const { fg, fgDim, fgMuted, bg, cardBg, borderColor } = CARD_COLORS
 
-      // Sort: if race has a target, finished first by finish time, then by distance.
-      // DNF always at the bottom.
-      const hasTarget = race.target_distance_km > 0 || race.target_duration_seconds > 0
-      const sorted = [...participants].sort((a, b) => {
-        if (a.status === 'dnf' && b.status !== 'dnf') return 1
-        if (b.status === 'dnf' && a.status !== 'dnf') return -1
-        if (hasTarget) {
-          const aFin = a.status === 'finished' && a.finished_at
-          const bFin = b.status === 'finished' && b.finished_at
-          if (aFin && bFin) return new Date(a.finished_at!).getTime() - new Date(b.finished_at!).getTime()
-          if (aFin) return -1
-          if (bFin) return 1
-        }
-        if (b.distance_km !== a.distance_km) return b.distance_km - a.distance_km
-        if (a.duration_seconds !== b.duration_seconds) return a.duration_seconds - b.duration_seconds
-        return a.display_name.localeCompare(b.display_name)
-      })
+      const sorted = sortRaceParticipants(participants, race)
       const myIdx = sorted.findIndex(p => p.user === currentUserId)
       const me = sorted[myIdx]
       if (!me) return

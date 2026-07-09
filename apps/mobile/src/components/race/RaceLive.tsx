@@ -14,7 +14,7 @@ import { msUntil } from '@/lib/race/raceClock'
 import { haptics } from '@/lib/haptics'
 import * as sounds from '@/lib/sounds'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
-import type { RaceParticipant } from '@calistenia/core/types/race'
+import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
 
 function cartoStyle(dark: boolean) {
   const variant = dark ? 'dark_all' : 'rastertiles/voyager'
@@ -32,25 +32,12 @@ function cartoStyle(dark: boolean) {
   }
 }
 
-/** Finalizados primero (por llegada), corriendo por distancia, DNF al final. */
-export function sortLeaderboard(participants: RaceParticipant[]): RaceParticipant[] {
-  return [...participants].sort((a, b) => {
-    const rank = (p: RaceParticipant) => (p.status === 'finished' ? 0 : p.status === 'dnf' ? 2 : 1)
-    if (rank(a) !== rank(b)) return rank(a) - rank(b)
-    if (a.status === 'finished' && b.status === 'finished') {
-      return (a.finished_at || '').localeCompare(b.finished_at || '')
-    }
-    if (b.distance_km !== a.distance_km) return b.distance_km - a.distance_km
-    return a.duration_seconds - b.duration_seconds
-  })
-}
-
 export default function RaceLive() {
   const { t } = useTranslation()
   const { colorScheme } = useColorScheme()
   const { race, participants, me, myStats, actions, lastError, clearError } = useRaceContext()
 
-  const sorted = useMemo(() => sortLeaderboard(participants), [participants])
+  const sorted = useMemo(() => sortRaceParticipants(participants, race), [participants, race])
 
   // Km completado → misma vibración que en cardio libre (null = aún sin
   // baseline, para no vibrar al rehidratar una carrera a mitad)
@@ -71,6 +58,23 @@ export default function RaceLive() {
     }
     prevStatusRef.current = me?.status
   }, [me?.status])
+
+  // Últimos 10s de una carrera por tiempo → tick sonoro + haptic por segundo,
+  // como el 3-2-1 de salida. Sin ticks en carreras muy cortas (<30s) para no
+  // convertir media carrera en alarma.
+  const isTimeMode = race?.mode === 'time'
+  const remainingSec = isTimeMode && race?.starts_at
+    ? Math.max(0, race.target_duration_seconds - (myStats?.duration_seconds ?? Math.max(0, -msUntil(race.starts_at)) / 1000))
+    : 0
+  const iFinished = me?.status === 'finished'
+  const remainingCeil = Math.ceil(remainingSec)
+  const inFinalCountdown = isTimeMode && !iFinished && remainingCeil > 0 && remainingCeil <= 10
+    && (race?.target_duration_seconds ?? 0) >= 30
+  useEffect(() => {
+    if (!inFinalCountdown) return
+    sounds.playCountdownTick()
+    void haptics.light()
+  }, [inFinalCountdown, remainingCeil])
 
   const { markersGeoJSON, center } = useMemo(() => {
     const features: GeoJSON.Feature[] = []
@@ -93,15 +97,10 @@ export default function RaceLive() {
 
   if (!race) return null
 
-  const isTimeMode = race.mode === 'time'
   const target = isTimeMode ? race.target_duration_seconds : race.target_distance_km
   const progress = myStats && target > 0
     ? Math.min(1, (isTimeMode ? myStats.duration_seconds : myStats.distance_km) / target)
     : 0
-  const remainingSec = isTimeMode && race.starts_at
-    ? Math.max(0, race.target_duration_seconds - (myStats?.duration_seconds ?? Math.max(0, -msUntil(race.starts_at)) / 1000))
-    : 0
-  const iFinished = me?.status === 'finished'
 
   const handleLeave = () => {
     Alert.alert(t('race.leave'), race.name, [
@@ -126,13 +125,13 @@ export default function RaceLive() {
           <Text className="font-bebas text-4xl leading-none text-lime">{(myStats?.distance_km ?? 0).toFixed(2)}</Text>
           <Text className="mt-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{t('race.km')}</Text>
         </View>
-        <View className="flex-1 items-center rounded-xl bg-muted/60 p-3">
-          <Text className="font-bebas text-4xl leading-none text-foreground">
+        <View className={cn('flex-1 items-center rounded-xl bg-muted/60 p-3', inFinalCountdown && 'bg-red-500/10')}>
+          <Text className={cn('font-bebas text-4xl leading-none text-foreground', inFinalCountdown && 'text-red-500')}>
             {isTimeMode
               ? formatDuration(Math.round(remainingSec))
               : formatDuration(Math.floor(myStats?.duration_seconds ?? 0))}
           </Text>
-          <Text className="mt-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+          <Text className={cn('mt-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground', inFinalCountdown && 'text-red-500/70')}>
             {isTimeMode ? t('race.remaining') : t('race.elapsed')}
           </Text>
         </View>
