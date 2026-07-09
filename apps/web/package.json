@@ -61,7 +61,7 @@
     "media-chrome": "^4.19.0",
     "motion": "^12.38.0",
     "nanoid": "^5.1.9",
-    "pocketbase": "^0.26.8",
+    "pocketbase": "^0.27.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-i18next": "^17.0.3",
