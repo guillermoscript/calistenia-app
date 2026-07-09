@@ -1,5 +1,6 @@
 import PocketBase, { type RecordModel, type RecordAuthResponse } from 'pocketbase'
 import { getEnv, getPlatform } from '../platform'
+import { isNetworkError } from './offlineQueue'
 
 // La URL la resuelve cada plataforma en initCore() (web prod: window.location.origin).
 const PB_URL: string = getEnv().pbUrl
@@ -134,14 +135,20 @@ export const loginWithOAuth2Code = async (
 
 /**
  * Refresca el token en el arranque de la app.
- * Si el token guardado ya no es válido, limpia el authStore.
+ * Si el server RECHAZA el token (401/403…), limpia el authStore.
+ * Si no hubo respuesta (offline, server caído), CONSERVA el token: cerrar la
+ * sesión por un fallo de red dejaba la app inusable offline y, de rebote, la
+ * cola offline se drenaba sin auth y PB descartaba las escrituras pendientes.
+ * authStore.isValid ya valida la expiración del JWT localmente, así que un
+ * token caducado no se cuela por este camino.
  */
 export const tryRefreshAuth = async (): Promise<boolean> => {
   if (!pb.authStore.isValid) return false
   try {
     await pb.collection('users').authRefresh()
     return true
-  } catch {
+  } catch (e) {
+    if (isNetworkError(e)) return pb.authStore.isValid
     pb.authStore.clear()
     return false
   }

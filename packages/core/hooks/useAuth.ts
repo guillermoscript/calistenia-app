@@ -82,10 +82,16 @@ export function useAuth(): UseAuthReturn {
     const unsub = pb.authStore.onChange((_token: string, record: RecordModel | null) => {
       if (record?.timezone) setTimezone(record.timezone)
       else if (record) setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+      // Logout (propio o sincronizado desde otra pestaña vía storage event):
+      // vaciar la caché de queries también AQUÍ, no solo en signOut(). Si otra
+      // pestaña conserva en memoria las queries del usuario anterior, su
+      // persister las re-escribe a localStorage y los datos del usuario A
+      // quedan en disco durante la sesión del usuario B.
+      if (!record) qc.clear()
       setUser(record ?? null)
     })
     return () => unsub()
-  }, [])
+  }, [qc])
 
   // Track whether this is a new user (first OAuth login) to trigger post-registration side effects
   const justRegistered = useRef(false)
