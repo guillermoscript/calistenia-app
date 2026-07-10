@@ -214,7 +214,8 @@
             "enablePngCrunchInReleaseBuilds": false
           }
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "extra": {
       "eas": {
