@@ -3,44 +3,24 @@ import { useTranslation } from 'react-i18next'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from './ui/dialog'
-import changelog from '../data/changelog.json'
+import changelogJson from '@calistenia/core/data/changelog.mobile.json'
+import {
+  compareVersions,
+  dotColorForType,
+  getUnseenVersions as getUnseenVersionsCore,
+  pickLang,
+  type ChangelogData,
+  type ChangelogVersion,
+} from '@calistenia/core/lib/whats-new'
 import i18n from '../lib/i18n'
 import { cn } from '../lib/utils'
 
-const APP_VERSION = __APP_VERSION__
+const CHANGELOG = changelogJson as ChangelogData
+// Web deploys continuously (no discrete "installed version") — the newest
+// entry in the changelog is always considered current, so nothing is ever
+// filtered out as "not released yet" the way mobile's app.json version gates it.
+const CURRENT_VERSION = CHANGELOG.versions[0]?.version ?? '0.0.0'
 const LS_KEY = 'calistenia_last_seen_version'
-
-interface ChangelogItem {
-  description: string
-  scope: string | null
-  breaking: boolean
-  hash: string
-}
-
-interface ChangelogGroup {
-  label: string
-  emoji: string
-  type: string
-  items: ChangelogItem[]
-}
-
-interface ChangelogVersion {
-  version: string
-  date: string
-  groups: ChangelogGroup[]
-}
-
-// ── Type visuals ─────────────────────────────────────────────────────────────
-
-const TYPE_STYLES: Record<string, { dot: string; label: string }> = {
-  feat:     { dot: 'bg-lime-400',           label: 'text-lime-400/80' },
-  fix:      { dot: 'bg-amber-400',          label: 'text-amber-400/80' },
-  perf:     { dot: 'bg-sky-400',            label: 'text-sky-400/80' },
-  refactor: { dot: 'bg-violet-400',         label: 'text-violet-400/80' },
-  style:    { dot: 'bg-pink-400',           label: 'text-pink-400/80' },
-  chore:    { dot: 'bg-foreground/30',      label: 'text-muted-foreground' },
-  other:    { dot: 'bg-foreground/30',      label: 'text-muted-foreground' },
-}
 
 function formatDate(iso: string): string {
   try {
@@ -53,31 +33,26 @@ function formatDate(iso: string): string {
 }
 
 function getUnseenVersions(): ChangelogVersion[] {
-  const lastSeen = localStorage.getItem(LS_KEY)
-  if (!lastSeen) return changelog.versions.slice(0, 1)
-  if (lastSeen === APP_VERSION) return []
-  const idx = changelog.versions.findIndex(v => v.version === lastSeen)
-  if (idx <= 0) return changelog.versions.slice(0, 1)
-  return changelog.versions.slice(0, idx)
+  return getUnseenVersionsCore(CHANGELOG.versions, CURRENT_VERSION, localStorage.getItem(LS_KEY))
 }
 
 function markSeen() {
-  localStorage.setItem(LS_KEY, APP_VERSION)
+  localStorage.setItem(LS_KEY, CURRENT_VERSION)
 }
 
 // ── Staggered item reveal ────────────────────────────────────────────────────
 
 function StaggeredItem({ index, children }: { index: number; children: React.ReactNode }) {
-  const ref = useRef<HTMLLIElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 60 + index * 35)
+    const t = setTimeout(() => setVisible(true), 60 + index * 55)
     return () => clearTimeout(t)
   }, [index])
 
   return (
-    <li
+    <div
       ref={ref}
       className={cn(
         'transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]',
@@ -85,19 +60,20 @@ function StaggeredItem({ index, children }: { index: number; children: React.Rea
       )}
     >
       {children}
-    </li>
+    </div>
   )
 }
 
-// ── Version block ────────────────────────────────────────────────────────────
+// ── Version block — curated bilingual summary + highlights (same content as mobile) ──
 
 function VersionBlock({ version, isFirst }: { version: ChangelogVersion; isFirst: boolean }) {
-  let itemIndex = 0
+  const { i18n: i18nInstance } = useTranslation()
+  const lang = i18nInstance.language
 
   return (
     <div className="relative">
       {/* Version header */}
-      <div className={cn('flex items-end gap-3 mb-4', isFirst ? '' : 'mt-1')}>
+      <div className={cn('flex items-end gap-3 mb-2', isFirst ? '' : 'mt-1')}>
         <span
           className="font-['Bebas_Neue',cursive] text-[2rem] leading-none tracking-wide text-foreground"
           style={{ fontFeatureSettings: '"tnum"' }}
@@ -109,54 +85,36 @@ function VersionBlock({ version, isFirst }: { version: ChangelogVersion; isFirst
         </span>
       </div>
 
-      {/* Groups */}
-      <div className="space-y-4">
-        {version.groups.map(group => {
-          const style = TYPE_STYLES[group.type] || TYPE_STYLES.other
-          return (
-            <div key={group.type}>
-              {/* Group label */}
-              <div className="flex items-center gap-2 mb-2">
-                <div className={cn('size-1.5 rounded-full shrink-0', style.dot)} />
-                <span className={cn('text-[10px] font-semibold uppercase tracking-[0.1em]', style.label)}>
-                  {group.label}
-                </span>
-                <span className="text-[10px] text-muted-foreground/30 font-medium">
-                  {group.items.length}
-                </span>
-              </div>
+      {/* Summary */}
+      <p className="text-[13px] leading-snug text-muted-foreground mb-4">
+        {pickLang(version.summary, lang)}
+      </p>
 
-              {/* Items */}
-              <ul className="space-y-1.5 pl-[18px]">
-                {group.items.map((item, i) => {
-                  const idx = itemIndex++
-                  return (
-                    <StaggeredItem key={i} index={idx}>
-                      <div className="flex items-start gap-2 group">
-                        <div className="flex items-start gap-2 min-w-0">
-                          {item.breaking ? (
-                            <span className="shrink-0 mt-[2px] inline-block text-[9px] font-bold text-destructive bg-destructive/10 rounded px-1 py-px uppercase tracking-wider">
-                              break
-                            </span>
-                          ) : null}
-                          <span className="text-[13px] leading-relaxed text-foreground/85">
-                            {item.scope ? (
-                              <span className="text-muted-foreground/60 font-medium">{item.scope} — </span>
-                            ) : null}
-                            {item.description}
-                          </span>
-                        </div>
-                        <span className="shrink-0 text-[10px] text-muted-foreground/20 font-mono pt-[3px] opacity-0 group-hover:opacity-100 transition-opacity">
-                          {item.hash}
-                        </span>
-                      </div>
-                    </StaggeredItem>
-                  )
-                })}
-              </ul>
+      {/* Highlights */}
+      <div className="space-y-3.5">
+        {version.highlights.map((h, i) => (
+          <StaggeredItem key={i} index={i}>
+            <div className="flex items-start gap-3">
+              <div className="w-6 flex items-center justify-center pt-0.5 shrink-0">
+                <span className="text-[17px] leading-none">{h.icon}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="size-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: dotColorForType(h.type) }}
+                  />
+                  <span className="text-[14px] font-semibold text-foreground leading-tight">
+                    {pickLang(h.title, lang)}
+                  </span>
+                </div>
+                <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+                  {pickLang(h.body, lang)}
+                </p>
+              </div>
             </div>
-          )
-        })}
+          </StaggeredItem>
+        ))}
       </div>
     </div>
   )
@@ -172,7 +130,9 @@ export function WhatsNewDialog({
   versions?: ChangelogVersion[]
 }) {
   const { t } = useTranslation()
-  const displayVersions = versions || changelog.versions
+  const displayVersions = versions || CHANGELOG.versions.filter(
+    (v) => compareVersions(v.version, CURRENT_VERSION) <= 0,
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -191,7 +151,7 @@ export function WhatsNewDialog({
             <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
               <div className="size-1.5 rounded-full bg-lime-400 animate-pulse" />
               <span className="text-[10px] font-mono text-muted-foreground/50">
-                v{APP_VERSION}
+                v{CURRENT_VERSION}
               </span>
             </div>
           </div>
@@ -260,7 +220,7 @@ export function WhatsNewButton({ className }: { className?: string }) {
         onClick={() => setOpen(true)}
         className={cn('transition-colors', className)}
       >
-        v{APP_VERSION}
+        v{CURRENT_VERSION}
       </button>
       <WhatsNewDialog open={open} onOpenChange={setOpen} />
     </>
@@ -290,7 +250,7 @@ export function WhatsNewHomeButton({ className }: { className?: string }) {
         )}
       >
         {hasUnseen && <span className="size-1.5 rounded-full bg-lime-400 animate-pulse" />}
-        {t('whatsNew.title')} · v{APP_VERSION}
+        {t('whatsNew.title')} · v{CURRENT_VERSION}
       </button>
       <WhatsNewDialog
         open={open}

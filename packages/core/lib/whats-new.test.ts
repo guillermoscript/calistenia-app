@@ -5,7 +5,7 @@ import {
   pickLang,
   dotColorForType,
   type ChangelogVersion,
-} from '../whats-new'
+} from './whats-new'
 
 function v(version: string): ChangelogVersion {
   return {

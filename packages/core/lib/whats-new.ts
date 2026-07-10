@@ -1,11 +1,15 @@
 /**
- * Lógica pura de "Novedades" (what's new) — sin imports de plataforma para que
- * sea testeable en node/vitest. El glue de plataforma (versión instalada vía
- * expo-constants, storage, JSON) vive en el componente WhatsNewModal.
+ * Lógica pura de "Novedades" (what's new) — compartida entre web y mobile, sin
+ * imports de plataforma para que sea testeable en node/vitest. El glue de
+ * plataforma (versión instalada, storage, JSON) vive en cada componente
+ * (WhatsNewModal en mobile, WhatsNew en web).
  *
  * Modelo: el changelog (packages/core/data/changelog.mobile.json) lista versiones
  * de más nueva a más vieja, cada una con `summary` + `highlights` bilingües
- * (curados / generados por IA) y los `groups` técnicos crudos para el expander.
+ * (curados a mano, no autogenerados) y opcionalmente `groups` técnicos crudos
+ * para un expander de detalles. Es el mismo archivo/mensaje para ambas apps —
+ * la numeración sigue la línea de versión nativa (app.json), pero el contenido
+ * curado normalmente aplica a ambas (la mayoría de la lógica vive en core).
  */
 
 export interface LocalizedText {
@@ -49,12 +53,6 @@ export interface ChangelogData {
   generated: string
   versions: ChangelogVersion[]
 }
-
-/**
- * Clave propia de mobile (NO se comparte con la web): la línea de versiones de
- * la app nativa va por su cuenta (app.json) frente a la de web (package.json).
- */
-export const WHATS_NEW_STORAGE_KEY = 'calistenia_mobile_last_seen_version'
 
 /**
  * Compara dos versiones semánticas. Devuelve -1 (a<b), 0 (a=b) o 1 (a>b).

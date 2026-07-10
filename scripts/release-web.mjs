@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 /**
- * release-web.mjs — Bump the web-facing version and regenerate the in-app
- * "What's new" changelog (apps/web/src/data/changelog.json).
+ * release-web.mjs — Bump the web-facing version (root + apps/web package.json).
  *
  * Web deploys continuously on every push to main (see build-app.yml) — there
- * is no discrete "release" to cut. This script does NOT gate or trigger any
- * deploy; it exists purely to snapshot a changelog entry for the WhatsNew
- * widget, on whatever cadence you choose to run it.
+ * is no discrete "release" to cut, and no separate web changelog to snapshot:
+ * the in-app "What's new" widget (apps/web/src/components/WhatsNew.tsx) reads
+ * the same curated bilingual packages/core/data/changelog.mobile.json that
+ * mobile uses (maintained via `pnpm release:mobile`), since most of what
+ * ships is shared logic and applies to both platforms. This script only
+ * bumps the version number web itself reports (currently just the Sentry
+ * release tag — see apps/web/src/instrument.ts).
  *
  * Tags use the web-v* prefix (not v*) so they can never be mistaken for — or
  * accidentally match — a deploy-triggering tag pattern.
@@ -71,11 +74,8 @@ for (const pkgPath of PKG_PATHS) {
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8')
 }
 
-console.log('Generating changelog...')
-run('node scripts/generate-changelog.mjs')
-
 console.log('\nCommitting...')
-run('git add package.json apps/web/package.json apps/web/src/data/changelog.json')
+run('git add package.json apps/web/package.json')
 run(`git commit -m "chore(release): web v${newVersion}"`)
 run(`git tag web-v${newVersion}`)
 

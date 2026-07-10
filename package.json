@@ -15,7 +15,6 @@
     "preview": "pnpm --filter @calistenia/web preview",
     "pb:serve": "./pocketbase serve",
     "pb:migrate": "node scripts/pb-migrate.js",
-    "changelog": "node scripts/generate-changelog.mjs",
     "changelog:mobile": "node scripts/generate-changelog-ai.mjs",
     "changelog:md": "node scripts/generate-changelog-md.mjs",
     "release:web": "node scripts/release-web.mjs",

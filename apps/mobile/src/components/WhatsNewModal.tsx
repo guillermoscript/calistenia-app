@@ -37,18 +37,19 @@ import { Text } from '@/components/ui/text'
 import { haptics } from '@/lib/haptics'
 import { syncStorage } from '@/lib/storage'
 import {
-  WHATS_NEW_STORAGE_KEY,
   compareVersions,
   dotColorForType,
   getUnseenVersions,
   pickLang,
   type ChangelogData,
   type ChangelogVersion,
-} from '@/lib/whats-new'
+} from '@calistenia/core/lib/whats-new'
 import changelogJson from '@calistenia/core/data/changelog.mobile.json'
 
 const CHANGELOG = changelogJson as ChangelogData
 const LIME = 'hsl(74 90% 45%)'
+/** Propia de mobile: la web trackea "visto" por su cuenta con su propia clave. */
+const WHATS_NEW_STORAGE_KEY = 'calistenia_mobile_last_seen_version'
 
 function getCurrentVersion(): string {
   return Constants.expoConfig?.version ?? '0.0.0'
