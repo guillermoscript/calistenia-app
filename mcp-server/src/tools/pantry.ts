@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import { widget, text } from "mcp-use/server";
 import type PocketBase from "pocketbase";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
@@ -124,7 +125,12 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
       name: "cal_generate_pantry_day_plan",
       title: "Generate Pantry-Aware Day Plan",
       description:
-        "Generate a full day of meals (desayuno, almuerzo, cena, snack) with recipes, using only what's currently in the user's pantry. Synchronous — calls an AI model, so it can take a few seconds.",
+        "Generate a full day of meals (desayuno, almuerzo, cena, snack) with recipes, using only what's currently in the user's pantry. Synchronous — calls an AI model, so it can take a few seconds. Returns a visual widget with the meals, macros and recipes.",
+      widget: {
+        name: "pantry-day-plan",
+        invoking: "Cocinando tu plan del día…",
+        invoked: "Plan del día listo",
+      },
       schema: z
         .object({
           target_date: z.string().optional().describe("Target date for the plan (YYYY-MM-DD). Defaults to tomorrow."),
@@ -162,9 +168,9 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         const meals = (result.meals as Array<Record<string, any>>) ?? [];
         const notes = (result.notes as string) ?? "";
 
-        let text: string;
+        let out: string;
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(result, null, 2);
+          out = JSON.stringify(result, null, 2);
         } else {
           const lines = [`# Plan del día${target_date ? ` (${target_date})` : ""}\n`];
           for (const m of meals) {
@@ -180,10 +186,13 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
             lines.push("");
           }
           if (notes) lines.push(`---\n${notes}`);
-          text = lines.join("\n");
+          out = lines.join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: result };
+        return widget({
+          props: { target_date: target_date ?? null, meals, notes },
+          output: text(out),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -198,7 +207,12 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
       name: "cal_how_many_meals",
       title: "How Many Meals Left in Pantry",
       description:
-        "Estimate how many complete meals the user's current pantry can produce, broken down by meal type, and which ingredient runs out first for each. Does not generate a plan.",
+        "Estimate how many complete meals the user's current pantry can produce, broken down by meal type, and which ingredient runs out first for each. Does not generate a plan. Returns a visual widget with the breakdown.",
+      widget: {
+        name: "how-many-meals",
+        invoking: "Contando lo que alcanza tu despensa…",
+        invoked: "Estimación lista",
+      },
       schema: z
         .object({
           response_format: z
@@ -234,9 +248,9 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
 
         const breakdown = (result.breakdown as Array<Record<string, any>>) ?? [];
 
-        let text: string;
+        let out: string;
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(result, null, 2);
+          out = JSON.stringify(result, null, 2);
         } else {
           const lines = [
             `# ¿Cuántas comidas te alcanzan?\n`,
@@ -247,10 +261,18 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
             lines.push(`- ${b.meal_label}: ${b.times_possible}× (limita: ${b.limiting_ingredient})`);
           }
           if (result.summary) lines.push(`\n${result.summary}`);
-          text = lines.join("\n");
+          out = lines.join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: result };
+        return widget({
+          props: {
+            total_meals: result.total_meals ?? 0,
+            days_covered: result.days_covered ?? 0,
+            breakdown,
+            summary: (result.summary as string) ?? "",
+          },
+          output: text(out),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -404,7 +426,12 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
       name: "cal_parse_pantry_message",
       title: "Parse Pantry Chat Message",
       description:
-        "Parse a free-text message about the user's pantry (e.g. 'compré 2kg de arroz y pollo', 'se me acabó el aceite') into structured items and an intent (add/consume/discard/query/unknown). PARSE-ONLY — does not write anything. After confirming the parsed items with the user, call `cal_add_pantry_items` to persist them.",
+        "Parse a free-text message about the user's pantry (e.g. 'compré 2kg de arroz y pollo', 'se me acabó el aceite') into structured items and an intent (add/consume/discard/query/unknown). PARSE-ONLY — does not write anything. Returns a visual preview widget. After confirming the parsed items with the user, call `cal_add_pantry_items` to persist them.",
+      widget: {
+        name: "pantry-parse-preview",
+        invoking: "Leyendo tu mensaje de despensa…",
+        invoked: "Items detectados",
+      },
       schema: z
         .object({
           text: z.string().min(1).max(1000).describe("The user's message about their pantry, in Spanish"),
@@ -412,7 +439,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         .strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ text }, ctx) => {
+    async ({ text: userText }, ctx) => {
       try {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
@@ -421,7 +448,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         const activeItems = await getActivePantryItems(pb, userId);
         const existingItems = activeItems.slice(0, 200).map((r) => String(r.name_normalized ?? ""));
 
-        const result = await parsePantryText({ text, existingItems });
+        const result = await parsePantryText({ text: userText, existingItems });
 
         const lines = [`# Despensa: intención detectada — \`${result.intent}\``, "", result.reply];
         if (result.items.length > 0) {
@@ -434,7 +461,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         }
         lines.push("", "_Confirma con el usuario antes de guardar. Para persistir, usa `cal_add_pantry_items`._");
 
-        return { content: [{ type: "text", text: lines.join("\n") }], structuredContent: result };
+        return widget({ props: result, output: text(lines.join("\n")) });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -449,7 +476,12 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
       name: "cal_add_pantry_items",
       title: "Add Pantry Items",
       description:
-        "Persist one or more items into the user's pantry (creates pantry_items + a matching pantry_events 'add' record for each). Use this after the user confirms items parsed by cal_parse_pantry_message or cal_scan_receipt.",
+        "Persist one or more items into the user's pantry (creates pantry_items + a matching pantry_events 'add' record for each). Use this after the user confirms items parsed by cal_parse_pantry_message or cal_scan_receipt. Returns a visual confirmation widget.",
+      widget: {
+        name: "pantry-items-added",
+        invoking: "Guardando en tu despensa…",
+        invoked: "Despensa actualizada",
+      },
       schema: z
         .object({
           items: z.array(PantryItemInputSchema).min(1).max(50),
@@ -487,7 +519,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         const curr = canonCurrency(currency) ?? "USD";
         const rate = curr !== "USD" ? (exchange_rate ?? null) : null;
 
-        const created: Array<{ id: string; name: string; quantity: number | null; unit: string | null }> = [];
+        const created: Array<{ id: string; name: string; quantity: number | null; unit: string | null; price_usd: number | null }> = [];
         const failed: Array<{ name: string; error: string }> = [];
 
         for (const it of items) {
@@ -543,6 +575,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
               name: String(rec.name ?? it.name),
               quantity: rec.quantity != null && rec.quantity !== "" ? Number(rec.quantity) : null,
               unit: (rec.unit as string) || null,
+              price_usd: priceUsd ?? null,
             });
           } catch (err) {
             failed.push({ name: it.name, error: err instanceof Error ? err.message : String(err) });
@@ -558,7 +591,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
           for (const f of failed) lines.push(`- ${f.name}: ${f.error}`);
         }
 
-        return { content: [{ type: "text", text: lines.join("\n") }], structuredContent: { created, failed } };
+        return widget({ props: { created, failed, source }, output: text(lines.join("\n")) });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -573,7 +606,12 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
       name: "cal_scan_receipt",
       title: "Scan Grocery Receipt",
       description:
-        "Parse photo(s) of a grocery receipt into pantry items with prices, store name, purchase date and currency (with exchange rate to USD if printed on the receipt). PARSE-ONLY — does not write anything. After confirming with the user, call `cal_add_pantry_items` with source 'receipt' to persist.",
+        "Parse photo(s) of a grocery receipt into pantry items with prices, store name, purchase date and currency (with exchange rate to USD if printed on the receipt). PARSE-ONLY — does not write anything. Returns a visual preview widget. After confirming with the user, call `cal_add_pantry_items` with source 'receipt' to persist.",
+      widget: {
+        name: "receipt-scan-result",
+        invoking: "Escaneando recibo…",
+        invoked: "Recibo escaneado",
+      },
       schema: z
         .object({
           images: z
@@ -634,7 +672,11 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
           '_Confirma con el usuario antes de guardar. Para persistir, usa `cal_add_pantry_items` con `source: "receipt"`._'
         );
 
-        return { content: [{ type: "text", text: lines.join("\n") }], structuredContent: result };
+        // Total de línea solo con precios reales del recibo; null si ninguno trae precio.
+        const priced = result.items.filter((it) => it.price_total != null);
+        const total = priced.length > 0 ? priced.reduce((acc, it) => acc + (it.price_total ?? 0), 0) : null;
+
+        return widget({ props: { ...result, total }, output: text(lines.join("\n")) });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -649,7 +691,12 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
       name: "cal_match_pantry_consumption",
       title: "Match Logged Food to Pantry Items",
       description:
-        "Given a list of foods just logged as eaten, match them against the user's active pantry items to propose how much of each should be consumed. READ-ONLY — propose these matches to the user, get their confirmation, then call `cal_consume_pantry_matches` to actually deduct from the pantry. NEVER call cal_consume_pantry_matches without user confirmation.",
+        "Given a list of foods just logged as eaten, match them against the user's active pantry items to propose how much of each should be consumed. READ-ONLY — shows the proposal in a widget; the user confirms there (or in chat) and only then call `cal_consume_pantry_matches` to actually deduct from the pantry. NEVER call cal_consume_pantry_matches without user confirmation.",
+      widget: {
+        name: "pantry-consumption-match",
+        invoking: "Cruzando tu comida con la despensa…",
+        invoked: "Matches propuestos",
+      },
       schema: z
         .object({
           foods: z
@@ -701,7 +748,21 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
         }
         lines.push("", "_Propón esto al usuario; solo tras su confirmación llama a `cal_consume_pantry_matches`._");
 
-        return { content: [{ type: "text", text: lines.join("\n") }], structuredContent: result };
+        // El matcher solo devuelve ids — enriquecer con nombre/unidad para que el
+        // widget muestre algo legible sin otra vuelta a PB.
+        const itemById = new Map(
+          activeItems.map((r) => [String(r.id), { name: String(r.name ?? ""), unit: (r.unit as string) || null }])
+        );
+        const matches = result.matches.map((m) => ({
+          ...m,
+          pantry_item_name: itemById.get(m.pantry_item_id)?.name ?? m.pantry_item_id,
+          pantry_item_unit: itemById.get(m.pantry_item_id)?.unit ?? null,
+        }));
+
+        return widget({
+          props: { matches, unmatched_foods: result.unmatched_foods },
+          output: text(lines.join("\n")),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -716,7 +777,12 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
       name: "cal_consume_pantry_matches",
       title: "Consume Matched Pantry Items",
       description:
-        "Deduct confirmed quantities from the user's pantry after they've confirmed matches from cal_match_pantry_consumption. Depletes items to 0 and marks them 'depleted' when they run out. Requires explicit user confirmation before calling — this mutates the pantry.",
+        "Deduct confirmed quantities from the user's pantry after they've confirmed matches from cal_match_pantry_consumption. Depletes items to 0 and marks them 'depleted' when they run out. Requires explicit user confirmation before calling — this mutates the pantry. Returns a visual result widget.",
+      widget: {
+        name: "pantry-consumed",
+        invoking: "Descontando de tu despensa…",
+        invoked: "Despensa descontada",
+      },
       schema: z
         .object({
           matches: z
@@ -805,7 +871,7 @@ export function registerPantryTools(server: MCPServer, pbUrl: string) {
           for (const f of failed) lines.push(`- \`${f.item_id}\`: ${f.error}`);
         }
 
-        return { content: [{ type: "text", text: lines.join("\n") }], structuredContent: { results, failed } };
+        return widget({ props: { results, failed }, output: text(lines.join("\n")) });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
