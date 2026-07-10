@@ -1,6 +1,76 @@
 {
-  "generated": "2026-07-03T00:00:00.000Z",
+  "generated": "2026-07-10T00:00:00.000Z",
   "versions": [
+    {
+      "version": "1.2.0",
+      "date": "2026-07-10",
+      "summary": {
+        "es": "Carreras por tiempo con ranking real y countdown en rojo, y tu sesión offline ya no te desloguea ni pierde datos.",
+        "en": "Timed races get real ranking and a red countdown, and going offline no longer logs you out or loses your data."
+      },
+      "highlights": [
+        {
+          "icon": "🏁",
+          "type": "feat",
+          "title": {
+            "es": "Ranking real en carreras por tiempo",
+            "en": "Real ranking in timed races"
+          },
+          "body": {
+            "es": "En carreras a tiempo fijo ahora se ordena por distancia recorrida, no por quién sincronizó antes. El ganador se marca como \"Recorrió más\".",
+            "en": "Timed races now rank by distance covered instead of who synced first. The winner is tagged \"Went furthest\"."
+          }
+        },
+        {
+          "icon": "🔴",
+          "type": "feat",
+          "title": {
+            "es": "Countdown final en rojo",
+            "en": "Red final countdown"
+          },
+          "body": {
+            "es": "Los últimos 10 segundos de carrera se ven en rojo con vibración y sonido en cada segundo, para que sepas exactamente cuándo apretar.",
+            "en": "The race's final 10 seconds turn red with a haptic + sound tick every second, so you know exactly when to push."
+          }
+        },
+        {
+          "icon": "📡",
+          "type": "fix",
+          "title": {
+            "es": "Sin conexión ya no te desloguea",
+            "en": "No connection no longer logs you out"
+          },
+          "body": {
+            "es": "Abrir la app sin internet mantenía tu sesión, pero por un bug te deslogueaba y podía perder entrenamientos guardados sin conexión. Arreglado: tu sesión y tus datos offline ahora sobreviven arranques sin red.",
+            "en": "Opening the app without internet used to log you out and could silently lose workouts saved while offline. Fixed — your session and offline data now survive starting up with no connection."
+          }
+        },
+        {
+          "icon": "0️⃣",
+          "type": "fix",
+          "title": {
+            "es": "El cero ahora cuenta",
+            "en": "Zero now counts"
+          },
+          "body": {
+            "es": "Poner un macro en 0g o un descanso de circuito en 0s se guardaba como valor por defecto en vez de respetar el cero que elegiste. Ya se respeta.",
+            "en": "Setting a macro to 0g or a circuit rest to 0s used to fall back to a default instead of respecting the zero you picked. Now it sticks."
+          }
+        },
+        {
+          "icon": "🔒",
+          "type": "security",
+          "title": {
+            "es": "Dependencias actualizadas",
+            "en": "Dependencies updated"
+          },
+          "body": {
+            "es": "Actualizamos el SDK de PocketBase y parcheamos una vulnerabilidad de bajo impacto en una librería interna.",
+            "en": "Updated the PocketBase SDK and patched a low-severity vulnerability in an internal library."
+          }
+        }
+      ]
+    },
     {
       "version": "1.1.0",
       "date": "2026-07-03",

@@ -9,6 +9,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.2.0] - 2026-07-10
+
+_Timed races get real ranking and a red countdown, and going offline no longer logs you out or loses your data._
+
+### Added
+
+- **Real ranking in timed races** — Timed races now rank by distance covered instead of who synced first. The winner is tagged "Went furthest".
+- **Red final countdown** — The race's final 10 seconds turn red with a haptic + sound tick every second, so you know exactly when to push.
+
+### Fixed
+
+- **No connection no longer logs you out** — Opening the app without internet used to log you out and could silently lose workouts saved while offline. Fixed — your session and offline data now survive starting up with no connection.
+- **Zero now counts** — Setting a macro to 0g or a circuit rest to 0s used to fall back to a default instead of respecting the zero you picked. Now it sticks.
+
+### Security
+
+- **Dependencies updated** — Updated the PocketBase SDK and patched a low-severity vulnerability in an internal library.
+
 ## [1.1.0] - 2026-07-03
 
 _Your weekly insights level up: history, trends, an actionable tip, and an automatic summary every Monday._
@@ -140,7 +158,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.1.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.0...HEAD
+[1.2.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.1.0...mobile-v1.2.0
 [1.1.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.9...mobile-v1.1.0
 [1.0.9]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.7...mobile-v1.0.9
 [1.0.7]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.6...mobile-v1.0.7
