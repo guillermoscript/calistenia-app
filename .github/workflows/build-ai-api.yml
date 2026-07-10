@@ -6,8 +6,6 @@ on:
     paths:
       - 'mcp-server/**'
       - '.github/workflows/build-ai-api.yml'
-    tags:
-      - "v*"
   pull_request:
     branches: [main]
     paths:

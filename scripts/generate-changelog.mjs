@@ -33,10 +33,10 @@ function getPackageVersion() {
   return pkg.version
 }
 
-/** Returns sorted tags (newest first) matching vX.Y.Z */
+/** Returns sorted tags (newest first) matching web-vX.Y.Z */
 function getTags() {
   try {
-    const raw = git('git tag -l "v*" --sort=-v:refname')
+    const raw = git('git tag -l "web-v*" --sort=-v:refname')
     return raw ? raw.split('\n').filter(Boolean) : []
   } catch {
     return []
@@ -164,7 +164,7 @@ function generateChangelog() {
       }
 
       versions.push({
-        version: tag.replace(/^v/, ''),
+        version: tag.replace(/^web-v/, ''),
         date: tagDate,
         groups: groupByType(parsed),
       })

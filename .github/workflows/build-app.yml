@@ -14,8 +14,6 @@ on:
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - '.github/workflows/build-app.yml'
-    tags:
-      - "v*"
   pull_request:
     branches: [main]
     paths:
