@@ -1,4 +1,5 @@
 import type { MCPServer } from "mcp-use/server";
+import { widget, text } from "mcp-use/server";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat } from "../utils.js";
@@ -52,7 +53,12 @@ export function registerRecipeTools(server: MCPServer, pbUrl: string) {
     {
       name: "cal_list_saved_recipes",
       title: "List Saved Recipes",
-      description: "List the user's saved favorite recipes, most recent first.",
+      description: "List the user's saved favorite recipes, most recent first. Returns a visual widget with the recipe cards.",
+      widget: {
+        name: "saved-recipes",
+        invoking: "Buscando tus recetas guardadas…",
+        invoked: "Recetas listas",
+      },
       schema: z
         .object({
           response_format: z
@@ -76,11 +82,11 @@ export function registerRecipeTools(server: MCPServer, pbUrl: string) {
         });
         const recipes = records.map(mapSavedRecipe);
 
-        let text: string;
+        let out: string;
         if (response_format === ResponseFormat.JSON) {
-          text = JSON.stringify(recipes, null, 2);
+          out = JSON.stringify(recipes, null, 2);
         } else if (recipes.length === 0) {
-          text = "No tienes recetas guardadas todavía.";
+          out = "No tienes recetas guardadas todavía.";
         } else {
           const lines = [`# Recetas guardadas (${recipes.length})`, ""];
           for (const r of recipes) {
@@ -91,10 +97,16 @@ export function registerRecipeTools(server: MCPServer, pbUrl: string) {
               `- **${r.label}** — ${r.recipe.ingredients?.length ?? 0} ingrediente(s)${servings}${prep}${used} (\`${r.id}\`)`
             );
           }
-          text = lines.join("\n");
+          out = lines.join("\n");
         }
 
-        return { content: [{ type: "text", text }], structuredContent: { count: recipes.length, recipes } };
+        return widget({
+          props: {
+            count: recipes.length,
+            recipes: recipes.map((r) => ({ id: r.id, label: r.label, recipe: r.recipe, times_used: r.times_used })),
+          },
+          output: text(out),
+        });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
