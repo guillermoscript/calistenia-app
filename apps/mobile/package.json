@@ -34,7 +34,7 @@
     "@rn-primitives/portal": "^1.4.0",
     "@rn-primitives/slot": "^1.4.0",
     "@sentry/cli": "2.58.4",
-    "@sentry/react-native": "~7.11.0",
+    "@sentry/react-native": "~8.18.0",
     "@tanstack/query-sync-storage-persister": "^5.66.0",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-query-persist-client": "^5.66.0",
