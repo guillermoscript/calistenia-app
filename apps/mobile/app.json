@@ -27,7 +27,7 @@
     "android": {
       "package": "tech.guille.calistenia",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 14,
+      "versionCode": 17,
       "intentFilters": [
         {
           "action": "VIEW",
