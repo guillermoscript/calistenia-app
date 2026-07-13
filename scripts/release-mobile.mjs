@@ -73,6 +73,11 @@ if (!input) {
   process.exit(1)
 }
 
+// Guard: un build nativo con node_modules desincronizado de package.json
+// produce AABs que crashean al abrir (incidente v17, 2026-07-14).
+console.log('Preflight: verificando deps nativas...')
+run('node scripts/preflight-mobile-release.mjs')
+
 const appJson = readAppJson()
 const oldVersion = appJson.expo.version
 const newVersion = bumpVersion(oldVersion, input)
