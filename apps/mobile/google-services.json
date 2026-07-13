@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "116463439577",
+    "project_id": "calistenia-30ab8",
+    "storage_bucket": "calistenia-30ab8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:116463439577:android:4f272f2148bb6f636178c8",
+        "android_client_info": {
+          "package_name": "tech.guille.calistenia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMchghCFAivYKH5jgXMZ_oqqHakxhmTPU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

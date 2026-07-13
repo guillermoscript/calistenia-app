@@ -70,8 +70,6 @@ secret.json
 *.pfx
 credentials.json
 service-account*.json
-google-services.json
-apps/mobile/google-services.json
 # Sentry Config File
 .env.sentry-build-plugin
 *firebase-adminsdk*.json
