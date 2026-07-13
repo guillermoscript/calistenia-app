@@ -9,7 +9,10 @@ archivo es la fuente de verdad. Comentarios y textos de UI van en **español**
 
 App Expo del monorepo (pnpm workspaces). Stack:
 
-- **Expo SDK 56**, **React Native 0.85**, **React 19**.
+- **Expo SDK 57**, **React Native 0.86**, **React 19**.
+  **Tras cualquier bump de deps nativas: `pnpm install` + build de humo antes
+  de release** — un AAB construido con node_modules desincronizado crashea al
+  abrir (ver `scripts/preflight-mobile-release.mjs`).
 - **expo-router** — rutas basadas en archivos en `src/app/`.
 - **NativeWind v4** — estilos con `className` (Tailwind). No uses `StyleSheet`
   salvo en archivos que ya lo usen.
