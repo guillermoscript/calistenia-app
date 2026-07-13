@@ -1,6 +1,116 @@
 {
-  "generated": "2026-07-10T00:00:00.000Z",
+  "generated": "2026-07-13T23:25:58.762Z",
   "versions": [
+    {
+      "version": "1.2.1",
+      "date": "2026-07-13",
+      "summary": {
+        "es": "Mejoras y correcciones de esta versión.",
+        "en": "Mejoras y correcciones de esta versión."
+      },
+      "highlights": [
+        {
+          "icon": "✨",
+          "type": "feat",
+          "title": {
+            "es": "web",
+            "en": "web"
+          },
+          "body": {
+            "es": "Página de eliminación de cuenta para Google Play",
+            "en": "Página de eliminación de cuenta para Google Play"
+          }
+        },
+        {
+          "icon": "✨",
+          "type": "feat",
+          "title": {
+            "es": "web",
+            "en": "web"
+          },
+          "body": {
+            "es": "Página de política de privacidad para Google Play",
+            "en": "Página de política de privacidad para Google Play"
+          }
+        },
+        {
+          "icon": "✨",
+          "type": "feat",
+          "title": {
+            "es": "mcp",
+            "en": "mcp"
+          },
+          "body": {
+            "es": "Widgets visuales para despensa y recetas (8 nuevos, 19 total) (#202)",
+            "en": "Widgets visuales para despensa y recetas (8 nuevos, 19 total) (#202)"
+          }
+        },
+        {
+          "icon": "✨",
+          "type": "feat",
+          "title": {
+            "es": "deps",
+            "en": "deps"
+          },
+          "body": {
+            "es": "Tailwindcss+vitest bumps in apps/web (#146 parte 3a) — Vite 8 reverted, blocked upstream (#200)",
+            "en": "Tailwindcss+vitest bumps in apps/web (#146 parte 3a) — Vite 8 reverted, blocked upstream (#200)"
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Página de eliminación de cuenta para Google Play",
+              "scope": "web",
+              "breaking": false,
+              "hash": "6aad9dc"
+            },
+            {
+              "description": "Página de política de privacidad para Google Play",
+              "scope": "web",
+              "breaking": false,
+              "hash": "777b996"
+            },
+            {
+              "description": "Widgets visuales para despensa y recetas (8 nuevos, 19 total) (#202)",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "1918a21"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Tailwindcss+vitest bumps in apps/web (#146 parte 3a) — Vite 8 reverted, blocked upstream (#200)",
+              "scope": "deps",
+              "breaking": false,
+              "hash": "d7d17ff"
+            },
+            {
+              "description": "Bump Expo SDK 56 → 57 + React Native 0.85 → 0.86 (#146 parte 3b) (#201)",
+              "scope": "deps",
+              "breaking": false,
+              "hash": "9da3b92"
+            },
+            {
+              "description": "Show the same curated bilingual message on web and mobile",
+              "scope": "whats-new",
+              "breaking": false,
+              "hash": "46aaa3a"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.2.0",
       "date": "2026-07-10",
