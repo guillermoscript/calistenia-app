@@ -80,7 +80,7 @@ Una migración por grupo (o una sola) que haga `findCollectionByNameOrId` y reas
 
 Las escrituras cruzadas no son expresables en reglas porque `session_id`/`comment_id` son texto. Se valida en `pb_hooks` (nuevo `user_blocks.pb.js` o extensión de los hooks existentes), rechazando con error 4xx si existe bloqueo en cualquier dirección entre actor y dueño del contenido:
 
-- `onRecordCreate` de `comments`: resolver dueño vía `session_id` (misma resolución que ya hace `notification_service.pb.js` para notificar al dueño; contempla los prefijos de session_id de cardio/circuit si aplican).
+- `onRecordCreate` de `comments`: resolver dueño vía `session_id` con la misma cascada try/catch que usa `notification_service.pb.js` (`sessions` → `cardio_sessions`; **no** hay convención de prefijos). Hoy esa cascada no incluye `circuit_sessions` — añadirla al helper de resolución para cubrir comentarios/reacciones sobre circuitos.
 - `onRecordCreate` de `feed_reactions`: ídem.
 - `onRecordCreate` de `comment_reactions`: dueño = `author` del comentario referenciado.
 - `onRecordCreate` de `follows`: rechazar si hay bloqueo entre `follower` y `following` en cualquier dirección (impide re-seguir a quien te bloqueó o a quien bloqueaste sin desbloquear).
@@ -100,6 +100,10 @@ En `pb_hooks/user_blocks.pb.js`. Los efectos van en hooks **pre-commit** (`onRec
 3. Borrar `notifications` existentes entre el par en ambas direcciones (`user`=A y `actor`=B, y viceversa).
 
 Si cualquier paso falla, la transacción entera se revierte: o el bloqueo queda completo (record + follows + campo espejo + notifs) o no queda nada — atomicidad real, no compensación.
+
+**Crítico para el implementador:** los tres pasos deben usar `e.app` (el app transaccional del evento) en TODAS sus lecturas/escrituras — cualquier llamada con el `$app` global escapa silenciosamente de la transacción y rompe la atomicidad.
+
+**Edge case menor (aceptado):** `blocker`/`blocked` tienen `cascadeDelete`; si PB borra en cascada las filas de `user_blocks` al eliminar un usuario sin re-disparar `onRecordDelete`, quedaría un ID huérfano en el campo oculto `blocked_users`. Impacto nulo en reglas (apunta a un user inexistente); no se mitiga.
 
 **`onRecordDelete` de `user_blocks`** (tras `e.next()`, vía `e.app`): quitar `blocked` del campo `blocked_users` del blocker, en la misma transacción. No restaura follows ni notificaciones.
 
