@@ -70,6 +70,7 @@ A `listRule` y `viewRule` de estas colecciones se les añade la cláusula doble 
 | `comment_reactions` | `reactor` | Ídem en comentarios |
 | `user_stats` | `user` | **Leaderboard gateado server-side** (lee de aquí) |
 | `challenge_participants` | `user` | Participantes de retos |
+| `challenges` | `creator` | Retos creados por el bloqueado desaparecen (título, métrica, fechas) |
 
 Una migración por grupo (o una sola) que haga `findCollectionByNameOrId` y reasigne `listRule`/`viewRule` concatenando la cláusula a la regla existente. El down restaura las reglas previas verbatim.
 
@@ -83,23 +84,26 @@ Las escrituras cruzadas no son expresables en reglas porque `session_id`/`commen
 - `onRecordCreate` de `feed_reactions`: ídem.
 - `onRecordCreate` de `comment_reactions`: dueño = `author` del comentario referenciado.
 - `onRecordCreate` de `follows`: rechazar si hay bloqueo entre `follower` y `following` en cualquier dirección (impide re-seguir a quien te bloqueó o a quien bloqueaste sin desbloquear).
+- `onRecordCreate` de `challenge_participants`: rechazar si hay bloqueo entre `user` y el `creator` del reto (`challenge` es relación → resolver el record del reto).
 
 Helper compartido `isBlocked(a, b)` (consulta `user_blocks` en ambas direcciones) en `pb_hooks/utils/` para reuso entre validación y notificaciones.
 
+**Nota para el plan:** los hooks existentes del proyecto solo usan `onRecordAfterCreateSuccess` (efectos secundarios); el rechazo pre-commit con `onRecordCreate` es un patrón **nuevo** en este codebase. El implementador debe verificar la firma exacta del JSVM de PocketBase (lanzar `BadRequestError`/throw antes de `e.next()` rechaza la creación) contra la versión de PB desplegada antes de escribir los cinco hooks.
+
 ## 4. Efectos del bloqueo (hook de dominio)
 
-En `pb_hooks/user_blocks.pb.js`:
+En `pb_hooks/user_blocks.pb.js`. Los efectos van en hooks **pre-commit** (`onRecordCreate` / `onRecordDelete`), no en `*AfterSuccess`: los hooks `AfterSuccess` de PocketBase corren cuando el record ya está persistido y la respuesta enviada, no pueden rechazar ni revertir (el propio `notification_service.pb.js` solo loguea errores ahí). En cambio, en `onRecordCreate` el código tras `e.next()` corre **dentro de la transacción de guardado** usando `e.app` — un throw revierte todo, incluida la creación del bloqueo.
 
-**`onRecordAfterCreateSuccess` de `user_blocks`:**
+**`onRecordCreate` de `user_blocks`** (tras `e.next()`, vía `e.app`):
 1. Borrar `follows` en ambas direcciones (blocker↔blocked).
 2. Añadir `blocked` al campo `blocked_users` del record del blocker (idempotente).
 3. Borrar `notifications` existentes entre el par en ambas direcciones (`user`=A y `actor`=B, y viceversa).
 
-**`onRecordAfterDeleteSuccess` de `user_blocks`:** quitar `blocked` del campo `blocked_users` del blocker. No restaura follows ni notificaciones.
+Si cualquier paso falla, la transacción entera se revierte: o el bloqueo queda completo (record + follows + campo espejo + notifs) o no queda nada — atomicidad real, no compensación.
 
-**`notification_service.pb.js`:** guard `isBlocked()` antes de `createNotification` en las notificaciones directas y filtro en `notifyFollowers`. Es cinturón extra: los follows borrados y las creaciones rechazadas ya cortan casi todo el fan-out, pero el guard cubre carreras y tipos futuros.
+**`onRecordDelete` de `user_blocks`** (tras `e.next()`, vía `e.app`): quitar `blocked` del campo `blocked_users` del blocker, en la misma transacción. No restaura follows ni notificaciones.
 
-**Consistencia:** si el paso 2 falla tras crearse el record, las reglas de lectura no aplicarían pese a existir el bloqueo. Mitigación: realizar la sincronización dentro del hook con manejo de error que borre el record de `user_blocks` y devuelva error si no se pudo sincronizar (bloqueo atómico de cara al usuario).
+**Guard de notificaciones:** `isBlocked()` se aplica **dentro de los helpers compartidos** `createNotification()` y `notifyFollowers()` en `pb_hooks/utils/notifications.js` — no en los call sites de `notification_service.pb.js` — para que todos los llamadores actuales (incluido `referral_side_effects.pb.js`, que llama a `helpers.createNotification` directamente) y futuros lo hereden. Es cinturón extra: los follows borrados y las creaciones rechazadas ya cortan casi todo el fan-out, pero el guard cubre carreras y tipos futuros.
 
 ## 5. Core (`packages/core`)
 
