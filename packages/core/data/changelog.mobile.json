@@ -1,6 +1,43 @@
 {
-  "generated": "2026-07-14T01:55:23.156Z",
+  "generated": "2026-07-14T14:02:13.330Z",
   "versions": [
+    {
+      "version": "1.3.1",
+      "date": "2026-07-14",
+      "summary": {
+        "es": "Mejoras y correcciones de esta versión.",
+        "en": "Mejoras y correcciones de esta versión."
+      },
+      "highlights": [
+        {
+          "icon": "✨",
+          "type": "feat",
+          "title": {
+            "es": "mobile",
+            "en": "mobile"
+          },
+          "body": {
+            "es": "Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado",
+            "en": "Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado"
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "b720b14"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.3.0",
       "date": "2026-07-14",

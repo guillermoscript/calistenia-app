@@ -9,6 +9,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.3.1] - 2026-07-14
+
+_Mejoras y correcciones de esta versión._
+
+### Added
+
+- **mobile** — Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado
+
 ## [1.3.0] - 2026-07-14
 
 _You can now block users: their activity disappears for you across the whole app._
@@ -179,7 +187,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.1...HEAD
+[1.3.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.0...mobile-v1.3.1
 [1.3.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.1...mobile-v1.3.0
 [1.2.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.0...mobile-v1.2.1
 [1.2.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.1.0...mobile-v1.2.0
