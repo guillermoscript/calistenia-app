@@ -11,11 +11,11 @@ _Nothing yet._
 
 ## [1.3.1] - 2026-07-14
 
-_Mejoras y correcciones de esta versión._
+_Blocking users is now clearer and faster from the profile._
 
 ### Added
 
-- **mobile** — Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado
+- **Block redesigned** — New ⋯ menu on profiles to block, and a clear notice with an unblock button when a user is blocked.
 
 ## [1.3.0] - 2026-07-14
 

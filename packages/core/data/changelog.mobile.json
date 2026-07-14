@@ -5,36 +5,21 @@
       "version": "1.3.1",
       "date": "2026-07-14",
       "summary": {
-        "es": "Mejoras y correcciones de esta versión.",
-        "en": "Mejoras y correcciones de esta versión."
+        "es": "Bloquear usuarios ahora es más claro y rápido desde el perfil.",
+        "en": "Blocking users is now clearer and faster from the profile."
       },
       "highlights": [
         {
-          "icon": "✨",
+          "icon": "🚫",
           "type": "feat",
           "title": {
-            "es": "mobile",
-            "en": "mobile"
+            "es": "Bloqueo rediseñado",
+            "en": "Block redesigned"
           },
           "body": {
-            "es": "Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado",
-            "en": "Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado"
+            "es": "Nuevo menú ⋯ en el perfil para bloquear, y un aviso claro con botón para desbloquear cuando un usuario está bloqueado.",
+            "en": "New ⋯ menu on profiles to block, and a clear notice with an unblock button when a user is blocked."
           }
-        }
-      ],
-      "groups": [
-        {
-          "label": "Nuevas funciones",
-          "emoji": "✨",
-          "type": "feat",
-          "items": [
-            {
-              "description": "Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado",
-              "scope": "mobile",
-              "breaking": false,
-              "hash": "b720b14"
-            }
-          ]
         }
       ]
     },

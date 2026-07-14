@@ -11,11 +11,11 @@ _Nada por ahora._
 
 ## [1.3.1] - 2026-07-14
 
-_Mejoras y correcciones de esta versión._
+_Bloquear usuarios ahora es más claro y rápido desde el perfil._
 
 ### Añadido
 
-- **mobile** — Rediseño UI de bloqueo — menú ⋯ en perfil, variant danger, banner bloqueado
+- **Bloqueo rediseñado** — Nuevo menú ⋯ en el perfil para bloquear, y un aviso claro con botón para desbloquear cuando un usuario está bloqueado.
 
 ## [1.3.0] - 2026-07-14
 
