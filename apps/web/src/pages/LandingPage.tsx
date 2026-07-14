@@ -1,538 +1,76 @@
-import { useState, useEffect, useId, useRef, useCallback, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ArrowRight, Check, ChevronRight, Dumbbell, ShoppingBasket, Sparkles, TrendingUp } from 'lucide-react'
 import { op } from '@calistenia/core/lib/analytics'
 
-interface LandingPageProps {
-  onGetStarted: () => void
-}
+interface LandingPageProps { onGetStarted: () => void }
 
-/* ── Scroll reveal hook ──────────────────────────────────────── */
-function useReveal(threshold = 0.15) {
+function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } },
-      { threshold }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [threshold])
-  return { ref, visible }
+    const node = ref.current
+    if (!node) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVisible(true); observer.disconnect() }
+    }, { threshold: 0.14 })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+  return <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(18px)', transition: `opacity 700ms cubic-bezier(.16,1,.3,1) ${delay}ms, transform 700ms cubic-bezier(.16,1,.3,1) ${delay}ms` }}>{children}</div>
 }
 
-function Reveal({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
-  const { ref, visible } = useReveal(0.1)
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'none' : 'translateY(20px)',
-        transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-      }}
-    >
-      {children}
-    </div>
-  )
+function Eyebrow({ children }: { children: ReactNode }) {
+  return <p className="text-[11px] font-medium uppercase tracking-[.24em] text-lime">{children}</p>
 }
 
-/* ── Stagger for hero ────────────────────────────────────────── */
-function useStagger(count: number, baseDelay = 100) {
-  const [visible, setVisible] = useState<boolean[]>(Array(count).fill(false))
-  useEffect(() => {
-    const timers = Array.from({ length: count }, (_, i) =>
-      setTimeout(() => setVisible(v => { const next = [...v]; next[i] = true; return next }), baseDelay * (i + 1))
-    )
-    return () => timers.forEach(clearTimeout)
-  }, [count, baseDelay])
-  return visible
+function AndroidButton({ className = '' }: { className?: string }) {
+  const { t } = useTranslation()
+  return <Link to="/download" onClick={() => op.track('cta_clicked', { location: className || 'landing', intent: 'android_download' })} className={`group inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-lime px-5 py-3 text-sm font-bold text-[hsl(0_0%_5%)] transition hover:brightness-110 active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_3%)] ${className}`}>
+    {t('landing.androidCta')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+  </Link>
 }
 
-const ease = 'cubic-bezier(0.16,1,0.3,1)'
-function staggerStyle(visible: boolean, translateY = 8, duration = 0.6) {
-  return {
-    opacity: visible ? 1 : 0,
-    transform: visible ? 'none' : `translateY(${translateY}px)`,
-    transition: `opacity ${duration}s ${ease}, transform ${duration}s ${ease}`,
-  } as const
+function WebButton({ onGetStarted, className = '' }: { onGetStarted: () => void; className?: string }) {
+  const { t } = useTranslation()
+  return <button onClick={() => { op.track('cta_clicked', { location: className || 'landing', intent: 'web_start' }); onGetStarted() }} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/55 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${className}`}>
+    {t('landing.webCta')} <ChevronRight className="h-4 w-4" />
+  </button>
 }
 
-/* ── Mini UI mockup components ───────────────────────────────── */
-function MockWorkoutCard() {
-  const { ref, visible } = useReveal(0.3)
-  return (
-    <div ref={ref} className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-5 w-full max-w-sm">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)]">Día 1 — Push</span>
-        <span className="text-xs text-lime font-medium">Fase 2</span>
-      </div>
-      {[
-        { name: 'Diamond Push-ups', sets: '4×12', done: true },
-        { name: 'Parallel Bar Dips', sets: '3×10', done: true },
-        { name: 'Pike Push-ups', sets: '3×8', done: false },
-      ].map((ex, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-3 py-2.5 border-b border-[hsl(0_0%_10%)] last:border-0"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'none' : 'translateX(-8px)',
-            transition: `opacity 0.5s cubic-bezier(0.16,1,0.3,1) ${200 + i * 150}ms, transform 0.5s cubic-bezier(0.16,1,0.3,1) ${200 + i * 150}ms`,
-          }}
-        >
-          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${ex.done ? 'border-lime bg-lime/20' : 'border-[hsl(0_0%_25%)]'
-            }`}>
-            {ex.done && (
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 16 16"
-                fill="none"
-                style={{
-                  strokeDasharray: 20,
-                  strokeDashoffset: visible ? 0 : 20,
-                  transition: `stroke-dashoffset 0.4s ease ${400 + i * 150}ms`,
-                }}
-              >
-                <path d="M3 8l4 4 6-7" stroke="hsl(74 90% 57%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-[hsl(0_0%_90%)] truncate">{ex.name}</p>
-          </div>
-          <span className="text-xs text-[hsl(0_0%_50%)] tabular-nums">{ex.sets}</span>
-        </div>
-      ))}
-    </div>
-  )
+function ProductPanel({ type }: { type: 'session' | 'pantry' | 'progress' }) {
+  const { t } = useTranslation()
+  if (type === 'session') return <div className="w-full max-w-sm border border-white/10 bg-[hsl(0_0%_6%)] p-5 shadow-2xl shadow-black/40">
+    <div className="flex items-center justify-between border-b border-white/10 pb-4"><div><p className="text-[10px] uppercase tracking-[.18em] text-white/45">{t('landing.mockToday')}</p><p className="mt-1 font-bebas text-2xl tracking-wide">{t('landing.mockSession')}</p></div><span className="text-xs text-lime">01 / 03</span></div>
+    {[['Incline push-ups', '3 × 8', true], ['Bodyweight row', '3 × 8', false], ['Squat', '3 × 12', false]].map(([name, sets, done]) => <div key={String(name)} className="flex items-center gap-3 border-b border-white/5 py-4 last:border-0"><span className={`flex h-5 w-5 items-center justify-center rounded-full border ${done ? 'border-lime bg-lime text-black' : 'border-white/25'}`}>{done ? <Check className="h-3 w-3" /> : null}</span><span className="flex-1 text-sm text-white/85">{name}</span><span className="font-mono text-xs text-white/45">{sets}</span></div>)}</div>
+  if (type === 'pantry') return <div className="w-full max-w-sm border border-white/10 bg-[hsl(0_0%_6%)] p-5 shadow-2xl shadow-black/40">
+    <div className="flex items-center gap-3 border-b border-white/10 pb-4"><span className="grid h-9 w-9 place-items-center rounded-full bg-lime/15 text-lime"><ShoppingBasket className="h-4 w-4" /></span><div><p className="font-bebas text-xl tracking-wide">{t('landing.mockPantry')}</p><p className="text-xs text-white/45">{t('landing.mockPantrySub')}</p></div></div>
+    <div className="space-y-3 py-5">{[['Avena', '4 porciones'], ['Huevos', '6 unidades'], ['Banano', '3 unidades']].map(([food, amount]) => <div key={food} className="flex items-center justify-between text-sm"><span>{food}</span><span className="text-white/45">{amount}</span></div>)}</div>
+    <div className="border-t border-white/10 pt-4"><p className="text-xs text-lime">{t('landing.mockRecipe')}</p><p className="mt-1 font-bebas text-xl tracking-wide">Avena con banano</p></div></div>
+  return <div className="w-full max-w-sm border border-white/10 bg-[hsl(0_0%_6%)] p-5 shadow-2xl shadow-black/40"><div className="flex items-start justify-between"><div><p className="text-[10px] uppercase tracking-[.18em] text-white/45">{t('landing.mockWeek')}</p><p className="mt-1 font-bebas text-2xl tracking-wide">{t('landing.mockProgress')}</p></div><TrendingUp className="h-5 w-5 text-lime" /></div><svg viewBox="0 0 260 90" className="mt-7 w-full overflow-visible"><path d="M0 75 C28 68 37 75 58 57 S87 68 108 46 S143 55 161 32 S202 41 260 10" fill="none" stroke="hsl(74 90% 57%)" strokeWidth="2" /><circle cx="260" cy="10" r="4" fill="hsl(74 90% 57%)" /></svg><div className="mt-4 flex justify-between border-t border-white/10 pt-4 text-xs text-white/45"><span>{t('landing.mockWorkouts')}</span><span className="text-lime">3 / 3</span></div></div>
 }
 
-function MockProgressChart() {
-  const gradId = useId()
-  const { ref, visible } = useReveal(0.3)
-  const points = [68, 67.5, 67.8, 67.2, 66.5, 66.8, 66.1, 65.5, 65.2, 65.8, 65.0, 64.5]
-  const maxVal = Math.max(...points)
-  const minVal = Math.min(...points)
-  const range = maxVal - minVal || 1
-  const w = 280
-  const h = 100
-  const pad = 8
-  const pathData = points
-    .map((p, i) => {
-      const x = pad + (i / (points.length - 1)) * (w - 2 * pad)
-      const y = pad + (1 - (p - minVal) / range) * (h - 2 * pad)
-      return `${i === 0 ? 'M' : 'L'}${x},${y}`
-    })
-    .join(' ')
-
-  const pathLength = 350
-
-  return (
-    <div ref={ref} className="bg-[hsl(0_0%_6%)] border border-[hsl(0_0%_12%)] rounded-xl p-5 w-full max-w-sm">
-      <div className="flex items-baseline justify-between mb-1">
-        <span className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)]">Peso corporal</span>
-        <span className="text-2xl font-bebas tracking-wide text-[hsl(0_0%_95%)]">64.5 <span className="text-sm text-[hsl(0_0%_50%)]">kg</span></span>
-      </div>
-      <span className="text-xs text-lime">-3.5 kg en 12 semanas</span>
-      <svg viewBox={`0 0 ${w} ${h}`} className="mt-4 w-full" style={{ height: 100 }}>
-        <defs>
-          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(74 90% 57%)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="hsl(74 90% 57%)" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path
-          d={`${pathData} L${w - pad},${h - pad} L${pad},${h - pad} Z`}
-          fill={`url(#${gradId})`}
-          style={{ opacity: visible ? 1 : 0, transition: 'opacity 1s ease 0.8s' }}
-        />
-        <path
-          d={pathData}
-          fill="none"
-          stroke="hsl(74 90% 57%)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeDasharray={pathLength}
-          strokeDashoffset={visible ? 0 : pathLength}
-          style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)' }}
-        />
-        <circle
-          cx={w - pad}
-          cy={pad + (1 - (points[points.length - 1] - minVal) / range) * (h - 2 * pad)}
-          r="4"
-          fill="hsl(74 90% 57%)"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'scale(1)' : 'scale(0)',
-            transformOrigin: 'center',
-            transformBox: 'fill-box',
-            transition: 'opacity 0.3s ease 1.1s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 1.1s',
-          }}
-        />
-      </svg>
-    </div>
-  )
-}
-
-/* ── Section label ───────────────────────────────────────────── */
-function SectionTag({ children }: { children: string }) {
-  return (
-    <span className="inline-block text-[11px] uppercase tracking-[0.25em] text-lime font-medium border border-lime/25 rounded-full px-3 py-1">
-      {children}
-    </span>
-  )
-}
-
-/* ── Animated stat counter ────────────────────────────────────── */
-function useCountUp(target: number, duration = 1200) {
-  const [count, setCount] = useState(0)
-  const [started, setStarted] = useState(false)
-  const start = useCallback(() => setStarted(true), [])
-
-  useEffect(() => {
-    if (!started) return
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReduced) { setCount(target); return }
-
-    const steps = 40
-    const increment = target / steps
-    const interval = duration / steps
-    let current = 0
-    const timer = setInterval(() => {
-      current += increment
-      if (current >= target) { setCount(target); clearInterval(timer) }
-      else setCount(Math.floor(current))
-    }, interval)
-    return () => clearInterval(timer)
-  }, [started, target, duration])
-
-  return { count, start }
-}
-
-function Stat({ value, label, numeric }: { value: string; label: string; numeric?: number }) {
-  const { ref, visible } = useReveal(0.2)
-  const { count, start } = useCountUp(numeric ?? 0)
-
-  useEffect(() => { if (visible) start() }, [visible, start])
-
-  const display = numeric != null ? `${count}${value.replace(/\d+/, '')}` : value
-
-  return (
-    <div ref={ref}>
-      <p className="font-bebas text-[clamp(2.5rem,5vw,4rem)] leading-none tracking-tight">{display}</p>
-      <p className="text-sm text-muted-foreground mt-1">{label}</p>
-    </div>
-  )
-}
-
-/* ── Feature card for compact grid ───────────────────────────── */
-function FeatureCard({ icon, title, desc }: { icon: ReactNode; title: string; desc: string }) {
-  return (
-    <div className="group bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_10%)] rounded-xl p-5 transition-all duration-300 hover:-translate-y-1 hover:border-lime/20 hover:shadow-[0_4px_24px_rgba(74,205,61,0.06)]">
-      <div className="text-lime mb-3 opacity-70 group-hover:opacity-100 transition-opacity duration-300">{icon}</div>
-      <h3 className="font-bebas text-lg tracking-wide text-[hsl(0_0%_90%)]">{title}</h3>
-      <p className="mt-1.5 text-sm text-[hsl(0_0%_55%)] leading-relaxed">{desc}</p>
-    </div>
-  )
-}
-
-/* ── Main landing page ───────────────────────────────────────── */
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const { t } = useTranslation()
-  const vis = useStagger(4, 120)
-
-  const handleCTA = (location: string) => {
-    op.track('cta_clicked', { location })
-    onGetStarted()
-  }
-
-  return (
-    <div className="min-h-screen bg-[hsl(0_0%_2%)] text-[hsl(0_0%_92%)] selection:bg-lime/20 overflow-x-hidden">
-      {/* ── Nav ─────────────────────────────────── */}
-      <nav aria-label="Principal" className="flex items-center justify-between px-6 md:px-10 py-6 max-w-6xl mx-auto">
-        <div className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="" className="w-8 h-8 rounded-lg" />
-          <span className="font-bebas text-2xl tracking-[0.15em] text-[hsl(0_0%_95%)]">CALISTENIA</span>
-        </div>
-        <button
-          onClick={() => handleCTA('nav')}
-          className="text-sm text-[hsl(0_0%_55%)] hover:text-[hsl(0_0%_90%)] transition-colors duration-200 px-3 py-2 -mr-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
-        >
-          {t('landing.enter')}
-        </button>
-      </nav>
-
-      <main>
-        {/* ── Hero ────────────────────────────────── */}
-        <section className="relative px-6 md:px-10 pt-12 sm:pt-20 pb-16 sm:pb-28 max-w-6xl mx-auto overflow-hidden">
-          {/* Decorative grid overlay */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: `linear-gradient(hsl(74 90% 57% / 0.04) 1px, transparent 1px),
-                                linear-gradient(90deg, hsl(74 90% 57% / 0.04) 1px, transparent 1px)`,
-              backgroundSize: '48px 48px',
-              maskImage: 'radial-gradient(ellipse 80% 60% at 70% 50%, black 30%, transparent 80%)',
-              pointerEvents: 'none',
-            }}
-          />
-
-          <div className="relative grid lg:grid-cols-2 gap-0 lg:gap-0 items-center">
-            {/* ── Logo (mobile: above text, desktop: right column) ── */}
-            <div
-              className="order-first lg:order-last flex items-center justify-center lg:justify-end"
-              aria-hidden="true"
-              style={{
-                opacity: vis[0] ? 1 : 0,
-                transition: `opacity 0.9s ${ease} 80ms`,
-              }}
-            >
-              <img
-                src="/logo-bg-less.png"
-                alt="Calistenia athlete logo"
-                className="w-[200px] h-[200px] sm:w-[260px] sm:h-[260px] lg:w-[clamp(280px,40vw,480px)] lg:h-[clamp(280px,40vw,480px)]"
-                style={{ objectFit: 'contain' }}
-              />
-            </div>
-
-            {/* ── Text column ── */}
-            <div className="order-last lg:order-first flex flex-col justify-center lg:pr-12 z-10 pb-10 lg:pb-0">
-              <p
-                className="text-sm uppercase tracking-[0.3em] text-lime mb-6"
-                style={staggerStyle(vis[0])}
-              >
-                {t('landing.tagline')}
-              </p>
-
-              <h1
-                className="font-bebas text-[clamp(3.5rem,9vw,7.5rem)] leading-[0.88] tracking-tight"
-                style={staggerStyle(vis[1], 16, 0.7)}
-              >
-                {t('landing.heroTitle1')}{' '}
-                <br className="sm:hidden" />
-                {t('landing.heroTitle2')}
-                <br />
-                <span className="text-lime">{t('landing.heroTitle3')}</span>
-              </h1>
-
-              <p
-                className="mt-8 text-lg sm:text-xl text-[hsl(0_0%_62%)] max-w-md leading-relaxed"
-                style={staggerStyle(vis[2])}
-              >
-                {t('landing.heroDesc')}
-              </p>
-
-              <div className="mt-10 flex flex-wrap items-center gap-4" style={staggerStyle(vis[3])}>
-                <button
-                  onClick={() => handleCTA('hero')}
-                  className="group/cta w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-lime text-[hsl(0_0%_5%)] font-semibold text-sm px-7 py-3.5 rounded-lg hover:brightness-110 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
-                >
-                  {t('landing.startFree')}
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="transition-transform duration-200 group-hover/cta:translate-x-0.5">
-                    <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                <span className="text-xs text-[hsl(0_0%_50%)] w-full sm:w-auto text-center sm:text-left">
-                  {t('landing.earlyAccess')}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Stats bar ───────────────────────────── */}
-        <Reveal>
-          <div className="border-y border-[hsl(0_0%_10%)]">
-            <div className="max-w-6xl mx-auto px-6 md:px-10 py-12 grid grid-cols-3 gap-8">
-              <Stat value="150+" label={t('landing.statsExercises')} numeric={150} />
-              <Stat value="4" label={t('landing.statsPhases')} numeric={4} />
-              <Stat value="100%" label={t('landing.statsPWA')} numeric={100} />
-            </div>
-          </div>
-        </Reveal>
-
-        {/* ── Hero feature: Training ─────────────── */}
-        <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
-            <Reveal>
-              <div>
-                <SectionTag>{t('landing.training')}</SectionTag>
-                <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
-                  {t('landing.trainingTitle')}
-                </h2>
-                <p className="mt-5 text-[hsl(0_0%_55%)] leading-relaxed max-w-md">
-                  {t('landing.trainingDesc')}
-                </p>
-                <ul className="mt-6 space-y-2.5">
-                  {[
-                    t('landing.trainingFeature1'),
-                    t('landing.trainingFeature2'),
-                    t('landing.trainingFeature3'),
-                    t('landing.trainingFeature4'),
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 text-sm text-[hsl(0_0%_65%)]">
-                      <svg className="w-4 h-4 text-lime mt-0.5 shrink-0" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Reveal>
-            <Reveal delay={150}>
-              <div className="flex justify-center lg:justify-end" aria-hidden="true">
-                <MockWorkoutCard />
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* ── Analytics highlight with chart ──────── */}
-        <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
-          <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
-            <Reveal delay={150} className="order-2 lg:order-1">
-              <div className="flex justify-center lg:justify-start" aria-hidden="true">
-                <MockProgressChart />
-              </div>
-            </Reveal>
-            <Reveal className="order-1 lg:order-2">
-              <div>
-                <SectionTag>{t('landing.analytics')}</SectionTag>
-                <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
-                  {t('landing.analyticsTitle')}
-                </h2>
-                <p className="mt-5 text-[hsl(0_0%_55%)] leading-relaxed max-w-md">
-                  {t('landing.analyticsDesc')}
-                </p>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* ── Features grid (compact) ──────────────── */}
-        <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
-          <Reveal>
-            <SectionTag>{t('landing.more')}</SectionTag>
-            <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5 mb-14">
-              {t('landing.moreTitle')}
-            </h2>
-          </Reveal>
-          <Reveal>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {([
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><path d="M12 2C8 2 6 5 6 8c0 2 1 3.5 2 4.5S10 15 10 17h4c0-2 0-3.5 2-4.5S18 10 18 8c0-3-2-6-6-6z" strokeLinecap="round" strokeLinejoin="round" /><path d="M10 21h4M10 17v1a2 2 0 002 2 2 2 0 002-2v-1" strokeLinecap="round" /></svg>, key: 'Nutrition', title: t('landing.featureNutrition'), desc: t('landing.featureNutritionDesc') },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinecap="round" strokeLinejoin="round" /></svg>, key: 'Cardio', title: t('landing.featureCardio'), desc: t('landing.featureCardioDesc') },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" strokeLinejoin="round" /></svg>, key: 'Social', title: t('landing.featureSocial'), desc: t('landing.featureSocialDesc') },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" /></svg>, key: 'Consistency', title: t('landing.featureConsistency'), desc: t('landing.featureConsistencyDesc') },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><path d="M2 8.82a15 15 0 0120 0M5 12.86a10 10 0 0114 0M8.5 16.9a5 5 0 017 0" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 20h.01" strokeLinecap="round" /></svg>, key: 'Offline', title: t('landing.featureOffline'), desc: t('landing.featureOfflineDesc') },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5"><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg>, key: 'FreeSessions', title: t('landing.featureFreeSessions'), desc: t('landing.featureFreeSessionsDesc') },
-              ] as const).map((f) => (
-                <FeatureCard key={f.key} icon={f.icon} title={f.title} desc={f.desc} />
-              ))}
-            </div>
-          </Reveal>
-        </section>
-
-        {/* ── Install / How to use ───────────────── */}
-        <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 sm:py-24 lg:py-32 border-t border-[hsl(0_0%_8%)]">
-          <Reveal>
-            <div className="max-w-2xl mx-auto text-center">
-              <SectionTag>{t('landing.install')}</SectionTag>
-              <h2 className="font-bebas text-[clamp(2rem,5vw,3.5rem)] leading-[0.92] tracking-tight mt-5">
-                {t('landing.installTitle')}
-              </h2>
-              <p className="mt-5 text-[hsl(0_0%_55%)] leading-relaxed">
-                {t('landing.installDesc')}
-              </p>
-            </div>
-          </Reveal>
-          <Reveal>
-            <div className="mt-12 grid sm:grid-cols-3 gap-6 mx-auto">
-              {[
-                { step: '1', title: t('landing.installStep1'), desc: t('landing.installStep1Desc') },
-                { step: '2', title: t('landing.installStep2'), desc: t('landing.installStep2Desc') },
-                { step: '3', title: t('landing.installStep3'), desc: t('landing.installStep3Desc') },
-              ].map((s) => (
-                <div key={s.step} className="text-center">
-                  <div className="w-8 h-8 rounded-full bg-lime/15 text-lime font-bebas text-lg flex items-center justify-center mx-auto mb-3">
-                    {s.step}
-                  </div>
-                  <h3 className="font-bebas text-base tracking-wide text-[hsl(0_0%_90%)]">{s.title}</h3>
-                  <p className="mt-1.5 text-sm text-[hsl(0_0%_50%)] leading-relaxed">{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-        </section>
-
-        {/* ── Bottom CTA ──────────────────────────── */}
-        <section className="border-t border-[hsl(0_0%_8%)]">
-          <div className="max-w-6xl mx-auto px-6 md:px-10 py-20 sm:py-28 lg:py-36">
-            <Reveal>
-              <div className="max-w-2xl">
-                <h2 className="font-bebas text-[clamp(2.5rem,7vw,5rem)] leading-[0.88] tracking-tight">
-                  {t('landing.ctaTitle')}
-                </h2>
-                <p className="mt-6 text-[hsl(0_0%_55%)] text-lg max-w-md leading-relaxed">
-                  {t('landing.ctaDesc')}
-                </p>
-                <div className="mt-10 flex flex-wrap items-center gap-4">
-                  <button
-                    onClick={() => handleCTA('bottom')}
-                    className="group/cta w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-lime text-[hsl(0_0%_5%)] font-semibold text-sm px-8 py-4 rounded-lg hover:brightness-110 active:scale-[0.97] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(0_0%_2%)]"
-                  >
-                    {t('landing.createFreeAccount')}
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                      <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-      </main>
-      {/* ── Footer ──────────────────────────────── */}
-      <footer className="border-t border-[hsl(0_0%_8%)] px-6 md:px-10 py-10 max-w-6xl mx-auto">
-        <div className="grid sm:grid-cols-3 gap-8">
-          {/* Brand */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <img src="/logo.png" alt="" className="w-6 h-6 rounded" />
-              <span className="font-bebas text-sm tracking-[0.2em] text-[hsl(0_0%_70%)]">CALISTENIA</span>
-            </div>
-            <p className="text-xs text-[hsl(0_0%_45%)] leading-relaxed max-w-xs">
-              {t('landing.footerAbout')}
-            </p>
-          </div>
-          {/* Links */}
-          <div>
-            <h4 className="font-bebas text-sm tracking-[0.15em] text-[hsl(0_0%_60%)] mb-3">{t('landing.footerLinksTitle')}</h4>
-            <ul className="space-y-2 text-sm text-[hsl(0_0%_45%)]">
-              <li><Link to="/legal#privacy" className="hover:text-[hsl(0_0%_70%)] transition-colors">{t('landing.privacy')}</Link></li>
-              <li><Link to="/legal#terms" className="hover:text-[hsl(0_0%_70%)] transition-colors">{t('landing.terms')}</Link></li>
-            </ul>
-          </div>
-          {/* Built by */}
-          <div>
-            <h4 className="font-bebas text-sm tracking-[0.15em] text-[hsl(0_0%_60%)] mb-3">{t('landing.footerBuiltTitle')}</h4>
-            <p className="text-xs text-[hsl(0_0%_45%)] leading-relaxed">
-              {t('landing.footerBuiltDesc')}
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  )
+  const [active, setActive] = useState(0)
+  const features = [t('landing.beyond1'), t('landing.beyond2'), t('landing.beyond3'), t('landing.beyond4'), t('landing.beyond5'), t('landing.beyond6')]
+  return <div className="min-h-screen overflow-x-hidden bg-[hsl(0_0%_3%)] text-white selection:bg-lime/30">
+    <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-6 md:px-10"><div className="flex items-center gap-2.5"><img src="/logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="font-bebas text-2xl tracking-[.15em]">CALISTENIA</span></div><WebButton onGetStarted={onGetStarted} className="!min-h-0 !border-0 !px-2 !py-2 text-white/65 hover:text-white" /></header>
+    <main>
+      <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden bg-[radial-gradient(ellipse_at_78%_22%,hsl(74_90%_57%_/_0.2),transparent_35%),radial-gradient(ellipse_at_78%_70%,hsl(0_0%_18%),transparent_38%),hsl(0_0%_3%)] px-6 pb-16 pt-32 md:px-10 md:pb-20">
+        <div aria-hidden="true" className="absolute inset-0 opacity-40 [background-image:linear-gradient(hsl(0_0%_100%_/_0.045)_1px,transparent_1px),linear-gradient(90deg,hsl(0_0%_100%_/_0.045)_1px,transparent_1px)] [background-size:52px_52px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
+        <div aria-hidden="true" className="absolute bottom-[-15vw] right-[-4vw] h-[min(67vw,680px)] w-[min(67vw,680px)] rounded-full border border-lime/25 bg-[radial-gradient(circle_at_40%_40%,hsl(74_90%_57%_/_0.25),transparent_45%)]" />
+        <div className="relative mx-auto grid w-full max-w-6xl items-end gap-10 lg:grid-cols-[1fr_.75fr]"><div className="max-w-2xl"><Eyebrow>{t('landing.kicker')}</Eyebrow><h1 className="mt-5 font-bebas text-[clamp(4.2rem,11vw,9rem)] leading-[.82] tracking-tight">{t('landing.heroTitle1')}<br /><span className="text-lime">{t('landing.heroTitle2')}</span></h1><p className="mt-8 max-w-lg text-lg leading-relaxed text-white/68 sm:text-xl">{t('landing.heroDesc')}</p><div className="mt-10 flex flex-col gap-3 sm:flex-row"><AndroidButton className="hero-android" /><WebButton onGetStarted={onGetStarted} className="hero-web" /></div></div><div className="hidden lg:block"><p className="max-w-xs border-l border-lime pl-5 text-sm leading-relaxed text-white/65">{t('landing.heroProof')}</p></div></div>
+      </section>
+      <section className="border-y border-white/10"><Reveal className="mx-auto max-w-6xl px-6 py-16 md:px-10 md:py-20"><Eyebrow>{t('landing.startEyebrow')}</Eyebrow><div className="mt-5 grid gap-10 lg:grid-cols-[.72fr_1fr]"><h2 className="font-bebas text-5xl leading-[.88] tracking-tight sm:text-6xl">{t('landing.startTitle')}</h2><div className="grid gap-6 sm:grid-cols-3">{[t('landing.step1'), t('landing.step2'), t('landing.step3')].map((step, i) => <div key={step} className="border-t border-white/20 pt-4"><span className="font-mono text-xs text-lime">0{i + 1}</span><p className="mt-5 text-base leading-snug text-white/80">{step}</p></div>)}</div></div></Reveal></section>
+      <section className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-36"><Reveal><Eyebrow>{t('landing.trainingEyebrow')}</Eyebrow><h2 className="mt-5 max-w-md font-bebas text-5xl leading-[.88] tracking-tight sm:text-6xl">{t('landing.trainingTitle')}</h2><p className="mt-6 max-w-md text-base leading-relaxed text-white/60">{t('landing.trainingDesc')}</p><p className="mt-8 flex items-center gap-2 text-sm text-lime"><Dumbbell className="h-4 w-4" />{t('landing.trainingProof')}</p></Reveal><Reveal delay={120} className="flex justify-center lg:justify-end"><ProductPanel type="session" /></Reveal></section>
+      <section className="border-y border-white/10 bg-white/[.025]"><div className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-36"><Reveal className="order-2 flex justify-center lg:order-1 lg:justify-start"><ProductPanel type="pantry" /></Reveal><Reveal className="order-1 lg:order-2"><Eyebrow>{t('landing.foodEyebrow')}</Eyebrow><h2 className="mt-5 max-w-md font-bebas text-5xl leading-[.88] tracking-tight sm:text-6xl">{t('landing.foodTitle')}</h2><p className="mt-6 max-w-md text-base leading-relaxed text-white/60">{t('landing.foodDesc')}</p><p className="mt-8 flex items-center gap-2 text-sm text-lime"><Sparkles className="h-4 w-4" />{t('landing.foodProof')}</p></Reveal></div></section>
+      <section className="mx-auto grid max-w-6xl items-center gap-14 px-6 py-24 md:px-10 lg:grid-cols-2 lg:py-36"><Reveal><Eyebrow>{t('landing.progressEyebrow')}</Eyebrow><h2 className="mt-5 max-w-md font-bebas text-5xl leading-[.88] tracking-tight sm:text-6xl">{t('landing.progressTitle')}</h2><p className="mt-6 max-w-md text-base leading-relaxed text-white/60">{t('landing.progressDesc')}</p></Reveal><Reveal delay={120} className="flex justify-center lg:justify-end"><ProductPanel type="progress" /></Reveal></section>
+      <section className="border-t border-white/10"><div className="mx-auto grid max-w-6xl gap-10 px-6 py-24 md:px-10 lg:grid-cols-[.7fr_1fr] lg:py-36"><Reveal><Eyebrow>{t('landing.beyondEyebrow')}</Eyebrow><h2 className="mt-5 font-bebas text-5xl leading-[.88] tracking-tight sm:text-6xl">{t('landing.beyondTitle')}</h2></Reveal><Reveal delay={90}><div className="border-t border-white/15">{features.map((feature, index) => <button key={feature} onMouseEnter={() => setActive(index)} onFocus={() => setActive(index)} onClick={() => setActive(index)} className={`flex w-full items-center justify-between border-b border-white/15 py-4 text-left text-lg transition sm:text-xl ${active === index ? 'text-lime' : 'text-white/45 hover:text-white/85'}`}><span>{feature}</span><span className={`font-mono text-xs ${active === index ? 'opacity-100' : 'opacity-0'}`}>0{index + 1}</span></button>)}</div></Reveal></div></section>
+      <section className="border-y border-white/10 bg-lime px-6 py-20 text-[hsl(0_0%_5%)] md:px-10 md:py-28"><Reveal className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_auto] lg:items-end"><div><Eyebrow>{t('landing.platformEyebrow')}</Eyebrow><h2 className="mt-5 max-w-2xl font-bebas text-5xl leading-[.88] tracking-tight sm:text-6xl">{t('landing.platformTitle')}</h2><p className="mt-6 max-w-lg text-base leading-relaxed text-black/65">{t('landing.platformDesc')}</p></div><div className="flex flex-col gap-3 sm:flex-row"><AndroidButton className="platform-android !bg-black !text-white" /><WebButton onGetStarted={onGetStarted} className="platform-web !border-black/30 !text-black hover:!border-black hover:!bg-black/5" /></div></Reveal></section>
+      <section className="mx-auto max-w-6xl px-6 py-28 md:px-10 md:py-40"><Reveal><h2 className="max-w-3xl font-bebas text-[clamp(3.5rem,9vw,7rem)] leading-[.84] tracking-tight">{t('landing.finalTitle')}</h2><p className="mt-7 max-w-lg text-lg leading-relaxed text-white/60">{t('landing.finalDesc')}</p><div className="mt-10 flex flex-col gap-3 sm:flex-row"><AndroidButton className="final-android" /><WebButton onGetStarted={onGetStarted} className="final-web" /></div></Reveal></section>
+    </main>
+    <footer className="border-t border-white/10 px-6 py-10 md:px-10"><div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 text-xs text-white/45 sm:flex-row sm:items-end"><div><div className="flex items-center gap-2"><img src="/logo.png" alt="" className="h-5 w-5 rounded" /><span className="font-bebas text-sm tracking-[.18em] text-white/70">CALISTENIA</span></div><p className="mt-3 max-w-xs leading-relaxed">{t('landing.footerAbout')}</p></div><div className="flex gap-5"><Link to="/legal#privacy" className="hover:text-white">{t('landing.privacy')}</Link><Link to="/legal#terms" className="hover:text-white">{t('landing.terms')}</Link></div></div></footer>
+  </div>
 }
