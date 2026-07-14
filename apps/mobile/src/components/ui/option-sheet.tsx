@@ -11,6 +11,8 @@ export interface OptionSheetOption {
   key: string
   label: string
   icon?: LucideIcon
+  /** Acción destructiva: icono y label en rojo (p.ej. bloquear/eliminar). */
+  destructive?: boolean
   onPress: () => void
 }
 
@@ -49,11 +51,13 @@ export function OptionSheet({ visible, kicker, title, options, cancelLabel, onCl
             <Pressable
               key={opt.key}
               onPress={() => select(opt)}
-              className="flex-row items-center gap-3 border-t border-border px-4 py-3.5 active:bg-lime/10"
+              className={opt.destructive
+                ? 'flex-row items-center gap-3 border-t border-border px-4 py-3.5 active:bg-red-500/10'
+                : 'flex-row items-center gap-3 border-t border-border px-4 py-3.5 active:bg-lime/10'}
               accessibilityRole="button"
             >
-              {opt.icon ? <opt.icon size={18} color="hsl(0 0% 72%)" /> : null}
-              <Text className="font-sans-medium text-foreground">{opt.label}</Text>
+              {opt.icon ? <opt.icon size={18} color={opt.destructive ? '#ef4444' : 'hsl(0 0% 72%)'} /> : null}
+              <Text className={opt.destructive ? 'font-sans-medium text-red-500' : 'font-sans-medium text-foreground'}>{opt.label}</Text>
             </Pressable>
           ))}
           <Pressable onPress={onClose} className="items-center border-t border-border px-4 py-3.5 active:bg-muted/20" accessibilityRole="button">

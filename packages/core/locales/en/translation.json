@@ -35,7 +35,6 @@
   "common.daysAgo": "{{count}} days ago",
   "common.week": "Week",
   "common.month": "Month",
-
   "nav.dashboard": "Dashboard",
   "nav.workout": "Workout",
   "nav.nutrition": "Nutrition",
@@ -92,12 +91,10 @@
   "breadcrumb.sharedProgram": "Shared Program",
   "breadcrumb.routine": "Routine",
   "breadcrumb.logWorkout": "Log Past Workout",
-
   "meal.desayuno": "Breakfast",
   "meal.almuerzo": "Lunch",
   "meal.cena": "Dinner",
   "meal.snack": "Snack",
-
   "equipment.ninguno": "No equipment",
   "equipment.barra_dominadas": "Pull-up bar",
   "equipment.paralelas": "Parallel bars",
@@ -121,7 +118,6 @@
   "equipment.cuerda": "Rope",
   "equipment.rodillo": "Foam roller",
   "equipment.otro": "Other",
-
   "muscleGroup.pecho": "Chest",
   "muscleGroup.hombros": "Shoulders",
   "muscleGroup.triceps": "Triceps",
@@ -137,7 +133,6 @@
   "muscleGroup.cadera": "Hips",
   "muscleGroup.cuello": "Neck",
   "muscleGroup.cardio": "Cardio",
-
   "exerciseLibrary.showMore": "Show more ({{count}})",
   "exerciseDetail.variants": "Variations",
   "exerciseDetail.variantsEasier": "Easier",
@@ -145,15 +140,12 @@
   "exerciseDetail.variantsHarder": "Harder",
   "exerciseDetail.related": "Related",
   "exerciseDetail.createChallenge": "CREATE CHALLENGE",
-
   "difficulty.beginner": "Beginner",
   "difficulty.intermediate": "Intermediate",
   "difficulty.advanced": "Advanced",
-
   "cardio.running": "Running",
   "cardio.walking": "Walking",
   "cardio.cycling": "Cycling",
-
   "foodCategory.proteinas": "Proteins",
   "foodCategory.carbohidratos": "Carbohydrates",
   "foodCategory.frutas": "Fruits",
@@ -164,12 +156,10 @@
   "foodCategory.bebidas": "Beverages",
   "foodCategory.procesados": "Processed",
   "foodCategory.otros": "Other",
-
   "phase.1": "Base & Activation",
   "phase.2": "Fundamental Strength",
   "phase.3": "Intensity & Skills",
   "phase.4": "Peak & Consolidation",
-
   "day.lun": "Monday",
   "day.mar": "Tuesday",
   "day.mie": "Wednesday",
@@ -177,7 +167,6 @@
   "day.vie": "Friday",
   "day.sab": "Saturday",
   "day.dom": "Sunday",
-
   "dayFocus.lun": "Push + Core",
   "dayFocus.mar": "Pull + Mobility",
   "dayFocus.mie": "Lumbar + Stretching",
@@ -185,7 +174,6 @@
   "dayFocus.vie": "Full Body + Core",
   "dayFocus.sab": "Active walking",
   "dayFocus.dom": "Full rest",
-
   "reminder.meal.desayuno": "Breakfast time",
   "reminder.meal.almuerzo": "Lunch time",
   "reminder.meal.cena": "Dinner time",
@@ -196,25 +184,20 @@
   "reminder.pause.title": "Active Break",
   "reminder.pause.body": "Stand up, stretch and move — your body will thank you",
   "reminder.meal.body": "Don't skip this meal — your body needs it",
-
   "reminders.permissionNeeded": "You need to allow notifications to receive reminders.",
   "reminders.pushNotAvailable": "Notifications will work while the app is open. For alerts when the app is closed, install the app from the browser menu.",
   "reminders.updateError": "Could not update. Please try again.",
   "reminders.startBeforeEnd": "Start time must be before end time.",
   "reminders.saveError": "Could not save. Please try again.",
-
   "referrals.shareTitle": "Train with me on Calistenia App",
   "referrals.shareText": "I invite you to train together. Use my link to sign up:",
   "referrals.copyLink": "Copy link",
-
   "toast.newVersion": "New version available",
   "toast.newVersionDesc": "Update to get the latest improvements.",
   "toast.update": "Update",
-
   "priority.high": "High",
   "priority.med": "Medium",
   "priority.low": "Low",
-
   "dayType.push": "Push",
   "dayType.pull": "Pull",
   "dayType.lumbar": "Lumbar",
@@ -225,7 +208,6 @@
   "dayType.yoga": "Yoga",
   "dayType.rest": "Rest",
   "dayType.circuit": "Circuit / HIIT",
-
   "auth.tagline": "Train with purpose",
   "auth.loginSubtitle": "Sign in to continue",
   "auth.signupSubtitle": "Create your account",
@@ -242,7 +224,6 @@
   "auth.loginLink": "Sign in",
   "auth.privacy": "Privacy",
   "auth.terms": "Terms",
-
   "profile.accountLabel": "Account",
   "profile.title": "PROFILE",
   "profile.changePhoto": "Tap to change photo",
@@ -296,7 +277,6 @@
   "profile.whatsNew": "What's New",
   "profile.whatsNewDesc": "Changelog & version history",
   "profile.whatsappShare": "💪 Follow me on Calistenia App and let's train together!",
-
   "landing.enter": "Get started",
   "landing.tagline": "Train with purpose",
   "landing.heroTitle1": "Your body.",
@@ -350,7 +330,6 @@
   "landing.footerLinksTitle": "Legal",
   "landing.footerBuiltTitle": "Built with",
   "landing.footerBuiltDesc": "Created by a calisthenics practitioner who needed an app that didn't exist. Own code, no ads, no data sold.",
-
   "dashboard.greeting.morning": "Good morning",
   "dashboard.greeting.afternoon": "Good afternoon",
   "dashboard.greeting.evening": "Good evening",
@@ -414,7 +393,6 @@
   "dashboard.goal.lsit": "L-sit",
   "dashboard.goal.pistol": "Pistol Squat",
   "dashboard.goal.handstand": "Free handstand",
-
   "workout.phase": "Phase",
   "workout.trainingDay": "Training Day",
   "workout.selectDayHint": "Select any day to train. The actual day doesn't matter — pick the workout type you want. Green dot = today.",
@@ -432,9 +410,7 @@
   "workout.restDayHint": "You can pick another day if you want to train — the actual day doesn't matter.",
   "workout.chooseWorkout": "Choose your workout",
   "workout.chooseWorkoutHint": "Select a day of the week to see the exercises",
-
   "weekPlan.title": "TRAINING WEEK — P{{phase}}",
-
   "exercise.priorityHigh": "PRIORITY",
   "exercise.priorityMed": "IMPORTANT",
   "exercise.priorityLow": "SUPPLEMENTARY",
@@ -463,11 +439,9 @@
   "exercise.rpeAriaLabel": "RPE - Rate of perceived exertion 1 to 10",
   "exercise.saveSet": "✓ SAVE",
   "exercise.setNumber": "Set {{n}}",
-
   "water.today": "Water Today",
   "water.hydration": "Hydration",
   "water.goalReached": "GOAL REACHED",
-
   "sleep.title": "Sleep",
   "sleep.howDidYouSleep": "How did you sleep?",
   "sleep.tapToRegister": "Tap to register",
@@ -476,7 +450,6 @@
   "sleep.quality.3": "Fair",
   "sleep.quality.4": "Good",
   "sleep.quality.5": "Excellent",
-
   "nutrition.title": "NUTRITION",
   "nutrition.subtitle": "Food",
   "nutrition.calories": "Calories",
@@ -511,7 +484,6 @@
   "nutrition.photoOf": "Photo of {{meal}}",
   "nutrition.photo": "Photo {{number}}",
   "nutrition.consumedOf": "{{consumed}} of {{target}} calories consumed",
-
   "nutrition.phaseChange": "You entered training Phase {{phase}}",
   "nutrition.phaseChangeDesc": "Your activity level may have changed. Would you like to recalculate your macros?",
   "nutrition.ignore": "Ignore",
@@ -519,7 +491,6 @@
   "nutrition.missedGoalsTitle": "You've been missing your goal",
   "nutrition.missedGoalsDesc": "Your intake was below 70%. Use the Daily Plan or review your goals.",
   "nutrition.suggestionsAndHistory": "Suggestions & history",
-
   "nutrition.setup.title": "NUTRITION GOALS",
   "nutrition.setup.subtitle": "Setup",
   "nutrition.setup.step": "Step {{current}} of {{total}}",
@@ -546,7 +517,6 @@
   "nutrition.setup.previous": "PREVIOUS",
   "nutrition.setup.next": "NEXT",
   "nutrition.setup.save": "SAVE GOALS",
-
   "nutrition.activity.sedentary": "Sedentary",
   "nutrition.activity.sedentaryDesc": "Office work, little movement",
   "nutrition.activity.light": "Light",
@@ -557,7 +527,6 @@
   "nutrition.activity.activeDesc": "5-6 workouts/week",
   "nutrition.activity.veryActive": "Very active",
   "nutrition.activity.veryActiveDesc": "Daily intense workouts",
-
   "nutrition.goal.muscleGain": "Build Muscle",
   "nutrition.goal.muscleGainDesc": "Caloric surplus",
   "nutrition.goal.fatLoss": "Lose Fat",
@@ -566,7 +535,6 @@
   "nutrition.goal.recompDesc": "Build muscle and lose fat",
   "nutrition.goal.maintain": "Maintain",
   "nutrition.goal.maintainDesc": "Maintain current weight",
-
   "nutrition.suggestions": "Suggestions",
   "nutrition.suggestions.excess": "Excess detected",
   "nutrition.suggestions.excessDesc": "You exceeded: {{items}}. Adjust your next meal to compensate.",
@@ -580,7 +548,6 @@
   "nutrition.suggestions.overProtein": "protein",
   "nutrition.suggestions.overCarbs": "carbs",
   "nutrition.suggestions.overFat": "fat",
-
   "nutrition.weeklyChart.title": "WEEKLY HISTORY",
   "nutrition.weeklyChart.weekLabel": "Week",
   "nutrition.weeklyChart.daysOnGoal": "days on goal",
@@ -589,7 +556,6 @@
   "nutrition.weeklyChart.noRecords": "No records",
   "nutrition.weeklyChart.logToSeeHistory": "Log meals to see your history",
   "nutrition.weeklyChart.caption": "Weekly nutrition history",
-
   "nutrition.dailyPlan.title": "DAILY PLAN",
   "nutrition.dailyPlan.aiLabel": "AI",
   "nutrition.dailyPlan.generating": "GENERATING",
@@ -600,7 +566,6 @@
   "nutrition.dailyPlan.generateWithAI": "GENERATE PLAN WITH AI",
   "nutrition.dailyPlan.calculating": "Calculating the best plan for your remaining macros...",
   "nutrition.dailyPlan.dontWait": "Don't wait — notify me when done",
-
   "nutrition.summary.title": "Daily summary",
   "nutrition.summary.share": "SHARE SUMMARY",
   "nutrition.summary.sectionLabel": "D A I L Y   N U T R I T I O N",
@@ -609,7 +574,6 @@
   "nutrition.summary.moreMeals": "+{{count}} more",
   "nutrition.summary.variantSummary": "SUMMARY",
   "nutrition.summary.variantMeals": "WITH MEALS",
-
   "nutrition.logger.title": "Log Meal",
   "nutrition.logger.subtitle": "Take a photo of your meal to analyze the macros",
   "nutrition.logger.analyzingBg": "Analyzing in background",
@@ -663,7 +627,6 @@
   "nutrition.logger.photos": "photos",
   "nutrition.logger.dontWait": "Don't wait — notify me when done",
   "nutrition.logger.cancel": "Cancel",
-
   "nutrition.edit.title": "EDIT MEAL",
   "nutrition.edit.foodNamePlaceholder": "Food name",
   "nutrition.edit.addFood": "+ ADD FOOD",
@@ -671,11 +634,9 @@
   "nutrition.edit.saveError": "Error saving changes",
   "nutrition.edit.saving": "SAVING...",
   "nutrition.edit.saveChanges": "SAVE CHANGES",
-
   "nutrition.progress.configureGoals": "Set your goals to see progress",
   "nutrition.progress.dayProgress": "Day's progress",
   "nutrition.progress.includesThisMeal": "(includes this meal)",
-
   "nutrition.dailyScore": "Daily Score",
   "nutrition.dailyScoreHint": "Weighted average of your meals",
   "nutrition.scoreCriteriaTitle": "How scoring works",
@@ -689,12 +650,10 @@
   "nutrition.criteriaD.example": "Low nutritional quality or bad timing. E.g., frozen pizza at 11pm",
   "nutrition.criteriaE.label": "Bad",
   "nutrition.criteriaE.example": "Junk food, ultra-processed. E.g., Doritos with soda for dinner",
-
   "water.other": "Other",
   "water.readOnly": "Read only — go to today to log water",
   "water.dailyGoal": "Daily goal:",
   "water.goalLabel": "Goal: {{goal}} ml · click to change",
-
   "cardio.title": "CARDIO",
   "cardio.gpsTracking": "GPS Tracking",
   "cardio.activityType": "Activity type",
@@ -762,7 +721,6 @@
   "cardio.widget.startFirst": "Start your first session",
   "cardio.widget.sessions": "sessions",
   "cardio.kilometers": "KILOMETERS",
-
   "circuit.title": "Circuits & HIIT",
   "circuit.pageTitle": "Circuits & HIIT",
   "circuit.presets": "Templates",
@@ -823,7 +781,6 @@
   "circuit.exercises": "exercises",
   "circuit.addExercisesPrompt": "Add exercises to get started",
   "circuit.noExercisesYet": "No exercises yet",
-
   "friends.section": "Social",
   "friends.title": "FRIENDS",
   "friends.searchPlaceholder": "Search friends...",
@@ -863,7 +820,6 @@
   "friends.compare.nutritionAdherence": "Nutrition adherence (7d)",
   "friends.compare.vsYou": "vs you",
   "friends.compare.loading": "Loading comparison...",
-
   "blocks.blockBtn": "BLOCK",
   "blocks.unblockBtn": "UNBLOCK",
   "blocks.blockedState": "BLOCKED",
@@ -875,21 +831,23 @@
   "blocks.manageEntry": "Blocked users",
   "blocks.empty": "You haven't blocked anyone",
   "blocks.error": "Could not complete the action",
-
+  "blocks.menuBlock": "Block user",
+  "blocks.menuUnblock": "Unblock user",
+  "blocks.blockedNote": "You won't see each other's activity or be able to interact.",
+  "blocks.menuKicker": "OPTIONS",
   "feed.section": "Social",
-  "feed.title": "ACTIVITY",
-  "feed.loading": "Loading activity...",
-  "feed.empty": "No recent activity",
-  "feed.emptyHint": "When your friends train, you'll see it here",
+  "feed.title": "Activity",
+  "feed.loading": "Loading activity…",
+  "feed.empty": "Your feed is empty",
+  "feed.emptyHint": "Follow friends to see their activity",
   "feed.findFriends": "Find friends",
-  "feed.now": "Now",
+  "feed.now": "now",
   "feed.minutesAgo": "{{count}}m ago",
   "feed.hoursAgo": "{{count}}h ago",
-  "feed.daysAgo": "{{count}} days ago",
+  "feed.daysAgo": "{{count}}d ago",
   "feed.recentActivity": "Recent activity",
   "feed.completed": "completed",
-  "feed.yesterday": "Yesterday",
-
+  "feed.yesterday": "yesterday",
   "notif.section": "Social",
   "notif.title": "NOTIFICATIONS",
   "notif.markAllRead": "Mark all as read",
@@ -930,7 +888,6 @@
   "notifSettings.friend_workouts": "When a friend works out",
   "notifSettings.friend_streaks": "Your friends' streaks",
   "notifSettings.friend_achievements": "Your friends' achievements",
-
   "challenges.section": "Social",
   "challenges.title": "CHALLENGES",
   "challenges.create": "+ CREATE",
@@ -943,7 +900,6 @@
   "challenges.createChallenge": "Create challenge",
   "challenges.goal": "Goal: {{value}}",
   "challenges.participants": "{{count}} participants",
-
   "leaderboard.section": "Competition",
   "leaderboard.title": "RANKING",
   "leaderboard.sessions": "Sessions",
@@ -958,7 +914,6 @@
   "leaderboard.followToSee": "Follow friends to see the ranking",
   "leaderboard.findFriends": "Find friends",
   "leaderboard.you": "(you)",
-
   "calendar.section": "Planning",
   "calendar.title": "CALENDAR",
   "calendar.todayBtn": "TODAY",
@@ -991,7 +946,6 @@
   "calendar.running": "Running",
   "calendar.walking": "Walking",
   "calendar.cycling": "Cycling",
-
   "month.0": "January",
   "month.1": "February",
   "month.2": "March",
@@ -1004,7 +958,6 @@
   "month.9": "October",
   "month.10": "November",
   "month.11": "December",
-
   "dayShort.0": "Mon",
   "dayShort.1": "Tue",
   "dayShort.2": "Wed",
@@ -1012,11 +965,10 @@
   "dayShort.4": "Fri",
   "dayShort.5": "Sat",
   "dayShort.6": "Sun",
-
   "sleep.register": "Log sleep",
   "sleep.howSleptLastNight": "How did you sleep last night?",
   "sleep.lastNight": "Last night",
-  "sleep.awakenings": "awakenings",
+  "sleep.awakenings": "Night awakenings",
   "sleep.lastWeek": "Last week",
   "sleep.stats7days": "Statistics (7 days)",
   "sleep.avgDuration": "Average duration",
@@ -1032,7 +984,6 @@
   "sleep.editEntry": "Edit entry",
   "sleep.subtitle": "Track and analyze your sleep patterns",
   "sleep.loadingData": "Loading sleep data...",
-
   "lumbar.section": "Lumbar Protocol",
   "lumbar.title": "LUMBAR & POSTURE",
   "lumbar.subtitle": "Your main weapon against back pain as a programmer. Workday control with automatic active breaks.",
@@ -1047,7 +998,6 @@
   "lumbar.next5min": "next 5min",
   "lumbar.notificationHint": "Notification permission will be requested for active breaks.",
   "lumbar.tutorial": "▶ TUTORIAL",
-
   "lumbar.sleep.section": "Sleep & Back Pain",
   "lumbar.sleep.lastNight": "Last Night",
   "lumbar.sleep.noEntry": "No sleep logged for last night",
@@ -1063,7 +1013,6 @@
   "lumbar.sleep.painScore": "Pain",
   "lumbar.sleep.sleepQuality": "Sleep",
   "lumbar.sleep.goToSleep": "Go to sleep page",
-
   "admin.section": "Administration",
   "admin.title": "ADMIN PANEL",
   "admin.overview": "Overview",
@@ -1091,7 +1040,6 @@
   "admin.unpublishConfirm": "This will remove the program from the official section. Continue?",
   "admin.exercisesProgram": "Exercises (program)",
   "admin.exercisesCatalog": "Exercise catalog",
-
   "editor.section": "Editor panel",
   "editor.title": "MY OFFICIAL PROGRAMS",
   "editor.newProgram": "+ NEW OFFICIAL PROGRAM",
@@ -1102,7 +1050,6 @@
   "editor.createFirst": "CREATE YOUR FIRST PROGRAM",
   "editor.weeks": "weeks",
   "editor.edit": "EDIT",
-
   "programs.title": "PROGRAMS",
   "programs.available_one": "{{count}} program available",
   "programs.available_other": "{{count}} programs available",
@@ -1149,7 +1096,6 @@
   "programs.moreOptions": "More options",
   "programs.switchSuccess": "Program switched successfully",
   "programs.switchError": "Failed to switch program. Please try again.",
-
   "programEditor.editorTitle": "PROGRAM EDITOR",
   "programEditor.newProgram": "NEW PROGRAM",
   "programEditor.unsaved": "UNSAVED",
@@ -1200,9 +1146,8 @@
   "programEditor.noExercises": "No exercises for this day. Add from catalog or create a custom one.",
   "programEditor.addFromCatalog": "ADD FROM CATALOG",
   "programEditor.customExercise": "CUSTOM EXERCISE",
-
-  "programDetail.cannotConnect": "Cannot connect to the server.",
-  "programDetail.today": "today",
+  "programDetail.cannotConnect": "Could not connect to server",
+  "programDetail.today": "Today",
   "programDetail.yesterday": "yesterday",
   "programDetail.daysAgo": "{{count}} days ago",
   "programDetail.weeksAgo": "{{count}} weeks ago",
@@ -1212,7 +1157,6 @@
   "programDetail.lastSession": "Last session",
   "programDetail.goal": "Goal",
   "programDetail.duration": "Duration",
-
   "reminders.section": "Reminders",
   "reminders.title": "REMINDERS",
   "reminders.mealType": "MEAL",
@@ -1221,7 +1165,6 @@
   "reminders.newMeal": "New meal reminder",
   "reminders.newWorkout": "New workout reminder",
   "reminders.newPause": "New active breaks",
-
   "onboarding.welcomeMsg": "{{name}}, welcome to your training",
   "onboarding.welcomeDefault": "Welcome to your training",
   "onboarding.howItWorks": "How it works:",
@@ -1382,16 +1325,13 @@
   "onboarding.dayLabel": "Day",
   "onboarding.exercises": "Exercises",
   "onboarding.progress": "Progress",
-
   "tour.next": "Next",
   "tour.prev": "Previous",
   "tour.done": "Done",
   "tour.progress": "{{current}} of {{total}}",
-
   "widgets.weeklyRanking": "Weekly ranking",
   "widgets.recentActivity": "Recent activity",
   "widgets.completed": "completed",
-
   "exerciseLibrary.title": "EXERCISES",
   "exerciseLibrary.exerciseCount": "{{count}} exercise",
   "exerciseLibrary.exerciseCount_other": "{{count}} exercises",
@@ -1418,7 +1358,6 @@
   "exerciseLibrary.category.mobility": "Mobility",
   "exerciseLibrary.category.skills": "Skills",
   "exerciseLibrary.category.yoga": "Yoga",
-
   "exerciseDetail.notFound": "Exercise not found",
   "exerciseDetail.notFoundDesc": "No exercise found with identifier \"{{id}}\"",
   "exerciseDetail.backToLibrary": "Back to library",
@@ -1444,7 +1383,6 @@
   "exercise.priority.high": "Priority",
   "exercise.priority.med": "Important",
   "exercise.priority.low": "Supplementary",
-
   "progress.title": "PROGRESS",
   "progress.noData": "No data yet",
   "progress.noDataDesc": "Complete your first workout and log sets to see your progress here.",
@@ -1463,7 +1401,6 @@
   "progress.noChartsDataDesc": "Log sets in your workouts to see your charts.",
   "progress.goTrain": "Go train",
   "progress.freeSession": "Free Session",
-
   "freeProgress.history": "History",
   "freeProgress.title": "FREE SESSIONS",
   "freeProgress.sessionCount": "{{count}} session",
@@ -1471,7 +1408,6 @@
   "freeProgress.noSessions": "No free sessions",
   "freeProgress.noSessionsDesc": "When you complete a free session, you'll see your progress here independent of the program.",
   "freeProgress.exercises": "Exercises",
-
   "session.phase": "Phase {{phase}}",
   "session.set": "Set",
   "session.weight": "Weight",
@@ -1480,7 +1416,6 @@
   "session.notes": "Notes",
   "session.notFound": "Session not found",
   "session.noSetsRecorded": "Session completed without recorded sets",
-
   "logWorkout.title": "Log Past Workout",
   "logWorkout.dateLabel": "Date",
   "logWorkout.typeLabel": "Session Type",
@@ -1505,7 +1440,6 @@
   "logWorkout.rpePlaceholder": "RPE (opt.)",
   "logWorkout.exercisesSection": "Exercises",
   "logWorkout.noExercisesHint": "Add exercises to log your workout",
-
   "freeSession.freeSessionTitle": "Free Session",
   "freeSession.sessionInProgress": "Session in progress",
   "freeSession.tapToResume": "Tap to resume your session",
@@ -1553,7 +1487,6 @@
   "freeSession.savedTemplates": "Saved templates",
   "freeSession.deleteTemplate": "Delete template",
   "freeSession.delete": "Delete",
-
   "progress.summary.freePerWeek": "Free / week",
   "progress.summary.sessionsPerWeek": "Sessions / week",
   "progress.summary.vsLastWeek": "vs last week",
@@ -1562,14 +1495,12 @@
   "progress.summary.vsLastMonth": "vs last month",
   "progress.summary.freeSets": "Free sets",
   "progress.summary.setsPerWeek": "Sets / week",
-
   "progress.exerciseChart.sessionCount": "{{count}} session",
   "progress.exerciseChart.sessionCount_other": "{{count}} sessions",
   "progress.exerciseChart.program": "Program",
   "progress.exerciseChart.free": "Free",
   "progress.exerciseChart.date": "Date",
   "progress.exerciseChart.maxReps": "Max Reps",
-
   "progress.weight.title": "Body Weight",
   "progress.weight.weightKg": "Weight (kg)",
   "progress.weight.date": "Date",
@@ -1580,7 +1511,6 @@
   "progress.weight.trend": "Trend",
   "progress.weight.weightLabel": "Weight",
   "progress.weight.emptyState": "Log your weight to see your progress",
-
   "progress.bodyMeasurements.title": "Body Measurements",
   "progress.bodyMeasurements.recordCount": "{{count}} records",
   "progress.bodyMeasurements.noRecords": "No records",
@@ -1605,7 +1535,6 @@
   "progress.bodyMeasurements.thighLeftShort": "L.Th",
   "progress.bodyMeasurements.thighRight": "Right thigh",
   "progress.bodyMeasurements.thighRightShort": "R.Th",
-
   "progress.muscleVolume.title": "Muscle Volume",
   "progress.muscleVolume.sets": "sets",
   "progress.muscleVolume.chest": "Chest",
@@ -1616,7 +1545,6 @@
   "progress.muscleVolume.legs": "Legs",
   "progress.muscleVolume.lumbar": "Lumbar",
   "progress.muscleVolume.other": "Other",
-
   "progress.bodyPhotos.title": "Progress Photos",
   "progress.bodyPhotos.fileTooLarge": "Photo is too large (max 10 MB)",
   "progress.bodyPhotos.cancel": "Cancel",
@@ -1656,7 +1584,6 @@
   "progress.bodyPhotos.weeks": "weeks",
   "progress.bodyPhotos.sameDay": "Same day",
   "progress.bodyPhotos.shareError": "Couldn't share",
-
   "progress.phasePhotos.timelineTitle": "Your transformation",
   "progress.phasePhotos.phase": "Phase {{phase}}",
   "progress.phasePhotos.startVsNow": "Start vs Now",
@@ -1677,17 +1604,14 @@
   "progress.phasePhotos.currentPhase": "Current phase",
   "progress.phasePhotos.completed": "Completed",
   "progress.phasePhotos.comparePhases": "Compare",
-
   "progress.photoComparator.title": "Compare Photos",
   "progress.photoComparator.front": "Front",
   "progress.photoComparator.side": "Side",
   "progress.photoComparator.back": "Back",
   "progress.photoComparator.before": "Before",
   "progress.photoComparator.after": "After",
-
   "progress.export.sessions": "Export sessions",
   "progress.export.weight": "Export weight",
-
   "progress.oneRepMax.title": "1RM Calculator",
   "progress.oneRepMax.emptyState": "No exercises with recorded weight",
   "progress.oneRepMax.manualCalculator": "Manual calculator",
@@ -1696,16 +1620,13 @@
   "progress.oneRepMax.close": "Close",
   "progress.oneRepMax.totalWeight": "Total weight (kg)",
   "progress.oneRepMax.reps": "Reps",
-
   "progress.volumeLoad.title": "Volume Load",
   "progress.volumeLoad.thisWeek": "This week",
   "progress.volumeLoad.addWeightHint": "Add weight to your sets to calculate load",
-
   "progress.weightProgression.title": "Weight Progression (Weighted)",
   "progress.weightProgression.start": "Start",
   "progress.weightProgression.current": "Current",
   "progress.weightProgression.progress": "Progress",
-
   "tour.dashboard.sidebar.title": "Navigation",
   "tour.dashboard.sidebar.desc": "Access all sections from here: workouts, progress, nutrition, programs and more.",
   "tour.dashboard.activeProgram.title": "Your active program",
@@ -1718,7 +1639,6 @@
   "tour.dashboard.nutrition.desc": "Take a photo of your meal and AI calculates calories and macros.",
   "tour.dashboard.weeklyPlan.title": "Weekly plan",
   "tour.dashboard.weeklyPlan.desc": "Your week: each day has a focus (push, pull, legs...). Completed ones are marked.",
-
   "tour.workout.phaseSelector.title": "Phase selector",
   "tour.workout.phaseSelector.desc": "Choose the program phase. Each phase lasts several weeks and increases in difficulty.",
   "tour.workout.daySelector.title": "Training day",
@@ -1733,14 +1653,12 @@
   "tour.workout.editSet.desc": "Tap the ✏ icon to open the detailed form. There you can log custom reps, added weight in kg (e.g.: vest, dumbbell, band), RPE (effort 1-10) and a note. Weight is saved in your history to track progression.",
   "tour.workout.guidedSession.title": "Guided session",
   "tour.workout.guidedSession.desc": "Start the step-by-step workout. The app guides you exercise by exercise with rest timers, sounds and notifications.",
-
   "tour.programs.filters.title": "Filter programs",
   "tour.programs.filters.desc": "Official ones are curated by coaches. Community ones are created by users. My Programs are yours.",
   "tour.programs.search.title": "Search",
   "tour.programs.search.desc": "Search programs by name or description.",
   "tour.programs.create.title": "Create program",
   "tour.programs.create.desc": "Create your own program with custom phases, days and exercises.",
-
   "tour.nutrition.date.title": "Date",
   "tour.nutrition.date.desc": "Navigate between days to view or log meals for any date.",
   "tour.nutrition.dashboard.title": "Nutrition summary",
@@ -1749,48 +1667,40 @@
   "tour.nutrition.mealLogger.desc": "Take a photo of your meal and AI analyzes the nutrients automatically.",
   "tour.nutrition.score.title": "Quality Score",
   "tour.nutrition.score.desc": "Here you see the overall daily score. Tap ℹ to learn what each letter means.",
-
   "tour.progress.summary.title": "Progress summary",
   "tour.progress.summary.desc": "Overview: sessions, streaks, active weeks and more.",
   "tour.progress.charts.title": "Charts by exercise",
   "tour.progress.charts.desc": "See how your reps and volume evolve for each exercise over time.",
   "tour.progress.history.title": "Session history",
   "tour.progress.history.desc": "All your completed sessions with date, phase and details.",
-
   "tour.exercises.search.title": "Search exercises",
   "tour.exercises.search.desc": "Search by name among all available exercises.",
   "tour.exercises.categoryFilters.title": "Filter by category",
   "tour.exercises.categoryFilters.desc": "Filter by type: push, pull, legs, core, mobility and more.",
   "tour.exercises.catalog.title": "Exercise catalog",
   "tour.exercises.catalog.desc": "Tap an exercise to see videos, description and how to perform it.",
-
   "tour.profile.personalInfo.title": "Personal information",
   "tour.profile.personalInfo.desc": "Your name, weight and height. This data is used for nutrition calculations and goals.",
   "tour.profile.level.title": "Experience level",
   "tour.profile.level.desc": "Set your level so recommendations adjust to your experience.",
-
   "tour.feed.list.title": "Activity feed",
   "tour.feed.list.desc": "Here you see your friends' recent workouts. Each card shows who trained, what they did and when.",
   "tour.feed.reaction.title": "Reactions",
   "tour.feed.reaction.desc": "Tap 🔥 to cheer your friends. Reactions accumulate and they can see them.",
-
   "tour.friends.tabs.title": "Tabs",
   "tour.friends.tabs.desc": "\"Following\" shows who you follow, \"Followers\" who follows you, and \"Search\" to find new friends.",
   "tour.friends.search.title": "Search friends",
   "tour.friends.search.desc": "Type a friend's name to find them. Tap FOLLOW to see their activity in your feed.",
-
   "tour.leaderboard.categories.title": "Ranking categories",
   "tour.leaderboard.categories.desc": "Compare sessions, streaks, pull-ups, push-ups, L-sit and handstand with friends. Tap a category to see the ranking.",
   "tour.leaderboard.ranking.title": "Ranking",
   "tour.leaderboard.ranking.desc": "Your position is highlighted in green. Top three get a medal. Tap a name to see their profile.",
-
   "tour.challenges.create.title": "Create challenge",
   "tour.challenges.create.desc": "Create a challenge with friends: pick a metric (sessions, pull-ups, streak...), duration and participants.",
   "tour.challenges.filters.title": "Filters",
   "tour.challenges.filters.desc": "Toggle between active and finished challenges to see past results.",
   "tour.challenges.list.title": "Your challenges",
   "tour.challenges.list.desc": "Each card shows the metric, days remaining and participants. Tap to see details and challenge ranking.",
-
   "tour.cardio.activity.title": "Activity type",
   "tour.cardio.activity.desc": "Choose between running, walking or cycling. Each type calculates pace or speed differently.",
   "tour.cardio.start.title": "Start session",
@@ -1799,7 +1709,6 @@
   "tour.cardio.history.desc": "Your previous cardio sessions with distance, duration and pace.",
   "tour.cardio.stats.title": "Stats",
   "tour.cardio.stats.desc": "Weekly, monthly summary and personal records from your cardio sessions.",
-
   "tour.freeSession.search.title": "Search exercises",
   "tour.freeSession.search.desc": "Search by name or muscle in the full exercise catalog.",
   "tour.freeSession.categories.title": "Filter by category",
@@ -1808,26 +1717,22 @@
   "tour.freeSession.catalog.desc": "Tap an exercise to add it to your session. The green number shows the order. Tap again to remove it.",
   "tour.freeSession.bar.title": "Your session",
   "tour.freeSession.bar.desc": "Here you see how many exercises you have, sets and estimated time. Tap to reorder. When ready, tap \"Start\".",
-
   "tour.calendar.nav.title": "Navigation",
   "tour.calendar.nav.desc": "Navigate between months and go back to today. See how many active days and sessions each month has.",
   "tour.calendar.grid.title": "Calendar",
   "tour.calendar.grid.desc": "Days with sessions appear in green with dots. Tap a day to see details or train.",
   "tour.calendar.detail.title": "Day detail",
   "tour.calendar.detail.desc": "Here you see that day's sessions or planned workout. Tap a session to see full details.",
-
   "tour.mealLogger.type.title": "Meal type",
   "tour.mealLogger.type.desc": "Select whether it's breakfast, lunch, dinner or snack. The app auto-detects based on the time.",
   "tour.mealLogger.input.title": "Log meal",
   "tour.mealLogger.input.desc": "Type what you ate, take a photo for AI nutrient analysis, log manually, or repeat a previous meal.",
   "tour.mealLogger.barcode.title": "Scan barcode",
   "tour.mealLogger.barcode.desc": "Scan the barcode of a packaged product to get its nutrients directly from Open Food Facts.",
-
   "tour.reminders.add.title": "Create reminder",
   "tour.reminders.add.desc": "Tap Meal, Exercise or Breaks to schedule alerts. Choose time, days of the week and save.",
   "tour.reminders.timeline.title": "Timeline",
   "tour.reminders.timeline.desc": "Your reminders sorted by time. Toggle each one with the switch. Swipe to delete.",
-
   "tour.workoutDetail.header.title": "Your workout",
   "tour.workoutDetail.header.desc": "Here you see the phase, day, number of exercises and estimated duration.",
   "tour.workoutDetail.exerciseCard.title": "Exercise card",
@@ -1836,7 +1741,6 @@
   "tour.workoutDetail.quickLog.desc": "Tap \"+ SET\" to log each set. The counter goes up automatically and when done the rest timer starts.",
   "tour.workoutDetail.guidedSession.title": "Guided session",
   "tour.workoutDetail.guidedSession.desc": "Or start the guided session: the app takes you exercise by exercise with rest timers, sounds and notifications.",
-
   "tour.circuit.presets.title": "Preset circuits",
   "tour.circuit.presets.desc": "Choose a ready-made circuit: Tabata, EMOM or bodyweight. Each one has preconfigured exercises, rounds and timers.",
   "tour.circuit.custom.title": "Build your own",
@@ -1849,7 +1753,6 @@
   "tour.circuit.add.desc": "Search from the catalog or type a custom name. Reorder with arrows, remove with X. Each exercise can override timers individually.",
   "tour.circuit.start.title": "Start circuit",
   "tour.circuit.start.desc": "When ready, tap Start. The app guides you through each exercise and round with audio cues, vibration and countdown timers.",
-
   "lumbar.emergency.name": "Emergency Protocol",
   "lumbar.emergency.desc": "Use this when you feel acute pain. Don't train, just do this.",
   "lumbar.emergency.ex0.reps": "2 min",
@@ -1865,7 +1768,6 @@
   "lumbar.emergency.ex4.name": "Deep Hip Flexor Stretch",
   "lumbar.emergency.ex4.reps": "2 min/side",
   "lumbar.emergency.ex4.note": "Remove the anterior pull on the lumbar spine.",
-
   "lumbar.morning.name": "Morning Routine (Pre-work)",
   "lumbar.morning.desc": "Before sitting down to work. 10 minutes that change your day.",
   "lumbar.morning.ex0.name": "Cat-Cow Warm-up",
@@ -1879,7 +1781,6 @@
   "lumbar.morning.ex3.note": "Prepare the whole body for sedentary work.",
   "lumbar.morning.ex4.reps": "10/side",
   "lumbar.morning.ex4.note": "Mobilize the thoracic area before hunching.",
-
   "lumbar.pausa25.name": "Active Break 2 min (every 25 min)",
   "lumbar.pausa25.desc": "The automatic break system will alert you. Maximum impact in minimum time.",
   "lumbar.pausa25.ex0.name": "Stand up and move",
@@ -1890,7 +1791,6 @@
   "lumbar.pausa25.ex2.name": "Standing Thoracic Rotation",
   "lumbar.pausa25.ex2.reps": "5/side",
   "lumbar.pausa25.ex2.note": "Hands on head, rotate torso only. Quick and effective.",
-
   "lumbar.pausa60.name": "Active Break 5 min (every hour)",
   "lumbar.pausa60.desc": "The most important break of your workday.",
   "lumbar.pausa60.ex0.note": "Reactivate dormant glutes. Essential.",
@@ -1902,7 +1802,6 @@
   "lumbar.pausa60.ex3.reps": "30s/side",
   "lumbar.pausa60.ex3.note": "The neck also gets tense from work.",
   "lumbar.pausa60.ex4.note": "Return shoulders to their correct position.",
-
   "lumbar.cause1.title": "Tight Psoas",
   "lumbar.cause1.desc": "Sitting 8h shortens the psoas. It pulls the lumbar spine forward.",
   "lumbar.cause1.fix": "Hip Flexor Stretch",
@@ -1913,11 +1812,7 @@
   "lumbar.cause3.desc": "Without thoracic mobility, the lumbar rotates in place and gets injured.",
   "lumbar.cause3.fix": "Thoracic Rotation",
   "lumbar.fixLabel": "Fix",
-
-  "programs.shareText": "Check out this calisthenics program: {{name}}",
-  "programs.linkCopied": "Link copied to clipboard",
   "programs.copyThisLink": "Copy this link:",
-
   "common.processing": "Processing...",
   "offline.message": "Offline — data is saved locally",
   "auth.googleError": "Error signing in with Google",
@@ -1926,7 +1821,6 @@
   "wger.noResults": "No exercises found in wger",
   "wger.searchError": "Error searching wger",
   "cardioSession.geoNotAvailable": "Geolocation not available",
-
   "lumbarCheck.label": "MORNING CHECK",
   "lumbarCheck.title": "How are you today?",
   "lumbarCheck.subtitle": "30 seconds · Once a day only",
@@ -1948,7 +1842,6 @@
   "lumbarCheck.saving": "SAVING...",
   "lumbarCheck.save": "SAVE ✓",
   "lumbarCheck.skipToday": "SKIP FOR TODAY",
-
   "session.resting": "Resting",
   "session.skipRest": "SKIP REST →",
   "liveSession.logSet": "SET DONE",
@@ -1958,7 +1851,6 @@
   "session.closeSetEditor": "Close set editor",
   "session.editCustomSet": "Edit custom set",
   "session.editBtn": "✏ EDIT",
-
   "motivation.quote0": "The only bad workout is the one you didn't do.",
   "motivation.author0": "Unknown",
   "motivation.quote1": "Success is the sum of small efforts repeated day after day.",
@@ -1999,7 +1891,6 @@
   "motivation.author18": "Muhammad Ali",
   "motivation.quote19": "It's not about being the best. It's about being better than yesterday.",
   "motivation.author19": "Unknown",
-
   "media.noMedia": "No media available",
   "media.searchYouTube": "Search on YouTube",
   "media.searchGoogle": "Search on Google",
@@ -2027,7 +1918,6 @@
   "profile.noActiveProgram": "No active program",
   "nutrition.analysisError": "Error starting analysis",
   "nutrition.analysisErrorDesc": "Check your connection and try again",
-
   "bgJobs.analyzeMealDone": "Meal analyzed",
   "bgJobs.lookupFoodDone": "Food found",
   "bgJobs.mealPlanDone": "Plan ready",
@@ -2043,10 +1933,8 @@
   "bgJobs.viewResult": "View result",
   "bgJobs.analysisFailed": "Could not complete analysis",
   "bgJobs.tryAgainWithPhoto": "Try again with another photo",
-
   "sleep.bedtime": "Bedtime",
   "sleep.wakeTime": "Wake time",
-  "sleep.awakenings": "Night awakenings",
   "sleep.none": "None",
   "sleep.times": "{{count}} time",
   "sleep.times_other": "{{count}} times",
@@ -2084,7 +1972,6 @@
   "sleep.inBed": "In bed",
   "sleep.awakeFor": "Awake",
   "sleep.avgAwakeTime": "Avg. awake time",
-
   "day.shortSun": "Sun",
   "day.shortMon": "Mon",
   "day.shortTue": "Tue",
@@ -2092,7 +1979,6 @@
   "day.shortThu": "Thu",
   "day.shortFri": "Fri",
   "day.shortSat": "Sat",
-
   "share.invite": "Invite",
   "share.inviteTitle": "Train with me on Calistenia App",
   "share.inviteText": "💪 I invite you to train together on Calistenia App!",
@@ -2116,15 +2002,12 @@
   "share.referralTitle": "{{name}} invites you to train",
   "share.referralText": "💪 {{name}} invited you to train together on Calistenia App. Join and earn points!",
   "share.appText": "💪 Train calisthenics with personalized routines, progress tracking and nutrition. Try it free!",
-
   "referrals.noReferrals": "No referrals yet. Invite friends to earn points!",
   "referrals.sourceChallenge": "Challenge",
   "referrals.sourceInvite": "Invite",
-
   "social.replyingTo": "Replying to",
-  "social.commentPlaceholder": "Write a comment...",
+  "social.commentPlaceholder": "Write a comment…",
   "social.reply": "Reply",
-
   "timer.rest": "Rest",
   "timer.completed": "COMPLETED",
   "timer.getReady": "Get ready",
@@ -2135,9 +2018,7 @@
   "timer.reset": "Reset timer",
   "timer.addSeconds": "Add {{secs}} seconds",
   "timer.removeSeconds": "Remove {{secs}} seconds",
-
   "reminders.workoutReminders": "Workout reminders",
-
   "progression.title": "PROGRESSION",
   "progression.skills": "Skills",
   "progression.description": "Exercise chain from easiest to hardest",
@@ -2147,7 +2028,6 @@
   "progression.in": "in",
   "progression.sessions": "sessions",
   "progression.consecutiveToAdvance": "consecutive to advance",
-
   "whatsNew.title": "What's New",
   "whatsNew.continue": "Continue",
   "whatsNew.kicker": "What's New",
@@ -2155,13 +2035,11 @@
   "whatsNew.details": "Technical details",
   "whatsNew.historyKicker": "History",
   "whatsNew.seeOlder": "See previous versions",
-
   "barcode.permissionDenied": "Camera permission denied. Enable it in your browser settings.",
   "barcode.noCameraFound": "No camera found on this device.",
   "barcode.cameraStartError": "Could not start camera. Try closing other apps using it.",
   "barcode.closeScanner": "Close scanner",
   "barcode.aimAtBarcode": "Aim at the barcode",
-
   "nutrition.searchResults": "Search results",
   "nutrition.calculatingMacros": "Calculating macros...",
   "nutrition.calculatingMacrosFor": "Calculating macros for \"{{name}}\"...",
@@ -2170,7 +2048,6 @@
   "nutrition.retry": "Retry",
   "nutrition.searchWithAI": "Search with AI",
   "nutrition.chooseFromGallery": "Choose from gallery",
-
   "challenge.exercise": "Exercise",
   "challenge.dailyGoalPlaceholder": "E.g.: 50",
   "challenge.metricSessions": "Most sessions",
@@ -2185,7 +2062,6 @@
   "challenge.finished": "Finished",
   "challenge.oneDayLeft": "1 day left",
   "challenge.daysLeft": "{{count}} days left",
-
   "notify.restStart": "Rest — {{time}}",
   "notify.nextExercise": "Next: {{name}}",
   "notify.restAndPrepare": "Rest and get ready",
@@ -2202,19 +2078,15 @@
   "notify.friendWorkout": "💪 {{name}} worked out",
   "notify.prBeaten": "🏆 {{name}} beat your record",
   "notify.yours": "yours",
-
   "session.session": "Session",
   "session.activeBubbleLabel": "{{title}} active — {{count}} exercises — tap to return",
   "session.exerciseCount": "EXERCISE",
   "session.exerciseCount_other": "EXERCISES",
-
   "cardio.noRouteData": "No route data",
-
   "workday.pause2min": "Active Break — 2 min",
   "workday.pause2minBody": "Stand up · Hip Flexor · Thoracic Rotation",
   "workday.pause5min": "Active Break — 5 min",
   "workday.pause5minBody": "Glute Bridge · Cat-Cow · Thoracic Rotation",
-
   "session.weightPlaceholder": "Added weight kg",
   "session.rpeTitle": "Rate of perceived exertion (1-10)",
   "session.optionalNote": "Optional note",
@@ -2222,30 +2094,23 @@
   "session.discardWithSets": "You have {{count}} set(s) logged. They will be saved but the session will be marked as incomplete.",
   "session.discardEmpty": "The session will be discarded without saving anything.",
   "session.discardButton": "DISCARD SESSION",
-
   "day.saturday": "Saturday",
   "day.sunday": "Sunday",
   "day.activeWalk": "Active walk",
   "day.totalRest": "Full rest",
-
   "programEditor.nameRequired": "Program name is required",
   "programEditor.minOneWeek": "Duration must be at least 1 week",
   "programEditor.phaseNeedsName": "Phase {{n}} needs a name",
   "programEditor.phaseNeedsWeeks": "Phase {{n}} needs the weeks",
   "programEditor.loadError": "Error loading program",
-
   "wger.fetchError": "Could not fetch exercise info",
-
   "barcode.notFound": "We couldn't find that barcode. Try typing the product name instead.",
   "barcode.connectionError": "Could not connect. Check your connection and try again.",
-
   "profile.currentStreak": "Current streak",
   "profile.bestStreak": "Best streak",
   "profile.days": "days",
-
   "nutrition.analyzingBackground": "Analyzing in the background",
   "nutrition.analyzingBackgroundDesc": "You'll get a notification when it's done",
-
   "challenge.metric.most_sessions": "Sessions",
   "challenge.metric.most_pullups": "Pull-ups",
   "challenge.metric.most_pushups": "Push-ups",
@@ -2282,12 +2147,10 @@
   "challenge.changeExercise": "Change",
   "challenge.goalPlaceholder": "E.g.: 100",
   "challenge.inviteFriends": "Invite friends",
-
   "pr.newRecord": "NEW PERSONAL RECORD",
   "pr.celebration": "New PR!",
   "pr.share": "Share PR",
   "pr.reps": "{{count}} reps",
-
   "streak.milestone.title": "{{days}}-day streak!",
   "streak.milestone.subtitle7": "One week without stopping!",
   "streak.milestone.subtitle14": "Two weeks of consistency!",
@@ -2296,11 +2159,9 @@
   "streak.milestone.subtitle100": "100 days. Legend!",
   "streak.milestone.share": "Share your streak",
   "streak.milestone.shareText": "I've been training {{days}} days straight on Calistenia App!",
-
   "referral.prompt.question": "Know someone who'd like to train?",
   "referral.prompt.cta": "Invite via WhatsApp",
   "referral.prompt.dismiss": "Not now",
-
   "blog.title": "Blog",
   "blog.subtitle": "Tips, tutorials, and guides for your calisthenics training",
   "blog.allCategories": "All",
@@ -2331,10 +2192,8 @@
   "blog.editor.authorAvatar": "Author avatar",
   "blog.editor.saveDraft": "Save draft",
   "blog.editor.publish": "Publish",
-
   "nutrition.tabs.daily": "DAY",
   "nutrition.tabs.weekly": "WEEKLY PLAN",
-
   "nutrition.weeklyPlan.title": "WEEKLY PLAN",
   "nutrition.weeklyPlan.aiLabel": "AI",
   "nutrition.weeklyPlan.generate": "GENERATE WEEKLY PLAN",
@@ -2353,12 +2212,10 @@
   "nutrition.weeklyPlan.pending": "Remaining",
   "nutrition.weeklyPlan.iAteThis": "I ATE THIS",
   "nutrition.weeklyPlan.deleteMeal": "Delete",
-
   "nutrition.spend.kicker": "Spend",
   "nutrition.spend.today": "Today",
   "nutrition.spend.week": "Week",
   "nutrition.spend.perMeal": "Avg/meal",
-
   "weekday.short.mon": "Mon",
   "weekday.short.tue": "Tue",
   "weekday.short.wed": "Wed",
@@ -2366,12 +2223,9 @@
   "weekday.short.fri": "Fri",
   "weekday.short.sat": "Sat",
   "weekday.short.sun": "Sun",
-
   "bgJobs.weeklyPlanDone": "Weekly plan ready",
   "bgJobs.generatingWeeklyPlan": "Generating weekly plan",
   "bgJobs.tapToViewWeeklyPlan": "Tap to view your weekly plan",
-
-  "programDetail.cannotConnect": "Could not connect to server",
   "programDetail.loadError": "Error loading program",
   "programDetail.backToPrograms": "Back to programs",
   "programDetail.back": "Back",
@@ -2380,7 +2234,6 @@
   "programDetail.programDetail": "Program detail",
   "programDetail.weeks": "weeks",
   "programDetail.phases": "phases",
-  "programDetail.exercises": "ex",
   "programDetail.createdByYou": "Created by you",
   "programDetail.active": "Active",
   "programDetail.signUpToUse": "Sign up to use this program",
@@ -2395,10 +2248,6 @@
   "programDetail.weeksLabel": "Wk {{weeks}}",
   "programDetail.noExercises": "No exercises",
   "programDetail.noExercisesDesc": "This phase has no exercises configured yet",
-  "programDetail.today": "Today",
-  "programDetail.lastSession": "Last session",
-  "programDetail.goal": "Goal",
-  "programDetail.duration": "Duration",
   "programDetail.rest": "Rest",
   "programDetail.alsoInterested": "You might also like",
   "programDetail.deleteProgram": "Delete program",
@@ -2410,33 +2259,13 @@
   "programDetail.abandonSuccess": "Program quit. Your progress has been saved.",
   "programDetail.abandonError": "Error quitting the program.",
   "programDetail.statusAbandoned": "Incomplete",
-
-  "feed.section": "Social",
-  "feed.title": "Activity",
-  "feed.loading": "Loading activity…",
-  "feed.empty": "Your feed is empty",
-  "feed.emptyHint": "Follow friends to see their activity",
-  "feed.findFriends": "Find friends",
-  "feed.now": "now",
-  "feed.minutesAgo": "{{count}}m ago",
-  "feed.hoursAgo": "{{count}}h ago",
-  "feed.yesterday": "yesterday",
-  "feed.daysAgo": "{{count}}d ago",
   "feed.completedWorkout": "completed a workout 💪",
   "feed.you": "you",
   "feed.phase": "Phase",
-
   "social.comments": "Comments",
   "social.loadingComments": "Loading comments…",
   "social.noComments": "No comments yet",
   "social.beFirstToComment": "Be the first to comment",
-  "social.commentPlaceholder": "Write a comment…",
-  "social.reply": "Reply",
-  "social.replyingTo": "Replying to",
-
-  "widgets.recentActivity": "Recent activity",
-  "widgets.completed": "completed",
-
   "warmupCooldown.sections.warmup": "Warm-up",
   "warmupCooldown.sections.main": "Main Block",
   "warmupCooldown.sections.cooldown": "Cool-down",
@@ -2571,7 +2400,6 @@
   "insights.history.error": "Couldn't load your history.",
   "insights.history.weekOf": "Week of {{date}}",
   "insights.history.monthOf": "Month of {{month}}",
-
   "pantry.kicker": "INVENTORY",
   "pantry.title": "Pantry",
   "pantry.entrySubtitle": "Your food inventory",

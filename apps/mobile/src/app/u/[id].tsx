@@ -6,11 +6,12 @@ import { useState, useEffect } from 'react'
 import { View, ScrollView, Image, ActivityIndicator, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { X } from 'lucide-react-native'
+import { X, MoreVertical, UserX } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
+import { OptionSheet } from '@/components/ui/option-sheet'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
@@ -76,6 +77,8 @@ export default function UserProfileScreen() {
   const { isFollowing, follow, unfollow } = useFollows(currentUserId)
   const { isBlocked, block, unblock } = useBlocks(currentUserId)
   const [followLoading, setFollowLoading] = useState(false)
+  const [blockLoading, setBlockLoading] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -180,22 +183,74 @@ export default function UserProfileScreen() {
     return () => { cancelled = true }
   }, [userId, l])
 
+  const blocked = userId ? isBlocked(userId) : false
+  const canAct = !isOwnProfile && !!currentUserId && !!userId
+
+  const confirmBlock = () => {
+    Alert.alert(t('blocks.confirmTitle'), t('blocks.confirmBody'), [
+      { text: t('blocks.cancel'), style: 'cancel' },
+      {
+        text: t('blocks.confirmAction'),
+        style: 'destructive',
+        onPress: async () => {
+          if (!userId) return
+          setBlockLoading(true)
+          try { await block(userId) } finally { setBlockLoading(false) }
+        },
+      },
+    ])
+  }
+
+  const doUnblock = async () => {
+    if (!userId) return
+    setBlockLoading(true)
+    try { await unblock(userId) } finally { setBlockLoading(false) }
+  }
+
   const Header = (
     <View className="flex-row items-start justify-between px-4 pt-2 pb-3">
       <View>
         <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">SOCIAL</Text>
         <Text className="font-bebas text-4xl leading-none text-foreground">Perfil</Text>
       </View>
-      <Pressable onPress={() => router.back()} className="mt-1 rounded-full bg-muted/60 p-2 active:opacity-70">
-        <X size={18} color="#888899" />
-      </Pressable>
+      <View className="mt-1 flex-row items-center gap-2">
+        {canAct ? (
+          <Pressable
+            onPress={() => setMenuOpen(true)}
+            className="rounded-full bg-muted/60 p-2 active:opacity-70"
+            accessibilityLabel={t('blocks.menuKicker')}
+            hitSlop={6}
+          >
+            <MoreVertical size={18} color="#888899" />
+          </Pressable>
+        ) : null}
+        <Pressable onPress={() => router.back()} className="rounded-full bg-muted/60 p-2 active:opacity-70" hitSlop={6}>
+          <X size={18} color="#888899" />
+        </Pressable>
+      </View>
     </View>
   )
+
+  const Menu = canAct ? (
+    <OptionSheet
+      visible={menuOpen}
+      kicker={t('blocks.menuKicker')}
+      title={profile?.displayName ?? t('blocks.menuKicker')}
+      cancelLabel={t('blocks.cancel')}
+      onClose={() => setMenuOpen(false)}
+      options={[
+        blocked
+          ? { key: 'unblock', label: t('blocks.menuUnblock'), icon: UserX, onPress: () => { void doUnblock() } }
+          : { key: 'block', label: t('blocks.menuBlock'), icon: UserX, destructive: true, onPress: confirmBlock },
+      ]}
+    />
+  ) : null
 
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
         {Header}
+        {Menu}
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color="#888899" />
         </View>
@@ -207,6 +262,7 @@ export default function UserProfileScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
         {Header}
+        {Menu}
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-2xl">🚫</Text>
           <Text className="mt-2 text-center text-sm text-muted-foreground">No se pudo cargar el perfil.</Text>
@@ -218,11 +274,11 @@ export default function UserProfileScreen() {
   const today = todayStr()
   const initial = profile.displayName[0]?.toUpperCase() ?? '?'
   const following = userId ? isFollowing(userId) : false
-  const blocked = userId ? isBlocked(userId) : false
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       {Header}
+      {Menu}
       <ScrollView contentContainerClassName="px-4 pb-10" showsVerticalScrollIndicator={false}>
         {/* Cabecera de usuario */}
         <View className="mb-6 flex-row items-center gap-4">
@@ -241,58 +297,65 @@ export default function UserProfileScreen() {
           </View>
         </View>
 
-        {/* Seguir / dejar de seguir + bloquear */}
-        {!isOwnProfile && currentUserId && userId ? (
+        {/* Seguir / dejar de seguir (el bloqueo vive en el menú ⋯ del header) */}
+        {canAct && !blocked ? (
           <View className="mb-6 self-start">
-            {!blocked ? (
-              <Button
-                variant={following ? 'outline' : 'default'}
-                size="sm"
-                disabled={followLoading}
-                onPress={async () => {
-                  setFollowLoading(true)
-                  try {
-                    if (following) await unfollow(userId)
-                    else await follow(userId)
-                  } finally {
-                    setFollowLoading(false)
-                  }
-                }}
-                className={cn('self-start', !following && 'bg-lime')}
-              >
-                {followLoading ? (
-                  <ActivityIndicator size="small" color={following ? '#888899' : '#000'} />
-                ) : (
-                  <Text className={cn('font-mono text-[11px] tracking-widest', following ? 'text-foreground' : 'text-black')}>
-                    {following ? 'SIGUIENDO' : 'SEGUIR'}
-                  </Text>
-                )}
-              </Button>
-            ) : null}
-
-            {blocked ? (
-              <Pressable onPress={() => { void unblock(userId) }} className="mt-2 self-start active:opacity-70">
-                <Text className="font-mono text-[11px] uppercase tracking-widest text-red-500 underline">
-                  {t('blocks.blockedState')} — {t('blocks.unblockBtn')}
+            <Button
+              variant={following ? 'outline' : 'default'}
+              size="sm"
+              disabled={followLoading}
+              onPress={async () => {
+                setFollowLoading(true)
+                try {
+                  if (following) await unfollow(userId!)
+                  else await follow(userId!)
+                } finally {
+                  setFollowLoading(false)
+                }
+              }}
+              className={cn('self-start', !following && 'bg-lime')}
+            >
+              {followLoading ? (
+                <ActivityIndicator size="small" color={following ? '#888899' : '#000'} />
+              ) : (
+                <Text className={cn('font-mono text-[11px] tracking-widest', following ? 'text-foreground' : 'text-black')}>
+                  {following ? 'SIGUIENDO' : 'SEGUIR'}
                 </Text>
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={() => {
-                  Alert.alert(t('blocks.confirmTitle'), t('blocks.confirmBody'), [
-                    { text: t('blocks.cancel'), style: 'cancel' },
-                    { text: t('blocks.confirmAction'), style: 'destructive', onPress: () => { void block(userId) } },
-                  ])
-                }}
-                className="mt-2 self-start active:opacity-70"
-              >
-                <Text className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                  {t('blocks.blockBtn')}
-                </Text>
-              </Pressable>
-            )}
+              )}
+            </Button>
           </View>
         ) : null}
+
+        {/* Estado bloqueado — banner spec-sheet con acción clara de deshacer */}
+        {canAct && blocked ? (
+          <View className="mb-6 rounded-xl border border-red-500/40 bg-red-500/5 p-4">
+            <View className="flex-row items-center gap-2">
+              <UserX size={16} color="#ef4444" />
+              <Text className="font-bebas text-xl leading-none text-red-500">{t('blocks.blockedState')}</Text>
+            </View>
+            <Text className="mt-1.5 font-mono text-[11px] leading-4 text-muted-foreground">
+              {t('blocks.blockedNote')}
+            </Text>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={blockLoading}
+              onPress={() => { void doUnblock() }}
+              className="mt-3 self-start"
+            >
+              {blockLoading ? (
+                <ActivityIndicator size="small" color="#ef4444" />
+              ) : (
+                <Text className="font-mono text-[11px] tracking-widest">{t('blocks.unblockBtn')}</Text>
+              )}
+            </Button>
+          </View>
+        ) : null}
+
+        {/* Con bloqueo activo el servidor filtra sessions/stats: mostraríamos
+            ceros que parecen datos reales. Se oculta el contenido (patrón
+            Instagram: shell del perfil + banner, sin grid). */}
+        {!blocked ? (<>
 
         {/* Stats */}
         <View className="mb-6 flex-row gap-2">
@@ -368,6 +431,8 @@ export default function UserProfileScreen() {
             </View>
           </View>
         ) : null}
+
+        </>) : null}
       </ScrollView>
     </SafeAreaView>
   )

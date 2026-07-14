@@ -53,6 +53,12 @@ const buttonVariants = cva(
           'bg-lime active:bg-lime/90',
           Platform.select({ web: 'hover:bg-lime/90' })
         ),
+        // Acción destructiva secundaria (bloquear/eliminar sin ser el CTA):
+        // espejo de `lime` en rojo — hairline + tint, no relleno sólido.
+        danger: cn(
+          'border border-red-500/40 bg-red-500/10 active:bg-red-500/20',
+          Platform.select({ web: 'hover:bg-red-500/20' })
+        ),
         link: '',
       },
       size: {
@@ -87,6 +93,7 @@ const buttonTextVariants = cva(
         ghost: 'group-active:text-accent-foreground',
         lime: 'text-lime',
         limeSolid: 'text-black',
+        danger: 'text-red-500',
         link: cn(
           'text-primary group-active:underline',
           Platform.select({ web: 'underline-offset-4 hover:underline group-hover:underline' })
