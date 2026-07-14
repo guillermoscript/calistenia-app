@@ -9,6 +9,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.3.0] - 2026-07-14
+
+_Ahora puedes bloquear usuarios: su actividad desaparece para ti en toda la app._
+
+### Añadido
+
+- **Bloquear usuarios** — Bloquea a cualquier usuario desde su perfil: se dejan de seguir mutuamente y su actividad desaparece del feed, comentarios, reacciones, rankings y retos.
+- **Gestión de bloqueados** — Nueva pantalla en tu perfil para ver y desbloquear usuarios cuando quieras.
+- **Sin ruido** — Un usuario bloqueado no puede comentar tu actividad, seguirte ni enviarte notificaciones.
+
 ## [1.2.1] - 2026-07-13
 
 _Mejoras y correcciones de esta versión._
@@ -169,7 +179,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.0...HEAD
+[1.3.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.1...mobile-v1.3.0
 [1.2.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.0...mobile-v1.2.1
 [1.2.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.1.0...mobile-v1.2.0
 [1.1.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.9...mobile-v1.1.0

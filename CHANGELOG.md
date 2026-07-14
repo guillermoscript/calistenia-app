@@ -9,6 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.3.0] - 2026-07-14
+
+_You can now block users: their activity disappears for you across the whole app._
+
+### Added
+
+- **Block users** — Block any user from their profile: you unfollow each other and their activity disappears from your feed, comments, reactions, leaderboards and challenges.
+- **Blocked users management** — New screen in your profile to review and unblock users anytime.
+- **No noise** — A blocked user can't comment on your activity, follow you or send you notifications.
+
 ## [1.2.1] - 2026-07-13
 
 _Mejoras y correcciones de esta versión._
@@ -169,7 +179,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.0...HEAD
+[1.3.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.1...mobile-v1.3.0
 [1.2.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.0...mobile-v1.2.1
 [1.2.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.1.0...mobile-v1.2.0
 [1.1.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.0.9...mobile-v1.1.0

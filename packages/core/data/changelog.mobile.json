@@ -1,6 +1,52 @@
 {
-  "generated": "2026-07-13T23:25:58.762Z",
+  "generated": "2026-07-14T01:55:23.156Z",
   "versions": [
+    {
+      "version": "1.3.0",
+      "date": "2026-07-14",
+      "summary": {
+        "es": "Ahora puedes bloquear usuarios: su actividad desaparece para ti en toda la app.",
+        "en": "You can now block users: their activity disappears for you across the whole app."
+      },
+      "highlights": [
+        {
+          "icon": "🚫",
+          "type": "feat",
+          "title": {
+            "es": "Bloquear usuarios",
+            "en": "Block users"
+          },
+          "body": {
+            "es": "Bloquea a cualquier usuario desde su perfil: se dejan de seguir mutuamente y su actividad desaparece del feed, comentarios, reacciones, rankings y retos.",
+            "en": "Block any user from their profile: you unfollow each other and their activity disappears from your feed, comments, reactions, leaderboards and challenges."
+          }
+        },
+        {
+          "icon": "⚙️",
+          "type": "feat",
+          "title": {
+            "es": "Gestión de bloqueados",
+            "en": "Blocked users management"
+          },
+          "body": {
+            "es": "Nueva pantalla en tu perfil para ver y desbloquear usuarios cuando quieras.",
+            "en": "New screen in your profile to review and unblock users anytime."
+          }
+        },
+        {
+          "icon": "🔕",
+          "type": "feat",
+          "title": {
+            "es": "Sin ruido",
+            "en": "No noise"
+          },
+          "body": {
+            "es": "Un usuario bloqueado no puede comentar tu actividad, seguirte ni enviarte notificaciones.",
+            "en": "A blocked user can't comment on your activity, follow you or send you notifications."
+          }
+        }
+      ]
+    },
     {
       "version": "1.2.1",
       "date": "2026-07-13",
