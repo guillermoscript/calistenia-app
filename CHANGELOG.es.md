@@ -9,6 +9,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.3.2] - 2026-07-14
+
+_Mejoras y correcciones de esta versión._
+
+### Añadido
+
+- **mobile** — Tocar autor del feed abre su perfil + alert si block/unblock falla
+
 ## [1.3.1] - 2026-07-14
 
 _Bloquear usuarios ahora es más claro y rápido desde el perfil._
@@ -187,7 +195,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.2...HEAD
+[1.3.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.1...mobile-v1.3.2
 [1.3.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.0...mobile-v1.3.1
 [1.3.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.1...mobile-v1.3.0
 [1.2.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.0...mobile-v1.2.1

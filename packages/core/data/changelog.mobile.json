@@ -1,6 +1,43 @@
 {
-  "generated": "2026-07-14T14:02:13.330Z",
+  "generated": "2026-07-14T14:23:25.091Z",
   "versions": [
+    {
+      "version": "1.3.2",
+      "date": "2026-07-14",
+      "summary": {
+        "es": "Mejoras y correcciones de esta versión.",
+        "en": "Mejoras y correcciones de esta versión."
+      },
+      "highlights": [
+        {
+          "icon": "✨",
+          "type": "feat",
+          "title": {
+            "es": "mobile",
+            "en": "mobile"
+          },
+          "body": {
+            "es": "Tocar autor del feed abre su perfil + alert si block/unblock falla",
+            "en": "Tocar autor del feed abre su perfil + alert si block/unblock falla"
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Tocar autor del feed abre su perfil + alert si block/unblock falla",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "09d803e"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.3.1",
       "date": "2026-07-14",
