@@ -27,7 +27,7 @@
     "android": {
       "package": "tech.guille.calistenia",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 20,
+      "versionCode": 21,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -88,6 +88,9 @@
         "android.permission.health.READ_VO2_MAX",
         "android.permission.health.READ_DISTANCE",
         "android.permission.health.READ_EXERCISE"
+      ],
+      "blockedPermissions": [
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "web": {
