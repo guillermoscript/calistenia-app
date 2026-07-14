@@ -195,7 +195,10 @@ export default function UserProfileScreen() {
         onPress: async () => {
           if (!userId) return
           setBlockLoading(true)
-          try { await block(userId) } finally { setBlockLoading(false) }
+          try {
+            const ok = await block(userId)
+            if (!ok) Alert.alert(t('blocks.error'))
+          } finally { setBlockLoading(false) }
         },
       },
     ])
@@ -204,7 +207,10 @@ export default function UserProfileScreen() {
   const doUnblock = async () => {
     if (!userId) return
     setBlockLoading(true)
-    try { await unblock(userId) } finally { setBlockLoading(false) }
+    try {
+      const ok = await unblock(userId)
+      if (!ok) Alert.alert(t('blocks.error'))
+    } finally { setBlockLoading(false) }
   }
 
   const Header = (

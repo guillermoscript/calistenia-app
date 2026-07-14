@@ -84,8 +84,14 @@ export function FeedCard({
         style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(163, 230, 53, 0.3)' }, flashStyle]}
       />
 
-      {/* Avatar + nombre + tiempo */}
-      <View className="flex-row items-center gap-2.5 mb-2.5">
+      {/* Avatar + nombre + tiempo — tocar lleva al perfil del usuario */}
+      <Pressable
+        onPress={() => router.push({ pathname: '/u/[id]', params: { id: item.userId } })}
+        className="flex-row items-center gap-2.5 mb-2.5 active:opacity-70"
+        accessibilityRole="button"
+        accessibilityLabel={item.displayName}
+        hitSlop={4}
+      >
         <View className="size-9 rounded-full bg-accent items-center justify-center overflow-hidden shrink-0">
           {item.avatarUrl ? (
             <Image
@@ -116,7 +122,7 @@ export function FeedCard({
             {timeAgo(item.completedAt)}
           </Text>
         </View>
-      </View>
+      </Pressable>
 
       {/* Línea de acción */}
       <Text className="font-sans-medium text-xs text-muted-foreground mb-2">
