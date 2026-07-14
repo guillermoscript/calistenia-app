@@ -11,11 +11,11 @@ _Nada por ahora._
 
 ## [1.3.2] - 2026-07-14
 
-_Mejoras y correcciones de esta versión._
+_Toca el nombre de un amigo en el feed para abrir su perfil._
 
 ### Añadido
 
-- **mobile** — Tocar autor del feed abre su perfil + alert si block/unblock falla
+- **Perfil desde el feed** — Tocar el autor de una actividad abre su perfil. También avisamos si bloquear/desbloquear falla.
 
 ## [1.3.1] - 2026-07-14
 

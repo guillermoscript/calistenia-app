@@ -11,11 +11,11 @@ _Nothing yet._
 
 ## [1.3.2] - 2026-07-14
 
-_Mejoras y correcciones de esta versión._
+_Tap a friend's name in the feed to open their profile._
 
 ### Added
 
-- **mobile** — Tocar autor del feed abre su perfil + alert si block/unblock falla
+- **Profile from the feed** — Tapping an activity's author opens their profile. We also warn you if block/unblock fails.
 
 ## [1.3.1] - 2026-07-14
 

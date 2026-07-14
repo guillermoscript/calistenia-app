@@ -5,20 +5,20 @@
       "version": "1.3.2",
       "date": "2026-07-14",
       "summary": {
-        "es": "Mejoras y correcciones de esta versión.",
-        "en": "Mejoras y correcciones de esta versión."
+        "es": "Toca el nombre de un amigo en el feed para abrir su perfil.",
+        "en": "Tap a friend's name in the feed to open their profile."
       },
       "highlights": [
         {
-          "icon": "✨",
+          "icon": "👤",
           "type": "feat",
           "title": {
-            "es": "mobile",
-            "en": "mobile"
+            "es": "Perfil desde el feed",
+            "en": "Profile from the feed"
           },
           "body": {
-            "es": "Tocar autor del feed abre su perfil + alert si block/unblock falla",
-            "en": "Tocar autor del feed abre su perfil + alert si block/unblock falla"
+            "es": "Tocar el autor de una actividad abre su perfil. También avisamos si bloquear/desbloquear falla.",
+            "en": "Tapping an activity's author opens their profile. We also warn you if block/unblock fails."
           }
         }
       ],
