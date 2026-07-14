@@ -23,6 +23,8 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { shareReferralInvite, shareText, profileUrl } from '@/lib/share'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
+import { useBlocks } from '@calistenia/core/hooks/useBlocks'
+import { excludeBlocked } from '@calistenia/core/lib/blocks'
 import { Sentry } from '@/lib/instrument'
 import type { FollowUser } from '@calistenia/core/hooks/useFollows'
 import { buildUserSearchFilter } from '@/lib/user-search-filter'
@@ -161,6 +163,7 @@ export default function FriendsScreen() {
   const userId = user?.id ?? null
 
   const { following, followers, followingIds, loading, follow, unfollow } = useFollows(userId)
+  const { blockedIds } = useBlocks(userId)
 
   const [tab, setTab] = useState<Tab>('siguiendo')
   const [search, setSearch] = useState('')
@@ -211,15 +214,15 @@ export default function FriendsScreen() {
     return () => clearTimeout(debounceRef.current)
   }, [query, userId, retryTrigger])
 
-  // Sort search results: already-followed first
+  // Sort search results: already-followed first (bloqueados excluidos tras el filtro de texto)
   const sortedSearchResults = useMemo(
     () =>
-      searchResults.slice().sort((a, b) => {
+      excludeBlocked(searchResults, blockedIds).slice().sort((a, b) => {
         const aF = followingIds.has(a.id) ? 0 : 1
         const bF = followingIds.has(b.id) ? 0 : 1
         return aF - bF
       }),
-    [searchResults, followingIds],
+    [searchResults, followingIds, blockedIds],
   )
 
   // ── Invite share ─────────────────────────────────────────────────────────────
