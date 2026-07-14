@@ -91,6 +91,12 @@ function createSelfNotification(userId, type, referenceId, referenceType, data) 
 
 function createNotification(userId, type, actorId, referenceId, referenceType, data) {
   if (!userId || !actorId || userId === actorId) return
+  // Guard de bloqueo: nunca notificar entre usuarios con bloqueo (cinturón
+  // extra; los guards de creación ya cortan casi todo el fan-out).
+  try {
+    var blocks = require(`${__hooks}/utils/blocks.js`)
+    if (blocks.isBlocked($app, userId, actorId)) return
+  } catch (e) { /* nunca romper notificaciones por un error del guard */ }
   if (!prefAllows(userId, categoryForType(type), "inapp")) return
   try {
     var collection = $app.findCollectionByNameOrId("notifications")
@@ -151,10 +157,13 @@ function getFollowers(userId) {
 // El gate de preferencias se aplica por seguidor dentro de createNotification/sendPush.
 function notifyFollowers(actorId, type, referenceId, data, push) {
   if (!actorId) return
+  var blocks = null
+  try { blocks = require(`${__hooks}/utils/blocks.js`) } catch (e) {}
   var followers = getFollowers(actorId)
   for (var i = 0; i < followers.length; i++) {
     var fid = followers[i]
     if (!fid || fid === actorId) continue
+    if (blocks && blocks.isBlocked($app, fid, actorId)) continue
     createNotification(fid, type, actorId, referenceId, "user", data)
     if (push) {
       sendPush(fid, push.title, push.body, push.url, type)
