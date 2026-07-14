@@ -14,6 +14,7 @@ import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/cor
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
+import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { useProfileCompare } from '@calistenia/core/hooks/useProfileCompare'
 import { ShareButton } from '../components/ShareButton'
 import { shareProfile, shareReferralInvite } from '../lib/share'
@@ -67,7 +68,10 @@ export default function UserProfilePage() {
   const [comparing, setComparing] = useState(false)
   const isOwnProfile = currentUserId === userId
   const { isFollowing, follow, unfollow, followingCount, followersCount } = useFollows(currentUserId || null)
+  const { isBlocked, block, unblock } = useBlocks(currentUserId || null)
+  const blocked = userId ? isBlocked(userId) : false
   const [followLoading, setFollowLoading] = useState(false)
+  const [blockLoading, setBlockLoading] = useState(false)
   const { stats: referralStats, getReferralStats } = useReferrals(currentUserId || null)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   // Compare: fetch extended stats for both the viewed user and the current user
@@ -257,40 +261,70 @@ export default function UserProfilePage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           {!isOwnProfile && currentUserId && userId && (
-            <>
+            blocked ? (
               <Button
-                variant={isFollowing(userId) ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
-                disabled={followLoading}
+                disabled={blockLoading}
                 onClick={async () => {
-                  setFollowLoading(true)
-                  if (isFollowing(userId)) await unfollow(userId)
-                  else await follow(userId)
-                  setFollowLoading(false)
+                  setBlockLoading(true)
+                  await unblock(userId)
+                  setBlockLoading(false)
                 }}
-                className={cn(
-                  'text-[10px] tracking-widest h-9 active:scale-95 transition-all',
-                  isFollowing(userId)
-                    ? 'bg-[hsl(var(--lime))] text-background hover:bg-red-500 hover:text-white'
-                    : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
-                )}
+                className="text-[10px] tracking-widest h-9 border-red-500/60 text-red-500 hover:bg-red-500 hover:text-white active:scale-95 transition-all"
               >
-                {followLoading ? '...' : isFollowing(userId) ? t('friends.followingBtn') : t('friends.followBtn')}
+                {blockLoading ? '...' : `${t('blocks.blockedState')} · ${t('blocks.unblockBtn')}`}
               </Button>
-              <Button
-                variant={comparing ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setComparing(c => !c)}
-                className={cn(
-                  'text-[10px] tracking-widest h-9',
-                  comparing
-                    ? 'bg-[hsl(var(--lime))] text-background'
-                    : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
-                )}
-              >
-                {comparing ? t('friends.compare.hide') : t('friends.compare.show')}
-              </Button>
-            </>
+            ) : (
+              <>
+                <Button
+                  variant={isFollowing(userId) ? 'default' : 'outline'}
+                  size="sm"
+                  disabled={followLoading}
+                  onClick={async () => {
+                    setFollowLoading(true)
+                    if (isFollowing(userId)) await unfollow(userId)
+                    else await follow(userId)
+                    setFollowLoading(false)
+                  }}
+                  className={cn(
+                    'text-[10px] tracking-widest h-9 active:scale-95 transition-all',
+                    isFollowing(userId)
+                      ? 'bg-[hsl(var(--lime))] text-background hover:bg-red-500 hover:text-white'
+                      : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
+                  )}
+                >
+                  {followLoading ? '...' : isFollowing(userId) ? t('friends.followingBtn') : t('friends.followBtn')}
+                </Button>
+                <Button
+                  variant={comparing ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setComparing(c => !c)}
+                  className={cn(
+                    'text-[10px] tracking-widest h-9',
+                    comparing
+                      ? 'bg-[hsl(var(--lime))] text-background'
+                      : 'hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]'
+                  )}
+                >
+                  {comparing ? t('friends.compare.hide') : t('friends.compare.show')}
+                </Button>
+                <button
+                  type="button"
+                  disabled={blockLoading}
+                  onClick={async () => {
+                    if (window.confirm(`${t('blocks.confirmTitle')}\n\n${t('blocks.confirmBody')}`)) {
+                      setBlockLoading(true)
+                      await block(userId)
+                      setBlockLoading(false)
+                    }
+                  }}
+                  className="text-[10px] tracking-widest uppercase text-muted-foreground hover:text-red-500 transition-colors self-center px-1 h-9"
+                >
+                  {t('blocks.blockBtn')}
+                </button>
+              </>
+            )
           )}
           {userId && (
             <ShareButton
