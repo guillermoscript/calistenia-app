@@ -3,10 +3,11 @@
  * Ruta: /u/[id] (la usa friends.tsx al tocar un usuario).
  */
 import { useState, useEffect } from 'react'
-import { View, ScrollView, Image, ActivityIndicator, Pressable } from 'react-native'
+import { View, ScrollView, Image, ActivityIndicator, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { X } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
+import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
@@ -65,12 +67,14 @@ function StatBox({ label, value, accent, unit }: { label: string; value: number;
 export default function UserProfileScreen() {
   const { id: userId } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const { t } = useTranslation()
   const l = useLocalize()
   const me = useAuthUser()
   const currentUserId = me?.id ?? null
   const isOwnProfile = currentUserId === userId
 
   const { isFollowing, follow, unfollow } = useFollows(currentUserId)
+  const { isBlocked, block, unblock } = useBlocks(currentUserId)
   const [followLoading, setFollowLoading] = useState(false)
 
   const [profile, setProfile] = useState<ProfileData | null>(null)
@@ -214,6 +218,7 @@ export default function UserProfileScreen() {
   const today = todayStr()
   const initial = profile.displayName[0]?.toUpperCase() ?? '?'
   const following = userId ? isFollowing(userId) : false
+  const blocked = userId ? isBlocked(userId) : false
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -236,31 +241,57 @@ export default function UserProfileScreen() {
           </View>
         </View>
 
-        {/* Seguir / dejar de seguir */}
+        {/* Seguir / dejar de seguir + bloquear */}
         {!isOwnProfile && currentUserId && userId ? (
-          <Button
-            variant={following ? 'outline' : 'default'}
-            size="sm"
-            disabled={followLoading}
-            onPress={async () => {
-              setFollowLoading(true)
-              try {
-                if (following) await unfollow(userId)
-                else await follow(userId)
-              } finally {
-                setFollowLoading(false)
-              }
-            }}
-            className={cn('mb-6 self-start', !following && 'bg-lime')}
-          >
-            {followLoading ? (
-              <ActivityIndicator size="small" color={following ? '#888899' : '#000'} />
+          <View className="mb-6 self-start">
+            {!blocked ? (
+              <Button
+                variant={following ? 'outline' : 'default'}
+                size="sm"
+                disabled={followLoading}
+                onPress={async () => {
+                  setFollowLoading(true)
+                  try {
+                    if (following) await unfollow(userId)
+                    else await follow(userId)
+                  } finally {
+                    setFollowLoading(false)
+                  }
+                }}
+                className={cn('self-start', !following && 'bg-lime')}
+              >
+                {followLoading ? (
+                  <ActivityIndicator size="small" color={following ? '#888899' : '#000'} />
+                ) : (
+                  <Text className={cn('font-mono text-[11px] tracking-widest', following ? 'text-foreground' : 'text-black')}>
+                    {following ? 'SIGUIENDO' : 'SEGUIR'}
+                  </Text>
+                )}
+              </Button>
+            ) : null}
+
+            {blocked ? (
+              <Pressable onPress={() => { void unblock(userId) }} className="mt-2 self-start active:opacity-70">
+                <Text className="font-mono text-[11px] uppercase tracking-widest text-red-500 underline">
+                  {t('blocks.blockedState')} — {t('blocks.unblockBtn')}
+                </Text>
+              </Pressable>
             ) : (
-              <Text className={cn('font-mono text-[11px] tracking-widest', following ? 'text-foreground' : 'text-black')}>
-                {following ? 'SIGUIENDO' : 'SEGUIR'}
-              </Text>
+              <Pressable
+                onPress={() => {
+                  Alert.alert(t('blocks.confirmTitle'), t('blocks.confirmBody'), [
+                    { text: t('blocks.cancel'), style: 'cancel' },
+                    { text: t('blocks.confirmAction'), style: 'destructive', onPress: () => { void block(userId) } },
+                  ])
+                }}
+                className="mt-2 self-start active:opacity-70"
+              >
+                <Text className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  {t('blocks.blockBtn')}
+                </Text>
+              </Pressable>
             )}
-          </Button>
+          </View>
         ) : null}
 
         {/* Stats */}
