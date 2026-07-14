@@ -864,6 +864,18 @@
   "friends.compare.vsYou": "vs you",
   "friends.compare.loading": "Loading comparison...",
 
+  "blocks.blockBtn": "BLOCK",
+  "blocks.unblockBtn": "UNBLOCK",
+  "blocks.blockedState": "BLOCKED",
+  "blocks.confirmTitle": "Block user?",
+  "blocks.confirmBody": "You will unfollow each other and stop seeing each other's activity (feed, comments, reactions, rankings).",
+  "blocks.confirmAction": "Block",
+  "blocks.cancel": "Cancel",
+  "blocks.manageTitle": "BLOCKED USERS",
+  "blocks.manageEntry": "Blocked users",
+  "blocks.empty": "You haven't blocked anyone",
+  "blocks.error": "Could not complete the action",
+
   "feed.section": "Social",
   "feed.title": "ACTIVITY",
   "feed.loading": "Loading activity...",

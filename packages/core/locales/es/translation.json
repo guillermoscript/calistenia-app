@@ -864,6 +864,18 @@
   "friends.compare.vsYou": "vs tu",
   "friends.compare.loading": "Cargando comparacion...",
 
+  "blocks.blockBtn": "BLOQUEAR",
+  "blocks.unblockBtn": "DESBLOQUEAR",
+  "blocks.blockedState": "BLOQUEADO",
+  "blocks.confirmTitle": "¿Bloquear usuario?",
+  "blocks.confirmBody": "Dejarán de seguirse mutuamente y no verán la actividad del otro (feed, comentarios, reacciones, rankings).",
+  "blocks.confirmAction": "Bloquear",
+  "blocks.cancel": "Cancelar",
+  "blocks.manageTitle": "USUARIOS BLOQUEADOS",
+  "blocks.manageEntry": "Usuarios bloqueados",
+  "blocks.empty": "No has bloqueado a nadie",
+  "blocks.error": "No se pudo completar la acción",
+
   "feed.section": "Social",
   "feed.title": "ACTIVIDAD",
   "feed.loading": "Cargando actividad...",
