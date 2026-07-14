@@ -389,6 +389,12 @@
   "landing.mockWeek": "Esta semana",
   "landing.mockProgress": "Vas avanzando",
   "landing.mockWorkouts": "Entrenamientos completados",
+  "landing.foodFeature1": "Añade productos desde la despensa, código de barras o una foto de tu recibo.",
+  "landing.foodFeature2": "Recibe recetas que aprovechan lo que ya tienes y guarda tus favoritas.",
+  "landing.foodFeature3": "Genera una lista de compra útil y entiende el costo por comida.",
+  "landing.progressFeature1": "Ve entrenamientos, cardio, comidas, sueño y agua en un solo calendario.",
+  "landing.progressFeature2": "Compara fotos y registra tus marcas personales para ver cambios reales.",
+  "landing.progressFeature3": "Recibe un resumen semanal que une tus hábitos y te propone tu siguiente acción.",
 
   "dashboard.greeting.morning": "Buenos dias",
   "dashboard.greeting.afternoon": "Buenas tardes",

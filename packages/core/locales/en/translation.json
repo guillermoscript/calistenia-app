@@ -389,6 +389,12 @@
   "landing.mockWeek": "This week",
   "landing.mockProgress": "You are progressing",
   "landing.mockWorkouts": "Workouts completed",
+  "landing.foodFeature1": "Add items from your pantry, barcode scans or a photo of your receipt.",
+  "landing.foodFeature2": "Get recipes that use what you already have and save your favorites.",
+  "landing.foodFeature3": "Generate a useful shopping list and understand the cost per meal.",
+  "landing.progressFeature1": "See workouts, cardio, meals, sleep and water in one calendar.",
+  "landing.progressFeature2": "Compare photos and log personal records to see real change.",
+  "landing.progressFeature3": "Get a weekly summary that connects your habits and suggests your next action.",
 
   "dashboard.greeting.morning": "Good morning",
   "dashboard.greeting.afternoon": "Good afternoon",
