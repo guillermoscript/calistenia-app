@@ -758,6 +758,24 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           </CardContent>
         </Card>
 
+        {/* Blocked users link */}
+        <Card
+          className="cursor-pointer hover:border-lime-400/30 transition-colors"
+          onClick={() => navigate('/settings/blocked')}
+        >
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🚫</span>
+              <div>
+                <div className="text-sm font-medium">{t('blocks.manageEntry')}</div>
+              </div>
+            </div>
+            <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </CardContent>
+        </Card>
+
         {/* Save button */}
         <Button
           onClick={handleSave}

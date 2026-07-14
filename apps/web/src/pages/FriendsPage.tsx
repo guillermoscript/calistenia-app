@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
+import { useBlocks } from '@calistenia/core/hooks/useBlocks'
+import { excludeBlocked } from '@calistenia/core/lib/blocks'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -54,6 +56,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { following, followers, followingIds, loading, follow, unfollow } = useFollows(userId)
+  const { blockedIds } = useBlocks(userId)
   const [tab, setTab] = useState<Tab>('siguiendo')
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -154,14 +157,17 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
   }, [query, userId, retryTrigger, loadAllUsers])
 
   // [C1 fix] loadMore uses the pure mapPbItems with userId param — no stale closures
+  // Blocked users are excluded AFTER the text filter — see useBlocks/excludeBlocked.
+  const visibleResults = useMemo(() => excludeBlocked(searchResults, blockedIds), [searchResults, blockedIds])
+
   // Memoize sorted search results
   const sortedSearchResults = useMemo(() =>
-    searchResults.slice().sort((a, b) => {
+    visibleResults.slice().sort((a, b) => {
       const aFollowed = followingIds.has(a.id) ? 0 : 1
       const bFollowed = followingIds.has(b.id) ? 0 : 1
       return aFollowed - bFollowed
     }),
-  [searchResults, followingIds])
+  [visibleResults, followingIds])
 
   // [H4 fix] Arrow key navigation for tabs (WAI-ARIA Tabs pattern)
   const handleTabKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -275,8 +281,8 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
           <div aria-live="polite" className="sr-only">
             {searching && t('friends.searching')}
             {!searching && searchError && t('friends.searchErrorMsg')}
-            {!searching && !searchError && searchResults.length === 0 && t('friends.noResultsFor', { query: search.trim() })}
-            {!searching && searchResults.length > 0 && t('friends.resultCount', { count: searchResults.length })}
+            {!searching && !searchError && visibleResults.length === 0 && t('friends.noResultsFor', { query: search.trim() })}
+            {!searching && visibleResults.length > 0 && t('friends.resultCount', { count: visibleResults.length })}
           </div>
           {searching && (
             <div className="flex flex-col gap-1.5">
@@ -292,7 +298,7 @@ export default function FriendsPage({ userId }: FriendsPageProps) {
               <Button variant="outline" size="sm" onClick={() => setRetryTrigger(c => c + 1)}>{t('friends.retry')}</Button>
             </div>
           )}
-          {!searching && !searchError && searchResults.length === 0 && (
+          {!searching && !searchError && visibleResults.length === 0 && (
             <div className="text-center py-8">
               <div className="text-sm text-muted-foreground mb-3">{t('friends.notFound', { name: search.trim() })}</div>
               <div className="text-xs text-muted-foreground mb-4">{t('friends.inviteWhatsApp')}</div>
