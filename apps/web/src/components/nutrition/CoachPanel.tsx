@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { QualityScoreBadge } from './QualityScoreBadge'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import { MEAL_TYPE_COLORS, SCORE_BAR_COLORS, BADGE_COLORS } from '@calistenia/core/lib/style-tokens'
@@ -19,7 +20,6 @@ interface CoachPanelProps {
   weeklyInsight: NutritionCoachInsight | null
   badges: NutritionBadge[]
   generatingWeekly: boolean
-  activeTab: 'daily' | 'weekly'
   weeklyDayScores?: { date: string; dayLabel: string; score?: QualityScore }[]
 }
 
@@ -29,9 +29,12 @@ export function CoachPanel({
   weeklyInsight,
   badges,
   generatingWeekly,
-  activeTab,
   weeklyDayScores,
 }: CoachPanelProps) {
+  const { t } = useTranslation()
+  // Toggle interno Día/Semana (antes venía acoplado al tab de la página)
+  const [view, setView] = useState<'daily' | 'weekly'>('daily')
+
   // Coach messages from scored entries
   const coachMessages = useMemo(() => {
     return entries
@@ -45,12 +48,37 @@ export function CoachPanel({
       }))
   }, [entries])
 
-  if (activeTab === 'weekly') {
-    return <WeeklyCoachView insight={weeklyInsight} generating={generatingWeekly} dayScores={weeklyDayScores} />
+  const viewToggle = (
+    <div className="flex gap-2">
+      {(['daily', 'weekly'] as const).map(v => (
+        <button
+          key={v}
+          onClick={() => setView(v)}
+          className={cn(
+            'rounded-lg border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wide transition-colors',
+            view === v
+              ? 'border-lime/50 bg-lime/10 text-lime'
+              : 'border-border text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {v === 'daily' ? t('nutrition.coach.tabDay', 'Día') : t('nutrition.coach.tabWeek', 'Semana')}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (view === 'weekly') {
+    return (
+      <div className="space-y-4">
+        {viewToggle}
+        <WeeklyCoachView insight={weeklyInsight} generating={generatingWeekly} dayScores={weeklyDayScores} />
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
+      {viewToggle}
       {/* Daily score */}
       {dailyInsight?.overallScore && (
         <div className="flex items-center gap-3">

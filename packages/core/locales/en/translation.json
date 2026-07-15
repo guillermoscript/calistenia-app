@@ -2383,6 +2383,13 @@
 
   "nutrition.tabs.daily": "DAY",
   "nutrition.tabs.weekly": "WEEKLY PLAN",
+  "nutrition.tabs.today": "TODAY",
+  "nutrition.tabs.plan": "PLAN",
+  "nutrition.planHub.manage": "Manage",
+  "nutrition.planHub.foods": "foods",
+  "nutrition.planHub.empty": "Add what you have at home",
+  "nutrition.coach.tabDay": "Day",
+  "nutrition.coach.tabWeek": "Week",
 
   "nutrition.weeklyPlan.title": "WEEKLY PLAN",
   "nutrition.weeklyPlan.aiLabel": "AI",

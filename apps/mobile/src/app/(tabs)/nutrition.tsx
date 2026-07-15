@@ -1,16 +1,15 @@
 /**
- * NutritionPage (mobile) — port completo de apps/web/src/pages/NutritionPage.tsx
- * Features: date nav, daily/weekly tabs, goal setup, water, frequent meals,
- * dashboard + macros, AI daily/weekly plan, coach insights, FAB logger con cámara.
+ * NutritionPage (mobile) — pantalla de nutrición con dos sub-vistas:
+ * HOY (seguimiento: date nav, ring + macros, agua, comidas, coach/tendencia)
+ * y PLANIFICAR (hub de planificación: despensa, plan IA del día, plan desde
+ * despensa, plan semanal). FAB logger con cámara compartido entre ambas.
  */
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   View,
   ScrollView,
   Pressable,
-  TextInput,
   Alert,
-  ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
@@ -41,6 +40,7 @@ import { useDayRollover } from '@/lib/use-day-rollover'
 import { useDailyHealth } from '@/lib/health/useDailyHealth'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
+import { SCORE_COLORS } from '@calistenia/core/lib/style-tokens'
 import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
 
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -59,8 +59,6 @@ import { PantryDepleteSheet } from '@/components/pantry/PantryDepleteSheet'
 import CoachInsights from '@/components/nutrition/CoachInsights'
 import NutritionShareButton from '@/components/share/NutritionShareButton'
 import { Sentry } from '@/lib/instrument'
-
-const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
 type PlannedMeal = {
   meal_type: string
@@ -107,7 +105,7 @@ export default function NutritionTab() {
   const { action, date: dateParam } = useLocalSearchParams<{ action?: string; date?: string }>()
 
   const [selectedDate, setSelectedDate] = useState(dateParam || todayStr())
-  const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily')
+  const [activeTab, setActiveTab] = useState<'today' | 'plan'>('today')
   const [showCoach, setShowCoach] = useState(false)
   const [loggerVisible, setLoggerVisible] = useState(false)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
@@ -126,7 +124,6 @@ export default function NutritionTab() {
     saveEntry,
     deleteEntry,
     updateEntry,
-    analyzeMeal,
     calculateMacros,
     getDailyTotals,
     getEntriesForDate,
@@ -174,13 +171,12 @@ export default function NutritionTab() {
     generatingWeekly,
     loadBadges,
     upsertDailyInsight,
-    getWeeklyInsight,
     generateWeeklyInsight,
   } = useNutritionCoach(userId)
 
   // Mobile analyze: uses URI-based API instead of File objects
   const handleAnalyze = useCallback(async (
-    images: Array<{ uri: string; mimeType?: string; fileName?: string }>,
+    images: { uri: string; mimeType?: string; fileName?: string }[],
     mealType: string,
     description?: string,
     eatenHour?: number,
@@ -295,8 +291,7 @@ export default function NutritionTab() {
   // Deep-link: cuando se navega aquí con ?date (p.ej. desde el Calendario), saltar
   // a ese día. El tab queda montado, así que el initializer de useState no basta.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync a deep-link param into local state; tab stays mounted so initializer alone won't fire
-    if (dateParam) setSelectedDate(dateParam)
+    if (dateParam) { setSelectedDate(dateParam); setActiveTab('today') }
   }, [dateParam])
 
   // ─── Day rollover ────────────────────────────────────────────────────────────
@@ -385,20 +380,25 @@ export default function NutritionTab() {
   const dailyHealth = useDailyHealth(selectedDate)
   const activeCalories = Math.max(0, Math.round(dailyHealth?.active_calories ?? 0))
 
-  // ─── Remaining macros ────────────────────────────────────────────────────────
+  // ─── Remaining macros (siempre de HOY: alimentan el plan IA en PLANIFICAR,
+  // que planifica el día en curso aunque se esté inspeccionando otra fecha) ────
+  const todayTotals = useMemo(() => getDailyTotals(todayStr()), [getDailyTotals])
+  const todayEntries = useMemo(() => getEntriesForDate(todayStr()), [getEntriesForDate])
   const remaining = useMemo(() => {
     if (!goals) return { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    // activeCalories viene del health del día seleccionado; solo aplica si es hoy.
+    const extra = selectedDate === todayStr() ? activeCalories : 0
     return {
-      calories: goals.dailyCalories + activeCalories - dailyTotals.calories,
-      protein: goals.dailyProtein - dailyTotals.protein,
-      carbs: goals.dailyCarbs - dailyTotals.carbs,
-      fat: goals.dailyFat - dailyTotals.fat,
+      calories: goals.dailyCalories + extra - todayTotals.calories,
+      protein: goals.dailyProtein - todayTotals.protein,
+      carbs: goals.dailyCarbs - todayTotals.carbs,
+      fat: goals.dailyFat - todayTotals.fat,
     }
-  }, [goals, dailyTotals, activeCalories])
+  }, [goals, todayTotals, activeCalories, selectedDate])
 
   const loggedMealTypes = useMemo(
-    () => [...new Set(entries.map(e => e.mealType))],
-    [entries]
+    () => [...new Set(todayEntries.map(e => e.mealType))],
+    [todayEntries]
   )
 
   // ─── Save goals ──────────────────────────────────────────────────────────────
@@ -601,90 +601,75 @@ export default function NutritionTab() {
           </View>
         )}
 
-        {/* Date navigator — swipe left/right to change day */}
-        <GestureDetector gesture={swipeGesture}>
-          <View className="flex-row items-center gap-3 mb-5">
-            <Pressable
-              onPress={goToPrevDay}
-              className="size-9 rounded-full bg-muted/60 items-center justify-center active:bg-muted"
-            >
-              <ChevronLeft size={18} color="rgba(255,255,255,0.6)" strokeWidth={2} />
-            </Pressable>
-            <View className="flex-1">
-              <Text className="text-sm font-sans-medium text-foreground capitalize text-center">
-                {isToday ? t('common.today') : formatDate(selectedDate)}
-              </Text>
-              {!isToday && (
-                <Text className="text-[10px] font-mono text-muted-foreground text-center">{selectedDate}</Text>
-              )}
-            </View>
-            <Pressable
-              onPress={goToNextDay}
-              className="size-9 rounded-full bg-muted/60 items-center justify-center active:bg-muted"
-            >
-              <ChevronRight size={18} color="rgba(255,255,255,0.6)" strokeWidth={2} />
-            </Pressable>
-            {!isToday && (
-              <Pressable onPress={goToToday}>
-                <Text className="font-mono text-[10px] text-lime-400 tracking-widest uppercase">{t('common.today')}</Text>
-              </Pressable>
-            )}
-          </View>
-        </GestureDetector>
-
-        {/* Daily / Weekly tab toggle */}
-        <View className="flex-row gap-1 mb-5 bg-card border border-border rounded-lg p-1">
-          {(['daily', 'weekly'] as const).map(tab => (
+        {/* Sub-vistas: HOY (seguimiento) / PLANIFICAR (hub de planes) */}
+        <View className="flex-row mb-5 border-b border-border">
+          {(['today', 'plan'] as const).map(tab => (
             <Pressable
               key={tab}
               onPress={() => { haptics.selection(); setActiveTab(tab) }}
               className={cn(
-                'flex-1 py-1.5 rounded-md items-center',
-                activeTab === tab
-                  ? 'bg-lime-400/15 border border-lime-400/30'
-                  : '',
+                'flex-1 items-center pb-2.5 -mb-px border-b-2',
+                activeTab === tab ? 'border-lime-400' : 'border-transparent',
               )}
             >
               <Text className={cn(
-                'font-bebas text-sm tracking-widest',
+                'font-bebas text-base tracking-[2px]',
                 activeTab === tab ? 'text-lime-400' : 'text-muted-foreground',
               )}>
-                {tab === 'daily' ? t('nutrition.tabs.daily') : t('nutrition.tabs.weekly')}
+                {tab === 'today' ? t('nutrition.tabs.today') : t('nutrition.tabs.plan')}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        {/* Water tracker */}
-        <View className="mb-5">
-          <WaterTracker
-            todayTotal={waterTotal}
-            goal={waterGoal}
-            onAdd={isToday ? addWater : undefined}
-            onSetGoal={setWaterGoal}
-            adding={waterAdding}
-          />
-        </View>
+        {/* Date navigator — swipe left/right to change day */}
+        {activeTab === 'today' && (
+          <GestureDetector gesture={swipeGesture}>
+            <View className="flex-row items-center gap-3 mb-5">
+              <Pressable
+                onPress={goToPrevDay}
+                className="size-9 rounded-full bg-muted/60 items-center justify-center active:bg-muted"
+              >
+                <ChevronLeft size={18} color="rgba(255,255,255,0.6)" strokeWidth={2} />
+              </Pressable>
+              <View className="flex-1">
+                <Text className="text-sm font-sans-medium text-foreground capitalize text-center">
+                  {isToday ? t('common.today') : formatDate(selectedDate)}
+                </Text>
+                {!isToday && (
+                  <Text className="text-[10px] font-mono text-muted-foreground text-center">{selectedDate}</Text>
+                )}
+              </View>
+              <Pressable
+                onPress={goToNextDay}
+                className="size-9 rounded-full bg-muted/60 items-center justify-center active:bg-muted"
+              >
+                <ChevronRight size={18} color="rgba(255,255,255,0.6)" strokeWidth={2} />
+              </Pressable>
+              {!isToday && (
+                <Pressable onPress={goToToday}>
+                  <Text className="font-mono text-[10px] text-lime-400 tracking-widest uppercase">{t('common.today')}</Text>
+                </Pressable>
+              )}
+            </View>
+          </GestureDetector>
+        )}
 
-        {/* Despensa utility row */}
-        <Pressable
-          onPress={() => router.push('/pantry')}
-          className="mb-4 flex-row items-center justify-between border-b border-border pb-3 active:opacity-70"
-        >
-          <View className="flex-row items-center gap-2">
-            <View className="size-1.5 bg-lime" />
-            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
-              {t('pantry.title')}
-            </Text>
+        {/* Water tracker */}
+        {activeTab === 'today' && (
+          <View className="mb-5">
+            <WaterTracker
+              todayTotal={waterTotal}
+              goal={waterGoal}
+              onAdd={isToday ? addWater : undefined}
+              onSetGoal={setWaterGoal}
+              adding={waterAdding}
+            />
           </View>
-          <View className="flex-row items-center gap-2">
-            {pantryCount > 0 && <Text className="font-mono text-xs text-foreground">{pantryCount}</Text>}
-            <ChevronRight size={14} color="hsl(0 0% 55%)" />
-          </View>
-        </Pressable>
+        )}
 
         {/* Frequent meals quick-tap */}
-        {isToday && frequentMeals.length > 0 && (
+        {activeTab === 'today' && isToday && frequentMeals.length > 0 && (
           <View className="mb-5">
             <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-3">
               {t('nutrition.frequentMeals')}
@@ -740,24 +725,26 @@ export default function NutritionTab() {
         )}
 
         {/* Dashboard: calorie ring + macro bars + meal entries */}
-        <View className="mb-5">
-          <NutritionDashboard
-            dailyTotals={dailyTotals}
-            goals={goals}
-            entries={entries}
-            onDeleteEntry={deleteEntry}
-            onDuplicateEntry={handleDuplicateEntry}
-            onEditEntry={handleEditEntry}
-            selectedDate={selectedDate}
-            dailyQualityScore={dailyQualityScore}
-            activeCalories={activeCalories}
-            spend={spendData?.summary}
-            entryCosts={spendData?.costByEntry}
-          />
-        </View>
+        {activeTab === 'today' && (
+          <View className="mb-5">
+            <NutritionDashboard
+              dailyTotals={dailyTotals}
+              goals={goals}
+              entries={entries}
+              onDeleteEntry={deleteEntry}
+              onDuplicateEntry={handleDuplicateEntry}
+              onEditEntry={handleEditEntry}
+              selectedDate={selectedDate}
+              dailyQualityScore={dailyQualityScore}
+              activeCalories={activeCalories}
+              spend={spendData?.summary}
+              entryCosts={spendData?.costByEntry}
+            />
+          </View>
+        )}
 
-        {/* Share card — only in daily view and when there's at least one logged entry */}
-        {activeTab === 'daily' && entries.length > 0 && (
+        {/* Share card — solo en HOY y con al menos una comida registrada */}
+        {activeTab === 'today' && entries.length > 0 && (
           <View className="mb-5">
             <NutritionShareButton
               date={selectedDate}
@@ -775,75 +762,118 @@ export default function NutritionTab() {
           </View>
         )}
 
-        {/* AI Meal plans — daily or weekly */}
-        {activeTab === 'weekly' ? (
-          <View className="mb-5">
-            <WeeklyMealPlan
-              activePlan={weeklyPlan}
-              planDays={weeklyPlanDays}
-              isLoading={weeklyLoading}
-              goals={goals}
-              getDailyTotals={getDailyTotals}
-              onGenerate={() => generateWeeklyPlan(goals).then(() => {})}
-              onRegenerateDay={regenerateWeeklyDay}
-              onLogMeal={logWeeklyMeal}
-              onDeleteMeal={deleteWeeklyMeal}
-              onArchive={archiveWeeklyPlan}
-              onRefresh={refreshWeeklyPlan}
-              hasPantry={pantryPlan.hasPantry}
-              onGenerateFromPantry={() => pantryPlan.generateWeek(pantryGoals)}
+        {/* ── PLANIFICAR: despensa → plan del día → plan desde despensa → semanal ── */}
+        {activeTab === 'plan' && (
+          <View className="mb-5 gap-6">
+            {/* Despensa: el inventario que alimenta los planes */}
+            <Pressable
+              onPress={() => router.push('/pantry')}
+              className="flex-row items-end justify-between border-b border-border pb-4 active:opacity-70"
+            >
+              <View className="gap-1.5">
+                <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+                  {t('pantry.title')}
+                </Text>
+                {pantryCount > 0 ? (
+                  <Text className="font-bebas text-3xl leading-none text-foreground">
+                    {pantryCount}
+                    <Text className="font-mono text-[10px] tracking-[2px] text-muted-foreground">
+                      {'  '}{t('nutrition.planHub.foods').toUpperCase()}
+                    </Text>
+                  </Text>
+                ) : (
+                  <Text className="font-sans text-xs text-muted-foreground">
+                    {t('nutrition.planHub.empty')}
+                  </Text>
+                )}
+              </View>
+              <View className="flex-row items-center gap-1 pb-0.5">
+                <Text className="font-mono text-[10px] uppercase tracking-widest text-lime-400">
+                  {t('nutrition.planHub.manage')}
+                </Text>
+                <ChevronRight size={12} color="#a3e635" />
+              </View>
+            </Pressable>
+
+            {/* Plan IA del día — siempre planifica HOY; se oculta solo sin budget */}
+            <DailyMealPlan
+              remaining={remaining}
+              goals={pantryGoals}
+              loggedMealTypes={loggedMealTypes}
+              onSaveMeal={handleSavePlannedMeal}
             />
-          </View>
-        ) : (
-          <View className="mb-5 gap-5">
-            {isToday && (
-              <DailyMealPlan
-                remaining={remaining}
-                goals={pantryGoals}
-                loggedMealTypes={loggedMealTypes}
-                onSaveMeal={handleSavePlannedMeal}
-              />
-            )}
+
+            {/* Plan del día desde la despensa */}
             <PantryPlanSection userId={userId} goals={pantryGoals} />
+
+            {/* Plan semanal */}
+            <View className="border-t border-border pt-5">
+              <WeeklyMealPlan
+                activePlan={weeklyPlan}
+                planDays={weeklyPlanDays}
+                isLoading={weeklyLoading}
+                goals={goals}
+                getDailyTotals={getDailyTotals}
+                onGenerate={() => generateWeeklyPlan(goals).then(() => {})}
+                onRegenerateDay={regenerateWeeklyDay}
+                onLogMeal={logWeeklyMeal}
+                onDeleteMeal={deleteWeeklyMeal}
+                onArchive={archiveWeeklyPlan}
+                onRefresh={refreshWeeklyPlan}
+                hasPantry={pantryPlan.hasPantry}
+                onGenerateFromPantry={() => pantryPlan.generateWeek(pantryGoals)}
+              />
+            </View>
           </View>
         )}
 
-        {/* Coach & Insights (collapsible) */}
-        <View className="mb-5">
-          <Pressable
-            onPress={() => { haptics.light(); setShowCoach(v => !v) }}
-            className="flex-row items-center justify-between py-3"
-          >
-            <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground">
-              {entries.some(e => e.qualityScore) ? 'Coach' : t('nutrition.suggestionsAndHistory')}
-            </Text>
-            <ChevronLeft
-              size={16}
-              color="rgba(255,255,255,0.45)"
-              style={{ transform: [{ rotate: showCoach ? '-90deg' : '90deg' }] }}
-            />
-          </Pressable>
+        {/* Coach & tendencia (collapsible) */}
+        {activeTab === 'today' && (
+          <View className="mb-5">
+            <Pressable
+              onPress={() => { haptics.light(); setShowCoach(v => !v) }}
+              className="flex-row items-center justify-between border-t border-border py-3"
+            >
+              <View className="flex-row items-center gap-2">
+                <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground">
+                  {t('nutrition.coach.title', 'Coach')}
+                </Text>
+                {dailyInsight?.overallScore && (
+                  <View className={cn('rounded px-1.5 py-0.5', SCORE_COLORS[dailyInsight.overallScore])}>
+                    <Text className="font-bebas text-xs leading-none">{dailyInsight.overallScore}</Text>
+                  </View>
+                )}
+                {badges.length > 0 && (
+                  <Text className="font-mono text-[9px] text-amber-400">{badges.length} 🏅</Text>
+                )}
+              </View>
+              <ChevronLeft
+                size={16}
+                color="rgba(255,255,255,0.45)"
+                style={{ transform: [{ rotate: showCoach ? '-90deg' : '90deg' }] }}
+              />
+            </Pressable>
 
-          {showCoach && (
-            <View className="gap-4">
-              <CoachInsights
-                entries={entries}
-                dailyInsight={dailyInsight}
-                weeklyInsight={weeklyInsight}
-                badges={badges}
-                generatingWeekly={generatingWeekly}
-                activeTab={activeTab}
-                onGenerateWeekly={() => {
-                  generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'generate_weekly_insight' } }) })
-                }}
-              />
-              <WeeklyNutritionChart
-                history={weeklyHistory}
-                calorieGoal={goals.dailyCalories}
-              />
-            </View>
-          )}
-        </View>
+            {showCoach && (
+              <View className="gap-4 pt-1">
+                <CoachInsights
+                  entries={entries}
+                  dailyInsight={dailyInsight}
+                  weeklyInsight={weeklyInsight}
+                  badges={badges}
+                  generatingWeekly={generatingWeekly}
+                  onGenerateWeekly={() => {
+                    generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'generate_weekly_insight' } }) })
+                  }}
+                />
+                <WeeklyNutritionChart
+                  history={weeklyHistory}
+                  calorieGoal={goals.dailyCalories}
+                />
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* FAB: meal logger */}

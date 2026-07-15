@@ -27,6 +27,7 @@ import { toast } from 'sonner'
 import { useWater } from '@calistenia/core/hooks/useWater'
 import WaterTracker from '../components/WaterTracker'
 import { CoachPanel } from '../components/nutrition/CoachPanel'
+import { QualityScoreBadge } from '../components/nutrition/QualityScoreBadge'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
 import { Card, CardContent } from '../components/ui/card'
@@ -130,9 +131,12 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedDate, setSelectedDate] = useState(() => searchParams.get('date') || todayStr())
-  const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>(() =>
-    searchParams.get('tab') === 'weekly' ? 'weekly' : 'daily'
-  )
+  // Sub-vistas HOY (seguimiento) / PLANIFICAR (hub de planes); 'weekly' es el
+  // valor legado de los deep-links previos al rediseño.
+  const [activeTab, setActiveTab] = useState<'today' | 'plan'>(() => {
+    const tab = searchParams.get('tab')
+    return tab === 'plan' || tab === 'weekly' ? 'plan' : 'today'
+  })
 
   const {
     activePlan: weeklyPlan,
@@ -240,15 +244,19 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   const dailyTotals = useMemo(() => getDailyTotals(selectedDate), [getDailyTotals, selectedDate])
   const weeklyHistory = useMemo(() => getWeeklyHistory(), [getWeeklyHistory])
 
+  // Siempre de HOY: alimenta el plan IA de PLANIFICAR y las sugerencias, que
+  // planifican el día en curso aunque se esté inspeccionando otra fecha.
+  const todayTotals = useMemo(() => getDailyTotals(todayStr()), [getDailyTotals])
+  const todayEntries = useMemo(() => getEntriesForDate(todayStr()), [getEntriesForDate])
   const remaining = useMemo(() => {
     if (!goals) return { calories: 0, protein: 0, carbs: 0, fat: 0 }
     return {
-      calories: goals.dailyCalories - dailyTotals.calories,
-      protein: goals.dailyProtein - dailyTotals.protein,
-      carbs: goals.dailyCarbs - dailyTotals.carbs,
-      fat: goals.dailyFat - dailyTotals.fat,
+      calories: goals.dailyCalories - todayTotals.calories,
+      protein: goals.dailyProtein - todayTotals.protein,
+      carbs: goals.dailyCarbs - todayTotals.carbs,
+      fat: goals.dailyFat - todayTotals.fat,
     }
-  }, [goals, dailyTotals])
+  }, [goals, todayTotals])
 
   // US-15: Detect if user has missed goals 2+ of last 3 days
   const missedGoalsAlert = useMemo(() => {
@@ -276,8 +284,8 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
   }, [dailyQualityScore, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loggedMealTypes = useMemo(
-    () => [...new Set(entries.map(e => e.mealType))],
-    [entries]
+    () => [...new Set(todayEntries.map(e => e.mealType))],
+    [todayEntries]
   )
 
   const handleSaveGoals = useCallback(async (newGoals: NutritionGoal) => {
@@ -360,83 +368,58 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
         </div>
       )}
 
-      {/* Date picker */}
-      <div id="tour-nutrition-date" className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label={t('nutrition.previousDay')}
-        >
-          ‹
-        </button>
-        <Input
-          type="date"
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          className="w-auto h-8 text-xs"
-        />
-        <button
-          onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-          className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label={t('nutrition.nextDay')}
-        >
-          ›
-        </button>
-        {!isToday && (
-          <button
-            onClick={() => setSelectedDate(todayStr())}
-            className="text-[10px] tracking-widest text-lime hover:text-lime/80 uppercase"
-          >
-            {t('common.today').toUpperCase()}
-          </button>
-        )}
-      </div>
-
-      {/* Tab toggle: daily vs weekly */}
+      {/* Sub-vistas: HOY (seguimiento) / PLANIFICAR (hub de planes) */}
       {isReady && goals && (
-        <div className="flex gap-1 mb-6 bg-card border border-border rounded-lg p-1">
-          <button
-            onClick={() => setActiveTab('daily')}
-            className={cn(
-              'flex-1 py-1.5 rounded-md text-xs font-bebas tracking-widest transition-colors',
-              activeTab === 'daily'
-                ? 'bg-lime-400/15 text-lime-400 border border-lime-400/30'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {t('nutrition.tabs.daily')}
-          </button>
-          <button
-            onClick={() => setActiveTab('weekly')}
-            className={cn(
-              'flex-1 py-1.5 rounded-md text-xs font-bebas tracking-widest transition-colors',
-              activeTab === 'weekly'
-                ? 'bg-lime-400/15 text-lime-400 border border-lime-400/30'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {t('nutrition.tabs.weekly')}
-          </button>
+        <div className="flex border-b border-border mb-6">
+          {(['today', 'plan'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                'flex-1 pb-2.5 -mb-px border-b-2 text-center font-bebas text-base tracking-[2px] transition-colors',
+                activeTab === tab
+                  ? 'border-lime-400 text-lime-400'
+                  : 'border-transparent text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {tab === 'today' ? t('nutrition.tabs.today') : t('nutrition.tabs.plan')}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Entrada a Despensa (F1 #170) — misma fila compacta que el tab nativo */}
-      {isReady && goals && (
-        <button
-          onClick={() => navigate('/pantry')}
-          className="w-full flex items-center justify-between border border-border rounded-lg px-4 py-3 mb-6 hover:border-lime/40 transition-colors group"
-        >
-          <span className="flex items-center gap-2">
-            <span className="size-1.5 bg-lime-400" aria-hidden />
-            <span className="font-bebas text-lg tracking-wide text-foreground group-hover:text-lime-400 transition-colors">
-              {t('pantry.title')}
-            </span>
-          </span>
-          <span className="flex items-center gap-2 text-muted-foreground">
-            {pantryCount > 0 && <span className="font-mono text-xs text-foreground">{pantryCount}</span>}
-            <span aria-hidden>›</span>
-          </span>
-        </button>
+      {/* Date picker — solo en HOY (PLANIFICAR siempre trabaja sobre el día en curso) */}
+      {(!isReady || !goals || activeTab === 'today') && (
+        <div id="tour-nutrition-date" className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+            className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={t('nutrition.previousDay')}
+          >
+            ‹
+          </button>
+          <Input
+            type="date"
+            value={selectedDate}
+            onChange={e => setSelectedDate(e.target.value)}
+            className="w-auto h-8 text-xs"
+          />
+          <button
+            onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+            className="size-8 rounded-lg border border-border flex items-center justify-center hover:border-lime/40 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={t('nutrition.nextDay')}
+          >
+            ›
+          </button>
+          {!isToday && (
+            <button
+              onClick={() => setSelectedDate(todayStr())}
+              className="text-[10px] tracking-widest text-lime hover:text-lime/80 uppercase"
+            >
+              {t('common.today').toUpperCase()}
+            </button>
+          )}
+        </div>
       )}
 
       {!isReady ? (
@@ -509,10 +492,12 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           )}
 
           {/* Water tracker */}
-          <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={isToday ? addWater : undefined} onSetGoal={setWaterGoal} adding={waterAdding} />
+          {activeTab === 'today' && (
+            <WaterTracker todayTotal={waterTotal} goal={waterGoal} onAdd={isToday ? addWater : undefined} onSetGoal={setWaterGoal} adding={waterAdding} />
+          )}
 
           {/* Frequent meals quick-tap */}
-          {isToday && frequentMeals.length > 0 && (
+          {activeTab === 'today' && isToday && frequentMeals.length > 0 && (
             <div>
               <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-3 uppercase">{t('nutrition.frequentMeals')}</div>
               <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth">
@@ -556,6 +541,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           )}
 
           {/* Daily dashboard */}
+          {activeTab === 'today' && (
           <div id="tour-nutrition-dashboard">
             <NutritionDashboard
               dailyTotals={dailyTotals}
@@ -585,44 +571,87 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               selectedDate={selectedDate}
             />
           </div>
+          )}
 
-          {/* AI Meal plans — daily or weekly */}
-          {activeTab === 'weekly' ? (
-            <WeeklyMealPlan
-              activePlan={weeklyPlan}
-              planDays={weeklyPlanDays}
-              isLoading={weeklyLoading}
-              goals={goals}
-              getDailyTotals={getDailyTotals}
-              onGenerate={generateWeeklyPlan}
-              onRegenerateDay={regenerateWeeklyDay}
-              onLogMeal={logWeeklyMeal}
-              onDeleteMeal={deleteWeeklyMeal}
-              onArchive={archiveWeeklyPlan}
-              onRefresh={refreshWeeklyPlan}
-              userId={userId}
-              hasPantry={pantryPlan.hasPantry}
-              onGenerateFromPantry={() => pantryPlan.generateWeek(pantryGoals)}
-            />
-          ) : isToday ? (
-            <DailyMealPlan
-              remaining={remaining}
-              goals={{ calories: goals.dailyCalories, protein: goals.dailyProtein, carbs: goals.dailyCarbs, fat: goals.dailyFat }}
-              loggedMealTypes={loggedMealTypes}
-              onSaveMeal={handleSavePlannedMeal}
-            />
-          ) : null}
+          {/* ── PLANIFICAR: despensa → plan del día → plan desde despensa → semanal ── */}
+          {activeTab === 'plan' && (
+            <>
+              {/* Despensa: el inventario que alimenta los planes */}
+              <button
+                onClick={() => navigate('/pantry')}
+                className="w-full flex items-end justify-between border-b border-border pb-4 hover:opacity-80 transition-opacity text-left group"
+              >
+                <span className="space-y-1.5">
+                  <span className="block text-[10px] text-muted-foreground tracking-[3px] uppercase">
+                    {t('pantry.title')}
+                  </span>
+                  {pantryCount > 0 ? (
+                    <span className="block font-bebas text-3xl leading-none text-foreground">
+                      {pantryCount}
+                      <span className="font-mono text-[10px] tracking-[2px] text-muted-foreground">
+                        {'  '}{t('nutrition.planHub.foods').toUpperCase()}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="block text-xs text-muted-foreground">
+                      {t('nutrition.planHub.empty')}
+                    </span>
+                  )}
+                </span>
+                <span className="flex items-center gap-1 pb-0.5 text-[10px] font-mono tracking-widest uppercase text-lime-400 group-hover:text-lime-300 transition-colors">
+                  {t('nutrition.planHub.manage')} <span aria-hidden>›</span>
+                </span>
+              </button>
 
-          {/* F2 (#171): plan del día / cuántas comidas desde la despensa (null si está vacía) */}
-          <PantryPlanSection userId={userId} goals={pantryGoals} />
+              {/* Plan IA del día — siempre planifica HOY; se oculta solo sin budget */}
+              <DailyMealPlan
+                remaining={remaining}
+                goals={{ calories: goals.dailyCalories, protein: goals.dailyProtein, carbs: goals.dailyCarbs, fat: goals.dailyFat }}
+                loggedMealTypes={loggedMealTypes}
+                onSaveMeal={handleSavePlannedMeal}
+              />
 
-          {/* Coach & Insights tab */}
+              {/* Plan del día desde la despensa (null si está vacía) */}
+              <PantryPlanSection userId={userId} goals={pantryGoals} />
+
+              {/* Plan semanal */}
+              <div className="border-t border-border pt-5">
+                <WeeklyMealPlan
+                  activePlan={weeklyPlan}
+                  planDays={weeklyPlanDays}
+                  isLoading={weeklyLoading}
+                  goals={goals}
+                  getDailyTotals={getDailyTotals}
+                  onGenerate={generateWeeklyPlan}
+                  onRegenerateDay={regenerateWeeklyDay}
+                  onLogMeal={logWeeklyMeal}
+                  onDeleteMeal={deleteWeeklyMeal}
+                  onArchive={archiveWeeklyPlan}
+                  onRefresh={refreshWeeklyPlan}
+                  userId={userId}
+                  hasPantry={pantryPlan.hasPantry}
+                  onGenerateFromPantry={() => pantryPlan.generateWeek(pantryGoals)}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Coach & tendencia (collapsible) */}
+          {activeTab === 'today' && (
           <div>
             <button
               onClick={() => setShowInsights(v => !v)}
-              className="w-full flex items-center justify-between py-3 text-[10px] tracking-[0.3em] text-muted-foreground uppercase hover:text-foreground transition-colors"
+              className="w-full flex items-center justify-between border-t border-border py-3 text-[10px] tracking-[0.3em] text-muted-foreground uppercase hover:text-foreground transition-colors"
             >
-              <span>{entries.some(e => e.qualityScore) ? 'Coach' : t('nutrition.suggestionsAndHistory')}</span>
+              <span className="flex items-center gap-2">
+                <span>{t('nutrition.coach.title', 'Coach')}</span>
+                {dailyInsight?.overallScore && (
+                  <QualityScoreBadge score={dailyInsight.overallScore} size="sm" />
+                )}
+                {badges.length > 0 && (
+                  <span className="font-mono text-[9px] text-amber-400 normal-case tracking-normal">{badges.length} 🏅</span>
+                )}
+              </span>
               <svg
                 className={cn('size-4 transition-transform duration-200', showInsights && 'rotate-180')}
                 viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
@@ -632,7 +661,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             </button>
 
             {showInsights && (
-              <div className="space-y-6 pb-4">
+              <div className="space-y-6 pb-4 pt-1">
                 {/* Coach tip */}
                 {dailyInsight?.coachMessage && (
                   <div className="bg-card border border-border rounded-xl p-4">
@@ -652,7 +681,6 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
                     weeklyInsight={weeklyInsight}
                     badges={badges}
                     generatingWeekly={generatingWeekly}
-                    activeTab={activeTab}
                   />
                 )}
 
@@ -677,6 +705,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               </div>
             )}
           </div>
+          )}
 
           {/* FAB for meal logging */}
           <div id="tour-meal-logger">

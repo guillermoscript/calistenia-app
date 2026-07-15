@@ -48,7 +48,7 @@ interface PantryPlanSectionProps {
 export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
   const { t, i18n } = useTranslation()
   const router = useRouter()
-  const { hasPantry, pantryCount, generateDay, howManyMeals } = usePantryPlan(userId)
+  const { hasPantry, generateDay, howManyMeals } = usePantryPlan(userId)
   const [target, setTarget] = useState<'today' | 'tomorrow'>('tomorrow') // default Mañana (caso de uso: qué cocino mañana)
   const [loading, setLoading] = useState<'day' | 'howmany' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -83,9 +83,9 @@ export function PantryPlanSection({ userId, goals }: PantryPlanSectionProps) {
   }
 
   return (
-    <View className="mt-6 border-t border-border pt-5">
+    <View className="border-t border-border pt-5">
       <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-        {t('pantryPlan.kicker')} · {t('pantryPlan.itemCount', { count: pantryCount })}
+        {t('pantryPlan.kicker')}
       </Text>
 
       {/* Controles: Hoy/Mañana + CTAs */}

@@ -121,7 +121,7 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
           label: t('bgJobs.viewResult'),
           onClick: () => {
             const url = job.type === 'generate-weekly-meal-plan'
-              ? '/nutrition?tab=weekly'
+              ? '/nutrition?tab=plan'
               : job.type === 'generate-meal-plan'
                 ? '/nutrition'
                 : `/nutrition/log?job=${job.id}`

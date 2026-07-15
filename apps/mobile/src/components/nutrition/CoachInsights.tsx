@@ -1,11 +1,14 @@
-/** Collapsible nutrition coach & insights section — port of web CoachPanel. */
+/** Cuerpo del coach nutricional (feedback por comida, badges, análisis semanal).
+ *  El colapsable que lo contiene vive en la pantalla de nutrición; aquí solo
+ *  el contenido + el toggle interno Día/Semana. */
 import { useState, useMemo } from 'react'
 import { View, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
+import { Chip } from '@/components/ui/chip'
 import { cn } from '@/lib/utils'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
-import { MEAL_TYPE_COLORS, SCORE_COLORS, SCORE_BAR_COLORS } from '@calistenia/core/lib/style-tokens'
+import { MEAL_TYPE_COLORS, SCORE_COLORS } from '@calistenia/core/lib/style-tokens'
 import type {
   NutritionEntry,
   NutritionCoachInsight,
@@ -19,7 +22,6 @@ interface CoachInsightsProps {
   weeklyInsight: NutritionCoachInsight | null
   badges: NutritionBadge[]
   generatingWeekly: boolean
-  activeTab: 'daily' | 'weekly'
   onGenerateWeekly?: () => void
 }
 
@@ -47,8 +49,6 @@ function ScoreBadge({ score, size = 'sm' }: { score: QualityScore; size?: 'sm' |
 }
 
 // ── Weekly view ───────────────────────────────────────────────────────────────
-
-const SCORE_HEIGHT: Record<QualityScore, number> = { A: 40, B: 32, C: 24, D: 16, E: 8 }
 
 function WeeklyView({
   insight,
@@ -275,67 +275,39 @@ export default function CoachInsights({
   weeklyInsight,
   badges,
   generatingWeekly,
-  activeTab,
   onGenerateWeekly,
 }: CoachInsightsProps) {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(false)
+  const [view, setView] = useState<'daily' | 'weekly'>('daily')
 
   return (
-    <View className="rounded-xl border border-border bg-card overflow-hidden">
-      {/* Toggle header */}
-      <Pressable
-        onPress={() => setExpanded((v) => !v)}
-        className="flex-row items-center justify-between px-4 py-3 active:bg-muted/30"
-      >
-        <View className="flex-row items-center gap-2">
-          <Text className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-            {t('nutrition.coach.title', 'COACH')}
-          </Text>
-          {/* Daily score pill if available */}
-          {dailyInsight?.overallScore && (
-            <View
-              className={cn(
-                'rounded px-1.5 py-0.5',
-                SCORE_COLORS[dailyInsight.overallScore],
-              )}
-            >
-              <Text className="font-bebas text-xs leading-none">
-                {dailyInsight.overallScore}
-              </Text>
-            </View>
-          )}
-          {badges.length > 0 && (
-            <View className="rounded-full bg-amber-500/20 px-2 py-0.5">
-              <Text className="font-mono text-[8px] text-amber-400">
-                {badges.length} 🏅
-              </Text>
-            </View>
-          )}
-        </View>
+    <View className="gap-4">
+      {/* Toggle Día / Semana */}
+      <View className="flex-row gap-2">
+        <Chip
+          label={t('nutrition.coach.tabDay', 'Día')}
+          active={view === 'daily'}
+          onPress={() => setView('daily')}
+        />
+        <Chip
+          label={t('nutrition.coach.tabWeek', 'Semana')}
+          active={view === 'weekly'}
+          onPress={() => setView('weekly')}
+        />
+      </View>
 
-        <Text className="font-mono text-[11px] text-muted-foreground">
-          {expanded ? '▲' : '▼'}
-        </Text>
-      </Pressable>
-
-      {/* Collapsible body */}
-      {expanded && (
-        <View className="px-4 pb-4 border-t border-border pt-3">
-          {activeTab === 'weekly' ? (
-            <WeeklyView
-              insight={weeklyInsight}
-              generating={generatingWeekly}
-              onGenerate={onGenerateWeekly}
-            />
-          ) : (
-            <DailyView
-              entries={entries}
-              dailyInsight={dailyInsight}
-              badges={badges}
-            />
-          )}
-        </View>
+      {view === 'weekly' ? (
+        <WeeklyView
+          insight={weeklyInsight}
+          generating={generatingWeekly}
+          onGenerate={onGenerateWeekly}
+        />
+      ) : (
+        <DailyView
+          entries={entries}
+          dailyInsight={dailyInsight}
+          badges={badges}
+        />
       )}
     </View>
   )
