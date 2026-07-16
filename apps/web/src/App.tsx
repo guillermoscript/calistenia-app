@@ -116,11 +116,13 @@ function SessionRestoreNavigator() {
   const hasNavigated = useRef(false)
 
   useEffect(() => {
+    // Depende de isActive (no solo mount): la sesión puede llegar async desde
+    // el server (reanudar entre dispositivos) poco después de cargar la app.
     if (isActive && location.pathname !== '/session' && !hasNavigated.current) {
       hasNavigated.current = true
       navigate('/session', { replace: true })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isActive]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return null
 }

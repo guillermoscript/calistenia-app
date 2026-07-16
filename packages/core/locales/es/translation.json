@@ -2253,6 +2253,7 @@
   "notify.yours": "tu",
 
   "session.session": "Sesión",
+  "session.activeSession": "Sesión en curso",
   "session.activeBubbleLabel": "{{title}} activa — {{count}} ejercicios — toca para volver",
   "session.exerciseCount": "EJERCICIO",
   "session.exerciseCount_other": "EJERCICIOS",

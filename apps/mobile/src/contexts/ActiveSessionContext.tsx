@@ -9,6 +9,11 @@ import { storage } from '@calistenia/core/platform'
 import type { Exercise, Workout } from '@calistenia/core/types'
 import { op } from '@calistenia/core/lib/analytics'
 import type { ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import {
+  scheduleActiveSessionPush, flushActiveSessionPush, pushActiveSessionNow,
+  fetchRemoteActiveSession, clearRemoteActiveSession,
+} from '@calistenia/core/lib/activeSessionSync'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +41,8 @@ interface PersistedStrengthSession {
   progress: SessionProgress
   startedAt: number
   sectionStartTime: number | null
+  /** Último guardado local — para decidir si la copia del server es más reciente */
+  savedAt?: number
 }
 
 interface ActiveSessionContextValue {
@@ -54,6 +61,8 @@ interface ActiveSessionContextValue {
   getWarmupCooldownData: () => WarmupCooldownData
   skipWarmup: () => void
   skipCooldown: () => void
+  /** Se incrementa al adoptar una sesión del server — remonta SessionView */
+  resumeEpoch: number
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
   setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
 }
@@ -123,6 +132,9 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   const [sectionStartTime, setSectionStartTime] = useState<number | null>(restored?.sectionStartTime ?? null)
   const workoutKeyRef = useRef(restored?.workoutKey ?? '')
   const startedAtRef = useRef(restored?.startedAt ?? 0)
+  const savedAtRef = useRef(restored?.savedAt ?? restored?.startedAt ?? 0)
+  const isActiveRef = useRef(!!restored)
+  const [resumeEpoch, setResumeEpoch] = useState(0)
 
   // Metadata transitoria de warmup/cooldown — refs porque no pintan UI,
   // solo se leen una vez al cerrar la sesión via getWarmupCooldownData().
@@ -139,19 +151,25 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   useEffect(() => {
     if (!isActive || !workout) return
 
-    const persist = () => saveToStorage({
-      workout,
-      workoutKey: workoutKeyRef.current,
-      source,
-      progress,
-      startedAt: startedAtRef.current,
-      sectionStartTime,
-    })
+    const persist = () => {
+      savedAtRef.current = Date.now()
+      const data = {
+        workout,
+        workoutKey: workoutKeyRef.current,
+        source,
+        progress,
+        startedAt: startedAtRef.current,
+        sectionStartTime,
+        savedAt: savedAtRef.current,
+      }
+      saveToStorage(data)
+      scheduleActiveSessionPush({ ...data, platform: 'mobile' })
+    }
 
     persist()
 
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'background' || state === 'inactive') persist()
+      if (state === 'background' || state === 'inactive') { persist(); flushActiveSessionPush() }
     })
     return () => sub.remove()
   }, [isActive, workout, source, progress, sectionStartTime])
@@ -170,7 +188,52 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     cooldownDurationRef.current = 0
     setIsActive(true)
     op.track('session_started', { workout_key: key, source: src, platform: 'mobile' })
-    saveToStorage({ workout: w, workoutKey: key, source: src, progress: INITIAL_PROGRESS, startedAt: now, sectionStartTime: now })
+    isActiveRef.current = true
+    savedAtRef.current = now
+    const data = { workout: w, workoutKey: key, source: src, progress: INITIAL_PROGRESS, startedAt: now, sectionStartTime: now, savedAt: now }
+    saveToStorage(data)
+    pushActiveSessionNow({ ...data, platform: 'mobile' })
+  }, [])
+
+  // Adopción de la sesión activa del server (reanudar entre dispositivos).
+  // Solo al arrancar, cuando haya auth: si el server tiene una sesión más
+  // reciente que la copia local (o no hay local), se adopta; la home muestra
+  // el botón de reanudar y SessionView se remonta vía resumeEpoch.
+  useEffect(() => {
+    let cancelled = false
+    const tryAdopt = async () => {
+      const remote = await fetchRemoteActiveSession<Workout, SessionProgress>()
+      if (cancelled || !remote) return
+      if (isActiveRef.current) {
+        // Sesión local en marcha: solo adoptar si es LA MISMA y el server va por delante
+        if (remote.workoutKey !== workoutKeyRef.current) return
+        if (remote.savedAt <= savedAtRef.current) return
+      }
+      workoutKeyRef.current = remote.workoutKey
+      startedAtRef.current = remote.startedAt
+      savedAtRef.current = remote.savedAt
+      isActiveRef.current = true
+      setWorkout(remote.workout)
+      setSource(remote.source)
+      setProgressState(remote.progress)
+      setSectionStartTime(remote.sectionStartTime)
+      setIsActive(true)
+      setResumeEpoch(n => n + 1)
+      saveToStorage({
+        workout: remote.workout, workoutKey: remote.workoutKey, source: remote.source,
+        progress: remote.progress, startedAt: remote.startedAt,
+        sectionStartTime: remote.sectionStartTime, savedAt: remote.savedAt,
+      })
+    }
+    if (pb.authStore.isValid) tryAdopt()
+    const unsubAuth = pb.authStore.onChange(() => {
+      if (pb.authStore.isValid) tryAdopt()
+    })
+    // Re-chequear al volver a primer plano: quizá se avanzó en otro dispositivo
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && pb.authStore.isValid) tryAdopt()
+    })
+    return () => { cancelled = true; unsubAuth(); sub.remove() }
   }, [])
 
   const getWarmupCooldownData = useCallback((): WarmupCooldownData => ({
@@ -195,6 +258,8 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   }, [sectionStartTime])
 
   const endSession = useCallback(() => {
+    isActiveRef.current = false
+    clearRemoteActiveSession()
     setIsActive(false)
     setWorkout(null)
     workoutKeyRef.current = ''
@@ -220,9 +285,10 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     getWarmupCooldownData,
     skipWarmup,
     skipCooldown,
+    resumeEpoch,
     getRestForExercise,
     setRestForExercise,
-  }), [isActive, workout, source, progress, setProgress, startSession, endSession, sectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown, getRestForExercise, setRestForExercise])
+  }), [isActive, workout, source, progress, setProgress, startSession, endSession, sectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown, resumeEpoch, getRestForExercise, setRestForExercise])
 
   return (
     <ActiveSessionContext.Provider value={value}>

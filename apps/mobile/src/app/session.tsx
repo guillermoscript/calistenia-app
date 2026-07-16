@@ -30,6 +30,7 @@ export default function SessionScreen() {
     getRestForExercise, setRestForExercise,
     progress, setProgress, startedAt,
     setSectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown,
+    resumeEpoch,
   } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
   const router = useRouter()
@@ -91,7 +92,7 @@ export default function SessionScreen() {
 
   return (
     <SessionView
-      key={runId}
+      key={`${runId}-${resumeEpoch}`}
       workout={workout}
       workoutKey={workoutKey}
       onLogSet={onLogSet}

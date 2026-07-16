@@ -7,6 +7,7 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { isOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import { NAV_THEME } from '@/lib/theme'
 import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
+import ActiveSessionBar from '@/components/ActiveSessionBar'
 import { QuickMenuProvider } from '@/components/QuickMenu'
 import { haptics } from '@/lib/haptics'
 
@@ -94,6 +95,8 @@ export default function TabsLayout() {
     </Tabs>
     {/* Sesión de cardio en curso: barra flotante para volver a /cardio */}
     <ActiveCardioBar />
+    {/* Sesión de fuerza en curso: barra flotante para volver a /session */}
+    <ActiveSessionBar />
     </View>
     </QuickMenuProvider>
   )

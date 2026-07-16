@@ -10,6 +10,19 @@ vi.mock('@calistenia/core/lib/analytics', () => ({
   op: { track: mockTrack },
 }))
 
+// El singleton pb exige initCore() al evaluarse y el sync con el server no
+// aplica a estos tests (sin auth) — ambos se mockean enteros.
+vi.mock('@calistenia/core/lib/pocketbase', () => ({
+  pb: { authStore: { isValid: false, onChange: vi.fn(() => () => {}) } },
+}))
+vi.mock('@calistenia/core/lib/activeSessionSync', () => ({
+  scheduleActiveSessionPush: vi.fn(),
+  flushActiveSessionPush: vi.fn(),
+  pushActiveSessionNow: vi.fn(),
+  fetchRemoteActiveSession: vi.fn(async () => null),
+  clearRemoteActiveSession: vi.fn(),
+}))
+
 import { ActiveSessionProvider, useActiveSession, getCurrentSection } from './ActiveSessionContext'
 
 const STORAGE_KEY = 'calistenia_strength_active'

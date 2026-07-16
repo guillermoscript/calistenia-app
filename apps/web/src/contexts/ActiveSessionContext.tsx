@@ -2,6 +2,11 @@ import { createContext, useContext, useState, useRef, useCallback, useEffect, us
 import type { Exercise, Workout } from '@calistenia/core/types'
 import { op } from '@calistenia/core/lib/analytics'
 import type { ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
+import { pb } from '@calistenia/core/lib/pocketbase'
+import {
+  scheduleActiveSessionPush, flushActiveSessionPush, pushActiveSessionNow,
+  fetchRemoteActiveSession, clearRemoteActiveSession,
+} from '@calistenia/core/lib/activeSessionSync'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +35,8 @@ interface PersistedStrengthSession {
   progress: SessionProgress
   startedAt: number
   sectionStartTime: number | null
+  /** Último guardado local — para decidir si la copia del server es más reciente */
+  savedAt?: number
 }
 
 interface ActiveSessionContextValue {
@@ -65,6 +72,8 @@ interface ActiveSessionContextValue {
   skipCooldown: () => void
   /** Skip remaining cooldown exercises */
   skipRemainingCooldown: () => void
+  /** Se incrementa al adoptar una sesión del server — remonta SessionView */
+  resumeEpoch: number
   /** Optional rest preference hooks passed from the caller */
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
   setRestForExercise?: (exerciseId: string, seconds: number) => Promise<void>
@@ -138,6 +147,9 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   const [sectionStartTime, setSectionStartTime] = useState<number | null>(restored?.sectionStartTime ?? null)
   const workoutKeyRef = useRef(restored?.workoutKey ?? '')
   const startedAtRef = useRef(restored?.startedAt ?? 0)
+  const savedAtRef = useRef(restored?.savedAt ?? restored?.startedAt ?? 0)
+  const isActiveRef = useRef(!!restored)
+  const [resumeEpoch, setResumeEpoch] = useState(0)
 
   // Transient warmup/cooldown metadata — refs because they don't drive UI,
   // only read once at session end via getWarmupCooldownData().
@@ -154,18 +166,26 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   useEffect(() => {
     if (!isActive || !workout) return
 
-    const persist = () => saveToStorage({
-      workout,
-      workoutKey: workoutKeyRef.current,
-      source,
-      progress,
-      startedAt: startedAtRef.current,
-      sectionStartTime,
-    })
+    const persist = () => {
+      savedAtRef.current = Date.now()
+      const data = {
+        workout,
+        workoutKey: workoutKeyRef.current,
+        source,
+        progress,
+        startedAt: startedAtRef.current,
+        sectionStartTime,
+        savedAt: savedAtRef.current,
+      }
+      saveToStorage(data)
+      scheduleActiveSessionPush({ ...data, platform: 'web' })
+    }
 
     persist()
 
-    const handler = () => { if (document.visibilityState === 'hidden') persist() }
+    const handler = () => {
+      if (document.visibilityState === 'hidden') { persist(); flushActiveSessionPush() }
+    }
     document.addEventListener('visibilitychange', handler)
 
     // Track session abandonment when closing/navigating away mid-session
@@ -198,8 +218,58 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     setIsActive(true)
     op.track('session_started', { workout_key: key, source: src })
     // Persist immediately
-    saveToStorage({ workout: w, workoutKey: key, source: src, progress: INITIAL_PROGRESS, startedAt: now, sectionStartTime: now })
+    isActiveRef.current = true
+    savedAtRef.current = now
+    const data = { workout: w, workoutKey: key, source: src, progress: INITIAL_PROGRESS, startedAt: now, sectionStartTime: now, savedAt: now }
+    saveToStorage(data)
+    pushActiveSessionNow({ ...data, platform: 'web' })
   }, [])
+
+  // Adopción de la sesión activa del server (reanudar entre dispositivos).
+  // Solo al arrancar, cuando haya auth: si el server tiene una sesión más
+  // reciente que la copia local (o no hay local), se adopta y se remonta
+  // SessionView vía resumeEpoch.
+  useEffect(() => {
+    let cancelled = false
+    const tryAdopt = async () => {
+      const remote = await fetchRemoteActiveSession<Workout, SessionProgress>()
+      if (cancelled || !remote) return
+      if (isActiveRef.current) {
+        // Sesión local en marcha: solo adoptar si es LA MISMA y el server va por delante
+        if (remote.workoutKey !== workoutKeyRef.current) return
+        if (remote.savedAt <= savedAtRef.current) return
+      }
+      workoutKeyRef.current = remote.workoutKey
+      startedAtRef.current = remote.startedAt
+      savedAtRef.current = remote.savedAt
+      isActiveRef.current = true
+      setWorkout(remote.workout)
+      setSource(remote.source)
+      setProgressState(remote.progress)
+      setSectionStartTime(remote.sectionStartTime)
+      setIsActive(true)
+      setResumeEpoch(n => n + 1)
+      saveToStorage({
+        workout: remote.workout, workoutKey: remote.workoutKey, source: remote.source,
+        progress: remote.progress, startedAt: remote.startedAt,
+        sectionStartTime: remote.sectionStartTime, savedAt: remote.savedAt,
+      })
+    }
+    if (pb.authStore.isValid) tryAdopt()
+    const unsubAuth = pb.authStore.onChange(() => {
+      if (pb.authStore.isValid) tryAdopt()
+    })
+    // Re-chequear al volver a la pestaña: quizá se avanzó en otro dispositivo
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && pb.authStore.isValid) tryAdopt()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      unsubAuth()
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const getWarmupCooldownData = useCallback((): WarmupCooldownData => ({
     warmupSkipped: warmupSkippedRef.current,
@@ -249,6 +319,8 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
   }, [skipCooldown])
 
   const endSession = useCallback(() => {
+    isActiveRef.current = false
+    clearRemoteActiveSession()
     setIsActive(false)
     setWorkout(null)
     workoutKeyRef.current = ''
@@ -277,6 +349,7 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     skipWarmup,
     skipCooldown,
     skipRemainingCooldown,
+    resumeEpoch,
     getRestForExercise,
     setRestForExercise,
   }

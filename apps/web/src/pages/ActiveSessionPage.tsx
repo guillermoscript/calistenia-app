@@ -7,7 +7,7 @@ import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import SessionView from '../components/SessionView'
 
 export default function ActiveSessionPage() {
-  const { isActive, workout, workoutKey, endSession, getRestForExercise, setRestForExercise, progress, setProgress, startedAt, sectionStartTime, setSectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown, skipRemainingCooldown } = useActiveSession()
+  const { isActive, workout, workoutKey, endSession, getRestForExercise, setRestForExercise, progress, setProgress, startedAt, sectionStartTime, setSectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown, skipRemainingCooldown, resumeEpoch } = useActiveSession()
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
   const { user } = useAuthState()
   const navigate = useNavigate()
@@ -50,6 +50,7 @@ export default function ActiveSessionPage() {
 
   return (
     <SessionView
+      key={resumeEpoch}
       workout={workout}
       workoutKey={workoutKey}
       onLogSet={onLogSet}
