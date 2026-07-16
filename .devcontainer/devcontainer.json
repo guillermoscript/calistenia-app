@@ -1,0 +1,27 @@
+{
+  "name": "calistenia-app",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [5173, 3001, 8090],
+  "portsAttributes": {
+    "5173": { "label": "Web (Vite)", "onAutoForward": "openPreview" },
+    "3001": { "label": "AI API (mcp-server)", "onAutoForward": "silent" },
+    "8090": { "label": "PocketBase", "onAutoForward": "silent" }
+  },
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "remoteEnv": {
+    "PNPM_HOME": "/home/node/.local/share/pnpm",
+    "PATH": "/home/node/.local/share/pnpm:${containerEnv:PATH}"
+  }
+}
