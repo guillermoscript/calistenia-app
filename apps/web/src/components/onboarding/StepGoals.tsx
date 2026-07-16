@@ -5,6 +5,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
+import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
 
 export type ActivityLevel = 'sedentary' | 'light' | 'active' | 'very_active'
 export type Pace = 'gradual' | 'balanced' | 'aggressive'
@@ -26,25 +27,6 @@ interface Props {
   onSkip: () => void
 }
 
-function bmi(weightKg: number | null, heightCm: number | null): number | null {
-  if (!weightKg || !heightCm || heightCm <= 0) return null
-  const m = heightCm / 100
-  return Number((weightKg / (m * m)).toFixed(1))
-}
-
-function bmiCategoryKey(v: number): 'bmiUnderweight' | 'bmiNormal' | 'bmiOverweight' | 'bmiObese' {
-  if (v < 18.5) return 'bmiUnderweight'
-  if (v < 25) return 'bmiNormal'
-  if (v < 30) return 'bmiOverweight'
-  return 'bmiObese'
-}
-
-function bmiColor(v: number): string {
-  if (v < 18.5 || (v >= 25 && v < 30)) return 'text-amber-400'
-  if (v >= 30) return 'text-red-500'
-  return 'text-emerald-500'
-}
-
 export function StepGoals({
   values, onChange, currentWeightKg, currentHeightCm, saving,
   onBack, onContinue, onSkip,
@@ -53,9 +35,9 @@ export function StepGoals({
   const set = <K extends keyof GoalsValues>(key: K, v: GoalsValues[K]) =>
     onChange({ ...values, [key]: v })
 
-  const goalWeightNum = values.goal_weight ? parseFloat(values.goal_weight) : null
-  const currentBmi = useMemo(() => bmi(currentWeightKg, currentHeightCm), [currentWeightKg, currentHeightCm])
-  const goalBmi = useMemo(() => bmi(goalWeightNum, currentHeightCm), [goalWeightNum, currentHeightCm])
+  const goalWeightNum = parseDecimal(values.goal_weight)
+  const currentBmi = useMemo(() => calculateBmi(currentWeightKg, currentHeightCm), [currentWeightKg, currentHeightCm])
+  const goalBmi = useMemo(() => calculateBmi(goalWeightNum, currentHeightCm), [goalWeightNum, currentHeightCm])
 
   const ACTIVITY: { value: ActivityLevel; label: string; desc: string }[] = [
     { value: 'sedentary', label: t('onboarding.activitySedentary'), desc: t('onboarding.activitySedentaryDesc') },
@@ -98,12 +80,12 @@ export function StepGoals({
                   <span>{t('onboarding.currentWeightRef', { weight: currentWeightKg })}</span>
                 )}
                 {currentBmi && (
-                  <span className={bmiColor(currentBmi)}>
+                  <span className={bmiColorClass(currentBmi)}>
                     {t('onboarding.bmiCurrent', { bmi: currentBmi })} ({t(`onboarding.${bmiCategoryKey(currentBmi)}`)})
                   </span>
                 )}
                 {goalBmi && (
-                  <span className={bmiColor(goalBmi)}>
+                  <span className={bmiColorClass(goalBmi)}>
                     {t('onboarding.bmiGoal', { bmi: goalBmi })} ({t(`onboarding.${bmiCategoryKey(goalBmi)}`)})
                   </span>
                 )}

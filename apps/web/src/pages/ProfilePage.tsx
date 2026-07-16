@@ -14,6 +14,7 @@ import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
 import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity } from '../components/onboarding/StepTraining'
 import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
+import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
 
 interface ProfilePageProps {
   user: any
@@ -115,29 +116,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     load()
   }, [user?.id, loaded])
 
-  const bmi = useMemo(() => {
-    const w = parseFloat(weight)
-    const h = parseFloat(height)
-    if (!w || !h || h <= 0) return null
-    const meters = h / 100
-    return (w / (meters * meters)).toFixed(1)
-  }, [weight, height])
+  const bmi = useMemo(() => calculateBmi(parseDecimal(weight), parseDecimal(height)), [weight, height])
 
-  const goalBmi = useMemo(() => {
-    const gw = parseFloat(goalWeight)
-    const h = parseFloat(height)
-    if (!gw || !h || h <= 0) return null
-    const meters = h / 100
-    return (gw / (meters * meters)).toFixed(1)
-  }, [goalWeight, height])
+  const goalBmi = useMemo(() => calculateBmi(parseDecimal(goalWeight), parseDecimal(height)), [goalWeight, height])
 
   const bmiCategory = useMemo(() => {
-    if (!bmi) return null
-    const v = parseFloat(bmi)
-    if (v < 18.5) return { label: t('profile.bmiUnderweight'), color: 'text-amber-400' }
-    if (v < 25) return { label: t('profile.bmiNormal'), color: 'text-emerald-500' }
-    if (v < 30) return { label: t('profile.bmiOverweight'), color: 'text-amber-400' }
-    return { label: t('profile.bmiObese'), color: 'text-red-500' }
+    if (bmi == null) return null
+    const key = bmiCategoryKey(bmi)
+    return { label: t(`profile.${key}`), color: bmiColorClass(bmi) }
   }, [bmi, t])
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,13 +161,13 @@ export default function ProfilePage({ user }: ProfilePageProps) {
       if (available) {
         await pb.collection('users').update(user.id, {
           display_name: displayName,
-          weight: weight ? parseFloat(weight) : null,
-          height: height ? parseFloat(height) : null,
+          weight: parseDecimal(weight),
+          height: parseDecimal(height),
           age: age ? parseInt(age, 10) : null,
           sex: sex || '',
           level,
           goal,
-          goal_weight: goalWeight ? parseFloat(goalWeight) : null,
+          goal_weight: parseDecimal(goalWeight),
           activity_level: activityLevel || '',
           pace: pace || '',
           medical_conditions: medicalConditions,

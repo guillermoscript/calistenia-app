@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { op } from '@calistenia/core/lib/analytics'
+import { parseDecimal } from '@calistenia/core/lib/bmi'
 import type { ProgramMeta } from '@calistenia/core/types'
 import { markOnboardingDone } from './state'
 import { OnboardingProgress } from './OnboardingProgress'
@@ -108,8 +109,8 @@ export default function OnboardingFlow({
     setSavingProfile(true)
     try {
       await pb.collection('users').update(userId, {
-        weight: basics.weight ? parseFloat(basics.weight) : null,
-        height: basics.height ? parseFloat(basics.height) : null,
+        weight: parseDecimal(basics.weight),
+        height: parseDecimal(basics.height),
         age: basics.age ? parseInt(basics.age, 10) : null,
         sex: basics.sex || null,
       })
@@ -125,7 +126,7 @@ export default function OnboardingFlow({
     setSavingGoals(true)
     try {
       await pb.collection('users').update(userId, {
-        goal_weight: goals.goal_weight ? parseFloat(goals.goal_weight) : null,
+        goal_weight: parseDecimal(goals.goal_weight),
         activity_level: goals.activity_level || '',
         pace: goals.pace || '',
       })
@@ -193,8 +194,8 @@ export default function OnboardingFlow({
   }
 
   const firstName = displayName?.split(/[\s@]/)[0] || ''
-  const currentWeightNum = basics.weight ? parseFloat(basics.weight) : null
-  const currentHeightNum = basics.height ? parseFloat(basics.height) : null
+  const currentWeightNum = parseDecimal(basics.weight)
+  const currentHeightNum = parseDecimal(basics.height)
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -285,7 +286,7 @@ export default function OnboardingFlow({
         {step === personalizingStep && (
           <StepPersonalizing
             currentWeightKg={currentWeightNum}
-            goalWeightKg={goals.goal_weight ? parseFloat(goals.goal_weight) : null}
+            goalWeightKg={parseDecimal(goals.goal_weight)}
             pace={goals.pace}
             program={programs.find(p => p.id === selectedProgramId) ?? null}
             onFinish={handleFinish}

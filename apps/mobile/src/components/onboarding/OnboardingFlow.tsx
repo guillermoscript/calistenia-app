@@ -15,6 +15,7 @@ import Animated, { FadeInRight } from 'react-native-reanimated'
 
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { op } from '@calistenia/core/lib/analytics'
+import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import type { MatchUserInput } from '@calistenia/core/lib/matchPrograms'
 
@@ -117,8 +118,8 @@ export function OnboardingFlow() {
     setSavingProfile(true)
     try {
       await pb.collection('users').update(userId, {
-        weight: basics.weight ? parseFloat(basics.weight) : null,
-        height: basics.height ? parseFloat(basics.height) : null,
+        weight: parseDecimal(basics.weight),
+        height: parseDecimal(basics.height),
         age: basics.age ? parseInt(basics.age, 10) : null,
         sex: basics.sex || null,
       })
@@ -134,7 +135,7 @@ export function OnboardingFlow() {
     setSavingGoals(true)
     try {
       await pb.collection('users').update(userId, {
-        goal_weight: goals.goal_weight ? parseFloat(goals.goal_weight) : null,
+        goal_weight: parseDecimal(goals.goal_weight),
         activity_level: goals.activity_level || '',
         pace: goals.pace || '',
       })
@@ -204,14 +205,14 @@ export function OnboardingFlow() {
   }
 
   const firstName = displayName?.split(/[\s@]/)[0] ?? ''
-  const currentWeightNum = basics.weight ? parseFloat(basics.weight) : null
-  const currentHeightNum = basics.height ? parseFloat(basics.height) : null
+  const currentWeightNum = parseDecimal(basics.weight)
+  const currentHeightNum = parseDecimal(basics.height)
 
   // Build MatchUserInput from current live user fields merged with in-progress values
   const matchUserInput: MatchUserInput = {
     level: training.level || (user as Record<string, unknown>)?.level as string | undefined,
     weight: currentWeightNum ?? (user as Record<string, unknown>)?.weight as number | undefined,
-    goal_weight: goals.goal_weight ? parseFloat(goals.goal_weight) : (user as Record<string, unknown>)?.goal_weight as number | undefined,
+    goal_weight: parseDecimal(goals.goal_weight) ?? (user as Record<string, unknown>)?.goal_weight as number | undefined,
     focus_areas: training.focus_areas.length ? training.focus_areas : (user as Record<string, unknown>)?.focus_areas as string[] | undefined,
     training_days: training.training_days.length ? training.training_days : (user as Record<string, unknown>)?.training_days as string[] | undefined,
     injuries: health.injuries.length ? health.injuries : (user as Record<string, unknown>)?.injuries as string[] | undefined,
@@ -302,7 +303,7 @@ export function OnboardingFlow() {
           {step === personalizingStep ? (
             <StepPersonalizing
               currentWeightKg={currentWeightNum}
-              goalWeightKg={goals.goal_weight ? parseFloat(goals.goal_weight) : null}
+              goalWeightKg={parseDecimal(goals.goal_weight)}
               pace={goals.pace}
               program={programs.find((p) => p.id === selectedProgramId) ?? null}
               onFinish={handleFinish}
