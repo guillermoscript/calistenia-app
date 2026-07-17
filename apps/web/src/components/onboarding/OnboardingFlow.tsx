@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { op } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
@@ -193,6 +194,9 @@ export default function OnboardingFlow({
     onComplete()
   }
 
+  const { i18n } = useTranslation()
+  const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
+
   const firstName = displayName?.split(/[\s@]/)[0] || ''
   const currentWeightNum = parseDecimal(basics.weight)
   const currentHeightNum = parseDecimal(basics.height)
@@ -201,6 +205,24 @@ export default function OnboardingFlow({
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }`}</style>
       <div className="w-full max-w-lg">
+        {/* Selector de idioma: visible durante todo el onboarding */}
+        <div className="flex justify-end gap-1 mb-3">
+          {([['es', 'ES'], ['en', 'EN']] as const).map(([code, label]) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => i18n.changeLanguage(code)}
+              aria-pressed={currentLang === code}
+              className={`h-8 px-3 rounded-md border font-mono text-xs tracking-wide transition-colors ${
+                currentLang === code
+                  ? 'border-lime/40 bg-lime/10 text-lime'
+                  : 'border-border text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <OnboardingProgress step={step} totalSteps={totalSteps} />
 
         {step === 0 && (
