@@ -1312,6 +1312,7 @@
   "reminders.newWorkout": "Nuevo recordatorio de ejercicio",
   "reminders.newPause": "Nuevas pausas activas",
 
+  "onboarding.saveError": "No se pudo guardar. Revisa tu conexión e intenta de nuevo.",
   "onboarding.welcomeMsg": "{{name}}, bienvenido a tu entrenamiento",
   "onboarding.welcomeDefault": "Bienvenido a tu entrenamiento",
   "onboarding.howItWorks": "Así funciona:",

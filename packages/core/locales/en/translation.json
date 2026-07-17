@@ -1312,6 +1312,7 @@
   "reminders.newWorkout": "New workout reminder",
   "reminders.newPause": "New active breaks",
 
+  "onboarding.saveError": "Couldn't save. Check your connection and try again.",
   "onboarding.welcomeMsg": "{{name}}, welcome to your training",
   "onboarding.welcomeDefault": "Welcome to your training",
   "onboarding.howItWorks": "How it works:",
