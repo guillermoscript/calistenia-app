@@ -9,7 +9,8 @@
  * markOnboardingDone immediately and go to tabs.
  */
 import { useEffect, useState } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
 import Animated, { FadeInRight } from 'react-native-reanimated'
 
@@ -43,6 +44,8 @@ const EMPTY_TRAINING: TrainingValues = {
 
 export function OnboardingFlow() {
   const router = useRouter()
+  const { i18n } = useTranslation()
+  const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
   const user = useAuthUser()
   const userId = user?.id
   const displayName: string =
@@ -246,6 +249,33 @@ export function OnboardingFlow() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Selector de idioma: visible durante todo el onboarding */}
+        <View className="mb-3 flex-row justify-end gap-2">
+          {([['es', 'ES'], ['en', 'EN']] as const).map(([code, label]) => (
+            <Pressable
+              key={code}
+              onPress={() => {
+                haptics.light()
+                i18n.changeLanguage(code)
+              }}
+              className={
+                currentLang === code
+                  ? 'h-9 items-center justify-center rounded-md border border-lime/40 bg-lime/10 px-4'
+                  : 'h-9 items-center justify-center rounded-md border border-border px-4'
+              }
+            >
+              <Text
+                className={
+                  currentLang === code
+                    ? 'font-mono text-xs tracking-wide text-lime'
+                    : 'font-mono text-xs tracking-wide text-muted-foreground'
+                }
+              >
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
         <OnboardingProgress step={step} totalSteps={totalSteps} />
 
         <Animated.View key={step} entering={FadeInRight.duration(280)} className="flex-1">
