@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
+import { isPrimaryGoal, primaryGoalToNutritionGoalType } from '@calistenia/core/lib/primaryGoal'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
 import NutritionDashboard from '../components/nutrition/NutritionDashboard'
@@ -65,7 +66,10 @@ const ONBOARDING_ACTIVITY_TO_NUTRITION: Record<string, UserProfileData['activity
 function inferNutritionGoalType(
   weight?: number,
   goalWeight?: number,
+  primaryGoal?: unknown,
 ): UserProfileData['goalType'] {
+  // Objetivo explícito del onboarding (#226); el delta de peso es solo fallback.
+  if (isPrimaryGoal(primaryGoal)) return primaryGoalToNutritionGoalType(primaryGoal)
   if (!weight || !goalWeight) return undefined
   const delta = goalWeight - weight
   if (delta > 2) return 'muscle_gain'
@@ -112,7 +116,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           goalWeight,
           activityLevel: user.activity_level ? ONBOARDING_ACTIVITY_TO_NUTRITION[user.activity_level] : undefined,
           pace: user.pace || undefined,
-          goalType: inferNutritionGoalType(weight, goalWeight),
+          goalType: inferNutritionGoalType(weight, goalWeight, user.primary_goal),
         })
       } catch { /* ignore */ }
     }

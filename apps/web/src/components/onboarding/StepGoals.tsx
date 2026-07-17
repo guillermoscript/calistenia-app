@@ -5,13 +5,17 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
-import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
+import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal, calculateWhtr, whtrCategoryKey, whtrColorClass } from '@calistenia/core/lib/bmi'
+import { primaryGoalImpliesWeightChange } from '@calistenia/core/lib/primaryGoal'
+import type { PrimaryGoal } from '@calistenia/core/types/onboarding'
 
 export type ActivityLevel = 'sedentary' | 'light' | 'active' | 'very_active'
 export type Pace = 'gradual' | 'balanced' | 'aggressive'
 
 export interface GoalsValues {
+  primary_goal: PrimaryGoal | ''
   goal_weight: string
+  waist: string
   activity_level: ActivityLevel | ''
   pace: Pace | ''
 }
@@ -36,8 +40,22 @@ export function StepGoals({
     onChange({ ...values, [key]: v })
 
   const goalWeightNum = parseDecimal(values.goal_weight)
+  const waistNum = parseDecimal(values.waist)
   const currentBmi = useMemo(() => calculateBmi(currentWeightKg, currentHeightCm), [currentWeightKg, currentHeightCm])
   const goalBmi = useMemo(() => calculateBmi(goalWeightNum, currentHeightCm), [goalWeightNum, currentHeightCm])
+  const whtr = useMemo(() => calculateWhtr(waistNum, currentHeightCm), [waistNum, currentHeightCm])
+
+  // El peso objetivo solo se destaca si el objetivo implica cambio de peso.
+  const goalWeightOptional = !!values.primary_goal && !primaryGoalImpliesWeightChange(values.primary_goal)
+
+  const PRIMARY_GOALS: { value: PrimaryGoal; label: string }[] = [
+    { value: 'ganar_musculo', label: t('onboarding.primaryGoalMuscle') },
+    { value: 'perder_grasa', label: t('onboarding.primaryGoalFatLoss') },
+    { value: 'recomposicion', label: t('onboarding.primaryGoalRecomp') },
+    { value: 'resistencia', label: t('onboarding.primaryGoalEndurance') },
+    { value: 'habilidades', label: t('onboarding.primaryGoalSkills') },
+    { value: 'salud_general', label: t('onboarding.primaryGoalHealth') },
+  ]
 
   const ACTIVITY: { value: ActivityLevel; label: string; desc: string }[] = [
     { value: 'sedentary', label: t('onboarding.activitySedentary'), desc: t('onboarding.activitySedentaryDesc') },
@@ -61,9 +79,34 @@ export function StepGoals({
 
       <Card className="mb-6">
         <CardContent className="p-5 flex flex-col gap-4">
+          {/* Primary goal */}
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.primaryGoal')}</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {PRIMARY_GOALS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => set('primary_goal', opt.value)}
+                  aria-pressed={values.primary_goal === opt.value}
+                  className={cn(
+                    'rounded-md border px-3 py-2 text-left text-sm font-medium transition-colors',
+                    values.primary_goal === opt.value
+                      ? 'border-[hsl(var(--lime))] bg-[hsl(var(--lime))]/10 text-[hsl(var(--lime))]'
+                      : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Goal weight */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ob-goal-weight" className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('onboarding.goalWeight')}</Label>
+            <Label htmlFor="ob-goal-weight" className="text-[11px] text-muted-foreground tracking-wide uppercase">
+              {t('onboarding.goalWeight')}{goalWeightOptional ? ` ${t('onboarding.optionalTag')}` : ''}
+            </Label>
             <Input
               id="ob-goal-weight"
               type="number"
@@ -89,8 +132,37 @@ export function StepGoals({
                     {t('onboarding.bmiGoal', { bmi: goalBmi })} ({t(`onboarding.${bmiCategoryKey(goalBmi)}`)})
                   </span>
                 )}
+                {currentBmi && (
+                  <span className="basis-full">{t('onboarding.bmiOrientative')}</span>
+                )}
               </div>
             )}
+          </div>
+
+          {/* Waist / WHtR */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ob-waist" className="text-[11px] text-muted-foreground tracking-wide uppercase">
+              {t('onboarding.waist')} {t('onboarding.optionalTag')}
+            </Label>
+            <Input
+              id="ob-waist"
+              type="number"
+              step="0.5"
+              min="0"
+              placeholder={t('onboarding.waistPlaceholder')}
+              value={values.waist}
+              onChange={(e) => set('waist', e.target.value)}
+              className="h-10"
+            />
+            <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
+              {whtr ? (
+                <span className={whtrColorClass(whtr)}>
+                  {t('onboarding.whtrValue', { whtr })} ({t(`onboarding.${whtrCategoryKey(whtr)}`)})
+                </span>
+              ) : (
+                <span>{t('onboarding.waistHint')}</span>
+              )}
+            </div>
           </div>
 
           {/* Activity level */}

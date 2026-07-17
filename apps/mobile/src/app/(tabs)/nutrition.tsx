@@ -35,6 +35,7 @@ import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
 import { useWater } from '@calistenia/core/hooks/useWater'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
+import { isPrimaryGoal, primaryGoalToNutritionGoalType } from '@calistenia/core/lib/primaryGoal'
 import { qk } from '@calistenia/core/lib/query-keys'
 import { useDayRollover } from '@/lib/use-day-rollover'
 import { useDailyHealth } from '@/lib/health/useDailyHealth'
@@ -88,7 +89,9 @@ const ONBOARDING_ACTIVITY_MAP: Record<string, string> = {
   very_active: 'active',
 }
 
-function inferGoalType(weight?: number, goalWeight?: number): string | undefined {
+function inferGoalType(weight?: number, goalWeight?: number, primaryGoal?: unknown): string | undefined {
+  // Objetivo explícito del onboarding (#226); el delta de peso es solo fallback.
+  if (isPrimaryGoal(primaryGoal)) return primaryGoalToNutritionGoalType(primaryGoal)
   if (!weight || !goalWeight) return undefined
   const delta = goalWeight - weight
   if (delta > 2) return 'muscle_gain'
@@ -265,7 +268,7 @@ export default function NutritionTab() {
           goalWeight,
           activityLevel: user.activity_level ? ONBOARDING_ACTIVITY_MAP[user.activity_level] : undefined,
           pace: user.pace || undefined,
-          goalType: inferGoalType(weight, goalWeight),
+          goalType: inferGoalType(weight, goalWeight, user.primary_goal),
         })
       } catch { /* ignore */ }
     }
@@ -863,7 +866,7 @@ export default function NutritionTab() {
                   badges={badges}
                   generatingWeekly={generatingWeekly}
                   onGenerateWeekly={() => {
-                    generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'generate_weekly_insight' } }) })
+                    generateWeeklyInsight(todayStr(), allEntries, (authUser as { primary_goal?: string } | null)?.primary_goal || goals?.goal).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'generate_weekly_insight' } }) })
                   }}
                 />
                 <WeeklyNutritionChart

@@ -64,6 +64,9 @@ export interface InsightContext {
   // si se pidió `withPrevious`. Únicamente el summary — nunca las filas, para no
   // inflar el presupuesto de tokens del prompt (épica #128 Fase 3, #136).
   previousSummary?: InsightSummary
+  // Objetivo principal declarado en el onboarding (#226) — el LLM interpreta
+  // las señales según lo que el usuario quiere lograr, no solo el delta de peso.
+  primaryGoal?: string
 }
 
 // Forma mínima de un registro `sessions` (entrenamiento de fuerza) — solo los
@@ -432,6 +435,14 @@ export async function buildInsightContext(
     }
   }
 
+  let primaryGoal: string | undefined
+  try {
+    const user = await pb.collection('users').getOne(userId, { fields: 'primary_goal' })
+    primaryGoal = (user as { primary_goal?: string }).primary_goal || undefined
+  } catch (err) {
+    console.warn('buildInsightContext: user primary_goal fetch failed', err)
+  }
+
   return {
     userId,
     period,
@@ -439,5 +450,6 @@ export async function buildInsightContext(
     summary: current.summary,
     watchAvailable: current.watchAvailable,
     ...(previousSummary ? { previousSummary } : {}),
+    ...(primaryGoal ? { primaryGoal } : {}),
   }
 }

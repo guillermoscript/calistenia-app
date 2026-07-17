@@ -35,7 +35,7 @@ import type { HealthValues } from '@calistenia/core/types/onboarding'
 import type { TrainingValues } from '@calistenia/core/types/onboarding'
 
 const EMPTY_BASICS: BasicsValues = { weight: '', height: '', age: '', sex: '' }
-const EMPTY_GOALS: GoalsValues = { goal_weight: '', activity_level: '', pace: '' }
+const EMPTY_GOALS: GoalsValues = { primary_goal: '', goal_weight: '', waist: '', activity_level: '', pace: '' }
 const EMPTY_HEALTH: HealthValues = { medical_conditions: [], injuries: [] }
 const EMPTY_TRAINING: TrainingValues = {
   level: 'principiante', focus_areas: [], training_days: [], intensity: '', goal: '',
@@ -133,14 +133,29 @@ export function OnboardingFlow() {
   const handleSaveGoals = async () => {
     if (!userId) return
     setSavingGoals(true)
+    const waist = parseDecimal(goals.waist)
     try {
       await pb.collection('users').update(userId, {
+        primary_goal: goals.primary_goal || '',
         goal_weight: parseDecimal(goals.goal_weight),
+        waist,
         activity_level: goals.activity_level || '',
         pace: goals.pace || '',
       })
     } catch (e) {
       console.warn('Failed to save onboarding goals:', e)
+    }
+    // La cintura también se registra como medición corporal con fecha (historial).
+    if (waist) {
+      try {
+        await pb.collection('body_measurements').create({
+          user: userId,
+          date: new Date().toISOString().slice(0, 10),
+          waist,
+        })
+      } catch (e) {
+        console.warn('Failed to save waist measurement:', e)
+      }
     }
     setSavingGoals(false)
     goToStep(healthStep)
@@ -193,6 +208,7 @@ export function OnboardingFlow() {
     }
     op.track('onboarding_completed', {
       level: training.level || 'unknown',
+      primary_goal: goals.primary_goal || 'unknown',
       has_program: !!selectedProgramId,
       has_goal_weight: !!goals.goal_weight,
       activity_level: goals.activity_level || 'unknown',
@@ -217,6 +233,7 @@ export function OnboardingFlow() {
     training_days: training.training_days.length ? training.training_days : (user as Record<string, unknown>)?.training_days as string[] | undefined,
     injuries: health.injuries.length ? health.injuries : (user as Record<string, unknown>)?.injuries as string[] | undefined,
     medical_conditions: health.medical_conditions.length ? health.medical_conditions : (user as Record<string, unknown>)?.medical_conditions as string[] | undefined,
+    primary_goal: goals.primary_goal || (user as Record<string, unknown>)?.primary_goal as string | undefined,
   }
 
   return (

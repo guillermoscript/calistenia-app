@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseDecimal, normalizeHeightCm, calculateBmi, bmiCategoryKey } from './bmi'
+import { parseDecimal, normalizeHeightCm, calculateBmi, bmiCategoryKey, calculateWhtr, whtrCategoryKey, whtrColorClass } from './bmi'
 
 describe('parseDecimal', () => {
   it('acepta punto decimal', () => {
@@ -111,5 +111,51 @@ describe('bmiCategoryKey', () => {
 
   it('30 → bmiObese', () => {
     expect(bmiCategoryKey(30)).toBe('bmiObese')
+  })
+})
+
+describe('calculateWhtr', () => {
+  it('calcula el ratio cintura/altura con 2 decimales', () => {
+    expect(calculateWhtr(80, 175)).toBe(0.46)
+    expect(calculateWhtr(90, 170)).toBe(0.53)
+  })
+
+  it('acepta altura en metros (normalizeHeightCm)', () => {
+    expect(calculateWhtr(80, 1.75)).toBe(0.46)
+  })
+
+  it('devuelve null con entradas faltantes', () => {
+    expect(calculateWhtr(null, 175)).toBeNull()
+    expect(calculateWhtr(80, null)).toBeNull()
+    expect(calculateWhtr(0, 175)).toBeNull()
+  })
+
+  it('devuelve null fuera de rangos plausibles', () => {
+    expect(calculateWhtr(20, 175)).toBeNull()
+    expect(calculateWhtr(400, 175)).toBeNull()
+    expect(calculateWhtr(80, 50)).toBeNull()
+    expect(calculateWhtr(80, 300)).toBeNull()
+  })
+})
+
+describe('whtrCategoryKey', () => {
+  it('<0.5 → saludable', () => {
+    expect(whtrCategoryKey(0.4)).toBe('whtrHealthy')
+    expect(whtrCategoryKey(0.49)).toBe('whtrHealthy')
+  })
+  it('0.5–0.6 → riesgo aumentado', () => {
+    expect(whtrCategoryKey(0.5)).toBe('whtrIncreased')
+    expect(whtrCategoryKey(0.6)).toBe('whtrIncreased')
+  })
+  it('>0.6 → riesgo alto', () => {
+    expect(whtrCategoryKey(0.61)).toBe('whtrHigh')
+  })
+})
+
+describe('whtrColorClass', () => {
+  it('mapea categorías a colores del design system', () => {
+    expect(whtrColorClass(0.45)).toBe('text-emerald-500')
+    expect(whtrColorClass(0.55)).toBe('text-amber-400')
+    expect(whtrColorClass(0.65)).toBe('text-red-500')
   })
 })

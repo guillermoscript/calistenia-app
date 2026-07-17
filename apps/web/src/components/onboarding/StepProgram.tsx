@@ -67,6 +67,12 @@ export function StepProgram({
         <span className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: t('onboarding.recommendedHint') }} />
       </div>
 
+      {user.primary_goal === 'resistencia' && (
+        <div className="px-3 py-2 rounded-lg bg-card border border-border mb-4">
+          <span className="text-xs text-muted-foreground">{t('onboarding.enduranceNotice')}</span>
+        </div>
+      )}
+
       <div className="space-y-3 mb-6 max-h-[50vh] overflow-y-auto pr-1">
         {ordered.map(({ program, tier }) => {
           const isSelected = selectedProgramId === program.id

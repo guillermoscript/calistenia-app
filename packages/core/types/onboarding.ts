@@ -15,6 +15,14 @@ export interface HealthValues {
   injuries: InjuryId[]
 }
 
+/** Objetivo principal estructurado del usuario (campo select `primary_goal` en `users`). */
+export const PRIMARY_GOAL_IDS = [
+  'ganar_musculo', 'perder_grasa', 'recomposicion',
+  'resistencia', 'habilidades', 'salud_general',
+] as const
+
+export type PrimaryGoal = typeof PRIMARY_GOAL_IDS[number]
+
 export const FOCUS_AREA_IDS = [
   'full_body', 'upper_body', 'core', 'legs',
   'pull_up', 'handstand', 'planche', 'muscle_up',
