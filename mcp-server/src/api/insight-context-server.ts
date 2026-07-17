@@ -571,11 +571,20 @@ export async function buildInsightContextServer(
     }
   }
 
+  let primaryGoal: string | undefined;
+  try {
+    const user = await pb.collection("users").getOne(userId, { fields: "primary_goal" });
+    primaryGoal = (user as { primary_goal?: string }).primary_goal || undefined;
+  } catch (err) {
+    console.warn("insight-context-server: user primary_goal fetch failed", err);
+  }
+
   return {
     period,
     rows: current.rows,
     summary: current.summary,
     watchAvailable: current.watchAvailable,
     ...(previousSummary ? { previousSummary } : {}),
+    ...(primaryGoal ? { primaryGoal } : {}),
   };
 }

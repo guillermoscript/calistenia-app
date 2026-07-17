@@ -143,6 +143,33 @@ describe('matchUserToPrograms — secondary skill track', () => {
     expect(r.primary?.id).toBe('b-maint')
     expect(r.secondary?.id).toBe('sk-pull')
   })
+
+  it('primary_goal=habilidades sin focus areas de skill aún recomienda un skill track', () => {
+    const r = matchUserToPrograms({
+      level: 'intermedio', weight: 75, goal_weight: 75,
+      primary_goal: 'habilidades', focus_areas: ['full_body'], training_days: ['mon','wed','fri'],
+    }, catalog)
+    expect(r.primary?.id).toBe('i-maint')
+    // Prefiere el skill track de su dificultad (sk-mu es intermediate).
+    expect(r.secondary?.id).toBe('sk-mu')
+  })
+
+  it('habilidades cae a cualquier skill track si no hay uno de su dificultad', () => {
+    const r = matchUserToPrograms({
+      level: 'avanzado', weight: 75, goal_weight: 75,
+      primary_goal: 'habilidades', focus_areas: [], training_days: ['mon','wed','fri'],
+    }, catalog)
+    // Hay sk-pla (advanced) en el catálogo → lo prefiere por dificultad.
+    expect(r.secondary?.id).toBe('sk-pla')
+  })
+
+  it('sin primary_goal habilidades no hay fallback: secondary null si no hay focus de skill', () => {
+    const r = matchUserToPrograms({
+      level: 'intermedio', weight: 75, goal_weight: 75,
+      focus_areas: ['full_body'], training_days: ['mon','wed','fri'],
+    }, catalog)
+    expect(r.secondary).toBeNull()
+  })
 })
 
 describe('matchUserToPrograms — penalties', () => {

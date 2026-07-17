@@ -866,7 +866,7 @@ export default function NutritionTab() {
                   badges={badges}
                   generatingWeekly={generatingWeekly}
                   onGenerateWeekly={() => {
-                    generateWeeklyInsight(todayStr(), allEntries, goals?.goal).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'generate_weekly_insight' } }) })
+                    generateWeeklyInsight(todayStr(), allEntries, (authUser as { primary_goal?: string } | null)?.primary_goal || goals?.goal).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'generate_weekly_insight' } }) })
                   }}
                 />
                 <WeeklyNutritionChart

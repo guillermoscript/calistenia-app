@@ -121,5 +121,14 @@ export function matchUserToPrograms(
     }
   }
 
+  // Objetivo "habilidades" sin focus areas de skill: aún así merece un skill
+  // track de secundario; preferimos el que coincida con la dificultad del user.
+  if (!secondary && user.primary_goal === 'habilidades') {
+    secondary =
+      programs.find(p => p.goal_type === 'skill' && p.difficulty === userDifficulty && p.id !== primary?.id) ??
+      programs.find(p => p.goal_type === 'skill' && p.id !== primary?.id) ??
+      null
+  }
+
   return { primary, secondary, penalties }
 }

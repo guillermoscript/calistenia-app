@@ -461,6 +461,8 @@ export function useNutrition(userId: string | null) {
     switch (goal) {
       case 'muscle_gain': dailyCalories = tdee + 300 * paceFactor; break
       case 'fat_loss':    dailyCalories = tdee - 500 * paceFactor; break
+      // Recomposición: déficit ligero fijo (no escala con pace) + proteína alta.
+      case 'recomp':      dailyCalories = tdee - 200; break
       default:            dailyCalories = tdee; break
     }
     dailyCalories = Math.round(dailyCalories)
@@ -468,6 +470,7 @@ export function useNutrition(userId: string | null) {
     switch (goal) {
       case 'muscle_gain': proteinPerKg = 2.0; break
       case 'fat_loss':    proteinPerKg = 2.2; break
+      case 'recomp':      proteinPerKg = 2.2; break
       default:            proteinPerKg = 1.8; break
     }
     const dailyProtein = Math.round(proteinPerKg * weight)

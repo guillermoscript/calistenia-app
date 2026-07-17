@@ -1372,6 +1372,7 @@
   "onboarding.whtrIncreased": "Increased risk",
   "onboarding.whtrHigh": "High risk",
   "onboarding.bmiOrientative": "BMI is a rough guide: it can't tell muscle from fat.",
+  "onboarding.enduranceNotice": "We don't have dedicated endurance programs yet. We recommend a general base program — you can add GPS cardio sessions from the app.",
   "onboarding.healthTitle": "HEALTH",
   "onboarding.healthDesc": "Helps us filter exercises that might hurt you.",
   "onboarding.noIssuesLabel": "No conditions or injuries",
