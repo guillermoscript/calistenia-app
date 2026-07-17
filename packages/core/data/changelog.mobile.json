@@ -1,6 +1,134 @@
 {
-  "generated": "2026-07-14T14:23:25.091Z",
+  "generated": "2026-07-17T20:39:20.139Z",
   "versions": [
+    {
+      "version": "1.4.0",
+      "date": "2026-07-17",
+      "summary": {
+        "es": "Onboarding más inteligente: define tu objetivo principal, mide tu ratio cintura/altura y elige tu idioma. Además, retoma tu sesión de fuerza en cualquier dispositivo.",
+        "en": "Smarter onboarding: set your primary goal, measure your waist-to-height ratio and pick your language. Plus, resume your strength session on any device."
+      },
+      "highlights": [
+        {
+          "icon": "🎯",
+          "type": "feat",
+          "title": {
+            "es": "Objetivo principal",
+            "en": "Primary goal"
+          },
+          "body": {
+            "es": "El onboarding ahora te pide tu objetivo principal de forma estructurada y adapta las recomendaciones a él.",
+            "en": "Onboarding now asks for your primary goal in a structured way and tailors recommendations to it."
+          }
+        },
+        {
+          "icon": "📏",
+          "type": "feat",
+          "title": {
+            "es": "Ratio cintura/altura",
+            "en": "Waist-to-height ratio"
+          },
+          "body": {
+            "es": "Nueva medida de cintura en el onboarding para calcular tu ratio cintura/altura (WHtR), un indicador de salud más fiable que el IMC solo.",
+            "en": "New waist measurement during onboarding to compute your waist-to-height ratio (WHtR), a more reliable health indicator than BMI alone."
+          }
+        },
+        {
+          "icon": "🌐",
+          "type": "feat",
+          "title": {
+            "es": "Idioma ES/EN",
+            "en": "ES/EN language"
+          },
+          "body": {
+            "es": "Elige entre español e inglés directamente desde el onboarding, en web y en la app.",
+            "en": "Choose between Spanish and English right from onboarding, on web and in the app."
+          }
+        },
+        {
+          "icon": "🔄",
+          "type": "feat",
+          "title": {
+            "es": "Reanuda tu sesión donde sea",
+            "en": "Resume your session anywhere"
+          },
+          "body": {
+            "es": "Tu sesión de fuerza en curso se sincroniza con el servidor: empieza en el móvil y continúa en la web, o al revés.",
+            "en": "Your in-progress strength session syncs to the server: start on your phone and continue on the web, or the other way around."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Selector de idioma ES/EN en el onboarding (web y native)",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "f896129"
+            },
+            {
+              "description": "Cierra huecos de lógica de negocio del objetivo principal (#226)",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "d69714c"
+            },
+            {
+              "description": "Objetivo principal estructurado + ratio cintura/altura (#226)",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "d9fdc3b"
+            },
+            {
+              "description": "Amplía landing v2 con secciones de historia y og image",
+              "scope": "web",
+              "breaking": false,
+              "hash": "4d6da19"
+            },
+            {
+              "description": "Sincroniza la sesión de fuerza en curso con el server (reanudar web↔mobile)",
+              "scope": "session",
+              "breaking": false,
+              "hash": "78cc75c"
+            },
+            {
+              "description": "Reestructura la vista en HOY/PLANIFICAR (native y web)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "7eba6fb"
+            },
+            {
+              "description": "Enrich landing story and hero",
+              "scope": "web",
+              "breaking": false,
+              "hash": "7feb502"
+            },
+            {
+              "description": "Redesign beginner landing page",
+              "scope": "web",
+              "breaking": false,
+              "hash": "534ca21"
+            }
+          ]
+        },
+        {
+          "label": "Mejoras internas",
+          "emoji": "♻️",
+          "type": "refactor",
+          "items": [
+            {
+              "description": "Extrae helpers de BMI compartidos a core",
+              "scope": "core",
+              "breaking": false,
+              "hash": "c094dfb"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.3.2",
       "date": "2026-07-14",
