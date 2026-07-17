@@ -43,6 +43,16 @@ describe('inferGoalType', () => {
     expect(inferGoalType(70, undefined)).toBe('maintain')
     expect(inferGoalType(undefined, undefined)).toBe('maintain')
   })
+  it('primary_goal manda sobre el delta de peso', () => {
+    expect(inferGoalType(85, 75, 'ganar_musculo')).toBe('muscle_gain')
+    expect(inferGoalType(70, 75, 'perder_grasa')).toBe('fat_loss')
+    expect(inferGoalType(70, 80, 'recomposicion')).toBe('maintain')
+    expect(inferGoalType(70, 80, 'resistencia')).toBe('maintain')
+  })
+  it('primary_goal desconocido cae al fallback por delta', () => {
+    expect(inferGoalType(70, 75, 'lo_que_sea')).toBe('muscle_gain')
+    expect(inferGoalType(70, 75, '')).toBe('muscle_gain')
+  })
 })
 
 describe('LEVEL_TO_DIFFICULTY', () => {

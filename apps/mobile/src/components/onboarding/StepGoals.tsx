@@ -8,13 +8,17 @@ import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
-import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
+import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal, calculateWhtr, whtrCategoryKey, whtrColorClass } from '@calistenia/core/lib/bmi'
+import { primaryGoalImpliesWeightChange } from '@calistenia/core/lib/primaryGoal'
+import type { PrimaryGoal } from '@calistenia/core/types/onboarding'
 
 export type ActivityLevel = 'sedentary' | 'light' | 'active' | 'very_active'
 export type Pace = 'gradual' | 'balanced' | 'aggressive'
 
 export interface GoalsValues {
+  primary_goal: PrimaryGoal | ''
   goal_weight: string
+  waist: string
   activity_level: ActivityLevel | ''
   pace: Pace | ''
 }
@@ -39,8 +43,22 @@ export function StepGoals({
     onChange({ ...values, [key]: v })
 
   const goalWeightNum = parseDecimal(values.goal_weight)
+  const waistNum = parseDecimal(values.waist)
   const currentBmi = useMemo(() => calculateBmi(currentWeightKg, currentHeightCm), [currentWeightKg, currentHeightCm])
   const goalBmi = useMemo(() => calculateBmi(goalWeightNum, currentHeightCm), [goalWeightNum, currentHeightCm])
+  const whtr = useMemo(() => calculateWhtr(waistNum, currentHeightCm), [waistNum, currentHeightCm])
+
+  // El peso objetivo solo se destaca si el objetivo implica cambio de peso.
+  const goalWeightOptional = !!values.primary_goal && !primaryGoalImpliesWeightChange(values.primary_goal)
+
+  const PRIMARY_GOALS: { value: PrimaryGoal; label: string }[] = [
+    { value: 'ganar_musculo', label: t('onboarding.primaryGoalMuscle') },
+    { value: 'perder_grasa', label: t('onboarding.primaryGoalFatLoss') },
+    { value: 'recomposicion', label: t('onboarding.primaryGoalRecomp') },
+    { value: 'resistencia', label: t('onboarding.primaryGoalEndurance') },
+    { value: 'habilidades', label: t('onboarding.primaryGoalSkills') },
+    { value: 'salud_general', label: t('onboarding.primaryGoalHealth') },
+  ]
 
   const ACTIVITY: { value: ActivityLevel; label: string; desc: string }[] = [
     { value: 'sedentary', label: t('onboarding.activitySedentary'), desc: t('onboarding.activitySedentaryDesc') },
@@ -64,11 +82,39 @@ export function StepGoals({
 
       <Card className="mb-6">
         <CardContent className="p-5 gap-4">
+          {/* Primary goal */}
+          <View className="gap-1.5">
+            <Text className="text-[11px] text-muted-foreground uppercase tracking-wide">
+              {t('onboarding.primaryGoal')}
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {PRIMARY_GOALS.map((opt) => (
+                <Pressable
+                  key={opt.value}
+                  onPress={() => { haptics.selection(); set('primary_goal', opt.value) }}
+                  className={cn(
+                    'flex-1 min-w-[45%] items-start rounded-md border px-3 py-2',
+                    values.primary_goal === opt.value
+                      ? 'border-lime bg-lime/10'
+                      : 'border-border'
+                  )}
+                >
+                  <Text className={cn(
+                    'text-sm font-sans-medium',
+                    values.primary_goal === opt.value ? 'text-lime' : 'text-foreground'
+                  )}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
           {/* Goal weight */}
           <View className="gap-1.5">
             <Label nativeID="ob-goal-weight">
               <Text className="text-[11px] text-muted-foreground uppercase tracking-wide">
-                {t('onboarding.goalWeight')}
+                {t('onboarding.goalWeight')}{goalWeightOptional ? ` ${t('onboarding.optionalTag')}` : ''}
               </Text>
             </Label>
             <Input
@@ -95,8 +141,36 @@ export function StepGoals({
                     {t('onboarding.bmiGoal', { bmi: goalBmi })} ({t(`onboarding.${bmiCategoryKey(goalBmi)}`)})
                   </Text>
                 ) : null}
+                {currentBmi !== null ? (
+                  <Text className="text-[11px] text-muted-foreground w-full">
+                    {t('onboarding.bmiOrientative')}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
+          </View>
+
+          {/* Waist / WHtR */}
+          <View className="gap-1.5">
+            <Label nativeID="ob-waist">
+              <Text className="text-[11px] text-muted-foreground uppercase tracking-wide">
+                {t('onboarding.waist')} {t('onboarding.optionalTag')}
+              </Text>
+            </Label>
+            <Input
+              aria-labelledby="ob-waist"
+              keyboardType="decimal-pad"
+              placeholder={t('onboarding.waistPlaceholder')}
+              value={values.waist}
+              onChangeText={(v) => set('waist', v)}
+            />
+            {whtr !== null ? (
+              <Text className={cn('text-[11px]', whtrColorClass(whtr))}>
+                {t('onboarding.whtrValue', { whtr })} ({t(`onboarding.${whtrCategoryKey(whtr)}`)})
+              </Text>
+            ) : (
+              <Text className="text-[11px] text-muted-foreground">{t('onboarding.waistHint')}</Text>
+            )}
           </View>
 
           {/* Activity level */}
