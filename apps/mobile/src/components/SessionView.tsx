@@ -792,7 +792,11 @@ export default function SessionView({
     const dir = swipeDirectionRef.current
     swipeDirectionRef.current = null
     if (!dir) return
-    // translateX was already snapped to the entry side in the worklet callback
+    // Snap al lado de entrada (el ejercicio nuevo entra desde el lado opuesto
+    // al swipe) y desliza a 0. Antes esto se hacía dentro del callback de
+    // withTiming en el worklet, pero mutar un shared value + runOnJS anidados
+    // en un callback de animación crashea en Reanimated 4 (release).
+    translateX.value = dir === 'next' ? SCREEN_WIDTH : -SCREEN_WIDTH
     translateX.value = withSpring(0, { damping: 20, stiffness: 220 })
   }, [stepIdx, translateX])
 
@@ -818,17 +822,15 @@ export default function SessionView({
       .onEnd((e) => {
         const THRESHOLD = 65
         if (e.translationX < -THRESHOLD && canSwipeLeft.value) {
+          // Desliza la tarjeta actual fuera; la navegación (y el snap de
+          // entrada del ejercicio nuevo) los maneja el efecto sobre stepIdx.
+          translateX.value = withTiming(-SCREEN_WIDTH, { duration: 180 })
           runOnJS(haptic.selection)()
-          translateX.value = withTiming(-SCREEN_WIDTH, { duration: 180 }, () => {
-            translateX.value = SCREEN_WIDTH
-            runOnJS(handleSwipeToNext)()
-          })
+          runOnJS(handleSwipeToNext)()
         } else if (e.translationX > THRESHOLD && canSwipeRight.value) {
+          translateX.value = withTiming(SCREEN_WIDTH, { duration: 180 })
           runOnJS(haptic.selection)()
-          translateX.value = withTiming(SCREEN_WIDTH, { duration: 180 }, () => {
-            translateX.value = -SCREEN_WIDTH
-            runOnJS(handleSwipeToPrev)()
-          })
+          runOnJS(handleSwipeToPrev)()
         } else {
           translateX.value = withSpring(0, { damping: 15, stiffness: 200 })
         }
