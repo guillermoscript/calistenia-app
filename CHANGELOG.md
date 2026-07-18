@@ -9,6 +9,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.5.0] - 2026-07-18
+
+_A guided getting-started checklist on Home, a «Discover» directory of all 21 app features, and empty screens that now teach you how to use them._
+
+### Added
+
+- **Getting started** — A new Home checklist with 6 activation steps, a progress bar, and a shortcut to each one.
+- **Discover** — A new section in your profile lists all 21 app features by category, each one a tap away.
+- **Guided empty states** — History, library, calendar and other screens now explain what to do when they're empty, with a direct action button.
+
+### Fixed
+
+- **Session-swipe crash** — Fixed the app closing unexpectedly when swiping between exercises mid-workout.
+
 ## [1.4.0] - 2026-07-17
 
 _Smarter onboarding: set your primary goal, measure your waist-to-height ratio and pick your language. Plus, resume your strength session on any device._
@@ -206,7 +220,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.4.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.5.0...HEAD
+[1.5.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.4.0...mobile-v1.5.0
 [1.4.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.2...mobile-v1.4.0
 [1.3.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.1...mobile-v1.3.2
 [1.3.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.0...mobile-v1.3.1
