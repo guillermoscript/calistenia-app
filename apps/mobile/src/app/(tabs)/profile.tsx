@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
-import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Camera, UserX } from 'lucide-react-native'
+import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Camera, UserX, Compass } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { getThemeMode, setThemeMode, type ThemeMode } from '@/lib/theme-mode'
 import { ChangelogHistory } from '@/components/WhatsNewModal'
+import { DiscoverSheet } from '@/components/DiscoverSheet'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
@@ -44,6 +45,7 @@ export default function ProfileScreen() {
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [themeMode, setThemeModeState] = useState<ThemeMode>(getThemeMode)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [discoverOpen, setDiscoverOpen] = useState(false)
 
   const changeTheme = (mode: ThemeMode) => {
     setThemeMode(mode)
@@ -201,6 +203,24 @@ export default function ProfileScreen() {
           </Card>
         </Pressable>
 
+        {/* Descubre — directorio de todas las features (issue #236) */}
+        <Pressable onPress={() => setDiscoverOpen(true)}>
+          <Card>
+            <CardContent className="flex-row items-center gap-3 py-4">
+              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+                <Compass size={18} color="hsl(74 90% 57%)" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground">{t('profile.discover')}</Text>
+                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                  {t('profile.discoverDesc')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="hsl(0 0% 45%)" />
+            </CardContent>
+          </Card>
+        </Pressable>
+
         {/* Novedades / historial de cambios */}
         <Pressable onPress={() => setHistoryOpen(true)}>
           <Card>
@@ -345,6 +365,7 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <ChangelogHistory visible={historyOpen} onClose={() => setHistoryOpen(false)} />
+      <DiscoverSheet visible={discoverOpen} onClose={() => setDiscoverOpen(false)} />
     </SafeAreaView>
   )
 }
