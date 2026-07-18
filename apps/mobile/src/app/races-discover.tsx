@@ -4,9 +4,10 @@ import { View, ScrollView, Pressable, TextInput, RefreshControl } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { X, MapPin } from 'lucide-react-native'
+import { X, MapPin, Flag } from 'lucide-react-native'
 import * as Location from 'expo-location'
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useDiscoverRaces } from '@calistenia/core/hooks/useDiscoverRaces'
@@ -131,10 +132,13 @@ export default function RacesDiscoverScreen() {
             <Text className="text-muted-foreground">{t('common.loading')}</Text>
           </View>
         ) : races.length === 0 ? (
-          <View className="items-center rounded-xl border border-dashed border-border py-10">
-            <Text className="font-bebas text-xl text-muted-foreground">{t('race.noPublicRaces')}</Text>
-            <Text className="mt-1 text-xs text-muted-foreground">{t('race.createAndShare')}</Text>
-          </View>
+          <EmptyState
+            icon={Flag}
+            title={t('race.noPublicRaces')}
+            body={t('race.discoverBody')}
+            ctaLabel={t('race.discoverCta')}
+            onCtaPress={() => router.push('/race-create')}
+          />
         ) : (
           <View className="gap-2">
             {races.map((race) => (

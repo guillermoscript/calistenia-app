@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { ChevronLeft, ChevronDown } from 'lucide-react-native'
+import { ChevronLeft, ChevronDown, Sparkles } from 'lucide-react-native'
 import Animated, {
   FadeIn,
   FadeOut,
@@ -31,6 +31,7 @@ import {
   type InsightPeriodType,
 } from '@calistenia/core/hooks/useCrossInsights'
 import { sortByStrength, CorrelationRow, Disclaimer, relativeTime } from '@/components/insights/InsightsCard'
+import { EmptyState } from '@/components/ui/empty-state'
 
 /** "Semana del 23 jun" / "Mes de junio 2026" — a partir de period_start (YYYY-MM-DD local). */
 function periodLabel(periodStart: string, periodType: InsightPeriodType, t: TFunction): string {
@@ -216,10 +217,14 @@ export default function InsightsHistoryScreen() {
           </Text>
         </View>
       ) : !data || data.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="font-bebas text-xl tracking-wide text-muted-foreground text-center">
-            {t('insights.history.empty', 'Aún no tienes resúmenes todavía')}
-          </Text>
+        <View className="flex-1 justify-center px-4">
+          <EmptyState
+            icon={Sparkles}
+            title={t('insights.history.emptyTitle', 'Tus semanas, analizadas')}
+            body={t('insights.history.emptyBody', 'Cada semana la IA cruza sueño, entrenos, nutrición y más buscando patrones. Genera tu primer resumen desde la card «Tu semana» del inicio.')}
+            ctaLabel={t('insights.history.emptyCta', 'Ir al inicio')}
+            onCtaPress={() => router.back()}
+          />
         </View>
       ) : (
         <FlatList

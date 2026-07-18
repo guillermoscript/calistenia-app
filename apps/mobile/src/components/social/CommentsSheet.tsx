@@ -23,6 +23,7 @@ import {
   Modal,
 } from 'react-native'
 import { useColorScheme } from 'nativewind'
+import { useTranslation } from 'react-i18next'
 import { KeyboardProvider, KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
@@ -105,6 +106,7 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
     },
     ref,
   ) {
+    const { t } = useTranslation()
     const { colorScheme } = useColorScheme()
     const isDark = colorScheme === 'dark'
 
@@ -348,7 +350,7 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                       <View className="flex-1 items-center justify-center py-14 gap-3">
                         <Text className="font-mono text-4xl opacity-40">💬</Text>
                         <Text className="font-sans text-sm text-muted-foreground/60">
-                          Sé el primero en comentar
+                          {t('social.commentsEmpty')}
                         </Text>
                       </View>
                     }

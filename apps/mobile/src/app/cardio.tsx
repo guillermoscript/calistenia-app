@@ -3,7 +3,7 @@
  * Tres vistas: idle (selector + historial + stats), tracking (métricas en vivo
  * + mapa) y finished (resumen + splits + elevación + nota).
  */
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { View, ScrollView, Pressable, TextInput, Alert, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
@@ -40,6 +40,8 @@ export default function CardioScreen() {
   const router = useRouter()
   const user = useAuthUser()
   const userId = user?.id ?? null
+  // «Empezar cardio» del empty state del historial: sube al tracker (arriba).
+  const scrollRef = useRef<ScrollView>(null)
 
   const {
     state, activityType, points: pointsRef, pointsCount, distance, duration,
@@ -150,6 +152,7 @@ export default function CardioScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerClassName="px-4 pb-10 gap-4"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -317,7 +320,12 @@ export default function CardioScreen() {
             {/* Historial */}
             <View className="gap-3">
               <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{t('cardio.history')}</Text>
-              <CardioHistory sessions={history} loading={historyLoading} onDelete={handleDeleteSession} />
+              <CardioHistory
+                sessions={history}
+                loading={historyLoading}
+                onDelete={handleDeleteSession}
+                onStart={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+              />
             </View>
 
             {/* Estadísticas */}

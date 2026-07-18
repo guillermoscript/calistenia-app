@@ -1120,14 +1120,14 @@ export default function RemindersScreen() {
             <View className="size-16 rounded-full bg-muted/30 items-center justify-center mb-6">
               <Bell size={28} color="rgba(255,255,255,0.3)" strokeWidth={1.5} />
             </View>
-            <Text className="font-bebas text-xl tracking-wide text-muted-foreground mb-1">
-              SIN RECORDATORIOS
+            <Text className="font-bebas text-xl uppercase tracking-wide text-muted-foreground mb-1">
+              {t('reminders.emptyTitle')}
             </Text>
             <Text
               className="font-mono text-[11px] text-muted-foreground text-center leading-relaxed"
               style={{ maxWidth: 240 }}
             >
-              Programa alertas para no saltarte comidas, entrenamientos o pausas activas durante el trabajo
+              {t('reminders.emptyBody')}
             </Text>
           </View>
         ) : null}

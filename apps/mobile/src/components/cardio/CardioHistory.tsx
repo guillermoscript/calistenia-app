@@ -2,8 +2,9 @@
 import { useState } from 'react'
 import { View, Pressable, Alert } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronDown, ChevronUp } from 'lucide-react-native'
+import { Trash2, ChevronDown, ChevronUp, MapPin } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { formatPace, formatSpeed, formatDuration } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
 import RouteMap from './RouteMap'
@@ -14,9 +15,11 @@ interface Props {
   sessions: CardioSession[]
   loading: boolean
   onDelete: (id: string) => void
+  /** CTA del empty state («Empezar cardio») — el padre decide (p. ej. subir al tracker). */
+  onStart?: () => void
 }
 
-export default function CardioHistory({ sessions, loading, onDelete }: Props) {
+export default function CardioHistory({ sessions, loading, onDelete, onStart }: Props) {
   const { t, i18n } = useTranslation()
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -30,12 +33,13 @@ export default function CardioHistory({ sessions, loading, onDelete }: Props) {
 
   if (sessions.length === 0) {
     return (
-      <View className="items-center rounded-xl border border-dashed border-border py-8">
-        <Text className="text-sm text-muted-foreground">{t('cardio.noSessions')}</Text>
-        <Text className="mt-1 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground/60">
-          {t('cardio.startFirstSession')}
-        </Text>
-      </View>
+      <EmptyState
+        icon={MapPin}
+        title={t('cardio.noSessions')}
+        body={t('cardio.emptyBody')}
+        ctaLabel={onStart ? t('cardio.emptyCta') : undefined}
+        onCtaPress={onStart}
+      />
     )
   }
 

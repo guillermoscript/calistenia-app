@@ -316,6 +316,7 @@ function PickView({
   onRelaunchTemplate: (tpl: FreeSessionTemplate) => void
   onDeleteTemplate: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const categories = ['todos', ...CATALOG_CATEGORIES]
   // Las plantillas solo se muestran en la vista "limpia" (sin búsqueda ni
   // filtro) para no estorbar al buscar ejercicios.
@@ -415,7 +416,7 @@ function PickView({
         }}
         ListEmptyComponent={
           <View className="items-center py-12">
-            <Text className="text-muted-foreground font-mono text-sm">Sin resultados</Text>
+            <Text className="text-muted-foreground font-mono text-sm">{t('common.noResults')}</Text>
           </View>
         }
       />
@@ -454,6 +455,7 @@ function ReviewView({
   onRemove: (i: number) => void
   onStart: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <View className="flex-1">
       <FlatList
@@ -462,8 +464,8 @@ function ReviewView({
         contentContainerClassName="px-4 pb-24 gap-2"
         ListEmptyComponent={
           <View className="items-center py-12">
-            <Text className="font-bebas text-xl text-muted-foreground">Sin ejercicios</Text>
-            <Text className="mt-1 text-xs text-muted-foreground">Vuelve y selecciona algunos</Text>
+            <Text className="font-bebas text-xl text-muted-foreground">{t('freeSession.reviewEmptyTitle')}</Text>
+            <Text className="mt-1 text-xs text-muted-foreground">{t('freeSession.reviewEmptyBody')}</Text>
           </View>
         }
         renderItem={({ item, index }) => (

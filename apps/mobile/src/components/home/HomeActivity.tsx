@@ -15,6 +15,7 @@ import { ChevronRight, Users, Dumbbell, Apple, Activity } from 'lucide-react-nat
 
 import { Text } from '@/components/ui/text'
 import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
@@ -145,9 +146,11 @@ export default function HomeActivity() {
           <ActivitySkeleton />
         ) : friends.length === 0 ? (
           <EmptyState
-            text={t('dashboard.noFriendsActivity')}
+            icon={Users}
+            title={t('dashboard.noFriendsActivityTitle')}
+            body={t('dashboard.noFriendsActivity')}
             ctaLabel={t('dashboard.findFriends')}
-            onPress={() => router.push('/friends')}
+            onCtaPress={() => router.push('/friends')}
           />
         ) : (
           <View className="gap-2">
@@ -186,7 +189,11 @@ export default function HomeActivity() {
           </View>
         )
       ) : youItems.length === 0 ? (
-        <EmptyState text={t('dashboard.noYourActivity')} />
+        <EmptyState
+          icon={Dumbbell}
+          title={t('dashboard.noYourActivityTitle')}
+          body={t('dashboard.noYourActivity')}
+        />
       ) : (
         <View className="gap-2">
           {youItems.map(item => (
@@ -235,20 +242,6 @@ function TabButton({ label, active, onPress }: { label: string; active: boolean;
         {label}
       </Text>
     </Pressable>
-  )
-}
-
-function EmptyState({ text, ctaLabel, onPress }: { text: string; ctaLabel?: string; onPress?: () => void }) {
-  return (
-    <View className="items-center gap-3 rounded-xl border border-dashed border-border bg-card/40 py-7 px-4">
-      <Users size={22} color={MUTED} />
-      <Text className="text-center font-sans-medium text-xs text-muted-foreground">{text}</Text>
-      {ctaLabel && onPress ? (
-        <Pressable onPress={onPress} className="rounded-full border border-border px-4 py-2 active:opacity-70">
-          <Text className="font-mono text-[10px] uppercase tracking-wide text-lime">{ctaLabel}</Text>
-        </Pressable>
-      ) : null}
-    </View>
   )
 }
 
