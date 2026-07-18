@@ -4,10 +4,11 @@ import { View, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Check, Activity, ChevronRight, Camera } from 'lucide-react-native'
+import { Check, Activity, ChevronRight, Camera, Dumbbell } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -138,9 +139,14 @@ export default function HistoryScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View className="items-center gap-1 py-8">
-            <Text className="font-semibold text-foreground">{t('progress.noData')}</Text>
-            <Text className="text-center text-sm text-muted-foreground">{t('progress.noDataDesc')}</Text>
+          <View className="py-4">
+            <EmptyState
+              icon={Dumbbell}
+              title={t('progress.noData')}
+              body={t('progress.noDataDesc')}
+              ctaLabel={t('progress.noDataCta')}
+              onCtaPress={() => router.push('/')}
+            />
           </View>
         }
         renderItem={({ item }) => {

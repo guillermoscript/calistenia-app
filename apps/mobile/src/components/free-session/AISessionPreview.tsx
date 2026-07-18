@@ -36,7 +36,7 @@ interface Props {
 }
 
 export function AISessionPreview({ exercises, onRemove, onReorder, onAdd }: Props) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const locale = i18n.language || 'es'
   const startFreeSession = useStartFreeSession()
   const [starting, setStarting] = useState(false)
@@ -175,7 +175,7 @@ export function AISessionPreview({ exercises, onRemove, onReorder, onAdd }: Prop
               <ScrollView className="max-h-44" keyboardShouldPersistTaps="handled">
                 {searchResults.length === 0 ? (
                   <Text className="py-1 text-center font-mono text-[11px] text-muted-foreground">
-                    Sin resultados
+                    {t('common.noResults')}
                   </Text>
                 ) : (
                   searchResults.map((ex) => (

@@ -3,7 +3,9 @@ import { useState, useCallback } from 'react'
 import { View, Pressable, ScrollView, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
+import { UtensilsCrossed } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import type {
   WeeklyMealPlan as WeeklyMealPlanType,
@@ -484,11 +486,11 @@ export default function WeeklyMealPlan({
               />
             ))
           ) : (
-            <View className="rounded-xl border border-border bg-card p-5 items-center">
-              <Text className="font-sans text-sm text-muted-foreground text-center">
-                {t('nutrition.weeklyPlan.noDayData', 'Sin comidas para este día')}
-              </Text>
-            </View>
+            <EmptyState
+              icon={UtensilsCrossed}
+              title={t('nutrition.weeklyPlan.noDayData', 'Sin comidas para este día')}
+              body={t('nutrition.weeklyPlan.noDayDataBody', 'Este día del plan quedó sin comidas generadas. Regenera el día para completarlo.')}
+            />
           )}
 
           {/* Regenerate day button */}
@@ -515,11 +517,11 @@ export default function WeeklyMealPlan({
           </Pressable>
         </View>
       ) : (
-        <View className="rounded-xl border border-border bg-card p-5 items-center">
-          <Text className="font-sans text-sm text-muted-foreground text-center">
-            {t('nutrition.weeklyPlan.noDayData', 'Sin comidas para este día')}
-          </Text>
-        </View>
+        <EmptyState
+          icon={UtensilsCrossed}
+          title={t('nutrition.weeklyPlan.noDayData', 'Sin comidas para este día')}
+          body={t('nutrition.weeklyPlan.noDayDataBody', 'Este día del plan quedó sin comidas generadas. Regenera el día para completarlo.')}
+        />
       )}
 
     </View>

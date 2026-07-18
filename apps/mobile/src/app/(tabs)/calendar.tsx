@@ -293,6 +293,13 @@ export default function CalendarScreen() {
                 )}
               </View>
 
+              {/* Día pasado/futuro sin registros: enseña qué guarda el calendario */}
+              {selectedDate !== today && selectedEntries.length === 0 && (
+                <Text className="text-xs leading-relaxed text-muted-foreground">
+                  {t('calendar.emptyDayHint')}
+                </Text>
+              )}
+
               {/* Sesiones registradas */}
               {selectedEntries.map((e, i) => {
                 const accent = ACCENT[e.type]

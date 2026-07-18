@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
@@ -158,6 +159,7 @@ function UserRow({ user, isFollowing, isMutual, onFollow, onUnfollow, onTap }: U
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 export default function FriendsScreen() {
+  const { t } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
   const userId = user?.id ?? null
@@ -342,16 +344,16 @@ export default function FriendsScreen() {
           )}
           {!searching && !searchError && searchResults.length === 0 && (
             <View className="items-center py-10 gap-2">
-              <Text className="font-sans-medium text-foreground">Sin resultados para &quot;{query}&quot;</Text>
+              <Text className="font-sans-medium text-foreground">{t('friends.searchNoResults', { query })}</Text>
               <Text className="text-sm text-muted-foreground text-center">
-                ¿No está en la app? Invítalo a unirse.
+                {t('friends.searchInviteHint')}
               </Text>
               <Button
                 onPress={handleInvite}
                 size="sm"
                 className="mt-2 bg-lime"
               >
-                <Text className="font-mono text-[11px] tracking-widest text-black">INVITAR</Text>
+                <Text className="font-mono text-[11px] uppercase tracking-widest text-black">{t('friends.invite')}</Text>
               </Button>
             </View>
           )}
@@ -431,19 +433,21 @@ export default function FriendsScreen() {
               <Text className="text-2xl">👥</Text>
               {tab === 'siguiendo' ? (
                 <>
-                  <Text className="font-sans-medium text-foreground">Aún no sigues a nadie</Text>
+                  <Text className="font-sans-medium text-foreground">{t('friends.emptyFollowingTitle')}</Text>
                   <Text className="text-sm text-muted-foreground text-center">
-                    Busca usuarios o invita a tus amigos.
+                    {t('friends.emptyFollowingBody')}
                   </Text>
                 </>
               ) : (
                 <>
-                  <Text className="font-sans-medium text-foreground">Nadie te sigue todavía</Text>
+                  <Text className="font-sans-medium text-foreground">{t('friends.emptyFollowersTitle')}</Text>
                   <Text className="text-sm text-muted-foreground text-center">
-                    Comparte tu perfil para conseguir seguidores.
+                    {t('friends.emptyFollowersBody')}
                   </Text>
                   <Button onPress={handleInvite} size="sm" className="mt-2 bg-lime">
-                    <Text className="font-mono text-[11px] tracking-widest text-black">COMPARTIR PERFIL</Text>
+                    <Text className="font-mono text-[11px] uppercase tracking-widest text-black">
+                      {t('friends.shareProfile')}
+                    </Text>
                   </Button>
                 </>
               )}

@@ -4,10 +4,11 @@
 import { View, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { ChevronLeft } from 'lucide-react-native'
+import { ChevronLeft, ShieldOff } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 
@@ -39,7 +40,9 @@ export default function BlockedUsersScreen() {
             <ActivityIndicator color="hsl(74 90% 45%)" />
           </View>
         ) : blocked.length === 0 ? (
-          <Text className="mt-8 text-center text-sm text-muted-foreground">{t('blocks.empty')}</Text>
+          <View className="mt-4">
+            <EmptyState icon={ShieldOff} title={t('blocks.empty')} body={t('blocks.emptyBody')} />
+          </View>
         ) : (
           blocked.map(u => (
             <View
