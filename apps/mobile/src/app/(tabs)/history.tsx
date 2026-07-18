@@ -4,11 +4,12 @@ import { View, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Check, Activity, ChevronRight, Camera, Dumbbell } from 'lucide-react-native'
+import { Check, Activity, ChevronRight, Camera, Dumbbell, CalendarDays } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { OneShotHint } from '@/components/ui/one-shot-hint'
 import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -87,6 +88,16 @@ export default function HistoryScreen() {
               <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
               <StatCard label="Racha" value={getLongestStreak()} />
             </View>
+
+            {/* Hint one-shot: calendario unificado (#235) */}
+            <OneShotHint
+              id="calendar_metrics"
+              userId={user?.id ?? null}
+              icon={CalendarDays}
+              text={t('hints.calendarMetrics')}
+              onPress={() => router.push('/calendar')}
+              visible={getTotalSessions() >= 3}
+            />
 
             {/* Actividad del mes */}
             <Card>

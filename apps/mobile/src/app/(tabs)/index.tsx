@@ -17,7 +17,9 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
 import HomeActivity from '@/components/home/HomeActivity'
-import GettingStartedCard from '@/components/home/GettingStartedCard'
+import GettingStartedCard, { isChecklistDismissed } from '@/components/home/GettingStartedCard'
+import { OneShotHint } from '@/components/ui/one-shot-hint'
+import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
 import InsightsCard from '@/components/insights/InsightsCard'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
@@ -82,6 +84,8 @@ export default function TodayScreen() {
   const session = useActiveSession()
   const milestoneUser = useAuthUser()
   const { unreadCount, loadNotifications } = useNotifications(milestoneUser?.id ?? null)
+  // Para el hint cardio_gps (#235): comparte query key con HomeActivity, cero fetch extra.
+  const { sessions: cardioSessions, isLoading: cardioLoading } = useCardioSessions(milestoneUser?.id ?? null)
   const [showMilestone, setShowMilestone] = useState(true)
   const scrollRef = useRef<ScrollView>(null)
   // «Completa tu primer entreno» del checklist: sube al hero (está justo encima).
@@ -289,6 +293,24 @@ export default function TodayScreen() {
             tenga (o ya hayas hecho) su propio entrenamiento. */}
         {activeProgram && (
           <OtherDays phase={phase} todayId={todayId} weekDays={weekDays} />
+        )}
+
+        {/* Hint one-shot: cardio GPS (#235). Cede ante el checklist «Primeros
+            pasos» (regla de saturación: máximo un elemento de descubrimiento). */}
+        {!isCardioDay && (
+          <OneShotHint
+            id="cardio_gps"
+            userId={milestoneUser?.id ?? null}
+            icon={MapPin}
+            text={t('hints.cardioGps')}
+            onPress={() => router.push('/cardio')}
+            visible={
+              isChecklistDismissed(milestoneUser?.id ?? null) &&
+              !cardioLoading &&
+              cardioSessions.length === 0 &&
+              getTotalSessions() >= 2
+            }
+          />
         )}
 
         {/* Acceso directo a cardio GPS (también fuera de días de cardio del programa) */}
