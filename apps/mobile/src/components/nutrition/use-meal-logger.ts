@@ -14,6 +14,7 @@ import {
   requestCameraPermission as askCameraPermission,
   requestMediaPermission as askMediaPermission,
 } from '@/lib/image-upload'
+import { op } from '@calistenia/core/lib/analytics'
 import { localHour, nowLocalForPB, todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
 import { isMidnightEatenAt, parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
 import { createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
@@ -465,6 +466,11 @@ export function useMealLogger({
       )
       const hour = localHour()
       validFoods.forEach((f) => trackFood(f, mealType, hour))
+      // Paridad con web (MealLoggerContent): solo registros nuevos — las
+      // ediciones no cuentan como comida registrada para el funnel (#233).
+      if (!editEntry) {
+        op.track('meal_logged', { meal_type: mealType, food_count: validFoods.length, calories: totals.calories })
+      }
       setLastMealType(mealType)
       haptics.success()
       setStep('success')
