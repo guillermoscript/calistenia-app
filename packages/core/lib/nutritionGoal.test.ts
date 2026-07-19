@@ -5,6 +5,7 @@ import {
   calculateMacros,
   previewNutritionGoal,
   nutritionGoalTypeToPrimaryGoal,
+  shouldRecomputeAutoGoal,
 } from './nutritionGoal'
 
 describe('ONBOARDING_ACTIVITY_TO_NUTRITION', () => {
@@ -105,5 +106,19 @@ describe('nutritionGoalTypeToPrimaryGoal', () => {
 
   it('maintain es ambiguo → no sobrescribe primary_goal', () => {
     expect(nutritionGoalTypeToPrimaryGoal('maintain')).toBeNull()
+  })
+})
+
+describe('shouldRecomputeAutoGoal', () => {
+  it('recalcula cuando el goal guardado es auto', () => {
+    expect(shouldRecomputeAutoGoal('auto')).toBe(true)
+  })
+
+  it('no toca un goal manual (el usuario lo ajustó a mano)', () => {
+    expect(shouldRecomputeAutoGoal('manual')).toBe(false)
+  })
+
+  it('no toca un goal legacy sin source (pre-#243, no hay certeza de que sea auto)', () => {
+    expect(shouldRecomputeAutoGoal(undefined)).toBe(false)
   })
 })

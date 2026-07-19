@@ -1,13 +1,13 @@
 import { storage } from '../platform'
 import { useCallback, useMemo, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import i18n from 'i18next'
 import { pb } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
 import { op } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { todayStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
-import { calculateMacros as computeMacros } from '../lib/nutritionGoal'
+import { calculateMacros as computeMacros, previewNutritionGoal, shouldRecomputeAutoGoal, ONBOARDING_ACTIVITY_TO_NUTRITION } from '../lib/nutritionGoal'
 import type {
   NutritionEntry,
   NutritionSource,
@@ -80,6 +80,64 @@ const sortByLoggedDesc = (a: NutritionEntry, b: NutritionEntry) =>
 const isTransient = (e: any) => {
   const status = e?.status
   return status === 0 || status === 429 || (typeof status === 'number' && status >= 500)
+}
+
+/**
+ * Recalcula el objetivo de nutrición 'auto' de un usuario a partir de sus
+ * datos corporales ACTUALES (peso/altura/edad/sexo/actividad/pace en
+ * `users`), sin tocar nunca un goal 'manual' (#243 F3). Standalone — no
+ * depende de que la pantalla llamante monte `useNutrition` — para que
+ * cualquier flujo que edite el perfil (p.ej. profile.tsx en mobile, #243
+ * F4a) pueda disparar el refresco tras guardar.
+ *
+ * Si se pasa `queryClient`, además sincroniza la caché de `useNutrition`
+ * (misma queryKey que `goalsQuery`) para que un componente montado en la
+ * misma sesión vea el goal fresco sin esperar al próximo refetch.
+ *
+ * Devuelve el nuevo goal si recalculó, o `null` si no había nada que hacer
+ * (sin PB, sin goal guardado, goal 'manual'/legacy, o perfil incompleto).
+ */
+export async function recomputeAutoNutritionGoal(
+  userId: string,
+  queryClient?: QueryClient,
+): Promise<NutritionGoal | null> {
+  try {
+    const existing: any = await pb.collection('nutrition_goals').getFirstListItem(
+      pb.filter('user = {:uid}', { uid: userId }),
+    )
+    if (!shouldRecomputeAutoGoal(existing.source as NutritionGoal['source'])) return null
+
+    const user: any = await pb.collection('users').getOne(userId)
+    const weight = Number(user.weight) || undefined
+    const height = Number(user.height) || undefined
+    const age = Number(user.age) || undefined
+    const sex = (user.sex as Sex) || undefined
+    // users.activity_level usa la escala de 4 niveles del onboarding; nutrición
+    // usa 5 — mapea, con el nivel guardado en el goal como fallback si el user
+    // aún no tiene activity_level propio.
+    const activityLevel = (user.activity_level && ONBOARDING_ACTIVITY_TO_NUTRITION[user.activity_level])
+      || (existing.activity_level as ActivityLevel)
+    const pace = user.pace || undefined
+    if (!weight || !height || !age || !sex || !activityLevel) return null // perfil incompleto: nada seguro que recalcular
+
+    const recomputed = previewNutritionGoal({ weight, height, age, sex, activityLevel, pace }, existing.goal)
+    const pbData = {
+      daily_calories: recomputed.dailyCalories, daily_protein: recomputed.dailyProtein,
+      daily_carbs: recomputed.dailyCarbs, daily_fat: recomputed.dailyFat,
+      weight: recomputed.weight, height: recomputed.height, age: recomputed.age,
+      sex: recomputed.sex, activity_level: recomputed.activityLevel,
+      source: 'auto',
+    }
+    const rec: any = await pb.collection('nutrition_goals').update(existing.id, pbData)
+    const newGoal: NutritionGoal = { ...recomputed, id: rec.id, user: userId, source: 'auto' }
+
+    if (queryClient) queryClient.setQueryData<NutritionGoal | null>(qk.nutrition.goals(userId), newGoal)
+    lsSetGoals(newGoal)
+    return newGoal
+  } catch (e) {
+    console.warn('recomputeAutoNutritionGoal error:', e)
+    return null
+  }
 }
 
 /**

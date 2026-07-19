@@ -123,6 +123,19 @@ export function previewNutritionGoal(
 }
 
 /**
+ * Decide si un `nutrition_goals` guardado debe recalcularse cuando cambian
+ * los datos corporales del usuario (peso/altura/edad/actividad…) — p.ej. al
+ * editar el perfil (#243 F3/F4a). Solo los goals `'auto'` (derivados de la
+ * fórmula, nunca tocados a mano) se refrescan; `'manual'` — o `undefined`,
+ * que cubre los goals legacy pre-#243, guardados antes de que existiera
+ * `source` — se deja intacto: no hay certeza de que sobreescribirlo sea
+ * seguro, así que el default es no tocarlo.
+ */
+export function shouldRecomputeAutoGoal(source: NutritionGoal['source']): boolean {
+  return source === 'auto'
+}
+
+/**
  * Objetivo de nutrición → `primary_goal` estructurado, para sincronizar
  * `users.primary_goal` cuando el usuario cambia su objetivo de nutrición
  * desde la web (#243 F2). 'maintain' es ambiguo (puede venir de
