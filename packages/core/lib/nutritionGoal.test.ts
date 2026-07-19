@@ -4,6 +4,7 @@ import {
   inferNutritionGoalType,
   calculateMacros,
   previewNutritionGoal,
+  nutritionGoalTypeToPrimaryGoal,
 } from './nutritionGoal'
 
 describe('ONBOARDING_ACTIVITY_TO_NUTRITION', () => {
@@ -92,5 +93,17 @@ describe('previewNutritionGoal', () => {
     expect(previewNutritionGoal(profile, 'muscle_gain')).toEqual(
       calculateMacros(80, 180, 30, 'male', 'moderate', 'muscle_gain', 'gradual'),
     )
+  })
+})
+
+describe('nutritionGoalTypeToPrimaryGoal', () => {
+  it('mapea muscle_gain/fat_loss/recomp a su primary_goal correspondiente', () => {
+    expect(nutritionGoalTypeToPrimaryGoal('muscle_gain')).toBe('ganar_musculo')
+    expect(nutritionGoalTypeToPrimaryGoal('fat_loss')).toBe('perder_grasa')
+    expect(nutritionGoalTypeToPrimaryGoal('recomp')).toBe('recomposicion')
+  })
+
+  it('maintain es ambiguo → no sobrescribe primary_goal', () => {
+    expect(nutritionGoalTypeToPrimaryGoal('maintain')).toBeNull()
   })
 })

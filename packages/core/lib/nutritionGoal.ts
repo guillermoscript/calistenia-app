@@ -8,6 +8,7 @@
  */
 
 import type { ActivityLevel, NutritionGoal, NutritionGoalType, Sex } from '../types'
+import type { PrimaryGoal } from '../types/onboarding'
 import { isPrimaryGoal, primaryGoalToNutritionGoalType } from './primaryGoal'
 
 export type NutritionPace = 'gradual' | 'balanced' | 'aggressive'
@@ -119,4 +120,19 @@ export function previewNutritionGoal(
     goal,
     profile.pace,
   )
+}
+
+/**
+ * Objetivo de nutrición → `primary_goal` estructurado, para sincronizar
+ * `users.primary_goal` cuando el usuario cambia su objetivo de nutrición
+ * desde la web (#243 F2). 'maintain' es ambiguo (puede venir de
+ * salud_general/resistencia/habilidades) → no se sobrescribe.
+ */
+export function nutritionGoalTypeToPrimaryGoal(goal: NutritionGoalType): PrimaryGoal | null {
+  switch (goal) {
+    case 'muscle_gain': return 'ganar_musculo'
+    case 'fat_loss': return 'perder_grasa'
+    case 'recomp': return 'recomposicion'
+    default: return null
+  }
 }

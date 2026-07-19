@@ -154,6 +154,7 @@ export function useNutrition(userId: string | null) {
           dailyCarbs: g.daily_carbs, dailyFat: g.daily_fat,
           goal: g.goal, weight: g.weight, height: g.height, age: g.age,
           sex: g.sex, activityLevel: g.activity_level,
+          source: g.source || undefined,
         }
         lsSetGoals(goalObj)
         return goalObj
