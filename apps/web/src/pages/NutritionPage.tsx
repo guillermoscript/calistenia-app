@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { todayStr, addDays, nowLocalForPB, startOfWeekStr } from '@calistenia/core/lib/dateUtils'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
-import { isPrimaryGoal, primaryGoalToNutritionGoalType } from '@calistenia/core/lib/primaryGoal'
+import { inferNutritionGoalType, ONBOARDING_ACTIVITY_TO_NUTRITION } from '@calistenia/core/lib/nutritionGoal'
 import { Input } from '../components/ui/input'
 import NutritionGoalSetup from '../components/nutrition/NutritionGoalSetup'
 import NutritionDashboard from '../components/nutrition/NutritionDashboard'
@@ -53,28 +53,6 @@ interface UserProfileData {
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
   pace?: 'gradual' | 'balanced' | 'aggressive'
   goalType?: 'muscle_gain' | 'fat_loss' | 'recomp' | 'maintain'
-}
-
-// Onboarding captures 4 activity values; nutrition uses 5. Map the extra step.
-const ONBOARDING_ACTIVITY_TO_NUTRITION: Record<string, UserProfileData['activityLevel']> = {
-  sedentary: 'sedentary',
-  light: 'light',
-  active: 'moderate',
-  very_active: 'active',
-}
-
-function inferNutritionGoalType(
-  weight?: number,
-  goalWeight?: number,
-  primaryGoal?: unknown,
-): UserProfileData['goalType'] {
-  // Objetivo explícito del onboarding (#226); el delta de peso es solo fallback.
-  if (isPrimaryGoal(primaryGoal)) return primaryGoalToNutritionGoalType(primaryGoal)
-  if (!weight || !goalWeight) return undefined
-  const delta = goalWeight - weight
-  if (delta > 2) return 'muscle_gain'
-  if (delta < -2) return 'fat_loss'
-  return 'maintain'
 }
 
 export default function NutritionPage({ userId, trainingPhase }: NutritionPageProps) {

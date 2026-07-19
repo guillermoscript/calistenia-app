@@ -7,6 +7,7 @@ import { AI_API_URL } from '../lib/ai-api'
 import { op } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { todayStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
+import { calculateMacros as computeMacros } from '../lib/nutritionGoal'
 import type {
   NutritionEntry,
   NutritionSource,
@@ -75,15 +76,6 @@ const lsSetGoals = (d: NutritionGoal | null): void => {
 
 const sortByLoggedDesc = (a: NutritionEntry, b: NutritionEntry) =>
   new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
-
-// ─── Activity-level multipliers (Mifflin-St Jeor) ───────────────────────────
-const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
-  sedentary: 1.2,
-  light: 1.375,
-  moderate: 1.55,
-  active: 1.725,
-  very_active: 1.9,
-}
 
 const isTransient = (e: any) => {
   const status = e?.status
@@ -427,6 +419,7 @@ export function useNutrition(userId: string | null) {
           daily_carbs: goalsData.dailyCarbs, daily_fat: goalsData.dailyFat,
           goal: goalsData.goal, weight: goalsData.weight, height: goalsData.height,
           age: goalsData.age, sex: goalsData.sex, activity_level: goalsData.activityLevel,
+          ...(goalsData.source !== undefined ? { source: goalsData.source } : {}),
         }
         try {
           const existing = await pb.collection('nutrition_goals').getFirstListItem(pb.filter('user = {:uid}', { uid: userId }))
@@ -446,40 +439,12 @@ export function useNutrition(userId: string | null) {
     lsSetGoals(newGoal)
   }, [usePB, userId, qc, goalsKey])
 
-  // ─── calculateMacros (puro) ───────────────────────────────────────────────
+  // ─── calculateMacros (delegado a lib puro core/lib/nutritionGoal) ──────────
   const calculateMacros = useCallback((
     weight: number, height: number, age: number, sex: Sex,
     activityLevel: ActivityLevel, goal: NutritionGoalType,
     pace?: 'gradual' | 'balanced' | 'aggressive',
-  ): NutritionGoal => {
-    const bmr = sex === 'male'
-      ? 10 * weight + 6.25 * height - 5 * age + 5
-      : 10 * weight + 6.25 * height - 5 * age - 161
-    const tdee = bmr * ACTIVITY_MULTIPLIERS[activityLevel]
-    const paceFactor = pace === 'gradual' ? 0.5 : pace === 'aggressive' ? 1.5 : 1.0
-    let dailyCalories: number
-    switch (goal) {
-      case 'muscle_gain': dailyCalories = tdee + 300 * paceFactor; break
-      case 'fat_loss':    dailyCalories = tdee - 500 * paceFactor; break
-      // Recomposición: déficit ligero fijo (no escala con pace) + proteína alta.
-      case 'recomp':      dailyCalories = tdee - 200; break
-      default:            dailyCalories = tdee; break
-    }
-    dailyCalories = Math.round(dailyCalories)
-    let proteinPerKg: number
-    switch (goal) {
-      case 'muscle_gain': proteinPerKg = 2.0; break
-      case 'fat_loss':    proteinPerKg = 2.2; break
-      case 'recomp':      proteinPerKg = 2.2; break
-      default:            proteinPerKg = 1.8; break
-    }
-    const dailyProtein = Math.round(proteinPerKg * weight)
-    const dailyFat = Math.round((dailyCalories * 0.25) / 9)
-    const proteinCals = dailyProtein * 4
-    const fatCals = dailyFat * 9
-    const dailyCarbs = Math.round((dailyCalories - proteinCals - fatCals) / 4)
-    return { dailyCalories, dailyProtein, dailyCarbs, dailyFat, goal, weight, height, age, sex, activityLevel }
-  }, [])
+  ): NutritionGoal => computeMacros(weight, height, age, sex, activityLevel, goal, pace), [])
 
   // ─── Índice de totales diarios (se recomputa solo cuando entries cambia) ───
   const dailyTotalsMap = useMemo((): Map<string, DailyTotals> => {

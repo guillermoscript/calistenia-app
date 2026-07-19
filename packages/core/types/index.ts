@@ -460,6 +460,8 @@ export interface NutritionGoal {
   age: number
   sex: Sex
   activityLevel: ActivityLevel
+  /** Origen del objetivo: 'auto' (derivado de la fórmula) o 'manual' (editado por el usuario). #243 */
+  source?: 'auto' | 'manual'
 }
 
 export interface DailyTotals {
