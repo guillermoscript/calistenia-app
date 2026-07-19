@@ -18,6 +18,7 @@ import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
 import HomeActivity from '@/components/home/HomeActivity'
 import GettingStartedCard from '@/components/home/GettingStartedCard'
+import SleepCard from '@/components/sleep/SleepCard'
 import InsightsCard from '@/components/insights/InsightsCard'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
@@ -318,6 +319,9 @@ export default function TodayScreen() {
           <StatCard label={t('profile.streak', { defaultValue: 'Racha' })} value={getLongestStreak()} />
           <StatCard label={t('profile.sessions', { defaultValue: 'Sesiones' })} value={getTotalSessions()} />
         </View>
+
+        {/* ¿Cómo dormiste? — paridad con SleepDashboardWidget del DashboardPage web (#244) */}
+        <SleepCard userId={milestoneUser?.id ?? null} />
 
         {/* Accesos rápidos comunidad */}
         <View className="flex-row gap-2">
