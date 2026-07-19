@@ -163,7 +163,7 @@ export async function fetchMonthActivity(
     }),
     pb.collection('sleep_entries').getList(1, 62, {
       filter: dateRange,
-      fields: 'id,date,quality,duration_minutes,bedtime,wake_time',
+      fields: 'id,date,quality,duration_minutes,bedtime,wake_time,awakenings,caffeine,screen_before_bed,stress_level',
     }),
     pb.collection('weight_entries').getList(1, 62, {
       filter: dateRange,

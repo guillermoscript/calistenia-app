@@ -79,7 +79,17 @@ describe('buildDayRows', () => {
     circuits: [{ started_at: '2026-06-27 09:00:00.000Z' }],
     nutritionByDate: { '2026-06-28': { meals: 3, calories: 2200 } },
     waterByDate: { '2026-06-29': { totalMl: 2000 } },
-    sleepByDate: { '2026-06-30': { duration_minutes: 420, quality: 4 } },
+    sleepByDate: {
+      '2026-06-30': {
+        duration_minutes: 420,
+        quality: 4,
+        awakenings: 2,
+        caffeine: true,
+        screen_before_bed: false,
+        stress_level: 3,
+        bedtime: '22:45',
+      },
+    },
     weightByDate: { '2026-06-25': { weight_kg: 80.5 }, '2026-07-01': { weight_kg: 79.8 } },
     measurementByDate: {},
     photosByDate: {},
@@ -117,7 +127,15 @@ describe('buildDayRows', () => {
   it('carries nutrition, water, sleep and weight through unchanged', () => {
     expect(byDate.get('2026-06-28')).toMatchObject({ meals: 3, calories: 2200 })
     expect(byDate.get('2026-06-29')).toMatchObject({ waterMl: 2000 })
-    expect(byDate.get('2026-06-30')).toMatchObject({ sleepMinutes: 420, sleepQuality: 4 })
+    expect(byDate.get('2026-06-30')).toMatchObject({
+      sleepMinutes: 420,
+      sleepQuality: 4,
+      awakenings: 2,
+      caffeine: true,
+      screenBeforeBed: false,
+      stressLevel: 3,
+      bedtime: '22:45',
+    })
     expect(byDate.get('2026-06-25')).toMatchObject({ weightKg: 80.5 })
     expect(byDate.get('2026-07-01')).toMatchObject({ weightKg: 79.8 })
   })
@@ -140,7 +158,16 @@ describe('summarizeRows', () => {
     expect(summary.workouts).toEqual({ total: 0, daysTrained: 0 })
     expect(summary.nutrition).toEqual({ daysLogged: 0, avgCalories: null, avgMeals: null })
     expect(summary.water).toEqual({ daysLogged: 0, avgMl: null })
-    expect(summary.sleep).toEqual({ daysLogged: 0, avgMinutes: null, avgQuality: null })
+    expect(summary.sleep).toEqual({
+      daysLogged: 0,
+      avgMinutes: null,
+      avgQuality: null,
+      avgAwakenings: 0,
+      pctCaffeine: 0,
+      pctScreenBeforeBed: 0,
+      avgStress: 0,
+      bedtimeConsistencyMin: 0,
+    })
     expect(summary.weight).toEqual({ firstKg: null, lastKg: null, deltaKg: null })
     expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null, avgHrvMs: null })
     expect(summary.streaks).toEqual({ currentTrainingStreak: 0, longestTrainingStreak: 0 })
@@ -168,7 +195,16 @@ describe('summarizeRows', () => {
     expect(summary.streaks).toEqual({ currentTrainingStreak: 1, longestTrainingStreak: 3 })
     expect(summary.nutrition).toEqual({ daysLogged: 1, avgCalories: 1800, avgMeals: 2 })
     expect(summary.water).toEqual({ daysLogged: 1, avgMl: 2500 })
-    expect(summary.sleep).toEqual({ daysLogged: 1, avgMinutes: 400, avgQuality: 3 })
+    expect(summary.sleep).toEqual({
+      daysLogged: 1,
+      avgMinutes: 400,
+      avgQuality: 3,
+      avgAwakenings: 0,
+      pctCaffeine: 0,
+      pctScreenBeforeBed: 0,
+      avgStress: 0,
+      bedtimeConsistencyMin: 0,
+    })
     expect(summary.weight).toEqual({ firstKg: 82.0, lastKg: 80.0, deltaKg: -2 })
     expect(summary.watch).toEqual({ available: true, avgSteps: 10000, avgRestingHr: 54, avgHrvMs: null }) // round((55+52)/2)
   })
@@ -177,5 +213,53 @@ describe('summarizeRows', () => {
     const rows: InsightDayRow[] = [{ date: '2026-07-01', steps: 5000 }]
     const summary = summarizeRows(rows, 7, '2026-07-01', false)
     expect(summary.watch).toEqual({ available: false, avgSteps: null, avgRestingHr: null, avgHrvMs: null })
+  })
+
+  it('aggregates awakenings/caffeine/screen/stress/bedtime-consistency across logged sleep days', () => {
+    const rows: InsightDayRow[] = [
+      {
+        date: '2026-06-24',
+        sleepMinutes: 400,
+        sleepQuality: 3,
+        awakenings: 1,
+        caffeine: true,
+        screenBeforeBed: false,
+        stressLevel: 2,
+        bedtime: '23:00',
+      },
+      {
+        date: '2026-06-25',
+        sleepMinutes: 420,
+        sleepQuality: 4,
+        awakenings: 3,
+        caffeine: false,
+        screenBeforeBed: true,
+        stressLevel: 4,
+        bedtime: '23:30',
+      },
+      {
+        date: '2026-06-26',
+        sleepMinutes: 380,
+        sleepQuality: 2,
+        awakenings: 2,
+        caffeine: true,
+        screenBeforeBed: true,
+        // sin stressLevel a propósito: no debe contar en avgStress
+        bedtime: '00:15',
+      },
+    ]
+
+    const summary = summarizeRows(rows, 7, '2026-06-26', false)
+
+    expect(summary.sleep).toEqual({
+      daysLogged: 3,
+      avgMinutes: 400,
+      avgQuality: 3,
+      avgAwakenings: 2, // (1+3+2)/3
+      pctCaffeine: 67, // 2/3 true
+      pctScreenBeforeBed: 67, // 2/3 true
+      avgStress: 3, // (2+4)/2, ignora el día sin stressLevel
+      bedtimeConsistencyMin: 30.8, // stddev de 23:00/23:30/00:15 (00:15 normalizado a "día siguiente")
+    })
   })
 })

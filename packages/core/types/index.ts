@@ -600,6 +600,17 @@ export interface SleepEntry {
   created: string
   updated: string
 }
+
+export interface SleepInsightPayload {
+  headline: string
+  avgDurationMin: number
+  avgQuality: number
+  bedtimeConsistency: 'consistent' | 'variable' | 'irregular'
+  patterns: string[]
+  suggestion: string
+  trend: 'improving' | 'declining' | 'stable'
+  model_used?: string
+}
 // ─── Weekly Meal Plan ───────────────────────────────────────────────────────
 
 export interface WeeklyMealPlan {

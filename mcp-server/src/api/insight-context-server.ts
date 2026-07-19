@@ -44,6 +44,11 @@ export interface InsightDayRow {
   waterMl?: number;
   sleepMinutes?: number;
   sleepQuality?: number;
+  awakenings?: number;
+  caffeine?: boolean;
+  screenBeforeBed?: boolean;
+  stressLevel?: number;
+  bedtime?: string; // "HH:MM"
   weightKg?: number;
   steps?: number;
   restingHr?: number;
@@ -59,7 +64,16 @@ export interface InsightSummary {
   circuits: { sessions: number };
   nutrition: { daysLogged: number; avgCalories: number | null; avgMeals: number | null };
   water: { daysLogged: number; avgMl: number | null };
-  sleep: { daysLogged: number; avgMinutes: number | null; avgQuality: number | null };
+  sleep: {
+    daysLogged: number;
+    avgMinutes: number | null;
+    avgQuality: number | null;
+    avgAwakenings: number;
+    pctCaffeine: number;
+    pctScreenBeforeBed: number;
+    avgStress: number;
+    bedtimeConsistencyMin: number;
+  };
   weight: { firstKg: number | null; lastKg: number | null; deltaKg: number | null };
   watch: { available: boolean; avgSteps: number | null; avgRestingHr: number | null; avgHrvMs: number | null };
   streaks: { currentTrainingStreak: number; longestTrainingStreak: number };
@@ -94,6 +108,56 @@ const dateKey = (raw: string): string => (raw || "").split(" ")[0].split("T")[0]
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
+// ─── Sleep-stat helpers (verbatim inline mirror of packages/core/lib/sleepStats.ts
+// — this file avoids a cross-package import, see header comment; keep these in
+// sync with that file if the math ever changes) ─────────────────────────────
+
+/**
+ * Convierte un bedtime "HH:MM" a minutos desde medianoche, tratando las horas
+ * de madrugada (0-11) como "día siguiente" (ej. "01:00" -> 25*60) para que una
+ * mezcla de bedtimes tipo 23:30 y 00:45 no vea una dispersión espuria de ~23h.
+ * Devuelve null si el string no tiene forma "HH:MM" parseable.
+ */
+function bedtimeToMinutes(bedtime: string): number | null {
+  const parts = (bedtime || "").split(":").map(Number);
+  if (parts.length < 2 || parts.some((n) => Number.isNaN(n))) return null;
+  const [h, m] = parts;
+  return h < 12 ? (h + 24) * 60 + m : h * 60 + m;
+}
+
+/**
+ * Desviación estándar (poblacional, /n) en minutos de un conjunto de bedtimes
+ * "HH:MM". Con 0 o 1 muestra válida no hay dispersión que calcular -> 0.
+ */
+function bedtimeConsistencyMinutes(bedtimes: string[]): number {
+  const minutes = bedtimes.map(bedtimeToMinutes).filter((n): n is number => n !== null);
+  if (minutes.length < 2) return 0;
+  const mean = minutes.reduce((s, v) => s + v, 0) / minutes.length;
+  const variance = minutes.reduce((s, v) => s + (v - mean) ** 2, 0) / minutes.length;
+  return Math.round(Math.sqrt(variance) * 10) / 10;
+}
+
+/**
+ * Porcentaje (0-100) de flags booleanos en `true`, ignorando entradas
+ * `undefined` (días sin ese dato). Sin entradas definidas -> 0.
+ */
+function pctTrue(flags: Array<boolean | undefined>): number {
+  const defined = flags.filter((f): f is boolean => f !== undefined);
+  if (defined.length === 0) return 0;
+  const trueCount = defined.filter(Boolean).length;
+  return Math.round((trueCount / defined.length) * 100);
+}
+
+/**
+ * Media de valores numéricos, ignorando entradas `undefined`. Sin entradas
+ * definidas -> 0 (no `null`, para que encaje directo en un campo `number`).
+ */
+function avgDefined(values: Array<number | undefined>): number {
+  const defined = values.filter((v): v is number => v !== undefined);
+  if (defined.length === 0) return 0;
+  return Math.round((defined.reduce((s, v) => s + v, 0) / defined.length) * 10) / 10;
+}
+
 // ─── Minimal shapes (only the fields buildDayRows actually reads) ───────────
 // packages/core's MonthActivity carries measurements/photos/lumbar too, but
 // buildDayRows never reads them, so they're omitted here (client comment:
@@ -122,6 +186,11 @@ interface CircuitSessionLite {
 interface SleepEntryLite {
   duration_minutes?: number;
   quality?: number;
+  awakenings?: number;
+  caffeine?: boolean;
+  screen_before_bed?: boolean;
+  stress_level?: number;
+  bedtime?: string;
 }
 
 interface WeightEntryLite {
@@ -233,6 +302,11 @@ function buildDayRows(
     const row = ensure(date);
     row.sleepMinutes = s.duration_minutes;
     row.sleepQuality = s.quality;
+    row.awakenings = s.awakenings;
+    row.caffeine = s.caffeine;
+    row.screenBeforeBed = s.screen_before_bed;
+    row.stressLevel = s.stress_level;
+    row.bedtime = s.bedtime;
   }
 
   for (const [date, w] of Object.entries(merged.weightByDate)) {
@@ -298,6 +372,13 @@ function summarizeRows(
   const sleepMinutesTotal = sum((r) => r.sleepMinutes);
   const sleepQualityDays = countDefined((r) => r.sleepQuality);
   const sleepQualityTotal = sum((r) => r.sleepQuality);
+  const avgAwakenings = avgDefined(sorted.map((r) => r.awakenings));
+  const pctCaffeine = pctTrue(sorted.map((r) => r.caffeine));
+  const pctScreenBeforeBed = pctTrue(sorted.map((r) => r.screenBeforeBed));
+  const avgStress = avgDefined(sorted.map((r) => r.stressLevel));
+  const bedtimeConsistencyMin = bedtimeConsistencyMinutes(
+    sorted.map((r) => r.bedtime).filter((b): b is string => b !== undefined),
+  );
 
   const weightRows = sorted.filter((r) => r.weightKg !== undefined);
   const firstKg = weightRows.length > 0 ? weightRows[0].weightKg! : null;
@@ -341,6 +422,11 @@ function summarizeRows(
       daysLogged: sleepDays,
       avgMinutes: sleepDays > 0 ? Math.round(sleepMinutesTotal / sleepDays) : null,
       avgQuality: sleepQualityDays > 0 ? round1(sleepQualityTotal / sleepQualityDays) : null,
+      avgAwakenings,
+      pctCaffeine,
+      pctScreenBeforeBed,
+      avgStress,
+      bedtimeConsistencyMin,
     },
     weight: { firstKg, lastKg, deltaKg },
     watch: {
@@ -456,12 +542,29 @@ async function fetchWindow(
         start,
         end,
       }),
-      fields: "id,date,quality,duration_minutes,bedtime,wake_time",
+      fields: "id,date,quality,duration_minutes,bedtime,wake_time,awakenings,caffeine,screen_before_bed,stress_level",
     });
-    for (const raw of items as unknown as Array<{ date: string; quality?: number; duration_minutes?: number }>) {
+    for (const raw of items as unknown as Array<{
+      date: string;
+      quality?: number;
+      duration_minutes?: number;
+      awakenings?: number;
+      caffeine?: boolean;
+      screen_before_bed?: boolean;
+      stress_level?: number;
+      bedtime?: string;
+    }>) {
       const date = dateKey(raw.date);
       if (!date) continue;
-      merged.sleepByDate[date] = { duration_minutes: raw.duration_minutes, quality: raw.quality };
+      merged.sleepByDate[date] = {
+        duration_minutes: raw.duration_minutes,
+        quality: raw.quality,
+        awakenings: raw.awakenings,
+        caffeine: raw.caffeine,
+        screen_before_bed: raw.screen_before_bed,
+        stress_level: raw.stress_level,
+        bedtime: raw.bedtime,
+      };
     }
   } catch (err) {
     console.warn("insight-context-server: sleep fetch failed", err);

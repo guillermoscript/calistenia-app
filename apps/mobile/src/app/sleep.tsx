@@ -31,6 +31,7 @@ import { useSleep } from '@calistenia/core/hooks/useSleep'
 import { daysAgoStr } from '@calistenia/core/lib/dateUtils'
 import type { SleepEntry } from '@calistenia/core/types'
 import SleepLoggerSheet from '@/components/sleep/SleepLoggerSheet'
+import SleepInsightsCard from '@/components/insights/SleepInsightsCard'
 
 const MUTED = 'rgba(255,255,255,0.45)'
 const INDIGO = '#818cf8'
@@ -239,6 +240,9 @@ export default function SleepScreen() {
                 </View>
               </Pressable>
             )}
+
+            {/* ── Resumen AI de sueño ── */}
+            <SleepInsightsCard userId={userId} />
 
             {/* ── Stats 7 días ── */}
             {stats.length > 0 && (
