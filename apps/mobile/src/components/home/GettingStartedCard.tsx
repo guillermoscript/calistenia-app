@@ -61,6 +61,19 @@ const ITEM_META: Record<ChecklistItemId, { icon: LucideIcon; route: Href }> = {
   friend: { icon: UserPlus, route: '/friends' },
 }
 
+/**
+ * true si el checklist ya no debe renderizarse para este usuario (descartado
+ * u completado). Lo usa también el hint `cardio_gps` de Home (#235): mientras
+ * el checklist siga en juego, el hint cede (regla de saturación).
+ */
+export function isChecklistDismissed(userId: string | null): boolean {
+  return (
+    !userId ||
+    syncStorage.getItem(checklistDismissedKey(userId)) === 'true' ||
+    syncStorage.getItem(checklistCompletedKey(userId)) === 'true'
+  )
+}
+
 interface GettingStartedCardProps {
   userId: string | null
   hasActiveProgram: boolean
@@ -76,11 +89,7 @@ function GettingStartedCard(props: GettingStartedCardProps) {
   const [, setDismissedTick] = useState(0)
   const onDismiss = useCallback(() => setDismissedTick(t => t + 1), [])
 
-  const hidden =
-    !userId ||
-    syncStorage.getItem(checklistDismissedKey(userId)) === 'true' ||
-    syncStorage.getItem(checklistCompletedKey(userId)) === 'true'
-  if (hidden) return null
+  if (!userId || isChecklistDismissed(userId)) return null
 
   return <GettingStartedInner {...props} userId={userId} onDismiss={onDismiss} />
 }

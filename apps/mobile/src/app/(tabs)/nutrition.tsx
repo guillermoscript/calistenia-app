@@ -13,7 +13,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react-native'
+import { Camera, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { runOnJS } from 'react-native-reanimated'
 
@@ -52,6 +52,7 @@ import { syncNutritionWidget } from '@/lib/sync-nutrition-widget'
 import NutritionDashboard from '@/components/nutrition/NutritionDashboard'
 import NutritionGoalSetup from '@/components/nutrition/NutritionGoalSetup'
 import MealLoggerSheet from '@/components/nutrition/MealLoggerSheet'
+import { OneShotHint } from '@/components/ui/one-shot-hint'
 import WaterTracker from '@/components/nutrition/WaterTracker'
 import WeeklyNutritionChart from '@/components/nutrition/WeeklyNutritionChart'
 import DailyMealPlan from '@/components/nutrition/DailyMealPlan'
@@ -795,6 +796,19 @@ export default function NutritionTab() {
             </Pressable>
           ))}
         </View>
+
+        {/* Hint one-shot: primera comida con foto (#235) */}
+        {activeTab === 'today' && (
+          <OneShotHint
+            id="meal_photo"
+            userId={userId}
+            icon={Camera}
+            text={t('hints.mealPhoto')}
+            onPress={() => { haptics.medium(); setLoggerVisible(true) }}
+            visible={isReady && allEntries.length === 0}
+            className="mb-5"
+          />
+        )}
 
         {/* Date navigator — swipe left/right to change day */}
         {activeTab === 'today' && (
