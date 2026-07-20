@@ -149,9 +149,53 @@ export const tryRefreshAuth = async (): Promise<boolean> => {
     return true
   } catch (e) {
     if (isNetworkError(e)) return pb.authStore.isValid
+    // Sesión fantasma: el JWT local no había caducado pero el server lo
+    // rechazó (cambio de contraseña, rotación de tokenKey, usuario borrado).
+    const status = (e as { status?: number })?.status
+    getPlatform().reportError?.(new Error(`[auth] token rechazado por el server (status ${status}): authStore limpiado`))
     pb.authStore.clear()
     return false
   }
+}
+
+// ── Detección de sesión fantasma (#254) ──────────────────────────────────────
+// Un token invalidado en el server NO produce 401s en las llamadas de datos:
+// PB lo degrada a invitado, así que las listas devuelven 200 vacías y los
+// creates protegidos fallan con 400 "Failed to create record". La única forma
+// de descubrirlo es preguntar explícitamente con authRefresh. verifyAuth()
+// envuelve tryRefreshAuth con dedupe + intervalo mínimo para poder llamarlo
+// desde puntos calientes (respuestas 4xx, vuelta a foreground) sin spamear.
+let _verifyAuthPromise: Promise<boolean> | null = null
+let _verifyAuthAt = 0
+const VERIFY_AUTH_MIN_INTERVAL_MS = 30_000
+
+export const verifyAuth = (): Promise<boolean> => {
+  if (!pb.authStore.isValid) return Promise.resolve(false)
+  if (_verifyAuthPromise) return _verifyAuthPromise
+  if (Date.now() - _verifyAuthAt < VERIFY_AUTH_MIN_INTERVAL_MS) return Promise.resolve(true)
+  _verifyAuthAt = Date.now()
+  _verifyAuthPromise = tryRefreshAuth().finally(() => {
+    _verifyAuthPromise = null
+  })
+  return _verifyAuthPromise
+}
+
+// Interceptor global de respuestas (#254):
+// - 401 con sesión local "válida" → el server rechazó el token: limpiar ya.
+// - 400/403/404 con sesión local "válida" → puede ser una regla/validación
+//   legítima o una sesión fantasma disfrazada (ver arriba); verifyAuth() lo
+//   distingue en segundo plano. Se excluye auth-refresh: sus errores ya los
+//   maneja tryRefreshAuth y evitamos re-disparos del propio verificador.
+pb.afterSend = (response: Response, data: unknown) => {
+  if (pb.authStore.isValid && !response.url.includes('/auth-refresh')) {
+    if (response.status === 401) {
+      getPlatform().reportError?.(new Error(`[auth] 401 con token local válido (${response.url}): authStore limpiado`))
+      pb.authStore.clear()
+    } else if (response.status === 400 || response.status === 403 || response.status === 404) {
+      void verifyAuth().catch(() => {})
+    }
+  }
+  return data
 }
 
 /** Cierra la sesión y limpia el token. */

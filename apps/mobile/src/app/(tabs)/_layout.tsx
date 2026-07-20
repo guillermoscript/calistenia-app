@@ -3,8 +3,8 @@ import { Redirect, Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Home, ClipboardList, Library, History, User, Utensils, CalendarDays } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
-import { pb } from '@calistenia/core/lib/pocketbase'
 import { isOnboardingDone } from '@calistenia/core/lib/onboarding-state'
+import { useAuthUser } from '@/lib/use-auth-user'
 import { NAV_THEME } from '@/lib/theme'
 import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
 import ActiveSessionBar from '@/components/ActiveSessionBar'
@@ -14,11 +14,13 @@ import { haptics } from '@/lib/haptics'
 export default function TabsLayout() {
   const { t } = useTranslation()
   const { colorScheme } = useColorScheme()
+  // Reactivo (pb.authStore.onChange): si el token se limpia con la app abierta
+  // (sesión fantasma #254, logout), el guard re-evalúa y redirige a login.
+  const user = useAuthUser()
   const theme = NAV_THEME[colorScheme === 'dark' ? 'dark' : 'light']
 
-  if (!pb.authStore.isValid) return <Redirect href="/login" />
-  const userId = pb.authStore.record?.id ?? pb.authStore.model?.id
-  if (!userId || !isOnboardingDone(userId)) return <Redirect href="/onboarding" />
+  if (!user) return <Redirect href="/login" />
+  if (!isOnboardingDone(user.id)) return <Redirect href="/onboarding" />
 
   return (
     <QuickMenuProvider>

@@ -2,7 +2,7 @@ import { storage } from '../platform'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
-import { pb, loginWithOAuth2, logout, tryRefreshAuth, getCurrentUser } from '../lib/pocketbase'
+import { pb, loginWithOAuth2, logout, tryRefreshAuth, verifyAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
 import { clearUserStorage } from '../lib/storage-keys'
@@ -75,6 +75,20 @@ export function useAuth(): UseAuthReturn {
     }
     boot()
     return () => { cancelled = true }
+  }, [])
+
+  // ── Revalidar el token al volver la pestaña a primer plano (solo web) ────
+  // Un token invalidado con la app abierta no genera 401s (PB lo degrada a
+  // invitado → listas vacías, #254); al volver a la pestaña se re-comprueba
+  // contra el server. Si el token murió, authStore se limpia y el listener
+  // de abajo saca al usuario a la vista de invitado.
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void verifyAuth().catch(() => {})
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
   // ── Escuchar cambios del authStore (login/logout/token expirado) ─────────

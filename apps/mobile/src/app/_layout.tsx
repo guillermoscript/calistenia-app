@@ -5,7 +5,7 @@ import '../global.css'
 import '@/lib/notifications'
 
 import { useEffect, useState, useRef, type ReactNode } from 'react'
-import { Platform } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import { Stack, ThemeProvider, usePathname, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as Notifications from 'expo-notifications'
@@ -21,7 +21,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
-import { pb } from '@calistenia/core/lib/pocketbase'
+import { pb, tryRefreshAuth, verifyAuth } from '@calistenia/core/lib/pocketbase'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 
 import { Sentry } from '@/lib/instrument'
@@ -137,14 +137,48 @@ function RootLayout() {
     return () => sub.remove()
   }, [])  // intentionally empty — runs once on mount
 
+  // ── Sesión fantasma (#254): expulsión en caliente + revalidación ──────────
+  const readyRef = useRef(false)
+  useEffect(() => {
+    // Si el authStore pasa de logueado a vacío con la app abierta (token
+    // rechazado por el server, logout), volver a login desde cualquier ruta.
+    // Solo tras el boot: durante el arranque el guard de (tabs) ya redirige.
+    let hadUser = pb.authStore.isValid
+    const unsubAuth = pb.authStore.onChange(() => {
+      const hasUser = pb.authStore.isValid
+      if (readyRef.current && hadUser && !hasUser) routerRef.current.replace('/login')
+      hadUser = hasUser
+    })
+    // Al volver a foreground, re-comprobar el token con el server (verifyAuth
+    // deduplica y respeta un intervalo mínimo, no spamea).
+    const subAppState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void verifyAuth().catch(() => {})
+    })
+    return () => {
+      unsubAuth()
+      subAppState.remove()
+    }
+  }, [])  // intentionally empty — runs once on mount
+
   useEffect(() => {
     let cancelled = false
     const boot = async () => {
       // Sesión PB persistida + caché síncrona de storage, antes de pintar nada.
       await Promise.all([hydrateStorage(), pbAuthHydration])
+      // Validar el token persistido contra el server (#254): isValid solo mira
+      // la expiración local, así que un token invalidado (cambio de contraseña
+      // en otro dispositivo, rotación de tokenKey) pasaba el guard y la app
+      // navegaba como invitado (listas vacías, creates 400). Cap de 2.5s para
+      // no colgar el splash sin red; si el refresh resuelve más tarde y limpia
+      // el authStore, el kick en caliente (effect de abajo) expulsa a login.
+      await Promise.race([
+        tryRefreshAuth().catch(() => {}),
+        new Promise((resolve) => setTimeout(resolve, 2500)),
+      ])
       // Storage ya hidratado → aplica la preferencia de tema guardada (claro/oscuro/sistema).
       applyThemeMode(getThemeMode())
       initI18n()
+      readyRef.current = true
       if (!cancelled) setReady(true)
     }
     boot()
