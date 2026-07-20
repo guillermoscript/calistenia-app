@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { upsertUserHealth, useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { op } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import type { ProgramMeta } from '@calistenia/core/types'
@@ -67,6 +68,9 @@ export default function OnboardingFlow({
   const [savingTraining, setSavingTraining] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
+  // Salud guardada (user_health): fallback para el matching de programas cuando
+  // el flujo no pasó por el paso de salud (needsProfile=false).
+  const { health: savedHealth } = useUserHealth(userId ?? null)
 
   // Step index layout (frozen via needsProfile):
   //   0=welcome, 1=basics, 2=goals, 3=health, 4=training (only if needsProfile),
@@ -153,11 +157,13 @@ export default function OnboardingFlow({
     goToStep(healthStep)
   }
 
+  // Salud → colección `user_health` (en `users` estos campos son PII ocultos
+  // que no se pueden escribir con token de usuario; ver #247).
   const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
     if (!userId) return
     setSavingHealth(true)
     try {
-      await pb.collection('users').update(userId, {
+      await upsertUserHealth(userId, {
         medical_conditions: next.medical_conditions,
         injuries: next.injuries,
       })
@@ -309,8 +315,8 @@ export default function OnboardingFlow({
               primary_goal: goals.primary_goal || user?.primary_goal,
               focus_areas: user?.focus_areas,
               training_days: user?.training_days,
-              injuries: user?.injuries,
-              medical_conditions: user?.medical_conditions,
+              injuries: health.injuries.length ? health.injuries : savedHealth.injuries,
+              medical_conditions: health.medical_conditions.length ? health.medical_conditions : savedHealth.medical_conditions,
             }}
             onSelectProgram={handleSelectProgram}
             onCreateProgram={() => {
