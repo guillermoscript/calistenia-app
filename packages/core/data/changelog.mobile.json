@@ -1,6 +1,194 @@
 {
-  "generated": "2026-07-18T19:30:30.000Z",
+  "generated": "2026-07-20T19:39:36.098Z",
   "versions": [
+    {
+      "version": "1.6.0",
+      "date": "2026-07-20",
+      "summary": {
+        "es": "Crea tus propios programas desde el móvil, registra tu sueño con resumen IA, cambia tu objetivo nutricional cuando quieras y celebra tus logros como se merece.",
+        "en": "Build your own programs on mobile, log your sleep with an AI summary, change your nutrition goal anytime, and celebrate your achievements properly."
+      },
+      "highlights": [
+        {
+          "icon": "🏗️",
+          "type": "feat",
+          "title": {
+            "es": "Editor de programas",
+            "en": "Program editor"
+          },
+          "body": {
+            "es": "Crea y edita tus propios programas desde el móvil: fases, días (fuerza, cardio o circuito) y ejercicios del catálogo, en un asistente de 4 pasos.",
+            "en": "Create and edit your own programs on mobile: phases, days (strength, cardio or circuit) and catalog exercises, in a 4-step wizard."
+          }
+        },
+        {
+          "icon": "😴",
+          "type": "feat",
+          "title": {
+            "es": "Sueño con resumen IA",
+            "en": "Sleep with AI summary"
+          },
+          "body": {
+            "es": "Registra tu sueño directamente en la app y recibe un análisis IA de tu patrón: consistencia, cafeína, pantallas y más.",
+            "en": "Log your sleep right in the app and get an AI analysis of your pattern: consistency, caffeine, screens and more."
+          }
+        },
+        {
+          "icon": "🎯",
+          "type": "feat",
+          "title": {
+            "es": "Objetivo editable",
+            "en": "Editable goal"
+          },
+          "body": {
+            "es": "Cambia tu objetivo nutricional cuando quieras con vista previa de calorías y macros, y edita tus datos corporales desde el perfil.",
+            "en": "Change your nutrition goal anytime with a calorie and macro preview, and edit your body data from your profile."
+          }
+        },
+        {
+          "icon": "🏅",
+          "type": "feat",
+          "title": {
+            "es": "Celebración de logros",
+            "en": "Achievement celebration"
+          },
+          "body": {
+            "es": "Los badges de nutrición ahora se celebran con una pantalla propia — y si ganas varios a la vez, los ves en secuencia.",
+            "en": "Nutrition badges now get a proper celebration screen — earn several at once and see them in sequence."
+          }
+        },
+        {
+          "icon": "🛡️",
+          "type": "feat",
+          "title": {
+            "es": "Denunciar contenido",
+            "en": "Report content"
+          },
+          "body": {
+            "es": "Denuncia usuarios o comentarios inapropiados desde el perfil o los comentarios; nuestro equipo los revisa.",
+            "en": "Report inappropriate users or comments from their profile or the comments sheet; our team reviews them."
+          }
+        },
+        {
+          "icon": "🔧",
+          "type": "fix",
+          "title": {
+            "es": "Onboarding más robusto",
+            "en": "Sturdier onboarding"
+          },
+          "body": {
+            "es": "El registro ya no puede perder tu perfil en silencio: si algo falla al guardar, te avisa y puedes reintentar.",
+            "en": "Sign-up can no longer silently lose your profile: if saving fails you are told and can retry."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Editor de programas nativo, wizard 4 pasos (#223, #224)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "44e5fe9"
+            },
+            {
+              "description": "Celebración de badges con dialog spec-sheet en vez de Alert (#231)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "595bc6e"
+            },
+            {
+              "description": "Denunciar usuarios y comentarios (content_reports, #220)",
+              "scope": "social",
+              "breaking": false,
+              "hash": "7b40fae"
+            },
+            {
+              "description": "Resumen IA del patrón de sueño (#244 F2-F5)",
+              "scope": "sleep",
+              "breaking": false,
+              "hash": "fc303e1"
+            },
+            {
+              "description": "Cambiar objetivo + editar cuerpo + recompute auto (#243 F3/F4)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "80da4b5"
+            },
+            {
+              "description": "Cambiar de objetivo tras el onboarding + recalcular (#243 F2)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "bd6fc7c"
+            },
+            {
+              "description": "Registro de sueño nativo — paridad con web (#244 F1)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "2ccde5e"
+            },
+            {
+              "description": "Extrae cálculo de objetivos a core + campo source (#243 F1)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "d747957"
+            },
+            {
+              "description": "Hints contextuales one-shot (callouts inline descartables)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "ff8606f"
+            },
+            {
+              "description": "Selector de idioma ES/EN en el onboarding (web y native)",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "3c8984b"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Mueve medical_conditions/injuries a colección user_health per-user (#247)",
+              "scope": "security",
+              "breaking": false,
+              "hash": "adae23a"
+            },
+            {
+              "description": "Endurece createRule en 10 colecciones per-user (inyección cross-user)",
+              "scope": "security",
+              "breaking": false,
+              "hash": "f8d1c3e"
+            },
+            {
+              "description": "Edad/sexo en nutrition_goals en web + regla PB más fuerte (#243 F4a)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "9983d8a"
+            },
+            {
+              "description": "Persist edad/sexo del cuerpo en nutrition_goals, no en users (#243 F4a)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "3a7913b"
+            },
+            {
+              "description": "Evita eyección del recovery y no avanza si falla el guardado",
+              "scope": "onboarding",
+              "breaking": false,
+              "hash": "e9d8e45"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.5.0",
       "date": "2026-07-18",
