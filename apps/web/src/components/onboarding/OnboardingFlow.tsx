@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as Sentry from '@sentry/react'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { upsertUserHealth, useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { op } from '@calistenia/core/lib/analytics'
@@ -68,6 +69,7 @@ export default function OnboardingFlow({
   const [savingTraining, setSavingTraining] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   // Salud guardada (user_health): fallback para el matching de programas cuando
   // el flujo no pasó por el paso de salud (needsProfile=false).
   const { health: savedHealth } = useUserHealth(userId ?? null)
@@ -95,8 +97,16 @@ export default function OnboardingFlow({
   }
 
   const goToStep = (s: number) => {
+    setSaveError(false)
     op.track('onboarding_step_viewed', { step: s, step_name: stepNameFor(s) })
     setStep(s)
+  }
+
+  // Si el update falla: reportar, avisar y NO avanzar de paso (#222).
+  const handleSaveFailed = (e: unknown, stepName: string) => {
+    Sentry.captureException(e, { tags: { flow: 'onboarding_save', step: stepName } })
+    op.track('onboarding_save_failed', { step_name: stepName })
+    setSaveError(true)
   }
 
   const handleSelectProgram = async (programId: string) => {
@@ -121,7 +131,9 @@ export default function OnboardingFlow({
         height: parseDecimal(basics.height),
       })
     } catch (e) {
-      console.warn('Failed to save onboarding basics:', e)
+      handleSaveFailed(e, 'profile')
+      setSavingProfile(false)
+      return
     }
     setSavingProfile(false)
     goToStep(goalsStep)
@@ -140,7 +152,9 @@ export default function OnboardingFlow({
         pace: goals.pace || '',
       })
     } catch (e) {
-      console.warn('Failed to save onboarding goals:', e)
+      handleSaveFailed(e, 'goals')
+      setSavingGoals(false)
+      return
     }
     // La cintura también se registra como medición corporal con fecha (historial).
     if (waist) {
@@ -169,7 +183,9 @@ export default function OnboardingFlow({
         injuries: next.injuries,
       })
     } catch (e) {
-      console.warn('Failed to save onboarding health:', e)
+      handleSaveFailed(e, 'health')
+      setSavingHealth(false)
+      return
     }
     setSavingHealth(false)
     goToStep(advanceTo)
@@ -195,7 +211,9 @@ export default function OnboardingFlow({
         goal: training.goal || '',
       })
     } catch (e) {
-      console.warn('Failed to save onboarding training:', e)
+      handleSaveFailed(e, 'training')
+      setSavingTraining(false)
+      return
     }
     setSavingTraining(false)
     goToStep(programStep)
@@ -217,7 +235,7 @@ export default function OnboardingFlow({
     onComplete()
   }
 
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
 
   const firstName = displayName?.split(/[\s@]/)[0] || ''
@@ -247,6 +265,12 @@ export default function OnboardingFlow({
           ))}
         </div>
         <OnboardingProgress step={step} totalSteps={totalSteps} />
+
+        {saveError && (
+          <div className="mb-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 font-mono text-xs tracking-wide text-red-400">
+            {t('onboarding.saveError')}
+          </div>
+        )}
 
         {step === 0 && (
           <StepWelcome

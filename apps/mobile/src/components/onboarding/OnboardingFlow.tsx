@@ -21,6 +21,7 @@ import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import type { MatchUserInput } from '@calistenia/core/lib/matchPrograms'
 
+import { Sentry } from '@/lib/instrument'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { haptics } from '@/lib/haptics'
@@ -45,7 +46,7 @@ const EMPTY_TRAINING: TrainingValues = {
 
 export function OnboardingFlow() {
   const router = useRouter()
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'es'
   const user = useAuthUser()
   const userId = user?.id
@@ -58,18 +59,22 @@ export function OnboardingFlow() {
   const { programs, activeProgram } = useWorkoutState()
   const { selectProgram } = useWorkoutActions()
 
-  // Recovery: if user already has an active program and ended up in onboarding, skip it.
+  const [step, setStep] = useState(0)
+
+  // Recovery: si el usuario ya tiene programa activo y aterrizó en onboarding, sáltalo.
+  // Solo aplica en el paso 0: WorkoutContext resuelve el programa de forma
+  // asíncrona (y también se vuelve truthy al elegir programa en StepProgram),
+  // así que sin este guard expulsaría al usuario a mitad del flujo (#222).
   useEffect(() => {
-    if (activeProgram && userId) {
+    if (step === 0 && activeProgram && userId) {
       markOnboardingDone(userId)
       router.replace('/(tabs)')
     }
-  }, [activeProgram, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeProgram, userId, step]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Frozen at mount: needsProfile drives step layout and must not change mid-flow.
   const [needsProfile] = useState(() => !user?.weight && !user?.height && !user?.level)
 
-  const [step, setStep] = useState(0)
   const [basics, setBasics] = useState<BasicsValues>(EMPTY_BASICS)
   const [goals, setGoals] = useState<GoalsValues>(EMPTY_GOALS)
   const [health, setHealth] = useState<HealthValues>(EMPTY_HEALTH)
@@ -80,6 +85,7 @@ export function OnboardingFlow() {
   const [savingTraining, setSavingTraining] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   // Salud guardada (user_health): fallback para el matching de programas cuando
   // el flujo no pasó por el paso de salud (needsProfile=false).
   const { health: savedHealth } = useUserHealth(userId ?? null)
@@ -106,8 +112,17 @@ export function OnboardingFlow() {
 
   const goToStep = (s: number) => {
     haptics.light()
+    setSaveError(false)
     op.track('onboarding_step_viewed', { step: s, step_name: stepNameFor(s) })
     setStep(s)
+  }
+
+  // Si el update falla: reportar, avisar y NO avanzar de paso (#222).
+  const handleSaveFailed = (e: unknown, stepName: string) => {
+    Sentry.captureException(e, { tags: { flow: 'onboarding_save', step: stepName } })
+    op.track('onboarding_save_failed', { step_name: stepName })
+    haptics.error()
+    setSaveError(true)
   }
 
   const handleSelectProgram = async (programId: string) => {
@@ -132,7 +147,9 @@ export function OnboardingFlow() {
         height: parseDecimal(basics.height),
       })
     } catch (e) {
-      console.warn('Failed to save onboarding basics:', e)
+      handleSaveFailed(e, 'profile')
+      setSavingProfile(false)
+      return
     }
     setSavingProfile(false)
     goToStep(goalsStep)
@@ -151,7 +168,9 @@ export function OnboardingFlow() {
         pace: goals.pace || '',
       })
     } catch (e) {
-      console.warn('Failed to save onboarding goals:', e)
+      handleSaveFailed(e, 'goals')
+      setSavingGoals(false)
+      return
     }
     // La cintura también se registra como medición corporal con fecha (historial).
     if (waist) {
@@ -180,7 +199,9 @@ export function OnboardingFlow() {
         injuries: next.injuries,
       })
     } catch (e) {
-      console.warn('Failed to save onboarding health:', e)
+      handleSaveFailed(e, 'health')
+      setSavingHealth(false)
+      return
     }
     setSavingHealth(false)
     goToStep(advanceTo)
@@ -206,7 +227,9 @@ export function OnboardingFlow() {
         goal: training.goal || '',
       })
     } catch (e) {
-      console.warn('Failed to save onboarding training:', e)
+      handleSaveFailed(e, 'training')
+      setSavingTraining(false)
+      return
     }
     setSavingTraining(false)
     goToStep(programStep)
@@ -284,6 +307,14 @@ export function OnboardingFlow() {
           ))}
         </View>
         <OnboardingProgress step={step} totalSteps={totalSteps} />
+
+        {saveError ? (
+          <View className="mb-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2">
+            <Text className="font-mono text-[11px] tracking-wide text-red-400">
+              {t('onboarding.saveError')}
+            </Text>
+          </View>
+        ) : null}
 
         <Animated.View key={step} entering={FadeInRight.duration(280)} className="flex-1">
           {step === 0 ? (
