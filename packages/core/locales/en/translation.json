@@ -1031,6 +1031,10 @@
   "reports.error": "Could not submit the report",
   "reports.cancel": "Cancel",
 
+  "badges.unlockedKicker": "ACHIEVEMENT UNLOCKED",
+  "badges.next": "Next",
+  "badges.close": "Let's go!",
+
   "feed.section": "Social",
   "feed.title": "ACTIVITY",
   "feed.loading": "Loading activity...",

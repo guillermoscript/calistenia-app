@@ -1031,6 +1031,10 @@
   "reports.error": "No se pudo enviar la denuncia",
   "reports.cancel": "Cancelar",
 
+  "badges.unlockedKicker": "LOGRO DESBLOQUEADO",
+  "badges.next": "Siguiente",
+  "badges.close": "¡Vamos!",
+
   "feed.section": "Social",
   "feed.title": "ACTIVIDAD",
   "feed.loading": "Cargando actividad...",
