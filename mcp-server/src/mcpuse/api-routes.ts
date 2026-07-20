@@ -572,6 +572,22 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     } catch (err) { return apiError(c, err); }
   });
 
+  // ── 13d. POST /api/generate-sleep-insight (sleep-only pattern summary) ────
+  app.post("/api/generate-sleep-insight", async (c) => {
+    const user = await getAuthUser(c, pbUrl);
+    if (!user) return c.json({ error: "Token de autenticación requerido" }, 401);
+    const rl = applyRateLimit(c, user.id);
+    if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
+    try {
+      const body = await c.req.json().catch(() => ({}));
+      const { context } = body ?? {};
+      if (!context?.summary?.sleep || !context?.period) return c.json({ error: "Se requiere el contexto de sueño (context.summary.sleep/period)" }, 400);
+      const { generateSleepInsight } = await import("../api/sleep-insight-generator.js");
+      const result = await generateSleepInsight({ context, tier: getTier(user) });
+      return c.json(result);
+    } catch (err) { return apiError(c, err); }
+  });
+
   // ── 14. POST /api/generate-free-session (SSE streaming) ──────────────────
   app.post("/api/generate-free-session", async (c) => {
     const user = await getAuthUser(c, pbUrl);

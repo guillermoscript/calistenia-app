@@ -122,6 +122,9 @@ export const qk = {
       ['insights', 'cross', userId, periodType] as const,
     history: (userId: string | null, periodType: string) =>
       ['insights', 'history', userId, periodType] as const,
+    // — Insight de sueño (issue #244 F5) —
+    sleep: (userId: string | null, periodType: string) =>
+      ['insights', 'sleep', userId, periodType] as const,
   },
 
   // — Nutrición —
