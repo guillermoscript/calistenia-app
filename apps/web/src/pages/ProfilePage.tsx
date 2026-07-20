@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -15,6 +16,7 @@ import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money
 import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity } from '../components/onboarding/StepTraining'
 import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
 import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
+import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
 interface ProfilePageProps {
   user: any
@@ -23,11 +25,17 @@ interface ProfilePageProps {
 export default function ProfilePage({ user }: ProfilePageProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [displayName, setDisplayName] = useState(user?.display_name || user?.name || '')
   const [weight, setWeight] = useState<string>('')
   const [height, setHeight] = useState<string>('')
   const [age, setAge] = useState<string>('')
   const [sex, setSex] = useState<string>('')
+  // Edad/sexo son PII ocultos en `users` (fix GHSA-wwj3-9h95-wcpf): no se
+  // serializan ni se pueden escribir con token de usuario. Su fuente fiable es
+  // la fila de `nutrition_goals` (protegida per-user), que además es lo que
+  // consume el cálculo de calorías. Guardamos su id para poder actualizarla. (#243 F4a)
+  const [bodyGoalId, setBodyGoalId] = useState<string | null>(null)
   const [level, setLevel] = useState('principiante')
   const [goal, setGoal] = useState('')
   const [goalWeight, setGoalWeight] = useState<string>('')
@@ -93,8 +101,6 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           setDisplayName((rec as any).display_name || (rec as any).name || '')
           setWeight((rec as any).weight ? String((rec as any).weight) : '')
           setHeight((rec as any).height ? String((rec as any).height) : '')
-          setAge((rec as any).age ? String((rec as any).age) : '')
-          setSex((rec as any).sex || '')
           setLevel((rec as any).level || 'principiante')
           setGoal((rec as any).goal || '')
           setGoalWeight((rec as any).goal_weight ? String((rec as any).goal_weight) : '')
@@ -107,6 +113,17 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           setIntensity((rec as any).intensity || '')
           setAvatarUrl(getUserAvatarUrl(rec as any, '200x200'))
           if ((rec as any).timezone) setTimezone((rec as any).timezone)
+          // Edad/sexo desde la fila de nutrition_goals (PII protegida; en `users`
+          // están ocultos). Si el usuario aún no tiene objetivo, quedan vacíos y
+          // solo se fijarán al crear uno (el wizard los pide). (#243 F4a)
+          try {
+            const goalRec = await pb.collection('nutrition_goals').getFirstListItem(
+              pb.filter('user = {:uid}', { uid: user.id }), { requestKey: null },
+            )
+            setBodyGoalId((goalRec as any).id)
+            setAge((goalRec as any).age ? String((goalRec as any).age) : '')
+            setSex((goalRec as any).sex || '')
+          } catch { /* sin objetivo todavía: edad/sexo vacíos */ }
         } catch (e) {
           console.warn('Failed to load profile:', e)
         }
@@ -163,8 +180,6 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           display_name: displayName,
           weight: parseDecimal(weight),
           height: parseDecimal(height),
-          age: age ? parseInt(age, 10) : null,
-          sex: sex || '',
           level,
           goal,
           goal_weight: parseDecimal(goalWeight),
@@ -177,9 +192,23 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           intensity: intensity || '',
           timezone,
         })
+        // Edad/sexo → fila de `nutrition_goals` (PII protegida; en `users` están
+        // ocultos y no se pueden escribir con token de usuario). Solo si ya hay
+        // objetivo; el recompute de abajo la releerá desde ahí. (#243 F4a)
+        if (bodyGoalId) {
+          await pb.collection('nutrition_goals').update(bodyGoalId, {
+            age: age ? parseInt(age, 10) : null,
+            sex: sex || '',
+          }).catch((e) => console.warn('Failed to save body age/sex:', e))
+        }
         setGlobalTimezone(timezone)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
+        // Reactivo (#243 F3): si el objetivo nutricional es 'auto', recalcula
+        // calorías/macros con el cuerpo recién guardado (no toca 'manual').
+        recomputeAutoNutritionGoal(user.id, queryClient).catch((e) =>
+          console.warn('Failed to recompute nutrition goal:', e),
+        )
       }
     } catch (e) {
       console.warn('Failed to save profile:', e)
