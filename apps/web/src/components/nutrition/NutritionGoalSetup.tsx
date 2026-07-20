@@ -8,6 +8,8 @@ import type { NutritionGoal, NutritionGoalType, ActivityLevel, Sex } from '@cali
 
 interface NutritionGoalSetupProps {
   onSave: (goals: NutritionGoal) => void
+  /** Provided only in edit-mode (goals already exist) — shows a "Cancelar" escape hatch. */
+  onCancel?: () => void
   calculateMacros: (weight: number, height: number, age: number, sex: string, activityLevel: string, goal: string, pace?: string) => {
     dailyCalories: number
     dailyProtein: number
@@ -41,7 +43,7 @@ const GOALS: { id: NutritionGoalType; labelKey: string; icon: string; descKey: s
 ]
 
 export default function NutritionGoalSetup({
-  onSave, calculateMacros,
+  onSave, onCancel, calculateMacros,
   initialWeight, initialHeight, initialAge, initialSex,
   initialActivityLevel, initialGoal, initialPace,
 }: NutritionGoalSetupProps) {
@@ -323,6 +325,15 @@ export default function NutritionGoalSetup({
 
       {/* Navigation */}
       <div className="flex gap-3 mt-6">
+        {onCancel && (
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1 text-[10px] tracking-widest"
+          >
+            {t('common.cancel')}
+          </Button>
+        )}
         {step > 0 && (
           <Button
             variant="outline"

@@ -99,6 +99,8 @@ export const qk = {
   bodyMeasurements: (userId: string | null) =>
     ['body_measurements', userId] as const,
   bodyPhotos: (userId: string | null) => ['body_photos', userId] as const,
+  // Condiciones médicas + lesiones (colección user_health, #247)
+  userHealth: (userId: string | null) => ['user_health', userId] as const,
   weight: (userId: string | null) => ['weight', userId] as const,
   sleep: (userId: string | null) => ['sleepEntries', userId] as const,
   // — Integración smartwatch / health hub (Health Connect / HealthKit) —
@@ -122,6 +124,9 @@ export const qk = {
       ['insights', 'cross', userId, periodType] as const,
     history: (userId: string | null, periodType: string) =>
       ['insights', 'history', userId, periodType] as const,
+    // — Insight de sueño (issue #244 F5) —
+    sleep: (userId: string | null, periodType: string) =>
+      ['insights', 'sleep', userId, periodType] as const,
   },
 
   // — Nutrición —

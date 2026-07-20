@@ -36,13 +36,15 @@ import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
 import { useWater } from '@calistenia/core/hooks/useWater'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
 import { isPrimaryGoal, primaryGoalToNutritionGoalType } from '@calistenia/core/lib/primaryGoal'
+import { previewNutritionGoal, nutritionGoalTypeToPrimaryGoal } from '@calistenia/core/lib/nutritionGoal'
+import { op } from '@calistenia/core/lib/analytics'
 import { qk } from '@calistenia/core/lib/query-keys'
 import { useDayRollover } from '@/lib/use-day-rollover'
 import { useDailyHealth } from '@/lib/health/useDailyHealth'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import { SCORE_COLORS } from '@calistenia/core/lib/style-tokens'
-import type { NutritionGoal, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
+import type { NutritionGoal, NutritionGoalType, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
 
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { analyzeMealMobile, urisToBlobs } from '@/lib/nutrition-api'
@@ -90,6 +92,21 @@ const ONBOARDING_ACTIVITY_MAP: Record<string, string> = {
   very_active: 'active',
 }
 
+// #243 F4b: mismas etiquetas/iconos que el picker inline de la web, para el
+// control "Cambiar objetivo" nativo.
+const GOAL_LABEL_KEYS: Record<NutritionGoalType, string> = {
+  muscle_gain: 'nutrition.goal.muscleGain',
+  fat_loss: 'nutrition.goal.fatLoss',
+  recomp: 'nutrition.goal.recomp',
+  maintain: 'nutrition.goal.maintain',
+}
+const GOAL_CHOICES: { id: NutritionGoalType; labelKey: string; icon: string }[] = [
+  { id: 'muscle_gain', labelKey: GOAL_LABEL_KEYS.muscle_gain, icon: '💪' },
+  { id: 'fat_loss', labelKey: GOAL_LABEL_KEYS.fat_loss, icon: '🔥' },
+  { id: 'recomp', labelKey: GOAL_LABEL_KEYS.recomp, icon: '⚖️' },
+  { id: 'maintain', labelKey: GOAL_LABEL_KEYS.maintain, icon: '✅' },
+]
+
 function inferGoalType(weight?: number, goalWeight?: number, primaryGoal?: unknown): string | undefined {
   // Objetivo explícito del onboarding (#226); el delta de peso es solo fallback.
   if (isPrimaryGoal(primaryGoal)) return primaryGoalToNutritionGoalType(primaryGoal)
@@ -116,6 +133,11 @@ export default function NutritionTab() {
   const [profileData, setProfileData] = useState<UserProfileData>({})
   const [phaseChangeBanner, setPhaseChangeBanner] = useState(false)
   const trainingPhaseRef = useRef<number | null>(null)
+  // #243 F4b: cambio de objetivo post-onboarding — reabre el wizard sobre goals existentes
+  const [showGoalSetup, setShowGoalSetup] = useState(false)
+  const [pendingGoal, setPendingGoal] = useState<NutritionGoalType | null>(null)
+  const [goalPickerOpen, setGoalPickerOpen] = useState(false)
+  const [selectedGoal, setSelectedGoal] = useState<NutritionGoalType | null>(null)
 
   // ─── Core hooks ─────────────────────────────────────────────────────────────
   const nutrition = useNutrition(userId)
@@ -261,11 +283,11 @@ export default function NutritionTab() {
         const user = await pb.collection('users').getOne(userId)
         const weight = user.weight || undefined
         const goalWeight = user.goal_weight || undefined
+        // Edad/sexo ya no existen en `users` (PII → nutrition_goals); el wizard
+        // los pide y los guarda en la propia fila del objetivo.
         setProfileData({
           weight,
           height: user.height || undefined,
-          age: user.age || undefined,
-          sex: user.sex || undefined,
           goalWeight,
           activityLevel: user.activity_level ? ONBOARDING_ACTIVITY_MAP[user.activity_level] : undefined,
           pace: user.pace || undefined,
@@ -407,9 +429,21 @@ export default function NutritionTab() {
 
   // ─── Save goals ──────────────────────────────────────────────────────────────
   const handleSaveGoals = useCallback(async (newGoals: NutritionGoal) => {
-    await saveGoals(newGoals)
+    // Wizard saves are user-reviewed/editable on the last step → 'manual'.
+    await saveGoals({ ...newGoals, source: 'manual' })
+    // Best-effort sync users.primary_goal (never blocks the save on failure).
+    const pg = nutritionGoalTypeToPrimaryGoal(newGoals.goal)
+    if (pg && userId) {
+      pb.collection('users').update(userId, { primary_goal: pg }).catch(() => {})
+    }
+    // Registra el cambio venga de donde venga (picker → Ajustar, o el propio wizard).
+    if (goals && newGoals.goal !== goals.goal) {
+      op.track('goal_changed', { from: goals.goal, to: newGoals.goal, applied_recommended: false })
+    }
     setPhaseChangeBanner(false)
-  }, [saveGoals])
+    setShowGoalSetup(false)
+    setPendingGoal(null)
+  }, [saveGoals, userId, goals])
 
   const handleCalculateMacros = useCallback((
     weight: number, height: number, age: number, sex: string,
@@ -522,20 +556,21 @@ export default function NutritionTab() {
     )
   }
 
-  // ─── Goal setup (first run) ──────────────────────────────────────────────────
-  if (!goals) {
+  // ─── Goal setup (first run, or editing/changing goals) ───────────────────────
+  if (!goals || showGoalSetup) {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-        <ScrollView contentContainerClassName="px-4 py-6">
+        <ScrollView contentContainerClassName="px-4 py-6" keyboardShouldPersistTaps="handled">
           <NutritionGoalSetup
             onSave={handleSaveGoals}
+            onCancel={goals ? () => { setShowGoalSetup(false); setPendingGoal(null) } : undefined}
             calculateMacros={handleCalculateMacros}
-            initialWeight={profileData.weight}
-            initialHeight={profileData.height}
-            initialAge={profileData.age}
-            initialSex={profileData.sex}
-            initialActivityLevel={profileData.activityLevel}
-            initialGoal={profileData.goalType}
+            initialWeight={goals ? goals.weight : profileData.weight}
+            initialHeight={goals ? goals.height : profileData.height}
+            initialAge={goals ? goals.age : profileData.age}
+            initialSex={goals ? goals.sex : profileData.sex}
+            initialActivityLevel={goals ? goals.activityLevel : profileData.activityLevel}
+            initialGoal={goals ? (pendingGoal ?? goals.goal) : profileData.goalType}
             initialPace={profileData.pace}
           />
         </ScrollView>
@@ -583,7 +618,7 @@ export default function NutritionTab() {
                 <Button
                   onPress={() => {
                     setPhaseChangeBanner(false)
-                    saveGoals({ ...goals, dailyCalories: -1 })
+                    setShowGoalSetup(true)
                   }}
                   className="flex-1 h-9 bg-lime-400"
                 >
@@ -593,6 +628,142 @@ export default function NutritionTab() {
             </CardContent>
           </Card>
         )}
+
+        {/* #243 F4b: cambiar objetivo con preview de nuevo rango antes de aplicar */}
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            {!goalPickerOpen ? (
+              <View className="flex-row items-center justify-between gap-4">
+                <View className="flex-1">
+                  <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                    {t('nutrition.changeGoal.title')}
+                  </Text>
+                  <Text className="font-bebas text-2xl text-lime-400">
+                    {t(GOAL_LABEL_KEYS[goals.goal])}
+                  </Text>
+                </View>
+                <Button
+                  variant="outline"
+                  onPress={() => { haptics.light(); setSelectedGoal(null); setGoalPickerOpen(true) }}
+                  className="h-9 shrink-0"
+                >
+                  <Text className="font-mono text-[10px] tracking-widest uppercase">{t('nutrition.changeGoal.cta')}</Text>
+                </Button>
+              </View>
+            ) : (
+              <View className="gap-4">
+                <View className="flex-row items-center justify-between">
+                  <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {t('nutrition.changeGoal.pickPrompt')}
+                  </Text>
+                  <Pressable onPress={() => { setGoalPickerOpen(false); setSelectedGoal(null) }}>
+                    <Text className="font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+                      {t('common.cancel')}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <View className="flex-row flex-wrap gap-2.5">
+                  {GOAL_CHOICES.map(g => (
+                    <Pressable
+                      key={g.id}
+                      onPress={() => { haptics.selection(); setSelectedGoal(g.id) }}
+                      className={cn(
+                        'min-w-[45%] flex-1 items-center rounded-lg border p-3',
+                        selectedGoal === g.id
+                          ? 'border-lime-400 bg-lime-400/15'
+                          : 'border-border bg-card',
+                      )}
+                    >
+                      <Text className="text-xl mb-1">{g.icon}</Text>
+                      <Text className={cn(
+                        'font-sans-medium text-xs',
+                        selectedGoal === g.id ? 'text-lime-400' : 'text-foreground',
+                      )}>
+                        {t(g.labelKey)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {selectedGoal && selectedGoal !== goals.goal && (() => {
+                  const preview = previewNutritionGoal(
+                    {
+                      weight: goals.weight,
+                      height: goals.height,
+                      age: goals.age,
+                      sex: goals.sex,
+                      activityLevel: goals.activityLevel,
+                      pace: profileData.pace as any,
+                    },
+                    selectedGoal,
+                  )
+                  return (
+                    <>
+                      <View className="rounded-lg border border-lime-400/20 bg-lime-400/5 p-3 gap-3">
+                        <Text className="font-mono text-[10px] uppercase tracking-widest text-lime-400">
+                          {t('nutrition.changeGoal.newRange')}
+                        </Text>
+                        <View className="flex-row justify-around">
+                          <View className="items-center">
+                            <Text className="font-bebas text-2xl leading-none text-lime-400">{preview.dailyCalories}</Text>
+                            <Text className="font-mono text-[9px] text-muted-foreground mt-0.5">KCAL</Text>
+                          </View>
+                          <View className="items-center">
+                            <Text className="font-bebas text-2xl leading-none text-sky-400">{preview.dailyProtein}</Text>
+                            <Text className="font-mono text-[9px] text-muted-foreground mt-0.5">PROT</Text>
+                          </View>
+                          <View className="items-center">
+                            <Text className="font-bebas text-2xl leading-none text-amber-400">{preview.dailyCarbs}</Text>
+                            <Text className="font-mono text-[9px] text-muted-foreground mt-0.5">CARBS</Text>
+                          </View>
+                          <View className="items-center">
+                            <Text className="font-bebas text-2xl leading-none text-pink-400">{preview.dailyFat}</Text>
+                            <Text className="font-mono text-[9px] text-muted-foreground mt-0.5">{t('nutrition.fat').toUpperCase()}</Text>
+                          </View>
+                        </View>
+                        <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground border-t border-lime-400/10 pt-2">
+                          {t('nutrition.changeGoal.current')}: {goals.dailyCalories} kcal · {goals.dailyProtein}P · {goals.dailyCarbs}C · {goals.dailyFat}F
+                        </Text>
+                      </View>
+
+                      <View className="flex-row gap-3">
+                        <Button
+                          variant="outline"
+                          onPress={() => {
+                            haptics.medium()
+                            setPendingGoal(selectedGoal)
+                            setShowGoalSetup(true)
+                            setGoalPickerOpen(false)
+                          }}
+                          className="flex-1 h-10"
+                        >
+                          <Text className="font-mono text-[10px] tracking-widest uppercase">{t('nutrition.changeGoal.adjust')}</Text>
+                        </Button>
+                        <Button
+                          onPress={async () => {
+                            haptics.success()
+                            await saveGoals({ ...preview, source: 'auto' })
+                            const pg = nutritionGoalTypeToPrimaryGoal(selectedGoal)
+                            if (pg && userId) {
+                              pb.collection('users').update(userId, { primary_goal: pg }).catch(() => {})
+                            }
+                            op.track('goal_changed', { from: goals.goal, to: selectedGoal, applied_recommended: true })
+                            setGoalPickerOpen(false)
+                            setSelectedGoal(null)
+                          }}
+                          className="flex-1 h-10 bg-lime-400"
+                        >
+                          <Text className="font-bebas text-lg tracking-wide text-zinc-900">{t('nutrition.changeGoal.apply')}</Text>
+                        </Button>
+                      </View>
+                    </>
+                  )
+                })()}
+              </View>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Missed goals alert (US-15) */}
         {missedGoalsAlert && (

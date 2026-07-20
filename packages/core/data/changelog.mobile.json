@@ -1,6 +1,104 @@
 {
-  "generated": "2026-07-17T20:39:20.139Z",
+  "generated": "2026-07-18T19:30:30.000Z",
   "versions": [
+    {
+      "version": "1.5.0",
+      "date": "2026-07-18",
+      "summary": {
+        "es": "Primeros pasos guiados en el Home, un directorio «Descubre» con las 21 funciones de la app, y pantallas vacías que ahora enseñan a usar cada una.",
+        "en": "A guided getting-started checklist on Home, a «Discover» directory of all 21 app features, and empty screens that now teach you how to use them."
+      },
+      "highlights": [
+        {
+          "icon": "🎯",
+          "type": "feat",
+          "title": {
+            "es": "Primeros pasos",
+            "en": "Getting started"
+          },
+          "body": {
+            "es": "Nuevo checklist en el Home con 6 pasos de activación, barra de progreso y un acceso directo a cada uno.",
+            "en": "A new Home checklist with 6 activation steps, a progress bar, and a shortcut to each one."
+          }
+        },
+        {
+          "icon": "🧭",
+          "type": "feat",
+          "title": {
+            "es": "Descubre",
+            "en": "Discover"
+          },
+          "body": {
+            "es": "Nueva sección en tu perfil con las 21 funciones de la app organizadas por categoría, cada una a un toque de distancia.",
+            "en": "A new section in your profile lists all 21 app features by category, each one a tap away."
+          }
+        },
+        {
+          "icon": "💡",
+          "type": "feat",
+          "title": {
+            "es": "Pantallas vacías que enseñan",
+            "en": "Guided empty states"
+          },
+          "body": {
+            "es": "Historial, biblioteca, calendario y otras pantallas ahora explican qué hacer cuando están vacías, con un botón directo a la acción.",
+            "en": "History, library, calendar and other screens now explain what to do when they're empty, with a direct action button."
+          }
+        },
+        {
+          "icon": "🐛",
+          "type": "fix",
+          "title": {
+            "es": "Crash al deslizar en la sesión",
+            "en": "Session-swipe crash"
+          },
+          "body": {
+            "es": "Arreglado un cierre inesperado de la app al deslizar entre ejercicios durante el entreno.",
+            "en": "Fixed the app closing unexpectedly when swiping between exercises mid-workout."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Sección «Descubre» en Perfil, directorio bilingüe de features",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "8f50bc0"
+            },
+            {
+              "description": "Empty states educativos + componente EmptyState compartido",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "b900ae9"
+            },
+            {
+              "description": "Checklist «Primeros pasos» en Home con 6 ítems de activación",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "6826ba0"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Crash al deslizar entre ejercicios en la sesión",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "53ba9db"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.4.0",
       "date": "2026-07-17",

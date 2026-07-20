@@ -5,6 +5,7 @@ import { daysAgoStr } from '@calistenia/core/lib/dateUtils'
 import { useSleep, type SleepEntryInput } from '@calistenia/core/hooks/useSleep'
 import SleepForm, { type SleepFormData } from '../components/sleep/SleepForm'
 import SleepWeekChart from '../components/sleep/SleepWeekChart'
+import SleepInsightsCard from '../components/insights/SleepInsightsCard'
 import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -285,6 +286,11 @@ export default function SleepPage({ userId }: SleepPageProps) {
           </div>
         </button>
       )}
+
+      {/* ═══ AI SLEEP INSIGHT ═══════════════════════════════════════════════ */}
+      <div className="mb-6">
+        <SleepInsightsCard userId={userId} />
+      </div>
 
       {/* ═══ WEEKLY CHART ═══════════════════════════════════════════════════ */}
       {entries.length > 0 && (
