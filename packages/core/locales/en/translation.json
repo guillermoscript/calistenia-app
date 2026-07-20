@@ -1372,6 +1372,11 @@
   "programEditor.noExercises": "No exercises for this day. Add from catalog or create a custom one.",
   "programEditor.addFromCatalog": "ADD FROM CATALOG",
   "programEditor.customExercise": "CUSTOM EXERCISE",
+  "programEditor.phasesTitle": "PROGRAM PHASES",
+  "programs.createOwn": "Create program",
+  "programs.createOwnHint": "Design your phases, days and exercises",
+  "programEditor.addPhase": "ADD PHASE",
+  "programEditor.stepOf": "Step {{n}} of {{total}}",
 
   "programDetail.cannotConnect": "Cannot connect to the server.",
   "programDetail.today": "today",

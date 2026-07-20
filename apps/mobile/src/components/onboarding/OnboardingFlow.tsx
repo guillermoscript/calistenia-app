@@ -380,6 +380,12 @@ export function OnboardingFlow() {
               userId={userId}
               user={matchUserInput}
               onSelectProgram={handleSelectProgram}
+              onCreateProgram={() => {
+                // Igual que web (App.tsx): cerrar onboarding y abrir el editor (#224)
+                if (userId) markOnboardingDone(userId)
+                op.track('onboarding_create_own_program')
+                router.replace('/program-editor')
+              }}
               onBack={() => goToStep(needsProfile ? trainingStep : 0)}
               onContinue={() => goToStep(personalizingStep)}
             />
