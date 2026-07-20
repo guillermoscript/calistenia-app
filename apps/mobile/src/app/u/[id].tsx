@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { View, ScrollView, Image, ActivityIndicator, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { X, MoreVertical, UserX } from 'lucide-react-native'
+import { X, MoreVertical, UserX, Flag } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
@@ -17,6 +17,8 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
+import { useReports } from '@calistenia/core/hooks/useReports'
+import { ReportReasonSheet } from '@/components/social/ReportReasonSheet'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
@@ -79,6 +81,9 @@ export default function UserProfileScreen() {
   const [followLoading, setFollowLoading] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  // Denuncia de usuario (#220): menú ⋯ → selector de motivo → content_reports
+  const { report } = useReports(currentUserId)
+  const [reportOpen, setReportOpen] = useState(false)
 
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -213,6 +218,14 @@ export default function UserProfileScreen() {
     } finally { setBlockLoading(false) }
   }
 
+  const doReport = async (reason: Parameters<typeof report>[0]['reason']) => {
+    if (!userId) return
+    setReportOpen(false)
+    const ok = await report({ targetType: 'user', targetUserId: userId, reason })
+    if (ok) Alert.alert(t('reports.successTitle'), t('reports.success'))
+    else Alert.alert(t('reports.error'))
+  }
+
   const Header = (
     <View className="flex-row items-start justify-between px-4 pt-2 pb-3">
       <View>
@@ -238,18 +251,26 @@ export default function UserProfileScreen() {
   )
 
   const Menu = canAct ? (
-    <OptionSheet
-      visible={menuOpen}
-      kicker={t('blocks.menuKicker')}
-      title={profile?.displayName ?? t('blocks.menuKicker')}
-      cancelLabel={t('blocks.cancel')}
-      onClose={() => setMenuOpen(false)}
-      options={[
-        blocked
-          ? { key: 'unblock', label: t('blocks.menuUnblock'), icon: UserX, onPress: () => { void doUnblock() } }
-          : { key: 'block', label: t('blocks.menuBlock'), icon: UserX, destructive: true, onPress: confirmBlock },
-      ]}
-    />
+    <>
+      <OptionSheet
+        visible={menuOpen}
+        kicker={t('blocks.menuKicker')}
+        title={profile?.displayName ?? t('blocks.menuKicker')}
+        cancelLabel={t('blocks.cancel')}
+        onClose={() => setMenuOpen(false)}
+        options={[
+          { key: 'report', label: t('reports.menuReport'), icon: Flag, destructive: true, onPress: () => setReportOpen(true) },
+          blocked
+            ? { key: 'unblock', label: t('blocks.menuUnblock'), icon: UserX, onPress: () => { void doUnblock() } }
+            : { key: 'block', label: t('blocks.menuBlock'), icon: UserX, destructive: true, onPress: confirmBlock },
+        ]}
+      />
+      <ReportReasonSheet
+        visible={reportOpen}
+        onClose={() => setReportOpen(false)}
+        onPick={reason => { void doReport(reason) }}
+      />
+    </>
   ) : null
 
   if (loading) {
