@@ -16,6 +16,7 @@ import {
   View,
   Pressable,
   ActivityIndicator,
+  Alert,
   Platform,
   FlatList,
   TextInput,
@@ -33,6 +34,8 @@ import { COMMENT_REACTION_EMOJIS } from '@calistenia/core/hooks/useCommentReacti
 import type { EmojiReactions } from '@calistenia/core/hooks/useReactions'
 import type { CommentEmojiReactions } from '@calistenia/core/hooks/useCommentReactions'
 import type { Comment } from '@calistenia/core/hooks/useComments'
+import { useReports } from '@calistenia/core/hooks/useReports'
+import { ReportReasonSheet } from '@/components/social/ReportReasonSheet'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,6 +124,9 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
     const [sending, setSending] = useState(false)
     // Comentario a resaltar tras un deep-link de notificación (flash lime ~2s).
     const [highlightCommentId, setHighlightCommentId] = useState<string | null>(null)
+    // Comentario ajeno en proceso de denuncia (#220): abre el selector de motivo.
+    const [reportTarget, setReportTarget] = useState<Comment | null>(null)
+    const { report } = useReports(currentUserId)
     const listRef = useRef<FlatList<Comment>>(null)
     const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -365,6 +371,7 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                               ? onDeleteComment(comment.id, sessionId)
                               : Promise.resolve(false)
                           }
+                          onReport={() => setReportTarget(comment)}
                           commentReactions={commentReactions}
                           highlight={comment.id === highlightCommentId}
                         />
@@ -384,6 +391,7 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
                                     ? onDeleteComment(reply.id, sessionId)
                                     : Promise.resolve(false)
                                 }
+                                onReport={() => setReportTarget(reply)}
                                 commentReactions={commentReactions}
                                 isReply
                                 highlight={reply.id === highlightCommentId}
@@ -494,6 +502,29 @@ export const CommentsSheet = forwardRef<CommentsSheetMethods, CommentsSheetProps
             </KeyboardAvoidingView>
           </View>
         </KeyboardProvider>
+
+        {/* Denuncia de comentario ajeno (#220): motivo → content_reports.
+            Va DENTRO del Modal para que su ventana quede por encima. */}
+        <ReportReasonSheet
+          visible={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          onPick={(reason) => {
+            const target = reportTarget
+            setReportTarget(null)
+            if (!target || !sessionId) return
+            void report({
+              targetType: 'comment',
+              targetUserId: target.authorId,
+              commentId: target.id,
+              commentText: target.text,
+              sessionId,
+              reason,
+            }).then((ok) => {
+              if (ok) Alert.alert(t('reports.successTitle'), t('reports.success'))
+              else Alert.alert(t('reports.error'))
+            })
+          }}
+        />
       </Modal>
     )
   },
@@ -506,6 +537,7 @@ interface CommentBubbleProps {
   currentUserId: string | null
   onReply: () => void
   onDelete: () => Promise<boolean>
+  onReport: () => void
   commentReactions?: CommentReactionsHook
   isReply?: boolean
   /** Flash lime al llegar desde una notif que apunta a este comentario. */
@@ -517,10 +549,12 @@ function CommentBubble({
   currentUserId,
   onReply,
   onDelete,
+  onReport,
   commentReactions,
   isReply,
   highlight,
 }: CommentBubbleProps) {
+  const { t } = useTranslation()
   const [showPicker, setShowPicker] = useState(false)
   const isOwn = comment.authorId === currentUserId
 
@@ -634,9 +668,15 @@ function CommentBubble({
             </Text>
           </Pressable>
 
-          {isOwn && (
+          {isOwn ? (
             <Pressable onPress={onDelete} hitSlop={6}>
               <Text className="font-sans text-[11px] text-muted-foreground/35">Eliminar</Text>
+            </Pressable>
+          ) : (
+            <Pressable onPress={onReport} hitSlop={6}>
+              <Text className="font-sans text-[11px] text-muted-foreground/35">
+                {t('reports.commentAction')}
+              </Text>
             </Pressable>
           )}
         </View>

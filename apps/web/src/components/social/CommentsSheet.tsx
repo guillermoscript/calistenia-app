@@ -7,6 +7,8 @@ import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
 import { REACTION_EMOJIS, type EmojiReactions } from '@calistenia/core/hooks/useReactions'
 import { COMMENT_REACTION_EMOJIS, type CommentEmojiReactions } from '@calistenia/core/hooks/useCommentReactions'
 import type { Comment } from '@calistenia/core/hooks/useComments'
+import { useReports } from '@calistenia/core/hooks/useReports'
+import { ReportDialog } from './ReportDialog'
 
 // ── Reaction color map ──────────────────────────────────────────────────────
 
@@ -80,6 +82,9 @@ export function CommentsSheet({
   const [sending, setSending] = useState(false)
   // Comentario a resaltar tras un deep-link de notificación (flash lime ~2s).
   const [flashCommentId, setFlashCommentId] = useState<string | null>(null)
+  // Comentario ajeno en proceso de denuncia (#220): abre el selector de motivo.
+  const [reportTarget, setReportTarget] = useState<Comment | null>(null)
+  const { report } = useReports(currentUserId || null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -253,6 +258,7 @@ export function CommentsSheet({
                     currentUserId={currentUserId}
                     onReply={() => setReplyTo({ id: comment.id, name: comment.authorName })}
                     onDelete={() => onDeleteComment(comment.id, sessionId)}
+                    onReport={() => setReportTarget(comment)}
                     commentReactions={commentReactions}
                     highlight={comment.id === flashCommentId}
                   />
@@ -267,6 +273,7 @@ export function CommentsSheet({
                           currentUserId={currentUserId}
                           onReply={() => setReplyTo({ id: comment.id, name: reply.authorName })}
                           onDelete={() => onDeleteComment(reply.id, sessionId)}
+                          onReport={() => setReportTarget(reply)}
                           commentReactions={commentReactions}
                           isReply
                           highlight={reply.id === flashCommentId}
@@ -350,6 +357,23 @@ export function CommentsSheet({
           </div>
         </div>
       </SheetContent>
+
+      {/* Denuncia de comentario ajeno (#220): motivo → content_reports */}
+      <ReportDialog
+        open={!!reportTarget}
+        onOpenChange={open => { if (!open) setReportTarget(null) }}
+        onSubmit={async reason => {
+          if (!reportTarget) return false
+          return report({
+            targetType: 'comment',
+            targetUserId: reportTarget.authorId,
+            commentId: reportTarget.id,
+            commentText: reportTarget.text,
+            sessionId,
+            reason,
+          })
+        }}
+      />
     </Sheet>
   )
 }
@@ -361,13 +385,14 @@ interface CommentBubbleProps {
   currentUserId: string
   onReply: () => void
   onDelete: () => void
+  onReport: () => void
   commentReactions?: CommentReactionsHook
   isReply?: boolean
   /** Flash lime al llegar desde una notif que apunta a este comentario. */
   highlight?: boolean
 }
 
-function CommentBubble({ comment, currentUserId, onReply, onDelete, commentReactions, isReply, highlight }: CommentBubbleProps) {
+function CommentBubble({ comment, currentUserId, onReply, onDelete, onReport, commentReactions, isReply, highlight }: CommentBubbleProps) {
   const { t } = useTranslation()
   const isOwn = comment.authorId === currentUserId
   const [showReactionPicker, setShowReactionPicker] = useState(false)
@@ -503,12 +528,19 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, commentReact
               </>
             )}
           </div>
-          {isOwn && (
+          {isOwn ? (
             <button
               onClick={onDelete}
               className="text-[11px] text-muted-foreground/40 hover:text-red-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
             >
               {t('common.delete')}
+            </button>
+          ) : (
+            <button
+              onClick={onReport}
+              className="text-[11px] text-muted-foreground/40 hover:text-red-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+            >
+              {t('reports.commentAction')}
             </button>
           )}
         </div>

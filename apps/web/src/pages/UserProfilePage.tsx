@@ -15,6 +15,8 @@ import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
+import { useReports } from '@calistenia/core/hooks/useReports'
+import { ReportDialog } from '../components/social/ReportDialog'
 import { useProfileCompare } from '@calistenia/core/hooks/useProfileCompare'
 import { ShareButton } from '../components/ShareButton'
 import { shareProfile, shareReferralInvite } from '../lib/share'
@@ -72,6 +74,9 @@ export default function UserProfilePage() {
   const blocked = userId ? isBlocked(userId) : false
   const [followLoading, setFollowLoading] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
+  // Denuncia de usuario (#220): abre el selector de motivo
+  const { report } = useReports(currentUserId || null)
+  const [reportOpen, setReportOpen] = useState(false)
   const { stats: referralStats, getReferralStats } = useReferrals(currentUserId || null)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   // Compare: fetch extended stats for both the viewed user and the current user
@@ -325,6 +330,22 @@ export default function UserProfilePage() {
                 </button>
               </>
             )
+          )}
+          {!isOwnProfile && currentUserId && userId && (
+            <>
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="text-[10px] tracking-widest uppercase text-muted-foreground hover:text-red-500 transition-colors self-center px-1 h-9"
+              >
+                {t('reports.commentAction')}
+              </button>
+              <ReportDialog
+                open={reportOpen}
+                onOpenChange={setReportOpen}
+                onSubmit={reason => report({ targetType: 'user', targetUserId: userId, reason })}
+              />
+            </>
           )}
           {userId && (
             <ShareButton
