@@ -43,8 +43,9 @@ import { useDayRollover } from '@/lib/use-day-rollover'
 import { useDailyHealth } from '@/lib/health/useDailyHealth'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
+import { BadgeCelebrationDialog } from '@/components/nutrition/BadgeCelebrationDialog'
 import { SCORE_COLORS } from '@calistenia/core/lib/style-tokens'
-import type { NutritionGoal, NutritionGoalType, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
+import type { BadgeType, NutritionGoal, NutritionGoalType, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
 
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { analyzeMealMobile, urisToBlobs } from '@/lib/nutrition-api'
@@ -378,16 +379,14 @@ export default function NutritionTab() {
     [entries],
   )
 
+  // Badges nuevos → cola del dialog de celebración (#231); el haptic lo
+  // dispara el propio dialog al mostrar cada badge.
+  const [badgeQueue, setBadgeQueue] = useState<BadgeType[]>([])
   useEffect(() => {
     if (!dailyQualityScore || selectedDate !== todayStr()) return
     upsertDailyInsight(selectedDate, dailyQualityScore, entries).then(({ newBadges }) => {
-      for (const badge of newBadges) {
-        const def = BADGE_DEFINITIONS[badge]
-        if (def) {
-          haptics.success()
-          Alert.alert(`${def.icon} ${def.label}`, def.description)
-        }
-      }
+      const earned = newBadges.filter(badge => BADGE_DEFINITIONS[badge])
+      if (earned.length) setBadgeQueue(q => [...q, ...earned])
     }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'upsert_daily_insight' } }) })
   }, [dailyQualityScore, selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1092,6 +1091,12 @@ export default function NutritionTab() {
         rows={loggerVisible ? null : pantryDepletion.rows}
         onConfirm={pantryDepletion.confirm}
         onDismiss={pantryDepletion.dismiss}
+      />
+      {/* Celebración de badges (#231) — mismo gating que PantryDepleteSheet:
+          no montar mientras el logger esté abierto (iOS, Modals hermanos). */}
+      <BadgeCelebrationDialog
+        badges={loggerVisible ? [] : badgeQueue}
+        onDone={() => setBadgeQueue([])}
       />
     </SafeAreaView>
   )
