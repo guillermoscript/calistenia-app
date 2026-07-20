@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Animated as RNAnimated, Easing, View } from 'react-native'
+import { Animated as RNAnimated, Easing, Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { Button } from '@/components/ui/button'
@@ -26,9 +26,11 @@ interface Props {
   pace: Pace | ''
   program: ProgramMeta | null
   onFinish: () => void
+  /** Cierra el onboarding y lleva a registrar la primera medición corporal (#227). */
+  onFirstMeasurement?: () => void
 }
 
-export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program, onFinish }: Props) {
+export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program, onFinish, onFirstMeasurement }: Props) {
   const { t, i18n } = useTranslation()
   const [phase, setPhase] = useState<'loading' | 'preview'>('loading')
   const [msgIndex, setMsgIndex] = useState(0)
@@ -214,6 +216,14 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
             {t('onboarding.startTraining')}
           </Text>
         </Button>
+
+        {onFirstMeasurement && (
+          <Pressable onPress={onFirstMeasurement} hitSlop={8} className="mt-3 items-center py-1">
+            <Text className="font-mono text-[11px] tracking-wide text-muted-foreground underline">
+              {t('onboarding.firstMeasurementCta')}
+            </Text>
+          </Pressable>
+        )}
       </Animated.View>
     </View>
   )

@@ -22,9 +22,11 @@ interface Props {
   pace: Pace | ''
   program: ProgramMeta | null
   onFinish: () => void
+  /** Cierra el onboarding y lleva a registrar la primera medición corporal (#227). */
+  onFirstMeasurement?: () => void
 }
 
-export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program, onFinish }: Props) {
+export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program, onFinish, onFirstMeasurement }: Props) {
   const { t, i18n } = useTranslation()
   const [phase, setPhase] = useState<'loading' | 'preview'>('loading')
   const [msgIndex, setMsgIndex] = useState(0)
@@ -160,6 +162,17 @@ export function StepPersonalizing({ currentWeightKg, goalWeightKg, pace, program
       >
         {t('onboarding.startTraining')}
       </Button>
+
+      {onFirstMeasurement && (
+        <div className="mt-3 text-center">
+          <button
+            onClick={onFirstMeasurement}
+            className="text-[11px] text-muted-foreground tracking-wide underline underline-offset-4 hover:text-lime"
+          >
+            {t('onboarding.firstMeasurementCta')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { Badge } from '../components/ui/badge'
@@ -21,6 +21,7 @@ import OneRepMaxCalculator from '../components/progress/OneRepMaxCalculator'
 import PhotoComparator from '../components/progress/PhotoComparator'
 import PhasePhotoTimeline from '../components/progress/PhasePhotoTimeline'
 import BodyMeasurementsTracker from '../components/progress/BodyMeasurementsTracker'
+import BodyFatPanel from '../components/progress/BodyFatPanel'
 import ExportData from '../components/progress/ExportData'
 import { Input } from '../components/ui/input'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
@@ -80,6 +81,12 @@ export default function ProgressPage() {
   const { progress, settings, activeProgram } = useWorkoutState()
   const { userId } = useAuthState()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  // Deep-link a una tab concreta (p.ej. /progress?tab=cuerpo desde el CTA de
+  // primera medición post-onboarding, #227).
+  const initialTab = ['resumen', 'graficas', 'cuerpo'].includes(searchParams.get('tab') || '')
+    ? searchParams.get('tab')!
+    : 'resumen'
   const { weights } = useWeight(userId || null)
   const { photos, getPhotosByPhase, uploadPhotos } = useBodyPhotos(userId || null)
   const currentPhase = settings.phase || 1
@@ -146,7 +153,7 @@ export default function ProgressPage() {
           </div>
         </div>
       ) : (
-        <Tabs defaultValue="resumen" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="w-full mb-6">
             <TabsTrigger value="resumen" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.summary')}</TabsTrigger>
             <TabsTrigger value="graficas" className="flex-1 text-xs tracking-[1.5px] uppercase">{t('progress.tab.charts')}</TabsTrigger>
@@ -286,6 +293,9 @@ export default function ProgressPage() {
 
             {/* Body Measurements */}
             <BodyMeasurementsTracker userId={userId || null} />
+
+            {/* Body Fat (Navy method) */}
+            <BodyFatPanel userId={userId || null} />
 
             {/* Body Photos */}
             <div className="mb-8">

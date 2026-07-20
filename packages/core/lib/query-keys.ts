@@ -98,6 +98,8 @@ export const qk = {
   // — Cuerpo / salud —
   bodyMeasurements: (userId: string | null) =>
     ['body_measurements', userId] as const,
+  // Sexo + altura + peso actuales para cálculos de composición corporal (#227)
+  bodyProfile: (userId: string | null) => ['body_profile', userId] as const,
   bodyPhotos: (userId: string | null) => ['body_photos', userId] as const,
   // Condiciones médicas + lesiones (colección user_health, #247)
   userHealth: (userId: string | null) => ['user_health', userId] as const,

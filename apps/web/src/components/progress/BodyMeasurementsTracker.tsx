@@ -10,6 +10,7 @@ import { useBodyMeasurements, type BodyMeasurement } from '@calistenia/core/hook
 const FIELDS: { key: keyof BodyMeasurement; labelKey: string; shortKey: string }[] = [
   { key: 'chest', labelKey: 'progress.bodyMeasurements.chest', shortKey: 'progress.bodyMeasurements.chestShort' },
   { key: 'waist', labelKey: 'progress.bodyMeasurements.waist', shortKey: 'progress.bodyMeasurements.waistShort' },
+  { key: 'neck', labelKey: 'progress.bodyMeasurements.neck', shortKey: 'progress.bodyMeasurements.neckShort' },
   { key: 'hips', labelKey: 'progress.bodyMeasurements.hips', shortKey: 'progress.bodyMeasurements.hipsShort' },
   { key: 'arm_left', labelKey: 'progress.bodyMeasurements.armLeft', shortKey: 'progress.bodyMeasurements.armLeftShort' },
   { key: 'arm_right', labelKey: 'progress.bodyMeasurements.armRight', shortKey: 'progress.bodyMeasurements.armRightShort' },
@@ -40,6 +41,7 @@ export default function BodyMeasurementsTracker({ userId }: BodyMeasurementsTrac
         date,
         chest: values.chest ? parseFloat(values.chest) : undefined,
         waist: values.waist ? parseFloat(values.waist) : undefined,
+        neck: values.neck ? parseFloat(values.neck) : undefined,
         hips: values.hips ? parseFloat(values.hips) : undefined,
         arm_left: values.arm_left ? parseFloat(values.arm_left) : undefined,
         arm_right: values.arm_right ? parseFloat(values.arm_right) : undefined,

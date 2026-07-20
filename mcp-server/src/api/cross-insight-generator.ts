@@ -68,6 +68,8 @@ interface InsightDayRow {
   sleepMinutes?: number;
   sleepQuality?: number;
   weightKg?: number;
+  waistCm?: number;
+  bodyFatPct?: number;
   steps?: number;
   restingHr?: number;
   hrvMs?: number;
@@ -84,6 +86,9 @@ interface InsightSummary {
   water: { daysLogged: number; avgMl: number | null };
   sleep: { daysLogged: number; avgMinutes: number | null; avgQuality: number | null };
   weight: { firstKg: number | null; lastKg: number | null; deltaKg: number | null };
+  // Composición corporal (#227) — puede faltar en contexts generados por cores viejos.
+  waist?: { firstCm: number | null; lastCm: number | null; deltaCm: number | null };
+  bodyFat?: { firstPct: number | null; lastPct: number | null; deltaPct: number | null };
   watch: { available: boolean; avgSteps: number | null; avgRestingHr: number | null; avgHrvMs: number | null };
   streaks: { currentTrainingStreak: number; longestTrainingStreak: number };
 }
@@ -130,6 +135,12 @@ function buildUserText(ctx: InsightContext): string {
   lines.push(`- Agua: registrada ${s.water.daysLogged} días · ~${n0(s.water.avgMl)} ml/día.`);
   lines.push(`- Sueño: registrado ${s.sleep.daysLogged} días · ~${n0(s.sleep.avgMinutes)} min/noche · calidad ~${n1(s.sleep.avgQuality)}/5.`);
   lines.push(`- Peso: ${n1(s.weight.firstKg)} kg → ${n1(s.weight.lastKg)} kg (Δ ${s.weight.deltaKg == null ? "?" : n1(s.weight.deltaKg)} kg).`);
+  if (s.waist?.firstCm != null) {
+    lines.push(`- Cintura: ${n1(s.waist.firstCm)} cm → ${n1(s.waist.lastCm)} cm (Δ ${s.waist.deltaCm == null ? "?" : n1(s.waist.deltaCm)} cm). Peso estable + cintura bajando sugiere recomposición.`);
+  }
+  if (s.bodyFat?.firstPct != null) {
+    lines.push(`- Grasa corporal estimada (método Navy, cinta métrica): ${n1(s.bodyFat.firstPct)}% → ${n1(s.bodyFat.lastPct)}% (Δ ${s.bodyFat.deltaPct == null ? "?" : n1(s.bodyFat.deltaPct)} pts).`);
+  }
   if (watchAvailable) {
     lines.push(`- Reloj: ~${n0(s.watch.avgSteps)} pasos/día · FC reposo ~${n0(s.watch.avgRestingHr)} bpm · HRV ~${n0(s.watch.avgHrvMs)} ms.`);
   } else {
@@ -165,6 +176,12 @@ function buildUserText(ctx: InsightContext): string {
     lines.push(`- Agua: ${p.water.daysLogged} días · ~${n0(p.water.avgMl)} ml/día.`);
     lines.push(`- Sueño: ${p.sleep.daysLogged} días · ~${n0(p.sleep.avgMinutes)} min/noche · calidad ~${n1(p.sleep.avgQuality)}/5.`);
     lines.push(`- Peso: ${n1(p.weight.firstKg)} → ${n1(p.weight.lastKg)} kg (Δ ${p.weight.deltaKg == null ? "?" : n1(p.weight.deltaKg)} kg).`);
+    if (p.waist?.firstCm != null) {
+      lines.push(`- Cintura: ${n1(p.waist.firstCm)} → ${n1(p.waist.lastCm)} cm (Δ ${p.waist.deltaCm == null ? "?" : n1(p.waist.deltaCm)} cm).`);
+    }
+    if (p.bodyFat?.firstPct != null) {
+      lines.push(`- Grasa corporal estimada: ${n1(p.bodyFat.firstPct)}% → ${n1(p.bodyFat.lastPct)}%.`);
+    }
   }
 
   lines.push("");
@@ -178,6 +195,8 @@ function buildUserText(ctx: InsightContext): string {
     if (r.waterMl != null) parts.push(`agua ${n0(r.waterMl)}ml`);
     if (r.sleepMinutes != null) parts.push(`sueño ${n0(r.sleepMinutes)}min${r.sleepQuality != null ? `(cal ${n1(r.sleepQuality)})` : ""}`);
     if (r.weightKg != null) parts.push(`peso ${n1(r.weightKg)}kg`);
+    if (r.waistCm != null) parts.push(`cintura ${n1(r.waistCm)}cm`);
+    if (r.bodyFatPct != null) parts.push(`grasa ${n1(r.bodyFatPct)}%`);
     if (r.steps != null) parts.push(`${n0(r.steps)}pasos`);
     if (r.restingHr != null) parts.push(`FC ${n0(r.restingHr)}`);
     if (r.hrvMs != null) parts.push(`HRV ${n0(r.hrvMs)}`);

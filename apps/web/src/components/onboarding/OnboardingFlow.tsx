@@ -25,6 +25,8 @@ interface OnboardingFlowProps {
   onSelectProgram: (programId: string) => Promise<boolean>
   onCreateProgram: () => void
   onComplete: () => void
+  /** Cierra el onboarding navegando a la primera medición corporal (#227). */
+  onFirstMeasurement?: () => void
 }
 
 const EMPTY_BASICS: BasicsValues = {
@@ -52,6 +54,7 @@ export default function OnboardingFlow({
   onSelectProgram,
   onCreateProgram,
   onComplete,
+  onFirstMeasurement,
 }: OnboardingFlowProps) {
   // Detect if profile data is missing (e.g. Google OAuth signup or skipped step).
   // Freeze at mount: otherwise saving the profile mid-flow re-numbers the steps
@@ -219,9 +222,10 @@ export default function OnboardingFlow({
     goToStep(programStep)
   }
 
-  const handleFinish = () => {
+  const handleFinish = (destination: 'home' | 'measurements' = 'home') => {
     markOnboardingDone(userId)
     op.track('onboarding_completed', {
+      first_measurement_cta: destination === 'measurements',
       level: training.level || 'unknown',
       primary_goal: goals.primary_goal || 'unknown',
       has_program: !!selectedProgramId,
@@ -232,7 +236,8 @@ export default function OnboardingFlow({
       focus_areas_count: training.focus_areas.length,
       training_days_count: training.training_days.length,
     })
-    onComplete()
+    if (destination === 'measurements' && onFirstMeasurement) onFirstMeasurement()
+    else onComplete()
   }
 
   const { t, i18n } = useTranslation()
@@ -359,7 +364,8 @@ export default function OnboardingFlow({
             goalWeightKg={parseDecimal(goals.goal_weight)}
             pace={goals.pace}
             program={programs.find(p => p.id === selectedProgramId) ?? null}
-            onFinish={handleFinish}
+            onFinish={() => handleFinish()}
+            onFirstMeasurement={onFirstMeasurement ? () => handleFinish('measurements') : undefined}
           />
         )}
       </div>
