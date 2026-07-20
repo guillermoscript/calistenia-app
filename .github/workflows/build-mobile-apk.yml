@@ -208,6 +208,35 @@ jobs:
         with:
           name: calistenia-apk
 
+      # Only tag-push releases have a curated changelog.mobile.json entry
+      # (written by `pnpm release:mobile` before tagging) — a manual
+      # workflow_dispatch build has no version bump to look up, so it keeps
+      # using the release_notes input instead.
+      - name: Checkout repository
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Extract release notes from curated changelog
+        if: github.event_name != 'workflow_dispatch'
+        id: notes
+        run: |
+          if BODY=$(node scripts/extract-changelog-entry.mjs "${{ needs.build.outputs.version }}"); then
+            echo "$BODY"
+          else
+            BODY='Automated build'
+          fi
+          {
+            echo "body<<CHANGELOG_EOF"
+            echo "$BODY"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -216,7 +245,7 @@ jobs:
           body: |
             ## Calistenia ${{ needs.build.outputs.version }}
 
-            ${{ github.event.inputs.release_notes || 'Automated build' }}
+            ${{ steps.notes.outputs.body || github.event.inputs.release_notes || 'Automated build' }}
 
             ### Instalar
             1. Descarga el archivo APK de abajo

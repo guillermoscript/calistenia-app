@@ -10,6 +10,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # commitlint needs the PR's base commit to diff against — the
+          # husky commit-msg hook only guards local commits (skippable with
+          # --no-verify), so this is the one check that can't be bypassed.
+          fetch-depth: 0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -22,6 +27,10 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Lint commit messages (PR only)
+        if: github.event_name == 'pull_request'
+        run: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
 
       - name: Typecheck (all workspaces)
         run: pnpm -r typecheck

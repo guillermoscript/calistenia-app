@@ -17,6 +17,7 @@
     "pb:migrate": "node scripts/pb-migrate.js",
     "changelog:mobile": "node scripts/generate-changelog-ai.mjs",
     "changelog:md": "node scripts/generate-changelog-md.mjs",
+    "changelog:notes": "node scripts/extract-changelog-entry.mjs",
     "release:web": "node scripts/release-web.mjs",
     "release:mobile": "node scripts/release-mobile.mjs",
     "validate:catalog": "node scripts/validate-exercise-catalog.mjs packages/core/data/exercise-catalog.json",
