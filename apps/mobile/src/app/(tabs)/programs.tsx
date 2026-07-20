@@ -3,7 +3,7 @@ import { View, FlatList, Pressable, ScrollView, RefreshControl } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, BadgeCheck, Dumbbell, Search, X } from 'lucide-react-native'
+import { ChevronRight, BadgeCheck, Dumbbell, Plus, Search, X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { MenuButton } from '@/components/QuickMenu'
@@ -185,6 +185,23 @@ export default function ProgramsScreen() {
                 </Text>
               </View>
               <ChevronRight size={18} color={LIME} />
+            </Pressable>
+
+            {/* Editor de programas nativo (#223) */}
+            <Pressable
+              onPress={() => router.push('/program-editor')}
+              className="flex-row items-center gap-3 rounded-xl border border-dashed border-border px-4 py-3.5 active:border-lime/50 active:opacity-80"
+            >
+              <View className="h-8 w-8 items-center justify-center rounded-full bg-muted/60">
+                <Plus size={16} color="#888899" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground">{t('programs.createOwn')}</Text>
+                <Text className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {t('programs.createOwnHint')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="#888899" />
             </Pressable>
 
             <Text className="px-0.5 font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground/70">

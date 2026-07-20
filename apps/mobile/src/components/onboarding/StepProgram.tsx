@@ -22,6 +22,8 @@ interface Props {
   userId?: string
   user: MatchUserInput
   onSelectProgram: (programId: string) => void
+  /** Abre el editor de programas nativo (#224, paridad con web). */
+  onCreateProgram: () => void
   onBack: () => void
   onContinue: () => void
 }
@@ -144,7 +146,7 @@ const ProgramItem = memo(function ProgramItem({ item, isSelected, userId, onSele
 
 export function StepProgram({
   programs, selectedProgramId, selecting, userId, user,
-  onSelectProgram, onBack, onContinue,
+  onSelectProgram, onCreateProgram, onBack, onContinue,
 }: Props) {
   const { t } = useTranslation()
 
@@ -210,6 +212,16 @@ export function StepProgram({
         showsVerticalScrollIndicator={false}
         scrollEnabled={true}
       />
+
+      {/* Card "crear tu propio programa" (#224) — espejo de web StepProgram:172-181 */}
+      <Pressable
+        onPress={onCreateProgram}
+        className="items-center rounded-xl border-2 border-dashed border-border py-3.5 active:border-lime/50 active:opacity-80"
+      >
+        <Text className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+          {t('onboarding.createOwn')}
+        </Text>
+      </Pressable>
 
       <View className="flex-row gap-3 mt-3">
         <Button variant="outline" onPress={onBack} className="flex-1 h-11">
