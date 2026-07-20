@@ -235,11 +235,12 @@ export function OnboardingFlow() {
     goToStep(programStep)
   }
 
-  const handleFinish = () => {
+  const handleFinish = (destination: 'home' | 'measurements' = 'home') => {
     if (userId) {
       markOnboardingDone(userId)
     }
     op.track('onboarding_completed', {
+      first_measurement_cta: destination === 'measurements',
       level: training.level || 'unknown',
       primary_goal: goals.primary_goal || 'unknown',
       has_program: !!selectedProgramId,
@@ -251,6 +252,9 @@ export function OnboardingFlow() {
       training_days_count: training.training_days.length,
     })
     router.replace('/(tabs)')
+    // Deep-link a la primera medición corporal (#227): la pantalla stacked se
+    // apila sobre las tabs para que "atrás" caiga en la app normal.
+    if (destination === 'measurements') router.push('/body-measurements' as never)
   }
 
   const firstName = displayName?.split(/[\s@]/)[0] ?? ''
@@ -397,7 +401,8 @@ export function OnboardingFlow() {
               goalWeightKg={parseDecimal(goals.goal_weight)}
               pace={goals.pace}
               program={programs.find((p) => p.id === selectedProgramId) ?? null}
-              onFinish={handleFinish}
+              onFinish={() => handleFinish()}
+              onFirstMeasurement={() => handleFinish('measurements')}
             />
           ) : null}
         </Animated.View>

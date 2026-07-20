@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
-import { makeOptimisticListHandlers } from '../lib/optimistic'
+import { makeOptimisticListHandlers, type OptimisticContext } from '../lib/optimistic'
 
 const LS_KEY = 'calistenia_body_measurements'
 
@@ -12,6 +12,7 @@ export interface BodyMeasurement {
   date: string
   chest?: number
   waist?: number
+  neck?: number
   hips?: number
   arm_left?: number
   arm_right?: number
@@ -60,6 +61,7 @@ export function useBodyMeasurements(userId: string | null = null): UseBodyMeasur
         date: r.date?.split(' ')[0] || r.date,
         chest: r.chest || undefined,
         waist: r.waist || undefined,
+        neck: r.neck || undefined,
         hips: r.hips || undefined,
         arm_left: r.arm_left || undefined,
         arm_right: r.arm_right || undefined,
@@ -81,6 +83,7 @@ export function useBodyMeasurements(userId: string | null = null): UseBodyMeasur
           date: m.date + ' 00:00:00',
           chest: m.chest || null,
           waist: m.waist || null,
+          neck: m.neck || null,
           hips: m.hips || null,
           arm_left: m.arm_left || null,
           arm_right: m.arm_right || null,
@@ -124,7 +127,9 @@ export function useBodyMeasurements(userId: string | null = null): UseBodyMeasur
     lsSet,
   )
 
-  const deleteMutation = useMutation<void, Error, string>({
+  // TContext explícito: sin él queda `unknown` y el onError tipado de los
+  // handlers no es asignable bajo strictFunctionTypes (tsconfig de mobile).
+  const deleteMutation = useMutation<void, Error, string, OptimisticContext<BodyMeasurement[]>>({
     mutationFn: async (id) => {
       if (userId && !id.startsWith('local_')) {
         await pb.collection('body_measurements').delete(id).catch(() => {})

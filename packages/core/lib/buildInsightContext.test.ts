@@ -141,6 +141,36 @@ describe('buildDayRows', () => {
   })
 })
 
+describe('buildDayRows — medidas corporales (#227)', () => {
+  const merged = {
+    ...emptyMonthActivity(),
+    measurementByDate: {
+      // Con cuello → cintura + BF% (hombre 177.8cm: 85.09/38.1 → 16.5)
+      '2026-06-26': { id: 'm1', date: '2026-06-26', waist: 85.09, neck: 38.1 },
+      // Sin cuello → solo cintura
+      '2026-06-28': { id: 'm2', date: '2026-06-28', waist: 84 },
+      // Sin cintura → sin fila
+      '2026-06-29': { id: 'm3', date: '2026-06-29' },
+    },
+  } as unknown as MonthActivity
+
+  it('con perfil completo añade waistCm y bodyFatPct cuando hay cuello', () => {
+    const rows = buildDayRows(merged, {}, {}, '2026-06-25', '2026-07-01', { sex: 'male', heightCm: 177.8 })
+    const byDate = new Map(rows.map((r) => [r.date, r]))
+    expect(byDate.get('2026-06-26')).toMatchObject({ waistCm: 85.09, bodyFatPct: 16.5 })
+    expect(byDate.get('2026-06-28')).toMatchObject({ waistCm: 84 })
+    expect(byDate.get('2026-06-28')!.bodyFatPct).toBeUndefined()
+    expect(byDate.has('2026-06-29')).toBe(false)
+  })
+
+  it('sin perfil (sexo/altura) las filas llevan cintura pero no BF%', () => {
+    const rows = buildDayRows(merged, {}, {}, '2026-06-25', '2026-07-01')
+    const byDate = new Map(rows.map((r) => [r.date, r]))
+    expect(byDate.get('2026-06-26')).toMatchObject({ waistCm: 85.09 })
+    expect(byDate.get('2026-06-26')!.bodyFatPct).toBeUndefined()
+  })
+})
+
 describe('previousWindow', () => {
   it('weekly window: returns the 7 days immediately before start, no overlap', () => {
     expect(previousWindow('2026-06-25', 7)).toEqual({ end: '2026-06-24', start: '2026-06-18' })
@@ -148,6 +178,25 @@ describe('previousWindow', () => {
 
   it('monthly window crossing a month boundary (Mar 1 → Feb 28, non-leap year)', () => {
     expect(previousWindow('2026-03-01', 30)).toEqual({ end: '2026-02-28', start: '2026-01-30' })
+  })
+})
+
+describe('summarizeRows — cintura/BF% (#227)', () => {
+  it('first/last/delta de cintura y BF%, mismo patrón que el peso', () => {
+    const rows: InsightDayRow[] = [
+      { date: '2026-06-25', waistCm: 86, bodyFatPct: 17.2 },
+      { date: '2026-06-28', waistCm: 85 },
+      { date: '2026-07-01', waistCm: 84.5, bodyFatPct: 16.4 },
+    ]
+    const summary = summarizeRows(rows, 7, '2026-07-01', false)
+    expect(summary.waist).toEqual({ firstCm: 86, lastCm: 84.5, deltaCm: -1.5 })
+    expect(summary.bodyFat).toEqual({ firstPct: 17.2, lastPct: 16.4, deltaPct: -0.8 })
+  })
+
+  it('sin medidas → bloques a null', () => {
+    const summary = summarizeRows([], 7, '2026-07-01', false)
+    expect(summary.waist).toEqual({ firstCm: null, lastCm: null, deltaCm: null })
+    expect(summary.bodyFat).toEqual({ firstPct: null, lastPct: null, deltaPct: null })
   })
 })
 

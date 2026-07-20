@@ -34,10 +34,15 @@ export interface WeightEntryLite {
   note?: string
 }
 
-// Medidas corporales (cinta métrica) — el calendario solo necesita presencia + fecha.
+// Medidas corporales (cinta métrica) — el calendario solo necesita presencia +
+// fecha; cintura/cuello/cadera alimentan la señal de composición corporal de
+// los insights (#227) y son opcionales por registro.
 export interface BodyMeasurementLite {
   id: string
   date: string
+  waist?: number
+  neck?: number
+  hips?: number
 }
 
 // Foto de progreso individual (id + URL servible desde PocketBase).
@@ -172,7 +177,7 @@ export async function fetchMonthActivity(
     pb.collection('body_measurements').getList(1, 62, {
       filter: dateRange,
       sort: '-date',
-      fields: 'id,date',
+      fields: 'id,date,waist,neck,hips',
     }),
     pb.collection('body_photos').getList(1, 300, {
       filter: dateRange,

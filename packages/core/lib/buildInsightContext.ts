@@ -19,7 +19,15 @@ import { pb } from './pocketbase'
 import { todayStr, addDays, utcToLocalDateStr, localMidnightAsUTC, diffDays } from './dateUtils'
 import { fetchMonthActivity, emptyMonthActivity, type MonthActivity } from './monthActivity'
 import { bedtimeConsistencyMinutes, pctTrue, avgDefined } from './sleepStats'
-import type { DailyHealthSummary } from '../types'
+import { estimateBodyFatNavy } from './body-composition'
+import type { DailyHealthSummary, Sex } from '../types'
+
+// Sexo + altura para estimar BF% (método Navy) por fila de medidas (#227).
+// Opcional: sin él (o incompleto) las filas llevan cintura pero no bodyFatPct.
+export interface InsightBodyProfile {
+  sex?: Sex
+  heightCm?: number
+}
 
 export interface InsightDayRow {
   date: string // YYYY-MM-DD local
@@ -40,6 +48,8 @@ export interface InsightDayRow {
   stressLevel?: number
   bedtime?: string // "HH:MM"
   weightKg?: number
+  waistCm?: number // medidas corporales (#227)
+  bodyFatPct?: number // estimado Navy, solo si hay cintura+cuello (+cadera mujer) y sexo/altura
   steps?: number // reloj (daily_health_cache)
   restingHr?: number
   hrvMs?: number
@@ -65,6 +75,10 @@ export interface InsightSummary {
     bedtimeConsistencyMin: number
   }
   weight: { firstKg: number | null; lastKg: number | null; deltaKg: number | null }
+  // Composición corporal (#227): tendencia de cintura y % grasa estimado (Navy).
+  // Con peso estable + cintura bajando el LLM puede leer recomposición.
+  waist: { firstCm: number | null; lastCm: number | null; deltaCm: number | null }
+  bodyFat: { firstPct: number | null; lastPct: number | null; deltaPct: number | null }
   watch: { available: boolean; avgSteps: number | null; avgRestingHr: number | null; avgHrvMs: number | null }
   streaks: { currentTrainingStreak: number; longestTrainingStreak: number }
 }
@@ -154,6 +168,7 @@ export function buildDayRows(
   watchByDate: Record<string, { steps?: number; restingHr?: number; hrvMs?: number; vo2max?: number }>,
   start: string,
   end: string,
+  bodyProfile?: InsightBodyProfile,
 ): InsightDayRow[] {
   const inRange = (date: string): boolean => date >= start && date <= end
   const map = new Map<string, InsightDayRow>()
@@ -215,6 +230,24 @@ export function buildDayRows(
   for (const [date, w] of Object.entries(merged.weightByDate)) {
     if (!inRange(date)) continue
     ensure(date).weightKg = w.weight_kg
+  }
+
+  // Medidas corporales (#227): cintura como señal directa; BF% Navy solo si el
+  // registro trae cintura+cuello (+cadera en mujeres) y hay sexo/altura.
+  for (const [date, m] of Object.entries(merged.measurementByDate)) {
+    if (!inRange(date) || !m.waist) continue
+    const row = ensure(date)
+    row.waistCm = m.waist
+    if (m.neck && bodyProfile?.sex && bodyProfile.heightCm) {
+      const pct = estimateBodyFatNavy({
+        sex: bodyProfile.sex,
+        heightCm: bodyProfile.heightCm,
+        waistCm: m.waist,
+        neckCm: m.neck,
+        hipsCm: m.hips,
+      })
+      if (pct != null) row.bodyFatPct = pct
+    }
   }
 
   for (const [date, s] of Object.entries(strengthByDate)) {
@@ -291,6 +324,17 @@ export function summarizeRows(
   const lastKg = weightRows.length > 0 ? weightRows[weightRows.length - 1].weightKg! : null
   const deltaKg = firstKg !== null && lastKg !== null ? round2(lastKg - firstKg) : null
 
+  // Cintura y BF% (#227): mismo patrón first/last/delta que el peso.
+  const waistRows = sorted.filter((r) => r.waistCm !== undefined)
+  const firstCm = waistRows.length > 0 ? waistRows[0].waistCm! : null
+  const lastCm = waistRows.length > 0 ? waistRows[waistRows.length - 1].waistCm! : null
+  const deltaCm = firstCm !== null && lastCm !== null ? round1(lastCm - firstCm) : null
+
+  const bfRows = sorted.filter((r) => r.bodyFatPct !== undefined)
+  const firstPct = bfRows.length > 0 ? bfRows[0].bodyFatPct! : null
+  const lastPct = bfRows.length > 0 ? bfRows[bfRows.length - 1].bodyFatPct! : null
+  const deltaPct = firstPct !== null && lastPct !== null ? round1(lastPct - firstPct) : null
+
   const stepsDays = countDefined((r) => r.steps)
   const hrDays = countDefined((r) => r.restingHr)
   const hrvDays = countDefined((r) => r.hrvMs)
@@ -335,6 +379,8 @@ export function summarizeRows(
       bedtimeConsistencyMin,
     },
     weight: { firstKg, lastKg, deltaKg },
+    waist: { firstCm, lastCm, deltaCm },
+    bodyFat: { firstPct, lastPct, deltaPct },
     watch: {
       available: watchAvailable,
       avgSteps: watchAvailable && stepsDays > 0 ? Math.round(sum((r) => r.steps) / stepsDays) : null,
@@ -359,6 +405,7 @@ async function fetchWindow(
   start: string,
   end: string,
   days: number,
+  bodyProfile?: InsightBodyProfile,
 ): Promise<{ rows: InsightDayRow[]; summary: InsightSummary; watchAvailable: boolean }> {
   // 1. Calendario (cardio/circuitos/nutrición/agua/sueño/peso), un fetch por
   // mes calendario que la ventana toca, combinados en uno solo.
@@ -427,7 +474,7 @@ async function fetchWindow(
     console.warn('buildInsightContext: daily_health_cache fetch failed', err)
   }
 
-  const rows = buildDayRows(merged, strengthByDate, watchByDate, start, end)
+  const rows = buildDayRows(merged, strengthByDate, watchByDate, start, end, bodyProfile)
   const summary = summarizeRows(rows, days, end, watchAvailable)
 
   return { rows, summary, watchAvailable }
@@ -454,13 +501,32 @@ export async function buildInsightContext(
   const start = addDays(end, -(days - 1))
   const period: InsightContext['period'] = { type: days === 7 ? 'weekly' : 'monthly', days, start, end }
 
-  const current = await fetchWindow(userId, start, end, days)
+  // Sexo + altura para BF% (#227). SECUENCIAL antes de las ventanas (mismo
+  // gotcha de auto-cancel de PocketBase). Degrada a perfil vacío si falla.
+  const bodyProfile: InsightBodyProfile = {}
+  try {
+    const user = await pb.collection('users').getOne(userId, { fields: 'height' })
+    bodyProfile.heightCm = Number((user as { height?: number }).height) || undefined
+  } catch (err) {
+    console.warn('buildInsightContext: user height fetch failed', err)
+  }
+  try {
+    const goals = await pb.collection('nutrition_goals').getFirstListItem(
+      pb.filter('user = {:uid}', { uid: userId }),
+      { fields: 'sex' },
+    )
+    bodyProfile.sex = ((goals as { sex?: string }).sex as Sex) || undefined
+  } catch (err) {
+    console.warn('buildInsightContext: nutrition_goals sex fetch failed', err)
+  }
+
+  const current = await fetchWindow(userId, start, end, days, bodyProfile)
 
   let previousSummary: InsightSummary | undefined
   if (withPrevious) {
     const prev = previousWindow(start, days)
     try {
-      const prevWindow = await fetchWindow(userId, prev.start, prev.end, days)
+      const prevWindow = await fetchWindow(userId, prev.start, prev.end, days, bodyProfile)
       previousSummary = prevWindow.summary
     } catch (err) {
       console.warn('buildInsightContext: previous window fetch failed', err)

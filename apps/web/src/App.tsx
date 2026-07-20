@@ -631,6 +631,7 @@ function AuthenticatedApp({
         userId={user.id} user={user} onSelectProgram={selectProgram}
         onCreateProgram={() => { markOnboardingDone(user.id); setOnboardingDone(true); navigate('/programs/new') }}
         onComplete={() => { setOnboardingDone(true); navigate('/') }}
+        onFirstMeasurement={() => { setOnboardingDone(true); navigate('/progress?tab=cuerpo') }}
       />
     )
   }
