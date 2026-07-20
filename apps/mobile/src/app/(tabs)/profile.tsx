@@ -1,11 +1,12 @@
 // Versión compacta del ProfilePage web: identidad, idioma, cuenta y sesión.
 // Los campos extensos (peso/altura/salud/timezone) siguen solo en la web.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
+import { useQueryClient } from '@tanstack/react-query'
 import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Camera, UserX, Compass } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 
@@ -22,10 +23,21 @@ import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
+import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
+import { parseDecimal } from '@calistenia/core/lib/bmi'
+import type { ActivityLevel } from '@/components/onboarding/StepGoals'
 import { Sentry } from '@/lib/instrument'
 
 type SaveState = 'idle' | 'saving' | 'saved'
+
+const ACTIVITY_LEVEL_IDS: ActivityLevel[] = ['sedentary', 'light', 'active', 'very_active']
+const ACTIVITY_LEVEL_LABEL_KEYS: Record<ActivityLevel, string> = {
+  sedentary: 'onboarding.activitySedentary',
+  light: 'onboarding.activityLight',
+  active: 'onboarding.activityActive',
+  very_active: 'onboarding.activityVeryActive',
+}
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation()
@@ -39,6 +51,7 @@ export default function ProfileScreen() {
   const lime = colorScheme === 'dark' ? 'hsl(74 90% 57%)' : 'hsl(74 90% 38%)'
   const muted = 'hsl(0 0% 45%)'
 
+  const queryClient = useQueryClient()
   const [name, setName] = useState((user?.display_name as string) || (user?.name as string) || '')
   // Multimoneda (USD de referencia): moneda en la que el user habla en la despensa
   const { prefs: currencyPrefs, setDefaultCurrency } = useUserCurrency((user?.id as string) ?? null)
@@ -46,6 +59,25 @@ export default function ProfileScreen() {
   const [themeMode, setThemeModeState] = useState<ThemeMode>(getThemeMode)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [discoverOpen, setDiscoverOpen] = useState(false)
+
+  // Cuerpo (#243 F4a): peso/altura/edad/sexo/actividad — hoy solo editables en
+  // web; se portan aquí para que el objetivo nutricional 'auto' pueda seguir
+  // recalculándose cuando el usuario actualiza su perfil desde el móvil.
+  const [weight, setWeight] = useState('')
+  const [height, setHeight] = useState('')
+  const [age, setAge] = useState('')
+  const [sex, setSex] = useState<'' | 'male' | 'female'>('')
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | ''>('')
+  const [bodySaveState, setBodySaveState] = useState<SaveState>('idle')
+  // No permitir guardar hasta que carguen los datos actuales (ni si la carga
+  // falla): guardar con los campos vacíos borraría peso/altura/edad/sexo/
+  // actividad ya guardados. (#243 F4a)
+  const [bodyLoaded, setBodyLoaded] = useState(false)
+  // Edad/sexo son PII ocultos en `users` (fix GHSA-wwj3-9h95-wcpf): no se
+  // serializan ni se pueden escribir con token de usuario. Su fuente fiable es
+  // la fila de `nutrition_goals` (protegida per-user), que además es lo que
+  // consume el cálculo de calorías. Guardamos su id para poder actualizarla.
+  const [bodyGoalId, setBodyGoalId] = useState<string | null>(null)
 
   const changeTheme = (mode: ThemeMode) => {
     setThemeMode(mode)
@@ -65,6 +97,74 @@ export default function ProfileScreen() {
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_display_name' } })
       setSaveState('idle')
+    }
+  }
+
+  // Carga peso/altura/edad/sexo/actividad guardados (no vienen en el modelo
+  // de auth) para poder editarlos aquí.
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        // Peso/altura/actividad viven en `users` (no ocultos).
+        const rec: any = await pb.collection('users').getOne(user.id)
+        if (cancelled) return
+        setWeight(rec.weight ? String(rec.weight) : '')
+        setHeight(rec.height ? String(rec.height) : '')
+        setActivityLevel((rec.activity_level as ActivityLevel) || '')
+        // Edad/sexo desde la fila de nutrition_goals (PII protegida). Si el
+        // usuario aún no tiene objetivo, quedan vacíos y solo se fijarán al
+        // crear uno (el wizard los pide). (#243 F4a)
+        try {
+          const goal: any = await pb.collection('nutrition_goals').getFirstListItem(
+            pb.filter('user = {:uid}', { uid: user.id }), { $autoCancel: false },
+          )
+          if (cancelled) return
+          setBodyGoalId(goal.id)
+          setAge(goal.age ? String(goal.age) : '')
+          setSex((goal.sex as 'male' | 'female') || '')
+        } catch { /* sin objetivo todavía: edad/sexo vacíos */ }
+        if (!cancelled) setBodyLoaded(true)
+      } catch (e) {
+        Sentry.captureException(e, { tags: { feature: 'profile', op: 'load_body_fields' } })
+      }
+    })()
+    return () => { cancelled = true }
+  }, [user?.id])
+
+  const handleSaveBody = async () => {
+    if (!user || bodySaveState === 'saving' || !bodyLoaded) return
+    setBodySaveState('saving')
+    try {
+      // Peso/altura/actividad → `users` (campos no ocultos).
+      await pb.collection('users').update(user.id, {
+        weight: parseDecimal(weight),
+        height: parseDecimal(height),
+        activity_level: activityLevel || '',
+      })
+      // Edad/sexo → fila de `nutrition_goals` (PII protegida; en `users` están
+      // ocultos y no se pueden escribir con token de usuario). Solo si ya hay
+      // objetivo; el recompute de abajo la releerá desde ahí. (#243 F4a)
+      if (bodyGoalId) {
+        await pb.collection('nutrition_goals').update(bodyGoalId, {
+          age: age ? parseInt(age, 10) : null,
+          sex: sex || '',
+        }).catch((e) => {
+          Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_age_sex' } })
+        })
+      }
+      setBodySaveState('saved')
+      setTimeout(() => setBodySaveState('idle'), 2000)
+      // Reactivo (#243 F3): si el goal nutricional guardado es 'auto', refresca
+      // sus macros con los datos corporales recién guardados. Best-effort — un
+      // fallo aquí no debe bloquear el feedback de guardado de arriba.
+      recomputeAutoNutritionGoal(user.id, queryClient).catch((e) => {
+        Sentry.captureException(e, { tags: { feature: 'profile', op: 'recompute_auto_goal' } })
+      })
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_fields' } })
+      setBodySaveState('idle')
     }
   }
 
@@ -122,6 +222,98 @@ export default function ProfileScreen() {
                 </Button>
               </View>
             </View>
+          </CardContent>
+        </Card>
+
+        {/* Cuerpo (#243 F4a): alimenta el objetivo nutricional 'auto' */}
+        <Card>
+          <CardContent className="gap-4 py-5">
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+              {t('profile.sectionBody')}
+            </Text>
+
+            <View className="flex-row gap-3">
+              <View className="flex-1 gap-1.5">
+                <Text className="text-[11px] text-muted-foreground">{t('profile.weight')}</Text>
+                <Input
+                  value={weight}
+                  onChangeText={setWeight}
+                  placeholder={t('profile.weightPlaceholder')}
+                  keyboardType="decimal-pad"
+                  className="h-11"
+                />
+              </View>
+              <View className="flex-1 gap-1.5">
+                <Text className="text-[11px] text-muted-foreground">{t('profile.height')}</Text>
+                <Input
+                  value={height}
+                  onChangeText={setHeight}
+                  placeholder={t('profile.heightPlaceholder')}
+                  keyboardType="decimal-pad"
+                  className="h-11"
+                />
+              </View>
+              <View className="flex-1 gap-1.5">
+                <Text className="text-[11px] text-muted-foreground">{t('profile.age')}</Text>
+                <Input
+                  value={age}
+                  onChangeText={setAge}
+                  placeholder={t('profile.agePlaceholder')}
+                  keyboardType="number-pad"
+                  className="h-11"
+                />
+              </View>
+            </View>
+
+            <View className="gap-1.5">
+              <Text className="text-[11px] text-muted-foreground">{t('profile.sex')}</Text>
+              <View className="flex-row gap-2">
+                {([['male', t('profile.male')], ['female', t('profile.female')]] as const).map(([value, label]) => (
+                  <Pressable
+                    key={value}
+                    onPress={() => setSex(sex === value ? '' : value)}
+                    className={cn(
+                      'h-11 flex-1 items-center justify-center rounded-md border',
+                      sex === value ? 'border-lime/40 bg-lime/10' : 'border-border',
+                    )}
+                  >
+                    <Text className={cn('text-sm', sex === value ? 'text-lime' : 'text-muted-foreground')}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            <View className="gap-1.5">
+              <Text className="text-[11px] text-muted-foreground">{t('onboarding.activityLevel')}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {ACTIVITY_LEVEL_IDS.map(id => (
+                  <Pressable
+                    key={id}
+                    onPress={() => setActivityLevel(activityLevel === id ? '' : id)}
+                    className={cn(
+                      'h-11 min-w-[45%] flex-1 items-center justify-center rounded-md border',
+                      activityLevel === id ? 'border-lime/40 bg-lime/10' : 'border-border',
+                    )}
+                  >
+                    <Text className={cn('text-xs', activityLevel === id ? 'text-lime' : 'text-muted-foreground')}>
+                      {t(ACTIVITY_LEVEL_LABEL_KEYS[id])}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            <Button
+              className="h-11 bg-lime active:bg-lime/90"
+              onPress={handleSaveBody}
+              disabled={bodySaveState === 'saving' || !bodyLoaded}
+            >
+              <Text className="font-bebas text-base tracking-wide text-lime-foreground">
+                {bodySaveState === 'saving' ? t('profile.saving') : bodySaveState === 'saved' ? t('profile.saved') : t('common.save').toUpperCase()}
+              </Text>
+            </Button>
           </CardContent>
         </Card>
 

@@ -683,6 +683,14 @@
   "nutrition.goal.maintain": "Maintain",
   "nutrition.goal.maintainDesc": "Maintain current weight",
 
+  "nutrition.changeGoal.cta": "Change goal",
+  "nutrition.changeGoal.title": "Your goal",
+  "nutrition.changeGoal.pickPrompt": "Choose your new goal",
+  "nutrition.changeGoal.newRange": "New recommended range",
+  "nutrition.changeGoal.current": "Current",
+  "nutrition.changeGoal.apply": "Apply",
+  "nutrition.changeGoal.adjust": "Adjust",
+
   "nutrition.suggestions": "Suggestions",
   "nutrition.suggestions.excess": "Excess detected",
   "nutrition.suggestions.excessDesc": "You exceeded: {{items}}. Adjust your next meal to compensate.",
