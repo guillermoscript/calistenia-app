@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useCountUp } from '@/lib/use-count-up'
 import { View, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -17,6 +17,8 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
 import HomeActivity from '@/components/home/HomeActivity'
+import GettingStartedCard from '@/components/home/GettingStartedCard'
+import SleepCard from '@/components/sleep/SleepCard'
 import InsightsCard from '@/components/insights/InsightsCard'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { MenuButton } from '@/components/QuickMenu'
@@ -82,6 +84,9 @@ export default function TodayScreen() {
   const milestoneUser = useAuthUser()
   const { unreadCount, loadNotifications } = useNotifications(milestoneUser?.id ?? null)
   const [showMilestone, setShowMilestone] = useState(true)
+  const scrollRef = useRef<ScrollView>(null)
+  // «Completa tu primer entreno» del checklist: sube al hero (está justo encima).
+  const scrollToHero = useCallback(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), [])
 
   useEffect(() => {
     if (milestoneUser?.id) loadNotifications()
@@ -139,7 +144,7 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <ScrollView contentContainerClassName="px-4 pb-8 gap-4">
+      <ScrollView ref={scrollRef} contentContainerClassName="px-4 pb-8 gap-4">
         {/* ── Welcome header — mismo patrón que DashboardPage web ── */}
         <View className="flex-row items-start justify-between pt-2">
           <View className="flex-1">
@@ -271,6 +276,16 @@ export default function TodayScreen() {
           </Pressable>
         )}
 
+        {/* Checklist «Primeros pasos» — activación de usuarios nuevos (#233).
+            Arriba para quien empieza, sin tapar el hero. */}
+        <GettingStartedCard
+          userId={milestoneUser?.id ?? null}
+          hasActiveProgram={!!activeProgram}
+          totalSessions={getTotalSessions()}
+          programsReady={programsReady}
+          onWorkoutTap={scrollToHero}
+        />
+
         {/* Otro día: entrena el que quieras — siempre disponible, aunque hoy
             tenga (o ya hayas hecho) su propio entrenamiento. */}
         {activeProgram && (
@@ -304,6 +319,9 @@ export default function TodayScreen() {
           <StatCard label={t('profile.streak', { defaultValue: 'Racha' })} value={getLongestStreak()} />
           <StatCard label={t('profile.sessions', { defaultValue: 'Sesiones' })} value={getTotalSessions()} />
         </View>
+
+        {/* ¿Cómo dormiste? — paridad con SleepDashboardWidget del DashboardPage web (#244) */}
+        <SleepCard userId={milestoneUser?.id ?? null} />
 
         {/* Accesos rápidos comunidad */}
         <View className="flex-row gap-2">

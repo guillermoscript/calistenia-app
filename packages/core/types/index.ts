@@ -460,6 +460,8 @@ export interface NutritionGoal {
   age: number
   sex: Sex
   activityLevel: ActivityLevel
+  /** Origen del objetivo: 'auto' (derivado de la fórmula) o 'manual' (editado por el usuario). #243 */
+  source?: 'auto' | 'manual'
 }
 
 export interface DailyTotals {
@@ -599,6 +601,17 @@ export interface SleepEntry {
   note?: string
   created: string
   updated: string
+}
+
+export interface SleepInsightPayload {
+  headline: string
+  avgDurationMin: number
+  avgQuality: number
+  bedtimeConsistency: 'consistent' | 'variable' | 'irregular'
+  patterns: string[]
+  suggestion: string
+  trend: 'improving' | 'declining' | 'stable'
+  model_used?: string
 }
 // ─── Weekly Meal Plan ───────────────────────────────────────────────────────
 

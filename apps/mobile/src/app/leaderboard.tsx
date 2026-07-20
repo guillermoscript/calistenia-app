@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react'
 import { View, FlatList, Pressable, ScrollView, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { X } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
+import { X, Trophy } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useLeaderboard, type LeaderboardCategory, type LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
@@ -41,6 +43,7 @@ const CATEGORIES: CategoryDef[] = [
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function LeaderboardScreen() {
+  const { t } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
   const userId = user?.id ?? null
@@ -161,24 +164,19 @@ export default function LeaderboardScreen() {
         ListEmptyComponent={
           loading ? (
             <View className="items-center py-10">
-              <Text className="font-mono text-xs text-muted-foreground">Cargando...</Text>
+              <Text className="font-mono text-xs text-muted-foreground">{t('common.loading')}</Text>
             </View>
           ) : !hasAnyFollows ? (
-            <View className="items-center gap-3 rounded-xl border border-dashed border-border py-14">
-              <Text className="text-3xl">🏆</Text>
-              <Text className="text-center font-mono text-xs text-muted-foreground px-6">
-                Sigue a amigos para ver la clasificación
-              </Text>
-              <Pressable
-                onPress={() => router.push('/friends' as never)}
-                className="mt-1 rounded-lg bg-lime/20 px-4 py-2 active:opacity-70"
-              >
-                <Text className="font-mono text-xs text-lime tracking-wide">Buscar amigos</Text>
-              </Pressable>
-            </View>
+            <EmptyState
+              icon={Trophy}
+              title={t('leaderboard.emptyTitle')}
+              body={t('leaderboard.emptyBody')}
+              ctaLabel={t('dashboard.findFriends')}
+              onCtaPress={() => router.push('/friends')}
+            />
           ) : (
             <View className="items-center py-10">
-              <Text className="font-mono text-xs text-muted-foreground">Sin datos aún</Text>
+              <Text className="font-mono text-xs text-muted-foreground">{t('leaderboard.noData')}</Text>
             </View>
           )
         }

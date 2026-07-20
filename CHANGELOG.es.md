@@ -9,6 +9,31 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.5.0] - 2026-07-18
+
+_Primeros pasos guiados en el Home, un directorio «Descubre» con las 21 funciones de la app, y pantallas vacías que ahora enseñan a usar cada una._
+
+### Añadido
+
+- **Primeros pasos** — Nuevo checklist en el Home con 6 pasos de activación, barra de progreso y un acceso directo a cada uno.
+- **Descubre** — Nueva sección en tu perfil con las 21 funciones de la app organizadas por categoría, cada una a un toque de distancia.
+- **Pantallas vacías que enseñan** — Historial, biblioteca, calendario y otras pantallas ahora explican qué hacer cuando están vacías, con un botón directo a la acción.
+
+### Corregido
+
+- **Crash al deslizar en la sesión** — Arreglado un cierre inesperado de la app al deslizar entre ejercicios durante el entreno.
+
+## [1.4.0] - 2026-07-17
+
+_Onboarding más inteligente: define tu objetivo principal, mide tu ratio cintura/altura y elige tu idioma. Además, retoma tu sesión de fuerza en cualquier dispositivo._
+
+### Añadido
+
+- **Objetivo principal** — El onboarding ahora te pide tu objetivo principal de forma estructurada y adapta las recomendaciones a él.
+- **Ratio cintura/altura** — Nueva medida de cintura en el onboarding para calcular tu ratio cintura/altura (WHtR), un indicador de salud más fiable que el IMC solo.
+- **Idioma ES/EN** — Elige entre español e inglés directamente desde el onboarding, en web y en la app.
+- **Reanuda tu sesión donde sea** — Tu sesión de fuerza en curso se sincroniza con el servidor: empieza en el móvil y continúa en la web, o al revés.
+
 ## [1.3.2] - 2026-07-14
 
 _Toca el nombre de un amigo en el feed para abrir su perfil._
@@ -195,7 +220,9 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.2...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.5.0...HEAD
+[1.5.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.4.0...mobile-v1.5.0
+[1.4.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.2...mobile-v1.4.0
 [1.3.2]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.1...mobile-v1.3.2
 [1.3.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.0...mobile-v1.3.1
 [1.3.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.2.1...mobile-v1.3.0

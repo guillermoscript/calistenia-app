@@ -6,9 +6,11 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { View, FlatList, RefreshControl, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import { X } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
+import { X, Rss } from 'lucide-react-native'
 import { Pressable } from 'react-native'
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useActivityFeed } from '@calistenia/core/hooks/useActivityFeed'
@@ -20,6 +22,7 @@ import { CommentsSheet, type CommentsSheetMethods } from '@/components/social/Co
 import type { FeedItem } from '@calistenia/core/hooks/useActivityFeed'
 
 export default function SocialScreen() {
+  const { t } = useTranslation()
   const router = useRouter()
   // Deep-link desde una notificación de comentario/reacción: ?session=<id> hace
   // scroll al post, lo resalta (flash) y abre sus comentarios (ver
@@ -198,13 +201,13 @@ export default function SocialScreen() {
               {Array.from({ length: 5 }).map((_, i) => <FeedCardSkeleton key={i} />)}
             </View>
           ) : (
-            <View className="items-center rounded-xl border border-dashed border-border py-16 gap-3">
-              <Text className="text-4xl">📡</Text>
-              <Text className="font-bebas text-xl text-muted-foreground">Sin actividad aún</Text>
-              <Text className="font-sans-medium text-xs text-center text-muted-foreground px-4">
-                Sigue a otros atletas para ver su progreso aquí.
-              </Text>
-            </View>
+            <EmptyState
+              icon={Rss}
+              title={t('social.feedEmptyTitle')}
+              body={t('social.feedEmptyBody')}
+              ctaLabel={t('dashboard.findFriends')}
+              onCtaPress={() => router.push('/friends')}
+            />
           )
         }
         ListFooterComponent={

@@ -3,10 +3,11 @@ import { View, FlatList, Pressable, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight } from 'lucide-react-native'
+import { ChevronRight, SearchX } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Input } from '@/components/ui/input'
+import { EmptyState } from '@/components/ui/empty-state'
 import { MenuButton } from '@/components/QuickMenu'
 import { cn } from '@/lib/utils'
 import { CATALOG, CATALOG_CATEGORIES, type CatalogExercise } from '@/lib/catalog'
@@ -173,7 +174,23 @@ export default function LibraryScreen() {
         keyExtractor={ex => ex.id}
         contentContainerClassName="px-4 pb-8 gap-2"
         keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={<Text className="py-10 text-center text-muted-foreground">{t('common.noResults')}</Text>}
+        ListEmptyComponent={
+          <View className="py-6">
+            <EmptyState
+              icon={SearchX}
+              title={t('library.emptyTitle')}
+              body={t('library.emptyBody', { count: CATALOG.length })}
+              ctaLabel={t('library.emptyCta')}
+              onCtaPress={() => {
+                setQuery('')
+                setCategory('todos')
+                setDifficulty(null)
+                setEquipment(null)
+                setMuscle(null)
+              }}
+            />
+          </View>
+        }
         renderItem={renderItem}
       />
     </SafeAreaView>

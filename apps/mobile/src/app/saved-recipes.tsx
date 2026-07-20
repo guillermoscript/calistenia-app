@@ -10,8 +10,9 @@ import { Alert, FlatList, Pressable, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, X } from 'lucide-react-native'
+import { ArrowLeft, Star, X } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
 import { useDeleteSavedRecipe, useSavedRecipes } from '@calistenia/core/hooks/useSavedRecipes'
@@ -128,13 +129,14 @@ export default function SavedRecipesScreen() {
       </View>
 
       {recipes.length === 0 && !isLoading ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="mb-2 font-mono text-xs uppercase tracking-[3px] text-muted-foreground">
-            {t('savedRecipes.emptyTitle')}
-          </Text>
-          <Text className="text-center font-sans text-sm text-muted-foreground">
-            {t('savedRecipes.empty')}
-          </Text>
+        <View className="flex-1 justify-center px-4">
+          <EmptyState
+            icon={Star}
+            title={t('savedRecipes.emptyTitle')}
+            body={t('savedRecipes.empty')}
+            ctaLabel={t('savedRecipes.emptyCta')}
+            onCtaPress={() => router.push('/nutrition')}
+          />
         </View>
       ) : (
         <FlatList

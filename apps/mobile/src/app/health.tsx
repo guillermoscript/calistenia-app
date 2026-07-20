@@ -1,6 +1,7 @@
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { Activity, ChevronLeft, RefreshCw, ShieldCheck, Watch } from 'lucide-react-native'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -28,6 +29,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 export default function HealthScreen() {
+  const { t } = useTranslation()
   const router = useRouter()
   const h = useHealthSync()
 
@@ -146,7 +148,7 @@ export default function HealthScreen() {
               <CardContent className="py-2">
                 {metrics.length === 0 ? (
                   <Text className="py-4 font-sans text-sm text-muted-foreground">
-                    Sin datos todavía hoy. Pulsa «Sincronizar» después de que tu reloj suba sus datos a Health Connect.
+                    {t('health.emptyToday')}
                   </Text>
                 ) : (
                   metrics.map((m) => <Metric key={m.label} label={m.label} value={m.value} />)

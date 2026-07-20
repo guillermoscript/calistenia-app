@@ -1,0 +1,233 @@
+[
+  {
+    "id": "programs",
+    "icon": "ClipboardList",
+    "category": "training",
+    "title": { "es": "Programas", "en": "Programs" },
+    "body": {
+      "es": "Planes de calistenia por fases con progresión semanal.",
+      "en": "Phased calisthenics plans with weekly progression."
+    },
+    "route": "/programs"
+  },
+  {
+    "id": "library",
+    "icon": "BookOpen",
+    "category": "training",
+    "title": { "es": "Biblioteca de ejercicios", "en": "Exercise library" },
+    "body": {
+      "es": "Más de 1.500 ejercicios con demostración, músculos y técnica.",
+      "en": "1,500+ exercises with demos, muscles and technique."
+    },
+    "route": "/library"
+  },
+  {
+    "id": "free_session",
+    "icon": "Sparkles",
+    "category": "training",
+    "title": { "es": "Sesión libre", "en": "Free session" },
+    "body": {
+      "es": "Pide a la IA una sesión a medida o arma la tuya en segundos.",
+      "en": "Ask AI for a tailored session or build your own in seconds."
+    },
+    "route": "/free-session"
+  },
+  {
+    "id": "circuit",
+    "icon": "Timer",
+    "category": "training",
+    "title": { "es": "Circuitos y cronometrado", "en": "Circuits & timed mode" },
+    "body": {
+      "es": "Rondas y estaciones por tiempo, guiadas desde tu programa o sesión libre.",
+      "en": "Timed rounds and stations, guided from your program or free session."
+    },
+    "route": null
+  },
+  {
+    "id": "cardio_gps",
+    "icon": "MapPin",
+    "category": "training",
+    "title": { "es": "Cardio con GPS", "en": "GPS cardio" },
+    "body": {
+      "es": "Corre con ruta en vivo, ritmo y récords personales.",
+      "en": "Run with live route, pace and personal records."
+    },
+    "route": "/cardio"
+  },
+  {
+    "id": "races",
+    "icon": "Flag",
+    "category": "training",
+    "title": { "es": "Carreras con amigos", "en": "Races with friends" },
+    "body": {
+      "es": "Crea carreras, comparte el código y compite en tiempo real.",
+      "en": "Create races, share the code and compete in real time."
+    },
+    "route": "/races-discover"
+  },
+  {
+    "id": "meal_photo",
+    "icon": "Camera",
+    "category": "nutrition",
+    "title": { "es": "Registro con foto", "en": "Photo logging" },
+    "body": {
+      "es": "Saca una foto a tu comida y la IA calcula calorías y macros.",
+      "en": "Snap your meal and AI calculates calories and macros."
+    },
+    "route": "/nutrition"
+  },
+  {
+    "id": "meal_plan",
+    "icon": "ChefHat",
+    "category": "nutrition",
+    "title": { "es": "Plan semanal + coach IA", "en": "Weekly plan + AI coach" },
+    "body": {
+      "es": "Planifica tu semana con el coach y sigue tu puntuación nutricional.",
+      "en": "Plan your week with the coach and track your nutrition score."
+    },
+    "route": "/nutrition"
+  },
+  {
+    "id": "pantry",
+    "icon": "ShoppingBasket",
+    "category": "nutrition",
+    "title": { "es": "Despensa con chat IA", "en": "Pantry with AI chat" },
+    "body": {
+      "es": "Controla lo que tienes en casa y pide recetas con ello.",
+      "en": "Track what you have at home and ask for recipes with it."
+    },
+    "route": "/pantry"
+  },
+  {
+    "id": "saved_recipes",
+    "icon": "Star",
+    "category": "nutrition",
+    "title": { "es": "Recetas guardadas", "en": "Saved recipes" },
+    "body": {
+      "es": "Tus recetas favoritas del coach, listas para repetir.",
+      "en": "Your favorite coach recipes, ready to repeat."
+    },
+    "route": "/saved-recipes"
+  },
+  {
+    "id": "history",
+    "icon": "History",
+    "category": "progress",
+    "title": { "es": "Historial y PRs", "en": "History & PRs" },
+    "body": {
+      "es": "Todas tus sesiones de fuerza y cardio en una sola línea de tiempo.",
+      "en": "All your strength and cardio sessions in one timeline."
+    },
+    "route": "/history"
+  },
+  {
+    "id": "calendar",
+    "icon": "CalendarDays",
+    "category": "progress",
+    "title": { "es": "Calendario unificado", "en": "Unified calendar" },
+    "body": {
+      "es": "Entrenos, comidas, cardio y más: 6 métricas cruzadas por día.",
+      "en": "Workouts, meals, cardio and more: 6 metrics crossed per day."
+    },
+    "route": "/calendar"
+  },
+  {
+    "id": "insights",
+    "icon": "Brain",
+    "category": "progress",
+    "title": { "es": "Insights semanales IA", "en": "Weekly AI insights" },
+    "body": {
+      "es": "La IA cruza tus datos y te dice qué está funcionando.",
+      "en": "AI crosses your data and tells you what's working."
+    },
+    "route": "/insights"
+  },
+  {
+    "id": "progress_photos",
+    "icon": "Image",
+    "category": "progress",
+    "title": { "es": "Fotos de progreso", "en": "Progress photos" },
+    "body": {
+      "es": "Compara tu físico mes a mes con fotos privadas.",
+      "en": "Compare your physique month to month with private photos."
+    },
+    "route": "/progress-photos"
+  },
+  {
+    "id": "health",
+    "icon": "Watch",
+    "category": "progress",
+    "title": { "es": "Reloj y salud", "en": "Watch & health" },
+    "body": {
+      "es": "Conecta tu smartwatch vía Health Connect.",
+      "en": "Connect your smartwatch via Health Connect."
+    },
+    "route": "/health"
+  },
+  {
+    "id": "friends",
+    "icon": "Users",
+    "category": "community",
+    "title": { "es": "Amigos", "en": "Friends" },
+    "body": {
+      "es": "Sigue a tus amigos y entrenad juntos.",
+      "en": "Follow your friends and train together."
+    },
+    "route": "/friends"
+  },
+  {
+    "id": "social_feed",
+    "icon": "Rss",
+    "category": "community",
+    "title": { "es": "Feed social", "en": "Social feed" },
+    "body": {
+      "es": "Reacciona y comenta la actividad de la gente que sigues.",
+      "en": "React and comment on activity from people you follow."
+    },
+    "route": "/social"
+  },
+  {
+    "id": "leaderboard",
+    "icon": "Trophy",
+    "category": "community",
+    "title": { "es": "Ranking", "en": "Leaderboard" },
+    "body": {
+      "es": "Compite por sesiones, racha y volumen con tus amigos.",
+      "en": "Compete on sessions, streak and volume with your friends."
+    },
+    "route": "/leaderboard"
+  },
+  {
+    "id": "challenges",
+    "icon": "Target",
+    "category": "community",
+    "title": { "es": "Retos", "en": "Challenges" },
+    "body": {
+      "es": "Únete a retos y mantén la constancia.",
+      "en": "Join challenges and stay consistent."
+    },
+    "route": "/challenges"
+  },
+  {
+    "id": "reminders",
+    "icon": "Bell",
+    "category": "extras",
+    "title": { "es": "Recordatorios", "en": "Reminders" },
+    "body": {
+      "es": "Avisos locales de comidas, entreno y pausas activas.",
+      "en": "Local reminders for meals, workouts and active breaks."
+    },
+    "route": "/reminders"
+  },
+  {
+    "id": "widgets",
+    "icon": "LayoutGrid",
+    "category": "extras",
+    "title": { "es": "Widgets Android", "en": "Android widgets" },
+    "body": {
+      "es": "Tu día en la pantalla de inicio: mantén pulsado el escritorio → Widgets.",
+      "en": "Your day on the home screen: long-press your launcher → Widgets."
+    },
+    "route": null
+  }
+]

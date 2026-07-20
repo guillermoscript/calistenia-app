@@ -293,6 +293,13 @@ export default function CalendarScreen() {
                 )}
               </View>
 
+              {/* Día pasado/futuro sin registros: enseña qué guarda el calendario */}
+              {selectedDate !== today && selectedEntries.length === 0 && (
+                <Text className="text-xs leading-relaxed text-muted-foreground">
+                  {t('calendar.emptyDayHint')}
+                </Text>
+              )}
+
               {/* Sesiones registradas */}
               {selectedEntries.map((e, i) => {
                 const accent = ACCENT[e.type]
@@ -369,12 +376,12 @@ export default function CalendarScreen() {
                     </View>
                   )}
                   {data.sleepByDate[selectedDate] && (
-                    <View className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2', ACCENT.sleep.chip)}>
+                    <Pressable onPress={() => router.push({ pathname: '/sleep', params: { date: selectedDate } })} className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2 active:opacity-70', ACCENT.sleep.chip)}>
                       <Moon size={13} color={ACCENT.sleep.icon} />
                       <Text className="font-mono text-[11px] text-foreground">
                         {Math.floor((data.sleepByDate[selectedDate].duration_minutes || 0) / 60)}h {(data.sleepByDate[selectedDate].duration_minutes || 0) % 60}m
                       </Text>
-                    </View>
+                    </Pressable>
                   )}
                   {data.weightByDate[selectedDate] && (
                     <View className={cn('flex-row items-center gap-2 rounded-lg border px-3 py-2', ACCENT.weight.chip)}>

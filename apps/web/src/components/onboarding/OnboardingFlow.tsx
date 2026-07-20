@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as Sentry from '@sentry/react'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { upsertUserHealth, useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { op } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import type { ProgramMeta } from '@calistenia/core/types'
@@ -31,7 +32,7 @@ const EMPTY_BASICS: BasicsValues = {
 }
 
 const EMPTY_GOALS: GoalsValues = {
-  goal_weight: '', activity_level: '', pace: '',
+  primary_goal: '', goal_weight: '', waist: '', activity_level: '', pace: '',
 }
 
 const EMPTY_HEALTH: HealthValues = {
@@ -69,6 +70,9 @@ export default function OnboardingFlow({
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
   const [saveError, setSaveError] = useState(false)
+  // Salud guardada (user_health): fallback para el matching de programas cuando
+  // el flujo no pasó por el paso de salud (needsProfile=false).
+  const { health: savedHealth } = useUserHealth(userId ?? null)
 
   // Step index layout (frozen via needsProfile):
   //   0=welcome, 1=basics, 2=goals, 3=health, 4=training (only if needsProfile),
@@ -119,11 +123,12 @@ export default function OnboardingFlow({
     if (!userId) return
     setSavingProfile(true)
     try {
+      // Edad/sexo ya no existen en `users` (PII; viven en `nutrition_goals`,
+      // que el wizard de nutrición pide al crear el objetivo). Aquí solo se
+      // usan para las heurísticas del propio flujo.
       await pb.collection('users').update(userId, {
         weight: parseDecimal(basics.weight),
         height: parseDecimal(basics.height),
-        age: basics.age ? parseInt(basics.age, 10) : null,
-        sex: basics.sex || null,
       })
     } catch (e) {
       handleSaveFailed(e, 'profile')
@@ -137,9 +142,12 @@ export default function OnboardingFlow({
   const handleSaveGoals = async () => {
     if (!userId) return
     setSavingGoals(true)
+    const waist = parseDecimal(goals.waist)
     try {
       await pb.collection('users').update(userId, {
+        primary_goal: goals.primary_goal || '',
         goal_weight: parseDecimal(goals.goal_weight),
+        waist,
         activity_level: goals.activity_level || '',
         pace: goals.pace || '',
       })
@@ -148,15 +156,29 @@ export default function OnboardingFlow({
       setSavingGoals(false)
       return
     }
+    // La cintura también se registra como medición corporal con fecha (historial).
+    if (waist) {
+      try {
+        await pb.collection('body_measurements').create({
+          user: userId,
+          date: new Date().toISOString().slice(0, 10),
+          waist,
+        })
+      } catch (e) {
+        console.warn('Failed to save waist measurement:', e)
+      }
+    }
     setSavingGoals(false)
     goToStep(healthStep)
   }
 
+  // Salud → colección `user_health` (en `users` estos campos son PII ocultos
+  // que no se pueden escribir con token de usuario; ver #247).
   const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
     if (!userId) return
     setSavingHealth(true)
     try {
-      await pb.collection('users').update(userId, {
+      await upsertUserHealth(userId, {
         medical_conditions: next.medical_conditions,
         injuries: next.injuries,
       })
@@ -201,6 +223,7 @@ export default function OnboardingFlow({
     markOnboardingDone(userId)
     op.track('onboarding_completed', {
       level: training.level || 'unknown',
+      primary_goal: goals.primary_goal || 'unknown',
       has_program: !!selectedProgramId,
       has_goal_weight: !!goals.goal_weight,
       activity_level: goals.activity_level || 'unknown',
@@ -314,10 +337,11 @@ export default function OnboardingFlow({
               level: user?.level,
               weight: user?.weight,
               goal_weight: user?.goal_weight,
+              primary_goal: goals.primary_goal || user?.primary_goal,
               focus_areas: user?.focus_areas,
               training_days: user?.training_days,
-              injuries: user?.injuries,
-              medical_conditions: user?.medical_conditions,
+              injuries: health.injuries.length ? health.injuries : savedHealth.injuries,
+              medical_conditions: health.medical_conditions.length ? health.medical_conditions : savedHealth.medical_conditions,
             }}
             onSelectProgram={handleSelectProgram}
             onCreateProgram={() => {

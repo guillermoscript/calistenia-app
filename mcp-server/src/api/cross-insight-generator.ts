@@ -94,6 +94,8 @@ export interface InsightContext {
   summary: InsightSummary;
   previousSummary?: InsightSummary;
   watchAvailable: boolean;
+  // Objetivo principal declarado en el onboarding (#226), p. ej. "recomposicion".
+  primaryGoal?: string;
 }
 
 interface CrossInsightInput {
@@ -116,6 +118,9 @@ function buildUserText(ctx: InsightContext): string {
   lines.push(
     `Periodo: ${label} (${period.start} a ${period.end}). Días con algún registro: ${s.daysWithAnyData}/${s.days}.`,
   );
+  if (ctx.primaryGoal) {
+    lines.push(`Objetivo declarado del usuario: ${ctx.primaryGoal.replace(/_/g, " ")}. Interpreta las señales en función de ese objetivo (p. ej. en recomposición el peso estable no es estancamiento).`);
+  }
   lines.push("");
   lines.push("## Resumen agregado");
   lines.push(`- Fuerza: ${s.workouts.total} entrenos en ${s.workouts.daysTrained} días. Racha actual ${s.streaks.currentTrainingStreak}, máxima ${s.streaks.longestTrainingStreak}.`);

@@ -18,6 +18,7 @@
 import { pb } from './pocketbase'
 import { todayStr, addDays, utcToLocalDateStr, localMidnightAsUTC, diffDays } from './dateUtils'
 import { fetchMonthActivity, emptyMonthActivity, type MonthActivity } from './monthActivity'
+import { bedtimeConsistencyMinutes, pctTrue, avgDefined } from './sleepStats'
 import type { DailyHealthSummary } from '../types'
 
 export interface InsightDayRow {
@@ -33,6 +34,11 @@ export interface InsightDayRow {
   waterMl?: number
   sleepMinutes?: number
   sleepQuality?: number
+  awakenings?: number
+  caffeine?: boolean
+  screenBeforeBed?: boolean
+  stressLevel?: number
+  bedtime?: string // "HH:MM"
   weightKg?: number
   steps?: number // reloj (daily_health_cache)
   restingHr?: number
@@ -48,7 +54,16 @@ export interface InsightSummary {
   circuits: { sessions: number }
   nutrition: { daysLogged: number; avgCalories: number | null; avgMeals: number | null }
   water: { daysLogged: number; avgMl: number | null }
-  sleep: { daysLogged: number; avgMinutes: number | null; avgQuality: number | null }
+  sleep: {
+    daysLogged: number
+    avgMinutes: number | null
+    avgQuality: number | null
+    avgAwakenings: number
+    pctCaffeine: number
+    pctScreenBeforeBed: number
+    avgStress: number
+    bedtimeConsistencyMin: number
+  }
   weight: { firstKg: number | null; lastKg: number | null; deltaKg: number | null }
   watch: { available: boolean; avgSteps: number | null; avgRestingHr: number | null; avgHrvMs: number | null }
   streaks: { currentTrainingStreak: number; longestTrainingStreak: number }
@@ -64,6 +79,9 @@ export interface InsightContext {
   // si se pidió `withPrevious`. Únicamente el summary — nunca las filas, para no
   // inflar el presupuesto de tokens del prompt (épica #128 Fase 3, #136).
   previousSummary?: InsightSummary
+  // Objetivo principal declarado en el onboarding (#226) — el LLM interpreta
+  // las señales según lo que el usuario quiere lograr, no solo el delta de peso.
+  primaryGoal?: string
 }
 
 // Forma mínima de un registro `sessions` (entrenamiento de fuerza) — solo los
@@ -187,6 +205,11 @@ export function buildDayRows(
     const row = ensure(date)
     row.sleepMinutes = s.duration_minutes
     row.sleepQuality = s.quality
+    row.awakenings = s.awakenings
+    row.caffeine = s.caffeine
+    row.screenBeforeBed = s.screen_before_bed
+    row.stressLevel = s.stress_level
+    row.bedtime = s.bedtime
   }
 
   for (const [date, w] of Object.entries(merged.weightByDate)) {
@@ -255,6 +278,13 @@ export function summarizeRows(
   const sleepMinutesTotal = sum((r) => r.sleepMinutes)
   const sleepQualityDays = countDefined((r) => r.sleepQuality)
   const sleepQualityTotal = sum((r) => r.sleepQuality)
+  const avgAwakenings = avgDefined(sorted.map((r) => r.awakenings))
+  const pctCaffeine = pctTrue(sorted.map((r) => r.caffeine))
+  const pctScreenBeforeBed = pctTrue(sorted.map((r) => r.screenBeforeBed))
+  const avgStress = avgDefined(sorted.map((r) => r.stressLevel))
+  const bedtimeConsistencyMin = bedtimeConsistencyMinutes(
+    sorted.map((r) => r.bedtime).filter((b): b is string => b !== undefined),
+  )
 
   const weightRows = sorted.filter((r) => r.weightKg !== undefined)
   const firstKg = weightRows.length > 0 ? weightRows[0].weightKg! : null
@@ -298,6 +328,11 @@ export function summarizeRows(
       daysLogged: sleepDays,
       avgMinutes: sleepDays > 0 ? Math.round(sleepMinutesTotal / sleepDays) : null,
       avgQuality: sleepQualityDays > 0 ? round1(sleepQualityTotal / sleepQualityDays) : null,
+      avgAwakenings,
+      pctCaffeine,
+      pctScreenBeforeBed,
+      avgStress,
+      bedtimeConsistencyMin,
     },
     weight: { firstKg, lastKg, deltaKg },
     watch: {
@@ -432,6 +467,14 @@ export async function buildInsightContext(
     }
   }
 
+  let primaryGoal: string | undefined
+  try {
+    const user = await pb.collection('users').getOne(userId, { fields: 'primary_goal' })
+    primaryGoal = (user as { primary_goal?: string }).primary_goal || undefined
+  } catch (err) {
+    console.warn('buildInsightContext: user primary_goal fetch failed', err)
+  }
+
   return {
     userId,
     period,
@@ -439,5 +482,6 @@ export async function buildInsightContext(
     summary: current.summary,
     watchAvailable: current.watchAvailable,
     ...(previousSummary ? { previousSummary } : {}),
+    ...(primaryGoal ? { primaryGoal } : {}),
   }
 }

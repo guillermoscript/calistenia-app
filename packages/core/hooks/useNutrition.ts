@@ -1,12 +1,13 @@
 import { storage } from '../platform'
 import { useCallback, useMemo, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import i18n from 'i18next'
 import { pb } from '../lib/pocketbase'
 import { AI_API_URL } from '../lib/ai-api'
 import { op } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { todayStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
+import { calculateMacros as computeMacros, previewNutritionGoal, shouldRecomputeAutoGoal, ONBOARDING_ACTIVITY_TO_NUTRITION } from '../lib/nutritionGoal'
 import type {
   NutritionEntry,
   NutritionSource,
@@ -76,18 +77,74 @@ const lsSetGoals = (d: NutritionGoal | null): void => {
 const sortByLoggedDesc = (a: NutritionEntry, b: NutritionEntry) =>
   new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
 
-// ─── Activity-level multipliers (Mifflin-St Jeor) ───────────────────────────
-const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
-  sedentary: 1.2,
-  light: 1.375,
-  moderate: 1.55,
-  active: 1.725,
-  very_active: 1.9,
-}
-
 const isTransient = (e: any) => {
   const status = e?.status
   return status === 0 || status === 429 || (typeof status === 'number' && status >= 500)
+}
+
+/**
+ * Recalcula el objetivo de nutrición 'auto' de un usuario a partir de sus
+ * datos corporales ACTUALES (peso/altura/actividad/pace en `users`; edad/sexo
+ * desde `nutrition_goals` porque son PII ocultos en `users`), sin tocar nunca
+ * un goal 'manual' (#243 F3). Standalone — no
+ * depende de que la pantalla llamante monte `useNutrition` — para que
+ * cualquier flujo que edite el perfil (p.ej. profile.tsx en mobile, #243
+ * F4a) pueda disparar el refresco tras guardar.
+ *
+ * Si se pasa `queryClient`, además sincroniza la caché de `useNutrition`
+ * (misma queryKey que `goalsQuery`) para que un componente montado en la
+ * misma sesión vea el goal fresco sin esperar al próximo refetch.
+ *
+ * Devuelve el nuevo goal si recalculó, o `null` si no había nada que hacer
+ * (sin PB, sin goal guardado, goal 'manual'/legacy, o perfil incompleto).
+ */
+export async function recomputeAutoNutritionGoal(
+  userId: string,
+  queryClient?: QueryClient,
+): Promise<NutritionGoal | null> {
+  try {
+    const existing: any = await pb.collection('nutrition_goals').getFirstListItem(
+      pb.filter('user = {:uid}', { uid: userId }),
+    )
+    if (!shouldRecomputeAutoGoal(existing.source as NutritionGoal['source'])) return null
+
+    const user: any = await pb.collection('users').getOne(userId)
+    const weight = Number(user.weight) || undefined
+    const height = Number(user.height) || undefined
+    // edad/sexo son PII: en `users` están marcados `hidden` (fix de seguridad
+    // GHSA-wwj3-9h95-wcpf, migración 1780500001) porque users es legible por
+    // cualquier usuario autenticado — no se serializan ni se pueden escribir
+    // con token de usuario. La fuente fiable es la fila de `nutrition_goals`
+    // (protegida per-user), que snapshotea el cuerpo; profile.tsx (#243 F4a) los
+    // escribe ahí. Peso/altura/actividad sí viven en `users` (no ocultos).
+    const age = Number(existing.age) || undefined
+    const sex = (existing.sex as Sex) || undefined
+    // users.activity_level usa la escala de 4 niveles del onboarding; nutrición
+    // usa 5 — mapea, con el nivel guardado en el goal como fallback si el user
+    // aún no tiene activity_level propio.
+    const activityLevel = (user.activity_level && ONBOARDING_ACTIVITY_TO_NUTRITION[user.activity_level])
+      || (existing.activity_level as ActivityLevel)
+    const pace = user.pace || undefined
+    if (!weight || !height || !age || !sex || !activityLevel) return null // perfil incompleto: nada seguro que recalcular
+
+    const recomputed = previewNutritionGoal({ weight, height, age, sex, activityLevel, pace }, existing.goal)
+    const pbData = {
+      daily_calories: recomputed.dailyCalories, daily_protein: recomputed.dailyProtein,
+      daily_carbs: recomputed.dailyCarbs, daily_fat: recomputed.dailyFat,
+      weight: recomputed.weight, height: recomputed.height, age: recomputed.age,
+      sex: recomputed.sex, activity_level: recomputed.activityLevel,
+      source: 'auto',
+    }
+    const rec: any = await pb.collection('nutrition_goals').update(existing.id, pbData)
+    const newGoal: NutritionGoal = { ...recomputed, id: rec.id, user: userId, source: 'auto' }
+
+    if (queryClient) queryClient.setQueryData<NutritionGoal | null>(qk.nutrition.goals(userId), newGoal)
+    lsSetGoals(newGoal)
+    return newGoal
+  } catch (e) {
+    console.warn('recomputeAutoNutritionGoal error:', e)
+    return null
+  }
 }
 
 /**
@@ -162,6 +219,7 @@ export function useNutrition(userId: string | null) {
           dailyCarbs: g.daily_carbs, dailyFat: g.daily_fat,
           goal: g.goal, weight: g.weight, height: g.height, age: g.age,
           sex: g.sex, activityLevel: g.activity_level,
+          source: g.source || undefined,
         }
         lsSetGoals(goalObj)
         return goalObj
@@ -427,6 +485,7 @@ export function useNutrition(userId: string | null) {
           daily_carbs: goalsData.dailyCarbs, daily_fat: goalsData.dailyFat,
           goal: goalsData.goal, weight: goalsData.weight, height: goalsData.height,
           age: goalsData.age, sex: goalsData.sex, activity_level: goalsData.activityLevel,
+          ...(goalsData.source !== undefined ? { source: goalsData.source } : {}),
         }
         try {
           const existing = await pb.collection('nutrition_goals').getFirstListItem(pb.filter('user = {:uid}', { uid: userId }))
@@ -446,37 +505,12 @@ export function useNutrition(userId: string | null) {
     lsSetGoals(newGoal)
   }, [usePB, userId, qc, goalsKey])
 
-  // ─── calculateMacros (puro) ───────────────────────────────────────────────
+  // ─── calculateMacros (delegado a lib puro core/lib/nutritionGoal) ──────────
   const calculateMacros = useCallback((
     weight: number, height: number, age: number, sex: Sex,
     activityLevel: ActivityLevel, goal: NutritionGoalType,
     pace?: 'gradual' | 'balanced' | 'aggressive',
-  ): NutritionGoal => {
-    const bmr = sex === 'male'
-      ? 10 * weight + 6.25 * height - 5 * age + 5
-      : 10 * weight + 6.25 * height - 5 * age - 161
-    const tdee = bmr * ACTIVITY_MULTIPLIERS[activityLevel]
-    const paceFactor = pace === 'gradual' ? 0.5 : pace === 'aggressive' ? 1.5 : 1.0
-    let dailyCalories: number
-    switch (goal) {
-      case 'muscle_gain': dailyCalories = tdee + 300 * paceFactor; break
-      case 'fat_loss':    dailyCalories = tdee - 500 * paceFactor; break
-      default:            dailyCalories = tdee; break
-    }
-    dailyCalories = Math.round(dailyCalories)
-    let proteinPerKg: number
-    switch (goal) {
-      case 'muscle_gain': proteinPerKg = 2.0; break
-      case 'fat_loss':    proteinPerKg = 2.2; break
-      default:            proteinPerKg = 1.8; break
-    }
-    const dailyProtein = Math.round(proteinPerKg * weight)
-    const dailyFat = Math.round((dailyCalories * 0.25) / 9)
-    const proteinCals = dailyProtein * 4
-    const fatCals = dailyFat * 9
-    const dailyCarbs = Math.round((dailyCalories - proteinCals - fatCals) / 4)
-    return { dailyCalories, dailyProtein, dailyCarbs, dailyFat, goal, weight, height, age, sex, activityLevel }
-  }, [])
+  ): NutritionGoal => computeMacros(weight, height, age, sex, activityLevel, goal, pace), [])
 
   // ─── Índice de totales diarios (se recomputa solo cuando entries cambia) ───
   const dailyTotalsMap = useMemo((): Map<string, DailyTotals> => {

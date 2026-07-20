@@ -10,6 +10,7 @@ import { X, BellOff, Settings } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
@@ -263,14 +264,12 @@ export default function NotificationsScreen() {
           )}
           ItemSeparatorComponent={NotifSeparator}
           ListEmptyComponent={
-            <View className="flex-1 items-center justify-center gap-3 py-20">
-              <BellOff size={36} color="#52525b" strokeWidth={1.5} />
-              <Text className="font-sans-medium text-sm text-muted-foreground">
-                Sin notificaciones aún
-              </Text>
-              <Text className="text-center text-xs text-muted-foreground/60 px-8">
-                Aquí aparecerán reacciones, comentarios y más
-              </Text>
+            <View className="px-4 py-10">
+              <EmptyState
+                icon={BellOff}
+                title={t('notifications.emptyTitle')}
+                body={t('notifications.emptyBody')}
+              />
             </View>
           }
         />

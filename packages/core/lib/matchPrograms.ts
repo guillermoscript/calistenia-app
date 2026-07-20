@@ -8,6 +8,7 @@
 
 import type { ProgramMeta, ProgramGoalType } from '../types'
 import { FOCUS_AREA_IDS } from '../types/onboarding'
+import { isPrimaryGoal, primaryGoalToProgramGoalType } from './primaryGoal'
 
 export const LEVEL_TO_DIFFICULTY: Record<string, string> = {
   principiante: 'beginner',
@@ -31,6 +32,8 @@ export interface MatchUserInput {
   medical_conditions?: string[]
   /** Future field — user's available equipment. Unused today, reserved for Phase-2. */
   equipment?: string[]
+  /** Objetivo principal estructurado (issue #226). Manda sobre el delta de peso. */
+  primary_goal?: string
 }
 
 export interface MatchResult {
@@ -42,7 +45,10 @@ export interface MatchResult {
 export function inferGoalType(
   weight: number | undefined,
   goalWeight: number | undefined,
+  primaryGoal?: string,
 ): ProgramGoalType {
+  // El objetivo explícito del usuario manda; el delta de peso es solo fallback.
+  if (isPrimaryGoal(primaryGoal)) return primaryGoalToProgramGoalType(primaryGoal)
   if (typeof weight !== 'number' || typeof goalWeight !== 'number') return 'maintain'
   const delta = goalWeight - weight
   if (delta > 2) return 'muscle_gain'
@@ -94,7 +100,7 @@ export function matchUserToPrograms(
     return { primary: null, secondary: null, penalties }
   }
 
-  const goalType = inferGoalType(user.weight, user.goal_weight)
+  const goalType = inferGoalType(user.weight, user.goal_weight, user.primary_goal)
 
   const primary = programs.find(p =>
     p.difficulty === userDifficulty && p.goal_type === goalType
@@ -113,6 +119,15 @@ export function matchUserToPrograms(
       secondary = found
       break
     }
+  }
+
+  // Objetivo "habilidades" sin focus areas de skill: aún así merece un skill
+  // track de secundario; preferimos el que coincida con la dificultad del user.
+  if (!secondary && user.primary_goal === 'habilidades') {
+    secondary =
+      programs.find(p => p.goal_type === 'skill' && p.difficulty === userDifficulty && p.id !== primary?.id) ??
+      programs.find(p => p.goal_type === 'skill' && p.id !== primary?.id) ??
+      null
   }
 
   return { primary, secondary, penalties }

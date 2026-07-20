@@ -3,11 +3,12 @@ import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, BadgeCheck } from 'lucide-react-native'
+import { ArrowLeft, BadgeCheck, CalendarDays } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb } from '@calistenia/core/lib/pocketbase'
@@ -186,7 +187,11 @@ export default function ProgramDetailScreen() {
               {days === null ? (
                 <ActivityIndicator />
               ) : days.length === 0 ? (
-                <Text className="text-sm text-muted-foreground">{t('common.noResults')}</Text>
+                <EmptyState
+                  icon={CalendarDays}
+                  title={t('programDetail.emptyTitle')}
+                  body={t('programDetail.emptyBody')}
+                />
               ) : (
                 days.map(day => (
                   <View key={day.dayId} className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">

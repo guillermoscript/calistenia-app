@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react'
 import { View, FlatList, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { X } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
+import { X, Target } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallenges, type ChallengeWithMeta } from '@calistenia/core/hooks/useChallenges'
@@ -19,6 +21,7 @@ type TabFilter = 'active' | 'past'
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function ChallengesScreen() {
+  const { t } = useTranslation()
   const router = useRouter()
   const user = useAuthUser()
   const userId = user?.id ?? null
@@ -110,7 +113,7 @@ export default function ChallengesScreen() {
       {loading ? (
         <View className="flex-1 items-center justify-center gap-2 py-10">
           <ActivityIndicator color="#a3e635" />
-          <Text className="font-mono text-xs text-muted-foreground">Cargando retos...</Text>
+          <Text className="font-mono text-xs text-muted-foreground">{t('common.loading')}</Text>
         </View>
       ) : (
         <FlatList
@@ -118,15 +121,11 @@ export default function ChallengesScreen() {
           keyExtractor={(item) => item.id}
           contentContainerClassName="px-4 pb-10 gap-2"
           ListEmptyComponent={
-            <View className="items-center gap-2 rounded-xl border border-dashed border-border py-14">
-              <Text className="text-3xl">🎯</Text>
-              <Text className="font-mono text-xs text-muted-foreground">
-                {filter === 'active' ? 'No hay retos activos' : 'No hay retos pasados'}
-              </Text>
-              <Text className="font-mono text-[10px] text-muted-foreground/60 text-center px-6">
-                Crea un reto desde la versión web para invitar a tus amigos
-              </Text>
-            </View>
+            <EmptyState
+              icon={Target}
+              title={filter === 'active' ? t('challenges.emptyActive') : t('challenges.emptyPast')}
+              body={t('challenges.emptyBody')}
+            />
           }
           renderItem={({ item }) => (
             <ChallengeCard

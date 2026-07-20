@@ -196,6 +196,12 @@ export function StepProgram({
         </Text>
       </View>
 
+      {user.primary_goal === 'resistencia' ? (
+        <View className="px-3 py-2 rounded-lg bg-card border border-border mb-4">
+          <Text className="text-xs text-muted-foreground">{t('onboarding.enduranceNotice')}</Text>
+        </View>
+      ) : null}
+
       <FlatList
         data={ordered}
         renderItem={renderItem}
