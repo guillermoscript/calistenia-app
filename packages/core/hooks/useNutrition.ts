@@ -84,8 +84,9 @@ const isTransient = (e: any) => {
 
 /**
  * Recalcula el objetivo de nutrición 'auto' de un usuario a partir de sus
- * datos corporales ACTUALES (peso/altura/edad/sexo/actividad/pace en
- * `users`), sin tocar nunca un goal 'manual' (#243 F3). Standalone — no
+ * datos corporales ACTUALES (peso/altura/actividad/pace en `users`; edad/sexo
+ * desde `nutrition_goals` porque son PII ocultos en `users`), sin tocar nunca
+ * un goal 'manual' (#243 F3). Standalone — no
  * depende de que la pantalla llamante monte `useNutrition` — para que
  * cualquier flujo que edite el perfil (p.ej. profile.tsx en mobile, #243
  * F4a) pueda disparar el refresco tras guardar.
@@ -110,8 +111,14 @@ export async function recomputeAutoNutritionGoal(
     const user: any = await pb.collection('users').getOne(userId)
     const weight = Number(user.weight) || undefined
     const height = Number(user.height) || undefined
-    const age = Number(user.age) || undefined
-    const sex = (user.sex as Sex) || undefined
+    // edad/sexo son PII: en `users` están marcados `hidden` (fix de seguridad
+    // GHSA-wwj3-9h95-wcpf, migración 1780500001) porque users es legible por
+    // cualquier usuario autenticado — no se serializan ni se pueden escribir
+    // con token de usuario. La fuente fiable es la fila de `nutrition_goals`
+    // (protegida per-user), que snapshotea el cuerpo; profile.tsx (#243 F4a) los
+    // escribe ahí. Peso/altura/actividad sí viven en `users` (no ocultos).
+    const age = Number(existing.age) || undefined
+    const sex = (existing.sex as Sex) || undefined
     // users.activity_level usa la escala de 4 niveles del onboarding; nutrición
     // usa 5 — mapea, con el nivel guardado en el goal como fallback si el user
     // aún no tiene activity_level propio.

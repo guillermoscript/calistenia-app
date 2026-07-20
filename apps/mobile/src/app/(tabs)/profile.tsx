@@ -73,6 +73,11 @@ export default function ProfileScreen() {
   // falla): guardar con los campos vacíos borraría peso/altura/edad/sexo/
   // actividad ya guardados. (#243 F4a)
   const [bodyLoaded, setBodyLoaded] = useState(false)
+  // Edad/sexo son PII ocultos en `users` (fix GHSA-wwj3-9h95-wcpf): no se
+  // serializan ni se pueden escribir con token de usuario. Su fuente fiable es
+  // la fila de `nutrition_goals` (protegida per-user), que además es lo que
+  // consume el cálculo de calorías. Guardamos su id para poder actualizarla.
+  const [bodyGoalId, setBodyGoalId] = useState<string | null>(null)
 
   const changeTheme = (mode: ThemeMode) => {
     setThemeMode(mode)
@@ -100,17 +105,31 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!user?.id) return
     let cancelled = false
-    pb.collection('users').getOne(user.id).then((rec: any) => {
-      if (cancelled) return
-      setWeight(rec.weight ? String(rec.weight) : '')
-      setHeight(rec.height ? String(rec.height) : '')
-      setAge(rec.age ? String(rec.age) : '')
-      setSex((rec.sex as 'male' | 'female') || '')
-      setActivityLevel((rec.activity_level as ActivityLevel) || '')
-      setBodyLoaded(true)
-    }).catch((e) => {
-      Sentry.captureException(e, { tags: { feature: 'profile', op: 'load_body_fields' } })
-    })
+    ;(async () => {
+      try {
+        // Peso/altura/actividad viven en `users` (no ocultos).
+        const rec: any = await pb.collection('users').getOne(user.id)
+        if (cancelled) return
+        setWeight(rec.weight ? String(rec.weight) : '')
+        setHeight(rec.height ? String(rec.height) : '')
+        setActivityLevel((rec.activity_level as ActivityLevel) || '')
+        // Edad/sexo desde la fila de nutrition_goals (PII protegida). Si el
+        // usuario aún no tiene objetivo, quedan vacíos y solo se fijarán al
+        // crear uno (el wizard los pide). (#243 F4a)
+        try {
+          const goal: any = await pb.collection('nutrition_goals').getFirstListItem(
+            pb.filter('user = {:uid}', { uid: user.id }), { $autoCancel: false },
+          )
+          if (cancelled) return
+          setBodyGoalId(goal.id)
+          setAge(goal.age ? String(goal.age) : '')
+          setSex((goal.sex as 'male' | 'female') || '')
+        } catch { /* sin objetivo todavía: edad/sexo vacíos */ }
+        if (!cancelled) setBodyLoaded(true)
+      } catch (e) {
+        Sentry.captureException(e, { tags: { feature: 'profile', op: 'load_body_fields' } })
+      }
+    })()
     return () => { cancelled = true }
   }, [user?.id])
 
@@ -118,13 +137,23 @@ export default function ProfileScreen() {
     if (!user || bodySaveState === 'saving' || !bodyLoaded) return
     setBodySaveState('saving')
     try {
+      // Peso/altura/actividad → `users` (campos no ocultos).
       await pb.collection('users').update(user.id, {
         weight: parseDecimal(weight),
         height: parseDecimal(height),
-        age: age ? parseInt(age, 10) : null,
-        sex: sex || '',
         activity_level: activityLevel || '',
       })
+      // Edad/sexo → fila de `nutrition_goals` (PII protegida; en `users` están
+      // ocultos y no se pueden escribir con token de usuario). Solo si ya hay
+      // objetivo; el recompute de abajo la releerá desde ahí. (#243 F4a)
+      if (bodyGoalId) {
+        await pb.collection('nutrition_goals').update(bodyGoalId, {
+          age: age ? parseInt(age, 10) : null,
+          sex: sex || '',
+        }).catch((e) => {
+          Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_age_sex' } })
+        })
+      }
       setBodySaveState('saved')
       setTimeout(() => setBodySaveState('idle'), 2000)
       // Reactivo (#243 F3): si el goal nutricional guardado es 'auto', refresca
