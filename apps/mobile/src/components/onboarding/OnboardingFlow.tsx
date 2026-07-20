@@ -124,11 +124,12 @@ export function OnboardingFlow() {
     if (!userId) return
     setSavingProfile(true)
     try {
+      // Edad/sexo ya no existen en `users` (PII; viven en `nutrition_goals`,
+      // que el wizard de nutrición pide al crear el objetivo). Aquí solo se
+      // usan para las heurísticas del propio flujo.
       await pb.collection('users').update(userId, {
         weight: parseDecimal(basics.weight),
         height: parseDecimal(basics.height),
-        age: basics.age ? parseInt(basics.age, 10) : null,
-        sex: basics.sex || null,
       })
     } catch (e) {
       console.warn('Failed to save onboarding basics:', e)

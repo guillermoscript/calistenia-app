@@ -282,11 +282,11 @@ export default function NutritionTab() {
         const user = await pb.collection('users').getOne(userId)
         const weight = user.weight || undefined
         const goalWeight = user.goal_weight || undefined
+        // Edad/sexo ya no existen en `users` (PII → nutrition_goals); el wizard
+        // los pide y los guarda en la propia fila del objetivo.
         setProfileData({
           weight,
           height: user.height || undefined,
-          age: user.age || undefined,
-          sex: user.sex || undefined,
           goalWeight,
           activityLevel: user.activity_level ? ONBOARDING_ACTIVITY_MAP[user.activity_level] : undefined,
           pace: user.pace || undefined,
