@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router'
 import Animated, { FadeInRight } from 'react-native-reanimated'
 
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { upsertUserHealth, useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { op } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
@@ -79,6 +80,9 @@ export function OnboardingFlow() {
   const [savingTraining, setSavingTraining] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
+  // Salud guardada (user_health): fallback para el matching de programas cuando
+  // el flujo no pasó por el paso de salud (needsProfile=false).
+  const { health: savedHealth } = useUserHealth(userId ?? null)
 
   // Step index layout (frozen via needsProfile)
   const profileStep = needsProfile ? 1 : -1
@@ -164,11 +168,13 @@ export function OnboardingFlow() {
     goToStep(healthStep)
   }
 
+  // Salud → colección `user_health` (en `users` estos campos son PII ocultos
+  // que no se pueden escribir con token de usuario; ver #247).
   const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
     if (!userId) return
     setSavingHealth(true)
     try {
-      await pb.collection('users').update(userId, {
+      await upsertUserHealth(userId, {
         medical_conditions: next.medical_conditions,
         injuries: next.injuries,
       })
@@ -234,8 +240,8 @@ export function OnboardingFlow() {
     goal_weight: parseDecimal(goals.goal_weight) ?? (user as Record<string, unknown>)?.goal_weight as number | undefined,
     focus_areas: training.focus_areas.length ? training.focus_areas : (user as Record<string, unknown>)?.focus_areas as string[] | undefined,
     training_days: training.training_days.length ? training.training_days : (user as Record<string, unknown>)?.training_days as string[] | undefined,
-    injuries: health.injuries.length ? health.injuries : (user as Record<string, unknown>)?.injuries as string[] | undefined,
-    medical_conditions: health.medical_conditions.length ? health.medical_conditions : (user as Record<string, unknown>)?.medical_conditions as string[] | undefined,
+    injuries: health.injuries.length ? health.injuries : savedHealth.injuries,
+    medical_conditions: health.medical_conditions.length ? health.medical_conditions : savedHealth.medical_conditions,
     primary_goal: goals.primary_goal || (user as Record<string, unknown>)?.primary_goal as string | undefined,
   }
 

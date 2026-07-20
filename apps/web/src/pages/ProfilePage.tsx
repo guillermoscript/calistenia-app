@@ -16,6 +16,7 @@ import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money
 import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity } from '../components/onboarding/StepTraining'
 import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
 import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
+import { fetchUserHealth, upsertUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
 interface ProfilePageProps {
@@ -106,8 +107,6 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           setGoalWeight((rec as any).goal_weight ? String((rec as any).goal_weight) : '')
           setActivityLevel((rec as any).activity_level || '')
           setPace((rec as any).pace || '')
-          setMedicalConditions(Array.isArray((rec as any).medical_conditions) ? (rec as any).medical_conditions : [])
-          setInjuries(Array.isArray((rec as any).injuries) ? (rec as any).injuries : [])
           setFocusAreas(Array.isArray((rec as any).focus_areas) ? (rec as any).focus_areas : [])
           setTrainingDays(Array.isArray((rec as any).training_days) ? (rec as any).training_days : [])
           setIntensity((rec as any).intensity || '')
@@ -124,6 +123,13 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             setAge((goalRec as any).age ? String((goalRec as any).age) : '')
             setSex((goalRec as any).sex || '')
           } catch { /* sin objetivo todavía: edad/sexo vacíos */ }
+          // Condiciones/lesiones desde `user_health` (en `users` son PII ocultos
+          // que no se serializan ni se pueden escribir con token de usuario). (#247)
+          const uh = await fetchUserHealth(user.id)
+          if (uh) {
+            setMedicalConditions(uh.medical_conditions)
+            setInjuries(uh.injuries)
+          }
         } catch (e) {
           console.warn('Failed to load profile:', e)
         }
@@ -185,8 +191,6 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           goal_weight: parseDecimal(goalWeight),
           activity_level: activityLevel || '',
           pace: pace || '',
-          medical_conditions: medicalConditions,
-          injuries,
           focus_areas: focusAreas,
           training_days: trainingDays,
           intensity: intensity || '',
@@ -201,6 +205,12 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             sex: sex || '',
           }).catch((e) => console.warn('Failed to save body age/sex:', e))
         }
+        // Condiciones/lesiones → `user_health` (upsert per-user; en `users`
+        // están ocultos y no se pueden escribir con token de usuario). (#247)
+        await upsertUserHealth(user.id, {
+          medical_conditions: medicalConditions,
+          injuries,
+        }).catch((e) => console.warn('Failed to save health:', e))
         setGlobalTimezone(timezone)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)

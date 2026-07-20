@@ -11,6 +11,7 @@ import { calculateWorkoutDuration } from '@calistenia/core/lib/duration'
 import ExerciseCard from '../components/ExerciseCard'
 import RestTimer from '../components/RestTimer'
 import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
+import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
 import { Button } from '../components/ui/button'
 import { triggerWorkoutDetailTour } from '../components/AppTour'
 import { Badge } from '../components/ui/badge'
@@ -23,11 +24,11 @@ export default function WorkoutPage() {
   const { logSet: onLogSet, markWorkoutDone: onMarkDone, unmarkWorkoutDone, isWorkoutDone, getExerciseLogs, getWorkout: getWorkoutAction } = useWorkoutActions()
   const { startSession } = useActiveSession()
   const { startCircuit } = useCircuitSession()
-  const { userId, userRole, user } = useAuthState()
-  const userInjuries = useMemo(
-    () => Array.isArray((user as any)?.injuries) ? (user as any).injuries : [],
-    [user],
-  )
+  const { userId, userRole } = useAuthState()
+  // Lesiones desde `user_health` (en `users` el campo es PII oculto y siempre
+  // llega vacío al cliente; ver #247).
+  const { health } = useUserHealth(userId ?? null)
+  const userInjuries = health.injuries
   const { t } = useTranslation()
   const navigate = useNavigate()
   const isAdmin = userRole === 'admin' || userRole === 'editor'
