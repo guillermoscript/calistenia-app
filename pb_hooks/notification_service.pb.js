@@ -344,7 +344,9 @@ onRecordAfterUpdateSuccess(function(e) {
 
     if (status !== "completed" || oldStatus === "completed") return
 
-    var challengeId = e.record.getId()
+    // getString("id"), no getId(): el JSVM de PB no expone getId() en Record
+    // (mismo gotcha que el handler de comments más arriba).
+    var challengeId = e.record.getString("id")
     var creatorId = e.record.getString("creator")
     var challengeTitle = e.record.getString("title") || "Desafio"
 
