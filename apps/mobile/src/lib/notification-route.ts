@@ -45,7 +45,6 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
       return `/social?session=${n.referenceId}${commentQs}`
     }
 
-    case 'challenge_invite':
     case 'challenge_join':
     case 'challenge_complete':
       // TODO: cuando exista /challenges/[id], usar `/challenges/${n.referenceId}`.

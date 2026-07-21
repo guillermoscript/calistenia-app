@@ -1060,7 +1060,6 @@
   "notif.reactionComment": "{{name}} reaccionó {{emoji}} a tu comentario",
   "notif.comment": "{{name}} comentó en tu sesión",
   "notif.commentReply": "{{name}} respondió a tu comentario",
-  "notif.challengeInvite": "{{name}} te invitó a un desafío",
   "notif.challengeJoin": "{{name}} se unió a tu desafío",
   "notif.challengeComplete": "El desafío {{title}} terminó!",
   "notif.achievement": "Desbloqueaste: {{name}}",

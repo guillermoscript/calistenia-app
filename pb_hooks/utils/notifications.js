@@ -38,7 +38,6 @@ function categoryForType(type) {
     case "comment":
     case "comment_reply": return "comments"
     case "follow": return "follows"
-    case "challenge_invite":
     case "challenge_join":
     case "challenge_complete": return "challenges"
     case "achievement":

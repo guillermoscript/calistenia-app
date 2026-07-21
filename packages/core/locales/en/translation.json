@@ -1060,7 +1060,6 @@
   "notif.reactionComment": "{{name}} reacted {{emoji}} to your comment",
   "notif.comment": "{{name}} commented on your session",
   "notif.commentReply": "{{name}} replied to your comment",
-  "notif.challengeInvite": "{{name}} invited you to a challenge",
   "notif.challengeJoin": "{{name}} joined your challenge",
   "notif.challengeComplete": "The challenge {{title}} has ended!",
   "notif.achievement": "Unlocked: {{name}}",
