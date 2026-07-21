@@ -73,3 +73,30 @@ test("racha que cruza un milestone notifica y hace fan-out; sin cruce no", async
   await update("user_stats", stats.id, { workout_streak_current: 3 })
   await expectNotifications(user.id, "streak", 1, "racha rota no notifica")
 })
+
+test("racha que cruza varios milestones a la vez notifica solo el mayor (#260)", async () => {
+  const user = await createUser("Atleta Salto")
+  const fan = await createUser("Fan Salto")
+  await createAs(fan, "follows", { follower: fan.id, following: user.id })
+
+  const stats = await create("user_stats", {
+    user: user.id,
+    workout_streak_current: 5,
+    workout_streak_best: 5,
+  })
+
+  // 5 → 20: cruza 7 y 14 en un solo update (recálculo server-side / sync
+  // atrasado) → una sola notif, la del milestone mayor (14).
+  await update("user_stats", stats.id, { workout_streak_current: 20 })
+  const [selfNotif] = await expectNotifications(user.id, "streak", 1, "solo el milestone mayor")
+  assert.equal(selfNotif.reference_id, "14")
+  assert.equal(selfNotif.data.days, 14)
+  const [friendNotif] = await expectNotifications(fan.id, "friend_streak", 1, "fan-out solo del mayor")
+  assert.equal(friendNotif.data.days, 14)
+
+  // 20 → 120: cruza 30, 50 y 100 → solo el 100
+  await update("user_stats", stats.id, { workout_streak_current: 120 })
+  const notifs = await expectNotifications(user.id, "streak", 2, "segundo salto notifica solo el 100")
+  const days = notifs.map((n) => n.data.days).sort((a, b) => a - b)
+  assert.deepEqual(days, [14, 100])
+})
