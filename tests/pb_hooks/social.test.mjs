@@ -70,6 +70,25 @@ test("reacción a cardio_session usa el fallback de colección", async () => {
   assert.equal(notif.reference_id, cardio.id)
 })
 
+test("comentario en cardio_session usa el fallback de colección", async () => {
+  const owner = await createUser("Dueno Cardio Com")
+  const commenter = await createUser("Comentarista Cardio")
+  const cardio = await createAs(owner, "cardio_sessions", {
+    user: owner.id,
+    activity_type: "running",
+    distance_km: 3,
+    duration_seconds: 1200,
+  })
+
+  await createAs(commenter, "comments", {
+    session_id: cardio.id,
+    author: commenter.id,
+    text: "Buen ritmo en esa carrera",
+  })
+  const [notif] = await expectNotifications(owner.id, "comment", 1, "comentario en cardio notifica al dueño")
+  assert.equal(notif.reference_id, cardio.id)
+})
+
 test("comentarios: owner, reply y dedup cuando owner == autor del padre", async () => {
   const owner = await createUser("Dueno Post")
   const commenter = await createUser("Comentarista")

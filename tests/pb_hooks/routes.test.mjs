@@ -52,6 +52,44 @@ test("race OG tags para crawler en carrera pública", async () => {
   assert.match(html, /5 km/)
 })
 
+test("race OG tags escapa HTML en el nombre (XSS)", async () => {
+  const creator = await createUser("Corredor XSS")
+  const race = await createAs(creator, "races", {
+    creator: creator.id,
+    name: '<script>alert(1)</script>"onload="x',
+    status: "pending",
+    is_public: true,
+    mode: "distance",
+    target_distance_km: 5,
+    activity_type: "running",
+  })
+
+  const res = await api(`/race/${race.id}`, { raw: true, headers: { "User-Agent": BOT_UA } })
+  assert.equal(res.status, 200)
+  const html = await res.text()
+  assert.ok(!html.includes("<script>alert"), "no inyecta el script crudo")
+  assert.match(html, /&lt;script&gt;/, "el nombre va escapado")
+  assert.match(html, /&quot;onload=&quot;/, "las comillas van escapadas")
+})
+
+test("race OG tags en modo tiempo muestra minutos", async () => {
+  const creator = await createUser("Corredor Tiempo")
+  const race = await createAs(creator, "races", {
+    creator: creator.id,
+    name: "Carrera 30 Minutos",
+    status: "pending",
+    is_public: true,
+    mode: "time",
+    target_duration_seconds: 1800,
+    activity_type: "running",
+  })
+
+  const res = await api(`/race/${race.id}`, { raw: true, headers: { "User-Agent": BOT_UA } })
+  assert.equal(res.status, 200)
+  const html = await res.text()
+  assert.match(html, /30 min/)
+})
+
 test("race OG tags no filtra carreras privadas ni responde a browsers", async () => {
   const creator = await createUser("Corredor Privado")
   const race = await createAs(creator, "races", {
