@@ -443,7 +443,9 @@ onRecordAfterUpdateSuccess(function(e) {
     var userId = e.record.getString("user")
     if (!userId) return
 
-    for (var i = 0; i < STREAK_MILESTONES.length; i++) {
+    // De mayor a menor: si un update cruza varios milestones (ej. 5 → 20),
+    // se notifica solo el mayor — una notif por update, la más significativa.
+    for (var i = STREAK_MILESTONES.length - 1; i >= 0; i--) {
       var milestone = STREAK_MILESTONES[i]
       if (currentStreak >= milestone && oldStreak < milestone) {
         helpers.createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
