@@ -109,6 +109,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // Rolldown extrae el singleton de PocketBase a un chunk compartido y
+        // puede ejecutarlo antes que init-core; esto fuerza orden de declaración.
+        strictExecutionOrder: true,
         manualChunks(id) {
           if (id.includes('data/exercise-catalog.json')) return 'exercise-catalog'
           if (id.includes('node_modules/recharts')) return 'recharts'
