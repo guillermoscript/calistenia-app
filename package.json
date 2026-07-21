@@ -11,6 +11,7 @@
     "build": "pnpm --filter @calistenia/web build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "test:pb-hooks": "node tests/pb_hooks/run.mjs",
     "outdated": "pnpm -r outdated",
     "preview": "pnpm --filter @calistenia/web preview",
     "pb:serve": "./pocketbase serve",

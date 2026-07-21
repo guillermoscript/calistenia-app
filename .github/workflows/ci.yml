@@ -74,6 +74,11 @@ jobs:
             "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" -o /tmp/pb.zip
           unzip -o /tmp/pb.zip -d /tmp/pb
 
+      # Integration tests de pb_hooks (issue #144): levantan su PROPIO PB
+      # efímero en un puerto libre — no interfieren con el PB del e2e de abajo.
+      - name: PB hooks integration tests
+        run: PB_BINARY=/tmp/pb/pocketbase node tests/pb_hooks/run.mjs
+
       - name: Start PocketBase (fresh data, migrations + hooks del repo)
         run: |
           /tmp/pb/pocketbase serve \

@@ -1,45 +1,18 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 /**
- * Helper: parse days_of_week from a record.
- * Handles both array and JSON-string formats.
+ * Crons de recordatorios push (comidas y entrenamientos).
+ *
+ * IMPORTANTE: los callbacks de cronAdd corren en un runtime JSVM AISLADO y no
+ * ven funciones top-level de este archivo — los helpers viven en
+ * ./utils/reminders.js y se requieren DENTRO de cada callback (mismo patrón y
+ * mismo motivo que utils/notifications.js). Antes eran top-level y cada tick
+ * moría con un ReferenceError silencioso: ningún reminder se envió nunca.
  */
-function parseDaysOfWeek(raw) {
-  if (Array.isArray(raw)) return raw
-  if (typeof raw === "string") {
-    try {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
-    } catch (e) {}
-  }
-  return [1, 2, 3, 4, 5]
-}
-
-/**
- * Helper: send a push notification to a user via the API.
- */
-function sendPush(userId, title, body, url) {
-  try {
-    const apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
-    const internalKey = $os.getenv("INTERNAL_API_KEY") || ""
-    const headers = { "Content-Type": "application/json" }
-    if (internalKey) {
-      headers["X-Internal-Key"] = internalKey
-    }
-    $http.send({
-      url: `${apiUrl}/api/send-push`,
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify({ user_id: userId, title, body, url }),
-      timeout: 10,
-    })
-  } catch (e) {
-    console.log("Push send error:", e)
-  }
-}
 
 // ── Meal reminders ─────────────────────────────────────────────────────────
 cronAdd("push_meal_reminders", "* * * * *", () => {
+  const helpers = require(`${__hooks}/utils/reminders.js`)
   const now = new Date()
   const currentHour = now.getHours()
   const currentMinute = now.getMinutes()
@@ -65,7 +38,7 @@ cronAdd("push_meal_reminders", "* * * * *", () => {
   for (const reminder of reminders) {
     const userId = reminder.getString("user")
     const mealType = reminder.getString("meal_type")
-    const daysOfWeek = parseDaysOfWeek(reminder.get("days_of_week"))
+    const daysOfWeek = helpers.parseDaysOfWeek(reminder.getString("days_of_week"))
 
     if (!daysOfWeek.includes(currentDay)) continue
 
@@ -127,12 +100,13 @@ cronAdd("push_meal_reminders", "* * * * *", () => {
       body = `Llevas ${Math.round(todayCalories)}/${Math.round(dailyGoal)} kcal hoy`
     }
 
-    sendPush(userId, `Hora de registrar tu ${label}`, body, "/nutrition")
+    helpers.sendPush(userId, `Hora de registrar tu ${label}`, body, "/nutrition")
   }
 })
 
 // ── Workout reminders ──────────────────────────────────────────────────────
 cronAdd("push_workout_reminders", "* * * * *", () => {
+  const helpers = require(`${__hooks}/utils/reminders.js`)
   const now = new Date()
   const currentHour = now.getHours()
   const currentMinute = now.getMinutes()
@@ -154,20 +128,20 @@ cronAdd("push_workout_reminders", "* * * * *", () => {
 
   for (const reminder of reminders) {
     const userId = reminder.getString("user")
-    const daysOfWeek = parseDaysOfWeek(reminder.get("days_of_week"))
+    const daysOfWeek = helpers.parseDaysOfWeek(reminder.getString("days_of_week"))
     const reminderType = reminder.getString("reminder_type") || "workout"
 
     if (!daysOfWeek.includes(currentDay)) continue
 
     if (reminderType === "pause") {
-      sendPush(
+      helpers.sendPush(
         userId,
         "Pausa Activa",
         "Levántate, estira y muévete — tu cuerpo lo agradece",
         "/workout"
       )
     } else {
-      sendPush(
+      helpers.sendPush(
         userId,
         "Hora de entrenar!",
         "Tu entrenamiento te espera. No pierdas la racha!",

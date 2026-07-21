@@ -21,13 +21,15 @@ cronAdd("weekly_cross_insight", "0 8 * * 1", () => { // Mondays 08:00 (server tz
   // Active users = distinct users with at least one push token (no last_active field exists).
   const seen = {}
   try {
-    const expo = $app.findRecordsByFilter("expo_push_tokens", "id != ''", "-created", 5000, 0)
+    // Sin sort: estas colecciones no tienen campo `created` y "-created"
+    // lanzaba GoError "invalid sort field" → el cron enumeraba 0 usuarios.
+    const expo = $app.findRecordsByFilter("expo_push_tokens", "id != ''", "", 5000, 0)
     for (let i = 0; i < expo.length; i++) seen[expo[i].getString("user")] = true
   } catch (e) {
     console.log("[weekly_cross_insight] expo query err", e)
   }
   try {
-    const web = $app.findRecordsByFilter("push_subscriptions", "id != ''", "-created", 5000, 0)
+    const web = $app.findRecordsByFilter("push_subscriptions", "id != ''", "", 5000, 0)
     for (let i = 0; i < web.length; i++) seen[web[i].getString("user")] = true
   } catch (e) {
     console.log("[weekly_cross_insight] web query err", e)
