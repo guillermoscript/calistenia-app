@@ -63,8 +63,6 @@ function getNotificationMessage(n: AppNotification, t: (k: string, opts?: Record
       return n.data?.preview
         ? `${name} respondió tu comentario: «${n.data.preview}»`
         : `${name} respondió tu comentario`
-    case 'challenge_invite':
-      return `${name} te invitó a un reto`
     case 'challenge_join':
       return `${name} se unió a tu reto`
     case 'challenge_complete': {

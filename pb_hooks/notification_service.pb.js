@@ -28,9 +28,9 @@
  *    mobile apps/mobile/src/app/notifications.tsx (message + route).
  * 7. Add i18n keys (notif.*) in packages/core/locales/{es,en}/translation.json.
  *
- * Current types: follow, reaction, comment, comment_reply, challenge_invite,
- * challenge_join, challenge_complete, achievement, streak, referral_signup,
- * referral_bonus, friend_streak, friend_achievement, friend_workout, friend_joined.
+ * Current types: follow, reaction, comment, comment_reply, challenge_join,
+ * challenge_complete, achievement, streak, referral_signup, referral_bonus,
+ * friend_streak, friend_achievement, friend_workout, friend_joined.
  */
 
 console.log("[notification_service] hook file loaded")
@@ -259,7 +259,10 @@ onRecordAfterCreateSuccess(function(e) {
   }
 }, "comment_reactions")
 
-// ── Challenge join + invite notifications ────────────────────────────────────
+// ── Challenge join notifications ─────────────────────────────────────────────
+// La API rule de challenge_participants (@request.body.user = @request.auth.id)
+// solo permite crearse la participación a uno mismo, así que no existe la
+// invitación por terceros — ver #261 si algún día se implementa de verdad.
 
 onRecordAfterCreateSuccess(function(e) {
   try {
@@ -277,35 +280,6 @@ onRecordAfterCreateSuccess(function(e) {
       challengeTitle = challenge.getString("title") || "un desafio"
     } catch (err) {
       return
-    }
-
-    // Determine who made the API call (inviter vs self-join)
-    var requestAuthId = ""
-    try {
-      var info = e.requestInfo()
-      if (info && info.auth) requestAuthId = info.auth.id || ""
-    } catch (err) { /* pre-0.36 or internal call */ }
-
-    // If someone else added this participant → notify the invited user
-    if (requestAuthId && requestAuthId !== userId) {
-      var inviterName = helpers.getUserName(requestAuthId)
-
-      helpers.createNotification(
-        userId,
-        "challenge_invite",
-        requestAuthId,
-        challengeId,
-        "challenge",
-        { inviterName: inviterName, challengeTitle: challengeTitle }
-      )
-
-      helpers.sendPush(
-        userId,
-        (inviterName || "Alguien") + " te invito a un desafio",
-        challengeTitle,
-        "/challenges/" + challengeId,
-        "challenge_invite"
-      )
     }
 
     // Notify the challenge creator that someone joined

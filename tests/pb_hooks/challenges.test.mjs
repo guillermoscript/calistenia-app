@@ -35,6 +35,22 @@ test("unirse a un reto notifica al creador (self-join sin challenge_invite)", as
   await expectNotifications(joiner.id, "challenge_invite", 0, "self-join sin challenge_invite")
 })
 
+test("no se puede crear participación para otro: la API rule bloquea invitaciones (#261)", async () => {
+  const inviter = await createUser("Invitador Reto")
+  const invited = await createUser("Invitado Reto")
+  const challenge = await makeChallenge(inviter)
+
+  // @request.body.user = @request.auth.id → crear participación para otro falla,
+  // por eso challenge_invite se eliminó como tipo de notificación (#261).
+  await assert.rejects(
+    createAs(inviter, "challenge_participants", { challenge: challenge.id, user: invited.id }),
+    (err) => err.status === 400 || err.status === 403,
+    "crear participación para otro debe rechazarse por API rule"
+  )
+
+  await expectNotifications(invited.id, "challenge_invite", 0, "sin notif de invitación")
+})
+
 test("el propio creador uniéndose no se auto-notifica", async () => {
   const creator = await createUser("Creador Solo")
   const challenge = await makeChallenge(creator)

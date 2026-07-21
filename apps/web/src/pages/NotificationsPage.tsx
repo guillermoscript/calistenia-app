@@ -55,8 +55,6 @@ function getNotificationMessage(n: AppNotification, t: TFunction): string {
       const base = t('notif.commentReply', { name: n.actorName })
       return n.data?.preview ? `${base}: «${n.data.preview}»` : base
     }
-    case 'challenge_invite':
-      return t('notif.challengeInvite', { name: n.actorName })
     case 'challenge_join':
       return t('notif.challengeJoin', { name: n.actorName })
     case 'challenge_complete':
@@ -95,7 +93,6 @@ function getNotificationRoute(n: AppNotification): string {
       const commentId = n.data?.commentId
       return `/feed?session=${n.referenceId}${commentId ? `&comment=${commentId}` : ''}`
     }
-    case 'challenge_invite':
     case 'challenge_join':
     case 'challenge_complete':
       return `/challenges/${n.referenceId}`
