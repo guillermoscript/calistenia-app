@@ -148,10 +148,9 @@ export async function generateSleepInsight({ context, tier }: SleepInsightInput)
       { role: "system", content: systemPrompt },
       { role: "user", content: userText },
     ],
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "sleep-insight-generator",
-      metadata: { tier, modelName, periodType: context.period.type },
     },
   });
 

@@ -1,4 +1,4 @@
-import { generateText, generateObject, Output, tool, stepCountIs } from "ai";
+import { generateText, generateObject, Output, tool, isStepCount } from "ai";
 import { z } from "zod";
 import { MealAnalysisSchema, QualityBlockSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
@@ -216,11 +216,12 @@ export async function analyzeMealImage({
     model,
     output: Output.object({ schema: MealAnalysisSchema }),
     tools: { search_food_database: searchFoodDatabase, ...webSearchTools },
-    stopWhen: stepCountIs(10),
-    experimental_telemetry: {
+    stopWhen: isStepCount(10),
+    runtimeContext: { tier, modelName, mode: images.length === 0 ? "text" : "image", ...(langfusePrompt && { langfusePrompt }) },
+    telemetry: {
       isEnabled: true,
       functionId: "meal-analyzer",
-      metadata: { tier, modelName, mode: images.length === 0 ? "text" : "image", ...(langfusePrompt && { langfusePrompt }) },
+      includeRuntimeContext: { tier: true, modelName: true, mode: true, langfusePrompt: true },
     },
     messages: [
       { role: "system", content: systemPrompt },
@@ -313,10 +314,9 @@ export async function scoreMealQuality({
         { role: "system", content: systemPrompt },
         { role: "user", content: userText },
       ],
-      experimental_telemetry: {
+      telemetry: {
         isEnabled: true,
         functionId: "meal-quality-scorer",
-        metadata: { tier, modelName },
       },
     });
 

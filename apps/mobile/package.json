@@ -17,7 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/react": "^3.0.201",
+    "@ai-sdk/react": "^4.0.40",
     "@bacons/apple-targets": "^4.0.7",
     "@calistenia/core": "workspace:*",
     "@expo-google-fonts/bebas-neue": "^0.4.1",
@@ -38,7 +38,7 @@
     "@tanstack/query-sync-storage-persister": "^5.66.0",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-query-persist-client": "^5.66.0",
-    "ai": "^6.0.199",
+    "ai": "^7.0.37",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "expo": "~57.0.4",

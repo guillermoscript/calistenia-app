@@ -221,10 +221,9 @@ export async function generateCrossInsight({ context, tier }: CrossInsightInput)
       { role: "system", content: systemPrompt },
       { role: "user", content: userText },
     ],
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "cross-insight-generator",
-      metadata: { tier, modelName, periodType: context.period.type },
     },
   });
 

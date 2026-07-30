@@ -1,4 +1,4 @@
-import { generateText, Output, tool, stepCountIs } from "ai";
+import { generateText, Output, tool, isStepCount } from "ai";
 import { z } from "zod";
 import { FoodItemSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
@@ -75,11 +75,12 @@ export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
     model,
     output: Output.object({ schema: FoodItemSchema }),
     tools: { search_food_database: searchFoodDatabase, ...webSearchTools },
-    stopWhen: stepCountIs(5),
-    experimental_telemetry: {
+    stopWhen: isStepCount(5),
+    runtimeContext: { tier, modelName, foodName, ...(langfusePrompt && { langfusePrompt }) },
+    telemetry: {
       isEnabled: true,
       functionId: "food-lookup",
-      metadata: { tier, modelName, foodName, ...(langfusePrompt && { langfusePrompt }) },
+      includeRuntimeContext: { tier: true, modelName: true, foodName: true, langfusePrompt: true },
     },
     messages: [
       { role: "system", content: systemPrompt },

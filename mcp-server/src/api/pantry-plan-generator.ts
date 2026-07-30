@@ -118,10 +118,9 @@ export async function generatePantryPlan({
   const { object, usage } = await generateObject({
     model,
     schema: SCHEMA_BY_HORIZON[horizon],
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "pantry-plan-generator",
-      metadata: { tier, modelName, horizon, ...(langfusePrompt && { langfusePrompt }) },
     },
     messages: [
       { role: "system", content: systemPrompt },

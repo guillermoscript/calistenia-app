@@ -68,10 +68,9 @@ export async function generateWeeklyInsight({
       { role: "system", content: systemPrompt },
       { role: "user", content: userText },
     ],
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "weekly-insight-generator",
-      metadata: { tier, modelName },
     },
   });
 

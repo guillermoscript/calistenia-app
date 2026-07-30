@@ -22,10 +22,9 @@ export async function parsePantryText({ text, existingItems }: PantryParseInput)
   const { object, usage } = await generateObject({
     model,
     schema: PantryParseSchema,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "pantry-parser",
-      metadata: { modelName, ...(langfusePrompt && { langfusePrompt }) },
     },
     messages: [
       { role: "system", content: systemPrompt },
@@ -67,10 +66,9 @@ export async function matchConsumption({ foods, pantryItems }: MatchConsumptionI
   const { object, usage } = await generateObject({
     model,
     schema: MatchConsumptionSchema,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "pantry-consumption-matcher",
-      metadata: { modelName, ...(langfusePrompt && { langfusePrompt }) },
     },
     messages: [
       { role: "system", content: systemPrompt },
@@ -116,10 +114,9 @@ export async function parseReceipt({ images, tier }: ReceiptParseInput) {
   const { object, usage } = await generateObject({
     model,
     schema: ReceiptParseSchema,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "receipt-parser",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
     },
     messages: [
       { role: "system", content: systemPrompt },

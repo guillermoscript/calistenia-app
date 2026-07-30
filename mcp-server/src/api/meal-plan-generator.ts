@@ -110,10 +110,9 @@ Cada comida debe traer su receta con la lista completa de ingredientes y su etiq
   const { object, usage } = await generateObject({
     model,
     schema: MealPlanSchema,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "meal-plan-generator",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
     },
     messages: [
       { role: "system", content: systemPrompt },
@@ -157,10 +156,9 @@ Cada comida debe traer su receta con la lista completa de ingredientes y su etiq
   const { object, usage } = await generateObject({
     model,
     schema: WeeklyMealPlanSchema,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "weekly-meal-plan-generator",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
     },
     messages: [
       { role: "system", content: systemPrompt },
