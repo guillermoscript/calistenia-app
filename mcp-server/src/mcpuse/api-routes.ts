@@ -201,7 +201,7 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
     try {
       const body = await c.req.json().catch(() => ({}));
-      const { remaining_calories, remaining_protein, remaining_carbs, remaining_fat, logged_meal_types = [] } = body ?? {};
+      const { remaining_calories, remaining_protein, remaining_carbs, remaining_fat, logged_meal_types = [], pantry_items = [] } = body ?? {};
       if (remaining_calories == null) return c.json({ error: "Se requieren los macros restantes" }, 400);
       const result = await generateDailyMealPlan({
         remainingCalories: Number(remaining_calories),
@@ -209,6 +209,9 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
         remainingCarbs: Number(remaining_carbs ?? 0),
         remainingFat: Number(remaining_fat ?? 0),
         loggedMealTypes: Array.isArray(logged_meal_types) ? logged_meal_types : [],
+        // Opcional y NO restrictivo: solo sirve para etiquetar cada ingrediente
+        // como 'pantry' o 'buy'. Sin él todo sale como 'buy', que es correcto.
+        pantryItems: Array.isArray(pantry_items) ? pantry_items.slice(0, 200) : [],
         tier: getTier(user),
       });
       return c.json(result);
@@ -306,7 +309,7 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
     try {
       const body = await c.req.json().catch(() => ({}));
-      const { remaining_calories, remaining_protein, remaining_carbs, remaining_fat, logged_meal_types = [] } = body ?? {};
+      const { remaining_calories, remaining_protein, remaining_carbs, remaining_fat, logged_meal_types = [], pantry_items = [] } = body ?? {};
       if (remaining_calories == null) return c.json({ error: "Se requieren los macros restantes" }, 400);
       if (!(await checkJobLimit(user.id))) {
         return c.json({ error: `Solo puedes tener ${MAX_PENDING_JOBS} analisis en proceso a la vez. Espera a que termine uno.` }, 429);
@@ -314,7 +317,11 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
       const pb = await getAdminPB();
       const record = await pb.collection("ai_jobs").create({
         user: user.id, type: "generate-meal-plan", status: "pending",
-        input: { remaining_calories, remaining_protein, remaining_carbs, remaining_fat, logged_meal_types, tier: getTier(user) },
+        input: {
+          remaining_calories, remaining_protein, remaining_carbs, remaining_fat, logged_meal_types,
+          pantry_items: Array.isArray(pantry_items) ? pantry_items.slice(0, 200) : [],
+          tier: getTier(user),
+        },
       });
       processJob(record.id).catch((err) => console.error("[job-processor-error]", record.id, err));
       return c.json({ job_id: record.id }, 202);
@@ -329,7 +336,7 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
     try {
       const body = await c.req.json().catch(() => ({}));
-      const { daily_calories, daily_protein, daily_carbs, daily_fat, goal = "maintain", week_start } = body ?? {};
+      const { daily_calories, daily_protein, daily_carbs, daily_fat, goal = "maintain", week_start, pantry_items = [] } = body ?? {};
       if (daily_calories == null) return c.json({ error: "Se requieren los macros diarios objetivo" }, 400);
       if (!(await checkJobLimit(user.id))) {
         return c.json({ error: `Solo puedes tener ${MAX_PENDING_JOBS} analisis en proceso a la vez. Espera a que termine uno.` }, 429);
@@ -337,7 +344,11 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
       const pb = await getAdminPB();
       const record = await pb.collection("ai_jobs").create({
         user: user.id, type: "generate-weekly-meal-plan", status: "pending",
-        input: { daily_calories, daily_protein, daily_carbs, daily_fat, goal, week_start: week_start || null, tier: getTier(user) },
+        input: {
+          daily_calories, daily_protein, daily_carbs, daily_fat, goal, week_start: week_start || null,
+          pantry_items: Array.isArray(pantry_items) ? pantry_items.slice(0, 200) : [],
+          tier: getTier(user),
+        },
       });
       processJob(record.id).catch((err) => console.error("[job-processor-error]", record.id, err));
       return c.json({ job_id: record.id }, 202);
@@ -649,18 +660,22 @@ export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
     if (rl.exceeded) return c.json({ error: "Demasiadas solicitudes. Intenta de nuevo en un momento.", retry_after_ms: rl.retryAfterMs }, 429);
     try {
       const body = await c.req.json().catch(() => ({}));
-      const { horizon, target_date = null, pantry_items = [], goals = null } = body ?? {};
+      const { horizon, target_date = null, pantry_items = [], goals = null, budget_kind = "full" } = body ?? {};
       if (horizon !== "day" && horizon !== "how_many_meals") {
         return c.json({ error: "horizon debe ser 'day' o 'how_many_meals' (week: usa /api/jobs/generate-pantry-plan)" }, 400);
       }
       if (!Array.isArray(pantry_items) || pantry_items.length === 0) {
         return c.json({ error: "Se requiere pantry_items con al menos un item" }, 400);
       }
+      if (budget_kind !== "full" && budget_kind !== "remaining") {
+        return c.json({ error: "budget_kind debe ser 'full' o 'remaining'" }, 400);
+      }
       const result = await generatePantryPlan({
         horizon,
         targetDate: typeof target_date === "string" ? target_date : null,
         pantryItems: pantry_items.slice(0, 200),
         goals,
+        budgetKind: budget_kind,
         tier: getTier(user),
       });
       return c.json({ ...result, target_date });
