@@ -44,8 +44,14 @@ export function SectionHeader({ eyebrow, title, lead }: { eyebrow: string; title
 /**
  * Tabla de datos con scroll propio. `rows` son celdas ya renderizadas: la
  * primera columna se pinta destacada porque siempre es el nombre de la fila.
+ *
+ * `dots` es opcional y va en paralelo a `rows`: cada entrada es la clase de
+ * Tailwind del punto de color que precede a la primera celda de esa fila
+ * (`/features/progress` la usa para reproducir la leyenda del calendario).
+ * Las clases se escriben literales en quien llama, nunca compuestas en
+ * runtime, porque Tailwind purga lo que no ve en el fuente.
  */
-export function SpecTable({ columns, rows }: { columns: string[]; rows: ReactNode[][] }) {
+export function SpecTable({ columns, rows, dots }: { columns: string[]; rows: ReactNode[][]; dots?: Array<string | undefined> }) {
   return (
     <Reveal className="mt-12">
       <div className="overflow-x-auto border border-white/10">
@@ -67,7 +73,12 @@ export function SpecTable({ columns, rows }: { columns: string[]; rows: ReactNod
                     key={j}
                     className={j === 0 ? 'px-5 py-5 font-semibold text-white/90' : 'px-5 py-5 leading-relaxed text-white/60'}
                   >
-                    {cell}
+                    {j === 0 && dots?.[i] ? (
+                      <span className="flex items-start gap-2.5">
+                        <span aria-hidden="true" className={`mt-[.45rem] size-2 shrink-0 rounded-full ${dots[i]}`} />
+                        <span>{cell}</span>
+                      </span>
+                    ) : cell}
                   </td>
                 ))}
               </tr>
@@ -164,12 +175,16 @@ export function StepFlow({ items, loopLabel }: { items: Array<{ title: string; d
 
 /**
  * Rejilla de tarjetas para los argumentos que no son un recorrido ni una tabla:
- * tres ideas del mismo peso, cada una con su título y su párrafo.
+ * ideas del mismo peso, cada una con su título y su párrafo.
+ *
+ * `cols` solo admite 3 (por defecto) o 4, y las dos clases se escriben literales
+ * porque Tailwind purga lo que se compone en runtime. Con 4 ideas la rejilla de
+ * tres dejaría una tarjeta huérfana en la segunda fila.
  */
-export function CardGrid({ items }: { items: Array<{ title: string; desc: string }> }) {
+export function CardGrid({ items, cols = 3 }: { items: Array<{ title: string; desc: string }>; cols?: 3 | 4 }) {
   return (
     <Reveal className="mt-12">
-      <div className="grid gap-px bg-white/10 md:grid-cols-3">
+      <div className={`grid gap-px bg-white/10 ${cols === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
         {items.map(item => (
           <div key={item.title} className="flex flex-col bg-[hsl(75_8%_3%)] p-6">
             <h3 className="font-bebas text-2xl leading-tight tracking-wide">{item.title}</h3>

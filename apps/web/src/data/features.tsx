@@ -31,7 +31,7 @@ const Beyond = (index: number) => function BeyondPanel() { return <BeyondVisual 
 export const FEATURES: FeatureDef[] = [
   { slug: 'training', icon: Dumbbell, Visual: LibraryPanel, related: ['progress', 'circuits', 'offline'], Page: lazy(() => import('../pages/features/TrainingPage')) },
   { slug: 'nutrition', icon: ShoppingBasket, Visual: PantryPanel, related: ['progress', 'training', 'community'], Page: lazy(() => import('../pages/features/NutritionPage')) },
-  { slug: 'progress', icon: LineChart, Visual: ProgressPanel, related: ['training', 'nutrition', 'community'], blocks: 4, faqs: 3 },
+  { slug: 'progress', icon: LineChart, Visual: ProgressPanel, related: ['training', 'nutrition', 'community'], Page: lazy(() => import('../pages/features/ProgressPage')) },
   { slug: 'cardio', icon: Route, Visual: Beyond(0), related: ['races', 'progress', 'offline'], Page: lazy(() => import('../pages/features/CardioPage')) },
   { slug: 'circuits', icon: Timer, Visual: Beyond(1), related: ['training', 'cardio', 'progress'], blocks: 4, faqs: 3 },
   { slug: 'races', icon: Trophy, Visual: Beyond(2), related: ['cardio', 'challenges', 'community'], Page: lazy(() => import('../pages/features/RacesPage')) },
