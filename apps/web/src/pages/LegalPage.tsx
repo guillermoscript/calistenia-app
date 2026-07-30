@@ -227,7 +227,7 @@ export default function LegalPage() {
           <h2 className="text-xl font-semibold mt-8 mb-3">6. Conservación y borrado</h2>
           <ul className="list-disc pl-6 mb-4 space-y-1">
             <li>No borramos nada automáticamente. Mientras tu cuenta exista, se conserva todo lo que registres.</li>
-            <li>Todavía no existe un botón para borrar tu cuenta, ni en la web ni en Android. Escríbenos a la dirección de la sección 10 y la eliminamos.</li>
+            <li>Todavía no existe un botón para borrar tu cuenta, ni en la web ni en Android. Escríbenos a la dirección de la sección 12 y la eliminamos.</li>
             <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, ajustes, marcas personales y estadísticas.</li>
             <li>Dos categorías no se borran solas por un fallo técnico que estamos corrigiendo: tus sesiones de cardio, con su ruta GPS, y tus participaciones en carreras. Las eliminamos a mano en el mismo momento en que nos pides la baja.</li>
           </ul>
