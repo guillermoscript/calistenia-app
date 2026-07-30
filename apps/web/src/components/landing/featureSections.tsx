@@ -150,11 +150,18 @@ export function PlatformTable({ rows }: { rows: Array<{ label: string; web: bool
  * cinco pasos quepan en dos filas— y una última celda con la vuelta al primero.
  * Esa celda es la que cierra el círculo y, de paso, tapa el hueco que dejaría
  * un quinto paso en una rejilla de seis: no lleva número porque no es un paso.
+ *
+ * El número de columnas sale del número de pasos, y no es cosmético: una
+ * rejilla `gap-px` con una celda de menos la pinta como un bloque gris vacío.
+ * Tres pasos van directos a tres columnas —sin escala intermedia de dos, que
+ * dejaría el hueco a anchos medios— y cuatro, a cuatro. Las clases se escriben
+ * literales porque Tailwind purga lo que se compone en runtime.
  */
 export function StepFlow({ items, loopLabel }: { items: Array<{ title: string; desc: string }>; loopLabel?: string }) {
+  const cols = loopLabel ? 'sm:grid-cols-2 lg:grid-cols-3' : items.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'
   return (
     <Reveal className="mt-12">
-      <ol className={`grid gap-px bg-white/10 sm:grid-cols-2 ${loopLabel ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
+      <ol className={`grid gap-px bg-white/10 ${cols}`}>
         {items.map((item, i) => (
           <li key={item.title} className="flex flex-col bg-[hsl(75_8%_3%)] p-6">
             <span className="font-mono text-xs text-lime">0{i + 1}</span>
