@@ -157,7 +157,9 @@ export function StepFlow({ items }: { items: Array<{ title: string; desc: string
  * semántica la pone la lista ordenada.
  */
 export function StateWalkthrough({ items }: {
-  items: Array<{ badge: string; title: string; desc: string; actions: string; visual?: ReactNode }>
+  // `desc`/`actions` son `ReactNode` para que un paso pueda llevar un enlace
+  // interno en prosa. `title` sigue siendo `string`: es la key de la lista.
+  items: Array<{ badge: string; title: string; desc: ReactNode; actions: ReactNode; visual?: ReactNode }>
 }) {
   return (
     <ol className="mt-14 grid gap-12">
