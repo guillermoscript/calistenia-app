@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { dismissOverlays, TEST_PASS, TEST_NAME } from './helpers.js'
+import { dismissOverlays, suppressOverlays, TEST_PASS, TEST_NAME } from './helpers.js'
 
 /**
  * Golden path: onboarding completo + activación de programa real.
@@ -21,14 +21,13 @@ const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090'
 /** Signup SIN saltar el onboarding (no usar helpers.register, que lo salta). */
 async function signup(page) {
   const email = `pw_ob_${Date.now()}_${Math.random().toString(36).slice(2, 7)}@test.com`
-  await page.goto('/auth?mode=signup')
 
-  // El InstallPrompt programa su timer de 5s al montarse: pre-marcar el
-  // dismiss ANTES del signup para que ni siquiera se monte durante el wizard.
-  await page.evaluate(() => {
-    localStorage.setItem('calistenia_install_dismiss', Date.now().toString())
-    localStorage.setItem('calistenia_tour_dashboard', 'true')
-  })
+  // El InstallPrompt programa su timer de 5s al montarse, así que el dismiss
+  // tiene que estar escrito antes de que arranque la app: con `page.evaluate`
+  // después del `goto` el efecto ya ha corrido y el temporizador ya está en
+  // marcha, y el prompt acaba apareciendo a mitad del wizard.
+  await suppressOverlays(page)
+  await page.goto('/auth?mode=signup')
 
   const nameField = page.getByPlaceholder(/^name$|^nombre$/i)
   await expect(nameField).toBeVisible({ timeout: 10000 })
