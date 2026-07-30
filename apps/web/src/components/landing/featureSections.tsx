@@ -15,7 +15,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Check, Minus } from 'lucide-react'
+import { ArrowLeft, Check, Minus, RotateCcw } from 'lucide-react'
 import { Eyebrow, Reveal, usePrefersReducedMotion } from './shared'
 
 /** Enlace de vuelta al índice, en la parte alta del hero de cada página. */
@@ -134,11 +134,16 @@ export function PlatformTable({ rows }: { rows: Array<{ label: string; web: bool
 /**
  * Recorrido corto de N pasos en horizontal, para «cómo se empieza». Sin
  * visuales: cuando cada paso merece una pantalla, lo que toca es `Walkthrough`.
+ *
+ * Con `loopLabel` el recorrido se dibuja como ciclo: tres columnas —para que
+ * cinco pasos quepan en dos filas— y una última celda con la vuelta al primero.
+ * Esa celda es la que cierra el círculo y, de paso, tapa el hueco que dejaría
+ * un quinto paso en una rejilla de seis: no lleva número porque no es un paso.
  */
-export function StepFlow({ items }: { items: Array<{ title: string; desc: string }> }) {
+export function StepFlow({ items, loopLabel }: { items: Array<{ title: string; desc: string }>; loopLabel?: string }) {
   return (
     <Reveal className="mt-12">
-      <ol className="grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
+      <ol className={`grid gap-px bg-white/10 sm:grid-cols-2 ${loopLabel ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
         {items.map((item, i) => (
           <li key={item.title} className="flex flex-col bg-[hsl(75_8%_3%)] p-6">
             <span className="font-mono text-xs text-lime">0{i + 1}</span>
@@ -146,7 +151,32 @@ export function StepFlow({ items }: { items: Array<{ title: string; desc: string
             <p className="mt-3 text-sm leading-relaxed text-white/60">{item.desc}</p>
           </li>
         ))}
+        {loopLabel ? (
+          <li className="flex items-center justify-center gap-3 bg-[hsl(75_8%_3%)] p-6 text-center">
+            <RotateCcw aria-hidden="true" className="h-5 w-5 shrink-0 text-lime" />
+            <span className="font-bebas text-xl tracking-[.1em] text-lime">{loopLabel}</span>
+          </li>
+        ) : null}
       </ol>
+    </Reveal>
+  )
+}
+
+/**
+ * Rejilla de tarjetas para los argumentos que no son un recorrido ni una tabla:
+ * tres ideas del mismo peso, cada una con su título y su párrafo.
+ */
+export function CardGrid({ items }: { items: Array<{ title: string; desc: string }> }) {
+  return (
+    <Reveal className="mt-12">
+      <div className="grid gap-px bg-white/10 md:grid-cols-3">
+        {items.map(item => (
+          <div key={item.title} className="flex flex-col bg-[hsl(75_8%_3%)] p-6">
+            <h3 className="font-bebas text-2xl leading-tight tracking-wide">{item.title}</h3>
+            <p className="mt-3 text-sm leading-relaxed text-white/60">{item.desc}</p>
+          </div>
+        ))}
+      </div>
     </Reveal>
   )
 }
