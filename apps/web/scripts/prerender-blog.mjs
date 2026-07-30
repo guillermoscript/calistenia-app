@@ -203,8 +203,18 @@ function generateListingHtml(posts, locale) {
 </html>`
 }
 
+// Debe coincidir con FEATURES en src/data/features.tsx — hay un test que lo verifica.
+const FEATURE_SLUGS = [
+  'training', 'nutrition', 'progress', 'cardio', 'circuits', 'races', 'challenges', 'community', 'offline',
+]
+
 function generateSitemap(posts) {
   const urls = [
+    `  <url><loc>${SITE_URL}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
+    `  <url><loc>${SITE_URL}/features</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>`,
+    ...FEATURE_SLUGS.map(slug =>
+      `  <url><loc>${SITE_URL}/features/${slug}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>`),
+    `  <url><loc>${SITE_URL}/download</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
     `  <url><loc>${SITE_URL}/blog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
   ]
 

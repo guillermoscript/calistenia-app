@@ -82,3 +82,13 @@ apps/mobile/calistenia-*-firebase-adminsdk-*.json
 
 # TypeScript incremental build artifacts
 *.tsbuildinfo
+
+# design-sync (claude.ai/design)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+apps/web/.ds-entry.css
+apps/web/.ds-compiled.css
+apps/web/ds-types/

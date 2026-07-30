@@ -65,6 +65,8 @@ const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
 const BlogEditorPage = lazy(() => import('./pages/BlogEditorPage'))
 const BlogLayout = lazy(() => import('./components/blog/BlogLayout'))
 const DownloadPage = lazy(() => import('./pages/DownloadPage'))
+const FeaturesPage = lazy(() => import('./pages/FeaturesPage'))
+const FeaturePage = lazy(() => import('./pages/FeaturePage'))
 import OfflineBanner from './components/OfflineBanner'
 import ActiveCardioBar from './components/cardio/ActiveCardioBar'
 import ActiveSessionBubble from './components/ActiveFreeSessionBubble'
@@ -788,6 +790,18 @@ function AppInner() {
   // Public APK download page — accessible both logged-in and logged-out
   if (location.pathname === '/download' || location.pathname === '/descargar') {
     return <Suspense fallback={<Loader />}><DownloadPage /></Suspense>
+  }
+
+  // Public feature pages — accessible both logged-in and logged-out
+  if (location.pathname === '/features' || location.pathname.startsWith('/features/')) {
+    return (
+      <Suspense fallback={<Loader />}>
+        <Routes>
+          <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/features/:slug" element={<FeaturePage />} />
+        </Routes>
+      </Suspense>
+    )
   }
 
   // Public invite landing — accessible both logged-in and logged-out
