@@ -43,8 +43,9 @@ describe('LandingPage CTAs', () => {
 
   it('todos los CTA de Android llevan a /download', () => {
     renderLanding()
+    // hero + platform + final + enlace del pie
     const androidLinks = screen.getAllByRole('link', { name: /landing\.androidCta/ })
-    expect(androidLinks).toHaveLength(3)
+    expect(androidLinks).toHaveLength(4)
     for (const link of androidLinks) expect(link).toHaveAttribute('href', '/download')
   })
 
@@ -63,6 +64,30 @@ describe('LandingPage CTAs', () => {
     fireEvent.click(webButtons[1])
     expect(onGetStarted).toHaveBeenCalledTimes(1)
     expect(mockTrack).toHaveBeenCalledWith('cta_clicked', { location: 'hero', intent: 'web_start' })
+  })
+
+  it('cada sección enlaza a su página de función', () => {
+    renderLanding()
+    const hrefs = screen.getAllByRole('link', { name: /feature\.learnMore/ }).map(l => l.getAttribute('href'))
+    // training + nutrition + progress + el enlace bajo el panel de "más que una rutina"
+    expect(hrefs.slice(0, 3)).toEqual(['/features/training', '/features/nutrition', '/features/progress'])
+    expect(hrefs).toHaveLength(4)
+  })
+
+  it('la lista "mucho más que una rutina" enlaza a las seis páginas', () => {
+    renderLanding()
+    const slugs = ['cardio', 'circuits', 'races', 'challenges', 'community', 'offline']
+    for (const [i, slug] of slugs.entries()) {
+      const link = screen.getByRole('link', { name: new RegExp(`^landing\\.beyond${i + 1}\\b`) })
+      expect(link).toHaveAttribute('href', `/features/${slug}`)
+    }
+  })
+
+  it('el pie lista las nueve funciones', () => {
+    renderLanding()
+    const footerLinks = screen.getAllByRole('link', { name: /^feature\.[a-z]+\.name$/ })
+    expect(footerLinks).toHaveLength(9)
+    expect(footerLinks[0]).toHaveAttribute('href', '/features/training')
   })
 
   it('cada superficie de conversión trackea su location', () => {
