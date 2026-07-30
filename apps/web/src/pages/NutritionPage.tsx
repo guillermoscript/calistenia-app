@@ -11,16 +11,12 @@ import NutritionDashboard from '../components/nutrition/NutritionDashboard'
 import MealLogger from '../components/nutrition/MealLogger'
 import MealSuggestions from '../components/nutrition/MealSuggestions'
 import WeeklyNutritionChart from '../components/nutrition/WeeklyNutritionChart'
-import DailyMealPlan, { type PlannedMeal } from '../components/nutrition/DailyMealPlan'
 import DailySummaryCard from '../components/nutrition/DailySummaryCard'
-import WeeklyMealPlan from '../components/nutrition/WeeklyMealPlan'
 import { useNutrition } from '@calistenia/core/hooks/useNutrition'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
-import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
 import { usePantryItems } from '@calistenia/core/hooks/usePantry'
-import { usePantryPlan } from '@calistenia/core/hooks/usePantryPlan'
 import { useSpendSummary } from '@calistenia/core/hooks/useSpend'
-import { PantryPlanSection } from '../components/nutrition/PantryPlanSection'
+import { PlanTab } from '../components/nutrition/plan/PlanTab'
 import { usePantryDepletion } from '../components/pantry/use-pantry-depletion'
 import { PantryDepleteDialog } from '../components/pantry/PantryDepleteDialog'
 import { useBackgroundJobs } from '../hooks/useBackgroundJobs'
@@ -36,7 +32,7 @@ import { Card, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
 import { useMealLoggerActions } from '@calistenia/core/hooks/useMealLoggerActions'
-import type { NutritionGoal, NutritionGoalType, NutritionEntry, FoodItem, Sex } from '@calistenia/core/types'
+import type { NutritionGoal, NutritionGoalType, NutritionEntry, Sex } from '@calistenia/core/types'
 
 const LS_LAST_PHASE = 'calistenia_last_nutrition_phase'
 
@@ -140,24 +136,12 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     return tab === 'plan' || tab === 'weekly' ? 'plan' : 'today'
   })
 
-  const {
-    activePlan: weeklyPlan,
-    planDays: weeklyPlanDays,
-    isLoading: weeklyLoading,
-    generatePlan: generateWeeklyPlan,
-    regenerateDay: regenerateWeeklyDay,
-    logMeal: logWeeklyMeal,
-    deleteMeal: deleteWeeklyMeal,
-    archivePlan: archiveWeeklyPlan,
-    refresh: refreshWeeklyPlan,
-  } = useWeeklyMealPlan(userId)
   const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
 
   // ── Despensa (F1-F5) ───────────────────────────────────────────────────────
   const navigate = useNavigate()
   const { data: pantryItems = [] } = usePantryItems(userId)
   const pantryCount = pantryItems.length
-  const pantryPlan = usePantryPlan(userId)
   const spendData = useSpendSummary(userId, startOfWeekStr()).data
   const pantryDepletion = usePantryDepletion(userId)
 
@@ -321,45 +305,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
     }
   }, [calculateMacros])
 
-  const handleSavePlannedMeal = useCallback(async (meal: PlannedMeal) => {
-    const food: FoodItem = {
-      name: meal.label,
-      portionAmount: 1,
-      portionUnit: 'unidad',
-      unitWeightInGrams: 0,
-      calories: meal.calories,
-      protein: meal.protein,
-      carbs: meal.carbs,
-      fat: meal.fat,
-      baseCal100: meal.calories,
-      baseProt100: meal.protein,
-      baseCarbs100: meal.carbs,
-      baseFat100: meal.fat,
-      tags: ['plan-ia'],
-    }
-    await saveEntry({
-      user: userId || undefined,
-      mealType: meal.meal_type,
-      foods: [food],
-      totalCalories: meal.calories,
-      totalProtein: meal.protein,
-      totalCarbs: meal.carbs,
-      totalFat: meal.fat,
-      aiModel: 'meal-plan',
-      source: 'ai_daily_plan',
-      loggedAt: nowLocalForPB(),
-    })
-  }, [saveEntry, userId])
-
   const isToday = selectedDate === todayStr()
-
-  // Metas simplificadas para la generación pantry-aware (mismo shape que mobile)
-  const pantryGoals = useMemo(() => ({
-    calories: goals?.dailyCalories ?? 0,
-    protein: goals?.dailyProtein ?? 0,
-    carbs: goals?.dailyCarbs ?? 0,
-    fat: goals?.dailyFat ?? 0,
-  }), [goals])
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -494,7 +440,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             </Card>
           )}
 
-          {/* #243 F2: cambiar objetivo con preview de nuevo rango antes de aplicar */}
+          {/* #243 F2: cambiar objetivo con preview de nuevo rango antes de aplicar.
+              Solo en HOY: PLANIFICAR trabaja contra las metas ya fijadas, y este
+              bloque se colaba en la pestaña empujando el planificador hacia abajo. */}
+          {activeTab === 'today' && (
           <Card>
             <CardContent className="p-4">
               {!goalPickerOpen ? (
@@ -619,6 +568,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* US-15: Missed goals alert */}
           {missedGoalsAlert && (
@@ -713,67 +663,17 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           </div>
           )}
 
-          {/* ── PLANIFICAR: despensa → plan del día → plan desde despensa → semanal ── */}
+          {/* ── PLANIFICAR: dos ejes (cuándo × con qué), un presupuesto, un CTA ── */}
           {activeTab === 'plan' && (
-            <>
-              {/* Despensa: el inventario que alimenta los planes */}
-              <button
-                onClick={() => navigate('/pantry')}
-                className="w-full flex items-end justify-between border-b border-border pb-4 hover:opacity-80 transition-opacity text-left group"
-              >
-                <span className="space-y-1.5">
-                  <span className="block text-[10px] text-muted-foreground tracking-[3px] uppercase">
-                    {t('pantry.title')}
-                  </span>
-                  {pantryCount > 0 ? (
-                    <span className="block font-bebas text-3xl leading-none text-foreground">
-                      {pantryCount}
-                      <span className="font-mono text-[10px] tracking-[2px] text-muted-foreground">
-                        {'  '}{t('nutrition.planHub.foods').toUpperCase()}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="block text-xs text-muted-foreground">
-                      {t('nutrition.planHub.empty')}
-                    </span>
-                  )}
-                </span>
-                <span className="flex items-center gap-1 pb-0.5 text-[10px] font-mono tracking-widest uppercase text-lime-400 group-hover:text-lime-300 transition-colors">
-                  {t('nutrition.planHub.manage')} <span aria-hidden>›</span>
-                </span>
-              </button>
-
-              {/* Plan IA del día — siempre planifica HOY; se oculta solo sin budget */}
-              <DailyMealPlan
-                remaining={remaining}
-                goals={{ calories: goals.dailyCalories, protein: goals.dailyProtein, carbs: goals.dailyCarbs, fat: goals.dailyFat }}
-                loggedMealTypes={loggedMealTypes}
-                onSaveMeal={handleSavePlannedMeal}
-              />
-
-              {/* Plan del día desde la despensa (null si está vacía) */}
-              <PantryPlanSection userId={userId} goals={pantryGoals} />
-
-              {/* Plan semanal */}
-              <div className="border-t border-border pt-5">
-                <WeeklyMealPlan
-                  activePlan={weeklyPlan}
-                  planDays={weeklyPlanDays}
-                  isLoading={weeklyLoading}
-                  goals={goals}
-                  getDailyTotals={getDailyTotals}
-                  onGenerate={generateWeeklyPlan}
-                  onRegenerateDay={regenerateWeeklyDay}
-                  onLogMeal={logWeeklyMeal}
-                  onDeleteMeal={deleteWeeklyMeal}
-                  onArchive={archiveWeeklyPlan}
-                  onRefresh={refreshWeeklyPlan}
-                  userId={userId}
-                  hasPantry={pantryPlan.hasPantry}
-                  onGenerateFromPantry={() => pantryPlan.generateWeek(pantryGoals)}
-                />
-              </div>
-            </>
+            <PlanTab
+              userId={userId}
+              goals={goals}
+              todayTotals={todayTotals}
+              loggedMealTypes={loggedMealTypes}
+              pantryCount={pantryCount}
+              onOpenPantry={() => navigate('/pantry')}
+              onOpenShoppingList={() => navigate('/pantry/shopping')}
+            />
           )}
 
           {/* Coach & tendencia (collapsible) */}
@@ -847,7 +747,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           </div>
           )}
 
-          {/* FAB for meal logging */}
+          {/* FAB de registro — solo en HOY. En PLANIFICAR flotaba sobre el CTA de
+              generar, que es lima igual que él: dos botones lima, uno registra lo
+              que ya comiste y el otro planifica lo que vas a comer. */}
+          {activeTab === 'today' && (
           <div id="tour-meal-logger">
             <MealLogger
               onAnalyze={handleAnalyze}
@@ -860,6 +763,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               onSaved={pantryDepletion.runMatch}
             />
           </div>
+          )}
 
           {/* F4 (#173): confirmación de descuento de despensa post meal-log */}
           <PantryDepleteDialog

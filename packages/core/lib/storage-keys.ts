@@ -29,6 +29,8 @@ export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
   'calistenia_workout_reminders',
   // useWeeklyMealPlan
   'calistenia_weekly_plan',
+  // useMealPlans — planes de un día (meal_day_plans)
+  'calistenia_day_plans',
   // useNutrition
   'calistenia_nutrition_entries',
   'calistenia_nutrition_goals',

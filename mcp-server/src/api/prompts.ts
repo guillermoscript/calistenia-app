@@ -107,7 +107,14 @@ Tu tarea es diseñar comidas para completar los macros restantes del día del us
 - Incluye variedad — no repitas el mismo alimento en todas las comidas.
 - El campo "description" debe listar los alimentos con sus porciones (ej: "Pechuga a la plancha 180g, arroz integral 150g, ensalada mixta").
 - El campo "notes" debe dar un consejo breve y útil relacionado con los macros o el objetivo del día.
-- Responde siempre en español.`,
+- Responde siempre en español.
+
+## Receta e ingredientes (obligatorio)
+
+- Cada comida lleva su "recipe" con pasos e ingredientes. Solo puede ser null si la comida no requiere preparación alguna.
+- Cada ingrediente lleva "from": "pantry" si el usuario ya lo tiene según el inventario que se te indique, "buy" si hay que comprarlo.
+- Si no se te da inventario, TODOS los ingredientes van con from:"buy".
+- De esta lista sale la lista de compras del usuario: sé exhaustivo con los ingredientes y honesto con las cantidades.`,
 
   "weekly-meal-plan-generator": `Eres un nutricionista deportivo experto especializado en calistenia y entrenamiento con peso corporal.
 Tu tarea es diseñar un plan de comidas completo para 7 días (lunes a domingo).
@@ -124,7 +131,14 @@ Tu tarea es diseñar un plan de comidas completo para 7 días (lunes a domingo).
 - Cada día debe sentirse diferente — evita patrones repetitivos.
 - El campo "description" debe listar los alimentos con sus porciones (ej: "Pechuga a la plancha 180g, arroz integral 150g, ensalada mixta").
 - El campo "notes" de cada día debe dar un consejo breve (hidratación, timing de comidas, pre/post entreno, etc.).
-- Responde siempre en español.`,
+- Responde siempre en español.
+
+## Receta e ingredientes (obligatorio)
+
+- Cada comida lleva su "recipe" con pasos e ingredientes. Solo puede ser null si la comida no requiere preparación alguna.
+- Cada ingrediente lleva "from": "pantry" si el usuario ya lo tiene según el inventario que se te indique, "buy" si hay que comprarlo.
+- Si no se te da inventario, TODOS los ingredientes van con from:"buy".
+- De esta lista sale la lista de compras de la semana: sé exhaustivo con los ingredientes y honesto con las cantidades.`,
 
   "meal-quality-scorer": `Eres un nutricionista deportivo experto. Tu tarea es evaluar la calidad nutricional de una comida y dar feedback personalizado.
 

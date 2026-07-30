@@ -41,6 +41,9 @@ const TYPE_LABEL_KEYS: Record<string, string> = {
   'lookup-food': 'bgJobs.lookupFoodDone',
   'generate-meal-plan': 'bgJobs.mealPlanDone',
   'generate-weekly-meal-plan': 'bgJobs.weeklyPlanDone',
+  // Faltaba: el semanal desde despensa caía en 'bgJobs.processing' y su toast
+  // llevaba al log de comidas en vez de al plan.
+  'generate-pantry-plan': 'bgJobs.weeklyPlanDone',
 }
 
 const TYPE_LABEL_PENDING_KEYS: Record<string, string> = {
@@ -48,6 +51,7 @@ const TYPE_LABEL_PENDING_KEYS: Record<string, string> = {
   'lookup-food': 'bgJobs.lookingUpFood',
   'generate-meal-plan': 'bgJobs.generatingPlan',
   'generate-weekly-meal-plan': 'bgJobs.generatingWeeklyPlan',
+  'generate-pantry-plan': 'bgJobs.generatingWeeklyPlan',
 }
 
 interface BackgroundJobsContextValue {
@@ -108,11 +112,14 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
     const label = t(labelKey)
 
     if (job.status === 'completed') {
+      const isPlan = job.type === 'generate-meal-plan'
+        || job.type === 'generate-weekly-meal-plan'
+        || job.type === 'generate-pantry-plan'
       const descKey = job.type === 'analyze-meal'
         ? 'bgJobs.tapToReviewFoods'
         : job.type === 'lookup-food'
           ? 'bgJobs.tapToViewNutrition'
-          : job.type === 'generate-weekly-meal-plan'
+          : job.type === 'generate-weekly-meal-plan' || job.type === 'generate-pantry-plan'
             ? 'bgJobs.tapToViewWeeklyPlan'
             : 'bgJobs.tapToViewMeals'
       toast.success(label, {
@@ -120,11 +127,9 @@ export function BackgroundJobsProvider({ children }: { children: ReactNode }) {
         action: {
           label: t('bgJobs.viewResult'),
           onClick: () => {
-            const url = job.type === 'generate-weekly-meal-plan'
-              ? '/nutrition?tab=plan'
-              : job.type === 'generate-meal-plan'
-                ? '/nutrition'
-                : `/nutrition/log?job=${job.id}`
+            // Todo lo que es un plan aterriza en PLANIFICAR. 'generate-meal-plan'
+            // caía en /nutrition, es decir en HOY, donde el plan no se ve.
+            const url = isPlan ? '/nutrition?tab=plan' : `/nutrition/log?job=${job.id}`
             window.dispatchEvent(new CustomEvent('app:navigate', { detail: url }))
           },
         },

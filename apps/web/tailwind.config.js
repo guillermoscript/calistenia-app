@@ -77,6 +77,9 @@ export default {
       fontFamily: {
         bebas: ['Bebas Neue', 'sans-serif'],
         sans: ['DM Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // JetBrains Mono already ships in the index.html font link, but without
+        // this entry `font-mono` silently resolves to Tailwind's default stack.
+        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       borderRadius: {
         lg: 'var(--radius)',

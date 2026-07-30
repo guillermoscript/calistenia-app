@@ -111,6 +111,7 @@ export async function processJob(jobId: string): Promise<void> {
           loggedMealTypes: Array.isArray(input.logged_meal_types)
             ? input.logged_meal_types
             : [],
+          pantryItems: Array.isArray(input.pantry_items) ? input.pantry_items : [],
           tier,
         });
         notifTitle = "Plan listo";
@@ -125,6 +126,7 @@ export async function processJob(jobId: string): Promise<void> {
           dailyCarbs: Number(input.daily_carbs ?? 0),
           dailyFat: Number(input.daily_fat ?? 0),
           goal: input.goal ?? "maintain",
+          pantryItems: Array.isArray(input.pantry_items) ? input.pantry_items : [],
           tier,
         });
 

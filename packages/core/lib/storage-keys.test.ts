@@ -22,6 +22,7 @@ const EXPECTED_KEYS = [
   'calistenia_meal_reminders',
   'calistenia_workout_reminders',
   'calistenia_weekly_plan',
+  'calistenia_day_plans',
   'calistenia_nutrition_entries',
   'calistenia_nutrition_goals',
   'calistenia_last_meal_type',
@@ -31,8 +32,8 @@ const EXPECTED_KEYS = [
 ]
 
 describe('USER_SCOPED_STORAGE_KEYS', () => {
-  it('contiene exactamente las 17 claves de localStorage por usuario', () => {
-    expect(USER_SCOPED_STORAGE_KEYS).toHaveLength(17)
+  it('contiene exactamente las 18 claves de localStorage por usuario', () => {
+    expect(USER_SCOPED_STORAGE_KEYS).toHaveLength(18)
     expect([...USER_SCOPED_STORAGE_KEYS].sort()).toEqual([...EXPECTED_KEYS].sort())
   })
 })

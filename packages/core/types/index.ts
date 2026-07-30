@@ -1,5 +1,5 @@
 import type { TranslatableField } from '../lib/i18n-db'
-import type { Recipe } from './pantry'
+import type { PantrySnapshotItem, Recipe } from './pantry'
 
 // Integración smartwatch / hub de salud (Health Connect / HealthKit)
 export * from './health'
@@ -667,6 +667,36 @@ export interface WeeklyPlanDay {
   day_index: number
   meals: WeeklyPlannedMeal[]
   notes: string
+}
+
+// ─── Plan de UN día (colección meal_day_plans) ──────────────────────────────
+
+/** Con qué se generó el plan: solo la despensa, o libre etiquetando qué comprar. */
+export type PlanSource = 'pantry' | 'buy'
+
+/**
+ * Plan de un solo día, persistido en PB para que web y móvil vean lo mismo.
+ * Colección aparte de weekly_meal_plans a propósito: esa asume una única fila
+ * activa por usuario y meterlos juntos rompería el plan semanal en clientes
+ * viejos. Las comidas comparten forma con las del plan semanal, así que la
+ * misma fila de UI sirve para ambos.
+ */
+export interface MealDayPlan {
+  id: string
+  user: string
+  /** YYYY-MM-DD ya normalizado (PB devuelve "YYYY-MM-DD 00:00:00.000Z"). */
+  target_date: string
+  source: PlanSource
+  /** Qué representa goal_snapshot: día entero o lo que quedaba al generarlo. */
+  macro_basis: 'full' | 'remaining'
+  status: 'active' | 'archived'
+  goal_snapshot: DailyTotals
+  pantry_snapshot: PantrySnapshotItem[]
+  meals: WeeklyPlannedMeal[]
+  notes: string
+  ai_model: string
+  created?: string
+  updated?: string
 }
 
 // ─── Races ──────────────────────────────────────────────────────────────────
