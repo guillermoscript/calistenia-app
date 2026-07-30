@@ -1,0 +1,26 @@
+/* Emite declaraciones .d.ts solo para los primitivos de UI.
+ *
+ * apps/web es una app con `noEmit: true`: no produce declaraciones, y sin ellas
+ * el conversor emite `[key: string]: unknown` como contrato de props para los
+ * 129 componentes — el agente de diseño no sabría que Button tiene `variant`
+ * ni que Sheet tiene `side`. El extractor recorre apps/web/**\/*.d.ts, así que
+ * la salida va dentro de ese árbol.
+ *
+ * Lo ejecuta .design-sync/build-types.mjs. */
+{
+  "extends": "../apps/web/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "skipLibCheck": true,
+    "types": [],
+    "rootDir": "../apps/web/src",
+    "outDir": "../apps/web/ds-types"
+  },
+  "include": [
+    "../apps/web/src/components/ui/**/*.tsx",
+    "../apps/web/src/lib/utils.ts",
+    "../apps/web/src/hooks/use-mobile.tsx"
+  ]
+}
