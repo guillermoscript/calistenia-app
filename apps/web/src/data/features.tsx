@@ -36,7 +36,7 @@ export const FEATURES: FeatureDef[] = [
   { slug: 'circuits', icon: Timer, Visual: Beyond(1), related: ['training', 'cardio', 'progress'], blocks: 4, faqs: 3 },
   { slug: 'races', icon: Trophy, Visual: Beyond(2), related: ['cardio', 'challenges', 'community'], Page: lazy(() => import('../pages/features/RacesPage')) },
   { slug: 'challenges', icon: Flame, Visual: Beyond(3), related: ['community', 'progress', 'races'], blocks: 4, faqs: 3 },
-  { slug: 'community', icon: Users, Visual: Beyond(4), related: ['challenges', 'races', 'progress'], blocks: 4, faqs: 3 },
+  { slug: 'community', icon: Users, Visual: Beyond(4), related: ['challenges', 'races', 'progress'], Page: lazy(() => import('../pages/features/CommunityPage')) },
   { slug: 'offline', icon: WifiOff, Visual: Beyond(5), related: ['training', 'cardio', 'progress'], blocks: 4, faqs: 3 },
 ]
 
