@@ -440,7 +440,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
             </Card>
           )}
 
-          {/* #243 F2: cambiar objetivo con preview de nuevo rango antes de aplicar */}
+          {/* #243 F2: cambiar objetivo con preview de nuevo rango antes de aplicar.
+              Solo en HOY: PLANIFICAR trabaja contra las metas ya fijadas, y este
+              bloque se colaba en la pestaña empujando el planificador hacia abajo. */}
+          {activeTab === 'today' && (
           <Card>
             <CardContent className="p-4">
               {!goalPickerOpen ? (
@@ -565,6 +568,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* US-15: Missed goals alert */}
           {missedGoalsAlert && (
