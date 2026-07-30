@@ -37,23 +37,26 @@ function renderAt(path: string) {
   )
 }
 
+// Este fichero prueba la PLANTILLA compartida, no una función concreta: usa
+// siempre un slug que siga sin página propia (`FeatureDef.Page`). Los slugs ya
+// migrados tienen su test en src/pages/features/.
 describe('FeaturePage', () => {
   it('renderiza el detalle completo de la función', () => {
-    renderAt('/features/training')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('feature.training.title')
+    renderAt('/features/nutrition')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('feature.nutrition.title')
     // 4 bloques "qué incluye"
-    for (const n of [1, 2, 3, 4]) expect(screen.getByText(`feature.training.b${n}t`)).toBeInTheDocument()
+    for (const n of [1, 2, 3, 4]) expect(screen.getByText(`feature.nutrition.b${n}t`)).toBeInTheDocument()
     // 3 pasos + 3 preguntas
     for (const n of [1, 2, 3]) {
-      expect(screen.getByText(`feature.training.s${n}`)).toBeInTheDocument()
-      expect(screen.getByText(`feature.training.q${n}`)).toBeInTheDocument()
-      expect(screen.getByText(`feature.training.a${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.nutrition.s${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.nutrition.q${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.nutrition.a${n}`)).toBeInTheDocument()
     }
   })
 
   it('enlaza a las funciones relacionadas declaradas', () => {
-    renderAt('/features/training')
-    for (const slug of ['progress', 'circuits', 'offline']) {
+    renderAt('/features/nutrition')
+    for (const slug of ['progress', 'training', 'community']) {
       // Aparecen en la tarjeta de "sigue explorando" y en el índice del pie
       const links = screen.getAllByRole('link', { name: new RegExp(`feature\\.${slug}\\.name`) })
       expect(links.length).toBeGreaterThanOrEqual(2)
@@ -61,8 +64,6 @@ describe('FeaturePage', () => {
     }
   })
 
-  // Usa un slug que siga servido por la plantilla: los que tienen página propia
-  // (`FeatureDef.Page`) se prueban en su propio fichero, en src/pages/features/.
   it('ofrece volver al índice y descargar la app', () => {
     renderAt('/features/circuits')
     expect(screen.getAllByRole('link', { name: /feature\.allFeatures/ })[0]).toHaveAttribute('href', '/features')

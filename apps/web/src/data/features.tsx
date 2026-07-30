@@ -29,7 +29,7 @@ export interface FeatureDef {
 const Beyond = (index: number) => function BeyondPanel() { return <BeyondVisual index={index} /> }
 
 export const FEATURES: FeatureDef[] = [
-  { slug: 'training', icon: Dumbbell, Visual: LibraryPanel, related: ['progress', 'circuits', 'offline'], blocks: 4, faqs: 3 },
+  { slug: 'training', icon: Dumbbell, Visual: LibraryPanel, related: ['progress', 'circuits', 'offline'], Page: lazy(() => import('../pages/features/TrainingPage')) },
   { slug: 'nutrition', icon: ShoppingBasket, Visual: PantryPanel, related: ['progress', 'training', 'community'], blocks: 4, faqs: 3 },
   { slug: 'progress', icon: LineChart, Visual: ProgressPanel, related: ['training', 'nutrition', 'community'], blocks: 4, faqs: 3 },
   { slug: 'cardio', icon: Route, Visual: Beyond(0), related: ['races', 'progress', 'offline'], Page: lazy(() => import('../pages/features/CardioPage')) },
