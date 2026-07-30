@@ -14,7 +14,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.58",
     "@ai-sdk/google": "^3.0.43",
-    "@ai-sdk/openai": "^3.0.41",
+    "@ai-sdk/openai": "^4.0.20",
     "@langfuse/otel": "^5.9.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@opentelemetry/sdk-node": "^0.221.0",
