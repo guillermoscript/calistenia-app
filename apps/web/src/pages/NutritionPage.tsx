@@ -747,7 +747,10 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
           </div>
           )}
 
-          {/* FAB for meal logging */}
+          {/* FAB de registro — solo en HOY. En PLANIFICAR flotaba sobre el CTA de
+              generar, que es lima igual que él: dos botones lima, uno registra lo
+              que ya comiste y el otro planifica lo que vas a comer. */}
+          {activeTab === 'today' && (
           <div id="tour-meal-logger">
             <MealLogger
               onAnalyze={handleAnalyze}
@@ -760,6 +763,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               onSaved={pantryDepletion.runMatch}
             />
           </div>
+          )}
 
           {/* F4 (#173): confirmación de descuento de despensa post meal-log */}
           <PantryDepleteDialog
