@@ -61,8 +61,10 @@ describe('FeaturePage', () => {
     }
   })
 
+  // Usa un slug que siga servido por la plantilla: los que tienen página propia
+  // (`FeatureDef.Page`) se prueban en su propio fichero, en src/pages/features/.
   it('ofrece volver al índice y descargar la app', () => {
-    renderAt('/features/cardio')
+    renderAt('/features/circuits')
     expect(screen.getAllByRole('link', { name: /feature\.allFeatures/ })[0]).toHaveAttribute('href', '/features')
     for (const link of screen.getAllByRole('link', { name: /landing\.androidCta/ })) {
       expect(link).toHaveAttribute('href', '/download')
