@@ -168,6 +168,16 @@ export const qk = {
       ['weekly_meal_plans', 'active', userId] as const,
     days: (planId: string) => ['weekly_meal_plans', 'days', planId] as const,
   },
+  // Planes de UN día (colección meal_day_plans). Separada de weeklyMealPlan a
+  // propósito: son colecciones distintas y se invalidan por separado.
+  mealDayPlans: {
+    all: ['meal_day_plans'] as const,
+    active: (userId: string | null) =>
+      ['meal_day_plans', 'active', userId] as const,
+  },
+  // "¿Cuántas comidas me alcanzan?" — derivado de la despensa, no de un plan.
+  pantryCoverage: (userId: string | null, signature: string) =>
+    ['pantry', 'coverage', userId, signature] as const,
 
   // — Cardio / carreras —
   races: {

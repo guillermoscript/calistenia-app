@@ -88,11 +88,21 @@ describe('qk — jerarquía de invalidación (sub-keys empiezan con el prefijo d
 })
 
 describe('qk — dominios sin "all" explícito pero con prefijo interno consistente', () => {
-  it('pantry: list/history/spend/currency comparten el prefijo "pantry"', () => {
+  it('pantry: list/history/spend/currency/coverage comparten el prefijo "pantry"', () => {
     expect(qk.pantry.list('u1')[0]).toBe('pantry')
     expect(qk.pantry.history('u1')[0]).toBe('pantry')
     expect(qk.pantry.spend('u1', '2026-07-01')[0]).toBe('pantry')
     expect(qk.pantry.currency('u1')[0]).toBe('pantry')
+    // La cobertura sale del inventario: vive bajo "pantry" para que al tocar la
+    // despensa se invalide junto con el resto del dominio.
+    expect(qk.pantryCoverage('u1', 'sig')[0]).toBe('pantry')
+  })
+
+  it('mealDayPlans: active comparte el prefijo de mealDayPlans.all', () => {
+    expect(qk.mealDayPlans.all[0]).toBe('meal_day_plans')
+    expect(qk.mealDayPlans.active('u1')[0]).toBe('meal_day_plans')
+    // Colección distinta de weekly_meal_plans: invalidar una no debe tocar la otra.
+    expect(qk.mealDayPlans.active('u1')[0]).not.toBe(qk.weeklyMealPlan.active('u1')[0])
   })
 
   it('shopping: active/lastDone/cadence comparten el prefijo "shopping"', () => {
@@ -148,6 +158,7 @@ describe('qk — unicidad de prefijos raíz entre dominios', () => {
       qk.wgerSearch('t', 'es')[0], qk.foodHistory.recent('u', 1)[0],
       qk.mealTemplates('u')[0], qk.freeSessionTemplates('u')[0],
       qk.mealReminders('u')[0], qk.weeklyMealPlan.active('u')[0],
+      qk.mealDayPlans.all[0],
       qk.races.discover({})[0], qk.blogPosts(1, null)[0], qk.blogPost('s', 'es')[0],
       qk.pantry.list('u')[0], qk.shopping.active('u')[0], qk.savedRecipes.list('u')[0],
     ]
