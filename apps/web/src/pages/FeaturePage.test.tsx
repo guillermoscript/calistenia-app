@@ -42,21 +42,21 @@ function renderAt(path: string) {
 // migrados tienen su test en src/pages/features/.
 describe('FeaturePage', () => {
   it('renderiza el detalle completo de la función', () => {
-    renderAt('/features/nutrition')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('feature.nutrition.title')
+    renderAt('/features/progress')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('feature.progress.title')
     // 4 bloques "qué incluye"
-    for (const n of [1, 2, 3, 4]) expect(screen.getByText(`feature.nutrition.b${n}t`)).toBeInTheDocument()
+    for (const n of [1, 2, 3, 4]) expect(screen.getByText(`feature.progress.b${n}t`)).toBeInTheDocument()
     // 3 pasos + 3 preguntas
     for (const n of [1, 2, 3]) {
-      expect(screen.getByText(`feature.nutrition.s${n}`)).toBeInTheDocument()
-      expect(screen.getByText(`feature.nutrition.q${n}`)).toBeInTheDocument()
-      expect(screen.getByText(`feature.nutrition.a${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.progress.s${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.progress.q${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.progress.a${n}`)).toBeInTheDocument()
     }
   })
 
   it('enlaza a las funciones relacionadas declaradas', () => {
-    renderAt('/features/nutrition')
-    for (const slug of ['progress', 'training', 'community']) {
+    renderAt('/features/progress')
+    for (const slug of ['training', 'nutrition', 'community']) {
       // Aparecen en la tarjeta de "sigue explorando" y en el índice del pie
       const links = screen.getAllByRole('link', { name: new RegExp(`feature\\.${slug}\\.name`) })
       expect(links.length).toBeGreaterThanOrEqual(2)
