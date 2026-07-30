@@ -131,6 +131,65 @@ export function PlatformTable({ rows }: { rows: Array<{ label: string; web: bool
   )
 }
 
+/**
+ * Recorrido corto de N pasos en horizontal, para «cómo se empieza». Sin
+ * visuales: cuando cada paso merece una pantalla, lo que toca es `Walkthrough`.
+ */
+export function StepFlow({ items }: { items: Array<{ title: string; desc: string }> }) {
+  return (
+    <Reveal className="mt-12">
+      <ol className="grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((item, i) => (
+          <li key={item.title} className="flex flex-col bg-[hsl(75_8%_3%)] p-6">
+            <span className="font-mono text-xs text-lime">0{i + 1}</span>
+            <h3 className="mt-4 font-bebas text-2xl leading-tight tracking-wide">{item.title}</h3>
+            <p className="mt-3 text-sm leading-relaxed text-white/60">{item.desc}</p>
+          </li>
+        ))}
+      </ol>
+    </Reveal>
+  )
+}
+
+/**
+ * Recorrido vertical de una máquina de estados: cada paso lleva su badge de
+ * fase, lo que se ve y lo que se puede hacer. El raíl es decorativo — la
+ * semántica la pone la lista ordenada.
+ */
+export function StateWalkthrough({ items }: {
+  items: Array<{ badge: string; title: string; desc: string; actions: string; visual?: ReactNode }>
+}) {
+  return (
+    <ol className="mt-14 grid gap-12">
+      {items.map((item, i) => (
+        // El raíl vive en el `<li>`, fuera del `Reveal`: es decorativo y así el
+        // tramo llega hasta el paso siguiente sea cual sea la altura del visual.
+        // `Reveal` renderiza un `<div>`, por eso va dentro del `<li>` y no fuera.
+        <li key={item.title} className="relative pl-10">
+          <span aria-hidden="true" className="absolute left-[7px] top-2 h-2.5 w-2.5 rounded-full bg-lime" />
+          {i < items.length - 1 ? (
+            <span aria-hidden="true" className="absolute -bottom-12 left-[11px] top-6 w-px bg-gradient-to-b from-lime/40 to-white/5" />
+          ) : null}
+          <Reveal delay={i * 50}>
+            {/* `items-start`: el badge tiene que quedar a la altura de su punto del raíl */}
+            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
+              <div>
+                <span className="inline-block border border-lime/30 bg-lime/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.16em] text-lime">
+                  {item.badge}
+                </span>
+                <h3 className="mt-4 font-bebas text-3xl leading-tight tracking-wide sm:text-4xl">{item.title}</h3>
+                <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/60">{item.desc}</p>
+                <p className="mt-4 max-w-xl font-mono text-xs leading-relaxed text-white/40">{item.actions}</p>
+              </div>
+              {item.visual ? <div className="flex justify-center lg:justify-end">{item.visual}</div> : null}
+            </div>
+          </Reveal>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 /** Recorrido de N pasos, cada uno con su visual. La sección «no plantilla». */
 export function Walkthrough({ items }: { items: Array<{ label: string; title: string; desc: string; visual: ReactNode }> }) {
   return (
