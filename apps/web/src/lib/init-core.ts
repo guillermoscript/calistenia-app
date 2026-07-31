@@ -8,12 +8,26 @@ import * as Sentry from '@sentry/react'
 import { OpenPanel } from '@openpanel/web'
 import { initCore } from '@calistenia/core/platform'
 
+// Session replay (rrweb) solo en builds de producción y navegadores reales:
+// el e2e de CI corre contra el bundle de prod con `vite preview`, y no queremos
+// grabaciones de Playwright en el panel. navigator.webdriver los descarta.
+const replayEnabled =
+  !import.meta.env.DEV && typeof navigator !== 'undefined' && !navigator.webdriver
+
 const op = new OpenPanel({
   apiUrl: 'https://openpanel.guille.tech/api',
   clientId: import.meta.env.VITE_OPENPANEL_CLIENT_ID ?? '95f75c3f-fb38-4c0b-a401-a3a63f8b91f5',
   trackScreenViews: true,
   trackOutgoingLinks: true,
   trackAttributes: true,
+  sessionReplay: {
+    enabled: replayEnabled,
+    // maskAllText y maskAllInputs quedan en su default (true): la app maneja datos
+    // de salud (peso, lesiones, condiciones médicas, comidas) y no deben salir del
+    // navegador. Solo se desenmascara lo que marque `data-op-unmask`, que hoy son
+    // las páginas públicas de marketing (ver components/MarketingUnmask.tsx).
+    unmaskTextSelector: '[data-op-unmask]',
+  },
 })
 
 // Lightweight health check — logs to console if analytics endpoint is unreachable.
