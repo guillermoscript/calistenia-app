@@ -37,39 +37,19 @@ function renderAt(path: string) {
   )
 }
 
-// Este fichero prueba la PLANTILLA compartida, no una función concreta: usa
-// siempre un slug que siga sin página propia (`FeatureDef.Page`). Los slugs ya
-// migrados tienen su test en src/pages/features/.
+// Este fichero probaba la PLANTILLA compartida con el último slug que seguía
+// sin página propia. Al migrar `challenges` (#286) se cerró la épica #279 y ya
+// no queda ninguno: cada slug tiene su test en src/pages/features/, y aquí solo
+// se prueba lo que sigue siendo del resolutor — el slug desconocido.
+//
+// La rama de plantilla de `FeaturePage.tsx` queda sin ningún slug que la use.
+// Retirarla (junto con `FeatureDef.Visual`, `blocks` y `faqs`) es una limpieza
+// aparte: toca el registro, los paneles y la landing, y no entra en #286.
 describe('FeaturePage', () => {
-  it('renderiza el detalle completo de la función', () => {
-    renderAt('/features/challenges')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('feature.challenges.title')
-    // 4 bloques "qué incluye"
-    for (const n of [1, 2, 3, 4]) expect(screen.getByText(`feature.challenges.b${n}t`)).toBeInTheDocument()
-    // 3 pasos + 3 preguntas
-    for (const n of [1, 2, 3]) {
-      expect(screen.getByText(`feature.challenges.s${n}`)).toBeInTheDocument()
-      expect(screen.getByText(`feature.challenges.q${n}`)).toBeInTheDocument()
-      expect(screen.getByText(`feature.challenges.a${n}`)).toBeInTheDocument()
-    }
-  })
-
-  it('enlaza a las funciones relacionadas declaradas', () => {
-    renderAt('/features/challenges')
-    for (const slug of ['community', 'progress', 'races']) {
-      // Aparecen en la tarjeta de "sigue explorando" y en el índice del pie
-      const links = screen.getAllByRole('link', { name: new RegExp(`feature\\.${slug}\\.name`) })
-      expect(links.length).toBeGreaterThanOrEqual(2)
-      for (const link of links) expect(link).toHaveAttribute('href', `/features/${slug}`)
-    }
-  })
-
-  it('ofrece volver al índice y descargar la app', () => {
-    renderAt('/features/challenges')
-    expect(screen.getAllByRole('link', { name: /feature\.allFeatures/ })[0]).toHaveAttribute('href', '/features')
-    for (const link of screen.getAllByRole('link', { name: /landing\.androidCta/ })) {
-      expect(link).toHaveAttribute('href', '/download')
-    }
+  it('cada slug del registro resuelve a su propia página', () => {
+    // El contrato del resolutor: si hay `Page`, se renderiza esa y no la
+    // plantilla. Comprobarlo aquí evita que una migración se quede a medias.
+    for (const feature of FEATURES) expect(feature.Page, feature.slug).toBeDefined()
   })
 
   it('un slug desconocido cae en el índice de funciones', () => {
