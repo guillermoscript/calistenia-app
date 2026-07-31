@@ -27,7 +27,7 @@ const UPDATED = '31 de julio de 2026'
  *   `cardio_sessions` a la colección owner-only `cardio_routes` (1782500000),
  *   con las cinco reglas atadas al dueño. El muro sigue abierto pero ya no
  *   arrastra la ruta.
- * - Rutas GPS de carreras: SIGUE ABIERTO. `race_participants.gps_track`
+ * - Rutas GPS de carreras: SIGUE ABIERTO (#316). `race_participants.gps_track`
  *   (1776000002:19-22) es un campo json normal de una colección legible por
  *   cualquier cuenta autenticada (1775200002:27,28), sin filtro de bloqueo.
  *   Mismo agujero que tenía el cardio, en la colección de al lado.

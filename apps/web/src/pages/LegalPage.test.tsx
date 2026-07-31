@@ -66,8 +66,8 @@ describe('LegalPage · privacidad', () => {
       .toHaveTextContent(/El bloqueo no las oculta/)
   })
 
-  // #299 cerró el agujero del cardio pero NO el de las carreras
-  // (`race_participants.gps_track` sigue siendo legible por cualquier cuenta),
+  // #299 cerró el agujero del cardio pero NO el de las carreras: #316 sigue
+  // abierto (`race_participants.gps_track` es legible por cualquier cuenta),
   // así que la página tiene que seguir avisando, ahora acotado a carreras.
   it('publica la limitacion de las rutas GPS de carreras en vez de omitirla', () => {
     renderPage()
