@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 
-const UPDATED = '30 de julio de 2026'
+const UPDATED = '31 de julio de 2026'
 
 /**
  * Política de privacidad y condiciones (issue #295).
@@ -28,8 +28,11 @@ const UPDATED = '30 de julio de 2026'
  *   excluyen, pero eso es convención del cliente, no regla de servidor.
  * - Ficheros con `protected: false`: fotos de progreso (1774000008:50) y de
  *   comida (1774000064:18) -> URL larga sin comprobación de sesión.
- * - Sin `cascadeDelete` desde users: `cardio_sessions` (1774000029:12) y
- *   `race_participants` (1775200002:15). Todo lo demás sí cascadea.
+ * - Desde #300 todas las relaciones a `users` cascadean: las 7 que faltaban
+ *   (`cardio_sessions`, `circuit_sessions`, `race_participants`, `races`,
+ *   `referrals` x2, `content_reports.target_user`) se arreglaron en
+ *   `1782600000_cascade_delete_user_relations.js`. Sin ellas PocketBase ni
+ *   siquiera dejaba borrar la cuenta (400 por relación requerida).
  * - Terceros: proveedores de IA en `mcp-server/src/api/model-resolver.ts:22-32`,
  *   fotos de comida enviadas en `meal-analyzer.ts:204-213`, contexto de los
  *   resúmenes en `insight-context-server.ts:468-679`, Langfuse sin enmascarado
@@ -46,7 +49,10 @@ const UPDATED = '30 de julio de 2026'
  * - Exportación: `apps/web/src/components/progress/ExportData.tsx:55-65`.
  * - Condiciones médicas y lesiones NO salen a la IA: solo se usan en cliente
  *   (`packages/core/lib/matchPrograms.ts:78-79`, `lib/injuryMatch.ts`).
- * - No existe borrado de cuenta autoservicio en ninguna plataforma (#300).
+ * - Borrado autoservicio (#300): `users.deleteRule` es `id = @request.auth.id`;
+ *   la UI está en `components/profile/DeleteAccountDialog.tsx` (web) y
+ *   `apps/mobile/src/components/profile/DeleteAccountModal.tsx` (Android), y la
+ *   operación compartida en `packages/core/hooks/useDeleteAccount.ts`.
  */
 
 /** Fila de la tabla de visibilidad: `who` admite varias frases. */
@@ -229,9 +235,9 @@ export default function LegalPage() {
           <h2 className="text-xl font-semibold mt-8 mb-3">6. Conservación y borrado</h2>
           <ul className="list-disc pl-6 mb-4 space-y-1">
             <li>No borramos nada automáticamente. Mientras tu cuenta exista, se conserva todo lo que registres.</li>
-            <li>Todavía no existe un botón para borrar tu cuenta, ni en la web ni en Android. Escríbenos a la dirección de la sección 12 y la eliminamos.</li>
-            <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, ajustes, marcas personales y estadísticas.</li>
-            <li>Dos categorías no se borran solas por un fallo técnico que estamos corrigiendo: tus sesiones de cardio, con su ruta GPS, y tus participaciones en carreras. Las eliminamos a mano en el mismo momento en que nos pides la baja.</li>
+            <li>Puedes eliminar tu cuenta tú mismo desde tu perfil, tanto en la web como en la aplicación de Android, sin pedírnoslo. Te pedimos escribir tu correo para confirmar y el borrado es inmediato. Si prefieres que lo hagamos nosotros, escríbenos a la dirección de la sección 12.</li>
+            <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, sesiones de cardio con su ruta GPS, circuitos, participaciones en carreras y las carreras que hayas creado, tus comentarios y reacciones, retos, ajustes, marcas personales y estadísticas.</li>
+            <li>No guardamos ninguna copia tras el borrado, así que una cuenta eliminada no se puede recuperar.</li>
           </ul>
 
           <h2 className="text-xl font-semibold mt-8 mb-3">7. Exportar tus datos</h2>
@@ -348,9 +354,9 @@ export default function LegalPage() {
           <h2 className="text-xl font-semibold mt-8 mb-3">8. Terminación</h2>
           <p className="mb-4">
             Podemos suspender o cancelar tu cuenta si violas estas condiciones. Puedes darte de baja
-            cuando quieras: todavía no hay un botón para hacerlo dentro de la aplicación, así que
-            escríbenos y eliminamos tu cuenta y tus datos como se describe en la sección 6 de la
-            política de privacidad.
+            cuando quieras desde tu perfil, tanto en la web como en la aplicación de Android: tu
+            cuenta y tus datos se eliminan en ese momento, como se describe en la sección 6 de la
+            política de privacidad. También puedes escribirnos y lo hacemos nosotros.
           </p>
 
           <h2 className="text-xl font-semibold mt-8 mb-3">9. Modificaciones</h2>
