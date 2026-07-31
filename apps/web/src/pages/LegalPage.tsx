@@ -36,7 +36,9 @@ const UPDATED = '30 de julio de 2026'
  *   en `mcp-server/src/instrumentation.ts:22-24`, Sentry web con PII en
  *   `apps/web/src/instrument.ts:12`, móvil sin ella en
  *   `apps/mobile/src/lib/instrument.ts:15`, OpenPanel autoalojado en
- *   `apps/web/src/lib/init-core.ts:12` e identify con email en
+ *   `apps/web/src/lib/init-core.ts:12` con session replay enmascarado salvo en
+ *   los subárboles `data-op-unmask` (`components/MarketingUnmask.tsx`)
+ *   e identify con email en
  *   `packages/core/hooks/useAuth.ts:70,119`, push en `push-sender.ts:100-174`,
  *   mapas CARTO en `apps/web/src/components/cardio/RouteMap.tsx:21-22`.
  * - Cron semanal de resúmenes: `pb_hooks/weekly_insights.pb.js:13,22-35`
@@ -210,7 +212,7 @@ export default function LegalPage() {
             <li><strong>Proveedores de inteligencia artificial (Anthropic, OpenAI y Google):</strong> reciben las fotos de comida que envías a analizar y, para los resúmenes semanales, un resumen en texto de tus entrenos, cardio, comidas, agua, sueño, peso y datos de Health Connect. <strong>No</strong> reciben tus fotos de progreso, tus medidas corporales ni tus condiciones médicas y lesiones. El proveedor concreto depende de la disponibilidad del servicio en cada momento.</li>
             <li><strong>Langfuse (observabilidad de IA):</strong> cuando está activado, conserva una copia de las peticiones enviadas a los proveedores anteriores y de sus respuestas.</li>
             <li><strong>Sentry (diagnóstico de errores):</strong> en la web se envían tu nombre y tu correo junto al error, y se graba una repetición de la sesión con todo el texto enmascarado y las imágenes bloqueadas. En la aplicación de Android no se envían datos personales.</li>
-            <li><strong>OpenPanel (analítica de uso):</strong> está alojado en nuestra propia infraestructura y no en un servicio de terceros. Registra tu identificador, tu nombre, tu correo y los eventos de uso de la aplicación.</li>
+            <li><strong>OpenPanel (analítica de uso):</strong> está alojado en nuestra propia infraestructura y no en un servicio de terceros. Registra tu identificador, tu nombre, tu correo y los eventos de uso de la aplicación. En la web también graba una repetición de la sesión (clics, desplazamiento y navegación) con todo el texto y los campos de formulario enmascarados; solo se guarda el texto legible en las páginas públicas de presentación, blog y descarga, donde no aparecen datos personales.</li>
             <li><strong>Servicios de notificaciones (Expo, Firebase Cloud Messaging y el servicio push de tu navegador):</strong> reciben el identificador de notificaciones de tu dispositivo y el texto de cada aviso.</li>
             <li><strong>CARTO (mapas):</strong> sirve las imágenes del mapa sobre el que se dibuja tu ruta de cardio, por lo que conoce la zona que se está mostrando.</li>
             <li><strong>Requerimientos legales:</strong> si la ley lo exige.</li>
