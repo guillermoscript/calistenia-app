@@ -97,10 +97,18 @@ describe('LegalPage · privacidad', () => {
       .toBeInTheDocument()
   })
 
-  it('dice que no hay boton de baja y que cardio y carreras se borran a mano', () => {
+  it('describe la baja autoservicio que existe desde #300, en web y en Android', () => {
     renderPage()
-    expect(screen.getByText(/Todavía no existe un botón para borrar tu cuenta/)).toBeInTheDocument()
-    expect(screen.getByText(/tus sesiones de cardio, con su ruta GPS, y tus participaciones en carreras/))
+    expect(screen.getByText(/Puedes eliminar tu cuenta tú mismo desde tu perfil/)).toBeInTheDocument()
+    expect(screen.getByText(/Te pedimos escribir tu correo para confirmar/)).toBeInTheDocument()
+    expect(screen.getByText(/una cuenta eliminada no se puede recuperar/)).toBeInTheDocument()
+  })
+
+  it('incluye cardio y carreras entre lo que se borra con la cuenta', () => {
+    renderPage()
+    // Antes de #300 estas dos categorías se borraban a mano porque su relación
+    // con `users` no cascadeaba; ahora caen con el resto.
+    expect(screen.getByText(/sesiones de cardio con su ruta GPS, circuitos, participaciones en carreras/))
       .toBeInTheDocument()
   })
 
@@ -111,9 +119,13 @@ describe('LegalPage · privacidad', () => {
 })
 
 describe('LegalPage · frases retiradas', () => {
-  it('ya no promete un borrado de cuenta autoservicio que no existe', () => {
+  it('ya no dice que el borrado de cuenta no exista ni que haya que pedirlo por correo', () => {
     renderPage()
-    expect(screen.queryByText(/desde la configuración de tu perfil/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Todavía no existe un botón para borrar tu cuenta/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/todavía no hay un botón para hacerlo dentro de la aplicación/))
+      .not.toBeInTheDocument()
+    // Y tampoco vuelve la excepción de cardio/carreras, ya cascadeadas.
+    expect(screen.queryByText(/Las eliminamos a mano/)).not.toBeInTheDocument()
   })
 
   it('ya no dice que Google OAuth sea el unico tercero', () => {
@@ -124,6 +136,6 @@ describe('LegalPage · frases retiradas', () => {
 
   it('ambas secciones llevan la misma fecha de actualizacion', () => {
     renderPage()
-    expect(screen.getAllByText(/Última actualización: 30 de julio de 2026/)).toHaveLength(2)
+    expect(screen.getAllByText(/Última actualización: 31 de julio de 2026/)).toHaveLength(2)
   })
 })
