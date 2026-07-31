@@ -42,21 +42,21 @@ function renderAt(path: string) {
 // migrados tienen su test en src/pages/features/.
 describe('FeaturePage', () => {
   it('renderiza el detalle completo de la función', () => {
-    renderAt('/features/circuits')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('feature.circuits.title')
+    renderAt('/features/challenges')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('feature.challenges.title')
     // 4 bloques "qué incluye"
-    for (const n of [1, 2, 3, 4]) expect(screen.getByText(`feature.circuits.b${n}t`)).toBeInTheDocument()
+    for (const n of [1, 2, 3, 4]) expect(screen.getByText(`feature.challenges.b${n}t`)).toBeInTheDocument()
     // 3 pasos + 3 preguntas
     for (const n of [1, 2, 3]) {
-      expect(screen.getByText(`feature.circuits.s${n}`)).toBeInTheDocument()
-      expect(screen.getByText(`feature.circuits.q${n}`)).toBeInTheDocument()
-      expect(screen.getByText(`feature.circuits.a${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.challenges.s${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.challenges.q${n}`)).toBeInTheDocument()
+      expect(screen.getByText(`feature.challenges.a${n}`)).toBeInTheDocument()
     }
   })
 
   it('enlaza a las funciones relacionadas declaradas', () => {
-    renderAt('/features/circuits')
-    for (const slug of ['training', 'cardio', 'progress']) {
+    renderAt('/features/challenges')
+    for (const slug of ['community', 'progress', 'races']) {
       // Aparecen en la tarjeta de "sigue explorando" y en el índice del pie
       const links = screen.getAllByRole('link', { name: new RegExp(`feature\\.${slug}\\.name`) })
       expect(links.length).toBeGreaterThanOrEqual(2)
@@ -65,7 +65,7 @@ describe('FeaturePage', () => {
   })
 
   it('ofrece volver al índice y descargar la app', () => {
-    renderAt('/features/circuits')
+    renderAt('/features/challenges')
     expect(screen.getAllByRole('link', { name: /feature\.allFeatures/ })[0]).toHaveAttribute('href', '/features')
     for (const link of screen.getAllByRole('link', { name: /landing\.androidCta/ })) {
       expect(link).toHaveAttribute('href', '/download')
