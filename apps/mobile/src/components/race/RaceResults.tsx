@@ -14,6 +14,7 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { estimateCalories } from '@calistenia/core/lib/calories'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
+import { splitRoute, saveCardioRoute } from '@calistenia/core/lib/cardioRoutes'
 
 export default function RaceResults({ celebrate = false }: { celebrate?: boolean }) {
   const { t } = useTranslation()
@@ -43,7 +44,7 @@ export default function RaceResults({ celebrate = false }: { celebrate?: boolean
     try {
       const track = me.gps_track ?? []
       const startMs = race.starts_at ? new Date(race.starts_at).getTime() : Date.now()
-      await pb.collection('cardio_sessions').create({
+      const { record, points } = splitRoute({
         user: user.id,
         activity_type: race.activity_type,
         gps_points: track.map((p) => ({ lat: p.lat, lng: p.lng, timestamp: startMs + p.t })),
@@ -56,6 +57,8 @@ export default function RaceResults({ celebrate = false }: { celebrate?: boolean
         note: `Race: ${race.name}`,
         calories_burned: estimateCalories(race.activity_type, me.duration_seconds),
       })
+      const saved = await pb.collection('cardio_sessions').create(record)
+      await saveCardioRoute(saved.id, user.id, points)
       setSaved(true)
       void haptics.success()
     } catch (e) {

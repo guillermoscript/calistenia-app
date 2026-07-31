@@ -66,10 +66,19 @@ describe('LegalPage · privacidad', () => {
       .toHaveTextContent(/El bloqueo no las oculta/)
   })
 
-  it('publica la limitacion de las rutas GPS en vez de omitirla', () => {
+  // #299 cerró el agujero del cardio pero NO el de las carreras
+  // (`race_participants.gps_track` sigue siendo legible por cualquier cuenta),
+  // así que la página tiene que seguir avisando, ahora acotado a carreras.
+  it('publica la limitacion de las rutas GPS de carreras en vez de omitirla', () => {
     renderPage()
-    expect(screen.getByRole('heading', { name: /Rutas GPS: limitación conocida/ })).toBeInTheDocument()
-    expect(screen.getByText(/el servidor no impide leerla/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Rutas GPS de carreras: limitación conocida/ })).toBeInTheDocument()
+    expect(screen.getByText(/el servidor tampoco impide leerlo/)).toBeInTheDocument()
+  })
+
+  it('deja claro que la ruta de cardio ya solo la ve su dueño', () => {
+    renderPage()
+    expect(within(visibilityTable()).getByRole('row', { name: /La ruta GPS de tus sesiones de cardio/ }))
+      .toHaveTextContent(/Solo tú/)
   })
 
   it('explica que las fotos se sirven por una direccion no adivinable', () => {
@@ -97,10 +106,12 @@ describe('LegalPage · privacidad', () => {
       .toBeInTheDocument()
   })
 
-  it('dice que no hay boton de baja y que cardio y carreras se borran a mano', () => {
+  it('dice que no hay boton de baja y nombra lo que aun se borra a mano', () => {
     renderPage()
     expect(screen.getByText(/Todavía no existe un botón para borrar tu cuenta/)).toBeInTheDocument()
-    expect(screen.getByText(/tus sesiones de cardio, con su ruta GPS, y tus participaciones en carreras/))
+    // Tras #299 cardio y carreras ya cascadean; lo que queda a mano son las
+    // otras cuatro relaciones required sin cascade (territorio de #300).
+    expect(screen.getByText(/tus sesiones de circuito, las carreras que hayas creado, tus invitaciones a otras personas y las denuncias en las que aparezcas/))
       .toBeInTheDocument()
   })
 
@@ -124,6 +135,6 @@ describe('LegalPage · frases retiradas', () => {
 
   it('ambas secciones llevan la misma fecha de actualizacion', () => {
     renderPage()
-    expect(screen.getAllByText(/Última actualización: 30 de julio de 2026/)).toHaveLength(2)
+    expect(screen.getAllByText(/Última actualización: 31 de julio de 2026/)).toHaveLength(2)
   })
 })

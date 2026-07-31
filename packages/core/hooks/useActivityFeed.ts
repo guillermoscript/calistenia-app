@@ -153,7 +153,8 @@ export function useActivityFeed(userId: string | null) {
         $autoCancel: false,
       }).catch(() => ({ items: [] as any[] }))
 
-      // — cardio_sessions (sin gps_points; ordena por finished_at, no existe `created`) —
+      // — cardio_sessions (ordena por finished_at, no existe `created`). La ruta
+      //   ya ni siquiera está en el registro: vive en `cardio_routes` (#299). —
       const cardioFilter = pageParam
         ? `(${uidFilter}) && (${pb.filter('finished_at < {:c}', { c: pageParam })})`
         : uidFilter

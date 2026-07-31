@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 
-const UPDATED = '30 de julio de 2026'
+const UPDATED = '31 de julio de 2026'
 
 /**
  * Política de privacidad y condiciones (issue #295).
@@ -23,13 +23,21 @@ const UPDATED = '30 de julio de 2026'
  *   `cardio_sessions` con filtro de bloqueo (1778000002:11-22,27-31), y
  *   `sets_log` (1777000005:12,13), `settings` (1775100007:14,15) y
  *   `race_participants` (1775200002:27,28) SIN filtro de bloqueo.
- * - Rutas GPS: `gps_points` es un campo json normal de una colección abierta
- *   (1774000029:14). El comentario de 1776700001:5-6 dice que las consultas lo
- *   excluyen, pero eso es convención del cliente, no regla de servidor.
+ * - Rutas GPS de cardio: RESUELTO en #299. `gps_points` salió de
+ *   `cardio_sessions` a la colección owner-only `cardio_routes` (1782500000),
+ *   con las cinco reglas atadas al dueño. El muro sigue abierto pero ya no
+ *   arrastra la ruta.
+ * - Rutas GPS de carreras: SIGUE ABIERTO. `race_participants.gps_track`
+ *   (1776000002:19-22) es un campo json normal de una colección legible por
+ *   cualquier cuenta autenticada (1775200002:27,28), sin filtro de bloqueo.
+ *   Mismo agujero que tenía el cardio, en la colección de al lado.
  * - Ficheros con `protected: false`: fotos de progreso (1774000008:50) y de
  *   comida (1774000064:18) -> URL larga sin comprobación de sesión.
- * - Sin `cascadeDelete` desde users: `cardio_sessions` (1774000029:12) y
- *   `race_participants` (1775200002:15). Todo lo demás sí cascadea.
+ * - Borrado de cuenta: `cardio_sessions` y `race_participants` ya cascadean
+ *   (1782500001). Siguen SIN cascadear, y además bloquean el borrado del
+ *   registro de usuario por ser relaciones required: `referrals.referrer`,
+ *   `referrals.referred`, `circuit_sessions.user`, `races.creator` y
+ *   `content_reports.target_user`. Es territorio de #300.
  * - Terceros: proveedores de IA en `mcp-server/src/api/model-resolver.ts:22-32`,
  *   fotos de comida enviadas en `meal-analyzer.ts:204-213`, contexto de los
  *   resúmenes en `insight-context-server.ts:468-679`, Langfuse sin enmascarado
@@ -168,12 +176,16 @@ export default function LegalPage() {
                   who="Cualquier persona con una cuenta: son los datos que hacen funcionar la clasificación y los retos. El bloqueo no las oculta."
                 />
                 <VisibilityRow
-                  what="Sesiones de cardio, incluida la ruta GPS"
-                  who="Cualquier persona con una cuenta, salvo bloqueos. Ninguna pantalla de la aplicación muestra la ruta de otra persona, pero el servidor tampoco la oculta: quien consulte la API directamente puede leerla. Lo explicamos con detalle más abajo."
+                  what="Sesiones de cardio: distancia, ritmo y duración"
+                  who="Cualquier persona con una cuenta, no solo quienes te siguen. Se ocultan a quien hayas bloqueado y a quien te haya bloqueado."
                 />
                 <VisibilityRow
-                  what="Participaciones en carreras"
-                  who="Cualquier persona con una cuenta. El bloqueo no las oculta."
+                  what="La ruta GPS de tus sesiones de cardio"
+                  who="Solo tú. Se guarda aparte del resto de la sesión, precisamente para que el muro pueda mostrar la actividad sin exponer por dónde pasaste."
+                />
+                <VisibilityRow
+                  what="Participaciones en carreras, incluido el recorrido registrado"
+                  who="Cualquier persona con una cuenta. El bloqueo no las oculta. Lo explicamos con detalle más abajo."
                 />
                 <VisibilityRow
                   what="Tu nombre, tu foto y tus estadísticas"
@@ -192,14 +204,20 @@ export default function LegalPage() {
             si esa dirección se filtrara.
           </p>
 
-          <h3 className="text-lg font-semibold mt-6 mb-2">Rutas GPS: limitación conocida</h3>
+          <h3 className="text-lg font-semibold mt-6 mb-2">Rutas GPS de carreras: limitación conocida</h3>
           <p className="mb-4">
-            Preferimos decírtelo a que lo descubras por tu cuenta. Las sesiones de cardio son legibles por
-            cualquier cuenta con la sesión iniciada, porque alimentan el muro de actividad y las carreras, y
-            la ruta viaja dentro del mismo registro. La aplicación nunca dibuja la ruta de otra persona,
-            pero el servidor no impide leerla. Como una ruta suele empezar y terminar en tu casa, lo
-            consideramos un fallo y estamos trabajando en cerrarlo. Mientras tanto, si no quieres que tu
-            recorrido sea legible, no grabes cardio con GPS desde tu domicilio.
+            Preferimos decírtelo a que lo descubras por tu cuenta. Cuando corres una <strong>carrera</strong>,
+            el recorrido que registra tu móvil se guarda junto al resto de tu participación, y las
+            participaciones son legibles por cualquier cuenta con la sesión iniciada. Ninguna pantalla de la
+            aplicación dibuja el recorrido de otra persona, pero el servidor tampoco impide leerlo. Como un
+            recorrido suele empezar y terminar en tu casa, lo consideramos un fallo y estamos trabajando en
+            cerrarlo. Mientras tanto, si no quieres que quede legible, no participes en carreras desde tu
+            domicilio.
+          </p>
+          <p className="mb-4">
+            Esto <strong>ya no ocurre</strong> con las rutas de tus sesiones de cardio normales: desde el 31
+            de julio de 2026 se guardan en un sitio aparte al que solo llega tu cuenta. Las rutas que
+            grabaste antes de esa fecha también se movieron allí.
           </p>
 
           <h2 className="text-xl font-semibold mt-8 mb-3">4. Proveedores con los que compartimos datos</h2>
@@ -230,8 +248,8 @@ export default function LegalPage() {
           <ul className="list-disc pl-6 mb-4 space-y-1">
             <li>No borramos nada automáticamente. Mientras tu cuenta exista, se conserva todo lo que registres.</li>
             <li>Todavía no existe un botón para borrar tu cuenta, ni en la web ni en Android. Escríbenos a la dirección de la sección 12 y la eliminamos.</li>
-            <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, ajustes, marcas personales y estadísticas.</li>
-            <li>Dos categorías no se borran solas por un fallo técnico que estamos corrigiendo: tus sesiones de cardio, con su ruta GPS, y tus participaciones en carreras. Las eliminamos a mano en el mismo momento en que nos pides la baja.</li>
+            <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, ajustes, marcas personales y estadísticas. Desde el 31 de julio de 2026 también tus sesiones de cardio con su ruta GPS y tus participaciones en carreras, que antes había que borrar aparte.</li>
+            <li>Cuatro categorías siguen sin borrarse solas por un fallo técnico que estamos corrigiendo: tus sesiones de circuito, las carreras que hayas creado, tus invitaciones a otras personas y las denuncias en las que aparezcas. Las eliminamos a mano en el mismo momento en que nos pides la baja.</li>
           </ul>
 
           <h2 className="text-xl font-semibold mt-8 mb-3">7. Exportar tus datos</h2>

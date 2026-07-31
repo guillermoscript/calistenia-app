@@ -95,7 +95,6 @@ async function main() {
     const rec = {
       user: uid,
       activity_type: s.activity_type,
-      gps_points: gps,
       distance_km: s.distance_km,
       duration_seconds: s.duration_seconds,
       avg_pace: s.avg_pace ?? 0,
@@ -112,6 +111,11 @@ async function main() {
     const created = await api('/api/collections/cardio_sessions/records', {
       method: 'POST',
       body: JSON.stringify(rec),
+    }, token)
+    // La ruta vive en su propia colección owner-only desde #299.
+    await api('/api/collections/cardio_routes/records', {
+      method: 'POST',
+      body: JSON.stringify({ session: created.id, user: uid, points: gps }),
     }, token)
     console.log(`  + ${s.activity_type.padEnd(8)} ${s.distance_km}km  ${s.started_at.slice(0, 10)}  id=${created.id}  (${gps.length} gps pts)`)
   }
