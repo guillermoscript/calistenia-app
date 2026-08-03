@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 
 const PatternSchema = z.object({
   type: z.string().describe("Tipo de patrón: 'positive' o 'negative'"),
@@ -64,15 +65,11 @@ export async function generateWeeklyInsight({
   const { object } = await generateObject({
     model,
     schema: WeeklyInsightSchema,
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: userText },
     ],
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "weekly-insight-generator",
-      metadata: { tier, modelName },
-    },
+    telemetry: langfuseTelemetry("weekly-insight-generator", { metadata: { tier, modelName } }),
   });
 
   return {

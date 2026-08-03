@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 import { RecipeSchema } from "./schemas.js";
 import type { PantrySnapshotItem } from "./pantry-plan-generator.js";
 
@@ -110,13 +111,9 @@ Cada comida debe traer su receta con la lista completa de ingredientes y su etiq
   const { object, usage } = await generateObject({
     model,
     schema: MealPlanSchema,
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "meal-plan-generator",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
-    },
+    telemetry: langfuseTelemetry("meal-plan-generator", { prompt: langfusePrompt, metadata: { tier, modelName } }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
   });
@@ -157,13 +154,9 @@ Cada comida debe traer su receta con la lista completa de ingredientes y su etiq
   const { object, usage } = await generateObject({
     model,
     schema: WeeklyMealPlanSchema,
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "weekly-meal-plan-generator",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
-    },
+    telemetry: langfuseTelemetry("weekly-meal-plan-generator", { prompt: langfusePrompt, metadata: { tier, modelName } }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
   });

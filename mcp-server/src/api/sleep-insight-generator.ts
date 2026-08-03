@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 
 // ── Output schema ────────────────────────────────────────────────────────────
 // Framed as OBSERVED PATTERNS, never medical advice/diagnosis. See the
@@ -144,15 +145,13 @@ export async function generateSleepInsight({ context, tier }: SleepInsightInput)
   const { object } = await generateObject({
     model,
     schema: SleepInsightSchema,
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: userText },
     ],
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "sleep-insight-generator",
+    telemetry: langfuseTelemetry("sleep-insight-generator", {
       metadata: { tier, modelName, periodType: context.period.type },
-    },
+    }),
   });
 
   return {

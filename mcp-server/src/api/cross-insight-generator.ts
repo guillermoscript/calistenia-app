@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 
 // ── Output schema ────────────────────────────────────────────────────────────
 // Framed as OBSERVED PATTERNS, never medical advice/diagnosis. See the
@@ -217,15 +218,13 @@ export async function generateCrossInsight({ context, tier }: CrossInsightInput)
   const { object } = await generateObject({
     model,
     schema: CrossInsightSchema,
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: userText },
     ],
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "cross-insight-generator",
+    telemetry: langfuseTelemetry("cross-insight-generator", {
       metadata: { tier, modelName, periodType: context.period.type },
-    },
+    }),
   });
 
   return {

@@ -1,6 +1,7 @@
 import { generateObject } from "ai";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 import { PantryParseSchema, MatchConsumptionSchema, ReceiptParseSchema } from "./schemas.js";
 import { canonCurrency, sanitizeReceiptItems } from "./receipt-sanitizer.js";
 
@@ -22,13 +23,9 @@ export async function parsePantryText({ text, existingItems }: PantryParseInput)
   const { object, usage } = await generateObject({
     model,
     schema: PantryParseSchema,
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "pantry-parser",
-      metadata: { modelName, ...(langfusePrompt && { langfusePrompt }) },
-    },
+    telemetry: langfuseTelemetry("pantry-parser", { prompt: langfusePrompt, metadata: { modelName } }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: `${inventoryBlock}\n\nMensaje del usuario: ${text}` },
     ],
   });
@@ -67,13 +64,9 @@ export async function matchConsumption({ foods, pantryItems }: MatchConsumptionI
   const { object, usage } = await generateObject({
     model,
     schema: MatchConsumptionSchema,
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "pantry-consumption-matcher",
-      metadata: { modelName, ...(langfusePrompt && { langfusePrompt }) },
-    },
+    telemetry: langfuseTelemetry("pantry-consumption-matcher", { prompt: langfusePrompt, metadata: { modelName } }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: `Inventario de la despensa:\n${pantryBlock}\n\nComida logueada:\n${foodsBlock}` },
     ],
   });
@@ -116,13 +109,9 @@ export async function parseReceipt({ images, tier }: ReceiptParseInput) {
   const { object, usage } = await generateObject({
     model,
     schema: ReceiptParseSchema,
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "receipt-parser",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
-    },
+    telemetry: langfuseTelemetry("receipt-parser", { prompt: langfusePrompt, metadata: { tier, modelName } }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: [...imageContent, { type: "text" as const, text: userText }] },
     ],
   });
