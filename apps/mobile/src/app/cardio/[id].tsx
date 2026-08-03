@@ -16,6 +16,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
 import RouteMap from '@/components/cardio/RouteMap'
 import ElevationProfile from '@/components/cardio/ElevationProfile'
 import SplitsTable from '@/components/cardio/SplitsTable'
@@ -30,7 +31,8 @@ function toCardioSession(raw: Record<string, unknown>): CardioSession {
     id: raw.id as string,
     user: raw.user as string | undefined,
     activity_type: (raw.activity_type as CardioSession['activity_type']) ?? 'running',
-    gps_points: Array.isArray(raw.gps_points) ? (raw.gps_points as CardioSession['gps_points']) : [],
+    // La ruta ya no viaja en el registro: llega de `cardio_routes` (#299).
+    gps_points: [],
     distance_km: (raw.distance_km as number) ?? 0,
     duration_seconds: (raw.duration_seconds as number) ?? 0,
     avg_pace: (raw.avg_pace as number) ?? 0,
@@ -84,6 +86,13 @@ export default function CardioDetailScreen() {
               undefined,
           )
         }
+
+        // Solo el dueño puede leer su ruta, así que ni se pide para una sesión
+        // ajena abierta desde el muro: ahorra un 404 por visita.
+        if (cs.user && cs.user === me?.id) {
+          const points = await fetchCardioRoute(cs.id as string)
+          if (!cancelled && points.length) setSession((prev) => (prev ? { ...prev, gps_points: points } : prev))
+        }
       } catch (e) {
         if (!cancelled) setError('No se pudo cargar la sesión.')
       } finally {
@@ -92,7 +101,9 @@ export default function CardioDetailScreen() {
     }
     void load()
     return () => { cancelled = true }
-  }, [id])
+    // `me?.id` decide si se pide la ruta: si la pantalla monta antes que el
+    // auth, hay que reintentar cuando llegue.
+  }, [id, me?.id])
 
   const isOwnSession = !!me && !!session?.user && me.id === session.user
   const shareUserName = authorName

@@ -66,10 +66,19 @@ describe('LegalPage · privacidad', () => {
       .toHaveTextContent(/El bloqueo no las oculta/)
   })
 
-  it('publica la limitacion de las rutas GPS en vez de omitirla', () => {
+  // #299 cerró el agujero del cardio pero NO el de las carreras: #316 sigue
+  // abierto (`race_participants.gps_track` es legible por cualquier cuenta),
+  // así que la página tiene que seguir avisando, ahora acotado a carreras.
+  it('publica la limitacion de las rutas GPS de carreras en vez de omitirla', () => {
     renderPage()
-    expect(screen.getByRole('heading', { name: /Rutas GPS: limitación conocida/ })).toBeInTheDocument()
-    expect(screen.getByText(/el servidor no impide leerla/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Rutas GPS de carreras: limitación conocida/ })).toBeInTheDocument()
+    expect(screen.getByText(/el servidor tampoco impide leerlo/)).toBeInTheDocument()
+  })
+
+  it('deja claro que la ruta de cardio ya solo la ve su dueño', () => {
+    renderPage()
+    expect(within(visibilityTable()).getByRole('row', { name: /La ruta GPS de tus sesiones de cardio/ }))
+      .toHaveTextContent(/Solo tú/)
   })
 
   it('explica que las fotos se sirven por una direccion no adivinable', () => {
@@ -136,6 +145,6 @@ describe('LegalPage · frases retiradas', () => {
 
   it('ambas secciones llevan la misma fecha de actualizacion', () => {
     renderPage()
-    expect(screen.getAllByText(/Última actualización: 31 de julio de 2026/)).toHaveLength(2)
+    expect(screen.getAllByText(/Última actualización: 3 de agosto de 2026/)).toHaveLength(2)
   })
 })

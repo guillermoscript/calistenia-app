@@ -16,6 +16,7 @@ const MAX_ACCURACY_M = 20
 // inflates distance otherwise.
 const MIN_POINT_DISTANCE_M = 3
 import { estimateCalories } from '@calistenia/core/lib/calories'
+import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from '@calistenia/core/lib/cardioRoutes'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -515,8 +516,10 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         }
         if (programId) saveData.program = programId
         if (programDayKey) saveData.program_day_key = programDayKey
-        const saved = await pb.collection('cardio_sessions').create(saveData)
+        const { record, points: routePoints } = splitRoute(saveData)
+        const saved = await pb.collection('cardio_sessions').create(record)
         session.id = saved.id
+        await saveCardioRoute(saved.id, userId, routePoints)
         // Refresh history, stats and recent-activity immediately after save.
         void queryClient.invalidateQueries({ queryKey: qk.cardioSessions(userId) })
       } catch (e) {
@@ -584,11 +587,13 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         filter: pb.filter('user = {:userId}', { userId }),
         sort: '-started_at',
       })
-      return res.items.map((r: any) => ({
+      // Las rutas viven aparte (#299) y se rellenan en una segunda consulta.
+      // Solo se hace aquí, en el historial propio; el muro no las pide.
+      return hydrateCardioRoutes(res.items.map((r: any) => ({
         id: r.id,
         user: r.user,
         activity_type: r.activity_type,
-        gps_points: r.gps_points || [],
+        gps_points: [] as GpsPoint[],
         distance_km: r.distance_km,
         duration_seconds: r.duration_seconds,
         avg_pace: r.avg_pace,
@@ -601,7 +606,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
         avg_speed_kmh: r.avg_speed_kmh,
         max_speed_kmh: r.max_speed_kmh,
         splits: r.splits,
-      }))
+      })))
     } catch { return [] }
   }, [userId])
 
@@ -666,7 +671,11 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
       const remaining: Record<string, unknown>[] = []
       for (const session of queue) {
         try {
-          await pb.collection('cardio_sessions').create(session)
+          // La cola sigue guardando la sesión entera, ruta incluida: se parte
+          // aquí para que una entrada encolada antes de #299 también funcione.
+          const { record, points: routePoints } = splitRoute(session)
+          const saved = await pb.collection('cardio_sessions').create(record)
+          await saveCardioRoute(saved.id, userId, routePoints)
         } catch {
           remaining.push(session)
         }

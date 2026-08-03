@@ -8,6 +8,7 @@ import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration, pointsToGPX } from '@calistenia/core/lib/geo'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
+import { splitRoute, saveCardioRoute } from '@calistenia/core/lib/cardioRoutes'
 import RaceShareCard from './RaceShareCard'
 
 export default function RaceResults() {
@@ -60,7 +61,9 @@ export default function RaceResults() {
         finished_at: me.finished_at || race.finished_at || new Date().toISOString(),
         note: `Race: ${race.name}`,
       }
-      const saved = await pb.collection('cardio_sessions').create(session)
+      const { record, points } = splitRoute(session)
+      const saved = await pb.collection('cardio_sessions').create(record)
+      await saveCardioRoute(saved.id, userId, points)
       setSavedId(saved.id)
     } catch (e) {
       console.warn('save as workout failed:', e)
