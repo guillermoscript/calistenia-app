@@ -5,13 +5,12 @@ import es from '@calistenia/core/locales/es/translation.json'
 import en from '@calistenia/core/locales/en/translation.json'
 import { FEATURES, getFeature } from './features'
 
-/** Se le exigen a todos los slugs, tengan página propia o plantilla. */
-const SHARED_KEYS = ['name', 'card']
 /**
- * Metadatos de buscador. Hoy solo existen en los slugs ya migrados a página
- * propia; al cerrar la épica #279 se suben a SHARED_KEYS para los nueve.
+ * Se le exigen a todos los slugs. `metaTitle`/`metaDesc` entraron aquí al
+ * cerrar la épica #279 (#286 fue la última migración): ya no hay ningún slug
+ * sirviéndose de la plantilla, así que los nueve llevan sus propios metadatos.
  */
-const SEO_KEYS = ['metaTitle', 'metaDesc']
+const SHARED_KEYS = ['name', 'card', 'metaTitle', 'metaDesc']
 /** Contrato de la plantilla compartida: solo para los slugs sin página propia. */
 const TEMPLATE_KEYS = ['eyebrow', 'title', 'lead', 'whatTitle', 'howNote', 's1', 's2', 's3']
 
@@ -48,7 +47,7 @@ describe('registro de funciones', () => {
     for (const feature of FEATURES) {
       const expected = [
         ...SHARED_KEYS,
-        ...(feature.Page ? SEO_KEYS : TEMPLATE_KEYS),
+        ...(feature.Page ? [] : TEMPLATE_KEYS),
         ...Array.from({ length: feature.blocks ?? 0 }, (_, i) => [`b${i + 1}t`, `b${i + 1}d`]).flat(),
         ...Array.from({ length: feature.faqs ?? 0 }, (_, i) => [`q${i + 1}`, `a${i + 1}`]).flat(),
       ]

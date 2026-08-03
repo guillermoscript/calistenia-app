@@ -7,6 +7,8 @@
 
 import { Langfuse } from "langfuse";
 
+import type { LangfusePromptRef } from "./telemetry.js";
+
 // ── Client ──────────────────────────────────────────────────────────────────
 
 const enabled = !!(
@@ -416,12 +418,12 @@ export async function getPrompt(name: string): Promise<string> {
 }
 
 /**
- * Fetch a prompt and return it along with its Langfuse metadata
- * so it can be linked to the trace via experimental_telemetry.
+ * Fetch a prompt and return it along with its Langfuse name/version reference
+ * so the generation can be linked to the prompt via langfuseTelemetry().
  */
 export async function getPromptWithMeta(name: string): Promise<{
   prompt: string;
-  langfusePrompt?: string;
+  langfusePrompt?: LangfusePromptRef;
 }> {
   if (!langfuse) {
     return { prompt: FALLBACKS[name] ?? "" };
@@ -431,7 +433,7 @@ export async function getPromptWithMeta(name: string): Promise<{
     const fetched = await langfuse.getPrompt(name);
     return {
       prompt: fetched.prompt as string,
-      langfusePrompt: JSON.stringify(fetched.toJSON()),
+      langfusePrompt: { name: fetched.name, version: fetched.version },
     };
   } catch (err) {
     console.error(`[langfuse-prompt] Failed to fetch "${name}", using fallback:`, err);

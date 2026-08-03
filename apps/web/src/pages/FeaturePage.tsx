@@ -10,8 +10,11 @@ import { BackToFeatures, FaqBlock, SectionHeader } from '../components/landing/f
  *
  * Si la función ya tiene página propia (épica #279) la renderiza; si no, cae en
  * la plantilla compartida de abajo: hero + «qué incluye» + 3 pasos + FAQ.
- * La plantilla es el suelo, no el techo — cada sub-issue de #279 sustituye un
- * slug por su página, y cuando no quede ninguno esta rama se puede retirar.
+ *
+ * Cerrada la épica con #286, **los nueve slugs tienen página propia** y la rama
+ * de plantilla ya no la alcanza nadie. Se deja como suelo por si vuelve a
+ * añadirse una función sin página; retirarla arrastra `FeatureDef.Visual`,
+ * `blocks` y `faqs`, así que es una limpieza aparte.
  */
 export default function FeaturePage() {
   const { slug } = useParams<{ slug: string }>()

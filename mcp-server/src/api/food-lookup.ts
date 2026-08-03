@@ -1,8 +1,9 @@
-import { generateText, Output, tool, stepCountIs } from "ai";
+import { generateText, Output, tool, isStepCount } from "ai";
 import { z } from "zod";
 import { FoodItemSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 
 interface FoodLookupInput {
   foodName: string;
@@ -75,14 +76,13 @@ export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
     model,
     output: Output.object({ schema: FoodItemSchema }),
     tools: { search_food_database: searchFoodDatabase, ...webSearchTools },
-    stopWhen: stepCountIs(5),
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "food-lookup",
-      metadata: { tier, modelName, foodName, ...(langfusePrompt && { langfusePrompt }) },
-    },
+    stopWhen: isStepCount(5),
+    telemetry: langfuseTelemetry("food-lookup", {
+      prompt: langfusePrompt,
+      metadata: { tier, modelName, foodName },
+    }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       {
         role: "user",
         content: `Proporciona la información nutricional para: "${foodName}"`,

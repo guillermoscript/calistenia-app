@@ -1,8 +1,9 @@
-import { generateText, generateObject, Output, tool, stepCountIs } from "ai";
+import { generateText, generateObject, Output, tool, isStepCount } from "ai";
 import { z } from "zod";
 import { MealAnalysisSchema, QualityBlockSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 
 interface ImageInput {
   buffer: Buffer;
@@ -216,14 +217,13 @@ export async function analyzeMealImage({
     model,
     output: Output.object({ schema: MealAnalysisSchema }),
     tools: { search_food_database: searchFoodDatabase, ...webSearchTools },
-    stopWhen: stepCountIs(10),
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "meal-analyzer",
-      metadata: { tier, modelName, mode: images.length === 0 ? "text" : "image", ...(langfusePrompt && { langfusePrompt }) },
-    },
+    stopWhen: isStepCount(10),
+    telemetry: langfuseTelemetry("meal-analyzer", {
+      prompt: langfusePrompt,
+      metadata: { tier, modelName, mode: images.length === 0 ? "text" : "image" },
+    }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: userContent },
     ],
   });
@@ -309,15 +309,11 @@ export async function scoreMealQuality({
     const { object } = await generateObject({
       model,
       schema: QualityBlockSchema,
+      instructions: systemPrompt,
       messages: [
-        { role: "system", content: systemPrompt },
         { role: "user", content: userText },
       ],
-      experimental_telemetry: {
-        isEnabled: true,
-        functionId: "meal-quality-scorer",
-        metadata: { tier, modelName },
-      },
+      telemetry: langfuseTelemetry("meal-quality-scorer", { metadata: { tier, modelName } }),
     });
 
     return object;

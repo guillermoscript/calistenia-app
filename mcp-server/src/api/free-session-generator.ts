@@ -1,7 +1,8 @@
-import { streamText, tool, stepCountIs, convertToModelMessages } from "ai";
+import { streamText, tool, isStepCount, convertToModelMessages } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 import config from "./config.js";
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
@@ -308,8 +309,8 @@ export async function handleGenerateFreeSession(req: any, res: any) {
 
   const ctx: SessionUserContext = userContext;
 
-  // Build system message with user context
-  let system = systemPrompt || SYSTEM_PROMPT_FALLBACK;
+  // Build the instructions message with user context
+  let instructions = systemPrompt || SYSTEM_PROMPT_FALLBACK;
   const contextLines: string[] = [];
   if (ctx.age) contextLines.push(`- Edad: ${ctx.age} años`);
   if (ctx.weight) contextLines.push(`- Peso: ${ctx.weight} kg`);
@@ -322,7 +323,7 @@ export async function handleGenerateFreeSession(req: any, res: any) {
   if (ctx.availableTime) contextLines.push(`- Tiempo disponible: ${ctx.availableTime} minutos`);
 
   if (contextLines.length > 0) {
-    system += `\n\n## Contexto del usuario\n\n${contextLines.join("\n")}`;
+    instructions += `\n\n## Contexto del usuario\n\n${contextLines.join("\n")}`;
   }
 
   // Truncate to last 10 messages to bound token cost
@@ -338,16 +339,12 @@ export async function handleGenerateFreeSession(req: any, res: any) {
 
   const result = streamText({
     model,
-    system,
+    instructions,
     messages: modelMessages,
     tools: { search_exercises: searchExercisesTool, create_session: createSessionTool },
     maxOutputTokens: 4000,
-    stopWhen: stepCountIs(12),
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "free-session-generator",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
-    },
+    stopWhen: isStepCount(12),
+    telemetry: langfuseTelemetry("free-session-generator", { prompt: langfusePrompt, metadata: { tier, modelName } }),
   });
 
   result.pipeUIMessageStreamToResponse(res);
@@ -367,7 +364,7 @@ export async function runFreeSession(
   const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("free-session-generator");
 
   const ctx: SessionUserContext = userContext;
-  let system = systemPrompt || SYSTEM_PROMPT_FALLBACK;
+  let instructions = systemPrompt || SYSTEM_PROMPT_FALLBACK;
   const contextLines: string[] = [];
   if (ctx.age) contextLines.push(`- Edad: ${ctx.age} años`);
   if (ctx.weight) contextLines.push(`- Peso: ${ctx.weight} kg`);
@@ -379,7 +376,7 @@ export async function runFreeSession(
   if (ctx.location) contextLines.push(`- Ubicación: ${ctx.location}`);
   if (ctx.availableTime) contextLines.push(`- Tiempo disponible: ${ctx.availableTime} minutos`);
   if (contextLines.length > 0) {
-    system += `\n\n## Contexto del usuario\n\n${contextLines.join("\n")}`;
+    instructions += `\n\n## Contexto del usuario\n\n${contextLines.join("\n")}`;
   }
 
   const truncatedMessages = messages.slice(-10);
@@ -393,16 +390,12 @@ export async function runFreeSession(
 
   const result = streamText({
     model,
-    system,
+    instructions,
     messages: modelMessages,
     tools: { search_exercises: searchExercisesTool, create_session: createSessionTool },
     maxOutputTokens: 4000,
-    stopWhen: stepCountIs(12),
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "free-session-generator",
-      metadata: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
-    },
+    stopWhen: isStepCount(12),
+    telemetry: langfuseTelemetry("free-session-generator", { prompt: langfusePrompt, metadata: { tier, modelName } }),
   });
 
   return result.toUIMessageStreamResponse();

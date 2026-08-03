@@ -8,9 +8,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "dayjs": "^1.11.20",
+    "dayjs": "^1.11.21",
     "i18next": "^26.3.6",
-    "pocketbase": "^0.27.0",
+    "pocketbase": "^0.27.1",
     "react-i18next": "^17.0.11"
   },
   "peerDependencies": {
@@ -23,7 +23,7 @@
     "@tanstack/query-sync-storage-persister": "^5.101.4",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-persist-client": "^5.101.4",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.18",
     "react": "^19.2.8",
     "vitest": "^4.1.10"
   }

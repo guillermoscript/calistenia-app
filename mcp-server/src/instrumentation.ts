@@ -11,6 +11,8 @@ dotenv.config();
 
 import { LangfuseSpanProcessor } from "@langfuse/otel";
 import { NodeSDK } from "@opentelemetry/sdk-node";
+import { registerTelemetry } from "ai";
+import { OpenTelemetry } from "@ai-sdk/otel";
 
 const enabled = !!(
   process.env.LANGFUSE_SECRET_KEY && process.env.LANGFUSE_PUBLIC_KEY
@@ -23,6 +25,11 @@ if (enabled) {
     spanProcessors: [new LangfuseSpanProcessor()],
   });
   sdk.start();
+  // AI SDK 7 dejo de emitir spans de OpenTelemetry por su cuenta: hay que
+  // registrar la integracion explicitamente y antes del primer uso del SDK.
+  // Sin esta linea Langfuse arranca igual y no se queja, pero no le llega
+  // ninguna traza de generacion.
+  registerTelemetry(new OpenTelemetry());
   console.error("[Langfuse] Tracing enabled");
 } else {
   console.error(
