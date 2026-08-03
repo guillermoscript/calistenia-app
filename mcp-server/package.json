@@ -18,7 +18,7 @@
     "@langfuse/otel": "^5.10.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@opentelemetry/sdk-node": "^0.221.0",
-    "ai": "^6.0.240",
+    "ai": "^7.0.44",
     "dayjs": "^1.11.21",
     "dotenv": "^17.4.2",
     "expo-server-sdk": "^3.15.0",
