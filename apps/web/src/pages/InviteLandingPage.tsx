@@ -44,6 +44,7 @@ export default function InviteLandingPage() {
   const [program, setProgram] = useState<ProgramPreview | null>(null)
   const [challenge, setChallenge] = useState<ChallengePreview | null>(null)
   const [isOwnLink, setIsOwnLink] = useState(false)
+  const [joining, setJoining] = useState(false)
 
   const isLoggedIn = pb.authStore.isValid
   const currentUserId = isLoggedIn ? ((pb.authStore as any).record?.id ?? (pb.authStore as any).model?.id) : null
@@ -106,34 +107,23 @@ export default function InviteLandingPage() {
         // Fetch program or challenge preview
         if (challengeId) {
           try {
-            const ch = await pb.collection('challenges').getOne(challengeId, {
-              $autoCancel: false,
-            }) as any
-
-            let exerciseName = ''
-            if (ch.exercise_id) {
-              try {
-                const ex = await pb.collection('exercises_catalog').getOne(ch.exercise_id, {
-                  $autoCancel: false,
-                })
-                const rawName = (ex as any).name
-                exerciseName = (typeof rawName === 'object' && rawName !== null) ? (rawName.es ?? rawName.en ?? '') : (rawName || '')
-              } catch { /* */ }
+            // Endpoint público: challenges/challenge_participants exigen auth
+            // en sus rules y el invitado típico aún no tiene cuenta (#313)
+            const chRes = await fetch(`${pb.baseUrl}/api/public/challenge-preview/${encodeURIComponent(challengeId)}`)
+            if (chRes.ok) {
+              const ch = await chRes.json() as {
+                id: string; title: string; exercise_name: string
+                daily_target: number; duration_days: number; participant_count: number
+              }
+              setChallenge({
+                id: ch.id,
+                title: ch.title || '',
+                exerciseName: ch.exercise_name || '',
+                dailyTarget: ch.daily_target || 0,
+                durationDays: ch.duration_days || 0,
+                participantCount: ch.participant_count || 0,
+              })
             }
-
-            const participants = await pb.collection('challenge_participants').getList(1, 1, {
-              filter: pb.filter('challenge = {:cid}', { cid: challengeId }),
-              $autoCancel: false,
-            })
-
-            setChallenge({
-              id: ch.id,
-              title: ch.title || '',
-              exerciseName,
-              dailyTarget: ch.daily_target || 0,
-              durationDays: ch.duration_days || 0,
-              participantCount: participants.totalItems,
-            })
           } catch { /* challenge not found */ }
         } else {
           // Fetch inviter's current program
@@ -223,7 +213,21 @@ export default function InviteLandingPage() {
     )
   }
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
+    // Con sesión: inscribirse directamente (la rule de challenge_participants
+    // permite crear tu propia participación) y saltar al detalle del reto.
+    if (isLoggedIn && challengeId && currentUserId) {
+      setJoining(true)
+      try {
+        await pb.collection('challenge_participants').create({
+          challenge: challengeId,
+          user: currentUserId,
+        })
+      } catch { /* ya inscrito (índice único challenge+user) */ }
+      op.track('challenge_joined', { challenge_id: challengeId, source: 'invite' })
+      navigate(`/challenges/${challengeId}`)
+      return
+    }
     const params = new URLSearchParams()
     params.set('ref', code!)
     if (challengeId) params.set('challenge', challengeId)
@@ -319,9 +323,10 @@ export default function InviteLandingPage() {
             {isLoggedIn && challengeId ? (
               <Button
                 onClick={handleJoin}
+                disabled={joining}
                 className="w-full h-12 bg-lime text-lime-foreground hover:bg-lime/90 font-semibold text-sm"
               >
-                Unirme al challenge
+                {joining ? 'Uniendote...' : 'Unirme al challenge'}
               </Button>
             ) : (
               <>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { captureReferralCode } from '@calistenia/core/hooks/useAuth'
+import { captureReferralCode, captureChallengeId } from '@calistenia/core/hooks/useAuth'
 
 interface AuthPageProps {
   signInWithGoogle: () => Promise<void>
@@ -20,10 +20,13 @@ export default function AuthPage({ signInWithGoogle, signInWithEmail, signUpWith
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
 
-  // Capture ?ref= query param to localStorage
+  // Capture ?ref= and ?challenge= query params to localStorage — useAuth
+  // consumes them post-auth (referral tracking + express-challenge join, #313)
   useEffect(() => {
     const ref = searchParams.get('ref')
     if (ref) captureReferralCode(ref)
+    const challenge = searchParams.get('challenge')
+    if (challenge) captureChallengeId(challenge)
   }, [searchParams])
 
   const handleSubmit = (e: React.FormEvent) => {

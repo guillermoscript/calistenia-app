@@ -548,6 +548,12 @@ export interface Challenge {
   starts_at: string
   ends_at: string
   status: ChallengeStatus
+  /** 'express' = reto de referidos: daily_target reps/día durante duration_days. */
+  type?: 'standard' | 'express'
+  /** Relation id a exercises_catalog (solo retos express). */
+  exercise_id?: string
+  daily_target?: number
+  duration_days?: number
 }
 
 export interface ChallengeParticipant {

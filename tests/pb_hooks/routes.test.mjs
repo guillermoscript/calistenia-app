@@ -5,7 +5,7 @@
  */
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { api, createUser, createAs, update, uniq } from "./helpers/client.mjs"
+import { api, create, createUser, createAs, update, uniq } from "./helpers/client.mjs"
 
 const BOT_UA = "facebookexternalhit/1.1"
 
@@ -120,4 +120,69 @@ test("race OG tags no filtra carreras privadas ni responde a browsers", async ()
   const browser = await api(`/race/${pub.id}`, { raw: true, headers: { "User-Agent": "Mozilla/5.0" } })
   const browserText = await browser.text()
   assert.ok(!browserText.includes("og:title"), "browser normal no recibe el HTML de OG")
+})
+
+// ── Preview pública de retos express (#313) ──────────────────────────────────
+
+async function makeExpressChallenge(creator, extra = {}) {
+  const exercise = await create("exercises_catalog", {
+    name: { es: "Dominadas", en: "Pull-ups" },
+    slug: uniq("pullup").toLowerCase(),
+  })
+  return createAs(creator, "challenges", {
+    creator: creator.id,
+    title: "Challenge de Dominadas — 20 x 7d",
+    metric: "exercise",
+    exercise_slug: exercise.slug,
+    starts_at: "2026-08-01",
+    ends_at: "2026-08-08",
+    status: "active",
+    type: "express",
+    exercise_id: exercise.id,
+    daily_target: 20,
+    duration_days: 7,
+    ...extra,
+  })
+}
+
+test("challenge-preview devuelve la tarjeta pública de un reto express", async () => {
+  const creator = await createUser("Creador Express")
+  const challenge = await makeExpressChallenge(creator)
+  await createAs(creator, "challenge_participants", { challenge: challenge.id, user: creator.id })
+
+  // Sin token: el endpoint es para invitados sin cuenta
+  const res = await api(`/api/public/challenge-preview/${challenge.id}`, { raw: true })
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.equal(body.id, challenge.id)
+  assert.equal(body.title, "Challenge de Dominadas — 20 x 7d")
+  assert.equal(body.exercise_name, "Dominadas")
+  assert.equal(body.daily_target, 20)
+  assert.equal(body.duration_days, 7)
+  assert.equal(body.participant_count, 1)
+  assert.deepEqual(
+    Object.keys(body).sort(),
+    ["daily_target", "duration_days", "exercise_name", "id", "participant_count", "status", "title"],
+    "no filtra ningún campo extra (creator, descripción, etc.)"
+  )
+})
+
+test("challenge-preview de un reto normal → 404 (solo expone express)", async () => {
+  const creator = await createUser("Creador Normal")
+  const challenge = await createAs(creator, "challenges", {
+    creator: creator.id,
+    title: "Reto privado normal",
+    metric: "most_sessions",
+    starts_at: "2026-08-01",
+    ends_at: "2026-08-08",
+    status: "active",
+  })
+
+  const res = await api(`/api/public/challenge-preview/${challenge.id}`, { raw: true })
+  assert.equal(res.status, 404)
+})
+
+test("challenge-preview con id desconocido → 404", async () => {
+  const res = await api("/api/public/challenge-preview/noexiste1234567", { raw: true })
+  assert.equal(res.status, 404)
 })

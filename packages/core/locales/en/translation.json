@@ -2413,6 +2413,8 @@
   "challenge.metricHandstand": "Longest handstand",
   "challenge.metricExercise": "Exercise",
   "challenge.metricCustom": "Custom",
+  "challenge.expressTarget": "{{target}} reps/day · {{days}} days",
+  "challenge.expressStreak": "{{n}}d streak",
   "challenge.unitDays": "days",
   "challenge.finished": "Finished",
   "challenge.oneDayLeft": "1 day left",

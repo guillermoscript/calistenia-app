@@ -27,6 +27,10 @@ async function fetchChallenge(challengeId: string): Promise<Challenge> {
     starts_at: ch.starts_at,
     ends_at: ch.ends_at,
     status: ch.status as any,
+    type: (ch.type as any) || 'standard',
+    exercise_id: ch.exercise_id || '',
+    daily_target: ch.daily_target || 0,
+    duration_days: ch.duration_days || 0,
   }
 }
 
