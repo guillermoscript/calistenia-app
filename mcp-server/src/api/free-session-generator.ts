@@ -2,6 +2,7 @@ import { streamText, tool, isStepCount, convertToModelMessages } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 import config from "./config.js";
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
@@ -343,12 +344,7 @@ export async function handleGenerateFreeSession(req: any, res: any) {
     tools: { search_exercises: searchExercisesTool, create_session: createSessionTool },
     maxOutputTokens: 4000,
     stopWhen: isStepCount(12),
-    runtimeContext: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
-    telemetry: {
-      isEnabled: true,
-      functionId: "free-session-generator",
-      includeRuntimeContext: { tier: true, modelName: true, langfusePrompt: true },
-    },
+    telemetry: langfuseTelemetry("free-session-generator", { prompt: langfusePrompt, metadata: { tier, modelName } }),
   });
 
   result.pipeUIMessageStreamToResponse(res);
@@ -399,12 +395,7 @@ export async function runFreeSession(
     tools: { search_exercises: searchExercisesTool, create_session: createSessionTool },
     maxOutputTokens: 4000,
     stopWhen: isStepCount(12),
-    runtimeContext: { tier, modelName, ...(langfusePrompt && { langfusePrompt }) },
-    telemetry: {
-      isEnabled: true,
-      functionId: "free-session-generator",
-      includeRuntimeContext: { tier: true, modelName: true, langfusePrompt: true },
-    },
+    telemetry: langfuseTelemetry("free-session-generator", { prompt: langfusePrompt, metadata: { tier, modelName } }),
   });
 
   return result.toUIMessageStreamResponse();

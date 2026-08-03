@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 import { RecipeSchema, HowManyMealsSchema } from "./schemas.js";
 
 const PantryPlannedMealSchema = z.object({
@@ -118,12 +119,12 @@ export async function generatePantryPlan({
   const { object, usage } = await generateObject({
     model,
     schema: SCHEMA_BY_HORIZON[horizon],
-    telemetry: {
-      isEnabled: true,
-      functionId: "pantry-plan-generator",
-    },
+    telemetry: langfuseTelemetry("pantry-plan-generator", {
+      prompt: langfusePrompt,
+      metadata: { tier, modelName, horizon },
+    }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
   });

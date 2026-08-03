@@ -3,6 +3,7 @@ import { z } from "zod";
 import { FoodItemSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
+import { langfuseTelemetry } from "./telemetry.js";
 
 interface FoodLookupInput {
   foodName: string;
@@ -76,14 +77,12 @@ export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
     output: Output.object({ schema: FoodItemSchema }),
     tools: { search_food_database: searchFoodDatabase, ...webSearchTools },
     stopWhen: isStepCount(5),
-    runtimeContext: { tier, modelName, foodName, ...(langfusePrompt && { langfusePrompt }) },
-    telemetry: {
-      isEnabled: true,
-      functionId: "food-lookup",
-      includeRuntimeContext: { tier: true, modelName: true, foodName: true, langfusePrompt: true },
-    },
+    telemetry: langfuseTelemetry("food-lookup", {
+      prompt: langfusePrompt,
+      metadata: { tier, modelName, foodName },
+    }),
+    instructions: systemPrompt,
     messages: [
-      { role: "system", content: systemPrompt },
       {
         role: "user",
         content: `Proporciona la información nutricional para: "${foodName}"`,
