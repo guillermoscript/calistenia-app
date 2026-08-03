@@ -12,7 +12,7 @@
     "seed": "node build/seed.js"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.104",
+    "@ai-sdk/anthropic": "^4.0.25",
     "@ai-sdk/google": "^3.0.103",
     "@ai-sdk/openai": "^3.0.90",
     "@langfuse/otel": "^5.10.0",
