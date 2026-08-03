@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 
-const UPDATED = '30 de julio de 2026'
+const UPDATED = '31 de julio de 2026'
 
 /**
  * Política de privacidad y condiciones (issue #295).
@@ -28,15 +28,20 @@ const UPDATED = '30 de julio de 2026'
  *   excluyen, pero eso es convención del cliente, no regla de servidor.
  * - Ficheros con `protected: false`: fotos de progreso (1774000008:50) y de
  *   comida (1774000064:18) -> URL larga sin comprobación de sesión.
- * - Sin `cascadeDelete` desde users: `cardio_sessions` (1774000029:12) y
- *   `race_participants` (1775200002:15). Todo lo demás sí cascadea.
+ * - Desde #300 todas las relaciones a `users` cascadean: las 7 que faltaban
+ *   (`cardio_sessions`, `circuit_sessions`, `race_participants`, `races`,
+ *   `referrals` x2, `content_reports.target_user`) se arreglaron en
+ *   `1782600000_cascade_delete_user_relations.js`. Sin ellas PocketBase ni
+ *   siquiera dejaba borrar la cuenta (400 por relación requerida).
  * - Terceros: proveedores de IA en `mcp-server/src/api/model-resolver.ts:22-32`,
  *   fotos de comida enviadas en `meal-analyzer.ts:204-213`, contexto de los
  *   resúmenes en `insight-context-server.ts:468-679`, Langfuse sin enmascarado
  *   en `mcp-server/src/instrumentation.ts:22-24`, Sentry web con PII en
  *   `apps/web/src/instrument.ts:12`, móvil sin ella en
  *   `apps/mobile/src/lib/instrument.ts:15`, OpenPanel autoalojado en
- *   `apps/web/src/lib/init-core.ts:12` e identify con email en
+ *   `apps/web/src/lib/init-core.ts:12` con session replay enmascarado salvo en
+ *   los subárboles `data-op-unmask` (`components/MarketingUnmask.tsx`)
+ *   e identify con email en
  *   `packages/core/hooks/useAuth.ts:70,119`, push en `push-sender.ts:100-174`,
  *   mapas CARTO en `apps/web/src/components/cardio/RouteMap.tsx:21-22`.
  * - Cron semanal de resúmenes: `pb_hooks/weekly_insights.pb.js:13,22-35`
@@ -44,7 +49,10 @@ const UPDATED = '30 de julio de 2026'
  * - Exportación: `apps/web/src/components/progress/ExportData.tsx:55-65`.
  * - Condiciones médicas y lesiones NO salen a la IA: solo se usan en cliente
  *   (`packages/core/lib/matchPrograms.ts:78-79`, `lib/injuryMatch.ts`).
- * - No existe borrado de cuenta autoservicio en ninguna plataforma (#300).
+ * - Borrado autoservicio (#300): `users.deleteRule` es `id = @request.auth.id`;
+ *   la UI está en `components/profile/DeleteAccountDialog.tsx` (web) y
+ *   `apps/mobile/src/components/profile/DeleteAccountModal.tsx` (Android), y la
+ *   operación compartida en `packages/core/hooks/useDeleteAccount.ts`.
  */
 
 /** Fila de la tabla de visibilidad: `who` admite varias frases. */
@@ -210,7 +218,7 @@ export default function LegalPage() {
             <li><strong>Proveedores de inteligencia artificial (Anthropic, OpenAI y Google):</strong> reciben las fotos de comida que envías a analizar y, para los resúmenes semanales, un resumen en texto de tus entrenos, cardio, comidas, agua, sueño, peso y datos de Health Connect. <strong>No</strong> reciben tus fotos de progreso, tus medidas corporales ni tus condiciones médicas y lesiones. El proveedor concreto depende de la disponibilidad del servicio en cada momento.</li>
             <li><strong>Langfuse (observabilidad de IA):</strong> cuando está activado, conserva una copia de las peticiones enviadas a los proveedores anteriores y de sus respuestas.</li>
             <li><strong>Sentry (diagnóstico de errores):</strong> en la web se envían tu nombre y tu correo junto al error, y se graba una repetición de la sesión con todo el texto enmascarado y las imágenes bloqueadas. En la aplicación de Android no se envían datos personales.</li>
-            <li><strong>OpenPanel (analítica de uso):</strong> está alojado en nuestra propia infraestructura y no en un servicio de terceros. Registra tu identificador, tu nombre, tu correo y los eventos de uso de la aplicación.</li>
+            <li><strong>OpenPanel (analítica de uso):</strong> está alojado en nuestra propia infraestructura y no en un servicio de terceros. Registra tu identificador, tu nombre, tu correo y los eventos de uso de la aplicación. En la web también graba una repetición de la sesión (clics, desplazamiento y navegación) con todo el texto y los campos de formulario enmascarados; solo se guarda el texto legible en las páginas públicas de presentación, blog y descarga, donde no aparecen datos personales.</li>
             <li><strong>Servicios de notificaciones (Expo, Firebase Cloud Messaging y el servicio push de tu navegador):</strong> reciben el identificador de notificaciones de tu dispositivo y el texto de cada aviso.</li>
             <li><strong>CARTO (mapas):</strong> sirve las imágenes del mapa sobre el que se dibuja tu ruta de cardio, por lo que conoce la zona que se está mostrando.</li>
             <li><strong>Requerimientos legales:</strong> si la ley lo exige.</li>
@@ -227,9 +235,9 @@ export default function LegalPage() {
           <h2 className="text-xl font-semibold mt-8 mb-3">6. Conservación y borrado</h2>
           <ul className="list-disc pl-6 mb-4 space-y-1">
             <li>No borramos nada automáticamente. Mientras tu cuenta exista, se conserva todo lo que registres.</li>
-            <li>Todavía no existe un botón para borrar tu cuenta, ni en la web ni en Android. Escríbenos a la dirección de la sección 12 y la eliminamos.</li>
-            <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, ajustes, marcas personales y estadísticas.</li>
-            <li>Dos categorías no se borran solas por un fallo técnico que estamos corrigiendo: tus sesiones de cardio, con su ruta GPS, y tus participaciones en carreras. Las eliminamos a mano en el mismo momento en que nos pides la baja.</li>
+            <li>Puedes eliminar tu cuenta tú mismo desde tu perfil, tanto en la web como en la aplicación de Android, sin pedírnoslo. Te pedimos escribir tu correo para confirmar y el borrado es inmediato. Si prefieres que lo hagamos nosotros, escríbenos a la dirección de la sección 12.</li>
+            <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, sesiones de cardio con su ruta GPS, circuitos, participaciones en carreras y las carreras que hayas creado, tus comentarios y reacciones, retos, ajustes, marcas personales y estadísticas.</li>
+            <li>No guardamos ninguna copia tras el borrado, así que una cuenta eliminada no se puede recuperar.</li>
           </ul>
 
           <h2 className="text-xl font-semibold mt-8 mb-3">7. Exportar tus datos</h2>
@@ -346,9 +354,9 @@ export default function LegalPage() {
           <h2 className="text-xl font-semibold mt-8 mb-3">8. Terminación</h2>
           <p className="mb-4">
             Podemos suspender o cancelar tu cuenta si violas estas condiciones. Puedes darte de baja
-            cuando quieras: todavía no hay un botón para hacerlo dentro de la aplicación, así que
-            escríbenos y eliminamos tu cuenta y tus datos como se describe en la sección 6 de la
-            política de privacidad.
+            cuando quieras desde tu perfil, tanto en la web como en la aplicación de Android: tu
+            cuenta y tus datos se eliminan en ese momento, como se describe en la sección 6 de la
+            política de privacidad. También puedes escribirnos y lo hacemos nosotros.
           </p>
 
           <h2 className="text-xl font-semibold mt-8 mb-3">9. Modificaciones</h2>

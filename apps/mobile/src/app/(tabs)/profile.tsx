@@ -1,13 +1,13 @@
 // Versión compacta del ProfilePage web: identidad, idioma, cuenta y sesión.
 // Los campos extensos (peso/altura/salud/timezone) siguen solo en la web.
 import { useEffect, useState } from 'react'
-import { View, ScrollView, Pressable } from 'react-native'
+import { View, ScrollView, Pressable, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Constants from 'expo-constants'
 import { useQueryClient } from '@tanstack/react-query'
-import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Camera, UserX, Compass, Ruler } from 'lucide-react-native'
+import { LogOut, Bell, ChevronRight, Watch, Sun, Moon, Smartphone, Sparkles, Camera, UserX, Compass, Ruler, ShieldCheck, Trash2 } from 'lucide-react-native'
 import { useColorScheme } from 'nativewind'
 
 import { Text } from '@/components/ui/text'
@@ -19,6 +19,8 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { getThemeMode, setThemeMode, type ThemeMode } from '@/lib/theme-mode'
 import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { DiscoverSheet } from '@/components/DiscoverSheet'
+import { DeleteAccountModal } from '@/components/profile/DeleteAccountModal'
+import { BASE_URL } from '@/lib/share'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
@@ -59,6 +61,7 @@ export default function ProfileScreen() {
   const [themeMode, setThemeModeState] = useState<ThemeMode>(getThemeMode)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [discoverOpen, setDiscoverOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   // Cuerpo (#243 F4a): peso/altura/edad/sexo/actividad — hoy solo editables en
   // web; se portan aquí para que el objetivo nutricional 'auto' pueda seguir
@@ -449,6 +452,26 @@ export default function ProfileScreen() {
           </Card>
         </Pressable>
 
+        {/* Privacidad y condiciones (#300): las tiendas exigen que la política
+            sea accesible desde dentro de la app, no solo desde la ficha. Vive
+            en la web, así que se abre en el navegador. */}
+        <Pressable onPress={() => Linking.openURL(`${BASE_URL}/legal#privacy`).catch(() => {})}>
+          <Card>
+            <CardContent className="flex-row items-center gap-3 py-4">
+              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+                <ShieldCheck size={18} color="hsl(74 90% 57%)" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-medium text-foreground">{t('account.privacyEntry')}</Text>
+                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                  {t('account.privacyEntryDesc')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="hsl(0 0% 45%)" />
+            </CardContent>
+          </Card>
+        </Pressable>
+
         {/* Idioma */}
         <Card>
           <CardContent className="gap-3 py-4">
@@ -569,6 +592,29 @@ export default function ProfileScreen() {
           </View>
         </Button>
 
+        {/* Zona de peligro: baja de cuenta (#300). Al final, separada del cierre
+            de sesión para que no se confundan de un vistazo. */}
+        <Card className="border-destructive/30">
+          <CardContent className="gap-2.5 py-4">
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-destructive">
+              {t('account.dangerZone')}
+            </Text>
+            <Text className="text-[13px] text-muted-foreground">{t('account.deleteDesc')}</Text>
+            <Button
+              variant="outline"
+              className="mt-1 h-11 self-start border-destructive/40 px-4 active:bg-destructive/10"
+              onPress={() => setDeleteOpen(true)}
+            >
+              <View className="flex-row items-center gap-2">
+                <Trash2 size={15} color="hsl(0 72% 55%)" />
+                <Text className="font-mono text-xs tracking-[2px] text-destructive">
+                  {t('account.deleteCta').toUpperCase()}
+                </Text>
+              </View>
+            </Button>
+          </CardContent>
+        </Card>
+
         <Text className="text-center font-mono text-[9px] tracking-[2px] text-muted-foreground/50">
           v{Constants.expoConfig?.version || '1.0.0'}
         </Text>
@@ -576,6 +622,15 @@ export default function ProfileScreen() {
 
       <ChangelogHistory visible={historyOpen} onClose={() => setHistoryOpen(false)} />
       <DiscoverSheet visible={discoverOpen} onClose={() => setDiscoverOpen(false)} />
+      <DeleteAccountModal
+        visible={deleteOpen}
+        email={(user?.email as string) || null}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={() => {
+          setDeleteOpen(false)
+          router.replace('/login')
+        }}
+      />
     </SafeAreaView>
   )
 }

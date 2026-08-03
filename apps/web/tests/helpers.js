@@ -3,6 +3,44 @@ import { expect } from '@playwright/test'
 export const TEST_PASS = 'TestPass123!'
 export const TEST_NAME = 'PW Tester'
 
+/** Páginas con tour de Driver.js; se marcan como vistas antes de arrancar la app. */
+const TOUR_PAGES = [
+  'dashboard', 'workout', 'workout-detail', 'progress', 'nutrition', 'calendar', 'sleep',
+  'programs', 'exercises', 'free-session', 'cardio', 'friends', 'leaderboard',
+  'challenges', 'notifications', 'profile', 'lumbar',
+]
+
+/**
+ * Desactiva los overlays ANTES de que la app monte, escribiendo sus claves de
+ * localStorage con `addInitScript` (corre en cada navegación, antes de los
+ * scripts de la página).
+ *
+ * Sin esto, `InstallPrompt` monta un `setTimeout` de 5 s (no hay
+ * `beforeinstallprompt` en Chromium headless, así que siempre entra por la guía
+ * manual) y se pinta en `fixed bottom-4 ... z-[100]`, justo encima de
+ * "SERIE COMPLETADA" y "SALTAR DESCANSO". Descartarlo a posteriori con
+ * `dismissOverlays` solo funciona si el temporizador cae dentro de una de las
+ * ventanas de descarte: cualquier cambio en el tiempo de arranque lo mueve
+ * fuera y el prompt aparece a mitad de sesión bloqueando los clics. Eso es lo
+ * que tumbó el smoke en #269, con 80 bumps de patch y ningún cambio de código.
+ */
+export async function suppressOverlays(page) {
+  await page.addInitScript(
+    ([dismissKey, tourPages]) => {
+      // El init script también corre en `about:blank`, donde tocar localStorage
+      // lanza SecurityError: sin el try/catch, la excepción se propaga y la
+      // navegación real se queda sin las claves.
+      try {
+        localStorage.setItem(dismissKey, Date.now().toString())
+        tourPages.forEach((p) => localStorage.setItem(`calistenia_tour_${p}`, 'true'))
+      } catch {
+        /* origen sin storage disponible: se reintenta en la siguiente navegación */
+      }
+    },
+    ['calistenia_install_dismiss', TOUR_PAGES],
+  )
+}
+
 /**
  * Dismiss any overlays that might block interaction (app tour, PWA install prompt, etc.)
  */
@@ -53,6 +91,7 @@ export async function register(page, { email, password, name } = {}) {
   const _password = password || TEST_PASS
   const _name = name || TEST_NAME
 
+  await suppressOverlays(page)
   await page.goto('/auth?mode=signup')
   const nameField = page.getByPlaceholder(/^name$|^nombre$/i)
   await expect(nameField).toBeVisible({ timeout: 10000 })
@@ -99,6 +138,7 @@ export async function register(page, { email, password, name } = {}) {
  * Login with an existing account.
  */
 export async function login(page, email, password = TEST_PASS) {
+  await suppressOverlays(page)
   await page.goto('/auth')
   const emailField = page.getByPlaceholder(/^email$/i)
   await expect(emailField).toBeVisible({ timeout: 8000 })

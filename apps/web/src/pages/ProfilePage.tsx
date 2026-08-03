@@ -17,6 +17,7 @@ import { FOCUS_AREA_IDS, DAY_IDS, type FocusAreaId, type DayId, type Intensity }
 import type { ActivityLevel, Pace } from '../components/onboarding/StepGoals'
 import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal } from '@calistenia/core/lib/bmi'
 import { fetchUserHealth, upsertUserHealth } from '@calistenia/core/hooks/useUserHealth'
+import { DeleteAccountDialog } from '../components/profile/DeleteAccountDialog'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
 
 interface ProfilePageProps {
@@ -55,6 +56,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   const [copied, setCopied] = useState(false)
   const [timezone, setTimezone] = useState(() => getTimezone())
   const [tzSearch, setTzSearch] = useState('')
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // Moneda de despensa (F5 #174): en qué moneda habla el user; el gasto siempre en $ USD
   const { prefs: currencyPrefs, setDefaultCurrency } = useUserCurrency(user?.id ?? null)
@@ -809,7 +811,30 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         >
           {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
         </Button>
+
+        {/* Zona de peligro: baja de cuenta (#300). Al final y separada del
+            resto para que no se pulse de paso mientras se editan campos. */}
+        <Card className="border-destructive/30">
+          <CardContent className="p-5 flex flex-col gap-3">
+            <div className="text-[10px] text-destructive tracking-[3px] uppercase">{t('account.dangerZone')}</div>
+            <p className="text-sm text-muted-foreground">{t('account.deleteDesc')}</p>
+            <Button
+              variant="outline"
+              className="self-start border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setDeleteOpen(true)}
+            >
+              {t('account.deleteCta')}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+
+      <DeleteAccountDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        email={user?.email}
+        onDeleted={() => navigate('/', { replace: true })}
+      />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────
 # Stage 1: Build the Vite / React frontend
 # ─────────────────────────────────────────────
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 
 # pnpm via corepack — version pinned in root package.json ("packageManager")
 RUN corepack enable

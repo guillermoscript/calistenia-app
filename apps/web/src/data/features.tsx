@@ -33,9 +33,9 @@ export const FEATURES: FeatureDef[] = [
   { slug: 'nutrition', icon: ShoppingBasket, Visual: PantryPanel, related: ['progress', 'training', 'community'], Page: lazy(() => import('../pages/features/NutritionPage')) },
   { slug: 'progress', icon: LineChart, Visual: ProgressPanel, related: ['training', 'nutrition', 'community'], Page: lazy(() => import('../pages/features/ProgressPage')) },
   { slug: 'cardio', icon: Route, Visual: Beyond(0), related: ['races', 'progress', 'offline'], Page: lazy(() => import('../pages/features/CardioPage')) },
-  { slug: 'circuits', icon: Timer, Visual: Beyond(1), related: ['training', 'cardio', 'progress'], blocks: 4, faqs: 3 },
+  { slug: 'circuits', icon: Timer, Visual: Beyond(1), related: ['training', 'cardio', 'progress'], Page: lazy(() => import('../pages/features/CircuitsPage')) },
   { slug: 'races', icon: Trophy, Visual: Beyond(2), related: ['cardio', 'challenges', 'community'], Page: lazy(() => import('../pages/features/RacesPage')) },
-  { slug: 'challenges', icon: Flame, Visual: Beyond(3), related: ['community', 'progress', 'races'], blocks: 4, faqs: 3 },
+  { slug: 'challenges', icon: Flame, Visual: Beyond(3), related: ['community', 'progress', 'races'], Page: lazy(() => import('../pages/features/ChallengesPage')) },
   { slug: 'community', icon: Users, Visual: Beyond(4), related: ['challenges', 'races', 'progress'], Page: lazy(() => import('../pages/features/CommunityPage')) },
   { slug: 'offline', icon: WifiOff, Visual: Beyond(5), related: ['training', 'cardio', 'progress'], Page: lazy(() => import('../pages/features/OfflinePage')) },
 ]

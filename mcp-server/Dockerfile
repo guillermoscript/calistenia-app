@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ COPY resources/ ./resources/
 RUN npm run build
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Public origin of this server, baked at build time. CI supplies the real value
 # via --build-arg SERVER_URL=${{ vars.SERVER_URL }} (see build-ai-api.yml); the

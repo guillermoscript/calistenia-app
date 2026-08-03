@@ -13,8 +13,8 @@ export async function hydrateStorage(): Promise<void> {
   if (hydrated) return
   const keys = await AsyncStorage.getAllKeys()
   if (keys.length > 0) {
-    const pairs = await AsyncStorage.multiGet(keys)
-    for (const [key, value] of pairs) {
+    const pairs = await AsyncStorage.getMany(keys)
+    for (const [key, value] of Object.entries(pairs)) {
       if (value != null) cache.set(key, value)
     }
   }

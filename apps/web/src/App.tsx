@@ -13,6 +13,7 @@ import DashboardPage from './pages/DashboardPage'
 import WorkoutPage from './pages/WorkoutPage'
 import AuthPage from './pages/AuthPage'
 import LandingPage from './pages/LandingPage'
+import { MarketingUnmask } from './components/MarketingUnmask'
 // Lazy loaded: secondary pages (split into separate chunks)
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const NutritionPage = lazy(() => import('./pages/NutritionPage'))
@@ -784,22 +785,24 @@ function AppInner() {
 
   // Public blog — accessible both logged-in and logged-out
   if (location.pathname.startsWith('/blog')) {
-    return <Suspense fallback={<Loader />}><BlogLayout><Routes><Route path="/blog" element={<BlogPage />} /><Route path="/blog/:slug" element={<BlogPostPage />} /></Routes></BlogLayout></Suspense>
+    return <Suspense fallback={<Loader />}><MarketingUnmask><BlogLayout><Routes><Route path="/blog" element={<BlogPage />} /><Route path="/blog/:slug" element={<BlogPostPage />} /></Routes></BlogLayout></MarketingUnmask></Suspense>
   }
 
   // Public APK download page — accessible both logged-in and logged-out
   if (location.pathname === '/download' || location.pathname === '/descargar') {
-    return <Suspense fallback={<Loader />}><DownloadPage /></Suspense>
+    return <Suspense fallback={<Loader />}><MarketingUnmask><DownloadPage /></MarketingUnmask></Suspense>
   }
 
   // Public feature pages — accessible both logged-in and logged-out
   if (location.pathname === '/features' || location.pathname.startsWith('/features/')) {
     return (
       <Suspense fallback={<Loader />}>
-        <Routes>
-          <Route path="/features" element={<FeaturesPage />} />
-          <Route path="/features/:slug" element={<FeaturePage />} />
-        </Routes>
+        <MarketingUnmask>
+          <Routes>
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/features/:slug" element={<FeaturePage />} />
+          </Routes>
+        </MarketingUnmask>
       </Suspense>
     )
   }
@@ -821,7 +824,7 @@ function AppInner() {
       return <div className="min-h-screen bg-background"><SharedProgramPage programId={shareCode} onBack={goToDashboard} onLogin={goToAuth} /></div>
     }
     if (location.pathname === '/auth') return <AuthPage signInWithGoogle={signInWithGoogle} signInWithEmail={signInWithEmail} signUpWithEmail={signUpWithEmail} authError={authError} isLoading={isLoading} />
-    return <LandingPage onGetStarted={goToAuth} />
+    return <MarketingUnmask><LandingPage onGetStarted={goToAuth} /></MarketingUnmask>
   }
 
   return (
