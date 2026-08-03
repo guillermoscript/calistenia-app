@@ -316,7 +316,10 @@ onRecordAfterUpdateSuccess(function(e) {
     var status = e.record.getString("status")
     var oldStatus = e.record.original().getString("status")
 
-    if (status !== "completed" || oldStatus === "completed") return
+    // 'ended' es el valor del dominio (ChallengeStatus en core); "completed"
+    // solo pudo llegar escrito a mano — tratarlo como ya-terminado evita
+    // re-notificar si una fila legacy se normaliza a 'ended' (#312).
+    if (status !== "ended" || oldStatus === "ended" || oldStatus === "completed") return
 
     // getString("id"), no getId(): el JSVM de PB no expone getId() en Record
     // (mismo gotcha que el handler de comments más arriba).

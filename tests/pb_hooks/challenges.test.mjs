@@ -59,7 +59,7 @@ test("el propio creador uniéndose no se auto-notifica", async () => {
   await expectNotifications(creator.id, "challenge_join", 0, "creador no se notifica a sí mismo")
 })
 
-test("completar un reto notifica a participantes y creador una sola vez", async () => {
+test("terminar un reto ('ended') notifica a participantes y creador una sola vez (#312)", async () => {
   const creator = await createUser("Creador Complete")
   const p1 = await createUser("Part Uno")
   const p2 = await createUser("Part Dos")
@@ -68,7 +68,8 @@ test("completar un reto notifica a participantes y creador una sola vez", async 
   await createAs(p1, "challenge_participants", { challenge: challenge.id, user: p1.id })
   await createAs(p2, "challenge_participants", { challenge: challenge.id, user: p2.id })
 
-  await update("challenges", challenge.id, { status: "completed" })
+  // 'ended' es lo que escribe el cliente (useChallenges) y el valor del dominio
+  await update("challenges", challenge.id, { status: "ended" })
 
   for (const u of [p1, p2, creator]) {
     const [notif] = await expectNotifications(u.id, "challenge_complete", 1, `challenge_complete para ${u.name}`)
@@ -77,5 +78,24 @@ test("completar un reto notifica a participantes y creador una sola vez", async 
 
   // Un update posterior sin transición de estado no re-notifica
   await update("challenges", challenge.id, { title: "Reto de dominadas (final)" })
-  await expectNotifications(creator.id, "challenge_complete", 1, "sin re-notificación al editar completado")
+  await expectNotifications(creator.id, "challenge_complete", 1, "sin re-notificación al editar terminado")
+})
+
+test("normalizar una fila legacy 'completed' a 'ended' no notifica (#312)", async () => {
+  const creator = await createUser("Creador Legacy")
+  const p1 = await createUser("Part Legacy")
+  const challenge = await createAs(creator, "challenges", {
+    creator: creator.id,
+    title: "Reto legacy",
+    metric: "sessions",
+    starts_at: "2026-07-20",
+    ends_at: "2026-07-27",
+    status: "completed",
+  })
+  await createAs(p1, "challenge_participants", { challenge: challenge.id, user: p1.id })
+
+  await update("challenges", challenge.id, { status: "ended" })
+
+  await expectNotifications(p1.id, "challenge_complete", 0, "fila legacy ya estaba terminada")
+  await expectNotifications(creator.id, "challenge_complete", 0, "fila legacy ya estaba terminada (creador)")
 })
