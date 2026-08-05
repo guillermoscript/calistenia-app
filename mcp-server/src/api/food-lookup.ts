@@ -4,6 +4,7 @@ import { FoodItemSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
 import { langfuseTelemetry } from "./telemetry.js";
+import { sanitizeFoodTexts } from "./text-sanitizer.js";
 
 interface FoodLookupInput {
   foodName: string;
@@ -102,6 +103,11 @@ export async function lookupFoodByName({ foodName, tier }: FoodLookupInput) {
     (acc, step) => acc + (step.toolCalls?.length ?? 0),
     0
   );
+
+  // #336: mismo FoodItemSchema + web_search que meal-analyzer → misma fuga de citas
+  if (output) {
+    sanitizeFoodTexts(output);
+  }
 
   return {
     food: output,
