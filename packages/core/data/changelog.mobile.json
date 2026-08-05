@@ -1,6 +1,290 @@
 {
-  "generated": "2026-07-20T19:39:36.098Z",
+  "generated": "2026-08-05T15:22:57.772Z",
   "versions": [
+    {
+      "version": "1.7.0",
+      "date": "2026-08-05",
+      "summary": {
+        "es": "Edita la porción de cada alimento y las macros se recalculan solas, sugerencia IA más discreta, baja de cuenta desde la app y más privacidad en tus rutas de cardio.",
+        "en": "Edit each food portion and macros recalculate automatically, a tidier AI suggestion, in-app account deletion, and more privacy for your cardio routes."
+      },
+      "highlights": [
+        {
+          "icon": "⚖️",
+          "type": "feat",
+          "title": {
+            "es": "Porción editable",
+            "en": "Editable portion"
+          },
+          "body": {
+            "es": "Ajusta la cantidad de cada alimento directamente en su card y las calorías y macros se recalculan al instante.",
+            "en": "Adjust each food amount right on its card and calories and macros recalculate instantly."
+          }
+        },
+        {
+          "icon": "💡",
+          "type": "feat",
+          "title": {
+            "es": "Sugerencia IA plegable",
+            "en": "Collapsible AI suggestion"
+          },
+          "body": {
+            "es": "La sugerencia del coach al registrar una comida ahora aparece plegada: ábrela solo cuando te interese.",
+            "en": "The coach suggestion when logging a meal now starts collapsed: open it only when you want it."
+          }
+        },
+        {
+          "icon": "👋",
+          "type": "feat",
+          "title": {
+            "es": "Baja de cuenta",
+            "en": "Account deletion"
+          },
+          "body": {
+            "es": "Elimina tu cuenta y todos tus datos directamente desde la app, sin pasos externos.",
+            "en": "Delete your account and all your data right from the app, no external steps."
+          }
+        },
+        {
+          "icon": "🔔",
+          "type": "fix",
+          "title": {
+            "es": "Aviso de reto terminado",
+            "en": "Challenge-ended alert"
+          },
+          "body": {
+            "es": "La notificación de reto terminado ahora llega en el momento correcto, cuando el reto acaba de verdad.",
+            "en": "The challenge-ended notification now arrives at the right moment, when the challenge actually ends."
+          }
+        },
+        {
+          "icon": "🔒",
+          "type": "fix",
+          "title": {
+            "es": "Rutas de cardio privadas",
+            "en": "Private cardio routes"
+          },
+          "body": {
+            "es": "Tus rutas GPS de cardio ahora solo son visibles para ti: nadie más puede consultarlas.",
+            "en": "Your cardio GPS routes are now visible only to you: no one else can look them up."
+          }
+        },
+        {
+          "icon": "🧹",
+          "type": "fix",
+          "title": {
+            "es": "Análisis de comida más limpio",
+            "en": "Cleaner meal analysis"
+          },
+          "body": {
+            "es": "Los textos del análisis de fotos de comida ya no muestran citas ni URLs extrañas de la búsqueda web.",
+            "en": "Meal photo analysis texts no longer show odd citations or URLs from web search."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Porción editable en la card de alimento con recálculo automático de macros (#335) (#339)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "8454aed"
+            },
+            {
+              "description": "Colapsar la sugerencia IA tras un disclosure cerrado por defecto (#337) (#341)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "325a2be"
+            },
+            {
+              "description": "Baja de cuenta autoservicio en web y Android (#300) (#315)",
+              "scope": "account",
+              "breaking": false,
+              "hash": "dbfa791"
+            },
+            {
+              "description": "Página propia de /features/challenges, reencuadrada como meta con fecha (#311)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "6d0bbef"
+            },
+            {
+              "description": "Activar el session replay de OpenPanel, enmascarado por defecto (#310)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "00c7c36"
+            },
+            {
+              "description": "Página propia de /features/circuits con demo del cronómetro (#309)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "69d5e6e"
+            },
+            {
+              "description": "Página propia de /features/offline (closes #288) (#303)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "ee786d2"
+            },
+            {
+              "description": "Página propia de /features/comunidad (closes #287) (#297)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "444c728"
+            },
+            {
+              "description": "Página propia de /features/progress (closes #282) (#296)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "06ec278"
+            },
+            {
+              "description": "Página propia de /features/nutrition (closes #281) (#293)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "48d3170"
+            },
+            {
+              "description": "Página propia de /features/races (closes #285) (#292)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "46ee716"
+            },
+            {
+              "description": "PLANIFICAR con dos ejes, un presupuesto y un CTA",
+              "scope": "web",
+              "breaking": false,
+              "hash": "1103578"
+            },
+            {
+              "description": "Primitivo Kicker y JetBrains Mono en la config de tailwind",
+              "scope": "web",
+              "breaking": false,
+              "hash": "ef869fc"
+            },
+            {
+              "description": "Página propia de /features/training (closes #280) (#291)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "9513b09"
+            },
+            {
+              "description": "Página propia de /features/cardio (closes #283) (#290)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "aeaac3b"
+            },
+            {
+              "description": "Modelo y lógica pura de PLANIFICAR (meal_day_plans + spec)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "82a5349"
+            },
+            {
+              "description": "Recetas con ingredientes en el plan libre + budget_kind explícito",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "007a7a6"
+            },
+            {
+              "description": "Páginas públicas /features con plantilla compartida (#279)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "892ba39"
+            },
+            {
+              "description": "Upgrade a Vite 8 (Rolldown) con strictExecutionOrder",
+              "scope": "web",
+              "breaking": false,
+              "hash": "9855ede"
+            },
+            {
+              "description": "% grasa corporal método Navy + medidas corporales en mobile (#227)",
+              "scope": null,
+              "breaking": false,
+              "hash": "fe8b2c0"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Sanitizar citas/URLs de web_search en portionNote y demás textos del meal-analyzer (#336) (#340)",
+              "scope": "ai",
+              "breaking": false,
+              "hash": "2728a7a"
+            },
+            {
+              "description": "No pisar portionAmount con portionGrams cuando la unidad es 'unidad' (#334) (#338)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "18383b3"
+            },
+            {
+              "description": "Disparar la notificación de reto terminado con 'ended', no 'completed' (#312) (#331)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "eecfeeb"
+            },
+            {
+              "description": "Sacar la ruta GPS de cardio a una colección owner-only (#299) (#314)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "158e012"
+            },
+            {
+              "description": "El smoke e2e desactiva el InstallPrompt antes de que arranque la app (#305)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "8f4502e"
+            },
+            {
+              "description": "Ocultar el FAB de registro en PLANIFICAR",
+              "scope": "web",
+              "breaking": false,
+              "hash": "198b59e"
+            },
+            {
+              "description": "La card de cambio de objetivo solo en HOY",
+              "scope": "web",
+              "breaking": false,
+              "hash": "4a4434f"
+            },
+            {
+              "description": "Eliminar challenge_invite, código muerto inalcanzable (closes #261)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "4cecfd1"
+            },
+            {
+              "description": "Racha que cruza varios milestones notifica el mayor (closes #260)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "2d9be8f"
+            },
+            {
+              "description": "Hooks que fallaban en silencio en produccion (4 bugs)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "82c12db"
+            },
+            {
+              "description": "Detectar sesión fantasma cuando el server invalida el token (#254)",
+              "scope": "auth",
+              "breaking": false,
+              "hash": "c586880"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.6.0",
       "date": "2026-07-20",

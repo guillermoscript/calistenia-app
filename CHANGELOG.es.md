@@ -9,6 +9,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.7.0] - 2026-08-05
+
+_Edita la porción de cada alimento y las macros se recalculan solas, sugerencia IA más discreta, baja de cuenta desde la app y más privacidad en tus rutas de cardio._
+
+### Añadido
+
+- **Porción editable** — Ajusta la cantidad de cada alimento directamente en su card y las calorías y macros se recalculan al instante.
+- **Sugerencia IA plegable** — La sugerencia del coach al registrar una comida ahora aparece plegada: ábrela solo cuando te interese.
+- **Baja de cuenta** — Elimina tu cuenta y todos tus datos directamente desde la app, sin pasos externos.
+
+### Corregido
+
+- **Aviso de reto terminado** — La notificación de reto terminado ahora llega en el momento correcto, cuando el reto acaba de verdad.
+- **Rutas de cardio privadas** — Tus rutas GPS de cardio ahora solo son visibles para ti: nadie más puede consultarlas.
+- **Análisis de comida más limpio** — Los textos del análisis de fotos de comida ya no muestran citas ni URLs extrañas de la búsqueda web.
+
 ## [1.6.0] - 2026-07-20
 
 _Crea tus propios programas desde el móvil, registra tu sueño con resumen IA, cambia tu objetivo nutricional cuando quieras y celebra tus logros como se merece._
@@ -236,7 +252,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.6.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...HEAD
+[1.7.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.6.0...mobile-v1.7.0
 [1.6.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.5.0...mobile-v1.6.0
 [1.5.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.4.0...mobile-v1.5.0
 [1.4.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.2...mobile-v1.4.0
