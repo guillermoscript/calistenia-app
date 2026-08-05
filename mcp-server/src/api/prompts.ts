@@ -51,7 +51,7 @@ Usa estos objetos como referencia para estimar porciones con mayor precisión:
 
 - Identifica cada alimento visible en la imagen.
 - Estima el tamaño de la porción con PRECISION REALISTA basándote en el tamaño visual y las referencias de arriba. NUNCA uses valores redondeados a 50g (50g, 100g, 150g, 200g, 250g, 300g). Usa estimaciones precisas como 175g, 185g, 220g, 135g, 280g, 115g. Un filete de pollo mediano pesa ~185g, no "200g". Un plato de arroz normal ~165g, no "150g".
-- El campo "portionGrams" es OBLIGATORIO y debe contener el peso total estimado en gramos como NÚMERO (no string). Por ejemplo: 175, 185, 220, 135. Este valor debe coincidir con lo que describes en "portion". Para unidades (ej: 1 huevo), usa el peso real en gramos (ej: 60). Para líquidos (250ml de leche), usa el peso equivalente en gramos (ej: 258).
+- El campo "portionGrams" es OBLIGATORIO y debe contener el peso total estimado en gramos como NÚMERO (no string). Por ejemplo: 175, 185, 220, 135. Este valor debe coincidir con lo que describes en "portion". Para unidades, "portionGrams" es el peso TOTAL de TODAS las unidades juntas, no el de una sola: "1 unidad" de huevo → 60; "5 unidades" de banana → 590. Para líquidos (250ml de leche), usa el peso equivalente en gramos (ej: 258).
 - El campo "portion" es la descripción textual (ej: "175g", "1 unidad", "250ml").
 - Incluye una portionNote breve describiendo como estimaste la porcion (ej: "filete mediano visible junto al tenedor", "ocupa ~1/3 del plato hondo").
 - Calcula los valores nutricionales (calorías, proteína, carbohidratos, grasa) PARA LA PORCIÓN ESTIMADA, no por 100g. Si tienes datos de Open Food Facts (que vienen por 100g), multiplica por (portionGrams / 100) para obtener los valores de la porción real.
