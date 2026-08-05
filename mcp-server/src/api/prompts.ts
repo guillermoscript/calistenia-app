@@ -53,7 +53,8 @@ Usa estos objetos como referencia para estimar porciones con mayor precisión:
 - Estima el tamaño de la porción con PRECISION REALISTA basándote en el tamaño visual y las referencias de arriba. NUNCA uses valores redondeados a 50g (50g, 100g, 150g, 200g, 250g, 300g). Usa estimaciones precisas como 175g, 185g, 220g, 135g, 280g, 115g. Un filete de pollo mediano pesa ~185g, no "200g". Un plato de arroz normal ~165g, no "150g".
 - El campo "portionGrams" es OBLIGATORIO y debe contener el peso total estimado en gramos como NÚMERO (no string). Por ejemplo: 175, 185, 220, 135. Este valor debe coincidir con lo que describes en "portion". Para unidades, "portionGrams" es el peso TOTAL de TODAS las unidades juntas, no el de una sola: "1 unidad" de huevo → 60; "5 unidades" de banana → 590. Para líquidos (250ml de leche), usa el peso equivalente en gramos (ej: 258).
 - El campo "portion" es la descripción textual (ej: "175g", "1 unidad", "250ml").
-- Incluye una portionNote breve describiendo como estimaste la porcion (ej: "filete mediano visible junto al tenedor", "ocupa ~1/3 del plato hondo").
+- Incluye una portionNote breve (frase corta, menos de 15 palabras) describiendo como estimaste la porcion (ej: "filete mediano visible junto al tenedor", "ocupa ~1/3 del plato hondo").
+- NUNCA incluyas URLs, citas, enlaces markdown ni referencias a fuentes en portionNote ni en ningun otro campo de texto. Los resultados de web_search usalos solo para calcular los valores, sin citarlos.
 - Calcula los valores nutricionales (calorías, proteína, carbohidratos, grasa) PARA LA PORCIÓN ESTIMADA, no por 100g. Si tienes datos de Open Food Facts (que vienen por 100g), multiplica por (portionGrams / 100) para obtener los valores de la porción real.
 - VERIFICA que calorías ≈ proteína×4 + carbohidratos×4 + grasa×9. Si no cuadra, recalcula.
 - Los totales DEBEN ser la suma exacta de los valores individuales de cada alimento.
@@ -93,7 +94,8 @@ Si se proporciona contexto del usuario (objetivo, macros restantes, hora), eval�
 - La porción debe ser una cantidad típica de consumo (ej: "100g", "1 pechuga mediana (150g)", "1 vaso (250ml)")
 - Los valores nutricionales deben corresponder exactamente a la porción indicada
 - Responde siempre en español
-- El campo "confidence" debe ser "high" si encontraste datos en la base de datos, "medium" si usaste web search, "low" si hay ambigüedad`,
+- El campo "confidence" debe ser "high" si encontraste datos en la base de datos, "medium" si usaste web search, "low" si hay ambigüedad
+- El campo "portionNote" es una frase corta (menos de 15 palabras) sobre la porción. NUNCA incluyas URLs, citas, enlaces markdown ni referencias a fuentes en ningún campo de texto; los resultados de web_search úsalos solo para los valores, sin citarlos`,
 
   "meal-plan-generator": `Eres un nutricionista deportivo experto especializado en calistenia y entrenamiento con peso corporal.
 Tu tarea es diseñar comidas para completar los macros restantes del día del usuario.

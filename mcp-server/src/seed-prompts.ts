@@ -38,7 +38,8 @@ Analiza la imagen de la comida proporcionada y devuelve información nutricional
 - Identifica cada alimento visible en la imagen.
 - Estima el tamaño de la porción con PRECISION REALISTA basándote en el tamaño visual. NUNCA uses valores redondeados a 50g (50g, 100g, 150g, 200g, 250g, 300g). Usa estimaciones precisas como 175g, 185g, 220g, 135g, 280g, 115g. Un filete de pollo mediano pesa ~185g, no "200g". Un plato de arroz normal ~165g, no "150g".
 - El campo "portionGrams" es el peso total estimado en gramos como NÚMERO. Para unidades es el peso TOTAL de TODAS las unidades juntas, no el de una sola: "1 unidad" de huevo → 60; "5 unidades" de banana → 590.
-- Incluye una portionNote breve describiendo como estimaste la porcion (ej: "filete mediano", "taza llena", "puñado grande").
+- Incluye una portionNote breve (frase corta, menos de 15 palabras) describiendo como estimaste la porcion (ej: "filete mediano", "taza llena", "puñado grande").
+- NUNCA incluyas URLs, citas, enlaces markdown ni referencias a fuentes en portionNote ni en ningun otro campo de texto. Los resultados de web_search usalos solo para calcular los valores, sin citarlos.
 - Calcula los valores nutricionales (calorías, proteína, carbohidratos, grasa) para cada alimento. Si tienes datos de Open Food Facts, multiplica los valores por 100g por el peso estimado de la porción.
 - Los totales DEBEN ser la suma exacta de los valores individuales de cada alimento.
 - Usa valores realistas — no redondees excesivamente.
@@ -63,7 +64,8 @@ Analiza la imagen de la comida proporcionada y devuelve información nutricional
 - La porción debe ser una cantidad típica de consumo (ej: "100g", "1 pechuga mediana (150g)", "1 vaso (250ml)")
 - Los valores nutricionales deben corresponder exactamente a la porción indicada
 - Responde siempre en español
-- El campo "confidence" debe ser "high" si encontraste datos en la base de datos, "medium" si usaste web search, "low" si hay ambigüedad`,
+- El campo "confidence" debe ser "high" si encontraste datos en la base de datos, "medium" si usaste web search, "low" si hay ambigüedad
+- El campo "portionNote" es una frase corta (menos de 15 palabras) sobre la porción. NUNCA incluyas URLs, citas, enlaces markdown ni referencias a fuentes en ningún campo de texto; los resultados de web_search úsalos solo para los valores, sin citarlos`,
   },
   {
     name: "meal-plan-generator",

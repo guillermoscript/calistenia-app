@@ -4,6 +4,7 @@ import { MealAnalysisSchema, QualityBlockSchema } from "./schemas.js";
 import { resolveModel, resolveWebSearchTool, type Tier } from "./model-resolver.js";
 import { getPromptWithMeta } from "./prompts.js";
 import { langfuseTelemetry } from "./telemetry.js";
+import { sanitizeMealAnalysis, sanitizeQualityTexts } from "./text-sanitizer.js";
 
 interface ImageInput {
   buffer: Buffer;
@@ -261,6 +262,11 @@ export async function analyzeMealImage({
     };
   }
 
+  // #336: web_search puede colar citas markdown/URLs en portionNote y demás textos
+  if (output) {
+    sanitizeMealAnalysis(output);
+  }
+
   return {
     analysis: output,
     model_used: modelName,
@@ -316,7 +322,7 @@ export async function scoreMealQuality({
       telemetry: langfuseTelemetry("meal-quality-scorer", { metadata: { tier, modelName } }),
     });
 
-    return object;
+    return sanitizeQualityTexts(object);
   } catch (err) {
     console.error("[scoreMealQuality] failed:", err);
     return null;

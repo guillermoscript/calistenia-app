@@ -349,11 +349,12 @@ export function FoodItemCard({
 
       {/* Portion info (read-only display — portion editing is simplified for mobile) */}
       <View className="px-3 pb-2 flex-row items-center gap-1">
-        <Text className="font-mono text-[11px] text-muted-foreground">
+        <Text className="shrink-0 font-mono text-[11px] text-muted-foreground">
           {food.portionAmount}{food.portionUnit}
         </Text>
         {food.portionNote ? (
-          <Text className="font-sans text-[11px] text-muted-foreground/60">· {food.portionNote}</Text>
+          // #336: nota larga (datos viejos con citas) truncada — nunca debe tapar la cantidad
+          <Text numberOfLines={2} className="flex-1 font-sans text-[11px] text-muted-foreground/60">· {food.portionNote}</Text>
         ) : null}
       </View>
 
