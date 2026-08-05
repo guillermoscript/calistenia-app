@@ -6,10 +6,12 @@ import { pb, loginWithOAuth2, logout, tryRefreshAuth, verifyAuth, getCurrentUser
 import { setTimezone } from '../lib/dateUtils'
 import { op } from '../lib/analytics'
 import { clearUserStorage } from '../lib/storage-keys'
+import { qk } from '../lib/query-keys'
 import i18n from 'i18next'
 import type { UserRole, UserTier } from '../types'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
+const EXPRESS_CHALLENGE_KEY = 'calistenia_express_challenge'
 
 /** Save referral code from URL to localStorage so it survives the registration flow. */
 export function captureReferralCode(code: string) {
@@ -21,6 +23,18 @@ function consumeReferralCode(): string | null {
   const code = storage.getItem(REFERRAL_CODE_KEY)
   if (code) storage.removeItem(REFERRAL_CODE_KEY)
   return code
+}
+
+/** Save the express-challenge id from an invite link so it survives auth (#313). */
+export function captureChallengeId(challengeId: string) {
+  storage.setItem(EXPRESS_CHALLENGE_KEY, challengeId)
+}
+
+/** Get and clear the stored express-challenge id. */
+function consumeChallengeId(): string | null {
+  const id = storage.getItem(EXPRESS_CHALLENGE_KEY)
+  if (id) storage.removeItem(EXPRESS_CHALLENGE_KEY)
+  return id
 }
 
 interface UseAuthReturn {
@@ -165,6 +179,30 @@ export function useAuth(): UseAuthReturn {
 
     postRegister()
   }, [user])
+
+  // ── Auto-inscripción en reto express tras autenticarse (#313) ────────────
+  // El link /invite/<code>/challenge/<id> guarda el id antes del registro o
+  // login; al haber usuario se consume y se crea la participación propia (la
+  // rule de challenge_participants solo permite auto-inscribirse, ver #261).
+  useEffect(() => {
+    if (!user) return
+    const challengeId = consumeChallengeId()
+    if (!challengeId) return
+
+    const joinChallenge = async () => {
+      try {
+        const challenge = await pb.collection('challenges').getOne(challengeId, { $autoCancel: false })
+        if (challenge.status !== 'active') return
+        await pb.collection('challenge_participants').create({
+          challenge: challengeId,
+          user: user.id,
+        }).catch(() => {}) // ya inscrito (índice único challenge+user)
+        op.track('challenge_joined', { challenge_id: challengeId, source: 'invite' })
+        qc.invalidateQueries({ queryKey: qk.challenges(user.id) })
+      } catch { /* reto borrado o inaccesible: no bloquear el login */ }
+    }
+    joinChallenge()
+  }, [user, qc])
 
   // ── signInWithGoogle ───────────────────────────────────────────────────
   const signInWithGoogle = useCallback(async () => {

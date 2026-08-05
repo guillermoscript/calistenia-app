@@ -2417,6 +2417,8 @@
   "challenge.metricHandstand": "Mayor handstand",
   "challenge.metricExercise": "Ejercicio",
   "challenge.metricCustom": "Personalizado",
+  "challenge.expressTarget": "{{target}} reps/día · {{days}} días",
+  "challenge.expressStreak": "racha {{n}}d",
   "challenge.unitDays": "días",
   "challenge.finished": "Finalizado",
   "challenge.oneDayLeft": "1 día restante",
