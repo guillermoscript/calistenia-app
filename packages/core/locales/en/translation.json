@@ -753,6 +753,8 @@
 
   "nutrition.logger.title": "Log Meal",
   "nutrition.logger.subtitle": "Take a photo of your meal to analyze the macros",
+  "nutrition.logger.suggestion": "Suggestion",
+  "nutrition.logger.suggestionToggle": "Dish suggestions",
   "nutrition.logger.analyzingBg": "Analyzing in background",
   "nutrition.logger.bgNotification": "You'll get a notification when done",
   "nutrition.logger.analyzeError": "Error starting analysis",
