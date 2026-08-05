@@ -119,6 +119,24 @@ export function migrateLegacyFood(legacy: {
 }
 
 /**
+ * Parse a free-typed portion amount ("2,5", "300") into a finite number ≥ 0.
+ */
+export function parsePortionAmountInput(text: string): number {
+  const n = parseFloat(String(text).replace(',', '.'))
+  return Number.isFinite(n) && n >= 0 ? n : 0
+}
+
+/**
+ * Unit weight to apply when the portion unit changes: standard units impose
+ * their own weight; `unidad` keeps the current per-unit weight (100 g fallback).
+ */
+export function resolveUnitWeight(unit: PortionUnit, currentWeight: number): number {
+  if (unit !== 'unidad') return UNIT_WEIGHT_GRAMS[unit]
+  const w = Number(currentWeight)
+  return Number.isFinite(w) && w > 0 ? w : UNIT_WEIGHT_GRAMS.unidad
+}
+
+/**
  * Create a default empty FoodItem for manual entry.
  */
 export function createEmptyFood(): FoodItem {

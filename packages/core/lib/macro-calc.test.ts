@@ -5,6 +5,8 @@ import {
   calcMacros,
   migrateLegacyFood,
   createEmptyFood,
+  parsePortionAmountInput,
+  resolveUnitWeight,
 } from './macro-calc'
 import type { FoodItem } from '../types'
 
@@ -245,5 +247,52 @@ describe('createEmptyFood', () => {
       calories: 0, protein: 0, carbs: 0, fat: 0,
       baseCal100: 0, baseProt100: 0, baseCarbs100: 0, baseFat100: 0,
     })
+  })
+})
+
+describe('parsePortionAmountInput', () => {
+  it('entero simple "300" → 300', () => {
+    expect(parsePortionAmountInput('300')).toBe(300)
+  })
+
+  it('decimal con coma "2,5" → 2.5', () => {
+    expect(parsePortionAmountInput('2,5')).toBe(2.5)
+  })
+
+  it('decimal con punto "2.5" → 2.5', () => {
+    expect(parsePortionAmountInput('2.5')).toBe(2.5)
+  })
+
+  it('vacío o basura → 0', () => {
+    expect(parsePortionAmountInput('')).toBe(0)
+    expect(parsePortionAmountInput('abc')).toBe(0)
+  })
+
+  it('negativos → 0 (no hay porciones negativas)', () => {
+    expect(parsePortionAmountInput('-5')).toBe(0)
+  })
+
+  it('decimal a medio teclear "3." → 3', () => {
+    expect(parsePortionAmountInput('3.')).toBe(3)
+  })
+})
+
+describe('resolveUnitWeight', () => {
+  it('unidades estándar imponen su peso, ignorando el actual', () => {
+    expect(resolveUnitWeight('g', 100)).toBe(1)
+    expect(resolveUnitWeight('kg', 1)).toBe(1000)
+    expect(resolveUnitWeight('ml', 50)).toBe(1)
+    expect(resolveUnitWeight('L', 1)).toBe(1000)
+    expect(resolveUnitWeight('oz', 1)).toBe(28.35)
+  })
+
+  it('"unidad" conserva el peso por unidad actual', () => {
+    expect(resolveUnitWeight('unidad', 120)).toBe(120)
+  })
+
+  it('"unidad" sin peso válido cae a 100 g', () => {
+    expect(resolveUnitWeight('unidad', 0)).toBe(100)
+    expect(resolveUnitWeight('unidad', NaN)).toBe(100)
+    expect(resolveUnitWeight('unidad', -3)).toBe(100)
   })
 })

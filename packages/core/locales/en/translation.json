@@ -794,6 +794,8 @@
   "nutrition.logger.finishedAt": "Finished at",
   "nutrition.logger.duration": "Duration",
   "nutrition.logger.durationUnit": "min",
+  "nutrition.logger.portionAmount": "Amount",
+  "nutrition.logger.portionUnit": "Unit",
   "nutrition.logger.saveMeal": "SAVE MEAL",
   "nutrition.logger.saveAsTemplate": "SAVE AS TEMPLATE",
   "nutrition.logger.templateNamePlaceholder": "Template name",

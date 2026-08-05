@@ -286,6 +286,7 @@ export function ReviewStep({ model }: StepProps) {
             onEditingMacroValueChange={model.setEditingMacroValue}
             onCommitMacro={model.commitMacroEdit}
             onUpdateFood={model.updateFood}
+            onPortionChange={model.handlePortionChange}
             onRemove={model.removeFood}
             t={t}
           />
