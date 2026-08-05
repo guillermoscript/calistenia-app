@@ -753,6 +753,8 @@
 
   "nutrition.logger.title": "Registrar Comida",
   "nutrition.logger.subtitle": "Toma una foto de tu comida para analizar los macros",
+  "nutrition.logger.suggestion": "Sugerencia",
+  "nutrition.logger.suggestionToggle": "Sugerencia de platos",
   "nutrition.logger.analyzingBg": "Analizando en segundo plano",
   "nutrition.logger.bgNotification": "Recibiras una notificacion cuando termine",
   "nutrition.logger.analyzeError": "Error al iniciar el analisis",

@@ -10,11 +10,14 @@
  *
  * Spec-sheet idiom: hairlines + mono kickers, no nested shadowed cards.
  */
-import { View } from 'react-native'
+import { useState } from 'react'
+import { Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { ChevronLeft } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
 import type { QualityScore, QualityBreakdown, QualitySuggestion } from '@calistenia/core/types'
 
 const SCORE_BG: Record<QualityScore, string> = {
@@ -84,6 +87,9 @@ export default function QualityBreakdownPanel({
   compact = false,
 }: QualityBreakdownPanelProps) {
   const { t } = useTranslation()
+  // Colapsada por defecto (#337): la sugerencia solo se despliega tras el
+  // disclosure; estado local ⇒ vuelve a nacer plegada al reabrir la comida.
+  const [showSuggestion, setShowSuggestion] = useState(false)
 
   if (!breakdown) return null
 
@@ -133,32 +139,50 @@ export default function QualityBreakdownPanel({
 
       {/* Suggestion (only emitted by the AI when score < B). Flattened: a lime
           hairline strip instead of a nested bordered box, so it doesn't read as
-          a card-in-card against the host meal-card / review surface. */}
+          a card-in-card against the host meal-card / review surface.
+          Plegada tras un disclosure (idioma del Coach colapsable, #337). */}
       {suggestion && (
         <View className="flex-row gap-2.5">
           <View className="w-0.5 shrink-0 rounded-full bg-lime/40" />
           <View className="flex-1 gap-2">
-            <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime">
-              {t('nutrition.logger.suggestion', { defaultValue: 'Sugerencia' })}
-            </Text>
-            <Text className="font-sans-medium text-xs leading-snug text-foreground">
-              {suggestion.text}
-            </Text>
-            {alternatives.length > 0 && (
-              <View className="gap-2 pt-0.5">
-                {alternatives.map((alt, i) => (
-                  <View key={i} className="gap-1">
-                    <View className="self-start rounded border border-blue-500/20 bg-blue-500/15 px-1.5 py-0.5">
-                      <Text className="font-mono text-[10px] text-blue-400">{alt.name}</Text>
-                    </View>
-                    {!!alt.portionNote && (
-                      <Text className="font-sans text-[11px] leading-snug text-foreground/50">
-                        {alt.portionNote}
-                      </Text>
-                    )}
+            <Pressable
+              onPress={() => { haptics.light(); setShowSuggestion(v => !v) }}
+              className="flex-row items-center justify-between py-0.5"
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showSuggestion }}
+              hitSlop={8}
+            >
+              <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime">
+                {t('nutrition.logger.suggestionToggle', { defaultValue: 'Sugerencia de platos' })}
+              </Text>
+              <ChevronLeft
+                size={14}
+                color="rgba(255,255,255,0.45)"
+                style={{ transform: [{ rotate: showSuggestion ? '-90deg' : '90deg' }] }}
+              />
+            </Pressable>
+            {showSuggestion && (
+              <>
+                <Text className="font-sans-medium text-xs leading-snug text-foreground">
+                  {suggestion.text}
+                </Text>
+                {alternatives.length > 0 && (
+                  <View className="gap-2 pt-0.5">
+                    {alternatives.map((alt, i) => (
+                      <View key={i} className="gap-1">
+                        <View className="self-start rounded border border-blue-500/20 bg-blue-500/15 px-1.5 py-0.5">
+                          <Text className="font-mono text-[10px] text-blue-400">{alt.name}</Text>
+                        </View>
+                        {!!alt.portionNote && (
+                          <Text className="font-sans text-[11px] leading-snug text-foreground/50">
+                            {alt.portionNote}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
                   </View>
-                ))}
-              </View>
+                )}
+              </>
             )}
           </View>
         </View>
