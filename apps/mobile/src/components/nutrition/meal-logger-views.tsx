@@ -476,9 +476,11 @@ function PortionEditor({
         ))}
       </View>
 
-      {/* Nota de porción de la IA */}
+      {/* Nota de porción de la IA — truncada (#336): datos viejos pueden traer citas largas */}
       {food.portionNote ? (
-        <Text className="font-sans text-[11px] text-muted-foreground/60 italic">{food.portionNote}</Text>
+        <Text numberOfLines={2} className="font-sans text-[11px] text-muted-foreground/60 italic">
+          {food.portionNote}
+        </Text>
       ) : null}
     </View>
   )

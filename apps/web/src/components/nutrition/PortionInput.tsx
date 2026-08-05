@@ -175,7 +175,8 @@ export default function PortionInput({ amount, unit, unitWeight, onChange, porti
 
       {/* Portion note from AI */}
       {portionNote && (
-        <div className="text-[11px] text-muted-foreground/70 italic pl-0.5 leading-relaxed">
+        // #336: line-clamp por si llega una nota larga de datos viejos ya guardados
+        <div className="text-[11px] text-muted-foreground/70 italic pl-0.5 leading-relaxed line-clamp-2">
           {portionNote}
         </div>
       )}
