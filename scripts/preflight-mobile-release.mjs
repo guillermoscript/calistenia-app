@@ -68,4 +68,57 @@ if (failed) {
   console.error('Corre `pnpm install` desde la raíz del repo y vuelve a intentar.')
   process.exit(1)
 }
-console.log('\nPreflight OK — deps nativas sincronizadas.')
+
+// ── Singletons: paquetes que DEBEN existir una sola vez en el bundle ──────────
+//
+// Motivo (incidente 2026-08-07, v1.7.0 subido a Play): había dos copias de
+// react-native-css-interop (apps/mobile fijaba 0.2.5 por el parche, nativewind
+// 4.2.6 pedía 0.2.6). Su runtime guarda las reglas compiladas de Tailwind en un
+// `let rules = {}` LOCAL al módulo — a diferencia de styles/keyframes/
+// rootVariables, que sí comparte vía `global.__css_interop`. El CSS se inyectó
+// en el `rules` de una copia y todos los className se buscaron en el de la otra:
+// la app se renderizó SIN UN SOLO ESTILO y sin lanzar ninguna excepción, así que
+// ni Sentry ni el typecheck ni los tests vieron nada. Solo se detectó cuando un
+// usuario mandó capturas.
+//
+// Cada entrada declara desde dónde debe verse la misma copia: `from` son los
+// paquetes que la requieren, y todos tienen que resolver al mismo fichero.
+const SINGLETONS = [
+  { pkg: 'react-native-css-interop', from: ['nativewind'] },
+  { pkg: 'react', from: ['nativewind', 'expo-router', '@tanstack/react-query'] },
+]
+
+let dupes = false
+for (const { pkg, from } of SINGLETONS) {
+  let appCopy
+  try {
+    appCopy = require.resolve(`${pkg}/package.json`)
+  } catch {
+    continue // no es dep directa de mobile; nada que comparar
+  }
+  for (const consumer of from) {
+    let consumerCopy
+    try {
+      const consumerRequire = createRequire(require.resolve(`${consumer}/package.json`))
+      consumerCopy = consumerRequire.resolve(`${pkg}/package.json`)
+    } catch {
+      continue // ese consumidor no depende de pkg (o no está instalado)
+    }
+    if (consumerCopy !== appCopy) {
+      console.error(`✗ ${pkg}: DUPLICADO en el bundle`)
+      console.error(`    apps/mobile  → ${JSON.parse(readFileSync(appCopy, 'utf-8')).version}`)
+      console.error(`    ${consumer.padEnd(11)} → ${JSON.parse(readFileSync(consumerCopy, 'utf-8')).version}`)
+      dupes = true
+    }
+  }
+  if (!dupes) console.log(`✓ ${pkg}: una sola copia`)
+}
+
+if (dupes) {
+  console.error('\nHay paquetes duplicados que deben ser singleton en el bundle.')
+  console.error('Alinea las versiones (pnpm-workspace.yaml → overrides) y repite.')
+  console.error('Ojo: esto NO lanza errores en runtime, la app sale rota en silencio.')
+  process.exit(1)
+}
+
+console.log('\nPreflight OK — deps nativas sincronizadas, sin duplicados.')

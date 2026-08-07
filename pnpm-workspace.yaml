@@ -8,9 +8,19 @@ onlyBuiltDependencies:
   - '@sentry/cli'
 
 patchedDependencies:
-  react-native-css-interop@0.2.5: patches/react-native-css-interop@0.2.5.patch
+  react-native-css-interop@0.2.6: patches/react-native-css-interop@0.2.6.patch
 
 # Security override: ansi-to-react pins linkify-it ^3 (ReDoS GHSA-22p9-wv53-3rq4,
 # patched in >=5.0.1). v5 keeps the CJS build and the factory/.tlds() API it uses.
+#
+# react-native-css-interop: DEBE haber una sola copia en el bundle. Su runtime
+# guarda las reglas compiladas de Tailwind en un `let rules = {}` LOCAL al módulo
+# (styles.js) — a diferencia de styles/keyframes/rootVariables, que sí comparte
+# vía `global.__css_interop`. Con dos copias, el CSS se inyecta en el `rules` de
+# una y todos los className se buscan en el de la otra: la app se renderiza sin
+# un solo estilo y SIN lanzar ningún error (v1.7.0 salió así a Play).
+# Pasó porque apps/mobile fijaba 0.2.5 (por el parche) mientras nativewind 4.2.6
+# pedía 0.2.6. Este override impide que vuelva a divergir.
 overrides:
   linkify-it: ^5.0.2
+  react-native-css-interop: 0.2.6

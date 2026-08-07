@@ -73,7 +73,7 @@
     "react-i18next": "^17.0.11",
     "react-native": "0.86.2",
     "react-native-android-widget": "^0.21.0",
-    "react-native-css-interop": "0.2.5",
+    "react-native-css-interop": "0.2.6",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-health-connect": "^3.6.0",
     "react-native-keyboard-controller": "1.22.2",
