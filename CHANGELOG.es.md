@@ -9,6 +9,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.7.1] - 2026-08-07
+
+_Arregla la 1.7.0: la app se veía completamente descolocada, sin estilos ni fuentes. Ya se muestra como debe._
+
+### Corregido
+
+- **La app vuelve a verse bien** — Si al actualizar a la 1.7.0 viste la app descolocada, con el texto pegado al borde y sin fuentes, ya está resuelto. No tienes que hacer nada: tus datos y tu sesión siguen intactos.
+
 ## [1.7.0] - 2026-08-05
 
 _Edita la porción de cada alimento y las macros se recalculan solas, sugerencia IA más discreta, baja de cuenta desde la app y más privacidad en tus rutas de cardio._
@@ -252,7 +260,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...HEAD
+[1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1
 [1.7.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.6.0...mobile-v1.7.0
 [1.6.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.5.0...mobile-v1.6.0
 [1.5.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.4.0...mobile-v1.5.0

@@ -1,6 +1,43 @@
 {
-  "generated": "2026-08-05T15:22:57.772Z",
+  "generated": "2026-08-07T20:49:03.918Z",
   "versions": [
+    {
+      "version": "1.7.1",
+      "date": "2026-08-07",
+      "summary": {
+        "es": "Arregla la 1.7.0: la app se veía completamente descolocada, sin estilos ni fuentes. Ya se muestra como debe.",
+        "en": "Fixes 1.7.0: the app rendered completely broken, with no styles or fonts. It now looks the way it should."
+      },
+      "highlights": [
+        {
+          "icon": "🩹",
+          "type": "fix",
+          "title": {
+            "es": "La app vuelve a verse bien",
+            "en": "The app looks right again"
+          },
+          "body": {
+            "es": "Si al actualizar a la 1.7.0 viste la app descolocada, con el texto pegado al borde y sin fuentes, ya está resuelto. No tienes que hacer nada: tus datos y tu sesión siguen intactos.",
+            "en": "If the app looked broken after updating to 1.7.0 — text stuck to the edge, no fonts — it is fixed now. Nothing for you to do: your data and session are untouched."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Deduplicar react-native-css-interop (v1.7.0 salía sin estilos)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "15ef4fa"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.7.0",
       "date": "2026-08-05",
