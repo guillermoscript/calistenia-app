@@ -27,6 +27,7 @@ import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
 import { resolveNotifUrl } from '@/lib/notification-route'
+import { cancelLegacyLocalReminders } from '@/lib/reminder-scheduler'
 import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
 import { applyThemeMode, getThemeMode } from '@/lib/theme-mode'
@@ -137,6 +138,14 @@ function RootLayout() {
 
     return () => sub.remove()
   }, [])  // intentionally empty — runs once on mount
+
+  // ── Recordatorios: limpiar la programación local antigua ──────────────────
+  // Los recordatorios ahora llegan por push del servidor. Quien actualice desde
+  // una versión anterior tiene notificaciones WEEKLY locales ya programadas;
+  // si no se cancelan, cada recordatorio sonaría dos veces.
+  useEffect(() => {
+    cancelLegacyLocalReminders()
+  }, [])
 
   // ── Sesión fantasma (#254): expulsión en caliente + revalidación ──────────
   const readyRef = useRef(false)

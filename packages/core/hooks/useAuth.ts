@@ -5,6 +5,7 @@ import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, verifyAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
+import { syncUserTimezone } from '../lib/timezone-sync'
 import { clearUserStorage } from '../lib/storage-keys'
 import i18n from 'i18next'
 import type { UserRole, UserTier } from '../types'
@@ -68,6 +69,9 @@ export function useAuth(): UseAuthReturn {
         else setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
         if (u) {
           op.identify({ profileId: u.id, firstName: u.display_name || u.name || '', email: u.email, properties: { tier: u.tier || 'free', role: u.role || 'user' } })
+          // Persistir la zona en el registro: el servidor la necesita para
+          // enviar los recordatorios a la hora local correcta.
+          void syncUserTimezone(u.id, u.timezone as string | undefined)
         }
         setUser(u)
         setAuthReady(true)
@@ -96,6 +100,8 @@ export function useAuth(): UseAuthReturn {
     const unsub = pb.authStore.onChange((_token: string, record: RecordModel | null) => {
       if (record?.timezone) setTimezone(record.timezone)
       else if (record) setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+      // Login (incl. OAuth) / refresh: asegurar que el servidor conoce la zona.
+      if (record) void syncUserTimezone(record.id, record.timezone as string | undefined)
       // Logout (propio o sincronizado desde otra pestaña vía storage event):
       // vaciar la caché de queries también AQUÍ, no solo en signOut(). Si otra
       // pestaña conserva en memoria las queries del usuario anterior, su

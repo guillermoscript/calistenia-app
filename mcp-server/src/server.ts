@@ -38,6 +38,7 @@ import { registerPantryTools } from "./tools/pantry.js";
 import { registerRecipeTools } from "./tools/recipes.js";
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
+import { startReminderScheduler, stopReminderScheduler } from "./api/reminder-dispatcher.js";
 
 const PORT = parseInt(process.env.PORT ?? process.env.MCP_SERVER_PORT ?? "3001", 10);
 const HOST = process.env.HOST ?? process.env.MCP_SERVER_HOST ?? "0.0.0.0";
@@ -151,10 +152,19 @@ registerOAuthRoutes(server, PB_URL, SERVER_URL);
 // ── REST /api/* routes (Phase 6) ──────────────────────────────────────────
 registerApiRoutes(server, PB_URL);
 
+// ── Recordatorios push (comidas / entrenamiento / pausa activa) ─────────────
+// Sustituye a los crons de pb_hooks/push_reminders.pb.js: la conversión a la
+// zona horaria del usuario es imposible en el JSVM de PocketBase (goja no trae
+// `Intl`), así que el tick vive aquí, donde Node sí tiene ICU completo.
+// REQUIERE una sola instancia del API — varias réplicas duplicarían envíos.
+if (process.env.REMINDERS_SCHEDULER !== "off") {
+  startReminderScheduler();
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 await server.listen(PORT);
 console.error(`[Calistenia] mcp-use server on ${SERVER_URL} (PB: ${PB_URL})`);
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
-process.on("SIGINT", async () => { console.error("\n[Shutdown] Flushing traces…"); await shutdownTracing(); process.exit(0); });
-process.on("SIGTERM", async () => { console.error("\n[Shutdown] Flushing traces…"); await shutdownTracing(); process.exit(0); });
+process.on("SIGINT", async () => { console.error("\n[Shutdown] Flushing traces…"); stopReminderScheduler(); await shutdownTracing(); process.exit(0); });
+process.on("SIGTERM", async () => { console.error("\n[Shutdown] Flushing traces…"); stopReminderScheduler(); await shutdownTracing(); process.exit(0); });

@@ -130,21 +130,24 @@ export function useMealReminders(userId: string | null) {
 
   const saveMutation = useMutation({
     mutationFn: async (payload: SavePayload) => {
-      if (!usePB || !userId) return null // sin PB, todo queda en LS (onMutate ya lo hizo)
-      try {
-        const rec = await pb.collection('meal_reminders').create({
-          user: userId,
-          meal_type: payload.mealType,
-          hour: payload.hour,
-          minute: payload.minute,
-          enabled: true,
-          days_of_week: payload.daysOfWeek,
-        })
-        return { pbId: rec.id, tempId: payload.tempId }
-      } catch (e) {
-        console.warn('PB meal_reminders create error:', e)
-        return null
-      }
+      // Los recordatorios los ENTREGA el servidor por push, así que uno que
+      // solo exista en local nunca sonaría. Antes los fallos se tragaban con un
+      // console.warn y `return null`: la fila optimista se quedaba en caché,
+      // el siguiente refetch la sobrescribía con lo que había en PB y el
+      // recordatorio DESAPARECÍA sin ningún aviso. Ahora se propaga el error →
+      // `onError` revierte el optimista y la pantalla lo muestra.
+      if (!userId) throw new Error('REMINDER_NOT_AUTHENTICATED')
+      if (!usePB) throw new Error('REMINDER_OFFLINE')
+
+      const rec = await pb.collection('meal_reminders').create({
+        user: userId,
+        meal_type: payload.mealType,
+        hour: payload.hour,
+        minute: payload.minute,
+        enabled: true,
+        days_of_week: payload.daysOfWeek,
+      })
+      return { pbId: rec.id, tempId: payload.tempId }
     },
     ...saveHandlers,
     onSuccess: (result) => {
