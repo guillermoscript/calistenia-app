@@ -63,7 +63,6 @@ const InviteLandingPage = lazy(() => import('./pages/InviteLandingPage'))
 const ReferralsPage = lazy(() => import('./pages/ReferralsPage'))
 const BlogPage = lazy(() => import('./pages/BlogPage'))
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
-const BlogEditorPage = lazy(() => import('./pages/BlogEditorPage'))
 const BlogLayout = lazy(() => import('./components/blog/BlogLayout'))
 const DownloadPage = lazy(() => import('./pages/DownloadPage'))
 const FeaturesPage = lazy(() => import('./pages/FeaturesPage'))
@@ -710,7 +709,6 @@ function AuthenticatedApp({
             <Route path="/referrals" element={<ReferralsPage userId={userId!} />} />
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}
-            {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor/blog" element={<BlogEditorPage />} /> : null}
             <Route path="/u/:userId" element={<UserProfilePage />} />
             <Route path="/shared/:shareCode" element={<SharedProgramPageRoute userId={userId} />} />
             <Route path="/legal" element={<LegalPage />} />

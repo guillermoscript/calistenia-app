@@ -1,207 +1,235 @@
 /**
- * Pre-render blog posts as static HTML for SEO.
+ * Pre-renderiza el blog como HTML estático para SEO.
  *
- * Runs after `vite build`, fetches published posts from PocketBase,
- * and generates static HTML files in dist/blog/ with proper meta tags,
- * Open Graph, hreflang, and JSON-LD structured data.
+ * Se ejecuta después de `vite build`, lee los .mdx de `src/content/blog/` y
+ * escribe en `dist/blog/<slug>/index.html` el artículo ya renderizado DENTRO
+ * del shell de la SPA. Así:
+ *   - el crawler recibe el texto completo en el primer HTML, sin ejecutar JS
+ *   - el visitante real arranca la app normal (el shell conserva sus <script>)
  *
- * Usage:
- *   POCKETBASE_URL=http://127.0.0.1:8090 node scripts/prerender-blog.mjs
+ * Antes esto leía los posts de PocketBase por HTTP. En el build de Docker no
+ * hay PocketBase, así que el fetch fallaba y el catch se lo tragaba: en
+ * producción nunca se generó el HTML de ningún artículo. Leyendo del disco no
+ * hay red que pueda fallar.
+ *
+ * Uso:
+ *   node scripts/prerender-blog.mjs
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { marked } from 'marked'
+import { fileURLToPath } from 'node:url'
+import { createElement as h, Fragment } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { evaluate } from '@mdx-js/mdx'
+import * as runtime from 'react/jsx-runtime'
+import { mdxOptions } from '../mdx.options.mjs'
 
-const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
-const DIST = path.resolve('dist')
-const SITE_URL = process.env.SITE_URL || 'https://gym.guille.tech'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ROOT = path.resolve(__dirname, '..')
+const DIST = path.join(ROOT, 'dist')
+const CONTENT_DIR = path.join(ROOT, 'src/content/blog')
+const SITE_URL = (process.env.SITE_URL || 'https://gym.guille.tech').replace(/\/$/, '')
 
-function localize(field, locale) {
-  if (!field) return ''
-  if (typeof field === 'string') return field
-  return field[locale] ?? field['es'] ?? Object.values(field)[0] ?? ''
+const CATEGORY_LABELS = {
+  calistenia: { es: 'Calistenia', en: 'Calisthenics' },
+  tutoriales: { es: 'Tutoriales', en: 'Tutorials' },
+  nutricion: { es: 'Nutrición', en: 'Nutrition' },
+  consejos: { es: 'Consejos', en: 'Tips' },
+  actualizaciones: { es: 'Actualizaciones', en: 'Updates' },
 }
 
-function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const escapeHtml = (str = '') =>
+  String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+const absolute = (urlPath) =>
+  !urlPath ? '' : /^https?:\/\//.test(urlPath) ? urlPath : `${SITE_URL}${urlPath}`
+
+/* ── Componentes MDX en versión Node ──────────────────────────────────────────
+ * Los reales (src/components/blog/mdx-components.tsx) son TSX y usan
+ * react-router, que aquí no tiene Router. Estos equivalentes emiten el mismo
+ * HTML semántico para que el crawler lea exactamente el mismo texto.
+ * Mantener en sync: si añades un componente al MDX, añádelo también aquí o el
+ * artículo se pre-renderizará incompleto. */
+const prerenderComponents = {
+  a: ({ href, children }) => h('a', { href }, children),
+  Callout: ({ title, children }) =>
+    h('aside', { className: 'callout' }, title ? h('p', null, h('strong', null, title)) : null, children),
+  Ladder: ({ children }) => h('div', { className: 'ladder' }, children),
+  ProgressionStep: ({ n, title, goal, children }) =>
+    h(
+      'section',
+      { className: 'step' },
+      h('h3', null, `${n}. ${title}`),
+      goal ? h('p', { className: 'goal' }, h('em', null, goal)) : null,
+      children
+    ),
+  ExerciseLink: ({ id, children }) => h('a', { href: `/exercises/${id}` }, children),
+  KeyTakeaways: ({ title, children }) =>
+    h('section', { className: 'takeaways' }, h('h2', null, title ?? 'En resumen'), children),
 }
 
-function coverUrl(post, thumb) {
-  if (!post.cover_image) return ''
-  return `${PB_URL}/api/files/${post.collectionId}/${post.id}/${post.cover_image}${thumb ? `?thumb=${thumb}` : ''}`
+/** Estilos mínimos para el instante previo a que arranque React */
+const PRERENDER_STYLES = `
+  .prerendered-article{max-width:44rem;margin:0 auto;padding:2rem 1rem;font-family:'DM Sans',system-ui,sans-serif;line-height:1.7}
+  .prerendered-article img{max-width:100%;height:auto;border-radius:12px}
+  .prerendered-article .callout,.prerendered-article .step,.prerendered-article .takeaways{border:1px solid rgba(127,127,127,.3);border-radius:12px;padding:1rem;margin:1.5rem 0}
+  .prerendered-article table{width:100%;border-collapse:collapse}
+  .prerendered-article th,.prerendered-article td{border:1px solid rgba(127,127,127,.3);padding:.5rem;text-align:left}
+`
+
+/* ── Lectura de contenido ─────────────────────────────────────────────────── */
+
+/** Misma convención que `src/lib/blog-content.ts`: `<key>.<lang>.mdx` */
+function parseFileName(fileName) {
+  const match = fileName.match(/^(.+)\.(es|en)\.mdx$/)
+  return match ? { key: match[1], lang: match[2] } : null
 }
 
-async function fetchPosts() {
-  const url = `${PB_URL}/api/collections/blog_posts/records?filter=status%3D%22published%22&sort=-published_at&perPage=500`
-  const res = await fetch(url)
-  if (!res.ok) {
-    console.error(`Failed to fetch posts: ${res.status} ${res.statusText}`)
-    return []
+function isPublished(post) {
+  if (post.draft) return false
+  return post.publishedAt <= new Date().toISOString().slice(0, 10)
+}
+
+async function readPosts() {
+  if (!fs.existsSync(CONTENT_DIR)) return []
+
+  const posts = []
+  for (const fileName of fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith('.mdx'))) {
+    const parsed = parseFileName(fileName)
+    if (!parsed) {
+      console.warn(`  ! nombre ignorado (esperado <key>.<es|en>.mdx): ${fileName}`)
+      continue
+    }
+
+    const source = fs.readFileSync(path.join(CONTENT_DIR, fileName), 'utf-8')
+    // `evaluate` compila Y ejecuta el MDX: devuelve el componente y el
+    // frontmatter (`meta`) en una sola pasada.
+    const mod = await evaluate(source, { ...mdxOptions, ...runtime, Fragment })
+    const frontmatter = mod.meta
+
+    if (!frontmatter?.slug || !frontmatter?.title) {
+      console.warn(`  ! frontmatter incompleto (falta slug o title): ${fileName}`)
+      continue
+    }
+
+    posts.push({ ...frontmatter, ...parsed, Content: mod.default })
   }
-  const data = await res.json()
-  return data.items || []
+
+  return posts
+    .filter(isPublished)
+    .sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1))
 }
 
-function generatePostHtml(post, locale) {
-  const title = localize(post.title, locale)
-  const excerpt = localize(post.excerpt, locale)
-  const body = localize(post.body, locale)
-  const seoTitle = localize(post.seo_title, locale) || title
-  const seoDescription = localize(post.seo_description, locale) || excerpt
-  const slug = locale === 'en' ? post.slug_en : post.slug_es
-  const altSlug = locale === 'en' ? post.slug_es : post.slug_en
-  const altLocale = locale === 'en' ? 'es' : 'en'
-  const cover = coverUrl(post, '800x450')
-  const bodyHtml = marked.parse(body, { async: false })
-  const date = post.published_at ? new Date(post.published_at).toISOString() : ''
-  const dateDisplay = post.published_at
-    ? new Date(post.published_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
-        year: 'numeric', month: 'long', day: 'numeric',
-      })
-    : ''
+/* ── Inyección en el shell de la SPA ──────────────────────────────────────── */
+
+/**
+ * Mete el HTML pre-renderizado y los metadatos en `dist/index.html`,
+ * conservando los <script>/<link> del bundle para que la app arranque igual.
+ */
+function injectIntoShell(shell, { lang, title, description, headExtra, bodyHtml }) {
+  let html = shell
+
+  html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
+  html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(title)}</title>`)
+  html = html.replace(
+    /<meta name="description" content="[^"]*"\s*\/?>/,
+    `<meta name="description" content="${escapeHtml(description)}" />`
+  )
+
+  // Las og:/twitter: del shell son las de la landing: sobran en un artículo.
+  html = html.replace(/\s*<meta (?:property|name)="(?:og|twitter):[^"]*"[^>]*>/g, '')
+  html = html.replace(/\s*<!-- (?:Open Graph|Twitter)[^>]*-->/g, '')
+
+  html = html.replace('</head>', `${headExtra}\n  </head>`)
+
+  // El shell de Vite trae <div id="root"></div> vacío.
+  const rootDiv = /<div id="root">\s*<\/div>/
+  if (!rootDiv.test(html)) {
+    throw new Error('No se encontró <div id="root"></div> en dist/index.html')
+  }
+  return html.replace(rootDiv, `<div id="root">${bodyHtml}</div>`)
+}
+
+function postHead(post, translation) {
+  const seoTitle = post.seoTitle ?? post.title
+  const seoDescription = post.seoDescription ?? post.excerpt
+  const url = `${SITE_URL}/blog/${post.slug}`
+  const cover = absolute(post.cover)
 
   const jsonLd = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: title,
+    headline: post.title,
     description: seoDescription,
     image: cover || undefined,
-    datePublished: date,
-    author: {
-      '@type': 'Person',
-      name: post.author_name,
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Calistenia App',
-      url: SITE_URL,
-    },
-    mainEntityOfPage: `${SITE_URL}/blog/${slug}`,
+    datePublished: post.publishedAt,
+    inLanguage: post.lang,
+    author: { '@type': 'Person', name: post.author?.name },
+    publisher: { '@type': 'Organization', name: 'Calistenia App', url: SITE_URL },
+    mainEntityOfPage: url,
   })
 
-  return `<!DOCTYPE html>
-<html lang="${locale}">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escapeHtml(seoTitle)} | Calistenia App Blog</title>
-  <meta name="description" content="${escapeHtml(seoDescription)}" />
-  <link rel="canonical" href="${SITE_URL}/blog/${slug}" />
-  <link rel="alternate" hreflang="${locale}" href="${SITE_URL}/blog/${slug}" />
-  <link rel="alternate" hreflang="${altLocale}" href="${SITE_URL}/blog/${altSlug}" />
+  return `
+  <link rel="canonical" href="${url}" />
+  <link rel="alternate" hreflang="${post.lang}" href="${url}" />${
+    translation
+      ? `\n  <link rel="alternate" hreflang="${translation.lang}" href="${SITE_URL}/blog/${translation.slug}" />`
+      : ''
+  }
   <meta property="og:type" content="article" />
   <meta property="og:title" content="${escapeHtml(seoTitle)}" />
   <meta property="og:description" content="${escapeHtml(seoDescription)}" />
-  ${cover ? `<meta property="og:image" content="${cover}" />` : ''}
-  <meta property="og:url" content="${SITE_URL}/blog/${slug}" />
-  <meta property="og:locale" content="${locale === 'en' ? 'en_US' : 'es_ES'}" />
+  <meta property="og:url" content="${url}" />
+  <meta property="og:locale" content="${post.lang === 'en' ? 'en_US' : 'es_ES'}" />${
+    cover ? `\n  <meta property="og:image" content="${cover}" />` : ''
+  }
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(seoTitle)}" />
-  <meta name="twitter:description" content="${escapeHtml(seoDescription)}" />
-  ${cover ? `<meta name="twitter:image" content="${cover}" />` : ''}
-  <script type="application/ld+json">${jsonLd}</script>
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; max-width: 700px; margin: 0 auto; padding: 2rem 1rem; color: #1a1a1a; line-height: 1.7; }
-    a { color: #4AA61A; }
-    img { max-width: 100%; border-radius: 12px; }
-    .meta { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
-    .cta { background: #f0fdf4; border: 1px solid #4AA61A40; border-radius: 16px; padding: 2rem; text-align: center; margin-top: 3rem; }
-    .cta a { display: inline-block; background: #4AA61A; color: #000; padding: 0.75rem 1.5rem; border-radius: 999px; text-decoration: none; font-weight: 600; }
-    nav { margin-bottom: 2rem; }
-    nav a { color: #4AA61A; text-decoration: none; font-size: 0.9rem; }
-  </style>
-</head>
-<body>
-  <nav><a href="/blog">&larr; ${locale === 'en' ? 'Back to Blog' : 'Volver al Blog'}</a></nav>
-  <article>
-    <h1>${escapeHtml(title)}</h1>
-    <div class="meta">
-      ${post.author_name} &middot; ${dateDisplay}
-      ${altSlug ? ` &middot; <a href="/blog/${altSlug}">${altLocale === 'en' ? 'Read in English' : 'Leer en Español'}</a>` : ''}
-    </div>
-    ${cover ? `<img src="${cover}" alt="${escapeHtml(title)}" />` : ''}
-    ${bodyHtml}
-  </article>
-  <div class="cta">
-    <h3>${locale === 'en' ? 'Start training with your own body' : 'Empieza a entrenar con tu propio cuerpo'}</h3>
-    <p>${locale === 'en' ? 'Structured programs, progress tracking, AI nutrition, and more. Free.' : 'Programas estructurados, seguimiento de progreso, nutrición con IA y más. Gratis.'}</p>
-    <a href="/auth">${locale === 'en' ? 'Create free account' : 'Crear cuenta gratis'}</a>
-  </div>
-</body>
-</html>`
+  <meta name="twitter:description" content="${escapeHtml(seoDescription)}" />${
+    cover ? `\n  <meta name="twitter:image" content="${cover}" />` : ''
+  }
+  <style>${PRERENDER_STYLES}</style>
+  <script type="application/ld+json">${jsonLd}</script>`
 }
 
-function generateListingHtml(posts, locale) {
-  const title = locale === 'en' ? 'Blog - Calisthenics Training Tips & Tutorials' : 'Blog - Consejos y Tutoriales de Calistenia'
-  const description = locale === 'en'
-    ? 'Tips, tutorials, and guides for your calisthenics training'
-    : 'Consejos, tutoriales y guías para tu entrenamiento de calistenia'
+function renderPostBody(post) {
+  const categoryLabel = CATEGORY_LABELS[post.category]?.[post.lang] ?? post.category
+  const body = renderToStaticMarkup(h(post.Content, { components: prerenderComponents }))
 
-  const cards = posts.map((post) => {
-    const postTitle = localize(post.title, locale)
-    const excerpt = localize(post.excerpt, locale)
-    const slug = locale === 'en' ? post.slug_en : post.slug_es
-    const cover = coverUrl(post, '400x225')
-    const date = post.published_at
-      ? new Date(post.published_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
-          year: 'numeric', month: 'short', day: 'numeric',
-        })
-      : ''
-
-    return `<a href="/blog/${slug}" class="card">
-      ${cover ? `<img src="${cover}" alt="${escapeHtml(postTitle)}" loading="lazy" />` : '<div class="placeholder"></div>'}
-      <div class="card-body">
-        <span class="badge">${post.category}</span>
-        <h2>${escapeHtml(postTitle)}</h2>
-        <p>${escapeHtml(excerpt)}</p>
-        <small>${post.author_name} · ${date}</small>
-      </div>
-    </a>`
-  }).join('\n')
-
-  return `<!DOCTYPE html>
-<html lang="${locale}">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escapeHtml(title)} | Calistenia App</title>
-  <meta name="description" content="${escapeHtml(description)}" />
-  <link rel="canonical" href="${SITE_URL}/blog" />
-  <meta property="og:title" content="${escapeHtml(title)}" />
-  <meta property="og:description" content="${escapeHtml(description)}" />
-  <meta property="og:url" content="${SITE_URL}/blog" />
-  <meta property="og:type" content="website" />
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; color: #1a1a1a; }
-    h1 { margin-bottom: 0.5rem; } .subtitle { color: #666; margin-bottom: 2rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-    .card { text-decoration: none; color: inherit; border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; transition: box-shadow 0.2s; }
-    .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    .card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-    .placeholder { width: 100%; aspect-ratio: 16/9; background: #f5f5f5; }
-    .card-body { padding: 1rem; }
-    .badge { display: inline-block; background: #4AA61A20; color: #3d8a15; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; margin-bottom: 0.5rem; }
-    .card h2 { font-size: 1.1rem; margin: 0.5rem 0; }
-    .card p { color: #666; font-size: 0.9rem; margin: 0.5rem 0; }
-    .card small { color: #999; font-size: 0.8rem; }
-    .cta { background: #f0fdf4; border: 1px solid #4AA61A40; border-radius: 16px; padding: 2rem; text-align: center; margin-top: 3rem; }
-    .cta a { display: inline-block; background: #4AA61A; color: #000; padding: 0.75rem 1.5rem; border-radius: 999px; text-decoration: none; font-weight: 600; }
-    nav a { color: #4AA61A; text-decoration: none; }
-  </style>
-</head>
-<body>
-  <nav><a href="/">Calistenia App</a> · Blog</nav>
-  <h1>${locale === 'en' ? 'Blog' : 'Blog'}</h1>
-  <p class="subtitle">${escapeHtml(description)}</p>
-  <div class="grid">${cards}</div>
-  <div class="cta">
-    <h3>${locale === 'en' ? 'Start training with your own body' : 'Empieza a entrenar con tu propio cuerpo'}</h3>
-    <a href="/auth">${locale === 'en' ? 'Create free account' : 'Crear cuenta gratis'}</a>
-  </div>
-</body>
-</html>`
+  return `<article class="prerendered-article">
+  <nav><a href="/blog">${post.lang === 'en' ? '&larr; Back to blog' : '&larr; Volver al blog'}</a></nav>
+  <p>${escapeHtml(categoryLabel)}</p>
+  <h1>${escapeHtml(post.title)}</h1>
+  <p>${escapeHtml(post.author?.name ?? '')} · <time datetime="${post.publishedAt}">${post.publishedAt}</time></p>
+  ${post.cover ? `<img src="${post.cover}" alt="${escapeHtml(post.coverAlt ?? '')}" />` : ''}
+  ${body}
+</article>`
 }
+
+function renderListingBody(posts, lang) {
+  const heading = lang === 'en' ? 'Blog' : 'Blog'
+  const cards = posts
+    .filter((post) => post.lang === lang)
+    .map(
+      (post) => `<li>
+    <a href="/blog/${post.slug}">
+      ${post.cover ? `<img src="${post.cover}" alt="${escapeHtml(post.coverAlt ?? '')}" loading="lazy" />` : ''}
+      <h2>${escapeHtml(post.title)}</h2>
+    </a>
+    <p>${escapeHtml(post.excerpt)}</p>
+    <p>${escapeHtml(post.author?.name ?? '')} · <time datetime="${post.publishedAt}">${post.publishedAt}</time></p>
+  </li>`
+    )
+    .join('\n')
+
+  return `<div class="prerendered-article">
+  <h1>${heading}</h1>
+  <ul>${cards}</ul>
+</div>`
+}
+
+/* ── Sitemap / robots ─────────────────────────────────────────────────────── */
 
 // Debe coincidir con FEATURES en src/data/features.tsx — hay un test que lo verifica.
 const FEATURE_SLUGS = [
@@ -212,27 +240,26 @@ function generateSitemap(posts) {
   const urls = [
     `  <url><loc>${SITE_URL}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
     `  <url><loc>${SITE_URL}/features</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>`,
-    ...FEATURE_SLUGS.map(slug =>
-      `  <url><loc>${SITE_URL}/features/${slug}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>`),
+    ...FEATURE_SLUGS.map(
+      (slug) => `  <url><loc>${SITE_URL}/features/${slug}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>`
+    ),
     `  <url><loc>${SITE_URL}/download</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
     `  <url><loc>${SITE_URL}/blog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
   ]
 
   for (const post of posts) {
-    const date = post.published_at ? new Date(post.published_at).toISOString().split('T')[0] : ''
-    for (const locale of ['es', 'en']) {
-      const slug = locale === 'en' ? post.slug_en : post.slug_es
-      const altSlug = locale === 'en' ? post.slug_es : post.slug_en
-      const altLocale = locale === 'en' ? 'es' : 'en'
-      urls.push(`  <url>
-    <loc>${SITE_URL}/blog/${slug}</loc>
-    ${date ? `<lastmod>${date}</lastmod>` : ''}
+    const translation = posts.find((p) => p.key === post.key && p.lang !== post.lang)
+    urls.push(`  <url>
+    <loc>${SITE_URL}/blog/${post.slug}</loc>
+    <lastmod>${post.publishedAt}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="${locale}" href="${SITE_URL}/blog/${slug}" />
-    <xhtml:link rel="alternate" hreflang="${altLocale}" href="${SITE_URL}/blog/${altSlug}" />
-  </url>`)
+    <xhtml:link rel="alternate" hreflang="${post.lang}" href="${SITE_URL}/blog/${post.slug}" />${
+      translation
+        ? `\n    <xhtml:link rel="alternate" hreflang="${translation.lang}" href="${SITE_URL}/blog/${translation.slug}" />`
+        : ''
     }
+  </url>`)
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -242,63 +269,66 @@ ${urls.join('\n')}
 </urlset>`
 }
 
-function generateRobotsTxt() {
-  return `User-agent: *
+const generateRobotsTxt = () => `User-agent: *
 Allow: /
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `
-}
+
+/* ── Main ─────────────────────────────────────────────────────────────────── */
 
 async function main() {
-  console.log(`Prerendering blog from ${PB_URL}...`)
-
-  const posts = await fetchPosts()
-  if (posts.length === 0) {
-    console.log('No published posts found. Skipping prerender.')
-    // Still generate sitemap and robots.txt
-    fs.writeFileSync(path.join(DIST, 'sitemap.xml'), generateSitemap([]))
-    fs.writeFileSync(path.join(DIST, 'robots.txt'), generateRobotsTxt())
-    console.log('Generated sitemap.xml and robots.txt (empty blog)')
-    return
+  const shellPath = path.join(DIST, 'index.html')
+  if (!fs.existsSync(shellPath)) {
+    throw new Error(`Falta ${shellPath} — ejecuta \`vite build\` antes que este script`)
   }
+  const shell = fs.readFileSync(shellPath, 'utf-8')
 
-  console.log(`Found ${posts.length} published post(s)`)
+  const posts = await readPosts()
+  console.log(`Pre-renderizando ${posts.length} artículo(s) desde src/content/blog/`)
 
-  // Generate individual post pages
   for (const post of posts) {
-    for (const locale of ['es', 'en']) {
-      const slug = locale === 'en' ? post.slug_en : post.slug_es
-      const dir = path.join(DIST, 'blog', slug)
-      fs.mkdirSync(dir, { recursive: true })
-      const html = generatePostHtml(post, locale)
-      fs.writeFileSync(path.join(dir, 'index.html'), html)
-      console.log(`  /blog/${slug} (${locale})`)
-    }
+    const translation = posts.find((p) => p.key === post.key && p.lang !== post.lang) ?? null
+    const html = injectIntoShell(shell, {
+      lang: post.lang,
+      title: `${post.seoTitle ?? post.title} | Calistenia App`,
+      description: post.seoDescription ?? post.excerpt,
+      headExtra: postHead(post, translation),
+      bodyHtml: renderPostBody(post),
+    })
+
+    const dir = path.join(DIST, 'blog', post.slug)
+    fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(path.join(dir, 'index.html'), html)
+    console.log(`  /blog/${post.slug} (${post.lang})`)
   }
 
-  // Generate listing page (Spanish as default since it's the primary audience)
-  const blogDir = path.join(DIST, 'blog')
-  fs.mkdirSync(blogDir, { recursive: true })
-  fs.writeFileSync(path.join(blogDir, 'index.html'), generateListingHtml(posts, 'es'))
-  console.log('  /blog (listing)')
+  // Listado: el español es el idioma principal de la audiencia
+  const listingHtml = injectIntoShell(shell, {
+    lang: 'es',
+    title: 'Blog - Consejos y Tutoriales de Calistenia | Calistenia App',
+    description: 'Consejos, tutoriales y guías para tu entrenamiento de calistenia',
+    headExtra: `
+  <link rel="canonical" href="${SITE_URL}/blog" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Blog - Consejos y Tutoriales de Calistenia" />
+  <meta property="og:url" content="${SITE_URL}/blog" />
+  <style>${PRERENDER_STYLES}</style>`,
+    bodyHtml: renderListingBody(posts, 'es'),
+  })
+  fs.mkdirSync(path.join(DIST, 'blog'), { recursive: true })
+  fs.writeFileSync(path.join(DIST, 'blog', 'index.html'), listingHtml)
+  console.log('  /blog (listado)')
 
-  // Sitemap & robots
   fs.writeFileSync(path.join(DIST, 'sitemap.xml'), generateSitemap(posts))
   fs.writeFileSync(path.join(DIST, 'robots.txt'), generateRobotsTxt())
-  console.log('Generated sitemap.xml and robots.txt')
-
-  console.log('Blog prerender complete!')
+  console.log('Generados sitemap.xml y robots.txt')
 }
 
 main().catch((err) => {
-  console.error('Blog prerender failed:', err.message)
-  // Still generate robots.txt and empty sitemap so they exist
-  try {
-    fs.writeFileSync(path.join(DIST, 'sitemap.xml'), generateSitemap([]))
-    fs.writeFileSync(path.join(DIST, 'robots.txt'), generateRobotsTxt())
-    console.log('Generated fallback sitemap.xml and robots.txt')
-  } catch { /* ignore */ }
-  // Don't fail the build — blog prerender is optional
-  process.exit(0)
+  // A diferencia de la versión anterior, esto SÍ rompe el build: si el
+  // pre-render falla en silencio, los artículos dejan de indexarse y nadie
+  // se entera hasta que el tráfico orgánico no llega.
+  console.error('Fallo al pre-renderizar el blog:', err)
+  process.exit(1)
 })
