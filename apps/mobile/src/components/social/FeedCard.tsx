@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
+import { ChevronRight } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { timeAgo } from '@calistenia/core/lib/dateUtils'
@@ -61,8 +62,7 @@ export function FeedCard({
   const handleShare = () => {
     if (isCardio) {
       // Navigate to the detail screen — it has the full session data + share card.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      router.push(`/cardio/${item.id}` as any)
+      router.push({ pathname: '/cardio/[id]', params: { id: item.id } })
     } else {
       const url = sessionUrl(item.date, item.workoutKey)
       const msg = `${item.displayName} completó "${item.workoutTitle}" 💪`
@@ -71,8 +71,13 @@ export function FeedCard({
   }
 
   const handleCardioPress = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    router.push(`/cardio/${item.id}` as any)
+    router.push({ pathname: '/cardio/[id]', params: { id: item.id } })
+  }
+
+  // El detalle por id sirve también para sesiones ajenas (a diferencia de
+  // /session-detail, que solo pinta el progreso del usuario logueado).
+  const handleWorkoutPress = () => {
+    router.push({ pathname: '/s/[id]', params: { id: item.id } })
   }
 
   return (
@@ -153,35 +158,43 @@ export function FeedCard({
           </View>
         </Pressable>
       ) : (
-        /* Bloque del workout */
-        <View
-          className={cn(
-            'px-3 py-2.5 rounded-md bg-muted/30 border-l-[3px]',
-            phaseColor?.border ?? 'border-l-lime',
-          )}
+        /* Bloque del workout — toca para abrir el detalle de la sesión */
+        <Pressable
+          onPress={handleWorkoutPress}
+          className="rounded-md active:opacity-75"
+          accessibilityRole="button"
+          accessibilityLabel="Ver detalle de la sesión"
         >
-          <View className="flex-row items-center justify-between gap-2">
-            <View className="flex-1 min-w-0">
-              <Text
-                className={cn('font-sans-medium text-sm', phaseColor?.text ?? 'text-foreground')}
-                numberOfLines={1}
-              >
-                {item.workoutTitle}
-              </Text>
-              <Text className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
-                Fase {item.phase}
-              </Text>
+          <View
+            className={cn(
+              'px-3 py-2.5 rounded-md bg-muted/30 border-l-[3px]',
+              phaseColor?.border ?? 'border-l-lime',
+            )}
+          >
+            <View className="flex-row items-center justify-between gap-2">
+              <View className="flex-1 min-w-0">
+                <Text
+                  className={cn('font-sans-medium text-sm', phaseColor?.text ?? 'text-foreground')}
+                  numberOfLines={1}
+                >
+                  {item.workoutTitle}
+                </Text>
+                <Text className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                  Fase {item.phase}
+                </Text>
+              </View>
+              <ChevronRight size={16} color="hsl(0 0% 40%)" />
             </View>
+            {Boolean(item.note) && (
+              <Text
+                className="font-sans-italic text-[11px] text-muted-foreground truncate mt-1.5 border-t border-border/50 pt-1.5"
+                numberOfLines={2}
+              >
+                &quot;{item.note}&quot;
+              </Text>
+            )}
           </View>
-          {Boolean(item.note) && (
-            <Text
-              className="font-sans-italic text-[11px] text-muted-foreground truncate mt-1.5 border-t border-border/50 pt-1.5"
-              numberOfLines={2}
-            >
-              &quot;{item.note}&quot;
-            </Text>
-          )}
-        </View>
+        </Pressable>
       )}
 
       {/* Reacciones + comentarios + compartir */}

@@ -71,6 +71,10 @@ export const qk = {
   sessions: (userId: string | null, activeProgramId: string | null) =>
     ['sessions', userId, activeProgramId] as const,
   setsLog: (userId: string | null) => ['sets_log', userId] as const,
+  // Detalle de una sesión de fuerza por id de registro (propia o de otro
+  // usuario, abierta desde el muro / actividad reciente).
+  publicSession: (sessionId: string | null) =>
+    ['public-session', sessionId] as const,
   userSettings: (userId: string | null) => ['user_settings', userId] as const,
   restPreferences: (userId: string | null) =>
     ['restPreferences', userId] as const,

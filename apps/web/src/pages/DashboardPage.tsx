@@ -519,6 +519,10 @@ export default function DashboardPage({
             <ActivityFeedWidget
               items={feedItems}
               onNavigate={() => navigate('/feed')}
+              onOpenSession={(item) => navigate(
+                item.type === 'cardio' ? `/cardio/session/${item.id}` : `/s/${item.id}`,
+              )}
+              onOpenUser={(uid) => navigate(`/u/${uid}`)}
             />
           )}
         </div>

@@ -45,6 +45,7 @@ const CircuitSessionDetailPage = lazy(() => import('./pages/CircuitSessionDetail
 const RacePage = lazy(() => import('./pages/RacePage'))
 const RacesDiscoverPage = lazy(() => import('./pages/RacesDiscoverPage'))
 const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
+const PublicSessionDetailPage = lazy(() => import('./pages/PublicSessionDetailPage'))
 const CardioSessionDetailPage = lazy(() => import('./pages/CardioSessionDetailPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
@@ -695,6 +696,8 @@ function AuthenticatedApp({
             <Route path="/sleep" element={<SleepPage userId={userId!} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
             <Route path="/session/:date/:workoutKey" element={<SessionDetailPage />} />
+            {/* Detalle por id de sesión: sirve también para sesiones ajenas (muro, actividad). */}
+            <Route path="/s/:id" element={<PublicSessionDetailPage />} />
             <Route path="/cardio/session/:id" element={<CardioSessionDetailPage />} />
             <Route path="/feed" element={<ActivityFeedPage userId={userId!} />} />
             <Route path="/challenges" element={<ChallengesPage userId={userId!} />} />

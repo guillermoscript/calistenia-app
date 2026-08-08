@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { View, ScrollView, Image, ActivityIndicator, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { X, MoreVertical, UserX, Flag } from 'lucide-react-native'
+import { X, MoreVertical, UserX, Flag, ChevronRight } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
@@ -441,8 +441,17 @@ export default function UserProfileScreen() {
                 const d = new Date(s.completedAt.replace(' ', 'T'))
                 const fdate = d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })
                 return (
-                  <View key={s.id} className="rounded-md border border-border border-l-[3px] border-l-lime bg-card px-3 py-2.5">
-                    <Text className="font-sans-medium text-sm text-foreground" numberOfLines={1}>{s.workoutTitle}</Text>
+                  <Pressable
+                    key={s.id}
+                    onPress={() => router.push({ pathname: '/s/[id]', params: { id: s.id } })}
+                    className="rounded-md border border-border border-l-[3px] border-l-lime bg-card px-3 py-2.5 active:opacity-70"
+                    accessibilityRole="button"
+                    accessibilityLabel={s.workoutTitle}
+                  >
+                    <View className="flex-row items-center justify-between gap-2">
+                      <Text className="flex-1 font-sans-medium text-sm text-foreground" numberOfLines={1}>{s.workoutTitle}</Text>
+                      <ChevronRight size={15} color="hsl(0 0% 40%)" />
+                    </View>
                     <View className="mt-0.5 flex-row items-center gap-2">
                       <Text className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Fase {s.phase}</Text>
                       <Text className="text-[10px] text-muted-foreground">{fdate}</Text>
@@ -452,7 +461,7 @@ export default function UserProfileScreen() {
                         &quot;{s.note}&quot;
                       </Text>
                     ) : null}
-                  </View>
+                  </Pressable>
                 )
               })}
             </View>

@@ -137,7 +137,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
                   item={item}
                   isOwnPost={item.userId === userId}
                   highlight={item.id === highlightId}
-                  onTap={() => navigate(`/u/${item.userId}`)}
+                  onTap={() => navigate(`/s/${item.id}`)}
                   onTapUser={() => navigate(`/u/${item.userId}`)}
                   reactions={reactions}
                   onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}

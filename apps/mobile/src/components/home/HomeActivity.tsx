@@ -154,13 +154,26 @@ export default function HomeActivity() {
           />
         ) : (
           <View className="gap-2">
+            {/* La fila abre el detalle de la sesión; el avatar y el nombre van al
+                perfil del autor (Pressables anidados: el interior gana el toque). */}
             {friends.map(item => (
               <Pressable
                 key={item.id}
-                onPress={() => router.push({ pathname: '/u/[id]', params: { id: item.userId } })}
+                onPress={() => router.push(
+                  item.type === 'cardio'
+                    ? { pathname: '/cardio/[id]', params: { id: item.id } }
+                    : { pathname: '/s/[id]', params: { id: item.id } },
+                )}
                 className="flex-row items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 active:opacity-70"
+                accessibilityRole="button"
+                accessibilityLabel={`${item.displayName} · ${item.workoutTitle}`}
               >
-                <View className="size-9 items-center justify-center overflow-hidden rounded-full bg-accent">
+                <Pressable
+                  onPress={() => router.push({ pathname: '/u/[id]', params: { id: item.userId } })}
+                  className="size-9 items-center justify-center overflow-hidden rounded-full bg-accent active:opacity-60"
+                  accessibilityRole="button"
+                  accessibilityLabel={item.displayName}
+                >
                   {item.avatarUrl ? (
                     <Image
                       source={{ uri: item.avatarUrl }}
@@ -174,11 +187,19 @@ export default function HomeActivity() {
                   ) : (
                     <Text className="font-mono text-xs text-foreground">{(item.displayName[0] ?? '?').toUpperCase()}</Text>
                   )}
-                </View>
+                </Pressable>
                 <View className="flex-1">
-                  <Text className="font-sans-medium text-sm text-foreground" numberOfLines={1}>
-                    {item.displayName}
-                  </Text>
+                  <Pressable
+                    onPress={() => router.push({ pathname: '/u/[id]', params: { id: item.userId } })}
+                    className="self-start active:opacity-60"
+                    accessibilityRole="button"
+                    accessibilityLabel={item.displayName}
+                    hitSlop={4}
+                  >
+                    <Text className="font-sans-medium text-sm text-foreground" numberOfLines={1}>
+                      {item.displayName}
+                    </Text>
+                  </Pressable>
                   <Text className="font-mono text-[10px] text-muted-foreground" numberOfLines={1}>
                     {item.workoutTitle} · {timeAgo(item.completedAt)}
                   </Text>
