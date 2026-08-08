@@ -22,7 +22,7 @@ import { useWindowDimensions } from 'react-native'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { shareImage, shareWorkoutSession } from '@/lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
 
 import ShareCardCapture, {
@@ -81,7 +81,9 @@ export default function WorkoutShareButton({
 
       await shareImage(uri, { message, title: 'Compartir sesión' })
 
-      op.track('share_card_shared', { card_type: 'workout' })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+        surface: 'post_workout', source: 'workout_completion', share_type: 'workout', result: 'shared', card_type: 'workout',
+      })
     } catch {
       // User cancelled the share sheet or capture failed — no-op.
     } finally {

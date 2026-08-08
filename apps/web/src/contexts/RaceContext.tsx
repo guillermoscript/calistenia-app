@@ -27,7 +27,7 @@ import { measureOffset, serverNow, msUntil } from '../lib/race/raceClock'
 import { createRaceTracker, type RaceTracker, type RaceTrackerStats } from '../lib/race/raceTracker'
 import { saveRaceSnapshot, loadRaceSnapshot, clearRaceSnapshot } from '../lib/race/raceSnapshot'
 import { RaceAuthError, RaceNotFoundError } from '../lib/race/errors'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -401,11 +401,15 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     try {
       await apiJoinRace(raceId, displayName)
       op.track('race_joined', { race_id: raceId })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleJoined, {
+        surface: 'battle', source: 'race_lobby', battle_id: raceId,
+        participant_count: participants.length + 1, result: 'joined',
+      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
       throw err
     }
-  }, [raceId])
+  }, [raceId, participants.length])
 
   const markReadyAction = useCallback(async () => {
     if (!me) return
@@ -423,6 +427,10 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         race_id: raceId,
         participants: participants.length,
         mode: race?.mode,
+      })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleStarted, {
+        surface: 'battle', source: 'race_lobby', battle_id: raceId,
+        participant_count: participants.length, result: 'started', mode: race?.mode,
       })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
@@ -478,10 +486,14 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         my_distance_km: stats?.distance_km ?? 0,
         my_duration_seconds: Math.floor(stats?.duration_seconds ?? 0),
       })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCompleted, {
+        surface: 'battle', source: 'race_results', battle_id: raceId,
+        participant_count: participants.length, result: 'completed',
+      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
     }
-  }, [raceId, me])
+  }, [raceId, me, participants.length])
 
   const leaveAction = useCallback(async () => {
     if (!me) return

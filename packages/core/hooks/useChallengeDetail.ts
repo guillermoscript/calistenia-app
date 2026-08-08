@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
-import { op } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
 import { localMidnightAsUTC, addDays, utcToLocalDateStr } from '../lib/dateUtils'
 import { parseRepsForPR } from '../lib/pr-utils'
 import { qk } from '../lib/query-keys'
@@ -123,7 +123,13 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
         challenge: challengeId,
         user: targetUserId,
       })
-      op.track('challenge_joined', { challenge_id: challengeId })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
+        surface: 'challenge_detail',
+        source: 'challenge_invite',
+        challenge_id: challengeId,
+        participant_count: participantIds.size + 1,
+        result: 'joined',
+      })
     },
     onSuccess: () => {
       // Invalidar el leaderboard para que aparezca el nuevo participante

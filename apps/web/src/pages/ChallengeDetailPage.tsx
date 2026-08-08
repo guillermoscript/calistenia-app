@@ -9,6 +9,7 @@ import { getMetricUnit, daysRemaining, getMetricLabel } from '@calistenia/core/l
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { ShareButton } from '../components/ShareButton'
 import { shareChallenge } from '../lib/share'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -27,6 +28,16 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   const [inviting, setInviting] = useState<string | null>(null)
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!id) return
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeViewed, {
+      surface: 'challenge_detail',
+      source: 'challenge_route',
+      challenge_id: id,
+      result: 'viewed',
+    })
+  }, [id])
 
   if (!id) return null
 

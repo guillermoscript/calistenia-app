@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { shareImage } from '@/lib/share'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { Sentry } from '@/lib/instrument'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { BodyPhoto } from '@calistenia/core/hooks/useBodyPhotos'
 
 import ShareCardCapture, {
@@ -62,7 +62,9 @@ export default function ProgressShareButton({ before, after }: Props) {
       if (!uri) return
 
       await shareImage(uri, { title: t('progress.bodyPhotos.share') })
-      op.track('share_card_shared', { card_type: 'progress_photo' })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+        surface: 'progress', source: 'progress_photo', share_type: 'progress_photo', result: 'shared', card_type: 'progress_photo',
+      })
     } catch (e) {
       Sentry.captureException(e)
     } finally {

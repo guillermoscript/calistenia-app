@@ -30,6 +30,7 @@ import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
 import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming, ExerciseTempo } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 /** Format a structured tempo object into a compact human-readable string.
  *  e.g. { eccentric: 5, pauseTop: 2 } → "baja 5s · pausa 2s arriba"
@@ -691,6 +692,7 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: Note
 
 interface CelebrateScreenProps {
   workoutTitle: string
+  workoutKey: string
   totalSetsLogged: number
   durationMin: number
   exercises: Exercise[]
@@ -703,10 +705,19 @@ interface CelebrateScreenProps {
   timings: ExerciseTiming[]
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl, userId, referralCode, totalSessions, timings }: CelebrateScreenProps) {
+function CelebrateScreen({ workoutTitle, workoutKey, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl, userId, referralCode, totalSessions, timings }: CelebrateScreenProps) {
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
   const [showReferral, setShowReferral] = useState(false)
   const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings), [timings])
+
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.postWorkoutActionViewed, {
+      surface: 'post_workout',
+      source: 'workout_completion',
+      workout_id: workoutKey,
+      result: 'viewed',
+    })
+  }, [workoutKey])
 
   useEffect(() => {
     if (userId && referralCode && (totalSessions ?? 0) >= 3 && !isReferralPromptShown(userId)) {
@@ -1277,6 +1288,7 @@ export default function SessionView({
       {phase === 'celebrate' && (
         <CelebrateScreen
           workoutTitle={workout.title}
+          workoutKey={workoutKey}
           totalSetsLogged={setsCount}
           durationMin={Math.round((Date.now() - sessionStartTime.current) / 60000)}
           exercises={workout.exercises}

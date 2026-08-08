@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import i18n from '../lib/i18n'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage } from '../lib/canvas-helpers'
 import type { Exercise } from '@calistenia/core/types'
@@ -319,7 +319,9 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
         `${workoutTitle} - ${formatDate(dateStr)}`,
         shareText,
       )
-      op.track('share_card_shared', { card_type: 'workout' })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+        surface: 'post_workout', source: 'workout_completion', share_type: 'workout', result: 'shared', card_type: 'workout',
+      })
     } catch (e) {
       console.warn('Share error:', e)
     }

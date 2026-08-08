@@ -13,6 +13,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallenges, type ChallengeWithMeta } from '@calistenia/core/hooks/useChallenges'
 import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,18 @@ export default function ChallengesScreen() {
 
   const items: ChallengeWithMeta[] = filter === 'active' ? active : past
 
+  useEffect(() => {
+    for (const challenge of items) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeViewed, {
+        surface: 'challenge_list',
+        source: filter,
+        challenge_id: challenge.id,
+        participant_count: challenge.participantCount,
+        result: 'viewed',
+      })
+    }
+  }, [filter, items])
+
   const handleJoin = async (challenge: ChallengeWithMeta) => {
     if (!userId) {
       Alert.alert('Inicia sesión para unirte a un reto')
@@ -46,6 +59,13 @@ export default function ChallengesScreen() {
       await pb.collection('challenge_participants').create({
         challenge: challenge.id,
         user: userId,
+      })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
+        surface: 'challenge_list',
+        source: 'challenge_list',
+        challenge_id: challenge.id,
+        participant_count: challenge.participantCount + 1,
+        result: 'joined',
       })
       await load()
     } catch (e: any) {

@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { RecordModel } from 'pocketbase'
 import { pb, loginWithOAuth2, logout, tryRefreshAuth, verifyAuth, getCurrentUser } from '../lib/pocketbase'
 import { setTimezone } from '../lib/dateUtils'
-import { op } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { clearUserStorage } from '../lib/storage-keys'
 import i18n from 'i18next'
 import type { UserRole, UserTier } from '../types'
@@ -159,7 +159,12 @@ export function useAuth(): UseAuthReturn {
           referred: user.id,
           source: 'quick_invite',
         })
-        op.track('referral_converted', { referrer_id: referrer.id })
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.referralConverted, {
+          surface: 'referral',
+          source: 'quick_invite',
+          result: 'converted',
+          referrer_id: referrer.id,
+        })
       } catch { /* non-critical */ }
     }
 

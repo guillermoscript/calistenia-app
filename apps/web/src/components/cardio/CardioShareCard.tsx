@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { fillRRect, drawInitialAvatar } from '../../lib/canvas-helpers'
 import i18n from '../../lib/i18n'
@@ -348,7 +348,9 @@ export default function CardioShareCard({ session, referralCode, raceName, userN
         `${i18n.t(`cardio.${session.activity_type}`).toUpperCase()} — ${session.distance_km.toFixed(2)} km`,
         shareText,
       )
-      op.track('share_card_shared', { card_type: 'cardio', activity: session.activity_type })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+        surface: 'cardio', source: 'cardio_completion', share_type: 'cardio', result: 'shared', card_type: 'cardio', activity: session.activity_type,
+      })
     } catch (e) {
       console.warn('Share error:', e)
     }

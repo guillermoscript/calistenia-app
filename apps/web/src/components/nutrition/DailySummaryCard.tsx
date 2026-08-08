@@ -5,7 +5,7 @@ import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
 import { loadImage, fillRRect } from '../../lib/canvas-helpers'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { buildShareMeals } from '@calistenia/core/lib/share-meals'
 import type { DailyTotals, NutritionGoal, NutritionEntry, QualityScore } from '@calistenia/core/types'
 
@@ -717,7 +717,10 @@ export default function DailySummaryCard({
       const blob = await canvasToBlob(canvas)
       if (!blob) return
       await shareImage(blob, `nutricion_${date}.png`, `Mi nutricion ${formatDate(date)}`)
-      op.track('share_card_shared', { card_type: variant === 'rich' ? 'nutrition_rich' : 'nutrition' })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+        surface: 'nutrition', source: 'daily_summary', share_type: 'nutrition', result: 'shared',
+        card_type: variant === 'rich' ? 'nutrition_rich' : 'nutrition',
+      })
     } catch (e) {
       console.warn('Share error:', e)
     }

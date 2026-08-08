@@ -39,6 +39,7 @@ import type { Exercise, Workout, ExerciseLog, SetData, ExerciseTiming, ExerciseT
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { getCelebrationTagline } from '@calistenia/core/lib/celebration'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import Confetti from '@/components/Confetti'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -525,6 +526,15 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
   const captureRef = useRef<ShareCardCaptureHandle>(null)
   const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
   const [sharing, setSharing] = useState(false)
+
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.postWorkoutActionViewed, {
+      surface: 'post_workout',
+      source: 'workout_completion',
+      workout_id: workoutKey,
+      result: 'viewed',
+    })
+  }, [workoutKey])
 
   const userName = (user?.display_name as string) || (user?.name as string) || 'Atleta'
   const avatarUrl = user ? getUserAvatarUrl(user, '200x200') : null

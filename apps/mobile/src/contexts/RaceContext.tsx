@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -364,11 +364,15 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     try {
       await apiJoinRace(raceId, displayName)
       op.track('race_joined', { race_id: raceId, platform: 'mobile' })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleJoined, {
+        surface: 'battle', source: 'race_lobby', battle_id: raceId,
+        participant_count: participants.length + 1, result: 'joined',
+      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
       throw err
     }
-  }, [raceId])
+  }, [raceId, participants.length])
 
   const markReadyAction = useCallback(async () => {
     if (!me) return
@@ -387,6 +391,10 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         participants: participants.length,
         mode: race?.mode,
         platform: 'mobile',
+      })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleStarted, {
+        surface: 'battle', source: 'race_lobby', battle_id: raceId,
+        participant_count: participants.length, result: 'started', mode: race?.mode,
       })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
@@ -442,10 +450,14 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         my_duration_seconds: Math.floor(s?.duration_seconds ?? 0),
         platform: 'mobile',
       })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCompleted, {
+        surface: 'battle', source: 'race_results', battle_id: raceId,
+        participant_count: participants.length, result: 'completed',
+      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
     }
-  }, [raceId, me])
+  }, [raceId, me, participants.length])
 
   const leaveAction = useCallback(async () => {
     if (!me) return
