@@ -27,13 +27,6 @@ export default function EditorPage() {
         <h1 className="font-bebas text-5xl">{t('editor.title')}</h1>
         <div className="flex gap-2">
           <Button
-            onClick={() => navigate('/editor/blog')}
-            variant="outline"
-            className="font-bebas text-lg tracking-widest px-6 h-11"
-          >
-            Blog
-          </Button>
-          <Button
             onClick={onCreateProgram}
             className="bg-[hsl(var(--lime))] hover:bg-[hsl(var(--lime))]/90 text-background font-bebas text-lg tracking-widest px-6 h-11"
           >

@@ -193,11 +193,8 @@ export const qk = {
     wins: (userId: string | null) => ['races', 'wins', userId] as const,
   },
 
-  // — Contenido —
-  blogPosts: (page: number, category: string | null) =>
-    ['blog_posts', page, category] as const,
-  blogPost: (slug: string, locale: string) =>
-    ['blog_post', slug, locale] as const,
+  // Nota: el blog ya no usa React Query — los artículos son ficheros MDX
+  // compilados en el bundle (`apps/web/src/lib/blog-content.ts`).
 
   // — Despensa (pantry, épica #153/#170) —
   pantry: {

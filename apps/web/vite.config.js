@@ -1,11 +1,13 @@
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import mdx from '@mdx-js/rollup'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
+import { mdxOptions } from './mdx.options.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'))
@@ -30,7 +32,11 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
-  plugins: [pocketbaseAliasPlugin(), tailwindcss(), react(), VitePWA({
+  plugins: [pocketbaseAliasPlugin(), tailwindcss(),
+    // `enforce: 'pre'` → los .mdx se compilan a JSX ANTES de que los procese
+    // el plugin de React; `include` en react() les da Fast Refresh.
+    { enforce: 'pre', ...mdx(mdxOptions) },
+    react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }), VitePWA({
     strategies: 'injectManifest',
     srcDir: 'src',
     filename: 'sw.ts',

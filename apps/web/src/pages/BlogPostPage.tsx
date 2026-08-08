@@ -1,152 +1,185 @@
-import { useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
+import { useParams, Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Calendar, User } from 'lucide-react'
-
-// lucide-react 1.x eliminó los iconos de marcas; SVG inline (mismo path que el antiguo icono)
-function Instagram({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-    </svg>
-  )
-}
-import { marked } from 'marked'
-import { useBlogPost, blogCoverUrl, blogAuthorAvatarUrl } from '@calistenia/core/hooks/useBlog'
-import { localize } from '@calistenia/core/lib/i18n-db'
+import { ArrowLeft } from 'lucide-react'
+import type { MDXComponents } from 'mdx/types'
+import {
+  getPostBySlug,
+  getTranslation,
+  loadPostContent,
+  type BlogPost,
+  type BlogLang,
+} from '../lib/blog-content'
+import { mdxComponents } from '../components/blog/mdx-components'
+import { Eyebrow } from '../components/landing/shared'
+import { useDocumentMeta } from '../hooks/useDocumentMeta'
 import BlogCTA from '../components/blog/BlogCTA'
-import { Loader } from '../components/ui/loader'
-import { sanitizeBlogHtml } from '../lib/sanitizeHtml'
+
+function formatDate(iso: string, lang: BlogLang): string {
+  if (!iso) return ''
+  const [year, month, day] = iso.split('-').map(Number)
+  if (!year || !month || !day) return ''
+  return new Date(year, month - 1, day).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
+/** Carga en diferido el cuerpo MDX del post */
+function useMdxContent(post: BlogPost | null) {
+  const [Content, setContent] = useState<ComponentType<{ components?: MDXComponents }> | null>(null)
+
+  useEffect(() => {
+    if (!post) return
+    let cancelled = false
+
+    setContent(null)
+    loadPostContent(post)
+      .then((component) => {
+        // `() => component` porque setState trata una función como updater
+        if (!cancelled) setContent(() => component)
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('[blog] No se pudo cargar el artículo', err)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [post])
+
+  return Content
+}
 
 export default function BlogPostPage() {
   const { slug = '' } = useParams()
   const { t, i18n } = useTranslation()
-  const locale = i18n.language?.startsWith('en') ? 'en' : 'es'
+  const lang: BlogLang = i18n.language?.startsWith('en') ? 'en' : 'es'
 
-  const { post, loading, error } = useBlogPost(slug, locale)
+  const post = useMemo(() => getPostBySlug(slug, lang), [slug, lang])
+  const translation = useMemo(() => (post ? getTranslation(post) : null), [post])
+  const Content = useMdxContent(post)
 
-  const bodyHtml = useMemo(() => {
-    if (!post) return ''
-    const md = localize(post.body, locale)
-    return sanitizeBlogHtml(marked.parse(md, { async: false }) as string)
-  }, [post, locale])
+  useDocumentMeta(
+    post ? (post.seoTitle ?? post.title) : '',
+    post ? (post.seoDescription ?? post.excerpt) : undefined
+  )
 
-  if (loading) {
-    return <div className="flex justify-center py-20"><Loader /></div>
-  }
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [slug])
 
-  if (error || !post) {
+  if (!post) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <p className="text-muted-foreground mb-4">{t('blog.notFound')}</p>
-        <Link to="/blog" className="text-lime-500 hover:underline">
+      <div className="mx-auto max-w-2xl px-6 py-24 text-center">
+        <p className="mb-6 text-white/55">{t('blog.notFound')}</p>
+        <Link
+          to="/blog"
+          className="text-xs font-semibold uppercase tracking-[.16em] text-lime hover:brightness-110"
+        >
           {t('blog.backToList')}
         </Link>
       </div>
     )
   }
 
-  const coverUrl = blogCoverUrl(post, '800x450')
-  const avatarUrl = blogAuthorAvatarUrl(post)
-  const date = post.published_at
-    ? new Date(post.published_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
-        year: 'numeric', month: 'long', day: 'numeric',
-      })
-    : ''
+  // El idioma de la interfaz cambió y este artículo existe traducido: llevamos
+  // al lector a su URL, que es la que debe indexarse.
+  if (post.lang !== lang && translation) {
+    return <Navigate to={`/blog/${translation.slug}`} replace />
+  }
 
-  // Link to the other language version
-  const altSlug = locale === 'en' ? post.slug_es : post.slug_en
-  const altLang = locale === 'en' ? 'es' : 'en'
+  const date = formatDate(post.publishedAt, post.lang)
+  const instagramHandle = post.author.instagram?.replace('@', '')
 
   return (
-    <article className="mx-auto max-w-2xl px-4 py-8">
-      {/* Back link */}
-      <Link
-        to="/blog"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t('blog.backToList')}
-      </Link>
+    <article>
+      <div className="mx-auto max-w-5xl px-6 md:px-10">
+        <Link
+          to="/blog"
+          className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.16em] text-white/40 transition hover:text-lime"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          {t('blog.backToList')}
+        </Link>
 
-      {/* Category badge */}
-      <span className="mb-3 inline-block rounded-full bg-lime-500/15 px-2.5 py-0.5 text-xs font-medium text-lime-600 dark:text-lime-400">
-        {t(`blog.category.${post.category}`)}
-      </span>
+        {/* Hero editorial */}
+        <header className="mt-10 max-w-3xl">
+          <Eyebrow>{t(`blog.category.${post.category}`)}</Eyebrow>
+          <h1 className="mt-5 font-bebas text-5xl leading-[.88] tracking-tight sm:text-6xl md:text-7xl">
+            {post.title}
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/60">{post.excerpt}</p>
+        </header>
 
-      {/* Title */}
-      <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-4">
-        {localize(post.title, locale)}
-      </h1>
-
-      {/* Meta row */}
-      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
-        <div className="flex items-center gap-2">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={post.author_name} className="h-8 w-8 rounded-full object-cover" />
-          ) : (
-            <User className="h-5 w-5" />
+        {/* Firma */}
+        <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-white/10 py-4 text-[11px] uppercase tracking-[.14em] text-white/40">
+          {post.author.avatar && (
+            <img
+              src={post.author.avatar}
+              alt=""
+              className="h-7 w-7 rounded-full object-cover"
+              loading="lazy"
+            />
           )}
-          <span>{post.author_name}</span>
-          {post.author_instagram && (
+          <span className="text-white/70">{post.author.name}</span>
+          {instagramHandle && (
             <a
-              href={`https://instagram.com/${post.author_instagram.replace('@', '')}`}
+              href={`https://instagram.com/${instagramHandle}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="transition hover:text-lime"
             >
-              <Instagram className="h-4 w-4" />
+              @{instagramHandle}
             </a>
           )}
+          {date && (
+            <>
+              <span aria-hidden="true">·</span>
+              <time dateTime={post.publishedAt}>{date}</time>
+            </>
+          )}
+          {post.readingMinutes ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{t('blog.readingTime', { count: post.readingMinutes })}</span>
+            </>
+          ) : null}
+          {translation && (
+            <Link
+              to={`/blog/${translation.slug}`}
+              hrefLang={translation.lang}
+              className="ml-auto border border-white/15 px-3 py-1.5 font-semibold transition hover:border-lime/50 hover:text-lime"
+            >
+              {translation.lang === 'en' ? 'Read in English' : 'Leer en Español'}
+            </Link>
+          )}
         </div>
-        {date && (
-          <span className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            {date}
-          </span>
-        )}
-        {altSlug && (
-          <Link
-            to={`/blog/${altSlug}`}
-            className="text-xs border rounded px-2 py-0.5 hover:bg-muted transition-colors"
-          >
-            {altLang === 'en' ? 'Read in English' : 'Leer en Español'}
-          </Link>
-        )}
-      </div>
 
-      {/* Cover image */}
-      {coverUrl && (
-        <div className="mb-8 rounded-xl overflow-hidden">
+        {post.cover && (
           <img
-            src={coverUrl}
-            alt={localize(post.title, locale)}
-            className="w-full object-cover"
+            src={post.cover}
+            alt={post.coverAlt ?? ''}
+            className="mt-10 w-full border border-white/10 object-cover"
           />
-        </div>
-      )}
-
-      {/* Article body */}
-      <div
-        className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-lime-500 prose-img:rounded-xl"
-        dangerouslySetInnerHTML={{ __html: bodyHtml }}
-      />
-
-      {/* CTA */}
-      <div className="mt-12">
-        <BlogCTA />
+        )}
       </div>
+
+      {/* Cuerpo — columna de medida de lectura (~70 caracteres) */}
+      <div className="mx-auto max-w-[43rem] px-6 py-14 md:px-0">
+        {Content ? (
+          <div className="prose prose-invert max-w-none prose-headings:font-bebas prose-headings:tracking-tight prose-h2:mt-14 prose-h2:text-3xl prose-h2:leading-none prose-h3:text-2xl prose-p:text-[16.5px] prose-p:leading-[1.75] prose-p:text-white/65 prose-a:text-lime prose-a:no-underline hover:prose-a:underline prose-strong:font-semibold prose-strong:text-white prose-li:text-white/65 prose-li:leading-[1.7] prose-img:border prose-img:border-white/10">
+            <Content components={mdxComponents} />
+          </div>
+        ) : (
+          // Sin spinner: el MDX viene del bundle y tarda milisegundos. Un loader
+          // aquí parpadearía más de lo que informa.
+          <div className="min-h-[50vh]" aria-busy="true" />
+        )}
+      </div>
+
+      <BlogCTA location="blog_article" />
     </article>
   )
 }
