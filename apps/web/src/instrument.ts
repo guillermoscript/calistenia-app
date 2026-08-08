@@ -60,8 +60,22 @@ Sentry.init({
     }),
   ],
 
+  // Errores lanzados por extensiones del navegador (MetaMask y compañía) que se
+  // inyectan en la página. No son nuestros, no los podemos arreglar y ensucian
+  // el proyecto.
+  ignoreErrors: ["Failed to connect to MetaMask"],
+  denyUrls: [/^chrome-extension:\/\//, /^moz-extension:\/\//, /^safari-web-extension:\/\//],
+
   beforeSend(event, hint) {
-    if (event.exception && event.event_id) {
+    // El diálogo de reporte tapa la página entera, así que sólo debe salir ante
+    // un fallo REAL de la app. Antes salía con cualquier excepción capturada:
+    // bastaba tener MetaMask instalado para que un lector del blog recibiera un
+    // "estamos teniendo problemas" encima del artículo, sin nada roto.
+    const isFromExtension = event.exception?.values?.some((value) =>
+      value.stacktrace?.frames?.some((frame) => frame.filename?.includes("-extension://"))
+    );
+
+    if (event.exception && event.event_id && !isFromExtension) {
       Sentry.showReportDialog({ eventId: event.event_id });
     }
     return event;
