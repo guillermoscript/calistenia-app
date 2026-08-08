@@ -542,10 +542,11 @@ export default function UserProfilePage() {
               const dateObj = new Date(session.completedAt.replace(' ', 'T'))
               const formattedDate = dateObj.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })
               return (
-                <div
+                <button
                   key={session.id}
+                  onClick={() => navigate(`/s/${session.id}`)}
                   className={cn(
-                    'px-3 py-2.5 rounded-md bg-card border border-border',
+                    'w-full text-left px-3 py-2.5 rounded-md bg-card border border-border hover:border-lime/30 transition-colors',
                     phaseColor?.border ? `border-l-[3px] ${phaseColor.border}` : 'border-l-[3px] border-l-[hsl(var(--lime))]',
                   )}
                 >
@@ -557,11 +558,12 @@ export default function UserProfilePage() {
                         <span className="text-[10px] text-muted-foreground">{formattedDate}</span>
                       </div>
                     </div>
+                    <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
                   </div>
                   {session.note && (
                     <div className="text-[11px] text-muted-foreground truncate mt-1.5 italic border-t border-border/50 pt-1.5">"{session.note}"</div>
                   )}
-                </div>
+                </button>
               )
             })}
           </div>
