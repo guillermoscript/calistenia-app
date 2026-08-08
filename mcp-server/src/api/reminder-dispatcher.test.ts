@@ -5,6 +5,7 @@ import {
   shouldFire,
   parseDaysOfWeek,
   contentFor,
+  mealBody,
 } from "./reminder-dispatcher.js";
 
 // Instante de referencia: 2026-08-08T22:30:00Z (sábado por la noche en UTC).
@@ -150,5 +151,30 @@ describe("contentFor", () => {
   it("distingue pausa activa de entrenamiento", () => {
     expect(contentFor({ kind: "pause" }).title).toBe("Pausa activa");
     expect(contentFor({ kind: "workout" }).title).toContain("entrenar");
+  });
+});
+
+describe("mealBody — progreso de calorías (paridad con el cron anterior)", () => {
+  it("muestra el progreso cuando hay objetivo diario", () => {
+    // Texto exacto que fijaba tests/pb_hooks/crons.test.mjs
+    expect(mealBody("cena", 300, 2000)).toBe("Llevas 300/2000 kcal hoy");
+  });
+
+  it("redondea las calorías", () => {
+    expect(mealBody("cena", 300.4, 1999.6)).toBe("Llevas 300/2000 kcal hoy");
+  });
+
+  it("cae al texto genérico si no hay objetivo", () => {
+    expect(mealBody("desayuno", 300, 0)).toBe("No olvides registrar tu desayuno");
+  });
+
+  it("contentFor usa el progreso cuando se le pasa contexto", () => {
+    const c = contentFor({ kind: "meal", mealType: "cena" }, { todayCalories: 300, dailyGoal: 2000 });
+    expect(c.title).toMatch(/registrar tu cena/);
+    expect(c.body).toBe("Llevas 300/2000 kcal hoy");
+  });
+
+  it("contentFor sin contexto sigue dando el texto genérico", () => {
+    expect(contentFor({ kind: "meal", mealType: "cena" }).body).toBe("No olvides registrar tu cena");
   });
 });

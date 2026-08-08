@@ -150,15 +150,36 @@ export function parseDaysOfWeek(raw: unknown): number[] {
   return [1, 2, 3, 4, 5];
 }
 
+/**
+ * Cuerpo del push de comida: si hay objetivo diario de calorías se muestra el
+ * progreso del día; si no, un recordatorio genérico. Réplica exacta del texto
+ * del cron anterior (lo fija `tests/pb_hooks/crons.test.mjs`).
+ */
+export function mealBody(label: string, todayCalories: number, dailyGoal: number): string {
+  if (dailyGoal > 0) {
+    return `Llevas ${Math.round(todayCalories)}/${Math.round(dailyGoal)} kcal hoy`;
+  }
+  return `No olvides registrar tu ${label}`;
+}
+
+/** Contexto nutricional del día para construir el push de comida. */
+export interface MealContext {
+  /** meal_type ya registrados hoy (en la fecha LOCAL del usuario). */
+  loggedTypes: Set<string>;
+  todayCalories: number;
+  dailyGoal: number;
+}
+
 /** Contenido del push por tipo de recordatorio. */
 export function contentFor(
   reminder: Pick<ReminderRow, "kind" | "mealType">,
+  mealCtx?: Pick<MealContext, "todayCalories" | "dailyGoal">,
 ): { title: string; body: string; url: string } {
   if (reminder.kind === "meal") {
     const label = reminder.mealType || "comida";
     return {
       title: `Hora de registrar tu ${label}`,
-      body: `No olvides registrar tu ${label}`,
+      body: mealBody(label, mealCtx?.todayCalories ?? 0, mealCtx?.dailyGoal ?? 0),
       url: "/nutrition",
     };
   }
@@ -241,6 +262,46 @@ async function loadTimezones(pb: any, userIds: string[]): Promise<Map<string, st
 }
 
 /**
+ * Contexto nutricional del día de un usuario, en SU fecha local.
+ *
+ * Sirve para dos cosas que hacía el cron anterior y no se pueden perder:
+ *  1. no dar la lata si esa comida ya está registrada hoy;
+ *  2. mostrar el progreso de calorías en el cuerpo del push.
+ *
+ * `dateKey` es la fecha local del usuario (no la del servidor): con el servidor
+ * en otra zona, "hoy" podía ser otro día y el skip no coincidía.
+ */
+async function loadMealContext(pb: any, userId: string, dateKey: string): Promise<MealContext> {
+  const ctx: MealContext = { loggedTypes: new Set(), todayCalories: 0, dailyGoal: 0 };
+
+  try {
+    const entries = await pb.collection("nutrition_entries").getFullList({
+      filter: pb.filter("user = {:uid} && logged_at >= {:from}", {
+        uid: userId,
+        from: `${dateKey} 00:00:00`,
+      }),
+    });
+    for (const e of entries) {
+      if (e.meal_type) ctx.loggedTypes.add(e.meal_type);
+      ctx.todayCalories += Number(e.total_calories) || 0;
+    }
+  } catch (err) {
+    console.error("[reminders] error cargando nutrition_entries:", err);
+  }
+
+  try {
+    const goals = await pb.collection("nutrition_goals").getList(1, 1, {
+      filter: pb.filter("user = {:uid}", { uid: userId }),
+    });
+    ctx.dailyGoal = Number((goals.items[0] as any)?.daily_calories) || 0;
+  } catch {
+    /* sin objetivos → cuerpo genérico */
+  }
+
+  return ctx;
+}
+
+/**
  * ¿El usuario permite push? Modelo opt-out igual que `pb_hooks/utils/notifications.js`:
  * sin registro o sin el campo → permitido; solo un `false` explícito suprime.
  *
@@ -305,6 +366,8 @@ export async function dispatchDueReminders(
   // Cache de la hora local por zona — muchos usuarios comparten zona.
   const partsByTz = new Map<string, LocalParts>();
   const allowedByUser = new Map<string, boolean>();
+  // Contexto nutricional por usuario+día, cacheado dentro del tick.
+  const mealCtxByUser = new Map<string, MealContext>();
 
   for (const reminder of reminders) {
     const tz = timezones.get(reminder.user) ?? "UTC";
@@ -327,7 +390,23 @@ export async function dispatchDueReminders(
       continue;
     }
 
-    const { title, body, url } = contentFor(reminder);
+    // Comidas: no dar la lata si ya está registrada, y añadir el progreso de
+    // calorías. Se calcula sobre la fecha LOCAL del usuario.
+    let mealCtx: MealContext | undefined;
+    if (reminder.kind === "meal") {
+      const cacheKey = `${reminder.user}|${parts.dateKey}`;
+      mealCtx = mealCtxByUser.get(cacheKey);
+      if (!mealCtx) {
+        mealCtx = await loadMealContext(pb, reminder.user, parts.dateKey);
+        mealCtxByUser.set(cacheKey, mealCtx);
+      }
+      if (reminder.mealType && mealCtx.loggedTypes.has(reminder.mealType)) {
+        result.suppressed++;
+        continue;
+      }
+    }
+
+    const { title, body, url } = contentFor(reminder, mealCtx);
     try {
       await sendPushToUser(reminder.user, { title, body, url });
       // Marcar ANTES de contar como enviado: si el update falla, el próximo
