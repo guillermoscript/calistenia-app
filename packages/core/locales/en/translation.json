@@ -205,6 +205,8 @@
   "reminders.updateError": "Could not update. Please try again.",
   "reminders.startBeforeEnd": "Start time must be before end time.",
   "reminders.saveError": "Could not save. Please try again.",
+  "reminders.saveErrorOffline": "No connection: the reminder wasn't saved. Reminders are sent from the server, so they need to be saved online.",
+  "reminders.saveErrorAuth": "Sign in to save reminders.",
 
   "referrals.shareTitle": "Train with me on Calistenia App",
   "referrals.shareText": "I invite you to train together. Use my link to sign up:",

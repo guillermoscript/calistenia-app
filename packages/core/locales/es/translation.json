@@ -204,6 +204,8 @@
   "reminders.updateError": "No se pudo actualizar. Intenta de nuevo.",
   "reminders.startBeforeEnd": "La hora de inicio debe ser menor que la hora de fin.",
   "reminders.saveError": "No se pudo guardar. Intenta de nuevo.",
+  "reminders.saveErrorOffline": "Sin conexión: el recordatorio no se guardó. Los recordatorios se envían desde el servidor, así que necesitan guardarse online.",
+  "reminders.saveErrorAuth": "Inicia sesión para guardar recordatorios.",
 
   "referrals.shareTitle": "Entrena conmigo en Calistenia App",
   "referrals.shareText": "Te invito a entrenar juntos. Usa mi link para registrarte:",

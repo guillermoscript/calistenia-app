@@ -1,8 +1,12 @@
 /**
  * RemindersTab — React Native port of apps/web/src/pages/RemindersPage.tsx
  *
- * Manages meal, workout, and pause (active-break) reminders. Integrates with
- * the OS-level local-notification scheduler via @/lib/reminder-scheduler.
+ * Manages meal, workout, and pause (active-break) reminders.
+ *
+ * La ENTREGA la hace el servidor por push
+ * (mcp-server/src/api/reminder-dispatcher.ts): esta pantalla solo edita los
+ * registros de PocketBase y se asegura del permiso + token de push. Ya no se
+ * programan notificaciones locales — ver @/lib/reminder-scheduler.
  *
  * Color strategy:
  *   amber/sky/violet are NOT in the mobile tailwind config (only semantic tokens
@@ -14,7 +18,7 @@
  *     next   → lime   (uses className `text-lime` / bg-lime from config)
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   View,
   ScrollView,
@@ -42,10 +46,13 @@ import { useAuthUser } from '@/lib/use-auth-user'
 
 import { useMealReminders } from '@calistenia/core/hooks/useMealReminders'
 import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
+import { pb } from '@calistenia/core/lib/pocketbase'
 import type { MealType } from '@calistenia/core/types'
 
+import { registerPushTokenAsync } from '@/lib/push-registration'
+
 import {
-  syncReminders,
+  cancelLegacyLocalReminders,
   ensureReminderPermission,
   getReminderPermission,
   type ReminderPermStatus,
@@ -111,6 +118,29 @@ function clampMinute(val: string): string {
   const n = parseInt(val)
   if (isNaN(n)) return '00'
   return String(Math.min(59, Math.max(0, n))).padStart(2, '0')
+}
+
+/**
+ * Traduce un fallo al guardar en un mensaje accionable.
+ *
+ * Un recordatorio que no llega a PocketBase NUNCA sonará (el push lo envía el
+ * servidor a partir de esos registros), así que el error tiene que verse. Se
+ * incluye el mensaje del servidor: es lo que distingue "sin conexión" de un
+ * rechazo por regla de acceso, el fallo típico al apuntar un build de
+ * desarrollo a un PocketBase distinto al que emitió el token de sesión.
+ */
+function describeSaveError(e: unknown, t: (k: string) => string): string {
+  const err = e as { message?: string; status?: number; response?: { message?: string } }
+
+  if (err?.message === 'REMINDER_OFFLINE' || err?.status === 0) {
+    return t('reminders.saveErrorOffline')
+  }
+  if (err?.message === 'REMINDER_NOT_AUTHENTICATED') {
+    return t('reminders.saveErrorAuth')
+  }
+
+  const serverMsg = err?.response?.message || err?.message
+  return serverMsg ? `${t('reminders.saveError')} (${serverMsg})` : t('reminders.saveError')
 }
 
 // ── Shared sub-components (module-level so TextInput identity stays stable) ──────
@@ -378,19 +408,13 @@ export default function RemindersScreen() {
     return () => sub.remove()
   }, [refreshPerm])
 
-  // ── Sync local notifications whenever reminders change ───────────────────────
-  const mealRemindersRef = useRef(mealReminders)
-  const workoutRemindersRef = useRef(workoutReminders)
-  mealRemindersRef.current = mealReminders
-  workoutRemindersRef.current = workoutReminders
-
-  const reschedule = useCallback(() => {
-    syncReminders(mealRemindersRef.current, workoutRemindersRef.current)
-  }, [])
-
+  // ── Limpieza de la programación local antigua ────────────────────────────────
+  // Los recordatorios los entrega el servidor por push. Las versiones previas
+  // programaban notificaciones locales WEEKLY; si quedasen vivas, cada
+  // recordatorio sonaría dos veces tras actualizar.
   useEffect(() => {
-    reschedule()
-  }, [mealReminders, workoutReminders, reschedule])
+    cancelLegacyLocalReminders()
+  }, [])
 
   // ── Timeline ─────────────────────────────────────────────────────────────────
   const timeline = useMemo((): TimelineItem[] => {
@@ -471,7 +495,15 @@ export default function RemindersScreen() {
     const granted = await ensureReminderPermission()
     if (granted) {
       setPermStatus('granted')
-      reschedule()
+      // Al arrancar la app el registro del token se salta si el permiso estaba
+      // denegado. Si se concede AQUÍ hay que registrarlo ya: sin token en
+      // `expo_push_tokens` el servidor no tiene a dónde enviar el push y el
+      // recordatorio no llegaría hasta el siguiente login.
+      if (userId) {
+        registerPushTokenAsync(pb, userId).catch((e) => {
+          Sentry.captureException(e, { tags: { feature: 'reminders', op: 'register_push_token' } })
+        })
+      }
     } else {
       setPermStatus('denied')
       Alert.alert(
@@ -520,10 +552,9 @@ export default function RemindersScreen() {
       }
 
       setShowForm(null)
-      setTimeout(reschedule, 0)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'reminders', op: 'save_reminder' } })
-      setError(t('reminders.saveError'))
+      setError(describeSaveError(e, t))
     } finally {
       setSaving(false)
     }
@@ -560,7 +591,6 @@ export default function RemindersScreen() {
         await updateWorkoutReminder(rawId, h, m, days)
       }
       setEditingItem(null)
-      setTimeout(reschedule, 0)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'reminders', op: 'update_reminder' } })
       setError(t('reminders.updateError'))
@@ -580,7 +610,6 @@ export default function RemindersScreen() {
       } else {
         await toggleWorkoutReminder(rawId)
       }
-      setTimeout(reschedule, 0)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'reminders', op: 'toggle_reminder' } })
       console.warn('Error toggling reminder')
@@ -601,7 +630,6 @@ export default function RemindersScreen() {
       } else {
         await deleteWorkoutReminder(rawId)
       }
-      setTimeout(reschedule, 0)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'reminders', op: 'delete_reminder' } })
       console.warn('Error deleting reminder')
