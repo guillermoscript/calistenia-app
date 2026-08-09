@@ -35,17 +35,31 @@ describe('battle lifecycle contract', () => {
     expect(canAcceptBattleJoin('ready')).toBe(false)
     expect(canAcceptBattleJoin('live')).toBe(false)
     expect(() => assertBattleParticipantTransition('joined', 'ready')).not.toThrow()
+    expect(() => assertBattleParticipantTransition('ready', 'joined')).not.toThrow()
     expect(() => assertBattleParticipantTransition('invited', 'active')).toThrow()
   })
 })
 
 describe('battle configuration and scoring', () => {
   it('accepts mixed rep/time targets and rejects duplicate positions', () => {
+    expect(validateBattleConfiguration(null as never)).toContain('configuration is required')
     expect(validateBattleConfiguration(config)).toEqual([])
     expect(validateBattleConfiguration({
       ...config,
       exercises: [config.exercises[0], { ...config.exercises[1], position: 0 }],
     })).toContain('duplicate exercise position: 0')
+    expect(validateBattleConfiguration({
+      ...config,
+      scoring_mode: 'unknown' as never,
+    })).toContain('unsupported scoring_mode')
+    expect(validateBattleConfiguration({
+      ...config,
+      exercises: [config.exercises[0], { ...config.exercises[1], position: 2 }],
+    })).toContain('exercise positions must be contiguous from 0')
+    expect(validateBattleConfiguration({
+      ...config,
+      exercises: [{ ...config.exercises[0], target: { kind: 'distance', value: 12 } as never }],
+    })).toContain('invalid target kind for push-ups')
   })
 
   it('ranks rounds, then reps, then time, then a stable id', () => {
@@ -69,10 +83,13 @@ describe('battle access contract', () => {
   })
 
   it('limits participant writes to their own lifecycle', () => {
-    expect(canMutateBattle('creator-1', battle, null, 'edit_config')).toBe(false)
-    expect(canMutateBattle('creator-1', { ...battle, status: 'draft' }, null, 'edit_config')).toBe(true)
-    expect(canMutateBattle('member-1', battle, participant, 'mark_ready')).toBe(true)
-    expect(canMutateBattle('stranger', battle, participant, 'mark_ready')).toBe(false)
-    expect(canMutateBattle('member-1', battle, participant, 'update_progress')).toBe(false)
+    expect(canMutateBattle('creator-1', battle, null, { kind: 'edit_config' })).toBe(false)
+    expect(canMutateBattle('creator-1', { ...battle, status: 'draft' }, null, { kind: 'edit_config' })).toBe(true)
+    expect(canMutateBattle('creator-1', battle, null, { kind: 'transition', to: 'ready' })).toBe(true)
+    expect(canMutateBattle('creator-1', battle, null, { kind: 'transition', to: 'live' })).toBe(false)
+    expect(canMutateBattle('creator-1', { ...battle, status: 'finished' }, null, { kind: 'transition', to: 'live' })).toBe(false)
+    expect(canMutateBattle('member-1', battle, participant, { kind: 'mark_ready' })).toBe(true)
+    expect(canMutateBattle('stranger', battle, participant, { kind: 'mark_ready' })).toBe(false)
+    expect(canMutateBattle('member-1', battle, participant, { kind: 'update_progress' })).toBe(false)
   })
 })

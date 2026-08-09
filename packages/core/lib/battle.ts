@@ -21,7 +21,7 @@ export const BATTLE_STATUS_TRANSITIONS: Readonly<Record<BattleStatus, readonly B
 export const BATTLE_PARTICIPANT_TRANSITIONS: Readonly<Record<BattleParticipantStatus, readonly BattleParticipantStatus[]>> = {
   invited: ['joined', 'left'],
   joined: ['ready', 'left'],
-  ready: ['active', 'left'],
+  ready: ['joined', 'active', 'left'],
   active: ['finished', 'left'],
   finished: [],
   left: [],
@@ -67,9 +67,18 @@ export function canAcceptBattleJoin(status: BattleStatus): boolean {
 
 export function validateBattleConfiguration(config: BattleConfiguration): string[] {
   const errors: string[] = []
-  if (!config.workout_template_id.trim()) errors.push('workout_template_id is required')
+  if (!config || typeof config !== 'object') return ['configuration is required']
+  if (typeof config.workout_template_id !== 'string' || !config.workout_template_id.trim()) {
+    errors.push('workout_template_id is required')
+  }
   if (!Number.isInteger(config.rounds) || config.rounds < 1) errors.push('rounds must be a positive integer')
-  if (config.exercises.length === 0) errors.push('at least one exercise is required')
+  if (config.scoring_mode !== 'rounds_then_reps_then_time') {
+    errors.push('unsupported scoring_mode')
+  }
+  if (!Array.isArray(config.exercises) || config.exercises.length === 0) {
+    errors.push('at least one exercise is required')
+    return errors
+  }
 
   const positions = new Set<number>()
   const exerciseIds = new Set<string>()
@@ -81,15 +90,23 @@ export function validateBattleConfiguration(config: BattleConfiguration): string
     } else {
       positions.add(exercise.position)
     }
-    if (!exercise.exercise_id.trim()) errors.push('exercise_id is required')
-    if (exerciseIds.has(exercise.exercise_id)) errors.push(`duplicate exercise_id: ${exercise.exercise_id}`)
-    exerciseIds.add(exercise.exercise_id)
-    if (!Number.isFinite(exercise.rest_seconds) || exercise.rest_seconds < 0) {
+    const exerciseId = typeof exercise.exercise_id === 'string' ? exercise.exercise_id.trim() : ''
+    if (!exerciseId) errors.push('exercise_id is required')
+    if (exerciseIds.has(exerciseId)) errors.push(`duplicate exercise_id: ${exerciseId}`)
+    exerciseIds.add(exerciseId)
+    if (!Number.isInteger(exercise.rest_seconds) || exercise.rest_seconds < 0) {
       errors.push(`invalid rest_seconds for ${exercise.exercise_id}`)
     }
-    if (!Number.isFinite(exercise.target.value) || exercise.target.value <= 0) {
+    if (exercise.target?.kind !== 'reps' && exercise.target?.kind !== 'seconds') {
+      errors.push(`invalid target kind for ${exerciseId}`)
+    }
+    if (!Number.isInteger(exercise.target?.value) || exercise.target.value <= 0) {
       errors.push(`invalid target for ${exercise.exercise_id}`)
     }
+  }
+  const orderedPositions = [...positions].sort((a, b) => a - b)
+  if (orderedPositions.some((position, index) => position !== index)) {
+    errors.push('exercise positions must be contiguous from 0')
   }
   return errors
 }
@@ -119,12 +136,12 @@ export function compareBattleScores(a: BattleScore, b: BattleScore): number {
 }
 
 export type BattleMutation =
-  | 'edit_config'
-  | 'transition'
-  | 'join'
-  | 'mark_ready'
-  | 'update_progress'
-  | 'leave'
+  | { kind: 'edit_config' }
+  | { kind: 'transition'; to: BattleStatus }
+  | { kind: 'join' }
+  | { kind: 'mark_ready' }
+  | { kind: 'update_progress' }
+  | { kind: 'leave' }
 
 /**
  * Client-side mirror of the server authorization contract. The server remains
@@ -137,13 +154,15 @@ export function canMutateBattle(
   mutation: BattleMutation,
 ): boolean {
   if (!actorUserId) return false
-  if (mutation === 'edit_config') return battle.creator === actorUserId && battle.status === 'draft'
-  if (mutation === 'transition') return battle.creator === actorUserId
-  if (mutation === 'join') return canAcceptBattleJoin(battle.status)
+  if (mutation.kind === 'edit_config') return battle.creator === actorUserId && battle.status === 'draft'
+  if (mutation.kind === 'transition') {
+    return battle.creator === actorUserId && canTransitionBattle(battle.status, mutation.to)
+  }
+  if (mutation.kind === 'join') return canAcceptBattleJoin(battle.status)
   if (!participant || participant.user !== actorUserId) return false
-  if (mutation === 'mark_ready') return participant.status === 'joined'
-  if (mutation === 'update_progress') return participant.status === 'active'
-  if (mutation === 'leave') return ['invited', 'joined', 'ready', 'active'].includes(participant.status)
+  if (mutation.kind === 'mark_ready') return participant.status === 'joined'
+  if (mutation.kind === 'update_progress') return participant.status === 'active'
+  if (mutation.kind === 'leave') return ['invited', 'joined', 'ready', 'active'].includes(participant.status)
   return false
 }
 

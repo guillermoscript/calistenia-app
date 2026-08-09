@@ -59,8 +59,10 @@ invited ──accept──> joined ──ready──> ready ──battle live─
 ```
 
 Allowed participant transitions are `invited → joined|left`,
-`joined → ready|left`, `ready → active|left`, and `active → finished|left`.
-Finished and left are terminal. The server records the transition timestamp;
+`joined → ready|left`, `ready → joined|active|left`, and
+`active → finished|left`. Returning from `ready` to `joined` supports a
+participant becoming unready before the countdown. Finished and left are terminal.
+The server records the transition timestamp;
 the client never supplies authoritative dates.
 
 ## PocketBase schema and access rules
@@ -78,8 +80,9 @@ Read rules expose `battles` to its creator or users represented in
 battle creator. Invite rows are never readable through the public API, so a
 token hash cannot be harvested.
 
-The creator may create only a `draft` with revision `0`. Battle and
-participant create/update/delete rules are server-only. The future battle API
+The creator may create only a `draft` with revision `0`; server-owned
+timestamps, invite metadata, and lifecycle fields cannot be supplied on that
+request. Battle and participant create/update/delete rules are server-only. The future battle API
 is responsible for authenticating the caller, checking creator/participant
 role, checking the transition table, validating the request body, and writing
 only the fields allowed for that role. This prevents clients from setting

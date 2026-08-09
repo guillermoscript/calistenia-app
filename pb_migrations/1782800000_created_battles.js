@@ -40,7 +40,7 @@ migrate((app) => {
   // is saved. Apply the participant-aware read rules after that save below.
   battles.listRule = 'creator = @request.auth.id'
   battles.viewRule = 'creator = @request.auth.id'
-  battles.createRule = '@request.auth.id = creator && @request.body.status = "draft" && @request.body.revision = 0'
+  battles.createRule = '@request.auth.id = creator && @request.body.status = "draft" && @request.body.revision = 0 && @request.body.invite_expires_at:isset = false && @request.body.invite_revoked_at:isset = false && @request.body.starts_at:isset = false && @request.body.ends_at:isset = false && @request.body.finished_at:isset = false'
   battles.updateRule = null
   battles.deleteRule = null
   app.save(battles)
