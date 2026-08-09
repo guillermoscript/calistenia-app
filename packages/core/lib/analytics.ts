@@ -8,6 +8,7 @@ import { getPlatform, type CoreAnalytics } from '../platform'
 export const CANONICAL_ANALYTICS_EVENTS = {
   postWorkoutActionViewed: 'post_workout_action_viewed',
   postWorkoutActionSelected: 'post_workout_action_selected',
+  referralPromptViewed: 'referral_prompt_viewed',
   shareCardShared: 'share_card_shared',
   inviteSent: 'invite_sent',
   inviteLandingViewed: 'invite_landing_viewed',

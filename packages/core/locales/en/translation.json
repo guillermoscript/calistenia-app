@@ -2554,6 +2554,12 @@
   "postWorkout.repeat": "Repeat workout",
   "postWorkout.repeatHint": "One more round",
   "postWorkout.dismiss": "Hide actions",
+  "referral.prompt.kicker": "THIRD WORKOUT",
+  "referral.prompt.question": "Training with company is easier. Invite someone with your link.",
+  "referral.prompt.native": "SHARE",
+  "referral.prompt.copy": "COPY LINK",
+  "referral.prompt.whatsapp": "WHATSAPP",
+  "referral.prompt.dismiss": "Not now",
 
   "blog.title": "Blog",
   "blog.subtitle": "Tips, tutorials, and guides for your calisthenics training",

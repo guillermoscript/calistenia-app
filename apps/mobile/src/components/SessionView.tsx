@@ -501,13 +501,14 @@ function TimingBar({ name, pct, seconds, isMax, delay, animate }: {
   )
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, onDone, onRepeat, onNavigateAway }: {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, totalSessions, onDone, onRepeat, onNavigateAway }: {
   workoutTitle: string
   totalSetsLogged: number
   durationMin: number
   exercises: Exercise[]
   workoutKey: string
   timings: ExerciseTiming[]
+  totalSessions: number
   onDone: () => void
   onRepeat?: () => void
   onNavigateAway: (path: string) => void
@@ -662,6 +663,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
       exerciseIds={exerciseIds}
       referralCode={referralCode}
       userName={userName}
+      totalSessions={totalSessions}
       sharing={sharing}
       onShare={handleShare}
       onRepeat={onRepeat}
@@ -715,6 +717,7 @@ interface SessionViewProps {
   initialProgress?: SessionProgress
   onProgressChange?: (update: Partial<SessionProgress>) => void
   startedAt?: number
+  totalSessions: number
   onSkipWarmup?: () => void
   onSkipCooldown?: () => void
   onSectionStartTimeChange?: (time: number | null) => void
@@ -736,6 +739,7 @@ export default function SessionView({
   initialProgress,
   onProgressChange,
   startedAt,
+  totalSessions,
   onSkipWarmup,
   onSkipCooldown,
   onSectionStartTimeChange,
@@ -1106,6 +1110,7 @@ export default function SessionView({
           exercises={workout.exercises}
           workoutKey={workoutKey}
           timings={finalTimings ?? []}
+          totalSessions={totalSessions}
           onDone={onGoToDashboard}
           onRepeat={onRepeat}
           onNavigateAway={onNavigateAway}
