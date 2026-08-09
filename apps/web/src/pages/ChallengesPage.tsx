@@ -5,6 +5,12 @@ import { useChallenges, type ChallengeWithMeta } from '@calistenia/core/hooks/us
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
+import {
+  BEGINNER_CHALLENGE_PRESETS,
+  getPresetDateRange,
+  type BeginnerChallengePreset,
+} from '@calistenia/core/lib/challenge-presets'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 type Filter = 'active' | 'past'
 
@@ -15,12 +21,45 @@ interface ChallengesPageProps {
 export default function ChallengesPage({ userId }: ChallengesPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { active, past, loading, load } = useChallenges(userId)
+  const { active, past, loading, load, joinPreset } = useChallenges(userId)
   const [filter, setFilter] = useState<Filter>('active')
+  const [joiningPreset, setJoiningPreset] = useState<string | null>(null)
 
   useEffect(() => { load() }, [load])
 
+  useEffect(() => {
+    for (const preset of BEGINNER_CHALLENGE_PRESETS) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeViewed, {
+        surface: 'challenge_preset_catalog',
+        source: preset.id,
+        result: 'viewed',
+      })
+    }
+  }, [])
+
   const items = filter === 'active' ? active : past
+  const joinedPresets = new Map(
+    [...active, ...past]
+      .filter(challenge => challenge.preset_key)
+      .map(challenge => [challenge.preset_key!, challenge]),
+  )
+
+  const handleJoinPreset = async (preset: BeginnerChallengePreset) => {
+    if (!preset.enabled || joiningPreset) return
+
+    const dates = getPresetDateRange(preset)
+    const confirmed = window.confirm(t('challenge.preset.confirmBody', {
+      title: t(preset.titleKey),
+      startsAt: dates.startsAt,
+      endsAt: dates.endsAt,
+    }))
+    if (!confirmed) return
+
+    setJoiningPreset(preset.id)
+    const result = await joinPreset(preset.id)
+    setJoiningPreset(null)
+    if (result) navigate(`/challenges/${result.challengeId}`)
+  }
 
   const FILTERS: { id: Filter; label: string; count: number }[] = [
     { id: 'active', label: t('challenges.filterActive'), count: active.length },
@@ -41,6 +80,28 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
           {t('challenges.create')}
         </Button>
       </div>
+
+      {filter === 'active' && (
+        <section data-testid="beginner-challenge-presets" className="mb-8">
+          <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">
+            {t('challenge.preset.kicker')}
+          </div>
+          <h2 className="font-bebas text-2xl mb-1">{t('challenge.preset.catalogTitle')}</h2>
+          <p className="text-xs text-muted-foreground mb-4">{t('challenge.preset.catalogDescription')}</p>
+          <div className="grid gap-2 md:grid-cols-2">
+            {BEGINNER_CHALLENGE_PRESETS.map(preset => (
+              <BeginnerPresetCard
+                key={preset.id}
+                preset={preset}
+                joinedChallenge={joinedPresets.get(preset.id)}
+                joining={joiningPreset === preset.id}
+                onJoin={() => void handleJoinPreset(preset)}
+                onOpen={(challengeId) => navigate(`/challenges/${challengeId}`)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Filter tabs */}
       <div id="tour-challenges-filters" role="tablist" aria-label={t('challenges.filterAriaLabel')} className="flex gap-1.5 mb-6">
@@ -115,6 +176,66 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
         )}
       </div>
     </div>
+  )
+}
+
+function BeginnerPresetCard({
+  preset,
+  joinedChallenge,
+  joining,
+  onJoin,
+  onOpen,
+}: {
+  preset: BeginnerChallengePreset
+  joinedChallenge?: ChallengeWithMeta
+  joining: boolean
+  onJoin: () => void
+  onOpen: (challengeId: string) => void
+}) {
+  const { t } = useTranslation()
+  const title = t(preset.titleKey)
+  const isJoined = !!joinedChallenge
+
+  return (
+    <article
+      data-testid={`challenge-preset-${preset.id}`}
+      className={cn(
+        'flex flex-col gap-3 rounded-lg border bg-card p-4',
+        preset.enabled ? 'border-border' : 'border-border/60 opacity-70',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-medium">{title}</h3>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t(preset.descriptionKey)}</p>
+        </div>
+        <span className="shrink-0 rounded border border-lime/30 bg-lime/10 px-2 py-1 text-[9px] uppercase tracking-widest text-lime">
+          {t('challenge.preset.difficulty')}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground">
+        <span className="text-lime">{getMetricLabel(preset.metric)}</span>
+        <span>·</span>
+        <span>{t('challenge.preset.target', { count: preset.goal })}</span>
+        <span>·</span>
+        <span>{t('challenge.preset.duration', { count: preset.durationDays })}</span>
+      </div>
+      {preset.disabledReasonKey && !preset.enabled && (
+        <p className="text-[10px] text-amber-400">{t(preset.disabledReasonKey)}</p>
+      )}
+      <Button
+        type="button"
+        size="sm"
+        disabled={!preset.enabled || joining}
+        onClick={() => isJoined ? onOpen(joinedChallenge!.id) : onJoin()}
+        className={cn(
+          'h-9 text-[10px] tracking-widest',
+          preset.enabled ? 'bg-lime text-lime-foreground hover:bg-lime/90' : 'bg-muted text-muted-foreground',
+        )}
+      >
+        {joining ? t('challenge.preset.joining') : isJoined ? t('challenge.preset.open') : preset.enabled ? t('challenge.preset.join') : t('challenge.preset.unavailable')}
+      </Button>
+    </article>
   )
 }
 

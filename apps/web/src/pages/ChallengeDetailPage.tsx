@@ -33,6 +33,8 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   // un reto borrado o sin permiso llega hasta aquí y no debe inflar el embudo.
   // El ref evita repetirla en cada refetch del leaderboard.
   const viewedIdRef = useRef<string | null>(null)
+  const progressTrackedRef = useRef<string | null>(null)
+  const completionTrackedRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!id || loading || !challenge) return
@@ -45,6 +47,35 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       result: 'viewed',
     })
   }, [id, loading, challenge])
+
+  useEffect(() => {
+    if (!id || loading) return
+    const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+    if (!currentEntry) return
+    const key = `${id}:${currentEntry.value}`
+    if (progressTrackedRef.current === key) return
+    progressTrackedRef.current = key
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeProgressUpdated, {
+      surface: 'challenge_detail',
+      source: 'challenge_route',
+      challenge_id: id,
+      progress_value: currentEntry.value,
+      result: 'updated',
+    })
+  }, [id, loading, leaderboard])
+
+  useEffect(() => {
+    if (!id || loading || !challenge?.goal || challenge.goal <= 0) return
+    const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+    if (!currentEntry || currentEntry.value < challenge.goal || completionTrackedRef.current === id) return
+    completionTrackedRef.current = id
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeCompleted, {
+      surface: 'challenge_detail',
+      source: 'challenge_goal_reached',
+      challenge_id: id,
+      result: 'completed',
+    })
+  }, [id, loading, challenge, leaderboard])
 
   if (!id) return null
 
@@ -82,6 +113,8 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
   const isCreator = challenge.creator === userId
   const isActive = challenge.status === 'active'
+  const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+  const goalReached = !!challenge.goal && !!currentEntry && currentEntry.value >= challenge.goal
   const unit = getMetricUnit(challenge.metric, challenge.exercise_slug)
   const metricLabel = getMetricLabel(challenge.metric, challenge.custom_metric, challenge.exercise_slug)
   const invitableUsers = following.filter(u => !participantIds.has(u.id))
@@ -114,8 +147,8 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
               Meta: {challenge.goal}
             </span>
           )}
-          <span className={cn('text-[11px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
-            {daysRemaining(challenge.ends_at)}
+          <span className={cn('text-[11px]', goalReached ? 'text-lime' : isActive ? 'text-amber-400' : 'text-muted-foreground')}>
+            {goalReached ? t('challenge.preset.completed') : isActive ? daysRemaining(challenge.ends_at) : t('challenge.preset.expired')}
           </span>
         </div>
         {challenge.description && (
