@@ -11,8 +11,7 @@ import { Image } from 'expo-image'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
-import { shareImage, shareCardioSession } from '@/lib/share'
-import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage, shareCardioSession } from '@/lib/share'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { CardioSession } from '@calistenia/core/types'
 
@@ -68,13 +67,9 @@ export default function CardioShareButton({
         referralCode: referralCode ?? null,
       })
 
-      // 4. Share image.
-      await shareImage(uri, { message: `${message}\n${url}` })
-
-      // 5. Track.
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
-        surface: 'cardio', source: 'cardio_completion', share_type: 'cardio', result: 'shared',
-        card_type: 'cardio',
+      // 4. Share image + track the classified native outcome once.
+      await shareCardImage(uri, { message: `${message}\n${url}` }, {
+        ...MOBILE_SHARE_CARD_CONTEXTS.cardio,
         activity: session.activity_type,
       })
     } catch (e) {

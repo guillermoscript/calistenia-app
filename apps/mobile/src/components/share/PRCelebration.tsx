@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { haptics } from '@/lib/haptics'
-import { shareImage, sharePR } from '@/lib/share'
+import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage, sharePR } from '@/lib/share'
 import PRShareCard from '@/components/share/PRShareCard'
 import ShareCardCapture, {
   type ShareCardCaptureHandle,
@@ -24,6 +24,7 @@ export interface PRCelebrationProps {
   userName: string
   avatarUrl?: string | null
   referralCode?: string | null
+  workoutId?: string
   onDismiss: () => void
 }
 
@@ -33,6 +34,7 @@ export default function PRCelebration({
   userName,
   avatarUrl,
   referralCode,
+  workoutId,
   onDismiss,
 }: PRCelebrationProps) {
   const insets = useSafeAreaInsets()
@@ -64,11 +66,14 @@ export default function PRCelebration({
         userName,
         referralCode,
       })
-      await shareImage(uri, { message })
+      await shareCardImage(uri, { message }, {
+        ...MOBILE_SHARE_CARD_CONTEXTS.personalRecord,
+        workout_id: workoutId,
+      })
     } catch (e) {
       // silent – share not available
     }
-  }, [exerciseName, prEvent, userName, referralCode])
+  }, [exerciseName, prEvent, userName, referralCode, workoutId])
 
   return (
     <>
