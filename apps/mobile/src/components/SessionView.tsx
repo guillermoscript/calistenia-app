@@ -563,6 +563,14 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           referralCode,
         })
         await shareImage(uri, { message, title: 'Compartir sesión' })
+        // Este es el botón de compartir principal de la pantalla de celebración
+        // (no pasa por WorkoutShareButton): sin esto el paso 1→2 del embudo de
+        // crecimiento sale a cero en móvil. `Sharing.shareAsync` no confirma el
+        // envío, de ahí `share_confirmed: false`.
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+          surface: 'post_workout', source: 'workout_completion', share_type: 'workout',
+          workout_id: workoutKey, result: 'shared', share_confirmed: false, card_type: 'workout',
+        })
       }
     } catch {
       // User cancelled the share sheet or capture failed — no-op.

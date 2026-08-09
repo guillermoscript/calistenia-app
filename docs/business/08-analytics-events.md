@@ -37,21 +37,35 @@ GPS coordinates, or unnecessary personal data.
 | Event | Trigger | Shared properties | Platforms | Success definition |
 |---|---|---|---|---|
 | `post_workout_action_viewed` | Completion screen renders after a workout | `surface`, `source`, `workout_id`, `result` | Web + mobile | Completion action screen can be reached without an error |
-| `share_card_shared` | A card image is successfully shared | `surface`, `source`, `share_type`, `result`; optional `workout_id` | Web + mobile | Share sheet/export succeeds; cancelled shares are not counted |
-| `invite_sent` | Referral invite is copied or handed to a share target | `surface`, `source`, `share_type`, `result` | Web | A link is copied or native share returns successfully |
+| `share_card_shared` | A card image is successfully shared | `surface`, `source`, `share_type`, `result`, `share_confirmed`; optional `workout_id` | Web + mobile | Share sheet/export succeeds; see "Share confirmation" below |
+| `invite_sent` | Referral invite is copied, handed to a share target, or sent to a specific user | `surface`, `source`, `share_type`, `result`; optional `challenge_id` | Web + mobile core | A link is copied, native share returns successfully, or an invite record is created |
 | `invite_landing_viewed` | Referral landing route renders | `surface`, `source`, `result` | Web | Referral landing is viewed and code is stored |
 | `referral_converted` | Signup creates a valid referral record | `surface`, `source`, `result` | Web + mobile core | Referral record is created successfully |
-| `challenge_viewed` | Challenge detail/list item is displayed | `surface`, `source`, `challenge_id`, `participant_count`, `result` | Web + mobile | Challenge surface is visible |
-| `challenge_joined` | User joins or is invited into a challenge | `surface`, `source`, `challenge_id`, `participant_count`, `result` | Web + mobile | Participant record is created successfully |
-| `challenge_progress_updated` | Completed workout can contribute to an active challenge | `surface`, `source`, `workout_id`, `challenge_id`, `result` | Web + mobile core | One progress signal is emitted per active challenge and workout completion |
+| `challenge_viewed` | Challenge detail/list item is displayed | `surface`, `source`, `challenge_id`, `participant_count`, `result` | Web + mobile | Challenge surface is visible; once per challenge per screen visit, and only after the challenge actually loads |
+| `challenge_joined` | User joins a challenge themselves | `surface`, `source`, `challenge_id`, `participant_count`, `result` | Web + mobile | Participant record is created successfully by the joining user. Inviting somebody else emits `invite_sent`, not this event — the inviter's device carries the inviter's analytics identity |
+| `challenge_progress_updated` | Completed workout can contribute to an active challenge | `surface`, `source`, `workout_id`, `challenge_id`, `result` | Web + mobile core | One progress signal per workout completion and per challenge the workout can actually score (metric-aware; free/manual sessions included) |
 | `challenge_completed` | Expired challenge is closed | `surface`, `source`, `challenge_id`, `result` | Web + mobile core | Challenge status changes to `ended` |
 | `program_joined` | Program enrollment becomes active | `surface`, `source`, `program_id`, `result` | Web + mobile core | Enrollment is created or reactivated |
-| `program_milestone_completed` | All configured non-rest days in a program phase are complete | `surface`, `source`, `program_id`, `workout_id`, `result` | Web + mobile core | Phase completion is detected once per user/program/phase |
+| `program_milestone_completed` | All configured non-rest days in a program phase are complete | `surface`, `source`, `program_id`, `workout_id`, `milestone_id`, `result` | Web + mobile core | Phase completion is detected once per user/program/phase, from PocketBase rows scoped to that program (strength days in `sessions`, cardio days in `cardio_sessions`) |
 | `battle_created` | Existing race flow creates a battle | `surface`, `source`, `battle_id`, `participant_count`, `result` | Web + mobile | Race record is created |
 | `battle_joined` | User joins an existing race/battle | `surface`, `source`, `battle_id`, `participant_count`, `result` | Web + mobile | Participant record is created |
 | `battle_started` | Race countdown starts | `surface`, `source`, `battle_id`, `participant_count`, `result` | Web + mobile | Battle enters its active state |
-| `battle_completed` | Race finishes and results are published | `surface`, `source`, `battle_id`, `participant_count`, `result` | Web + mobile | Battle enters its finished state |
-| `battle_shared` | Battle invite link or result card is shared | `surface`, `source`, `battle_id`, `share_type`, `participant_count`, `result` | Web + mobile | Share sheet/export succeeds |
+| `battle_completed` | Race finishes and results are published | `surface`, `source`, `battle_id`, `participant_count`, `result` | Web + mobile | Battle enters its finished state. Emitted once per battle by the creator's client, so manual finishes, auto-finish and the `ends_at` watchdog all count exactly once (a battle finished while the creator is offline is not counted) |
+| `battle_shared` | Battle invite link or result card is shared | `surface`, `source`, `battle_id`, `share_type`, `participant_count`, `result`, `share_confirmed` | Web + mobile | Share sheet/export succeeds; see "Share confirmation" below |
+
+## Share confirmation
+
+Not every platform tells us whether a share actually went out, so share events
+carry a `share_confirmed` boolean. Count confirmed shares with
+`share_confirmed = true`; treat the rest as "share sheet opened".
+
+| Path | `share_confirmed` | Why |
+|---|---|---|
+| Web `navigator.share` resolves | `true` | The Web Share API only resolves when the user goes through with it |
+| Web fallback download (`result: downloaded`) | `false` | Cancelling the sheet falls back to downloading the PNG — an export, not a send |
+| iOS `Share.share` → `sharedAction` | `true` | iOS reports `dismissedAction` on cancel, which is already filtered out |
+| Android `Share.share` | `false` | React Native always resolves with `sharedAction` on Android, dismissal included |
+| `expo-sharing` `shareAsync` (mobile images) | `false` | Resolves to `void`; the outcome is not observable |
 
 ## Compatibility rules
 
@@ -90,7 +104,7 @@ Create a dashboard called **Growth Loop v1** with these reports:
 | Referral conversion | Funnel | `invite_sent` → `invite_landing_viewed` → `signup_completed` | `share_type` |
 | Challenge activation | Funnel | `challenge_viewed` → `challenge_joined` → `challenge_progress_updated` → `challenge_completed` | `surface` |
 | Battle adoption | Funnel | `battle_created` → `battle_joined` → `battle_started` → `battle_completed` | `share_type` |
-| Shares by type | Bar | `share_card_shared` | `share_type` |
+| Shares by type | Bar | `share_card_shared` (filter `share_confirmed = true` for confirmed sends) | `share_type` |
 | Program milestones | Line | `program_milestone_completed` | `program_id` |
 
 This repository defines the report names, steps, filters, and breakdowns. The
@@ -114,12 +128,15 @@ dashboard and confirm the exact UI labels.
 
 ### Mobile
 
-- Complete and share a workout while online and confirm the two workout events.
+- Complete and share a workout while online and confirm the two workout events
+  (the share button on the celebration screen emits `share_card_shared` too).
 - Repeat the share flow while offline, reconnect, and confirm buffered delivery.
 - Open the challenges list, join a challenge, complete a contributing workout,
   and confirm the challenge events.
-- Select a program, complete every non-rest day in one phase, and confirm one
-  `program_milestone_completed`.
+- Select a program, complete every non-rest day in one phase (including any
+  cardio day), and confirm one `program_milestone_completed`. Switching to a
+  second program must not emit its milestone until that program's own days are
+  done.
 - Create, join, start, finish, and share a race; confirm the canonical battle
   events after the mobile buffer flushes.
 

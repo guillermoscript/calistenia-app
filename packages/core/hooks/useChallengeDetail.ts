@@ -123,12 +123,15 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
         challenge: challengeId,
         user: targetUserId,
       })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
+      // Esto corre en el dispositivo de QUIEN invita, con su identidad de
+      // analytics: emitir `challenge_joined` aquí le atribuiría una unión que no
+      // ha hecho (y a los invitados, ninguna). La acción real es un envío de
+      // invitación.
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.inviteSent, {
         surface: 'challenge_detail',
         source: 'challenge_invite',
         challenge_id: challengeId,
-        participant_count: participantIds.size + 1,
-        result: 'joined',
+        result: 'sent',
       })
     },
     onSuccess: () => {

@@ -149,6 +149,20 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const isCreator = !!(race && userId && race.creator === userId)
   const hasJoined = !!me
 
+  // Un solo `battle_completed` por carrera, no uno por cliente: cada
+  // participante ejecuta finishRaceAction en su dispositivo, y el auto-finish y
+  // el watchdog de ends_at cierran la carrera sin que nadie pulse nada. Por eso
+  // el evento cuelga de la fase 'finished' y lo emite el cliente del creador.
+  const battleCompletedRef = useRef(false)
+  useEffect(() => {
+    if (phase !== 'finished' || !isCreator || battleCompletedRef.current) return
+    battleCompletedRef.current = true
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCompleted, {
+      surface: 'battle', source: 'race_results', battle_id: raceId,
+      participant_count: participants.length, result: 'completed',
+    })
+  }, [phase, isCreator, raceId, participants.length])
+
   // Deadline duro en modo tiempo (clock-only, 500ms)
   useEffect(() => {
     if (phase !== 'racing' || !me || !race) return
@@ -450,14 +464,10 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         my_duration_seconds: Math.floor(s?.duration_seconds ?? 0),
         platform: 'mobile',
       })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCompleted, {
-        surface: 'battle', source: 'race_results', battle_id: raceId,
-        participant_count: participants.length, result: 'completed',
-      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
     }
-  }, [raceId, me, participants.length])
+  }, [raceId, me])
 
   const leaveAction = useCallback(async () => {
     if (!me) return

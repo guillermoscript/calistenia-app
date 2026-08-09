@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
@@ -29,15 +29,22 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
   useEffect(() => { load() }, [load])
 
+  // Solo cuenta como vista cuando el reto se ha cargado y se pinta: un enlace a
+  // un reto borrado o sin permiso llega hasta aquí y no debe inflar el embudo.
+  // El ref evita repetirla en cada refetch del leaderboard.
+  const viewedIdRef = useRef<string | null>(null)
+
   useEffect(() => {
-    if (!id) return
+    if (!id || loading || !challenge) return
+    if (viewedIdRef.current === id) return
+    viewedIdRef.current = id
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeViewed, {
       surface: 'challenge_detail',
       source: 'challenge_route',
       challenge_id: id,
       result: 'viewed',
     })
-  }, [id])
+  }, [id, loading, challenge])
 
   if (!id) return null
 

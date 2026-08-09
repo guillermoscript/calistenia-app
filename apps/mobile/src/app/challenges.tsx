@@ -1,5 +1,5 @@
 /** Retos — port móvil de ChallengesPage (useChallenges de core). */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View, FlatList, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -37,8 +37,16 @@ export default function ChallengesScreen() {
 
   const items: ChallengeWithMeta[] = filter === 'active' ? active : past
 
+  // Una vista por reto y por visita a la pantalla: `items` cambia de identidad
+  // en cada refetch (montaje, invalidate, staleTime), así que sin este registro
+  // el mismo reto se contaría varias veces y hundiría la conversión vista→unión.
+  const viewedRef = useRef<Set<string>>(new Set())
+
   useEffect(() => {
     for (const challenge of items) {
+      const seenKey = `${filter}:${challenge.id}`
+      if (viewedRef.current.has(seenKey)) continue
+      viewedRef.current.add(seenKey)
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeViewed, {
         surface: 'challenge_list',
         source: filter,

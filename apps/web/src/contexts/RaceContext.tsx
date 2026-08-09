@@ -154,6 +154,20 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const isCreator = !!(race && userId && race.creator === userId)
   const hasJoined = !!me
 
+  // One `battle_completed` per battle, not per client. Every participant runs
+  // finishRaceAction from their own device, and the auto-finish / ends_at
+  // watchdog effects close the race with nobody clicking at all — so the event
+  // hangs off the finished phase and is owned by the creator's client.
+  const battleCompletedRef = useRef(false)
+  useEffect(() => {
+    if (phase !== 'finished' || !isCreator || battleCompletedRef.current) return
+    battleCompletedRef.current = true
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCompleted, {
+      surface: 'battle', source: 'race_results', battle_id: raceId,
+      participant_count: participants.length, result: 'completed',
+    })
+  }, [phase, isCreator, raceId, participants.length])
+
   // ── Time-mode hard deadline ─────────────────────────────────────────────
   // When serverNow - starts_at >= target, freeze the participant and close
   // the race. Runs on a 500ms clock-only interval so it fires even if GPS
@@ -486,14 +500,10 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         my_distance_km: stats?.distance_km ?? 0,
         my_duration_seconds: Math.floor(stats?.duration_seconds ?? 0),
       })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCompleted, {
-        surface: 'battle', source: 'race_results', battle_id: raceId,
-        participant_count: participants.length, result: 'completed',
-      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
     }
-  }, [raceId, me, participants.length])
+  }, [raceId, me])
 
   const leaveAction = useCallback(async () => {
     if (!me) return

@@ -81,8 +81,12 @@ export default function WorkoutShareButton({
 
       await shareImage(uri, { message, title: 'Compartir sesión' })
 
+      // `Sharing.shareAsync` resuelve a void: la plataforma no dice si el
+      // usuario llegó a enviar. `share_confirmed: false` marca el evento como
+      // "hoja abierta" y no como envío verificado.
       trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
-        surface: 'post_workout', source: 'workout_completion', share_type: 'workout', result: 'shared', card_type: 'workout',
+        surface: 'post_workout', source: 'workout_completion', share_type: 'workout', result: 'shared',
+        share_confirmed: false, card_type: 'workout',
       })
     } catch {
       // User cancelled the share sheet or capture failed — no-op.
