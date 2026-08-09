@@ -12,10 +12,9 @@ import { Share2 } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
-import { shareImage } from '@/lib/share'
+import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage } from '@/lib/share'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { Sentry } from '@/lib/instrument'
-import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { BodyPhoto } from '@calistenia/core/hooks/useBodyPhotos'
 
 import ShareCardCapture, {
@@ -61,9 +60,8 @@ export default function ProgressShareButton({ before, after }: Props) {
       const uri = await captureRef.current?.capture()
       if (!uri) return
 
-      await shareImage(uri, { title: t('progress.bodyPhotos.share') })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
-        surface: 'progress', source: 'progress_photo', share_type: 'progress_photo', result: 'shared', card_type: 'progress_photo',
+      await shareCardImage(uri, { title: t('progress.bodyPhotos.share') }, {
+        ...MOBILE_SHARE_CARD_CONTEXTS.progressPhoto,
       })
     } catch (e) {
       Sentry.captureException(e)

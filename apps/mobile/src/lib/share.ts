@@ -1,6 +1,7 @@
-import { Linking, Share } from 'react-native'
+import { Linking, Platform, Share, type ShareAction } from 'react-native'
 import * as Sharing from 'expo-sharing'
 import * as Clipboard from 'expo-clipboard'
+import { trackShareCardShared } from '@calistenia/core/lib/analytics'
 
 export const BASE_URL = 'https://gym.guille.tech'
 
@@ -34,10 +35,58 @@ export interface ShareTextOptions {
   url?: string
 }
 
+export type NativeShareOutcome =
+  | { result: 'shared'; confirmed: true }
+  | { result: 'opened'; confirmed: false }
+  | { result: 'dismissed'; confirmed: false }
+
+export interface MobileShareCardProperties {
+  surface: string
+  source?: string
+  share_type: string
+  workout_id?: string
+  [key: string]: unknown
+}
+
+export const MOBILE_SHARE_CARD_CONTEXTS = {
+  workoutCompletion: {
+    surface: 'post_workout', source: 'workout_completion', share_type: 'workout', card_type: 'workout',
+  },
+  workoutHistory: {
+    surface: 'session_detail', source: 'history', share_type: 'workout', card_type: 'workout',
+  },
+  personalRecord: {
+    surface: 'pr_celebration', source: 'pr_achieved', share_type: 'pr', card_type: 'pr',
+  },
+  streak: {
+    surface: 'streak_milestone', source: 'streak_achieved', share_type: 'streak', card_type: 'streak',
+  },
+  cardio: {
+    surface: 'cardio', source: 'cardio_completion', share_type: 'cardio', card_type: 'cardio',
+  },
+  nutrition: {
+    surface: 'nutrition', source: 'daily_summary', share_type: 'nutrition', card_type: 'nutrition',
+  },
+  progressPhoto: {
+    surface: 'progress', source: 'progress_photo', share_type: 'progress_photo', card_type: 'progress_photo',
+  },
+} as const satisfies Record<string, MobileShareCardProperties>
+
+export function classifyNativeShareAction(action: ShareAction['action']): NativeShareOutcome {
+  if (action === Share.dismissedAction) {
+    return { result: 'dismissed', confirmed: false }
+  }
+  if (action === Share.sharedAction && Platform.OS === 'ios') {
+    return { result: 'shared', confirmed: true }
+  }
+  return { result: 'opened', confirmed: false }
+}
+
 /** Text-based share via RN native sheet. */
-export async function shareText({ message, url }: ShareTextOptions): Promise<void> {
+export async function shareText({ message, url }: ShareTextOptions): Promise<NativeShareOutcome> {
   const content = url ? `${message}\n${url}` : message
-  await Share.share({ message: content })
+  const result = await Share.share({ message: content })
+  return classifyNativeShareAction(result.action)
 }
 
 /**
@@ -47,7 +96,7 @@ export async function shareText({ message, url }: ShareTextOptions): Promise<voi
 export async function shareImage(
   uri: string,
   options?: { message?: string; title?: string },
-): Promise<void> {
+): Promise<NativeShareOutcome> {
   const available = await Sharing.isAvailableAsync()
   if (available) {
     await Sharing.shareAsync(uri, {
@@ -55,11 +104,31 @@ export async function shareImage(
       mimeType: 'image/png',
       UTI: 'public.png',
     })
+    // expo-sharing no expone éxito/cancelación: solo sabemos que abrió y cerró.
+    return { result: 'opened', confirmed: false }
   } else {
     // Fallback: share the URL/message text only
     const msg = options?.message ?? uri
-    await Share.share({ message: msg })
+    return shareText({ message: msg })
   }
+}
+
+/** Comparte una tarjeta y registra como máximo un evento por invocación. */
+export async function shareCardImage(
+  uri: string,
+  options: { message?: string; title?: string } | undefined,
+  properties: MobileShareCardProperties,
+): Promise<NativeShareOutcome> {
+  const outcome = await shareImage(uri, options)
+  if (outcome.result !== 'dismissed') {
+    trackShareCardShared({
+      ...properties,
+      platform: Platform.OS,
+      result: outcome.result,
+      share_confirmed: outcome.confirmed,
+    })
+  }
+  return outcome
 }
 
 // ── Message builders (Spanish, mirror web copy) ───────────────────────────────

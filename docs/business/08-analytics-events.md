@@ -39,7 +39,7 @@ GPS coordinates, or unnecessary personal data.
 |---|---|---|---|---|
 | `post_workout_action_viewed` | Completion screen renders after a workout | `surface`, `source`, `workout_id`, `result` | Web + mobile | Completion action screen can be reached without an error |
 | `post_workout_action_selected` | A growth action is tapped in the post-workout panel | `surface`, `source`, `workout_id`, `action`, `result`; optional `challenge_id` | Web + mobile | One event per tap. Emitted *in addition to* the canonical event each action already produces (`share_card_shared`, `invite_sent`, `challenge_viewed`), which stay where they were so the existing funnels are unaffected |
-| `share_card_shared` | A card image is successfully shared | `surface`, `source`, `share_type`, `result`, `share_confirmed`; optional `workout_id` | Web + mobile | Share sheet/export succeeds; see "Share confirmation" below |
+| `share_card_shared` | A card image is shared or reaches a native sheet whose final result is not observable | `surface`, `source`, `share_type`, `platform`, `result`, `share_confirmed`; optional `workout_id` | Web + mobile | One event per completed share invocation; observable dismissals and failures emit nothing. See "Share confirmation" below |
 | `invite_sent` | Referral invite is copied, handed to a share target, or sent to a specific user | `surface`, `source`, `share_type`, `result`; optional `challenge_id` | Web + mobile core | A link is copied, native share returns successfully, or an invite record is created |
 | `invite_landing_viewed` | Referral landing route renders | `surface`, `source`, `result` | Web | Referral landing is viewed and code is stored |
 | `referral_converted` | Signup creates a valid referral record | `surface`, `source`, `result` | Web + mobile core | Referral record is created successfully |
@@ -59,15 +59,17 @@ GPS coordinates, or unnecessary personal data.
 
 Not every platform tells us whether a share actually went out, so share events
 carry a `share_confirmed` boolean. Count confirmed shares with
-`share_confirmed = true`; treat the rest as "share sheet opened".
+`share_confirmed = true` and `result = shared`; `result = opened` means the
+native sheet completed without exposing its final outcome. Observable
+cancellations and native failures do not emit `share_card_shared`.
 
 | Path | `share_confirmed` | Why |
 |---|---|---|
 | Web `navigator.share` resolves | `true` | The Web Share API only resolves when the user goes through with it |
 | Web fallback download (`result: downloaded`) | `false` | Cancelling the sheet falls back to downloading the PNG — an export, not a send |
 | iOS `Share.share` → `sharedAction` | `true` | iOS reports `dismissedAction` on cancel, which is already filtered out |
-| Android `Share.share` | `false` | React Native always resolves with `sharedAction` on Android, dismissal included |
-| `expo-sharing` `shareAsync` (mobile images) | `false` | Resolves to `void`; the outcome is not observable |
+| Android `Share.share` (`result: opened`) | `false` | React Native always resolves with `sharedAction` on Android, dismissal included |
+| `expo-sharing` `shareAsync` (`result: opened`) | `false` | Resolves to `void`; the outcome is not observable |
 
 ## Compatibility rules
 
@@ -75,7 +77,8 @@ Existing events remain available for current dashboards. In particular,
 `card_type` remains on `share_card_shared`, `race_*` events remain emitted for
 the existing race reports, and `program_selected` remains emitted alongside
 the canonical `program_joined` event. Canonical events are emitted once per
-successful action; compatibility events are not used as additional canonical
+completed action (with unconfirmed share outcomes labeled `opened`);
+compatibility events are not used as additional canonical
 funnel steps.
 
 ## Growth funnel
@@ -83,7 +86,9 @@ funnel steps.
 Configure one OpenPanel funnel named **Completion → Return**:
 
 1. `post_workout_action_viewed`
-2. `share_card_shared` (filter `share_type = workout`)
+2. `share_card_shared` (filter `share_type = workout`; add
+   `share_confirmed = true` when the funnel must represent confirmed sends,
+   while `result = opened` measures unconfirmed native-sheet completions)
 3. `invite_sent` or `battle_shared`
 4. `invite_landing_viewed`
 5. `signup_completed`
@@ -132,7 +137,14 @@ dashboard and confirm the exact UI labels.
 ### Mobile
 
 - Complete and share a workout while online and confirm the two workout events
-  (the share button on the celebration screen emits `share_card_shared` too).
+  (the share button on the celebration screen emits `share_card_shared` too),
+  including `workout_id`, `platform`, and the classified `result`.
+- Share from workout history, PR, streak, cardio, nutrition, and progress-photo
+  surfaces; confirm one event per invocation and the expected `share_type`.
+- On iOS native fallback, dismiss the sheet and confirm no event. Disable an
+  available target or force a native failure, retry, and confirm only the retry
+  emits. Android and `expo-sharing` image paths report `result=opened` because
+  their APIs cannot distinguish delivery from dismissal.
 - Repeat the share flow while offline, reconnect, and confirm buffered delivery.
 - Open the challenges list, join a challenge, complete a contributing workout,
   and confirm the challenge events.

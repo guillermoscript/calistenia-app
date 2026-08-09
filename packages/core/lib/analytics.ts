@@ -44,6 +44,13 @@ export interface CanonicalAnalyticsProperties {
   [key: string]: unknown
 }
 
+export interface ShareCardAnalyticsProperties extends CanonicalAnalyticsProperties {
+  share_type: string
+  platform: string
+  result: 'shared' | 'opened' | 'downloaded'
+  share_confirmed: boolean
+}
+
 /**
  * Remove unset values and stamp the payload with the contract version.
  * Keeping this pure makes the cross-platform contract easy to test.
@@ -68,4 +75,9 @@ export function trackCanonicalEvent(
   properties: CanonicalAnalyticsProperties,
 ): unknown {
   return op.track(event, normalizeCanonicalAnalyticsProperties(properties))
+}
+
+/** Punto único para el contrato de `share_card_shared` en web y móvil. */
+export function trackShareCardShared(properties: ShareCardAnalyticsProperties): unknown {
+  return trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, properties)
 }

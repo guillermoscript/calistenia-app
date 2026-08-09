@@ -43,7 +43,7 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/cor
 import Confetti from '@/components/Confetti'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useAuthUser } from '@/lib/use-auth-user'
-import { shareImage, shareWorkoutSession } from '@/lib/share'
+import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage, shareWorkoutSession } from '@/lib/share'
 import WorkoutShareCard from '@/components/share/WorkoutShareCard'
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import PRCelebration from '@/components/share/PRCelebration'
@@ -565,14 +565,9 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           workoutKey,
           referralCode,
         })
-        await shareImage(uri, { message, title: 'Compartir sesión' })
-        // Este es el botón de compartir principal de la pantalla de celebración
-        // (no pasa por WorkoutShareButton): sin esto el paso 1→2 del embudo de
-        // crecimiento sale a cero en móvil. `Sharing.shareAsync` no confirma el
-        // envío, de ahí `share_confirmed: false`.
-        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
-          surface: 'post_workout', source: 'workout_completion', share_type: 'workout',
-          workout_id: workoutKey, result: 'shared', share_confirmed: false, card_type: 'workout',
+        await shareCardImage(uri, { message, title: 'Compartir sesión' }, {
+          ...MOBILE_SHARE_CARD_CONTEXTS.workoutCompletion,
+          workout_id: workoutKey,
         })
       }
     } catch {
@@ -1124,6 +1119,7 @@ export default function SessionView({
           userName={(sessionUser?.display_name as string) || (sessionUser?.name as string) || 'Atleta'}
           avatarUrl={sessionUser ? getUserAvatarUrl(sessionUser, '200x200') : null}
           referralCode={(sessionUser?.referral_code as string) || null}
+          workoutId={workoutKey}
           onDismiss={() => setPrCelebration(null)}
         />
       )}

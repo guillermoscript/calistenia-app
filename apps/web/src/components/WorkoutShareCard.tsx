@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import i18n from '../lib/i18n'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
-import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { trackShareCardShared } from '@calistenia/core/lib/analytics'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage } from '../lib/canvas-helpers'
 import type { Exercise } from '@calistenia/core/types'
@@ -328,9 +328,10 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
       )
       // Cancelar la hoja nativa cae al descargador, así que `share_confirmed`
       // distingue un envío real de una simple exportación del PNG.
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+      trackShareCardShared({
         surface: 'post_workout', source: 'workout_completion', share_type: 'workout',
-        result: outcome === 'shared' ? 'shared' : 'downloaded',
+        platform: 'web',
+        result: outcome,
         share_confirmed: outcome === 'shared',
         card_type: 'workout',
       })
