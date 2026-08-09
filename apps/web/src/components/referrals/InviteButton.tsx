@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { shareContent, type ShareMethod } from '../../lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 const BASE_URL = 'https://gym.guille.tech'
 
@@ -43,7 +43,11 @@ export function InviteButton({ referralCode, onCreateChallenge, className }: Inv
       url: inviteUrl,
     }, method)
 
-    if (ok) op.track('invite_sent', { method })
+    if (ok) {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.inviteSent, {
+        surface: 'referrals', source: 'quick_invite', share_type: method, result: 'sent', method,
+      })
+    }
 
     if (method === 'copy' && ok) {
       setCopied(true)

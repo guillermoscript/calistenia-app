@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button'
 import { Loader } from '../components/ui/loader'
 import { ShareButton } from '../components/ShareButton'
 import { shareContent, type ShareMethod } from '../lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 const REFERRAL_CODE_KEY = 'calistenia_referral_code'
 const BASE_URL = 'https://gym.guille.tech'
@@ -52,7 +52,9 @@ export default function InviteLandingPage() {
     if (!code) return
     // Save referral code to localStorage immediately
     localStorage.setItem(REFERRAL_CODE_KEY, code)
-    op.track('invite_landing_viewed', { code, has_challenge: !!challengeId })
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.inviteLandingViewed, {
+      surface: 'invite_landing', source: 'referral_link', result: 'viewed', code, has_challenge: !!challengeId,
+    })
 
     const load = async () => {
       setLoading(true)

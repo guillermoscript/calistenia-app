@@ -112,18 +112,25 @@ export function shareApp(method?: ShareMethod) {
   }, method)
 }
 
+/** How an image export actually completed, for analytics. */
+export type ShareImageOutcome = 'shared' | 'downloaded'
+
 /**
  * Share an image blob via Web Share API with proper canShare check,
  * falling back to download if file sharing is not supported.
+ *
+ * Returns how it completed: 'shared' only when the Web Share API resolved (the
+ * user went through with it). Cancelling the sheet falls back to a download and
+ * returns 'downloaded', so callers can avoid counting it as a confirmed share.
  */
-export async function shareImage(blob: Blob, filename: string, title?: string, text?: string): Promise<void> {
+export async function shareImage(blob: Blob, filename: string, title?: string, text?: string): Promise<ShareImageOutcome> {
   const file = new File([blob], filename, { type: 'image/png' })
 
   // Check if the browser supports sharing files specifically
   if (navigator.share && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title, text })
-      return
+      return 'shared'
     } catch {
       // User cancelled or share failed — fall through to download
     }
@@ -136,6 +143,7 @@ export async function shareImage(blob: Blob, filename: string, title?: string, t
   a.download = filename
   a.click()
   URL.revokeObjectURL(url)
+  return 'downloaded'
 }
 
 /**

@@ -1,5 +1,5 @@
 /** Retos — port móvil de ChallengesPage (useChallenges de core). */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View, FlatList, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -13,6 +13,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallenges, type ChallengeWithMeta } from '@calistenia/core/hooks/useChallenges'
 import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,26 @@ export default function ChallengesScreen() {
 
   const items: ChallengeWithMeta[] = filter === 'active' ? active : past
 
+  // Una vista por reto y por visita a la pantalla: `items` cambia de identidad
+  // en cada refetch (montaje, invalidate, staleTime), así que sin este registro
+  // el mismo reto se contaría varias veces y hundiría la conversión vista→unión.
+  const viewedRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    for (const challenge of items) {
+      const seenKey = `${filter}:${challenge.id}`
+      if (viewedRef.current.has(seenKey)) continue
+      viewedRef.current.add(seenKey)
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeViewed, {
+        surface: 'challenge_list',
+        source: filter,
+        challenge_id: challenge.id,
+        participant_count: challenge.participantCount,
+        result: 'viewed',
+      })
+    }
+  }, [filter, items])
+
   const handleJoin = async (challenge: ChallengeWithMeta) => {
     if (!userId) {
       Alert.alert('Inicia sesión para unirte a un reto')
@@ -46,6 +67,13 @@ export default function ChallengesScreen() {
       await pb.collection('challenge_participants').create({
         challenge: challenge.id,
         user: userId,
+      })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
+        surface: 'challenge_list',
+        source: 'challenge_list',
+        challenge_id: challenge.id,
+        participant_count: challenge.participantCount + 1,
+        result: 'joined',
       })
       await load()
     } catch (e: any) {

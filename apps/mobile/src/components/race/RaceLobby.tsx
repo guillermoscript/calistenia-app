@@ -1,6 +1,6 @@
 /** Sala de espera de la carrera — port móvil del RaceLobby web. */
 import { useEffect, useRef, useState } from 'react'
-import { View, Pressable, Share, Alert } from 'react-native'
+import { View, Pressable, Share, Alert, Platform } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Share2, Crown } from 'lucide-react-native'
 import { Text } from '@/components/ui/text'
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { useRaceContext } from '@/contexts/RaceContext'
 import { haptics } from '@/lib/haptics'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 const WEB_ORIGIN = 'https://gym.guille.tech'
 
@@ -32,8 +33,17 @@ export default function RaceLobby({ displayName }: { displayName: string }) {
     ? `${race.target_distance_km} km`
     : `${Math.round(race.target_duration_seconds / 60)} min`
 
-  const handleShare = () => {
-    void Share.share({ message: `${race.name} — ${WEB_ORIGIN}/race/${race.id}` })
+  const handleShare = async () => {
+    const result = await Share.share({ message: `${race.name} — ${WEB_ORIGIN}/race/${race.id}` })
+    if (result.action !== Share.sharedAction) return
+    // En Android `Share.share` devuelve siempre `sharedAction`, también al
+    // descartar la hoja: solo iOS confirma el envío. `share_confirmed` deja ver
+    // esa diferencia en vez de inflar Android en silencio.
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
+      surface: 'battle', source: 'race_lobby', battle_id: race.id,
+      share_type: 'invite_link', participant_count: participants.length, result: 'shared',
+      share_confirmed: Platform.OS === 'ios',
+    })
   }
 
   const handleJoin = async () => {

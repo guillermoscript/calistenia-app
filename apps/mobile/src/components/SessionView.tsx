@@ -39,6 +39,7 @@ import type { Exercise, Workout, ExerciseLog, SetData, ExerciseTiming, ExerciseT
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { getCelebrationTagline } from '@calistenia/core/lib/celebration'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import Confetti from '@/components/Confetti'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -526,6 +527,15 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
   const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
   const [sharing, setSharing] = useState(false)
 
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.postWorkoutActionViewed, {
+      surface: 'post_workout',
+      source: 'workout_completion',
+      workout_id: workoutKey,
+      result: 'viewed',
+    })
+  }, [workoutKey])
+
   const userName = (user?.display_name as string) || (user?.name as string) || 'Atleta'
   const avatarUrl = user ? getUserAvatarUrl(user, '200x200') : null
   const referralCode = (user?.referral_code as string) || null
@@ -553,6 +563,14 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           referralCode,
         })
         await shareImage(uri, { message, title: 'Compartir sesión' })
+        // Este es el botón de compartir principal de la pantalla de celebración
+        // (no pasa por WorkoutShareButton): sin esto el paso 1→2 del embudo de
+        // crecimiento sale a cero en móvil. `Sharing.shareAsync` no confirma el
+        // envío, de ahí `share_confirmed: false`.
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+          surface: 'post_workout', source: 'workout_completion', share_type: 'workout',
+          workout_id: workoutKey, result: 'shared', share_confirmed: false, card_type: 'workout',
+        })
       }
     } catch {
       // User cancelled the share sheet or capture failed — no-op.

@@ -12,7 +12,7 @@ import { Image } from 'expo-image'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { shareImage, shareCardioSession } from '@/lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { CardioSession } from '@calistenia/core/types'
 
@@ -72,7 +72,8 @@ export default function CardioShareButton({
       await shareImage(uri, { message: `${message}\n${url}` })
 
       // 5. Track.
-      op.track('share_card_shared', {
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+        surface: 'cardio', source: 'cardio_completion', share_type: 'cardio', result: 'shared',
         card_type: 'cardio',
         activity: session.activity_type,
       })

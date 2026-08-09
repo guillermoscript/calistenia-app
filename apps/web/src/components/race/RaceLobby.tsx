@@ -5,6 +5,7 @@ import { useRaceContext } from '../../contexts/RaceContext'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import RaceMap from './RaceMap'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export default function RaceLobby() {
   const { t } = useTranslation()
@@ -30,9 +31,21 @@ export default function RaceLobby() {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: race.name, url: raceUrl }) } catch { /* cancelled */ }
+      try {
+        await navigator.share({ title: race.name, url: raceUrl })
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
+          surface: 'battle', source: 'race_lobby', battle_id: race.id,
+          share_type: 'invite_link', participant_count: participants.length, result: 'shared',
+        })
+      } catch { /* cancelled */ }
     } else {
-      try { await navigator.clipboard.writeText(raceUrl) } catch { /* ignore */ }
+      try {
+        await navigator.clipboard.writeText(raceUrl)
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
+          surface: 'battle', source: 'race_lobby', battle_id: race.id,
+          share_type: 'invite_link', participant_count: participants.length, result: 'shared',
+        })
+      } catch { /* ignore */ }
     }
   }
 

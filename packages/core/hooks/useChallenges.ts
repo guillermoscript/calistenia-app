@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { op } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { todayStr } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
 import type { Challenge, ChallengeMetric, ChallengeStatus } from '../types'
@@ -128,7 +128,12 @@ export function useChallenges(userId: string | null) {
         if (cancelled) return
         try {
           await pb.collection('challenges').update(id, { status: 'ended' })
-          op.track('challenge_completed', { challenge_id: id })
+          trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeCompleted, {
+            surface: 'challenge',
+            source: 'challenge_expired',
+            challenge_id: id,
+            result: 'completed',
+          })
         } catch { /* solo el creador puede actualizar; ignorar si no lo es */ }
       }
       if (!cancelled) {

@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../../lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
 import { fillRRect, CARD_COLORS } from '../../lib/canvas-helpers'
@@ -366,7 +366,16 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
         `${race.name} — #${rank + 1}`,
         `#${rank + 1} en ${race.name} — ${me.distance_km.toFixed(2)} km\ncalistenia-app.com`,
       )
-      op.track('share_card_shared', { card_type: 'race_result', rank: rank + 1 })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+        surface: 'battle', source: 'race_result', battle_id: race.id,
+        share_type: 'race_result', participant_count: participants.length,
+        result: 'shared', card_type: 'race_result', rank: rank + 1,
+      })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
+        surface: 'battle', source: 'race_result', battle_id: race.id,
+        share_type: 'race_result', participant_count: participants.length,
+        result: 'shared', rank: rank + 1,
+      })
     } catch (e) {
       console.warn('Share error:', e)
     }

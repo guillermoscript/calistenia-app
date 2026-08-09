@@ -41,7 +41,7 @@ import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { shareImage, shareNutritionDay } from '@/lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { NutritionEntry, QualityScore } from '@calistenia/core/types'
 import { buildShareMeals } from '@calistenia/core/lib/share-meals'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
@@ -179,7 +179,9 @@ export default function NutritionShareButton({
       // 5. Share.
       await shareImage(uri, { message: `${message}\n${url}`, title: 'Compartir nutrición' })
 
-      op.track('share_card_shared', { card_type: 'nutrition', variant })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.shareCardShared, {
+        surface: 'nutrition', source: 'daily_summary', share_type: 'nutrition', result: 'shared', card_type: 'nutrition', variant,
+      })
 
       setModalVisible(false)
     } catch {

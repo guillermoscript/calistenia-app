@@ -12,7 +12,7 @@ import { Input } from '../ui/input'
 import { cn } from '../../lib/utils'
 import RouteDrawer from './RouteDrawer'
 import { createRace } from '../../lib/race/raceApi'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { Race, RaceMode, RaceActivityType } from '@calistenia/core/types/race'
 
 interface Props {
@@ -69,6 +69,10 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
         target_distance_km: race.target_distance_km,
         target_duration_seconds: race.target_duration_seconds,
         has_route: routePoints.length > 0,
+      })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCreated, {
+        surface: 'battle', source: 'race_create', battle_id: race.id,
+        participant_count: 1, result: 'created', mode, activity_type: activityType,
       })
       onCreated(race)
       setName('')

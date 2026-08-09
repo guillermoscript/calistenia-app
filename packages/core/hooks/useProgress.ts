@@ -3,7 +3,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
 import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightAsUTC, utcToLocalDateStr, startOfWeekStr, addDays, diffDays } from '../lib/dateUtils'
-import { op } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { parseRepsForPR, estimate1RM } from '../lib/pr-utils'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, WeightPR } from '../types'
@@ -37,6 +37,116 @@ const PR_PATTERNS: Array<{ test: (id: string) => boolean; key: keyof Settings }>
 /** Legacy pr_* field for an id, or null if it is not one of the 5 families. */
 const legacyPrKey = (id: string): keyof Settings | null =>
   PR_PATTERNS.find(p => p.test(id))?.key ?? null
+
+/** Challenge metrics whose score is read from a legacy pr_* settings field. */
+const CHALLENGE_PR_METRIC_FIELD: Record<string, keyof Settings> = {
+  most_pullups: 'pr_pullups',
+  most_pushups: 'pr_pushups',
+  most_lsit: 'pr_lsit',
+  most_handstand: 'pr_handstand',
+}
+
+/**
+ * Whether completing this workout can actually move the challenge's score, as
+ * computed by `getScore` in useChallengeDetail. Emitting for every active
+ * challenge would make `challenge_joined → challenge_progress_updated` convert
+ * at ~100% no matter what the user trained.
+ */
+const workoutAffectsChallenge = (challenge: any, loggedExerciseIds: Set<string>): boolean => {
+  switch (challenge.metric) {
+    // Scored from the session count / session dates: any completion counts.
+    case 'most_sessions':
+    case 'longest_streak':
+      return true
+    // Scored from the best set of one exercise inside the window.
+    case 'exercise':
+      return !!challenge.exercise_slug && loggedExerciseIds.has(challenge.exercise_slug)
+    // Scored from a pr_* field, which only moves when that family was trained.
+    case 'most_pullups':
+    case 'most_pushups':
+    case 'most_lsit':
+    case 'most_handstand':
+      return [...loggedExerciseIds].some(id => legacyPrKey(id) === CHALLENGE_PR_METRIC_FIELD[challenge.metric])
+    // 'custom' is scored manually and never derives from a workout.
+    default:
+      return false
+  }
+}
+
+/**
+ * Emit `program_milestone_completed` once every configured day of the phase has
+ * a completion **for this program**.
+ *
+ * Completion is read from PocketBase scoped by `program` rather than from the
+ * progress cache: that cache is deliberately program-agnostic (localStorage is a
+ * single global blob and `loadFromPB` also pulls sessions with `program = ""`),
+ * so another program's `p1_lun` would satisfy this program's phase 1 — and the
+ * marker written below would then suppress the real milestone forever. Cardio
+ * days live in `cardio_sessions`, so both collections are consulted; the local
+ * marker keeps the event idempotent across re-renders and both platforms.
+ */
+async function emitProgramMilestoneIfCompleted(userId: string, programId: string, workoutKey: string): Promise<void> {
+  const match = /^p(\d+)_/.exec(workoutKey)
+  if (!match) return
+  const phase = Number(match[1])
+  const milestoneKey = `calistenia_program_milestone_${userId}_${programId}_${phase}`
+  if (storage.getItem(milestoneKey)) return
+
+  const dayPrefix = `p${phase}_`
+  try {
+    const [exerciseDays, configuredDays, sessions, cardioSessions] = await Promise.all([
+      pb.collection('program_exercises').getFullList({
+        filter: pb.filter('program = {:pid} && phase_number = {:phase}', { pid: programId, phase }),
+        fields: 'day_id',
+        $autoCancel: false,
+      }).catch(() => [] as any[]),
+      pb.collection('program_day_config').getFullList({
+        filter: pb.filter('program = {:pid} && phase_number = {:phase} && day_type != "rest"', { pid: programId, phase }),
+        fields: 'day_id,day_type',
+        $autoCancel: false,
+      }).catch(() => [] as any[]),
+      pb.collection('sessions').getFullList({
+        filter: pb.filter('user = {:uid} && program = {:pid} && workout_key ~ {:prefix}', { uid: userId, pid: programId, prefix: `${dayPrefix}%` }),
+        fields: 'workout_key',
+        $autoCancel: false,
+      }).catch(() => [] as any[]),
+      pb.collection('cardio_sessions').getFullList({
+        filter: pb.filter('user = {:uid} && program = {:pid} && program_day_key ~ {:prefix}', { uid: userId, pid: programId, prefix: `${dayPrefix}%` }),
+        fields: 'program_day_key',
+        $autoCancel: false,
+      }).catch(() => [] as any[]),
+    ])
+    const requiredDays = new Set<string>([
+      ...exerciseDays.map((record: any) => record.day_id).filter(Boolean),
+      ...configuredDays.map((record: any) => record.day_id).filter(Boolean),
+    ])
+    if (requiredDays.size === 0) return
+
+    // `~` is a LIKE match, where `_` is a single-char wildcard: re-check the
+    // prefix exactly before slicing it off.
+    const completedDays = new Set<string>(
+      [
+        ...sessions.map((record: any) => record.workout_key),
+        ...cardioSessions.map((record: any) => record.program_day_key),
+      ]
+        .filter((key: unknown): key is string => typeof key === 'string' && key.startsWith(dayPrefix))
+        .map((key: string) => key.slice(dayPrefix.length)),
+    )
+    if (![...requiredDays].every(day => completedDays.has(day))) return
+
+    storage.setItem(milestoneKey, 'true')
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programMilestoneCompleted, {
+      surface: 'program',
+      source: 'workout_completion',
+      program_id: programId,
+      workout_id: workoutKey,
+      milestone_id: `phase_${phase}`,
+      result: 'phase_completed',
+    })
+  } catch {
+    // Analytics must never make workout completion fail.
+  }
+}
 
 /**
  * Scan all logged sets and rebuild the full `prs` map (every exercise id) plus
@@ -408,8 +518,51 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         storage.setItem(psKey, Date.now().toString())
         op.track('program_started', { program_id: activeProgramId })
       }
+
+      if (usePB && userId) void emitProgramMilestoneIfCompleted(userId, activeProgramId, workoutKey)
     }
-  }, [usePB, userId, activeProgramId, patchProgress])
+
+    // Challenge scores are computed from the same workout/sets data. Emit a
+    // lightweight progress event for each active challenge the workout can
+    // actually move, without sending notes, health data, or free-form content.
+    // Deliberately outside the program branch: free/manual sessions score
+    // challenges too.
+    if (usePB && userId) {
+      const loggedExerciseIds = new Set<string>(
+        Object.values(qc.getQueryData<ProgressData>(qk.sessions(userId, activeProgramId))?.progress ?? {})
+          .filter((entry: any) => Array.isArray(entry?.sets) && entry.workoutKey === workoutKey && entry.date === d)
+          .map((entry: any) => entry.exerciseId)
+          .filter(Boolean),
+      )
+      void (async () => {
+        try {
+          const participations = await pb.collection('challenge_participants').getFullList({
+            filter: pb.filter('user = {:uid}', { uid: userId }),
+            expand: 'challenge',
+            $autoCancel: false,
+          })
+          const today = todayStr()
+          for (const participation of participations as any[]) {
+            const challenge = participation.expand?.challenge
+            if (!challenge || challenge.status !== 'active') continue
+            // starts_at/ends_at may carry a PB time component; compare dates only.
+            if (challenge.ends_at?.slice(0, 10) < today) continue
+            if (challenge.starts_at && challenge.starts_at.slice(0, 10) > today) continue
+            if (!workoutAffectsChallenge(challenge, loggedExerciseIds)) continue
+            trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeProgressUpdated, {
+              surface: 'challenge',
+              source: 'workout_completion',
+              workout_id: workoutKey,
+              challenge_id: challenge.id || participation.challenge,
+              result: 'updated',
+            })
+          }
+        } catch {
+          // Challenge analytics is best-effort and can be unavailable offline.
+        }
+      })()
+    }
+  }, [usePB, userId, activeProgramId, patchProgress, qc])
 
   // ─── unmarkWorkoutDone ───────────────────────────────────────────────────
   const markCardioDayDone = useCallback((workoutKey: string, cardioSessionId: string, note: string = '', date?: string) => {
@@ -419,7 +572,13 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       ...prev,
       [k]: { done: true as const, date: d, workoutKey, completedAt: Date.now(), note, cardioSessionId },
     }))
-  }, [patchProgress])
+    // A cardio day counts toward the phase like any other non-rest day, so the
+    // milestone has to be re-checked here too — otherwise a phase that ends on
+    // its cardio day never emits.
+    if (usePB && userId && activeProgramId) {
+      void emitProgramMilestoneIfCompleted(userId, activeProgramId, workoutKey)
+    }
+  }, [patchProgress, usePB, userId, activeProgramId])
 
   const unmarkWorkoutDone = useCallback(async (workoutKey: string, date?: string) => {
     const d = date || todayStr()
