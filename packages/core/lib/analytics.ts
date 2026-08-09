@@ -7,6 +7,7 @@ import { getPlatform, type CoreAnalytics } from '../platform'
 /** Canonical growth-loop events shared by web and mobile. */
 export const CANONICAL_ANALYTICS_EVENTS = {
   postWorkoutActionViewed: 'post_workout_action_viewed',
+  postWorkoutActionSelected: 'post_workout_action_selected',
   shareCardShared: 'share_card_shared',
   inviteSent: 'invite_sent',
   inviteLandingViewed: 'invite_landing_viewed',
@@ -36,6 +37,8 @@ export interface CanonicalAnalyticsProperties {
   battle_id?: string
   share_type?: string
   participant_count?: number
+  /** Acción elegida dentro de una superficie con varias, p. ej. el panel post-entreno. */
+  action?: string
   result?: string
   [key: string]: unknown
 }

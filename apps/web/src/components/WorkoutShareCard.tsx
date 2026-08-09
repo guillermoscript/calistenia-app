@@ -19,9 +19,16 @@ interface WorkoutShareCardProps {
   userName?: string
   avatarUrl?: string | null
   referralCode?: string | null
+  /** Etiqueta del disparador; por defecto "COMPARTIR". */
+  label?: string
+  /** 'outline' (por defecto) o 'default' para usarlo como CTA primario. */
+  variant?: 'outline' | 'default'
+  className?: string
+  /** Se invoca al pulsar, antes de generar la imagen (analítica del que lo aloja). */
+  onPress?: () => void
 }
 
-export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin, date, exercises, quote, userName, avatarUrl, referralCode }: WorkoutShareCardProps) {
+export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin, date, exercises, quote, userName, avatarUrl, referralCode, label, variant = 'outline', className, onPress }: WorkoutShareCardProps) {
   const dateStr = date || todayStr()
 
   const handleShare = useCallback(async () => {
@@ -334,11 +341,11 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
 
   return (
     <Button
-      variant="outline"
-      onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleShare() }}
-      className="font-mono text-[10px] tracking-[2px] border-lime/25 text-lime hover:bg-lime/10 h-11 px-5"
+      variant={variant}
+      onClick={(e: React.MouseEvent) => { e.stopPropagation(); onPress?.(); handleShare() }}
+      className={className ?? 'font-mono text-[10px] tracking-[2px] border-lime/25 text-lime hover:bg-lime/10 h-11 px-5'}
     >
-      COMPARTIR
+      {label ?? 'COMPARTIR'}
     </Button>
   )
 }
