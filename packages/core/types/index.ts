@@ -710,6 +710,22 @@ export type {
   RaceGpsPoint,
 } from './race'
 
+// ─── Collaborative circuit battles ────────────────────────────────────────
+export type {
+  BattleStatus,
+  BattleParticipantStatus,
+  BattleTarget,
+  BattleExerciseTarget,
+  BattleScoringMode,
+  BattleConfiguration,
+  Battle,
+  BattleProgress,
+  BattleParticipant,
+  BattleInvite,
+  BattleScoreInput,
+  BattleScore,
+} from './battle'
+
 // ─── Pantry ─────────────────────────────────────────────────────────────────
 export type {
   PantryCategory, PantryUnit, PantryConfidence, PantryStatus, PantrySource,
