@@ -17,11 +17,69 @@ export function captureReferralCode(code: string) {
   storage.setItem(REFERRAL_CODE_KEY, code)
 }
 
+/** Existing-account login must not leave attribution for a future user. */
+export function discardCapturedReferralCode(): void {
+  storage.removeItem(REFERRAL_CODE_KEY)
+}
+
 /** Get and clear stored referral code. */
 function consumeReferralCode(): string | null {
   const code = storage.getItem(REFERRAL_CODE_KEY)
   if (code) storage.removeItem(REFERRAL_CODE_KEY)
   return code
+}
+
+export async function completeNewUserRegistration(
+  user: RecordModel,
+  method: 'email' | 'google',
+): Promise<void> {
+  op.identify({ profileId: user.id, firstName: user.display_name || user.name || '', email: user.email, properties: { tier: 'free', role: 'user' } })
+  op.track('signup_completed', { method })
+
+  const displayName = user.display_name || user.name || user.email?.split('@')[0] || 'USER'
+  try {
+    const sanitized = displayName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, '-')
+      .toUpperCase()
+      .slice(0, 10) || 'USER'
+
+    const hash = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+      .map((b: number) => b.toString(36).toUpperCase())
+      .join('')
+      .slice(0, 6)
+
+    const code = `${sanitized}-${hash}`
+    await pb.collection('users').update(user.id, { referral_code: code }).catch(() => {})
+  } catch { /* non-critical */ }
+
+  const referrerCode = consumeReferralCode()
+  if (!referrerCode) return
+
+  try {
+    const referrerUsers = await pb.collection('users').getList(1, 1, {
+      filter: pb.filter('referral_code = {:code}', { code: referrerCode }),
+      $autoCancel: false,
+    })
+    if (referrerUsers.items.length === 0) return
+
+    const referrer = referrerUsers.items[0]
+    if (referrer.id === user.id) return
+
+    await pb.collection('referrals').create({
+      referrer: referrer.id,
+      referred: user.id,
+      source: 'quick_invite',
+    })
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.referralConverted, {
+      surface: 'referral',
+      source: 'quick_invite',
+      result: 'converted',
+      referrer_id: referrer.id,
+    })
+  } catch { /* non-critical */ }
 }
 
 interface UseAuthReturn {
@@ -114,67 +172,14 @@ export function useAuth(): UseAuthReturn {
   }, [qc])
 
   // Track whether this is a new user (first OAuth login) to trigger post-registration side effects
-  const justRegistered = useRef(false)
+  const registrationMethod = useRef<'email' | 'google' | null>(null)
 
   // ── Post-registration: generate referral code + track referral ──────────
   useEffect(() => {
-    if (!justRegistered.current || !user) return
-    justRegistered.current = false
-
-    const postRegister = async () => {
-      op.identify({ profileId: user.id, firstName: user.display_name || user.name || '', email: user.email, properties: { tier: 'free', role: 'user' } })
-      op.track('signup_completed', { method: user.email ? 'email' : 'google' })
-
-      // Generate referral code for the new user
-      const displayName = user.display_name || user.name || user.email?.split('@')[0] || 'USER'
-      try {
-        const sanitized = displayName
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-zA-Z0-9\s]/g, '')
-          .replace(/\s+/g, '-')
-          .toUpperCase()
-          .slice(0, 10) || 'USER'
-
-        const hash = Array.from(crypto.getRandomValues(new Uint8Array(4)))
-          .map((b: number) => b.toString(36).toUpperCase())
-          .join('')
-          .slice(0, 6)
-
-        const code = `${sanitized}-${hash}`
-        await pb.collection('users').update(user.id, { referral_code: code }).catch(() => {})
-      } catch { /* non-critical */ }
-
-      // Track referral if there's a stored referral code
-      const referrerCode = consumeReferralCode()
-      if (!referrerCode) return
-
-      try {
-        const referrerUsers = await pb.collection('users').getList(1, 1, {
-          filter: pb.filter('referral_code = {:code}', { code: referrerCode }),
-          $autoCancel: false,
-        })
-        if (referrerUsers.items.length === 0) return
-
-        const referrer = referrerUsers.items[0]
-        if (referrer.id === user.id) return // block self-referral
-
-        // Create referral record — server hook handles follows, points, and notifications
-        await pb.collection('referrals').create({
-          referrer: referrer.id,
-          referred: user.id,
-          source: 'quick_invite',
-        })
-        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.referralConverted, {
-          surface: 'referral',
-          source: 'quick_invite',
-          result: 'converted',
-          referrer_id: referrer.id,
-        })
-      } catch { /* non-critical */ }
-    }
-
-    postRegister()
+    if (!registrationMethod.current || !user) return
+    const method = registrationMethod.current
+    registrationMethod.current = null
+    void completeNewUserRegistration(user, method)
   }, [user])
 
   // ── signInWithGoogle ───────────────────────────────────────────────────
@@ -185,8 +190,9 @@ export function useAuth(): UseAuthReturn {
       const result = await loginWithOAuth2('google')
       // If this is a newly created user (no referral_code yet), trigger post-registration
       if (result.record && !result.record.referral_code) {
-        justRegistered.current = true
+        registrationMethod.current = 'google'
       } else {
+        discardCapturedReferralCode()
         op.track('login_completed', { method: 'google' })
       }
     } catch (err: any) {
@@ -203,6 +209,7 @@ export function useAuth(): UseAuthReturn {
     setIsLoading(true)
     try {
       await pb.collection('users').authWithPassword(email, password)
+      discardCapturedReferralCode()
       op.track('login_completed', { method: 'email' })
     } catch (err: any) {
       setAuthError(err?.message || i18n.t('auth.loginError'))
@@ -225,7 +232,7 @@ export function useAuth(): UseAuthReturn {
       // Auto-login after signup
       const result = await pb.collection('users').authWithPassword(email, password)
       if (result.record && !result.record.referral_code) {
-        justRegistered.current = true
+        registrationMethod.current = 'email'
       }
     } catch (err: any) {
       setAuthError(err?.message || i18n.t('auth.signupError'))

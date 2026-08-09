@@ -1,5 +1,6 @@
-import { Share } from 'react-native'
+import { Linking, Share } from 'react-native'
 import * as Sharing from 'expo-sharing'
+import * as Clipboard from 'expo-clipboard'
 
 export const BASE_URL = 'https://gym.guille.tech'
 
@@ -143,6 +144,8 @@ export interface ReferralShareResult {
   url: string
 }
 
+export type ReferralShareChannel = 'native' | 'copy' | 'whatsapp'
+
 export function shareReferralInvite(
   displayName: string,
   referralCode: string,
@@ -150,6 +153,28 @@ export function shareReferralInvite(
   const url = inviteUrl(referralCode)
   const message = `${displayName} te invita a entrenar en Calistenia App 🤸\nÚnete y empieza gratis:`
   return { message, url }
+}
+
+export async function shareReferralInviteByChannel(
+  displayName: string,
+  referralCode: string,
+  channel: ReferralShareChannel,
+): Promise<boolean> {
+  const { message, url } = shareReferralInvite(displayName, referralCode)
+  const content = `${message}\n${url}`
+
+  if (channel === 'copy') {
+    await Clipboard.setStringAsync(url)
+    return true
+  }
+
+  if (channel === 'whatsapp') {
+    await Linking.openURL(`https://wa.me/?text=${encodeURIComponent(content)}`)
+    return true
+  }
+
+  const result = await Share.share({ message: content })
+  return result.action === Share.sharedAction
 }
 
 /** Deep link to the web nutrition page for a specific date. */

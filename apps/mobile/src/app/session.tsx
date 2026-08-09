@@ -32,7 +32,7 @@ export default function SessionScreen() {
     setSectionStartTime, getWarmupCooldownData, skipWarmup, skipCooldown,
     resumeEpoch,
   } = useActiveSession()
-  const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs } = useWorkoutActions()
+  const { logSet: onLogSet, markWorkoutDone: onMarkDone, getExerciseLogs, getTotalSessions } = useWorkoutActions()
   const router = useRouter()
   const authUser = useAuthUser()
   const { saveTemplate } = useFreeSessionTemplates(authUser?.id ?? null)
@@ -123,6 +123,7 @@ export default function SessionScreen() {
       initialProgress={progress}
       onProgressChange={setProgress}
       startedAt={startedAt}
+      totalSessions={getTotalSessions()}
       onSkipWarmup={skipWarmup}
       onSkipCooldown={skipCooldown}
       onSectionStartTimeChange={setSectionStartTime}

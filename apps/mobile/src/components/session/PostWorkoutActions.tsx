@@ -6,21 +6,26 @@
 // La celebración entera es un Pressable que lleva al home, así que el panel se
 // renderiza FUERA de ese Pressable (ver CelebrateScreen): si estuviera dentro,
 // la primera pulsación en cualquier acción sacaría al usuario de la pantalla.
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Pressable } from 'react-native'
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, RotateCcw, Share2, Swords, TrendingUp, UserPlus, X } from 'lucide-react-native'
+import { ChevronRight, Copy, MessageCircle, RotateCcw, Share2, Swords, TrendingUp, UserPlus, X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { haptics as haptic } from '@/lib/haptics'
-import { shareReferralInvite, shareText } from '@/lib/share'
+import { shareReferralInvite, shareReferralInviteByChannel, shareText, type ReferralShareChannel } from '@/lib/share'
 import { LIME, MUTED } from '@/components/session/constants'
 import { buildPostWorkoutActions, trackPostWorkoutAction, type PostWorkoutActionId } from '@calistenia/core/lib/post-workout-actions'
 import { usePostWorkoutChallenge } from '@calistenia/core/hooks/usePostWorkoutChallenge'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import {
+  markReferralPromptHandled,
+  markReferralPromptViewed,
+  shouldShowReferralPrompt,
+} from '@calistenia/core/lib/referral-prompt'
 
 const LIME_FG = 'hsl(0 0% 4%)'
 
@@ -31,6 +36,7 @@ export interface PostWorkoutActionsProps {
   exerciseIds: string[]
   referralCode: string | null
   userName: string
+  totalSessions: number
   /** Captura de la tarjeta en curso: la comparte el host, que es quien la monta. */
   sharing: boolean
   onShare: () => void
@@ -45,6 +51,7 @@ export function PostWorkoutActions({
   exerciseIds,
   referralCode,
   userName,
+  totalSessions,
   sharing,
   onShare,
   onRepeat,
@@ -54,6 +61,7 @@ export function PostWorkoutActions({
   const reduced = useReducedMotion()
   // Solo para esta finalización: no se persiste.
   const [dismissed, setDismissed] = useState(false)
+  const [promptVisible, setPromptVisible] = useState(false)
 
   const { challenge } = usePostWorkoutChallenge(userId ?? null, exerciseIds)
 
@@ -62,6 +70,20 @@ export function PostWorkoutActions({
     canRepeat: !!onRepeat,
     affectedChallengeId: challenge?.id ?? null,
   }), [referralCode, onRepeat, challenge?.id])
+
+  useEffect(() => {
+    if (dismissed) return
+    if (!shouldShowReferralPrompt({ userId, referralCode, totalSessions })) return
+
+    markReferralPromptViewed(userId!)
+    setPromptVisible(true)
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.referralPromptViewed, {
+      surface: 'post_workout',
+      source: 'workout_completion',
+      workout_id: workoutKey,
+      result: 'viewed',
+    })
+  }, [dismissed, userId, referralCode, totalSessions, workoutKey])
 
   const track = useCallback((action: PostWorkoutActionId) => {
     haptic.medium()
@@ -83,6 +105,42 @@ export function PostWorkoutActions({
       share_confirmed: false,
     })
   }, [referralCode, userName, track])
+
+  const handlePromptInvite = useCallback(async (channel: ReferralShareChannel) => {
+    if (!userId || !referralCode) return
+    haptic.medium()
+
+    try {
+      const completed = await shareReferralInviteByChannel(userName, referralCode, channel)
+      if (!completed) return
+
+      markReferralPromptHandled(userId)
+      setPromptVisible(false)
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.inviteSent, {
+        surface: 'post_workout',
+        source: 'workout_completion',
+        workout_id: workoutKey,
+        share_type: channel,
+        result: channel === 'copy' ? 'copied' : 'sent',
+        share_confirmed: channel === 'copy',
+      })
+    } catch {
+      // La hoja o el enlace pueden fallar/cancelarse; el prompt queda disponible.
+    }
+  }, [userId, referralCode, userName, workoutKey])
+
+  const handlePromptDismiss = useCallback(() => {
+    if (!userId) return
+    haptic.light()
+    markReferralPromptHandled(userId)
+    setPromptVisible(false)
+  }, [userId])
+
+  const handlePanelDismiss = useCallback(() => {
+    haptic.light()
+    if (promptVisible && userId) markReferralPromptHandled(userId)
+    setDismissed(true)
+  }, [promptVisible, userId])
 
   const handleChallenge = useCallback(() => {
     track('challenge')
@@ -116,6 +174,13 @@ export function PostWorkoutActions({
       entering={reduced ? undefined : FadeInDown.delay(620).duration(450)}
       className="mt-7 w-full max-w-[360px] self-center"
     >
+      {promptVisible && (
+        <ReferralPrompt
+          onShare={handlePromptInvite}
+          onDismiss={handlePromptDismiss}
+        />
+      )}
+
       <View className="mb-3 h-px bg-border" />
 
       <View className="mb-2.5 flex-row items-center justify-between">
@@ -123,7 +188,7 @@ export function PostWorkoutActions({
           {t('postWorkout.kicker')}
         </Text>
         <Pressable
-          onPress={() => { haptic.light(); setDismissed(true) }}
+          onPress={handlePanelDismiss}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel={t('postWorkout.dismiss')}
@@ -196,6 +261,95 @@ export function PostWorkoutActions({
         })}
       </View>
     </Animated.View>
+  )
+}
+
+function ReferralPrompt({
+  onShare,
+  onDismiss,
+}: {
+  onShare: (channel: ReferralShareChannel) => void
+  onDismiss: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <View className="mb-4 border-l border-lime pl-3.5">
+      <View className="mb-1.5 flex-row items-center justify-between">
+        <Text className="font-mono text-[9px] uppercase tracking-[3px] text-lime">
+          {t('referral.prompt.kicker')}
+        </Text>
+        <Pressable
+          onPress={onDismiss}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t('referral.prompt.dismiss')}
+          className="size-7 items-center justify-center"
+        >
+          <X size={14} color={MUTED} />
+        </Pressable>
+      </View>
+
+      <Text className="mb-3 font-sans text-[13px] leading-[18px] text-foreground/80">
+        {t('referral.prompt.question')}
+      </Text>
+
+      <View className="flex-row flex-wrap gap-2">
+        <PromptButton
+          icon={<Share2 size={14} color={LIME_FG} />}
+          label={t('referral.prompt.native')}
+          primary
+          onPress={() => onShare('native')}
+        />
+        <PromptButton
+          icon={<Copy size={14} color={MUTED} />}
+          label={t('referral.prompt.copy')}
+          onPress={() => onShare('copy')}
+        />
+        <PromptButton
+          icon={<MessageCircle size={14} color={MUTED} />}
+          label={t('referral.prompt.whatsapp')}
+          onPress={() => onShare('whatsapp')}
+        />
+      </View>
+
+      <Pressable
+        onPress={onDismiss}
+        accessibilityRole="button"
+        className="mt-3 self-start py-1"
+      >
+        <Text className="font-mono text-[10px] text-muted-foreground">
+          {t('referral.prompt.dismiss')}
+        </Text>
+      </Pressable>
+    </View>
+  )
+}
+
+function PromptButton({ icon, label, onPress, primary }: {
+  icon: React.ReactNode
+  label: string
+  onPress: () => void
+  primary?: boolean
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className={cn(
+        'min-h-10 flex-row items-center gap-1.5 rounded-md border px-3 py-2',
+        primary ? 'border-lime bg-lime active:bg-lime/90' : 'border-border active:bg-muted/40',
+      )}
+    >
+      {icon}
+      <Text className={cn(
+        'font-mono text-[10px] tracking-wide',
+        primary ? 'text-lime-foreground' : 'text-foreground',
+      )}>
+        {label}
+      </Text>
+    </Pressable>
   )
 }
 
