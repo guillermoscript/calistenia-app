@@ -1,6 +1,6 @@
 // Botón reutilizable "Repetir entrenamiento". Paridad con la web (WorkoutPage
-// muestra "▶ REPETIR" cuando isDone). Se usa en la card de hoy del home y en la
-// pantalla de celebración tras completar la sesión.
+// muestra "▶ REPETIR" cuando isDone). Se usa en la card de hoy del home; tras
+// completar la sesión, repetir vive en el panel post-entreno (#347).
 import { memo } from 'react'
 import { RotateCcw } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'

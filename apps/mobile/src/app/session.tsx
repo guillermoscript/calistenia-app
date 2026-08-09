@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useKeepAwake } from 'expo-keep-awake'
 
@@ -48,8 +48,14 @@ export default function SessionScreen() {
   // salir de la ruta. startSession ya reinicia el progreso del contexto.
   const [runId, setRunId] = useState(0)
 
+  // Salida deliberada del panel post-entreno hacia una ruta concreta. La guarda
+  // de abajo tiene que respetarla: cerrar la sesión pone isActive a false y la
+  // guarda respondería con un `replace('/(tabs)')` que se come el destino.
+  const leavingTo = useRef(false)
+
   // Sin sesión activa → volver al dashboard
   useEffect(() => {
+    if (leavingTo.current) return
     if (!isActive || !workout) {
       router.replace('/(tabs)')
     }
@@ -77,6 +83,15 @@ export default function SessionScreen() {
     setRunId(n => n + 1)
   }, [workout, workoutKey, source, startSession])
 
+  // El panel post-entreno navega a retos/historial: se cierra la sesión (si no,
+  // la barra de sesión seguiría viva en el destino) marcando antes la salida
+  // para que la guarda no la reescriba al home.
+  const handleNavigateAway = useCallback((path: string) => {
+    leavingTo.current = true
+    endSession()
+    router.replace(path as never)
+  }, [endSession, router])
+
   const handleMarkDone = useCallback((key: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => {
     saveFreeTemplate()
     const wcData = getWarmupCooldownData()
@@ -99,6 +114,7 @@ export default function SessionScreen() {
       onMarkDone={handleMarkDone}
       onGoToDashboard={handleGoToDashboard}
       onRepeat={handleRepeat}
+      onNavigateAway={handleNavigateAway}
       onExitSession={handleExitSession}
       onBack={goHome}
       getExerciseLogs={getExerciseLogs}

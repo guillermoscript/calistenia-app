@@ -25,7 +25,8 @@ Use the same property names and meanings on both platforms:
 | `battle_id` | Canonical id for the current race/battle flow | `race123` |
 | `share_type` | Asset or link shared | `workout`, `nutrition`, `race_result`, `invite_link` |
 | `participant_count` | Count known immediately after the action | `1`, `4` |
-| `result` | Outcome of the action | `viewed`, `joined`, `updated`, `completed`, `shared` |
+| `action` | Which option was chosen on a surface that offers several | `share`, `invite`, `challenge`, `progress`, `repeat` |
+| `result` | Outcome of the action | `viewed`, `selected`, `joined`, `updated`, `completed`, `shared` |
 
 Event-specific properties may be retained for analysis and backward
 compatibility, but must be low-cardinality and non-sensitive. Never send
@@ -37,6 +38,7 @@ GPS coordinates, or unnecessary personal data.
 | Event | Trigger | Shared properties | Platforms | Success definition |
 |---|---|---|---|---|
 | `post_workout_action_viewed` | Completion screen renders after a workout | `surface`, `source`, `workout_id`, `result` | Web + mobile | Completion action screen can be reached without an error |
+| `post_workout_action_selected` | A growth action is tapped in the post-workout panel | `surface`, `source`, `workout_id`, `action`, `result`; optional `challenge_id` | Web + mobile | One event per tap. Emitted *in addition to* the canonical event each action already produces (`share_card_shared`, `invite_sent`, `challenge_viewed`), which stay where they were so the existing funnels are unaffected |
 | `share_card_shared` | A card image is successfully shared | `surface`, `source`, `share_type`, `result`, `share_confirmed`; optional `workout_id` | Web + mobile | Share sheet/export succeeds; see "Share confirmation" below |
 | `invite_sent` | Referral invite is copied, handed to a share target, or sent to a specific user | `surface`, `source`, `share_type`, `result`; optional `challenge_id` | Web + mobile core | A link is copied, native share returns successfully, or an invite record is created |
 | `invite_landing_viewed` | Referral landing route renders | `surface`, `source`, `result` | Web | Referral landing is viewed and code is stored |
@@ -105,6 +107,7 @@ Create a dashboard called **Growth Loop v1** with these reports:
 | Challenge activation | Funnel | `challenge_viewed` → `challenge_joined` → `challenge_progress_updated` → `challenge_completed` | `surface` |
 | Battle adoption | Funnel | `battle_created` → `battle_joined` → `battle_started` → `battle_completed` | `share_type` |
 | Shares by type | Bar | `share_card_shared` (filter `share_confirmed = true` for confirmed sends) | `share_type` |
+| Post-workout panel | Bar | `post_workout_action_selected` | `action` |
 | Program milestones | Line | `program_milestone_completed` | `program_id` |
 
 This repository defines the report names, steps, filters, and breakdowns. The

@@ -47,7 +47,7 @@ import { shareImage, shareWorkoutSession } from '@/lib/share'
 import WorkoutShareCard from '@/components/share/WorkoutShareCard'
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import PRCelebration from '@/components/share/PRCelebration'
-import { RepeatTrainingButton } from '@/components/RepeatTrainingButton'
+import { PostWorkoutActions } from '@/components/session/PostWorkoutActions'
 import { buildSteps, computeExerciseBoundaries, findCurrentExerciseIndex, nextPhaseAfterSet, type Step } from '@/lib/session-machine'
 import { LIME, MUTED } from '@/components/session/constants'
 import { RestScreen } from '@/components/session/RestScreen'
@@ -501,7 +501,7 @@ function TimingBar({ name, pct, seconds, isMax, delay, animate }: {
   )
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, onDone, onRepeat }: {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, onDone, onRepeat, onNavigateAway }: {
   workoutTitle: string
   totalSetsLogged: number
   durationMin: number
@@ -510,6 +510,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
   timings: ExerciseTiming[]
   onDone: () => void
   onRepeat?: () => void
+  onNavigateAway: (path: string) => void
 }) {
   const { t } = useTranslation()
   const reduced = useReducedMotion()
@@ -526,6 +527,7 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
   const captureRef = useRef<ShareCardCaptureHandle>(null)
   const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
   const [sharing, setSharing] = useState(false)
+  const exerciseIds = useMemo(() => exercises.map(e => e.id), [exercises])
 
   useEffect(() => {
     trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.postWorkoutActionViewed, {
@@ -632,23 +634,6 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
         </Animated.View>
       )}
 
-      <Animated.View entering={reduced ? undefined : FadeInDown.delay(540).duration(450)} className="w-full max-w-[280px] gap-2.5">
-        <Button size="lg" className="w-full bg-lime active:bg-lime/90" onPress={() => { haptic.medium(); onDone() }}>
-          <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
-        </Button>
-        <Button variant="outline" size="lg" className="w-full" disabled={sharing} onPress={handleShare}>
-          <Text className="font-bebas text-lg tracking-[2px] text-foreground">{sharing ? 'GENERANDO…' : 'COMPARTIR'}</Text>
-        </Button>
-        {onRepeat && <RepeatTrainingButton tone="outline" onPress={onRepeat} />}
-      </Animated.View>
-
-      <Animated.Text
-        entering={reduced ? undefined : FadeIn.delay(800).duration(400)}
-        className="font-mono text-[11px] tracking-wide text-muted-foreground/50"
-      >
-        o toca en cualquier lugar
-      </Animated.Text>
-
       {/* Off-screen share card (captured to PNG on demand). Sized to the device
           screen for a full-bleed story image. */}
       <ShareCardCapture ref={captureRef} width={screenW} height={screenH}>
@@ -667,6 +652,35 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           height={screenH}
         />
       </ShareCardCapture>
+    </Pressable>
+
+    {/* Fuera del Pressable de arriba: sus pulsaciones no deben cerrar la
+        celebración. */}
+    <PostWorkoutActions
+      workoutKey={workoutKey}
+      userId={user?.id}
+      exerciseIds={exerciseIds}
+      referralCode={referralCode}
+      userName={userName}
+      sharing={sharing}
+      onShare={handleShare}
+      onRepeat={onRepeat}
+      onNavigateAway={onNavigateAway}
+    />
+
+    <Pressable onPress={onDone} className="items-center gap-2.5 pt-7">
+      <Animated.View entering={reduced ? undefined : FadeInDown.delay(720).duration(450)} className="w-full max-w-[280px]">
+        <Button size="lg" className="w-full bg-lime active:bg-lime/90" onPress={() => { haptic.medium(); onDone() }}>
+          <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
+        </Button>
+      </Animated.View>
+
+      <Animated.Text
+        entering={reduced ? undefined : FadeIn.delay(800).duration(400)}
+        className="font-mono text-[11px] tracking-wide text-muted-foreground/50"
+      >
+        o toca en cualquier lugar
+      </Animated.Text>
     </Pressable>
       </ScrollView>
     </View>
@@ -691,6 +705,8 @@ interface SessionViewProps {
   onMarkDone: (workoutKey: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => void
   onGoToDashboard: () => void
   onRepeat?: () => void
+  /** Cierra la sesión activa y navega a una ruta del panel post-entreno. */
+  onNavigateAway: (path: string) => void
   onExitSession: () => void
   onBack: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
@@ -711,6 +727,7 @@ export default function SessionView({
   onMarkDone,
   onGoToDashboard,
   onRepeat,
+  onNavigateAway,
   onExitSession,
   onBack,
   getExerciseLogs,
@@ -1091,6 +1108,7 @@ export default function SessionView({
           timings={finalTimings ?? []}
           onDone={onGoToDashboard}
           onRepeat={onRepeat}
+          onNavigateAway={onNavigateAway}
         />
       )}
 

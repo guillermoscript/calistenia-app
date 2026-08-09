@@ -6,6 +6,7 @@ import { todayStr, toLocalDateStr, nowLocalForPB, localDateForPB, localMidnightA
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { parseRepsForPR, estimate1RM } from '../lib/pr-utils'
+import { legacyPrKey, pickAffectedChallenges } from '../lib/challenge-scoring'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, WeightPR } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -23,54 +24,6 @@ export interface PREvent {
   /** For kind 'weight': reps performed at newValue kg and its estimated 1RM. */
   reps?: number
   e1rm?: number
-}
-
-// ─── PR pattern matching (module-level) ─────────────────────────────────────
-const PR_PATTERNS: Array<{ test: (id: string) => boolean; key: keyof Settings }> = [
-  { test: (id) => id.includes('pullup') || id.includes('chinup') || id === 'chin_up', key: 'pr_pullups' },
-  { test: (id) => id.includes('pushup'), key: 'pr_pushups' },
-  { test: (id) => id.startsWith('lsit') || id === 'l_sit', key: 'pr_lsit' },
-  { test: (id) => id.startsWith('pistol'), key: 'pr_pistol' },
-  { test: (id) => id.startsWith('handstand'), key: 'pr_handstand' },
-]
-
-/** Legacy pr_* field for an id, or null if it is not one of the 5 families. */
-const legacyPrKey = (id: string): keyof Settings | null =>
-  PR_PATTERNS.find(p => p.test(id))?.key ?? null
-
-/** Challenge metrics whose score is read from a legacy pr_* settings field. */
-const CHALLENGE_PR_METRIC_FIELD: Record<string, keyof Settings> = {
-  most_pullups: 'pr_pullups',
-  most_pushups: 'pr_pushups',
-  most_lsit: 'pr_lsit',
-  most_handstand: 'pr_handstand',
-}
-
-/**
- * Whether completing this workout can actually move the challenge's score, as
- * computed by `getScore` in useChallengeDetail. Emitting for every active
- * challenge would make `challenge_joined → challenge_progress_updated` convert
- * at ~100% no matter what the user trained.
- */
-const workoutAffectsChallenge = (challenge: any, loggedExerciseIds: Set<string>): boolean => {
-  switch (challenge.metric) {
-    // Scored from the session count / session dates: any completion counts.
-    case 'most_sessions':
-    case 'longest_streak':
-      return true
-    // Scored from the best set of one exercise inside the window.
-    case 'exercise':
-      return !!challenge.exercise_slug && loggedExerciseIds.has(challenge.exercise_slug)
-    // Scored from a pr_* field, which only moves when that family was trained.
-    case 'most_pullups':
-    case 'most_pushups':
-    case 'most_lsit':
-    case 'most_handstand':
-      return [...loggedExerciseIds].some(id => legacyPrKey(id) === CHALLENGE_PR_METRIC_FIELD[challenge.metric])
-    // 'custom' is scored manually and never derives from a workout.
-    default:
-      return false
-  }
 }
 
 /**
@@ -542,18 +495,17 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
             $autoCancel: false,
           })
           const today = todayStr()
-          for (const participation of participations as any[]) {
-            const challenge = participation.expand?.challenge
-            if (!challenge || challenge.status !== 'active') continue
-            // starts_at/ends_at may carry a PB time component; compare dates only.
-            if (challenge.ends_at?.slice(0, 10) < today) continue
-            if (challenge.starts_at && challenge.starts_at.slice(0, 10) > today) continue
-            if (!workoutAffectsChallenge(challenge, loggedExerciseIds)) continue
+          const affected = pickAffectedChallenges(
+            (participations as any[]).map(p => p.expand?.challenge),
+            loggedExerciseIds,
+            today,
+          )
+          for (const challenge of affected) {
             trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeProgressUpdated, {
               surface: 'challenge',
               source: 'workout_completion',
               workout_id: workoutKey,
-              challenge_id: challenge.id || participation.challenge,
+              challenge_id: challenge.id,
               result: 'updated',
             })
           }
