@@ -16,6 +16,30 @@ import {
 
 // ── Utilidades ───────────────────────────────────────────────────────────────
 
+/**
+ * La consulta exacta que manda `findMyActiveBattle`. Se fija aquí entera porque cada
+ * pieza se ganó a base de un fallo: el `sort` porque `battles` no tiene los autodate
+ * `created`/`updated` y ordenar por un campo inexistente da 400 (que el cliente no
+ * distingue de "no hay batalla"), y el `expand` porque el estado de la batalla por sí
+ * solo no dice si a mí me queda algo que hacer en ella.
+ */
+const ACTIVE_QS = "?perPage=10"
+  + "&filter=" + encodeURIComponent("status = 'draft' || status = 'lobby' || status = 'ready' || status = 'live'")
+  + "&sort=-last_activity_at"
+  + "&expand=battle_participants_via_battle"
+
+/**
+ * Espejo de `isBattleActiveForMe` de `packages/core/lib/battle.ts`. Se duplica por lo
+ * mismo que las máquinas de estado de `utils/battles.js`: este runner es node a pelo y
+ * no puede importar el TypeScript de core. La versión buena está testeada en vitest;
+ * esta existe para poder afirmar, sobre datos reales del servidor, qué decidiría.
+ */
+function isBattleActiveForMe(status, mySeat, amCreator) {
+  if (!["draft", "lobby", "ready", "live"].includes(status)) return false
+  if (mySeat === null || mySeat === undefined) return amCreator && status !== "live"
+  return mySeat !== "finished" && mySeat !== "left"
+}
+
 function config(overrides = {}) {
   return {
     workout_template_id: "circuit_basico",
@@ -718,13 +742,64 @@ test("un participante puede listar su batalla en curso, ordenada por actividad",
   // `created`/`updated`: ordenar por un campo inexistente da 400, y el cliente no
   // distingue ese 400 de "no hay batalla activa" — se queda sin ruta de vuelta.
   const ctx = await lobbyWithTwo()
-  const filtro = "status = 'draft' || status = 'lobby' || status = 'ready' || status = 'live'"
-  const qs = `?perPage=1&filter=${encodeURIComponent(filtro)}&sort=-last_activity_at`
 
   for (const usuario of [ctx.creator, ctx.friend]) {
-    const res = await api(`/api/collections/battles/records${qs}`, { token: await authAs(usuario) })
+    const res = await api(`/api/collections/battles/records${ACTIVE_QS}`, { token: await authAs(usuario) })
     assert.equal(res.items[0]?.id, ctx.battleId, "no recupera la batalla en curso del usuario")
   }
+})
+
+test("la consulta de batalla activa trae mi propia butaca expandida", async () => {
+  // La barra flotante no puede decidir con el estado de la batalla a secas: una batalla
+  // sigue `live` mientras quede alguien entrenando, mucho después de que yo terminara o
+  // me fuera. `isBattleActiveForMe` necesita mi fila de participante, y llega por la
+  // relación inversa — que además debe seguir respetando la regla de lectura.
+  const ctx = await liveBattle()
+  const res = await api(`/api/collections/battles/records${ACTIVE_QS}`, { token: await authAs(ctx.friend) })
+  const butacas = res.items[0]?.expand?.battle_participants_via_battle ?? []
+  const mia = butacas.find((b) => b.user === ctx.friend.id)
+
+  assert.ok(mia, "la relación inversa no devuelve la butaca del propio usuario")
+  assert.equal(mia.status, "active")
+})
+
+test("terminar mi turno saca la batalla de mi consulta de batalla activa", async () => {
+  // Regresión del bug que el usuario encontró en el dispositivo: terminó su circuito, la
+  // batalla siguió `live` porque el rival aún entrenaba, y la barra flotante siguió
+  // ofreciendo volver a una batalla en la que ya no le quedaba nada que hacer. Sin forma
+  // de quitarla: entrar y salir la dejaba igual.
+  const ctx = await liveBattle()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`)
+
+  const battle = await getOne("battles", ctx.battleId)
+  assert.equal(battle.status, "live", "la batalla debe seguir viva para el rival")
+
+  const res = await api(`/api/collections/battles/records${ACTIVE_QS}`, { token: await authAs(ctx.creator) })
+  const fila = res.items.find((b) => b.id === ctx.battleId)
+  const butacas = fila?.expand?.battle_participants_via_battle ?? []
+  const mia = butacas.find((b) => b.user === ctx.creator.id)
+
+  assert.equal(mia?.status, "finished", "la consulta debe poder ver que ya terminé")
+  assert.equal(
+    isBattleActiveForMe(fila.status, mia.status, fila.creator === ctx.creator.id),
+    false,
+    "la barra seguiría anunciando una batalla que el usuario ya cerró",
+  )
+})
+
+test("abandonar una batalla que sigue viva la saca de mi consulta de batalla activa", async () => {
+  const ctx = await liveBattle()
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/leave`)
+
+  const battle = await getOne("battles", ctx.battleId)
+  assert.equal(battle.status, "live", "queda un participante activo, la batalla sigue")
+
+  const res = await api(`/api/collections/battles/records${ACTIVE_QS}`, { token: await authAs(ctx.friend) })
+  const fila = res.items.find((b) => b.id === ctx.battleId)
+  const mia = (fila?.expand?.battle_participants_via_battle ?? []).find((b) => b.user === ctx.friend.id)
+
+  assert.equal(mia?.status, "left")
+  assert.equal(isBattleActiveForMe(fila.status, mia.status, false), false)
 })
 
 test("el cron NO toca un lobby recién creado", async () => {
