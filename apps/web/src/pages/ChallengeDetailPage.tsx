@@ -6,6 +6,10 @@ import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { getMetricUnit, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
+import {
+  resolvePresetChallengeDescription,
+  resolvePresetChallengeTitle,
+} from '@calistenia/core/lib/challenge-presets'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { ShareButton } from '../components/ShareButton'
 import { shareChallenge } from '../lib/share'
@@ -33,6 +37,8 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   // un reto borrado o sin permiso llega hasta aquí y no debe inflar el embudo.
   // El ref evita repetirla en cada refetch del leaderboard.
   const viewedIdRef = useRef<string | null>(null)
+  const progressTrackedRef = useRef<string | null>(null)
+  const completionTrackedRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!id || loading || !challenge) return
@@ -45,6 +51,35 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       result: 'viewed',
     })
   }, [id, loading, challenge])
+
+  useEffect(() => {
+    if (!id || loading) return
+    const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+    if (!currentEntry) return
+    const key = `${id}:${currentEntry.value}`
+    if (progressTrackedRef.current === key) return
+    progressTrackedRef.current = key
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeProgressUpdated, {
+      surface: 'challenge_detail',
+      source: 'challenge_route',
+      challenge_id: id,
+      progress_value: currentEntry.value,
+      result: 'updated',
+    })
+  }, [id, loading, leaderboard])
+
+  useEffect(() => {
+    if (!id || loading || !challenge?.goal || challenge.goal <= 0) return
+    const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+    if (!currentEntry || currentEntry.value < challenge.goal || completionTrackedRef.current === id) return
+    completionTrackedRef.current = id
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeCompleted, {
+      surface: 'challenge_detail',
+      source: 'challenge_goal_reached',
+      challenge_id: id,
+      result: 'completed',
+    })
+  }, [id, loading, challenge, leaderboard])
 
   if (!id) return null
 
@@ -82,6 +117,8 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
   const isCreator = challenge.creator === userId
   const isActive = challenge.status === 'active'
+  const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+  const goalReached = !!challenge.goal && !!currentEntry && currentEntry.value >= challenge.goal
   const unit = getMetricUnit(challenge.metric, challenge.exercise_slug)
   const metricLabel = getMetricLabel(challenge.metric, challenge.custom_metric, challenge.exercise_slug)
   const invitableUsers = following.filter(u => !participantIds.has(u.id))
@@ -104,7 +141,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
       {/* Header */}
       <div className="mb-6 motion-safe:animate-fade-in">
-        <h1 className="font-bebas text-3xl md:text-4xl leading-none mb-2">{challenge.title}</h1>
+        <h1 className="font-bebas text-3xl md:text-4xl leading-none mb-2">{resolvePresetChallengeTitle(challenge)}</h1>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-lime border border-lime/30 bg-lime/10">
             {metricLabel}
@@ -114,12 +151,12 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
               Meta: {challenge.goal}
             </span>
           )}
-          <span className={cn('text-[11px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
-            {daysRemaining(challenge.ends_at)}
+          <span className={cn('text-[11px]', goalReached ? 'text-lime' : isActive ? 'text-amber-400' : 'text-muted-foreground')}>
+            {goalReached ? t('challenge.preset.completed') : isActive ? daysRemaining(challenge.ends_at) : t('challenge.preset.expired')}
           </span>
         </div>
         {challenge.description && (
-          <div className="text-xs text-muted-foreground mt-2 leading-relaxed">{challenge.description}</div>
+          <div className="text-xs text-muted-foreground mt-2 leading-relaxed">{resolvePresetChallengeDescription(challenge)}</div>
         )}
         <div className="text-[10px] text-muted-foreground mt-2 opacity-70">
           {challenge.starts_at} → {challenge.ends_at}
@@ -130,7 +167,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       {isActive && (
         <div className="mb-6">
           <ShareButton
-            onShare={(method) => shareChallenge(challenge.title, challengeId, method)}
+            onShare={(method) => shareChallenge(resolvePresetChallengeTitle(challenge), challengeId, method)}
             className="hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
           />
         </div>
