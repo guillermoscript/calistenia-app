@@ -2530,6 +2530,8 @@
   "challenge.preset.difficulty": "Principiante",
   "challenge.preset.duration": "{{count}} días",
   "challenge.preset.target": "{{count}} entrenamientos",
+  "challenge.preset.targetUnit": "{{count}} {{unit}}",
+  "challenge.preset.joinError": "No se pudo empezar el reto. Revisa tu conexión e inténtalo de nuevo.",
   "challenge.preset.join": "UNIRME",
   "challenge.preset.joining": "UNIÉNDOME...",
   "challenge.preset.open": "VER PROGRESO",

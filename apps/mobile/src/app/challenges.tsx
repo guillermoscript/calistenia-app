@@ -15,6 +15,9 @@ import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import {
   BEGINNER_CHALLENGE_PRESETS,
   getPresetDateRange,
+  getPresetTargetLabel,
+  resolvePresetChallengeDescription,
+  resolvePresetChallengeTitle,
   type BeginnerChallengePreset,
 } from '@calistenia/core/lib/challenge-presets'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
@@ -70,8 +73,10 @@ export default function ChallengesScreen() {
     }
   }, [filter, items])
 
+  // Solo los retos activos "ocupan" un preset: una ronda terminada debe dejar
+  // volver a empezar, no bloquear la tarjeta en VER PROGRESO para siempre.
   const joinedPresets = new Map(
-    [...active, ...past]
+    active
       .filter(challenge => challenge.preset_key)
       .map(challenge => [challenge.preset_key!, challenge]),
   )
@@ -91,9 +96,9 @@ export default function ChallengesScreen() {
         {
           text: t('challenge.preset.join'),
           onPress: () => {
-            void joinPreset(preset.id).then(result => {
-              if (result) router.push(`/challenges/${result.challengeId}`)
-            })
+            void joinPreset(preset.id)
+              .then(result => router.push(`/challenges/${result.challengeId}`))
+              .catch(() => Alert.alert(t('challenge.preset.confirmTitle'), t('challenge.preset.joinError')))
           },
         },
       ],
@@ -151,40 +156,45 @@ export default function ChallengesScreen() {
         ))}
       </View>
 
-      {filter === 'active' ? (
-        <BeginnerPresetCatalog
-          joinedPresets={joinedPresets}
-          onJoin={handleJoinPreset}
-          onOpen={(challengeId) => router.push(`/challenges/${challengeId}`)}
-        />
-      ) : null}
-
-      {/* List */}
-      {loading ? (
-        <View className="flex-1 items-center justify-center gap-2 py-10">
-          <ActivityIndicator color="#a3e635" />
-          <Text className="font-mono text-xs text-muted-foreground">{t('common.loading')}</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          contentContainerClassName="px-4 pb-10 gap-2"
-          ListEmptyComponent={
+      {/*
+        El catálogo va como cabecera de la FlatList, no como View hermana: si no,
+        ocupa alto fijo, empuja la lista fuera de pantalla y nada de eso scrollea
+        (el último preset quedaba tapado por la barra de navegación).
+      */}
+      <FlatList
+        data={loading ? [] : items}
+        keyExtractor={(item) => item.id}
+        contentContainerClassName="px-4 pb-10 gap-2"
+        ListHeaderComponent={
+          filter === 'active' ? (
+            <BeginnerPresetCatalog
+              joinedPresets={joinedPresets}
+              onJoin={handleJoinPreset}
+              onOpen={(challengeId) => router.push(`/challenges/${challengeId}`)}
+            />
+          ) : null
+        }
+        ListEmptyComponent={
+          loading ? (
+            <View className="items-center justify-center gap-2 py-10">
+              <ActivityIndicator color="#a3e635" />
+              <Text className="font-mono text-xs text-muted-foreground">{t('common.loading')}</Text>
+            </View>
+          ) : (
             <EmptyState
               icon={Target}
               title={filter === 'active' ? t('challenges.emptyActive') : t('challenges.emptyPast')}
               body={t('challenges.emptyBody')}
             />
-          }
-          renderItem={({ item }) => (
-            <ChallengeCard
-              challenge={item}
-              onOpen={() => router.push(`/challenges/${item.id}`)}
-            />
-          )}
-        />
-      )}
+          )
+        }
+        renderItem={({ item }) => (
+          <ChallengeCard
+            challenge={item}
+            onOpen={() => router.push(`/challenges/${item.id}`)}
+          />
+        )}
+      />
     </SafeAreaView>
   )
 }
@@ -207,7 +217,7 @@ function ChallengeCard({ challenge: ch, onOpen }: ChallengeCardProps) {
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 min-w-0">
           <Text className="font-sans-medium text-foreground" numberOfLines={2}>
-            {ch.title}
+            {resolvePresetChallengeTitle(ch)}
           </Text>
         </View>
       </View>
@@ -250,7 +260,7 @@ function ChallengeCard({ challenge: ch, onOpen }: ChallengeCardProps) {
       {/* Description if present */}
       {ch.description ? (
         <Text className="font-mono text-[10px] text-muted-foreground/70 leading-relaxed" numberOfLines={2}>
-          {ch.description}
+          {resolvePresetChallengeDescription(ch)}
         </Text>
       ) : null}
     </Pressable>
@@ -269,7 +279,8 @@ function BeginnerPresetCatalog({
   const { t } = useTranslation()
 
   return (
-    <View className="px-4 pb-4 gap-2">
+    // Sin px-4: el padding horizontal ya lo pone el contentContainer de la lista.
+    <View className="pb-4 gap-2">
       <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
         {t('challenge.preset.kicker')}
       </Text>
@@ -293,7 +304,7 @@ function BeginnerPresetCatalog({
             <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
               <Text className="font-mono text-[10px] text-lime">{getMetricLabel(preset.metric)}</Text>
               <Text className="font-mono text-[10px] text-muted-foreground">·</Text>
-              <Text className="font-mono text-[10px] text-muted-foreground">{t('challenge.preset.target', { count: preset.goal })}</Text>
+              <Text className="font-mono text-[10px] text-muted-foreground">{getPresetTargetLabel(preset)}</Text>
               <Text className="font-mono text-[10px] text-muted-foreground">·</Text>
               <Text className="font-mono text-[10px] text-muted-foreground">{t('challenge.preset.duration', { count: preset.durationDays })}</Text>
             </View>

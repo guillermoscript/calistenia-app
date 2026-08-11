@@ -9,6 +9,10 @@ import { Text } from '@/components/ui/text'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
 import { daysRemaining, getMetricLabel, getMetricUnit } from '@calistenia/core/lib/challenges'
+import {
+  resolvePresetChallengeDescription,
+  resolvePresetChallengeTitle,
+} from '@calistenia/core/lib/challenge-presets'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export default function ChallengeDetailScreen() {
@@ -93,8 +97,8 @@ export default function ChallengeDetailScreen() {
         <View className="px-4 gap-5">
           <View className="gap-2">
             <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">{getMetricLabel(challenge.metric, challenge.custom_metric, challenge.exercise_slug)}</Text>
-            <Text className="font-bebas text-4xl leading-none text-foreground">{challenge.title}</Text>
-            {challenge.description ? <Text className="font-sans text-sm leading-relaxed text-muted-foreground">{challenge.description}</Text> : null}
+            <Text className="font-bebas text-4xl leading-none text-foreground">{resolvePresetChallengeTitle(challenge)}</Text>
+            {challenge.description ? <Text className="font-sans text-sm leading-relaxed text-muted-foreground">{resolvePresetChallengeDescription(challenge)}</Text> : null}
             <Text className="font-mono text-[10px] text-muted-foreground">{challenge.starts_at} → {challenge.ends_at}</Text>
           </View>
 

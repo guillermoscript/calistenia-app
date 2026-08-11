@@ -2530,6 +2530,8 @@
   "challenge.preset.difficulty": "Beginner",
   "challenge.preset.duration": "{{count}} days",
   "challenge.preset.target": "{{count}} workouts",
+  "challenge.preset.targetUnit": "{{count}} {{unit}}",
+  "challenge.preset.joinError": "Could not start the challenge. Check your connection and try again.",
   "challenge.preset.join": "JOIN",
   "challenge.preset.joining": "JOINING...",
   "challenge.preset.open": "VIEW PROGRESS",

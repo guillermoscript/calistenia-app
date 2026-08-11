@@ -8,8 +8,11 @@ import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import {
   BEGINNER_CHALLENGE_PRESETS,
   getPresetDateRange,
+  getPresetTargetLabel,
+  resolvePresetChallengeTitle,
   type BeginnerChallengePreset,
 } from '@calistenia/core/lib/challenge-presets'
+import { toast } from 'sonner'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 type Filter = 'active' | 'past'
@@ -38,8 +41,10 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
   }, [])
 
   const items = filter === 'active' ? active : past
+  // Solo los retos activos "ocupan" un preset: una ronda terminada debe dejar
+  // volver a empezar, no bloquear la tarjeta en VER PROGRESO para siempre.
   const joinedPresets = new Map(
-    [...active, ...past]
+    active
       .filter(challenge => challenge.preset_key)
       .map(challenge => [challenge.preset_key!, challenge]),
   )
@@ -56,9 +61,14 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
     if (!confirmed) return
 
     setJoiningPreset(preset.id)
-    const result = await joinPreset(preset.id)
-    setJoiningPreset(null)
-    if (result) navigate(`/challenges/${result.challengeId}`)
+    try {
+      const result = await joinPreset(preset.id)
+      navigate(`/challenges/${result.challengeId}`)
+    } catch {
+      toast.error(t('challenge.preset.joinError'))
+    } finally {
+      setJoiningPreset(null)
+    }
   }
 
   const FILTERS: { id: Filter; label: string; count: number }[] = [
@@ -216,7 +226,7 @@ function BeginnerPresetCard({
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground">
         <span className="text-lime">{getMetricLabel(preset.metric)}</span>
         <span>·</span>
-        <span>{t('challenge.preset.target', { count: preset.goal })}</span>
+        <span>{getPresetTargetLabel(preset)}</span>
         <span>·</span>
         <span>{t('challenge.preset.duration', { count: preset.durationDays })}</span>
       </div>
@@ -252,7 +262,7 @@ function ChallengeCard({ challenge: ch, onTap }: { challenge: ChallengeWithMeta;
       className="w-full text-left px-4 py-3.5 rounded-lg border transition-colors flex items-center justify-between gap-3 bg-card border-border hover:border-lime/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium truncate">{ch.title}</div>
+        <div className="text-sm font-medium truncate">{resolvePresetChallengeTitle(ch)}</div>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           <span className="text-[10px] text-lime tracking-wide">{metricLabel}</span>
           {ch.goal && ch.goal > 0 && (

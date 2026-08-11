@@ -6,6 +6,10 @@ import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { getMetricUnit, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
+import {
+  resolvePresetChallengeDescription,
+  resolvePresetChallengeTitle,
+} from '@calistenia/core/lib/challenge-presets'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { ShareButton } from '../components/ShareButton'
 import { shareChallenge } from '../lib/share'
@@ -137,7 +141,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
       {/* Header */}
       <div className="mb-6 motion-safe:animate-fade-in">
-        <h1 className="font-bebas text-3xl md:text-4xl leading-none mb-2">{challenge.title}</h1>
+        <h1 className="font-bebas text-3xl md:text-4xl leading-none mb-2">{resolvePresetChallengeTitle(challenge)}</h1>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-lime border border-lime/30 bg-lime/10">
             {metricLabel}
@@ -152,7 +156,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
           </span>
         </div>
         {challenge.description && (
-          <div className="text-xs text-muted-foreground mt-2 leading-relaxed">{challenge.description}</div>
+          <div className="text-xs text-muted-foreground mt-2 leading-relaxed">{resolvePresetChallengeDescription(challenge)}</div>
         )}
         <div className="text-[10px] text-muted-foreground mt-2 opacity-70">
           {challenge.starts_at} → {challenge.ends_at}
@@ -163,7 +167,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       {isActive && (
         <div className="mb-6">
           <ShareButton
-            onShare={(method) => shareChallenge(challenge.title, challengeId, method)}
+            onShare={(method) => shareChallenge(resolvePresetChallengeTitle(challenge), challengeId, method)}
             className="hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
           />
         </div>
