@@ -15,6 +15,7 @@ import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useBattleContext } from '@/contexts/BattleContext'
+import { isOnline, onConnectivityChange } from '@/lib/connectivity'
 import { battleElapsedMs } from '@calistenia/core/hooks/useBattle'
 import { battleExerciseName } from '@calistenia/core/data/battle-presets'
 
@@ -52,7 +53,13 @@ export default function BattleLive() {
 
   // El progreso hecho sin conexión no es verificable, así que se bloquea la entrada en
   // vez de guardarlo en local y reproducirlo después (ver decisión en el spec v2).
-  const offline = !!error && error.status === 0
+  //
+  // Se mira la conectividad directamente, no solo el error de la última petición: si
+  // solo reaccionáramos al fallo, el botón seguiría vivo sin conexión y el usuario
+  // tendría que tocarlo y ver reventar la petición para enterarse de que está bloqueado.
+  const [online, setOnline] = useState(isOnline())
+  useEffect(() => onConnectivityChange(setOnline), [])
+  const offline = !online || (!!error && error.status === 0)
   const locked = offline || busy || !can.progress
 
   const roundLabel = useMemo(() => {
