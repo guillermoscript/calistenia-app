@@ -59,6 +59,11 @@ export interface Battle {
   starts_at: string | null
   ends_at: string | null
   finished_at: string | null
+  /**
+   * Last accepted lobby mutation. The expiry sweep measures staleness against this
+   * rather than `updated`, which moves on unrelated writes. Server-owned (#356).
+   */
+  last_activity_at: string | null
   created: string
   updated: string
 }
@@ -113,4 +118,66 @@ export interface BattleScore {
   completed_reps: number
   completed_time_seconds: number
   tie_break_key: string
+}
+
+/** One row of the server-computed ranking. Includes `left` participants. */
+export interface BattleStanding {
+  participant_id: string
+  user: string | null
+  display_name: string
+  status: BattleParticipantStatus
+  score: BattleScore
+  rank: number
+}
+
+/**
+ * A participant as seen inside a battle the caller is authorized for. `display_name` is
+ * added by the snapshot endpoint because `battle_participants` read rules only expose a
+ * user their own row — it is never present on the pre-join invite landing.
+ */
+export interface BattleParticipantView extends BattleParticipant {
+  display_name: string
+}
+
+/**
+ * The authoritative view of a battle at one instant, as returned by every battle API
+ * endpoint. Clients **replace** their local state with this; they never merge into it.
+ */
+export interface BattleSnapshot {
+  battle: Battle
+  participants: BattleParticipantView[]
+  /** The caller's own participant row, or null if they are the creator watching only. */
+  me: BattleParticipantView | null
+  standings: BattleStanding[]
+  /** Server time at the moment the snapshot was built, for clock-offset correction. */
+  server_time: string
+  /** Present when an idempotency key short-circuited the mutation. */
+  replayed?: boolean
+  /** Present on `join` when the caller already had a seat. */
+  already_joined?: boolean
+}
+
+/** Raw invite token, returned by the API exactly once and never persisted server-side. */
+export interface BattleInviteIssued {
+  token: string
+  invite_id: string
+  expires_at: string
+}
+
+/** Why an invite link cannot be used. Deliberately coarse: it must not be an oracle. */
+export type BattleInviteRejection = 'invalid' | 'expired' | 'closed'
+
+/** Public landing metadata. Contains counts only — never participant identities. */
+export interface BattleInvitePreview {
+  ok: boolean
+  reason: BattleInviteRejection | ''
+  battle: {
+    id: string
+    status: BattleStatus
+    rounds: number
+    exercise_count: number
+    workout_template_id: string
+    participant_count: number
+    expires_at: string
+  } | null
 }

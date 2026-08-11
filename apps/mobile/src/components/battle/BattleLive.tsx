@@ -1,0 +1,195 @@
+/**
+ * Batalla en curso: el circuito propio a la izquierda del pulgar y el marcador en vivo.
+ *
+ * La posición dentro del circuito NO se guarda en local: sale de `me.progress` del
+ * servidor. Así, si la app muere a mitad de la ronda 3, al volver se retoma en la
+ * ronda 3 sin inventarse nada y sin arriesgar un contador local que el servidor
+ * rechazaría por no ser monótono.
+ */
+import { useEffect, useMemo, useState } from 'react'
+import { View, Pressable, ScrollView } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { Minus, Plus, WifiOff } from 'lucide-react-native'
+
+import { Text } from '@/components/ui/text'
+import { cn } from '@/lib/utils'
+import { haptics } from '@/lib/haptics'
+import { useBattleContext } from '@/contexts/BattleContext'
+import { battleElapsedMs } from '@calistenia/core/hooks/useBattle'
+import { battleExerciseName } from '@calistenia/core/data/battle-presets'
+
+function formatElapsed(ms: number): string {
+  const total = Math.floor(ms / 1000)
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+export default function BattleLive() {
+  const { t, i18n } = useTranslation()
+  const { snapshot, standings, busy, error, can, actions } = useBattleContext()
+
+  const me = snapshot?.me ?? null
+  const config = snapshot?.battle.config
+  const progress = me?.progress
+
+  const position = progress?.current_exercise_position ?? 0
+  const exercise = config?.exercises.find((ex) => ex.position === position) ?? config?.exercises[0]
+
+  // El contador arranca en el objetivo: lo normal es completarlo, y ajustar a la baja
+  // es un caso menos frecuente que confirmar.
+  const [count, setCount] = useState(exercise?.target.value ?? 0)
+  useEffect(() => { setCount(exercise?.target.value ?? 0) }, [exercise?.exercise_id, exercise?.target.value])
+
+  const [elapsed, setElapsed] = useState(0)
+  const startsAt = snapshot?.battle.starts_at ?? null
+  useEffect(() => {
+    const tick = () => setElapsed(battleElapsedMs(startsAt))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [startsAt])
+
+  // El progreso hecho sin conexión no es verificable, así que se bloquea la entrada en
+  // vez de guardarlo en local y reproducirlo después (ver decisión en el spec v2).
+  const offline = !!error && error.status === 0
+  const locked = offline || busy || !can.progress
+
+  const roundLabel = useMemo(() => {
+    if (!config || !progress) return ''
+    return `${Math.min(progress.completed_rounds + 1, config.rounds)} / ${config.rounds}`
+  }, [config, progress])
+
+  if (!snapshot || !config || !me || !exercise || !progress) return null
+
+  const isLastExercise = position >= config.exercises.length - 1
+  const willFinish = isLastExercise && progress.completed_rounds + 1 >= config.rounds
+
+  const commit = async () => {
+    const isReps = exercise.target.kind === 'reps'
+    const next = {
+      completed_rounds: isLastExercise ? progress.completed_rounds + 1 : progress.completed_rounds,
+      completed_reps: progress.completed_reps + (isReps ? count : 0),
+      completed_time_seconds: progress.completed_time_seconds + (isReps ? 0 : count),
+      current_exercise_position: isLastExercise ? 0 : position + 1,
+    }
+    try {
+      if (willFinish) {
+        await actions.finish(next)
+      } else {
+        await actions.reportProgress(next)
+      }
+      void haptics.medium()
+    } catch { /* el contexto expone el error */ }
+  }
+
+  return (
+    <View className="flex-1">
+      {offline && (
+        <View className="mb-3 flex-row items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-2.5">
+          <WifiOff size={14} color="#fbbf24" />
+          <Text className="flex-1 font-mono text-[10px] uppercase tracking-[1px] text-amber-400">
+            {t('battle.offlineBlocked')}
+          </Text>
+        </View>
+      )}
+
+      {/* Estado propio */}
+      <View className="flex-row items-end justify-between border-b border-border pb-3">
+        <View>
+          <Text className="font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">
+            {t('battle.round')}
+          </Text>
+          <Text className="font-bebas text-4xl leading-none text-foreground">{roundLabel}</Text>
+        </View>
+        <View className="items-end">
+          <Text className="font-mono text-[9px] uppercase tracking-[3px] text-muted-foreground">
+            {t('battle.elapsed')}
+          </Text>
+          <Text className="font-mono text-2xl text-lime">{formatElapsed(elapsed)}</Text>
+        </View>
+      </View>
+
+      {/* Ejercicio actual + entrada */}
+      <View className="items-center gap-4 py-6">
+        <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+          {t('battle.currentExercise')}
+        </Text>
+        <Text className="text-center font-bebas text-5xl leading-none text-foreground">
+          {battleExerciseName(config.workout_template_id, exercise.exercise_id, i18n.language)}
+        </Text>
+        <Text className="font-mono text-xs text-muted-foreground">
+          {t('battle.target')} {exercise.target.value}
+          {exercise.target.kind === 'seconds' ? 's' : ` ${t('battle.reps')}`}
+        </Text>
+
+        <View className="mt-2 flex-row items-center gap-6">
+          <Pressable
+            onPress={() => setCount((c) => Math.max(0, c - 1))}
+            disabled={locked}
+            className={cn(
+              'size-14 items-center justify-center rounded-full border border-border active:bg-muted/50',
+              locked && 'opacity-40',
+            )}
+          >
+            <Minus size={20} color="#888899" />
+          </Pressable>
+          <Text className="min-w-24 text-center font-bebas text-6xl leading-none text-lime">{count}</Text>
+          <Pressable
+            onPress={() => setCount((c) => c + 1)}
+            disabled={locked}
+            className={cn(
+              'size-14 items-center justify-center rounded-full border border-border active:bg-muted/50',
+              locked && 'opacity-40',
+            )}
+          >
+            <Plus size={20} color="#888899" />
+          </Pressable>
+        </View>
+      </View>
+
+      <Pressable
+        onPress={() => void commit()}
+        disabled={locked}
+        className={cn(
+          'h-16 items-center justify-center rounded-xl bg-lime active:bg-lime/90',
+          locked && 'opacity-40',
+        )}
+      >
+        <Text className="font-bebas text-2xl uppercase tracking-widest text-zinc-900">
+          {willFinish ? t('battle.finish') : t('battle.nextExercise')}
+        </Text>
+      </Pressable>
+
+      {/* Marcador en vivo */}
+      <Text className="mb-2 mt-6 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        {t('battle.liveStandings')}
+      </Text>
+      <ScrollView className="flex-1">
+        {standings.map((entry) => (
+          <View
+            key={entry.participant_id}
+            className={cn(
+              'flex-row items-center gap-3 border-b border-border py-2.5',
+              entry.user === me.user && 'bg-lime/5',
+            )}
+          >
+            <Text className="w-6 font-bebas text-lg text-muted-foreground">{entry.rank}</Text>
+            <Text className="flex-1 font-sans-medium text-foreground" numberOfLines={1}>
+              {entry.display_name || t('battle.someone')}
+              {entry.status === 'left' ? `  ${t('battle.leftTag')}` : ''}
+              {entry.status === 'finished' ? '  ✓' : ''}
+            </Text>
+            <Text className="font-mono text-xs text-muted-foreground">
+              {entry.score.completed_rounds}
+              <Text className="text-[10px]">{t('battle.roundsShort')}</Text>
+              {'  '}
+              {entry.score.completed_reps}
+              <Text className="text-[10px]">{t('battle.repsShort')}</Text>
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  )
+}

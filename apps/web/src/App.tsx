@@ -15,6 +15,7 @@ import AuthPage from './pages/AuthPage'
 import LandingPage from './pages/LandingPage'
 import { MarketingUnmask } from './components/MarketingUnmask'
 // Lazy loaded: secondary pages (split into separate chunks)
+const BattleInviteLandingPage = lazy(() => import('./pages/BattleInviteLandingPage'))
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const NutritionPage = lazy(() => import('./pages/NutritionPage'))
 const MealLoggerPage = lazy(() => import('./pages/MealLoggerPage'))
@@ -811,6 +812,13 @@ function AppInner() {
   // Public invite landing — accessible both logged-in and logged-out
   if (location.pathname.startsWith('/invite/')) {
     return <Suspense fallback={<Loader />}><Routes><Route path="/invite/:code/challenge/:challengeId" element={<InviteLandingPage />} /><Route path="/invite/:code" element={<InviteLandingPage />} /></Routes></Suspense>
+  }
+
+  // Battle invite landing — the shared link is a web URL, so it must resolve to
+  // something on desktop and on phones without the app installed. Where the app IS
+  // installed the app link intercepts it and this never renders.
+  if (location.pathname.startsWith('/battle-invite/')) {
+    return <Suspense fallback={<Loader />}><Routes><Route path="/battle-invite/:token" element={<BattleInviteLandingPage />} /></Routes></Suspense>
   }
 
   // Public race page — accessible pre-auth (shows login prompt if not authenticated)
