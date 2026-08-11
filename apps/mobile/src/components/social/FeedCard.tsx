@@ -179,9 +179,11 @@ export function FeedCard({
                 >
                   {item.workoutTitle}
                 </Text>
-                <Text className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
-                  Fase {item.phase}
-                </Text>
+                {item.phase > 0 && (
+                  <Text className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                    Fase {item.phase}
+                  </Text>
+                )}
               </View>
               <ChevronRight size={16} color="hsl(0 0% 40%)" />
             </View>

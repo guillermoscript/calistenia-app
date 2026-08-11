@@ -89,7 +89,9 @@ export function registerWorkoutTools(server: MCPServer, pbUrl: string) {
             `Found **${result.totalItems}** session(s)\n`,
           ];
           for (const s of sessions) {
-            lines.push(`- **${toDateStr(s.completed_at, tz)}** — ${s.workout_key} (Phase ${s.phase}, ${s.day})`);
+            // phase 0 = sesión libre/manual: no tiene fase que enseñar (#376).
+            const phaseLabel = Number(s.phase) > 0 ? `Phase ${s.phase}, ` : "";
+            lines.push(`- **${toDateStr(s.completed_at, tz)}** — ${s.workout_key} (${phaseLabel}${s.day})`);
             if (s.note) lines.push(`  > ${s.note}`);
           }
           text = lines.join("\n");

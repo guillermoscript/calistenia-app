@@ -1,4 +1,4 @@
-import { storage } from '../platform'
+import { getPlatform, storage } from '../platform'
 import { useCallback, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { pb } from '../lib/pocketbase'
@@ -7,6 +7,7 @@ import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/anal
 import { qk } from '../lib/query-keys'
 import { parseRepsForPR, estimate1RM } from '../lib/pr-utils'
 import { legacyPrKey, pickAffectedChallenges } from '../lib/challenge-scoring'
+import { isFreeSessionKey, sessionKeyParts } from '../lib/session-key'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, WeightPR } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -431,12 +432,16 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
 
     if (usePB && userId) {
       try {
-        const isFreeSession = workoutKey.startsWith('free_') || workoutKey.startsWith('manual_')
-        const [phaseStr, day] = workoutKey.split('_')
+        // #376: las sesiones libres se escriben con `phase: 0` (NO_PHASE), no -1.
+        // El -1 chocaba con `min: 0` y PocketBase rechazaba el create con un 400
+        // que moría en el `catch` de abajo, así que ninguna sesión libre llegó
+        // nunca a `sessions`. El 0 solo es aceptable porque la migración
+        // 1783100000 marcó `phase` como opcional.
+        const { phase, day, isFree: isFreeSession } = sessionKeyParts(workoutKey)
         const sessionData: Record<string, any> = {
           user: userId, workout_key: workoutKey,
-          phase: isFreeSession ? -1 : parseInt(phaseStr.replace('p', '')),
-          day: isFreeSession ? 'free' : day,
+          phase,
+          day,
           completed_at: date ? localDateForPB(date) : nowLocalForPB(),
           note: note || '',
         }
@@ -459,10 +464,17 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           if (timing.exerciseTimings?.length) sessionData.exercise_timings = timing.exerciseTimings
         }
         await pb.collection('sessions').create(sessionData)
-      } catch (e) { console.warn('PB sessions error:', e) }
+      } catch (e) {
+        // #376: este catch se tragó durante meses un 400 que impedía guardar
+        // TODA sesión libre. El progreso local sigue siendo autoritativo, así
+        // que el usuario no ve nada raro — por eso el fallo tiene que llegar al
+        // monitoreo o nadie se entera.
+        console.warn('PB sessions error:', e)
+        getPlatform().reportError?.(e)
+      }
     }
 
-    const isFree = workoutKey.startsWith('free_') || workoutKey.startsWith('manual_')
+    const isFree = isFreeSessionKey(workoutKey)
     op.track('workout_completed', { workout_key: workoutKey, is_free_session: isFree })
 
     if (!isFree && activeProgramId) {
@@ -559,7 +571,10 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         if (records.items.length > 0) {
           await pb.collection('sessions').delete(records.items[0].id)
         }
-      } catch (e) { console.warn('PB unmark session error:', e) }
+      } catch (e) {
+        console.warn('PB unmark session error:', e)
+        getPlatform().reportError?.(e)
+      }
     }
   }, [usePB, userId, patchProgress])
 

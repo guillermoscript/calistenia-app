@@ -22,8 +22,9 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         .object({
           workout_key: z
             .string()
-            .describe("Workout identifier (e.g. 'p1_lun' = Phase 1 Monday)"),
-          phase: z.number().int().min(1).describe("Training phase number"),
+            .describe("Workout identifier (e.g. 'p1_lun' = Phase 1 Monday, or 'free_{timestamp}' for a free session)"),
+          // min(0) para admitir sesiones libres, igual que cal_log_workout (#376).
+          phase: z.number().int().min(0).describe("Training phase number (1-4 for programs, 0 for free sessions)"),
           day: z
             .string()
             .describe("Day identifier: 'lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'"),

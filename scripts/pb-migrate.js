@@ -296,7 +296,9 @@ async function main() {
       fields: [
         userRelationField,
         { name: 'workout_key',  type: 'text',   required: true },
-        { name: 'phase',        type: 'number', required: true, min: 1, max: 4 },
+        // Opcional a propósito (#376): las sesiones libres/manuales se guardan
+        // con phase 0, y PocketBase considera vacío el 0 de un número required.
+        { name: 'phase',        type: 'number', required: false, min: 0, max: 4 },
         { name: 'day',          type: 'text',   required: true },
         { name: 'completed_at', type: 'date',   required: true },
         { name: 'note',         type: 'text',   required: false },
