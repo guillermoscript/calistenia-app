@@ -499,6 +499,7 @@ routerAdd("POST", "/api/battles/{id}/finish", function (e) {
         battle.set("status", "finished")
         battle.set("finished_at", battles.isoAt(now))
         battle.set("ends_at", battles.isoAt(now))
+        battles.sealFinalStandings(txApp, battle, participants)
       }
       battles.touch(battle, now)
       battles.bumpRevision(battle)
@@ -544,12 +545,14 @@ routerAdd("POST", "/api/battles/{id}/leave", function (e) {
         // Nobody else can start it, so a creator walking out of the lobby cancels the
         // battle rather than leaving a zombie for the expiry sweep.
         battle.set("status", "cancelled")
+        battles.sealFinalStandings(txApp, battle, participants)
       } else if (status === "live" && battles.countWithStatus(participants, "active") === 0) {
         // Mid-battle the creator is just another participant: the battle carries on
         // and only closes when the last active participant is gone.
         battle.set("status", "finished")
         battle.set("finished_at", battles.isoAt(now))
         battle.set("ends_at", battles.isoAt(now))
+        battles.sealFinalStandings(txApp, battle, participants)
       } else {
         battles.syncLobbyStatus(txApp, battle, participants)
       }
@@ -586,6 +589,7 @@ routerAdd("POST", "/api/battles/{id}/cancel", function (e) {
 
       var now = battles.nowMs()
       battle.set("status", "cancelled")
+      battles.sealFinalStandings(txApp, battle, null)
       battles.touch(battle, now)
       battles.bumpRevision(battle)
       txApp.save(battle)
@@ -631,6 +635,9 @@ cronAdd("battles_expiry", "*/5 * * * *", function () {
   for (var i = 0; i < stale.length; i++) {
     try {
       stale[i].set("status", "expired")
+      // Seal the ranking here too: an expired lobby is a closed battle, and the history
+      // list reads the result off the record rather than rebuilding it (#398).
+      battles.sealFinalStandings($app, stale[i], null)
       stale[i].set("revision", stale[i].getInt("revision") + 1)
       $app.save(stale[i])
     } catch (err) {

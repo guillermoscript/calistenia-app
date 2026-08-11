@@ -147,6 +147,9 @@ function serializeBattle(record) {
     ends_at: record.getString('ends_at') || null,
     finished_at: record.getString('finished_at') || null,
     last_activity_at: record.getString('last_activity_at') || null,
+    // Empty until the battle closes, and empty forever on battles that closed before
+    // #398 shipped — clients read that as "no stored result", not as an empty ranking.
+    final_standings: jsonField(record, 'final_standings', null),
     created: record.getString('created'),
     updated: record.getString('updated'),
   }
@@ -489,6 +492,34 @@ function standingsFor(participantRecords, nameByUser, config) {
   return scored
 }
 
+/**
+ * Freeze the ranking onto the battle as it closes (#398).
+ *
+ * A closed battle is immutable, so its result is stored once instead of rebuilt on every
+ * read. That is not only about cost: a joiner cannot rebuild it at all, because the
+ * participants read rule limits them to their own row — without this they would see a
+ * ranking of one. Display names are frozen with it on purpose, so a past result reads
+ * the way it read on the day rather than following later renames.
+ *
+ * Called from every path that closes a battle. Never overwrites: a result is written
+ * once, and a second close (a replayed idempotent call, a cron racing a read) must not
+ * be able to rewrite history.
+ */
+function sealFinalStandings(app, battle, participantRecords) {
+  // NOT `getString(...)`: an empty json field reads back as the string "null", which is
+  // truthy, so a truthiness check here silently sealed nothing at all.
+  var existing = jsonField(battle, 'final_standings', null)
+  if (existing && existing.length) return
+
+  var records = participantRecords || findParticipants(app, battle.getString('id'))
+  var nameByUser = {}
+  for (var i = 0; i < records.length; i++) {
+    var user = records[i].getString('user')
+    if (user) nameByUser[user] = displayNameFor(app, user)
+  }
+  battle.set('final_standings', standingsFor(records, nameByUser, jsonField(battle, 'config', null)))
+}
+
 // ── Snapshot ─────────────────────────────────────────────────────────────────
 
 /**
@@ -654,6 +685,7 @@ function expireIfStale(app, battle) {
   if (nowMs() - last < LOBBY_TTL_MS) return false
 
   battle.set('status', 'expired')
+  sealFinalStandings(app, battle, null)
   bumpRevision(battle)
   app.save(battle)
   return true
@@ -875,6 +907,7 @@ module.exports = {
   standingsFor: standingsFor,
 
   displayNameFor: displayNameFor,
+  sealFinalStandings: sealFinalStandings,
   snapshotOf: snapshotOf,
   touch: touch,
   bumpRevision: bumpRevision,

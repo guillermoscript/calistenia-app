@@ -4348,5 +4348,21 @@
   "battle.stateResting": "Resting",
   "battle.stateIdle": "No signal",
   "battle.stateFinished": "Done",
-  "battle.stateStarting": "Starting"
+  "battle.stateStarting": "Starting",
+
+  "battle.historyTitle": "Battles",
+  "battle.historyKicker": "YOUR RECORD",
+  "battle.historyRowDesc": "History, record and head-to-head",
+  "battle.historyEmpty": "No battles yet",
+  "battle.historyEmptyDesc": "Challenge someone to a circuit and the result lands here.",
+  "battle.recordFought": "Fought",
+  "battle.recordWon": "Won",
+  "battle.recordStreak": "Streak",
+  "battle.outcomeWon": "Won",
+  "battle.outcomeLost": "Lost",
+  "battle.outcomeLeft": "Left",
+  "battle.outcomeUnknown": "No result",
+  "battle.noStoredResult": "This battle ended before results were stored.",
+  "battle.rankOf": "{{rank}} of {{total}}",
+  "battle.compare": "Head-to-head"
 }

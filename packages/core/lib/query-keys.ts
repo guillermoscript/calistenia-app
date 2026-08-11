@@ -218,4 +218,11 @@ export const qk = {
   savedRecipes: {
     list: (userId: string | null) => ['savedRecipes', 'list', userId] as const,
   },
+
+  // — Batallas de circuito (issue #356) —
+  battles: {
+    // La barra flotante de las tabs; se invalida al terminar o salir de una batalla.
+    active: () => ['battle', 'active'] as const,
+    history: (userId: string | null) => ['battle', 'history', userId] as const,
+  },
 } as const
