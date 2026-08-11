@@ -560,6 +560,8 @@ export interface Challenge {
   starts_at: string
   ends_at: string
   status: ChallengeStatus
+  /** Stable catalog identity for a beginner preset enrollment. */
+  preset_key?: string
 }
 
 export interface ChallengeParticipant {

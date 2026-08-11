@@ -28,6 +28,7 @@ async function fetchChallenge(challengeId: string): Promise<Challenge> {
     starts_at: ch.starts_at,
     ends_at: ch.ends_at,
     status: ch.status as any,
+    preset_key: ch.preset_key || undefined,
   }
 }
 
