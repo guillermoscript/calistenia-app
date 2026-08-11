@@ -367,13 +367,13 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
         `#${rank + 1} en ${race.name} — ${me.distance_km.toFixed(2)} km\ncalistenia-app.com`,
       )
       trackShareCardShared({
-        surface: 'battle', source: 'race_result', battle_id: race.id,
+        surface: 'race', source: 'race_result', race_id: race.id,
         share_type: 'race_result', participant_count: participants.length,
         platform: 'web', result: outcome, share_confirmed: outcome === 'shared',
         card_type: 'race_result', rank: rank + 1,
       })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
-        surface: 'battle', source: 'race_result', battle_id: race.id,
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceShared, {
+        surface: 'race', source: 'race_result', race_id: race.id,
         share_type: 'race_result', participant_count: participants.length,
         platform: 'web', result: outcome, share_confirmed: outcome === 'shared', rank: rank + 1,
       })

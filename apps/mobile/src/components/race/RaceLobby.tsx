@@ -39,8 +39,8 @@ export default function RaceLobby({ displayName }: { displayName: string }) {
     // En Android `Share.share` devuelve siempre `sharedAction`, también al
     // descartar la hoja: solo iOS confirma el envío. `share_confirmed` deja ver
     // esa diferencia en vez de inflar Android en silencio.
-    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
-      surface: 'battle', source: 'race_lobby', battle_id: race.id,
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceShared, {
+      surface: 'race', source: 'race_lobby', race_id: race.id,
       share_type: 'invite_link', participant_count: participants.length, result: 'shared',
       share_confirmed: Platform.OS === 'ios',
     })

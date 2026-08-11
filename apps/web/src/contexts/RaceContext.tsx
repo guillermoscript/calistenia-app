@@ -154,16 +154,16 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   const isCreator = !!(race && userId && race.creator === userId)
   const hasJoined = !!me
 
-  // One `battle_completed` per battle, not per client. Every participant runs
+  // One `race_completed` per race, not per client. Every participant runs
   // finishRaceAction from their own device, and the auto-finish / ends_at
   // watchdog effects close the race with nobody clicking at all — so the event
   // hangs off the finished phase and is owned by the creator's client.
-  const battleCompletedRef = useRef(false)
+  const raceCompletedRef = useRef(false)
   useEffect(() => {
-    if (phase !== 'finished' || !isCreator || battleCompletedRef.current) return
-    battleCompletedRef.current = true
-    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCompleted, {
-      surface: 'battle', source: 'race_results', battle_id: raceId,
+    if (phase !== 'finished' || !isCreator || raceCompletedRef.current) return
+    raceCompletedRef.current = true
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceCompleted, {
+      surface: 'race', source: 'race_results', race_id: raceId,
       participant_count: participants.length, result: 'completed',
     })
   }, [phase, isCreator, raceId, participants.length])
@@ -415,8 +415,8 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     try {
       await apiJoinRace(raceId, displayName)
       op.track('race_joined', { race_id: raceId })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleJoined, {
-        surface: 'battle', source: 'race_lobby', battle_id: raceId,
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceJoined, {
+        surface: 'race', source: 'race_lobby', race_id: raceId,
         participant_count: participants.length + 1, result: 'joined',
       })
     } catch (err) {
@@ -442,8 +442,8 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         participants: participants.length,
         mode: race?.mode,
       })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleStarted, {
-        surface: 'battle', source: 'race_lobby', battle_id: raceId,
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceStarted, {
+        surface: 'race', source: 'race_lobby', race_id: raceId,
         participant_count: participants.length, result: 'started', mode: race?.mode,
       })
     } catch (err) {
