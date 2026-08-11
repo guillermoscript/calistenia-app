@@ -36,7 +36,7 @@ export default function BattleCountdown() {
         {secondsToStart}
       </Text>
       <Text className="font-mono text-[11px] uppercase tracking-[2px] text-muted-foreground">
-        {participants} {t('battle.participants')}
+        {participants} {participants === 1 ? t('battle.participantOne') : t('battle.participants')}
       </Text>
     </View>
   )

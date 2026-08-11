@@ -92,7 +92,10 @@ export default function BattleInviteScreen() {
               {preview.battle.rounds} {t('battle.rounds')} · {preview.battle.exercise_count} {t('battle.exercises')}
             </Text>
             <Text className="font-mono text-[11px] uppercase tracking-[2px] text-lime">
-              {preview.battle.participant_count} {t('battle.participants')}
+              {preview.battle.participant_count}{' '}
+              {preview.battle.participant_count === 1
+                ? t('battle.participantOne')
+                : t('battle.participants')}
             </Text>
 
             <Pressable

@@ -4300,6 +4300,7 @@
   "battle.nextExercise": "Next",
   "battle.finish": "Finish",
   "battle.participants": "participants",
+  "battle.participantOne": "participant",
   "battle.ready": "ready",
   "battle.allReady": "Everyone ready",
   "battle.waitingForParticipants": "Waiting for participants",

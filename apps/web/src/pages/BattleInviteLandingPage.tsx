@@ -60,7 +60,10 @@ export default function BattleInviteLandingPage() {
               {t('battle.exercises')}
             </p>
             <p className="font-mono text-[11px] uppercase tracking-[2px] text-lime">
-              {preview.battle.participant_count} {t('battle.participants')}
+              {preview.battle.participant_count}{' '}
+              {preview.battle.participant_count === 1
+                ? t('battle.participantOne')
+                : t('battle.participants')}
             </p>
             <p className="text-sm text-muted-foreground">{t('battle.openInApp')}</p>
             <a
