@@ -107,8 +107,8 @@ export default function ChallengesScreen() {
   }
 
   const TABS: { id: TabFilter; label: string; count: number }[] = [
-    { id: 'active', label: 'Activos', count: active.length },
-    { id: 'past', label: 'Pasados', count: past.length },
+    { id: 'active', label: t('challenges.filterActive'), count: active.length },
+    { id: 'past', label: t('challenges.filterPast'), count: past.length },
   ]
 
   return (
@@ -117,9 +117,9 @@ export default function ChallengesScreen() {
       <View className="flex-row items-start justify-between px-4 pt-2 pb-4">
         <View>
           <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
-            Social
+            {t('challenges.section')}
           </Text>
-          <Text className="font-bebas text-4xl leading-none text-foreground">Retos</Text>
+          <Text className="font-bebas text-4xl leading-none text-foreground">{t('challenges.title')}</Text>
         </View>
         <Pressable
           onPress={() => router.back()}
@@ -241,7 +241,7 @@ function ChallengeCard({ challenge: ch, onOpen }: ChallengeCardProps) {
           <>
             <Text className="font-mono text-[10px] text-muted-foreground">·</Text>
             <Text className="font-mono text-[10px] text-amber-400">
-              Meta: {ch.goal ?? 0}
+              {t('challenges.goal', { value: ch.goal ?? 0 })}
             </Text>
           </>
         ) : null}
@@ -262,7 +262,7 @@ function ChallengeCard({ challenge: ch, onOpen }: ChallengeCardProps) {
 
         {/* Participant count */}
         <Text className="font-mono text-[10px] text-muted-foreground">
-          {ch.participantCount} participante{ch.participantCount !== 1 ? 's' : ''}
+          {t('challenges.participants', { count: ch.participantCount })}
         </Text>
       </View>
 
