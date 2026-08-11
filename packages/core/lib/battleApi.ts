@@ -57,8 +57,9 @@ async function send<T>(path: string, method: 'GET' | 'POST', body?: unknown): Pr
       method,
       body,
       // Battle calls are user-initiated and often fire in quick succession (ready,
-      // progress); the SDK's auto-cancel would drop the earlier ones on the floor.
-      $autoCancel: false,
+      // progress); the SDK auto-cancels same-key requests, which would drop the earlier
+      // ones on the floor. `requestKey: null` opts each call out of that grouping.
+      requestKey: null,
     })
   } catch (err) {
     throw toBattleApiError(err)
@@ -97,7 +98,7 @@ export async function createBattleDraft(
     status: 'draft',
     revision: 0,
     config,
-  }, { $autoCancel: false })
+  }, { requestKey: null })
   return record.id
 }
 
