@@ -595,7 +595,8 @@ routerAdd("POST", "/api/battles/{id}/cancel", function (e) {
 cronAdd("battles_expiry", "*/5 * * * *", function () {
   var battles = require(`${__hooks}/utils/battles.js`)
   var now = battles.nowMs()
-  var cutoff = battles.isoAt(now - battles.LOBBY_TTL_MS)
+  // Storage format, not ISO: this value is compared against the stored text.
+  var cutoff = battles.filterTime(now - battles.LOBBY_TTL_MS)
 
   // Batch caps so one sweep cannot stall on a huge backlog. Hitting a cap is logged
   // rather than swallowed: the run still looks successful, and without the line nobody
@@ -629,7 +630,7 @@ cronAdd("battles_expiry", "*/5 * * * *", function () {
     expiredInvites = $app.findRecordsByFilter(
       "battle_invites",
       "status = 'active' && expires_at < {:now}",
-      "", INVITE_BATCH, 0, { now: battles.isoAt(now) },
+      "", INVITE_BATCH, 0, { now: battles.filterTime(now) },
     )
   } catch (err) {
     console.log("[battles_expiry] invite lookup failed:", err)

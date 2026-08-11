@@ -91,6 +91,20 @@ function isoAt(ms) {
   return new Date(ms).toISOString()
 }
 
+/**
+ * The same instant in PocketBase's *storage* format (`2026-08-11 10:00:00.000Z`).
+ *
+ * Only for values interpolated into a filter expression, never for JSON we return:
+ * a filter compares against the stored text, and `isoAt`'s `T` separator makes that
+ * comparison wrong for same-day rows — `' '` (0x20) sorts before `'T'` (0x54), so
+ * every freshly written row reads as older than a `T`-separated cutoff. That silently
+ * expired every lobby within one sweep of being created. `server_time` and the date
+ * fields keep the `T` form, which is what `Date.parse` accepts on the client.
+ */
+function filterTime(ms) {
+  return new Date(ms).toISOString().replace('T', ' ')
+}
+
 function nowMs() {
   return Date.now()
 }
@@ -702,6 +716,7 @@ module.exports = {
   parseMs: parseMs,
   dateMs: dateMs,
   isoAt: isoAt,
+  filterTime: filterTime,
   nowMs: nowMs,
 
   jsonField: jsonField,

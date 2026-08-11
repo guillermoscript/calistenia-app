@@ -634,3 +634,21 @@ test("el cron de expiración barre lobbies rancios", async () => {
     "el cron battles_expiry no expiró el lobby rancio",
   )
 })
+
+test("el cron NO toca un lobby recién creado", async () => {
+  // Regresión: el corte se interpolaba con `isoAt` (separador `T`) y se comparaba
+  // contra el texto almacenado por PocketBase (separador espacio). Para filas del
+  // mismo día `' '` (0x20) ordena antes que `'T'` (0x54), así que TODO lobby recién
+  // creado parecía más viejo que el corte y el barrido lo expiraba en cinco minutos.
+  const ctx = await lobbyWithTwo()
+  const antes = await getOne("battles", ctx.battleId)
+  assert.equal(antes.status, "lobby")
+
+  await triggerCron("battles_expiry")
+
+  // Damos margen al barrido en segundo plano y luego exigimos que no haya pasado nada.
+  await new Promise(resolve => setTimeout(resolve, 1500))
+  const despues = await getOne("battles", ctx.battleId)
+  assert.equal(despues.status, "lobby", "el cron expiró un lobby dentro de su TTL")
+  assert.equal(despues.revision, antes.revision, "el cron tocó la revisión de un lobby vivo")
+})
