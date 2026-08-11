@@ -6,14 +6,15 @@ import { qk } from '../lib/query-keys'
 
 const STORAGE_KEY = 'calistenia_exercise_favorites'
 
-function loadLocal(): Set<string> {
+function loadLocal(): string[] {
   try {
     const raw = storage.getItem(STORAGE_KEY)
-    return raw ? new Set(JSON.parse(raw)) : new Set()
-  } catch { return new Set() }
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch { return [] }
 }
 
-function saveLocal(ids: Set<string>) {
+function saveLocal(ids: Iterable<string>) {
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify([...ids]))
   } catch { /* storage full */ }
@@ -31,24 +32,35 @@ export function useFavorites() {
   const uid = user?.id ?? null
   const key = qk.favorites(uid)
 
-  const { data: favoriteIds = new Set<string>() } = useQuery({
+  // La query guarda un ARRAY, no un Set: el resultado va a la caché persistida
+  // (calistenia_rq_cache) como JSON y un Set serializado vuelve como `{}` —
+  // mismo crash que arreglamos en useChallengeDetail (#352).
+  const { data: rawFavorites } = useQuery({
     queryKey: key,
     // initialData = local → disponible aun offline / sin sesión.
     initialData: loadLocal,
     initialDataUpdatedAt: 0, // fuerza refetch al montar para fusionar con PB
     enabled: !!uid,
     staleTime: 5 * 60 * 1000,
-    queryFn: async () => {
+    queryFn: async (): Promise<string[]> => {
       const res = await pb.collection('exercise_favorites').getFullList({
         filter: pb.filter('user = {:uid}', { uid: uid! }),
         fields: 'exercise_id',
       })
-      const pbIds = new Set(res.map(r => r.exercise_id as string))
-      const merged = new Set<string>([...loadLocal(), ...pbIds])
+      const pbIds = res.map(r => r.exercise_id as string)
+      const merged = [...new Set<string>([...loadLocal(), ...pbIds])]
       saveLocal(merged)
       return merged
     },
   })
+
+  // El guard Array.isArray sanea entradas viejas de la caché donde el dato era
+  // un Set restaurado como `{}`; en ese caso caemos a la copia local
+  // (calistenia_exercise_favorites), que siempre fue un array JSON válido.
+  const favoriteIds = useMemo(
+    () => new Set<string>(Array.isArray(rawFavorites) ? rawFavorites : loadLocal()),
+    [rawFavorites],
+  )
 
   const toggle = useMutation({
     mutationFn: async (exerciseId: string) => {
@@ -65,12 +77,14 @@ export function useFavorites() {
     },
     onMutate: async (exerciseId: string) => {
       await qc.cancelQueries({ queryKey: key })
-      const prev = qc.getQueryData<Set<string>>(key) ?? new Set<string>()
+      const prevRaw = qc.getQueryData<string[]>(key)
+      const prev = Array.isArray(prevRaw) ? prevRaw : []
       const next = new Set(prev)
       if (next.has(exerciseId)) next.delete(exerciseId)
       else next.add(exerciseId)
-      saveLocal(next)
-      qc.setQueryData(key, next)
+      const nextList = [...next]
+      saveLocal(nextList)
+      qc.setQueryData(key, nextList)
       return { prev }
     },
     onError: (_err, _id, ctx) => {

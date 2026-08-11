@@ -6,6 +6,7 @@ import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { getMetricUnit, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
+import { isCumulativeMetric } from '@calistenia/core/lib/cumulative-scoring'
 import {
   resolvePresetChallengeDescription,
   resolvePresetChallengeTitle,
@@ -17,6 +18,11 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/cor
 import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 
 const MEDALS = ['🥇', '🥈', '🥉']
+
+// Métricas con semántica de ventana (cuentan lo registrado entre inicio y fin
+// del reto). PR-style ('most_pullups', 'most_lsit'...) y 'custom' no la tienen.
+const WINDOW_METRICS = new Set(['most_sessions', 'longest_streak', 'exercise'])
+const hasWindowSemantics = (metric: string) => WINDOW_METRICS.has(metric) || isCumulativeMetric(metric)
 
 interface ChallengeDetailPageProps {
   userId: string
@@ -158,6 +164,10 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
         {challenge.description && (
           <div className="text-xs text-muted-foreground mt-2 leading-relaxed">{resolvePresetChallengeDescription(challenge)}</div>
         )}
+        <div className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+          {t(`challenge.metricDesc.${challenge.metric}`)}
+          {hasWindowSemantics(challenge.metric) && <> · {t('challenge.scoreWindowNote')}</>}
+        </div>
         <div className="text-[10px] text-muted-foreground mt-2 opacity-70">
           {challenge.starts_at} → {challenge.ends_at}
         </div>

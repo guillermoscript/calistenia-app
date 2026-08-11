@@ -21,6 +21,9 @@ const METRIC_IDS: { id: ChallengeMetric; icon: string }[] = [
   { id: 'most_lsit', icon: '🧘' },
   { id: 'most_handstand', icon: '🤸' },
   { id: 'exercise', icon: '🎯' },
+  { id: 'total_workouts', icon: '🏋️' },
+  { id: 'total_exercise', icon: '🔢' },
+  { id: 'total_distance', icon: '🛣️' },
   { id: 'custom', icon: '✏️' },
 ]
 
@@ -98,7 +101,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   }
 
   const isCustomMetric = metric === 'custom'
-  const isExerciseMetric = metric === 'exercise'
+  const isExerciseMetric = metric === 'exercise' || metric === 'total_exercise'
   const selectedExercise = exerciseSlug ? getCatalogEntry(exerciseSlug) : undefined
 
   const exerciseResults = useMemo(() => {
@@ -244,7 +247,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
               </div>
             ) : (
               <>
-                <label htmlFor="challenge-exercise" className="sr-only">{t('challenge.metric.exercise')}</label>
+                <label htmlFor="challenge-exercise" className="sr-only">{t(`challenge.metric.${metric}`)}</label>
                 <Input
                   id="challenge-exercise"
                   value={exerciseQuery}
@@ -296,8 +299,10 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
             {isCustomMetric
               ? (customMetric || t('challenge.units'))
               : isExerciseMetric
-                ? getMetricUnit('exercise', exerciseSlug ?? undefined)
-                : t(`challenge.metric.${metric}`).toLowerCase()}
+                ? getMetricUnit(metric, exerciseSlug ?? undefined)
+                : metric === 'total_distance'
+                  ? getMetricUnit(metric)
+                  : t(`challenge.metric.${metric}`).toLowerCase()}
           </span>
         </div>
       </div>

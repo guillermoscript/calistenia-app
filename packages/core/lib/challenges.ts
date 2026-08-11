@@ -12,6 +12,9 @@ const METRIC_LABEL_KEYS: Record<ChallengeMetric, string> = {
   most_handstand: 'challenge.metricHandstand',
   exercise: 'challenge.metricExercise',
   custom: 'challenge.metricCustom',
+  total_workouts: 'challenge.metricTotalWorkouts',
+  total_exercise: 'challenge.metricTotalExercise',
+  total_distance: 'challenge.metricTotalDistance',
 }
 
 export function getMetricLabels(): Record<ChallengeMetric, string> {
@@ -39,6 +42,9 @@ export const METRIC_UNITS: Record<ChallengeMetric, string> = {
   most_handstand: 's',
   exercise: 'reps',
   custom: '',
+  total_workouts: '',
+  total_exercise: 'reps',
+  total_distance: 'km',
 }
 
 export function daysRemaining(endsAt: string): string {
@@ -54,13 +60,17 @@ export function getMetricLabel(metric: ChallengeMetric, customMetric?: string, e
     const entry = getCatalogEntry(exerciseSlug)
     if (entry) return localize(entry.name, i18n.language)
   }
+  if (metric === 'total_exercise' && exerciseSlug) {
+    const entry = getCatalogEntry(exerciseSlug)
+    if (entry) return i18n.t('challenge.metricTotalOf', { name: localize(entry.name, i18n.language) })
+  }
   return i18n.t(METRIC_LABEL_KEYS[metric])
 }
 
 /** Score unit for a challenge; timer exercises score in seconds, the rest in reps. */
 export function getMetricUnit(metric: ChallengeMetric, exerciseSlug?: string): string {
   if (metric === 'custom') return ''
-  if (metric === 'exercise') {
+  if (metric === 'exercise' || metric === 'total_exercise') {
     return exerciseSlug && getCatalogEntry(exerciseSlug)?.isTimer ? 's' : 'reps'
   }
   return METRIC_UNITS[metric] ?? ''
