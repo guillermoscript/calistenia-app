@@ -4343,5 +4343,10 @@
   "battle.inviteUnavailable": "Invitación no disponible",
   "battle.inviteUnavailableHint": "Pide a quien te invitó que te mande un enlace nuevo.",
   "battle.openInApp": "Las batallas se juegan en la app. Ábrela para unirte.",
-  "battle.getTheApp": "Descargar la app"
+  "battle.getTheApp": "Descargar la app",
+
+  "battle.stateResting": "Descanso",
+  "battle.stateIdle": "Sin señal",
+  "battle.stateFinished": "Terminó",
+  "battle.stateStarting": "Empezando"
 }

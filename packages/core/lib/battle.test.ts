@@ -6,9 +6,12 @@ import {
   canMutateBattle,
   canViewBattle,
   compareBattleScores,
+  battleParticipantActivity,
+  battleRestSecondsLeft,
   createBattleScore,
   isBattleActiveForMe,
   validateBattleConfiguration,
+  BATTLE_IDLE_AFTER_MS,
 } from './battle'
 
 const config = {
@@ -164,5 +167,59 @@ describe('is a battle still mine to go back to', () => {
     expect(isBattleActiveForMe('draft', null, false)).toBe(false)
     // A seatless creator is never a reason to advertise a battle already under way.
     expect(isBattleActiveForMe('live', null, true)).toBe(false)
+  })
+})
+
+describe('what a participant is doing right now', () => {
+  const NOW = Date.parse('2026-08-12T10:00:00.000Z')
+  const at = (offsetMs: number) => new Date(NOW + offsetMs).toISOString()
+
+  const standing = (over: Partial<Parameters<typeof battleParticipantActivity>[0]> = {}) => ({
+    status: 'active' as const,
+    resting_until: null,
+    last_activity_at: at(-5_000),
+    ...over,
+  })
+
+  it('reads rest as resting only while the deadline is ahead', () => {
+    expect(battleParticipantActivity(standing({ resting_until: at(12_000) }), NOW)).toBe('resting')
+    // The instant it lapses they are working again, not idle: they just confirmed.
+    expect(battleParticipantActivity(standing({ resting_until: at(-1) }), NOW)).toBe('working')
+  })
+
+  it('separates a long silence from a rest', () => {
+    // The distinction the live board exists for: a stalled counter reads the same
+    // whether someone is resting or has quietly stopped.
+    const quiet = standing({ last_activity_at: at(-(BATTLE_IDLE_AFTER_MS + 1_000)) })
+    expect(battleParticipantActivity(quiet, NOW)).toBe('idle')
+    const justInside = standing({ last_activity_at: at(-(BATTLE_IDLE_AFTER_MS - 1_000)) })
+    expect(battleParticipantActivity(justInside, NOW)).toBe('working')
+  })
+
+  it('lets a terminal seat win over any timestamp', () => {
+    // Someone who finished mid-rest is finished, not resting.
+    const done = standing({ status: 'finished', resting_until: at(30_000) })
+    expect(battleParticipantActivity(done, NOW)).toBe('finished')
+    expect(battleParticipantActivity(standing({ status: 'left' }), NOW)).toBe('left')
+  })
+
+  it('treats an unparseable or missing timestamp as working, never as 1970', () => {
+    expect(battleParticipantActivity(standing({ last_activity_at: null }), NOW)).toBe('working')
+    expect(battleParticipantActivity(standing({ last_activity_at: 'nonsense' }), NOW)).toBe('working')
+    expect(battleParticipantActivity(standing({ resting_until: 'nonsense' }), NOW)).toBe('working')
+  })
+
+  it('accepts the space-separated form PocketBase actually stores', () => {
+    // `2026-08-12 10:00:12.000Z`, not the ISO `T` — parsing this wrong is what made the
+    // expiry sweep kill every lobby (#356).
+    const stored = at(12_000).replace('T', ' ')
+    expect(battleParticipantActivity(standing({ resting_until: stored }), NOW)).toBe('resting')
+    expect(battleRestSecondsLeft(stored, NOW)).toBe(12)
+  })
+
+  it('counts rest down to zero and never past it', () => {
+    expect(battleRestSecondsLeft(at(11_400), NOW)).toBe(12)
+    expect(battleRestSecondsLeft(at(-9_000), NOW)).toBe(0)
+    expect(battleRestSecondsLeft(null, NOW)).toBe(0)
   })
 })

@@ -5,6 +5,7 @@ import type {
   BattleParticipantStatus,
   BattleScore,
   BattleScoreInput,
+  BattleStanding,
   BattleStatus,
 } from '../types/battle'
 
@@ -128,10 +129,11 @@ export function createBattleScore(input: BattleScoreInput): BattleScore {
 
 /**
  * PocketBase hands back `2026-08-11 20:38:14.658Z`; `Date.parse` wants the `T`.
- * Returns `null` for anything unparseable so a bad timestamp ranks like "did not
- * finish" instead of like "finished at the epoch".
+ * Returns `null` for anything unparseable so a bad timestamp reads as "we do not know"
+ * instead of as the epoch — which would rank a finisher last, or make a resting
+ * participant look idle since 1970.
  */
-function finishedMs(raw: string | null): number | null {
+function battleTimeMs(raw: string | null): number | null {
   if (!raw) return null
   const ms = Date.parse(raw.replace(' ', 'T'))
   return Number.isNaN(ms) ? null : ms
@@ -148,8 +150,8 @@ export function compareBattleScores(a: BattleScore, b: BattleScore): number {
   // A battle is a race, so equal work is settled by who got there first. Without this the
   // two all-reps circuits rank everyone who completes them by record id, which is
   // arbitrary: in testing the participant who finished 25 minutes later won (#387).
-  const aFinished = finishedMs(a.finished_at)
-  const bFinished = finishedMs(b.finished_at)
+  const aFinished = battleTimeMs(a.finished_at)
+  const bFinished = battleTimeMs(b.finished_at)
   if (aFinished !== bFinished) {
     // Finishing beats not finishing at equal work; among finishers, earlier wins.
     if (aFinished === null) return 1
@@ -213,6 +215,46 @@ export function canViewBattle(
  * draft (publishing is what seats them), so they keep the resume affordance; it is never
  * a reason to advertise a battle already under way.
  */
+/**
+ * What a participant is doing right now, as far as the server can honestly tell (#397).
+ *
+ * `idle` is the important one. A live board that only shows scores makes someone who is
+ * resting look identical to someone who lost signal or quietly gave up — the counter
+ * simply stops in both cases. Splitting them is the whole point: `resting` has a
+ * deadline you can watch tick down, `idle` is "we have not heard from them in a while".
+ */
+export type BattleParticipantActivity = 'resting' | 'working' | 'idle' | 'finished' | 'left'
+
+/**
+ * How long a participant may go without confirming an exercise before the board stops
+ * calling it work. Generous on purpose: a held plank plus getting set up for the next
+ * exercise is a legitimately long silence, and calling a training partner idle while
+ * they are mid-effort is worse than being slow to notice they stopped.
+ */
+export const BATTLE_IDLE_AFTER_MS = 180_000
+
+export function battleParticipantActivity(
+  standing: Pick<BattleStanding, 'status' | 'resting_until' | 'last_activity_at'>,
+  nowMs: number,
+): BattleParticipantActivity {
+  if (standing.status === 'finished') return 'finished'
+  if (standing.status === 'left') return 'left'
+
+  const restingUntil = battleTimeMs(standing.resting_until)
+  if (restingUntil !== null && restingUntil > nowMs) return 'resting'
+
+  const lastActivity = battleTimeMs(standing.last_activity_at)
+  if (lastActivity !== null && nowMs - lastActivity > BATTLE_IDLE_AFTER_MS) return 'idle'
+  return 'working'
+}
+
+/** Whole seconds of rest left, floored at 0. */
+export function battleRestSecondsLeft(restingUntil: string | null, nowMs: number): number {
+  const until = battleTimeMs(restingUntil)
+  if (until === null) return 0
+  return Math.max(0, Math.ceil((until - nowMs) / 1000))
+}
+
 export function isBattleActiveForMe(
   status: BattleStatus,
   mySeat: BattleParticipantStatus | null,
