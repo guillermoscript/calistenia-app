@@ -110,6 +110,8 @@ export interface BattleScoreInput {
   completed_rounds: number
   completed_reps: number
   completed_time_seconds: number
+  /** When this participant finished, or null if they have not. Ranks ties (#387). */
+  finished_at?: string | null
   tie_break_key: string
 }
 
@@ -117,6 +119,7 @@ export interface BattleScore {
   completed_rounds: number
   completed_reps: number
   completed_time_seconds: number
+  finished_at: string | null
   tie_break_key: string
 }
 

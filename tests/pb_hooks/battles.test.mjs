@@ -514,6 +514,42 @@ test("la clasificación sigue el orden rondas → reps → tiempo del contrato",
   assert.equal(snap.standings[1].rank, 2)
 })
 
+test("con la misma puntuación gana quien terminó antes", async () => {
+  // Reproduce lo que pasó en el test de dispositivo: los dos completan el circuito
+  // entero, así que rondas y reps empatan y el tiempo es 0 en un circuito de solo
+  // repeticiones. Antes decidía el id del registro y ganaba el que acabó 25 min más
+  // tarde (#387).
+  const ctx = await liveBattle()
+  const iguales = { completed_rounds: 3, completed_reps: 105, completed_time_seconds: 0, current_exercise_position: 0 }
+
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/finish`, { progress: iguales })
+  // Un margen real entre ambos finales: los timestamps de PocketBase van en milisegundos.
+  await new Promise((r) => setTimeout(r, 1100))
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`, { progress: iguales })
+
+  const snap = await api(`/api/battles/${ctx.battleId}/snapshot`, { token: await authAs(ctx.creator) })
+  assert.equal(snap.standings[0].user, ctx.friend.id, "gana quien terminó antes")
+  assert.equal(snap.standings[1].user, ctx.creator.id)
+  assert.deepEqual(
+    [snap.standings[0].score.completed_reps, snap.standings[1].score.completed_reps],
+    [105, 105],
+    "el desempate no debía cambiar la puntuación",
+  )
+})
+
+test("quien termina va por delante de quien sigue en curso con el mismo trabajo", async () => {
+  const ctx = await liveBattle()
+  const iguales = { completed_rounds: 3, completed_reps: 105, completed_time_seconds: 0, current_exercise_position: 0 }
+
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/progress`, { progress: iguales })
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`, { progress: iguales })
+
+  const snap = await api(`/api/battles/${ctx.battleId}/snapshot`, { token: await authAs(ctx.creator) })
+  assert.equal(snap.standings[0].user, ctx.creator.id, "haber terminado gana al mismo trabajo sin terminar")
+  assert.equal(snap.standings[0].status, "finished")
+  assert.equal(snap.standings[1].status, "active")
+})
+
 test("los participantes que se van conservan puntuación y puesto", async () => {
   const ctx = await liveBattle()
   await post(ctx.friend, `/api/battles/${ctx.battleId}/progress`, {

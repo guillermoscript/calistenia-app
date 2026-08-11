@@ -121,8 +121,20 @@ export function createBattleScore(input: BattleScoreInput): BattleScore {
     completed_rounds: Math.floor(input.completed_rounds),
     completed_reps: Math.floor(input.completed_reps),
     completed_time_seconds: Math.floor(input.completed_time_seconds),
+    finished_at: input.finished_at ?? null,
     tie_break_key: input.tie_break_key,
   }
+}
+
+/**
+ * PocketBase hands back `2026-08-11 20:38:14.658Z`; `Date.parse` wants the `T`.
+ * Returns `null` for anything unparseable so a bad timestamp ranks like "did not
+ * finish" instead of like "finished at the epoch".
+ */
+function finishedMs(raw: string | null): number | null {
+  if (!raw) return null
+  const ms = Date.parse(raw.replace(' ', 'T'))
+  return Number.isNaN(ms) ? null : ms
 }
 
 /** Returns a negative number when `a` ranks ahead of `b`. */
@@ -132,6 +144,19 @@ export function compareBattleScores(a: BattleScore, b: BattleScore): number {
   if (a.completed_time_seconds !== b.completed_time_seconds) {
     return b.completed_time_seconds - a.completed_time_seconds
   }
+
+  // A battle is a race, so equal work is settled by who got there first. Without this the
+  // two all-reps circuits rank everyone who completes them by record id, which is
+  // arbitrary: in testing the participant who finished 25 minutes later won (#387).
+  const aFinished = finishedMs(a.finished_at)
+  const bFinished = finishedMs(b.finished_at)
+  if (aFinished !== bFinished) {
+    // Finishing beats not finishing at equal work; among finishers, earlier wins.
+    if (aFinished === null) return 1
+    if (bFinished === null) return -1
+    return aFinished - bFinished
+  }
+
   return a.tie_break_key < b.tie_break_key ? -1 : a.tie_break_key > b.tie_break_key ? 1 : 0
 }
 
