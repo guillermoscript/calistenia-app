@@ -35,6 +35,15 @@ export default function BattleInviteScreen() {
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Nunca enseñar el mensaje crudo del error: esta es la primera pantalla que ve alguien
+  // que aún no usa la app, y lo que salía era texto en inglés del SDK ("Something went
+  // wrong.") sobre una pantalla en español. El detalle se queda en la consola de dev.
+  const showError = useCallback((e: unknown) => {
+    if (__DEV__) console.warn('[battle-invite]', e)
+    const status = (e as { status?: number } | null)?.status
+    setError(status === 0 ? t('battle.inviteOffline') : t('battle.inviteError'))
+  }, [t])
+
   useEffect(() => {
     if (!token) return
 
@@ -48,9 +57,9 @@ export default function BattleInviteScreen() {
     let cancelled = false
     previewBattleInvite(token)
       .then((result) => { if (!cancelled) setPreview(result) })
-      .catch((e) => { if (!cancelled) setError((e as Error).message) })
+      .catch((e) => { if (!cancelled) showError(e) })
     return () => { cancelled = true }
-  }, [token, router])
+  }, [token, router, showError])
 
   const handleJoin = useCallback(async () => {
     if (!token) return
@@ -65,11 +74,11 @@ export default function BattleInviteScreen() {
       void haptics.success()
       router.replace(`/battle/${snapshot.battle.id}`)
     } catch (e) {
-      setError((e as Error).message)
+      showError(e)
       void haptics.error()
       setJoining(false)
     }
-  }, [token, router])
+  }, [token, router, showError])
 
   if (!token) return null
 
