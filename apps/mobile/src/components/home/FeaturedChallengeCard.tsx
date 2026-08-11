@@ -23,6 +23,7 @@ import { COLORS } from '@/lib/theme'
 import { useFeaturedChallenge } from '@calistenia/core/hooks/useFeaturedChallenge'
 import { trackFeaturedChallengeViewed, trackFeaturedChallengeOpened } from '@calistenia/core/lib/featured-challenge'
 import { getMetricLabel } from '@calistenia/core/lib/challenges'
+import { resolvePresetChallengeTitle } from '@calistenia/core/lib/challenge-presets'
 
 interface FeaturedChallengeCardProps {
   userId: string | null
@@ -73,6 +74,9 @@ function FeaturedChallengeInner({ userId }: { userId: string }) {
   }
 
   const metricLabel = getMetricLabel(card.challenge.metric, card.challenge.custom_metric, card.challenge.exercise_slug)
+  // Un reto de preset (#350) guarda el título de catálogo; el visible vive en
+  // i18n. Sin preset_key devuelve el título tal cual.
+  const title = resolvePresetChallengeTitle(card.challenge)
   const daysLabel =
     card.state === 'results'
       ? t('featuredChallenge.ended')
@@ -102,7 +106,7 @@ function FeaturedChallengeInner({ userId }: { userId: string }) {
 
       {/* Title */}
       <Text className="font-bebas text-2xl leading-none text-foreground" numberOfLines={2}>
-        {card.challenge.title}
+        {title}
       </Text>
 
       {/* Metadata: métrica · participantes · días restantes / terminado */}

@@ -91,7 +91,8 @@ export function resolveNotifUrl(url: string | undefined | null): NotifRoute | nu
   if (path === '/progress' || path === '/history') return '/history'
   if (path === '/profile') return '/profile'
   if (path === '/notifications') return '/notifications'
-  if (path.startsWith('/challenges')) return `${path}${query}`
+  if (path.startsWith('/challenges/')) return `${path}${query}`
+  if (path === '/challenges') return '/challenges'
   if (path === '/referrals') return '/friends'
   if (path.startsWith('/nutrition')) return '/nutrition'
 

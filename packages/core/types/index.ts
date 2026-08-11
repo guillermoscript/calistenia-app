@@ -532,7 +532,19 @@ export interface CardioSession {
 
 // ─── Challenges ──────────────────────────────────────────────────────────────
 
-export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand' | 'exercise' | 'custom'
+export type ChallengeMetric =
+  | 'most_sessions'
+  | 'most_pullups'
+  | 'most_pushups'
+  | 'longest_streak'
+  | 'most_lsit'
+  | 'most_handstand'
+  | 'exercise'
+  | 'custom'
+  /** Acumulativas (#352): totales derivados de registros canónicos en la ventana del reto. */
+  | 'total_workouts'
+  | 'total_exercise'
+  | 'total_distance'
 export type ChallengeStatus = 'active' | 'ended'
 
 export interface Challenge {
@@ -541,7 +553,7 @@ export interface Challenge {
   title: string
   metric: ChallengeMetric
   custom_metric?: string
-  /** Catalog slug when metric === 'exercise' (matches sets_log.exercise_id). */
+  /** Catalog slug when metric === 'exercise' or 'total_exercise' (matches sets_log.exercise_id). */
   exercise_slug?: string
   description?: string
   goal?: number
@@ -550,6 +562,8 @@ export interface Challenge {
   status: ChallengeStatus
   /** Curado por admin/editor para la card de Home (#351); false por defecto. */
   is_featured?: boolean
+  /** Stable catalog identity for a beginner preset enrollment. */
+  preset_key?: string
 }
 
 export interface ChallengeParticipant {

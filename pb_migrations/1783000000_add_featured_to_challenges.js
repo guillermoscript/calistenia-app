@@ -15,15 +15,21 @@
 migrate((app) => {
   const challenges = app.findCollectionByNameOrId("challenges")
 
-  challenges.fields.push(new Field({
-    "hidden": false,
-    "id": "bool_chal_featured",
-    "name": "is_featured",
-    "presentable": false,
-    "required": false,
-    "system": false,
-    "type": "bool"
-  }))
+  // Guard de idempotencia: esta migración se renumeró (1782900000 → 1783000000)
+  // para ordenar detrás de las de presets (#350), que tocan la misma colección.
+  // Si alguna instalación llegó a aplicar la versión antigua, no dupliques campo.
+  const alreadyAdded = (challenges.fields || []).some(f => f.name === "is_featured")
+  if (!alreadyAdded) {
+    challenges.fields.push(new Field({
+      "hidden": false,
+      "id": "bool_chal_featured",
+      "name": "is_featured",
+      "presentable": false,
+      "required": false,
+      "system": false,
+      "type": "bool"
+    }))
+  }
 
   challenges.updateRule = '(creator = @request.auth.id && @request.body.is_featured:isset = false) || @request.auth.role = "admin" || @request.auth.role = "editor"'
 

@@ -5,6 +5,7 @@ import { Button } from './ui/button'
 import { Progress } from './ui/progress'
 import { useFeaturedChallenge } from '@calistenia/core/hooks/useFeaturedChallenge'
 import { trackFeaturedChallengeViewed, trackFeaturedChallengeOpened } from '@calistenia/core/lib/featured-challenge'
+import { resolvePresetChallengeTitle } from '@calistenia/core/lib/challenge-presets'
 
 interface FeaturedChallengeCardProps {
   onNavigate: (path: string) => void
@@ -45,6 +46,10 @@ export default function FeaturedChallengeCard({ onNavigate, userId }: FeaturedCh
     onNavigate(detailPath)
   }
 
+  // Un reto de preset (#350) guarda el título de catálogo; el visible vive en
+  // i18n. Sin preset_key devuelve el título tal cual.
+  const title = resolvePresetChallengeTitle(card.challenge)
+
   const daysLabel = card.state === 'results'
     ? t('featuredChallenge.ended')
     : card.daysRemaining === 0
@@ -56,7 +61,7 @@ export default function FeaturedChallengeCard({ onNavigate, userId }: FeaturedCh
       {/* Toda la card abre el detalle; los controles van encima (no se anidan botones). */}
       <button
         onClick={handleOpen}
-        aria-label={card.challenge.title}
+        aria-label={title}
         className="absolute inset-0 rounded-xl"
       />
 
@@ -66,7 +71,7 @@ export default function FeaturedChallengeCard({ onNavigate, userId }: FeaturedCh
       </div>
 
       <div className="relative font-bebas text-xl md:text-2xl leading-tight mb-2 truncate">
-        {card.challenge.title}
+        {title}
       </div>
 
       <div className="relative flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">

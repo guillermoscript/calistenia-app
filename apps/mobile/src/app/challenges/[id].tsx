@@ -1,5 +1,5 @@
 /**
- * Detalle de un reto — clasificación + unirse. Puerto móvil de
+ * Detalle de un reto — progreso propio + clasificación + unirse. Puerto móvil de
  * ChallengeDetailPage (web), usando el mismo hook de core (`useChallengeDetail`).
  *
  * Ruta: /challenges/[id]. Coexiste con `challenges.tsx` (listado en /challenges)
@@ -19,6 +19,10 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
 import { getMetricLabel, getMetricUnit, daysRemaining } from '@calistenia/core/lib/challenges'
+import {
+  resolvePresetChallengeDescription,
+  resolvePresetChallengeTitle,
+} from '@calistenia/core/lib/challenge-presets'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
@@ -38,6 +42,8 @@ export default function ChallengeDetailScreen() {
 
   useEffect(() => { load() }, [load])
 
+  const currentEntry = leaderboard.find(entry => entry.isCurrentUser) ?? null
+
   // Vista del detalle: una vez por reto cargado, no en cada refetch del leaderboard.
   const viewedIdRef = useRef<string | null>(null)
   useEffect(() => {
@@ -52,8 +58,39 @@ export default function ChallengeDetailScreen() {
     })
   }, [id, loading, challenge])
 
+  // Progreso propio: se reemite cuando cambia el valor del usuario, no en cada render.
+  const progressRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!id || loading || !currentEntry) return
+    const key = `${id}:${currentEntry.value}`
+    if (progressRef.current === key) return
+    progressRef.current = key
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeProgressUpdated, {
+      surface: 'challenge_detail',
+      source: 'challenge_route',
+      challenge_id: id,
+      progress_value: currentEntry.value,
+      result: 'updated',
+    })
+  }, [id, currentEntry, loading])
+
+  // Meta alcanzada: una sola vez por reto.
+  const completionRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!id || loading || !challenge?.goal || challenge.goal <= 0) return
+    if (!currentEntry || currentEntry.value < challenge.goal || completionRef.current === id) return
+    completionRef.current = id
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeCompleted, {
+      surface: 'challenge_detail',
+      source: 'challenge_goal_reached',
+      challenge_id: id,
+      result: 'completed',
+    })
+  }, [id, challenge, currentEntry, loading])
+
   const isParticipant = !!userId && participantIds.has(userId)
   const isActive = challenge?.status === 'active'
+  const goalReached = !!challenge?.goal && !!currentEntry && currentEntry.value >= challenge.goal
 
   const handleJoin = async () => {
     if (!userId || !id) return
@@ -102,6 +139,10 @@ export default function ChallengeDetailScreen() {
 
   const metricLabel = getMetricLabel(challenge.metric, challenge.custom_metric, challenge.exercise_slug)
   const unit = getMetricUnit(challenge.metric, challenge.exercise_slug)
+  // Los retos de preset guardan un slug de catálogo; el título/descripción reales
+  // viven en i18n (#350), así que se resuelven aquí en vez de usar el campo crudo.
+  const title = resolvePresetChallengeTitle(challenge)
+  const description = resolvePresetChallengeDescription(challenge)
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -110,7 +151,7 @@ export default function ChallengeDetailScreen() {
       <ScrollView contentContainerClassName="px-4 pb-12 gap-4" showsVerticalScrollIndicator={false}>
         {/* Título + meta */}
         <View className="gap-2">
-          <Text className="font-bebas text-3xl leading-none text-foreground">{challenge.title}</Text>
+          <Text className="font-bebas text-3xl leading-none text-foreground">{title}</Text>
 
           <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1.5">
             <Text className="font-mono text-[10px] tracking-wide text-lime">{metricLabel}</Text>
@@ -124,7 +165,11 @@ export default function ChallengeDetailScreen() {
             )}
             <Text className="font-mono text-[10px] text-muted-foreground">·</Text>
             <Text className={cn('font-mono text-[10px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
-              {daysRemaining(challenge.ends_at)}
+              {goalReached
+                ? t('challenge.preset.completed')
+                : isActive
+                  ? daysRemaining(challenge.ends_at)
+                  : t('challenge.preset.expired')}
             </Text>
             <Text className="font-mono text-[10px] text-muted-foreground">·</Text>
             <Text className="font-mono text-[10px] text-muted-foreground">
@@ -132,8 +177,8 @@ export default function ChallengeDetailScreen() {
             </Text>
           </View>
 
-          {challenge.description ? (
-            <Text className="text-sm leading-relaxed text-muted-foreground">{challenge.description}</Text>
+          {description ? (
+            <Text className="text-sm leading-relaxed text-muted-foreground">{description}</Text>
           ) : null}
         </View>
 
@@ -149,6 +194,36 @@ export default function ChallengeDetailScreen() {
               {joining ? '...' : t('featuredChallenge.join')}
             </Text>
           </Pressable>
+        )}
+
+        {/* Progreso propio — destacado sobre la clasificación cuando ya participa */}
+        {currentEntry && (
+          <View className="gap-2">
+            <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              {t('challenge.preset.progress')}
+            </Text>
+            <View className="gap-3 rounded-xl border border-lime/30 bg-lime/10 p-4">
+              <View className="flex-row items-end justify-between">
+                <Text className="font-sans-medium text-foreground">{currentEntry.displayName}</Text>
+                <Text className="font-bebas text-4xl leading-none text-lime">
+                  {currentEntry.value}{unit ? ` ${unit}` : ''}
+                </Text>
+              </View>
+              {(challenge.goal ?? 0) > 0 && (
+                <View className="gap-2">
+                  <View className="h-2 overflow-hidden rounded-full bg-background">
+                    <View
+                      className="h-full rounded-full bg-lime"
+                      style={{ width: `${Math.min(100, (currentEntry.value / challenge.goal!) * 100)}%` }}
+                    />
+                  </View>
+                  <Text className="font-mono text-[10px] text-muted-foreground">
+                    {currentEntry.value} / {challenge.goal}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
         )}
 
         {/* Clasificación */}

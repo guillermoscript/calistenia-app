@@ -47,6 +47,9 @@ async function fetchFeaturedChallenge(userId: string): Promise<FeaturedChallenge
     starts_at: c.starts_at,
     ends_at: c.ends_at,
     status: c.status as ChallengeStatus,
+    // Necesario para resolver el título/descripción de i18n si el reto
+    // destacado es un preset de principiante (#350).
+    preset_key: c.preset_key || undefined,
   }))
 
   // Participaciones del usuario solo entre los candidatos.
