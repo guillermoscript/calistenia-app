@@ -597,12 +597,18 @@ cronAdd("battles_expiry", "*/5 * * * *", function () {
   var now = battles.nowMs()
   var cutoff = battles.isoAt(now - battles.LOBBY_TTL_MS)
 
+  // Batch caps so one sweep cannot stall on a huge backlog. Hitting a cap is logged
+  // rather than swallowed: the run still looks successful, and without the line nobody
+  // would know the backlog is only draining 200 at a time.
+  var BATTLE_BATCH = 200
+  var INVITE_BATCH = 500
+
   var stale = []
   try {
     stale = $app.findRecordsByFilter(
       "battles",
       "(status = 'draft' || status = 'lobby' || status = 'ready') && last_activity_at < {:cutoff}",
-      "", 200, 0, { cutoff: cutoff },
+      "", BATTLE_BATCH, 0, { cutoff: cutoff },
     )
   } catch (err) {
     console.log("[battles_expiry] battle lookup failed:", err)
@@ -623,7 +629,7 @@ cronAdd("battles_expiry", "*/5 * * * *", function () {
     expiredInvites = $app.findRecordsByFilter(
       "battle_invites",
       "status = 'active' && expires_at < {:now}",
-      "", 500, 0, { now: battles.isoAt(now) },
+      "", INVITE_BATCH, 0, { now: battles.isoAt(now) },
     )
   } catch (err) {
     console.log("[battles_expiry] invite lookup failed:", err)
@@ -639,4 +645,7 @@ cronAdd("battles_expiry", "*/5 * * * *", function () {
   }
 
   console.log("[battles_expiry] expired", stale.length, "battles and", expiredInvites.length, "invites")
+  if (stale.length >= BATTLE_BATCH || expiredInvites.length >= INVITE_BATCH) {
+    console.log("[battles_expiry] hit a batch cap — more remain, next run in 5 minutes")
+  }
 })
