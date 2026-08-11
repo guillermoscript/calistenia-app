@@ -54,26 +54,42 @@ export function parseRepsTotal(reps: string | null | undefined): number {
 // ─── total_exercise ──────────────────────────────────────────────────────────
 
 export interface SetRowForTotal {
+  /** id del registro de `sets_log`: la única identidad fiable de una serie. */
+  id?: string
   reps?: string | null
+  /** Ya no se usan para deduplicar (ver nota abajo); se mantienen por contexto. */
   workout_key?: string
   logged_at?: string
 }
 
 /**
  * Suma de reps (o segundos si el ejercicio es de temporizador) de las filas de
- * `sets_log` de UN ejercicio. Filas idénticas en (workout_key, logged_at, reps)
- * son ingestas duplicadas (doble tap / doble sync) y se cuentan una sola vez;
- * series legítimas repetidas difieren siempre en `logged_at`.
+ * `sets_log` de UN ejercicio, deduplicadas por **id de registro**: cada fila
+ * almacenada cuenta exactamente una vez, así que refrescar es idempotente y
+ * editar/borrar se refleja solo.
+ *
+ * NO se puede deduplicar por (workout_key, logged_at, reps): al registrar un
+ * entreno pasado, `logSet` escribe `logged_at = localDateForPB(date)`, es decir
+ * MEDIANOCHE idéntica para todas las series de ese día, así que un 3x10
+ * legítimo quedaba idéntico en los tres campos y se contaba como una sola serie
+ * (30 reps → 10). Verificado en el leaderboard: marcaba 40 donde el usuario
+ * había hecho 60.
+ *
+ * Contrapartida asumida: si alguna vez se llegaran a escribir DOS filas para la
+ * misma serie real (reintento/replay), cada una tiene su propio id y sumarían
+ * dos veces. Se prefiere ese riesgo —hipotético— a subcontar entrenos reales,
+ * que es un fallo observado y visible en la clasificación.
  */
 export function sumExerciseTotal(rows: SetRowForTotal[]): number {
   const seen = new Set<string>()
   let total = 0
-  for (const row of rows) {
-    const key = `${row.workout_key ?? ''}|${row.logged_at ?? ''}|${row.reps ?? ''}`
-    if (seen.has(key)) continue
+  rows.forEach((row, index) => {
+    // Sin id no hay identidad que deduplicar: la fila cuenta tal cual.
+    const key = row.id ?? `__idx_${index}`
+    if (seen.has(key)) return
     seen.add(key)
     total += parseRepsTotal(row.reps)
-  }
+  })
   return total
 }
 

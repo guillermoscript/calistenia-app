@@ -244,7 +244,8 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
           'user = {:uid} && exercise_id = {:eid} && logged_at >= {:start} && logged_at <= {:end}',
           { uid, eid: exerciseSlug, start: startStr, end: endStr },
         ),
-        fields: 'reps,workout_key,logged_at',
+        // `id` es imprescindible: es la clave de dedupe de sumExerciseTotal.
+        fields: 'id,reps',
         $autoCancel: false,
       })
       return sumExerciseTotal(sets as any)

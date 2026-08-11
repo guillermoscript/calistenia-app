@@ -64,28 +64,53 @@ describe('sumExerciseTotal', () => {
     expect(sumExerciseTotal(rows)).toBe(40)
   })
 
-  it('counts exact duplicate rows (same workout_key + logged_at + reps) once', () => {
+  it('counts the same record id once (idempotent across refetches)', () => {
     const rows = [
-      { workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
-      { workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
+      { id: 'a1', workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
+      { id: 'a1', workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
     ]
     expect(sumExerciseTotal(rows)).toBe(10)
   })
 
+  it('counts distinct records with identical content separately', () => {
+    // Dos series reales de 10 pueden ser idénticas en todos los campos salvo el id.
+    const rows = [
+      { id: 'a1', workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
+      { id: 'a2', workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
+    ]
+    expect(sumExerciseTotal(rows)).toBe(20)
+  })
+
+  it('counts a past-logged 3x10 as 30, not 10 (regresión #374)', () => {
+    // `LogWorkoutPage` pasa `date` a `logSet`, así que las tres series comparten
+    // `logged_at` = medianoche. Deduplicar por contenido las colapsaba en una.
+    const rows = [
+      { id: 'p1', workout_key: 'p1_day4', logged_at: '2026-08-05 00:00:00', reps: '10' },
+      { id: 'p2', workout_key: 'p1_day4', logged_at: '2026-08-05 00:00:00', reps: '10' },
+      { id: 'p3', workout_key: 'p1_day4', logged_at: '2026-08-05 00:00:00', reps: '10' },
+    ]
+    expect(sumExerciseTotal(rows)).toBe(30)
+  })
+
   it('counts rows differing only in logged_at separately', () => {
     const rows = [
-      { workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
-      { workout_key: 'w1', logged_at: '2026-08-01T10:05:00Z', reps: '10' },
+      { id: 'b1', workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
+      { id: 'b2', workout_key: 'w1', logged_at: '2026-08-01T10:05:00Z', reps: '10' },
     ]
     expect(sumExerciseTotal(rows)).toBe(20)
   })
 
   it('counts rows differing only in reps separately', () => {
     const rows = [
-      { workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
-      { workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '12' },
+      { id: 'c1', workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '10' },
+      { id: 'c2', workout_key: 'w1', logged_at: '2026-08-01T10:00:00Z', reps: '12' },
     ]
     expect(sumExerciseTotal(rows)).toBe(22)
+  })
+
+  it('counts every row when the rows carry no id', () => {
+    const rows = [{ reps: '10' }, { reps: '10' }]
+    expect(sumExerciseTotal(rows)).toBe(20)
   })
 })
 
