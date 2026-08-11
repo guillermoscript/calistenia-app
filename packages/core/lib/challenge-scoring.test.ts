@@ -46,6 +46,27 @@ describe('workoutAffectsChallenge', () => {
   it('never scores custom challenges from a workout', () => {
     expect(workoutAffectsChallenge(challenge({ metric: 'custom' }), new Set(['wide_pullup']))).toBe(false)
   })
+
+  it('always counts completions for total_workouts, regardless of what was logged', () => {
+    const none = new Set<string>()
+    expect(workoutAffectsChallenge(challenge({ metric: 'total_workouts' }), none)).toBe(true)
+    expect(workoutAffectsChallenge(challenge({ metric: 'total_workouts' }), new Set(['wide_pullup']))).toBe(true)
+  })
+
+  it('requires the challenge exercise to have been logged for metric total_exercise', () => {
+    const ch = challenge({ metric: 'total_exercise', exercise_slug: 'muscle_up' })
+    expect(workoutAffectsChallenge(ch, new Set(['muscle_up', 'dips']))).toBe(true)
+    expect(workoutAffectsChallenge(ch, new Set(['dips']))).toBe(false)
+  })
+
+  it('does not score a total_exercise challenge with no slug configured', () => {
+    const ch = challenge({ metric: 'total_exercise', exercise_slug: '' })
+    expect(workoutAffectsChallenge(ch, new Set(['muscle_up']))).toBe(false)
+  })
+
+  it('never scores total_distance from a workout completion', () => {
+    expect(workoutAffectsChallenge(challenge({ metric: 'total_distance' }), new Set(['running']))).toBe(false)
+  })
 })
 
 describe('legacyPrKey', () => {

@@ -51,10 +51,16 @@ export function workoutAffectsChallenge(
     // Se puntúan por número/fechas de sesión: cualquier finalización cuenta.
     case 'most_sessions':
     case 'longest_streak':
+    case 'total_workouts':
       return true
-    // Se puntúa por la mejor serie de un ejercicio dentro de la ventana.
+    // Se puntúa por la mejor serie (o el total, #352) de un ejercicio en la ventana.
     case 'exercise':
+    case 'total_exercise':
       return !!challenge.exercise_slug && loggedExerciseIds.has(challenge.exercise_slug)
+    // El total de distancia solo se mueve con cardio, nunca al cerrar una sesión
+    // de calistenia — el panel post-entreno no debe destacarlo.
+    case 'total_distance':
+      return false
     // Se puntúa desde un campo pr_*, que solo se mueve si se entrenó esa familia.
     case 'most_pullups':
     case 'most_pushups':

@@ -1,9 +1,10 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
 import { localMidnightAsUTC, addDays, utcToLocalDateStr } from '../lib/dateUtils'
 import { parseRepsForPR } from '../lib/pr-utils'
+import { sumExerciseTotal, countWorkouts, sumDistanceKm, compareLeaderboardEntries } from '../lib/cumulative-scoring'
 import { qk } from '../lib/query-keys'
 import type { Challenge, ChallengeMetric } from '../types'
 import type { LeaderboardEntry } from './useLeaderboard'
@@ -34,7 +35,9 @@ async function fetchChallenge(challengeId: string): Promise<Challenge> {
 
 interface LeaderboardQueryResult {
   entries: LeaderboardEntry[]
-  participantIds: Set<string>
+  // Array, no Set: el resultado se persiste como JSON (calistenia_rq_cache) y
+  // un Set serializado vuelve como `{}` — el detalle petaba al restaurar caché.
+  participantIds: string[]
 }
 
 async function fetchLeaderboard(
@@ -43,7 +46,7 @@ async function fetchLeaderboard(
   currentUserId: string,
 ): Promise<LeaderboardQueryResult> {
   const available = await isPocketBaseAvailable()
-  if (!available) return { entries: [], participantIds: new Set() }
+  if (!available) return { entries: [], participantIds: [] }
 
   // Obtener participantes con usuario expandido
   const participants = await pb.collection('challenge_participants').getFullList({
@@ -52,13 +55,13 @@ async function fetchLeaderboard(
     $autoCancel: false,
   })
 
-  const participantIds = new Set(participants.map((p: any) => p.user as string))
+  const participantIds = participants.map((p: any) => p.user as string)
 
   // Calcular scores en paralelo (N+1 intencional, se mantiene como en el original)
   const startStr = localMidnightAsUTC(challenge.starts_at)
   const endStr = localMidnightAsUTC(addDays(challenge.ends_at, 1))
 
-  const entries = await Promise.all(
+  const ranked = await Promise.all(
     participants.map(async (p: any) => {
       const user = p.expand?.user
       const uid = p.user as string
@@ -70,17 +73,26 @@ async function fetchLeaderboard(
       } catch { /* valor por defecto 0 */ }
 
       return {
-        userId: uid,
-        displayName,
-        avatarUrl: user ? getUserAvatarUrl(user, '100x100') : null,
-        value,
-        isCurrentUser: uid === currentUserId,
-      } satisfies LeaderboardEntry
+        entry: {
+          userId: uid,
+          displayName,
+          avatarUrl: user ? getUserAvatarUrl(user, '100x100') : null,
+          value,
+          isCurrentUser: uid === currentUserId,
+        } satisfies LeaderboardEntry,
+        // Desempate determinista: quien se unió antes gana; ver compareLeaderboardEntries.
+        joinedAt: (p.created as string) || '',
+      }
     })
   )
 
+  ranked.sort((a, b) => compareLeaderboardEntries(
+    { value: a.entry.value, joinedAt: a.joinedAt, userId: a.entry.userId },
+    { value: b.entry.value, joinedAt: b.joinedAt, userId: b.entry.userId },
+  ))
+
   return {
-    entries: entries.sort((a, b) => b.value - a.value),
+    entries: ranked.map(r => r.entry),
     participantIds,
   }
 }
@@ -110,7 +122,13 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
   })
 
   const leaderboard = leaderboardQuery.data?.entries ?? []
-  const participantIds = leaderboardQuery.data?.participantIds ?? new Set<string>()
+  // El guard Array.isArray sanea entradas viejas de la caché persistida donde
+  // participantIds era un Set y se restauró como `{}`.
+  const rawParticipantIds = leaderboardQuery.data?.participantIds
+  const participantIds = useMemo(
+    () => new Set<string>(Array.isArray(rawParticipantIds) ? rawParticipantIds : []),
+    [rawParticipantIds],
+  )
 
   // loading = true mientras cualquiera de las dos queries esté en vuelo
   const loading = challengeQuery.isLoading || leaderboardQuery.isLoading
@@ -214,6 +232,44 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
         { $autoCancel: false },
       )
       return (settings as any)[fieldMap[metric]] || 0
+    }
+    // ── Métricas acumulativas (#352): recomputadas desde registros canónicos ──
+    // en cada fetch, así ediciones/borrados se reflejan y los refrescos son
+    // idempotentes. La ventana es la misma que el resto del leaderboard.
+    case 'total_exercise': {
+      if (!exerciseSlug) return 0
+      const sets = await pb.collection('sets_log').getFullList({
+        filter: pb.filter(
+          'user = {:uid} && exercise_id = {:eid} && logged_at >= {:start} && logged_at <= {:end}',
+          { uid, eid: exerciseSlug, start: startStr, end: endStr },
+        ),
+        fields: 'reps,workout_key,logged_at',
+        $autoCancel: false,
+      })
+      return sumExerciseTotal(sets as any)
+    }
+    case 'total_workouts': {
+      const [sessions, cardio] = await Promise.all([
+        pb.collection('sessions').getFullList({
+          filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: startStr, end: endStr }),
+          fields: 'workout_key,completed_at',
+          $autoCancel: false,
+        }),
+        pb.collection('cardio_sessions').getFullList({
+          filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at <= {:end}', { uid, start: startStr, end: endStr }),
+          fields: 'id,started_at',
+          $autoCancel: false,
+        }).catch(() => []),
+      ])
+      return countWorkouts(sessions as any, cardio as any, utcToLocalDateStr)
+    }
+    case 'total_distance': {
+      const cardio = await pb.collection('cardio_sessions').getFullList({
+        filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at <= {:end}', { uid, start: startStr, end: endStr }),
+        fields: 'id,distance_km',
+        $autoCancel: false,
+      }).catch(() => [])
+      return sumDistanceKm(cardio as any)
     }
     case 'longest_streak': {
       const sessions = await pb.collection('sessions').getFullList({

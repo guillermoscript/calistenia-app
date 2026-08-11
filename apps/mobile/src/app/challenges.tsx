@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallenges, type ChallengeWithMeta } from '@calistenia/core/hooks/useChallenges'
 import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
+import { isCumulativeMetric } from '@calistenia/core/lib/cumulative-scoring'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
@@ -179,6 +180,7 @@ interface ChallengeCardProps {
 }
 
 function ChallengeCard({ challenge: ch, onJoin, isJoining, userId }: ChallengeCardProps) {
+  const { t } = useTranslation()
   const isActive = ch.status === 'active'
   const metricLabel = getMetricLabel(ch.metric, ch.custom_metric, ch.exercise_slug)
   const daysLeft = daysRemaining(ch.ends_at)
@@ -213,6 +215,13 @@ function ChallengeCard({ challenge: ch, onJoin, isJoining, userId }: ChallengeCa
       <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
         {/* Metric */}
         <Text className="font-mono text-[10px] tracking-wide text-lime">{metricLabel}</Text>
+
+        {/* Cómo puntúa (solo métricas acumulativas #352) */}
+        {isCumulativeMetric(ch.metric) ? (
+          <Text className="font-mono text-[10px] text-muted-foreground">
+            {t(`challenge.metricDesc.${ch.metric}`)}
+          </Text>
+        ) : null}
 
         {/* Goal */}
         {(ch.goal ?? 0) > 0 ? (
