@@ -635,6 +635,21 @@ test("el cron de expiración barre lobbies rancios", async () => {
   )
 })
 
+test("un participante puede listar su batalla en curso, ordenada por actividad", async () => {
+  // Es la consulta exacta de `findMyActiveBattle`, la que devuelve al usuario a su
+  // batalla tras matar la app. Se fija aquí porque `battles` no tiene los autodate
+  // `created`/`updated`: ordenar por un campo inexistente da 400, y el cliente no
+  // distingue ese 400 de "no hay batalla activa" — se queda sin ruta de vuelta.
+  const ctx = await lobbyWithTwo()
+  const filtro = "status = 'draft' || status = 'lobby' || status = 'ready' || status = 'live'"
+  const qs = `?perPage=1&filter=${encodeURIComponent(filtro)}&sort=-last_activity_at`
+
+  for (const usuario of [ctx.creator, ctx.friend]) {
+    const res = await api(`/api/collections/battles/records${qs}`, { token: await authAs(usuario) })
+    assert.equal(res.items[0]?.id, ctx.battleId, "no recupera la batalla en curso del usuario")
+  }
+})
+
 test("el cron NO toca un lobby recién creado", async () => {
   // Regresión: el corte se interpolaba con `isoAt` (separador `T`) y se comparaba
   // contra el texto almacenado por PocketBase (separador espacio). Para filas del

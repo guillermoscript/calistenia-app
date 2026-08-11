@@ -114,7 +114,12 @@ export async function createBattleDraft(
 export async function findMyActiveBattle(): Promise<Battle | null> {
   const page = await pb.collection('battles').getList(1, 1, {
     filter: "status = 'draft' || status = 'lobby' || status = 'ready' || status = 'live'",
-    sort: '-updated',
+    // `battles` has no `created`/`updated` autodate fields, and PocketBase answers 400
+    // for a sort on a column that does not exist — which this swallows as "no active
+    // battle". The sort is not cosmetic either: without it the page comes back in an
+    // arbitrary order and the caller can be sent into someone else's stale lobby
+    // instead of the battle they are actually in.
+    sort: '-last_activity_at',
     requestKey: null,
   })
   return (page.items[0] as unknown as Battle) ?? null

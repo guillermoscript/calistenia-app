@@ -43,7 +43,12 @@ export default function BattleCreateScreen() {
     let alive = true
     findMyActiveBattle()
       .then(battle => { if (alive) setActive(battle) })
-      .catch(() => { /* sin batalla activa o sin conexión: la pantalla sigue sirviendo */ })
+      .catch(err => {
+        // Sin conexión esto falla y la pantalla sigue sirviendo para crear. Pero no se
+        // calla del todo: un fallo de la consulta es indistinguible de "no hay batalla"
+        // y así es como una query mal formada se quedó sin tarjeta y sin rastro.
+        if (__DEV__) console.warn('[battle] no se pudo buscar la batalla activa:', err)
+      })
     return () => { alive = false }
   }, [])
 
