@@ -1128,6 +1128,15 @@
   "challenges.emptyPast": "No past challenges",
   "challenges.emptyBody": "For now challenges are created on the web — open it in your browser or ask a friend to invite you.",
 
+  "featuredChallenge.kicker": "Featured challenge",
+  "featuredChallenge.join": "Join",
+  "featuredChallenge.continue": "Continue",
+  "featuredChallenge.results": "View results",
+  "featuredChallenge.participating": "Participating",
+  "featuredChallenge.daysLeft": "{{count}} days left",
+  "featuredChallenge.lastDay": "Ends today",
+  "featuredChallenge.ended": "Challenge ended",
+
   "leaderboard.section": "Competition",
   "leaderboard.title": "RANKING",
   "leaderboard.sessions": "Sessions",

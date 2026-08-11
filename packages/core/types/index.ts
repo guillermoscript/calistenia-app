@@ -548,6 +548,8 @@ export interface Challenge {
   starts_at: string
   ends_at: string
   status: ChallengeStatus
+  /** Curado por admin/editor para la card de Home (#351); false por defecto. */
+  is_featured?: boolean
 }
 
 export interface ChallengeParticipant {

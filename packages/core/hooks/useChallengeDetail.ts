@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '../lib/analytics'
@@ -32,9 +32,12 @@ async function fetchChallenge(challengeId: string): Promise<Challenge> {
 
 // ── queryFn: leaderboard (dependiente del reto) ────────────────────────────────
 
+// participantIds va como array y no como Set: el caché de queries se persiste
+// en JSON (localStorage/MMKV) y un Set rehidratado vuelve como `{}`, lo que
+// reventaba `.has()` al recargar la página con caché persistido.
 interface LeaderboardQueryResult {
   entries: LeaderboardEntry[]
-  participantIds: Set<string>
+  participantIds: string[]
 }
 
 async function fetchLeaderboard(
@@ -43,7 +46,7 @@ async function fetchLeaderboard(
   currentUserId: string,
 ): Promise<LeaderboardQueryResult> {
   const available = await isPocketBaseAvailable()
-  if (!available) return { entries: [], participantIds: new Set() }
+  if (!available) return { entries: [], participantIds: [] }
 
   // Obtener participantes con usuario expandido
   const participants = await pb.collection('challenge_participants').getFullList({
@@ -52,7 +55,7 @@ async function fetchLeaderboard(
     $autoCancel: false,
   })
 
-  const participantIds = new Set(participants.map((p: any) => p.user as string))
+  const participantIds = participants.map((p: any) => p.user as string)
 
   // Calcular scores en paralelo (N+1 intencional, se mantiene como en el original)
   const startStr = localMidnightAsUTC(challenge.starts_at)
@@ -110,7 +113,14 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
   })
 
   const leaderboard = leaderboardQuery.data?.entries ?? []
-  const participantIds = leaderboardQuery.data?.participantIds ?? new Set<string>()
+  // La API pública sigue exponiendo un Set (los consumidores usan `.has`); se
+  // reconstruye aquí porque en el caché solo viven datos JSON-serializables.
+  // Array.isArray cubre cachés persistidos ANTES de este cambio, donde el Set
+  // original quedó serializado como `{}` (no iterable).
+  const participantIds = useMemo(() => {
+    const ids = leaderboardQuery.data?.participantIds
+    return new Set(Array.isArray(ids) ? ids : [])
+  }, [leaderboardQuery.data])
 
   // loading = true mientras cualquiera de las dos queries esté en vuelo
   const loading = challengeQuery.isLoading || leaderboardQuery.isLoading

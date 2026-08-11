@@ -8,8 +8,9 @@ describe('canonical analytics contract', () => {
   it('defines the versioned growth-loop event set without duplicate names', () => {
     const events = Object.values(CANONICAL_ANALYTICS_EVENTS)
 
-    expect(events).toHaveLength(18)
+    expect(events).toHaveLength(19)
     expect(new Set(events).size).toBe(events.length)
+    expect(events).toContain('featured_challenge_viewed')
     expect(events).toContain('post_workout_action_viewed')
     expect(events).toContain('post_workout_action_selected')
     expect(events).toContain('referral_prompt_viewed')

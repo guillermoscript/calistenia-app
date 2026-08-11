@@ -20,6 +20,7 @@ import SleepDashboardWidget from '../components/sleep/SleepDashboardWidget'
 import type { SleepLastEntry } from '../components/sleep/SleepDashboardWidget'
 import LeaderboardWidget from '../components/friends/LeaderboardWidget'
 import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
+import FeaturedChallengeCard from '../components/FeaturedChallengeCard'
 import PhasePhotoBanner from '../components/progress/PhasePhotoBanner'
 import InsightsCard from '../components/insights/InsightsCard'
 import InsightsHistory from '../components/insights/InsightsHistory'
@@ -439,6 +440,11 @@ export default function DashboardPage({
             onClick={() => navigate('/log-workout')}
           />
         </div>
+      </div>
+
+      {/* ═══ RETO DESTACADO ══════════════════════════════════════════════════ */}
+      <div className="mb-6">
+        <FeaturedChallengeCard userId={userId ?? null} onNavigate={navigate} />
       </div>
 
       {/* ═══ TODAY'S SNAPSHOT ═════════════════════════════════════════════════ */}

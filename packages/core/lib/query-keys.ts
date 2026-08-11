@@ -98,6 +98,8 @@ export const qk = {
     ['challenge-leaderboard', id, currentUserId] as const,
   expressProgress: (challengeId: string) =>
     ['express-progress', challengeId] as const,
+  // Reto destacado en Home (#351): depende del usuario por el estado de participación
+  featuredChallenge: (userId: string | null) => ['featured-challenge', userId] as const,
 
   // — Cuerpo / salud —
   bodyMeasurements: (userId: string | null) =>

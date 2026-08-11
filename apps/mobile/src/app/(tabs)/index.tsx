@@ -17,6 +17,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { useNotifications } from '@calistenia/core/hooks/useNotifications'
 import StreakMilestone from '@/components/StreakMilestone'
 import HomeActivity from '@/components/home/HomeActivity'
+import FeaturedChallengeCard from '@/components/home/FeaturedChallengeCard'
 import GettingStartedCard, { isChecklistDismissed } from '@/components/home/GettingStartedCard'
 import { OneShotHint } from '@/components/ui/one-shot-hint'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
@@ -344,6 +345,9 @@ export default function TodayScreen() {
 
         {/* ¿Cómo dormiste? — paridad con SleepDashboardWidget del DashboardPage web (#244) */}
         <SleepCard userId={milestoneUser?.id ?? null} />
+
+        {/* Reto comunitario destacado (#351) — un único reto curado, si hay alguno vivo/reciente */}
+        <FeaturedChallengeCard userId={milestoneUser?.id ?? null} />
 
         {/* Accesos rápidos comunidad */}
         <View className="flex-row gap-2">

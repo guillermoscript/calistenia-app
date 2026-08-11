@@ -13,10 +13,10 @@
  * (`apps/web/src/pages/NotificationsPage.tsx`), adaptado a las rutas nativas.
  *
  * Rutas nativas existentes (expo-router): `/` (home), `/social`, `/u/[id]`,
- * `/challenges`, `/friends`, `/history`, `/profile`, `/nutrition`,
- * `/notifications`, `/cardio/[id]`, `/program/[id]`.
- * Aún NO existen `/challenges/[id]` ni una vista de post individual, así que esos
- * casos caen a la lista/feed correspondiente (ver TODOs).
+ * `/challenges`, `/challenges/[id]`, `/friends`, `/history`, `/profile`,
+ * `/nutrition`, `/notifications`, `/cardio/[id]`, `/program/[id]`.
+ * Aún NO existe una vista de post individual, así que ese caso cae al feed
+ * (ver comentario en `reaction`/`comment`/`comment_reply`).
  */
 import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
 
@@ -47,8 +47,7 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
 
     case 'challenge_join':
     case 'challenge_complete':
-      // TODO: cuando exista /challenges/[id], usar `/challenges/${n.referenceId}`.
-      return '/challenges'
+      return n.referenceId ? `/challenges/${n.referenceId}` : '/challenges'
 
     case 'achievement':
       return '/profile'
@@ -92,7 +91,7 @@ export function resolveNotifUrl(url: string | undefined | null): NotifRoute | nu
   if (path === '/progress' || path === '/history') return '/history'
   if (path === '/profile') return '/profile'
   if (path === '/notifications') return '/notifications'
-  if (path.startsWith('/challenges')) return '/challenges'
+  if (path.startsWith('/challenges')) return `${path}${query}`
   if (path === '/referrals') return '/friends'
   if (path.startsWith('/nutrition')) return '/nutrition'
 
