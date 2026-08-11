@@ -295,6 +295,13 @@ routerAdd("POST", "/api/battles/join", function (e) {
     })
 
     var fresh = battles.findBattle($app, outcome.battleId)
+
+    // Fuera de la transacción y a prueba de fallos: avisar al creador es útil, pero si
+    // la notificación revienta, la plaza ya está tomada y el usuario debe entrar igual.
+    if (!outcome.alreadyJoined) {
+      battles.notifyBattleJoin($app, fresh, userId)
+    }
+
     var snapshot = battles.snapshotOf($app, fresh, userId)
     snapshot.already_joined = outcome.alreadyJoined
     return e.json(200, snapshot)
@@ -397,6 +404,12 @@ routerAdd("POST", "/api/battles/{id}/start", function (e) {
     })
 
     var fresh = battles.findBattle($app, battleId)
+
+    // La cuenta atrás dura 5 s: quien tenga la app en segundo plano se pierde el
+    // arranque si nadie se lo dice. Fuera de la transacción, y nunca puede tumbar el
+    // arranque de la batalla.
+    battles.notifyBattleStart($app, fresh, userId)
+
     return e.json(200, battles.snapshotOf($app, fresh, userId))
   } catch (err) {
     return battles.respondError(e, err)

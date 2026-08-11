@@ -10,7 +10,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
-  api, authAs, createUser, createAs, getOne, list, triggerCron, uniq, update, waitFor,
+  api, authAs, createUser, createAs, expectNotifications, getOne, list, triggerCron, uniq,
+  update, waitFor,
 } from "./helpers/client.mjs"
 
 // ── Utilidades ───────────────────────────────────────────────────────────────
@@ -642,6 +643,46 @@ test("una batalla inexistente da 404 y no distingue de una ajena", async () => {
   const usuario = await createUser("Sondeador")
   const res = await getRaw(usuario, "/api/battles/noexisteenabsoluto/snapshot")
   assert.equal(res.status, 404)
+})
+
+// ── Notificaciones ───────────────────────────────────────────────────────────
+
+test("al unirse alguien se avisa al creador, y nunca a quien se une", async () => {
+  const ctx = await lobbyWithTwo()
+  const delCreador = await expectNotifications(
+    ctx.creator.id, "challenge_join", 1, "el creador no recibió el aviso de que se unieron",
+  )
+  // `data` es un campo json: la API ya lo devuelve parseado.
+  assert.equal(delCreador[0].data.kind, "battle_join")
+  assert.equal(delCreador[0].reference_id, ctx.battleId)
+  await expectNotifications(ctx.friend.id, "challenge_join", 0, "quien se une no debe recibir aviso")
+})
+
+test("al arrancar se avisa a los demás participantes, no a quien pulsa", async () => {
+  const ctx = await lobbyWithTwo()
+  // El aviso de "se ha unido" ya está en la bandeja del creador: contamos desde ahí.
+  await expectNotifications(ctx.creator.id, "challenge_join", 1, "estado previo")
+
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/ready`, { ready: true })
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/ready`, { ready: true })
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/start`)
+
+  const delAmigo = await expectNotifications(
+    ctx.friend.id, "challenge_join", 1, "el participante no recibió el aviso de arranque",
+  )
+  assert.equal(delAmigo[0].data.kind, "battle_start")
+  // El creador pulsó empezar: sigue con solo el aviso de la unión.
+  await expectNotifications(ctx.creator.id, "challenge_join", 1, "quien arranca no debe recibir aviso")
+})
+
+test("un fallo de notificación no impide unirse ni arrancar", async () => {
+  // El servicio de push no está garantizado en el entorno de test; lo que importa es
+  // que la mutación responde 200 igual, que es la promesa del fan-out.
+  const ctx = await lobbyWithTwo()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/ready`, { ready: true })
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/ready`, { ready: true })
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/start`)
+  assert.equal(snap.battle.status, "live")
 })
 
 // ── Expiración perezosa ──────────────────────────────────────────────────────
