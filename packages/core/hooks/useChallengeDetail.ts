@@ -34,10 +34,11 @@ async function fetchChallenge(challengeId: string): Promise<Challenge> {
 
 // ── queryFn: leaderboard (dependiente del reto) ────────────────────────────────
 
+// participantIds va como array y no como Set: el caché de queries se persiste
+// en JSON (localStorage/MMKV) y un Set rehidratado vuelve como `{}`, lo que
+// reventaba `.has()` al recargar la página con caché persistido.
 interface LeaderboardQueryResult {
   entries: LeaderboardEntry[]
-  // Array, no Set: el resultado se persiste como JSON (calistenia_rq_cache) y
-  // un Set serializado vuelve como `{}` — el detalle petaba al restaurar caché.
   participantIds: string[]
 }
 
@@ -123,8 +124,10 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
   })
 
   const leaderboard = leaderboardQuery.data?.entries ?? []
+  // La API pública sigue exponiendo un Set (los consumidores usan `.has`); se
+  // reconstruye aquí porque en el caché solo viven datos JSON-serializables.
   // El guard Array.isArray sanea entradas viejas de la caché persistida donde
-  // participantIds era un Set y se restauró como `{}`.
+  // participantIds era un Set y se restauró como `{}` (no iterable).
   const rawParticipantIds = leaderboardQuery.data?.participantIds
   const participantIds = useMemo(
     () => new Set<string>(Array.isArray(rawParticipantIds) ? rawParticipantIds : []),

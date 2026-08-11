@@ -1128,6 +1128,15 @@
   "challenges.emptyPast": "No hay retos pasados",
   "challenges.emptyBody": "Por ahora los retos se crean desde la versión web — entra desde el navegador o pide a un amigo que te invite.",
 
+  "featuredChallenge.kicker": "Reto destacado",
+  "featuredChallenge.join": "Unirse",
+  "featuredChallenge.continue": "Continuar",
+  "featuredChallenge.results": "Ver resultados",
+  "featuredChallenge.participating": "Participando",
+  "featuredChallenge.daysLeft": "Quedan {{count}} días",
+  "featuredChallenge.lastDay": "Termina hoy",
+  "featuredChallenge.ended": "Reto terminado",
+
   "leaderboard.section": "Competencia",
   "leaderboard.title": "RANKING",
   "leaderboard.sessions": "Sesiones",

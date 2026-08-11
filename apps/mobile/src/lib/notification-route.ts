@@ -13,10 +13,10 @@
  * (`apps/web/src/pages/NotificationsPage.tsx`), adaptado a las rutas nativas.
  *
  * Rutas nativas existentes (expo-router): `/` (home), `/social`, `/u/[id]`,
- * `/challenges`, `/friends`, `/history`, `/profile`, `/nutrition`,
- * `/notifications`, `/cardio/[id]`, `/program/[id]`, `/challenges/[id]`.
- * Aún no existe una vista nativa de post individual, así que esos casos caen
- * a la lista/feed correspondiente.
+ * `/challenges`, `/challenges/[id]`, `/friends`, `/history`, `/profile`,
+ * `/nutrition`, `/notifications`, `/cardio/[id]`, `/program/[id]`.
+ * Aún NO existe una vista de post individual, así que ese caso cae al feed
+ * (ver comentario en `reaction`/`comment`/`comment_reply`).
  */
 import type { AppNotification } from '@calistenia/core/hooks/useNotifications'
 
