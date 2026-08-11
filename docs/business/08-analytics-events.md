@@ -41,8 +41,9 @@ GPS coordinates, or unnecessary personal data.
 | `post_workout_action_selected` | A growth action is tapped in the post-workout panel | `surface`, `source`, `workout_id`, `action`, `result`; optional `challenge_id` | Web + mobile | One event per tap. Emitted *in addition to* the canonical event each action already produces (`share_card_shared`, `invite_sent`, `challenge_viewed`), which stay where they were so the existing funnels are unaffected |
 | `share_card_shared` | A card image is shared or reaches a native sheet whose final result is not observable | `surface`, `source`, `share_type`, `platform`, `result`, `share_confirmed`; optional `workout_id` | Web + mobile | One event per completed share invocation; observable dismissals and failures emit nothing. See "Share confirmation" below |
 | `invite_sent` | Referral invite is copied, handed to a share target, or sent to a specific user | `surface`, `source`, `share_type`, `result`; optional `challenge_id` | Web + mobile core | A link is copied, native share returns successfully, or an invite record is created |
-| `invite_landing_viewed` | Referral landing route renders | `surface`, `source`, `result` | Web | Referral landing is viewed and code is stored |
-| `referral_converted` | Signup creates a valid referral record | `surface`, `source`, `result` | Web + mobile core | Referral record is created successfully |
+| `invite_landing_viewed` | Referral landing route renders | `surface`, `source`, `result`; optional `code`, `has_challenge`, `platform` | Web + mobile | Referral landing is viewed and code is stored. Mobile emits it from the `/invite/[code]` route before redirecting to signup |
+| `referral_converted` | Signup creates a valid referral record | `surface`, `source`, `result`; optional `referrer_id` | Web + mobile core | Referral record is created successfully. `source` distinguishes the path: `quick_invite` (attribution captured at signup) vs `manual_code` (code entered in-app via `trackReferral`) |
+| `referral_status_viewed` | Referral status screen finishes loading | `surface`, `source`, `result`, `referral_count`, `pending_rewards` | Web + mobile | Emitted once per screen visit, only after the data resolves without error, so it counts screens that actually showed a status. `pending_rewards` counts referrals with no matching `point_transactions` row |
 | `challenge_viewed` | Challenge detail/list item is displayed | `surface`, `source`, `challenge_id`, `participant_count`, `result` | Web + mobile | Challenge surface is visible; once per challenge per screen visit, and only after the challenge actually loads |
 | `challenge_joined` | User joins a challenge themselves | `surface`, `source`, `challenge_id`, `participant_count`, `result` | Web + mobile | Participant record is created successfully by the joining user. Inviting somebody else emits `invite_sent`, not this event — the inviter's device carries the inviter's analytics identity |
 | `challenge_progress_updated` | Completed workout can contribute to an active challenge | `surface`, `source`, `workout_id`, `challenge_id`, `result` | Web + mobile core | One progress signal per workout completion and per challenge the workout can actually score (metric-aware; free/manual sessions included) |
@@ -129,6 +130,9 @@ dashboard and confirm the exact UI labels.
 - Copy/share a referral invite and confirm `invite_sent`.
 - Open the invite URL, register, and confirm `invite_landing_viewed` then
   `referral_converted`.
+- Open `/referrals` and confirm one `referral_status_viewed` with a
+  `referral_count` matching the list and a `pending_rewards` count matching the
+  rows badged as pending.
 - Open a challenge, join it, complete a contributing workout, and confirm
   `challenge_viewed`, `challenge_joined`, and `challenge_progress_updated`.
 - Create, join, start, finish, and share a race; confirm the five canonical
@@ -154,6 +158,13 @@ dashboard and confirm the exact UI labels.
   done.
 - Create, join, start, finish, and share a race; confirm the canonical battle
   events after the mobile buffer flushes.
+- Open an `/invite/<code>` link while logged out and confirm one
+  `invite_landing_viewed` before the signup screen appears.
+- Open Profile → Referidos and confirm one `referral_status_viewed`; copy and
+  share the link and confirm one `invite_sent` per invocation with
+  `surface=referrals` and `source=referral_status`.
+- Tap a referral push notification and confirm it lands on the referrals screen
+  rather than the friends list.
 
 ## Privacy review
 
