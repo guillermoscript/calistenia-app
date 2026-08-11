@@ -4301,6 +4301,8 @@
   "battle.finish": "Terminar",
   "battle.participants": "participantes",
   "battle.participantOne": "participante",
+  "battle.resumeKicker": "Batalla en curso",
+  "battle.resumeAction": "Volver a tu batalla",
   "battle.ready": "listo",
   "battle.allReady": "Todos listos",
   "battle.waitingForParticipants": "Esperando participantes",

@@ -9,6 +9,7 @@
  */
 import { pb } from './pocketbase'
 import type {
+  Battle,
   BattleConfiguration,
   BattleInviteIssued,
   BattleInvitePreview,
@@ -100,6 +101,23 @@ export async function createBattleDraft(
     config,
   }, { requestKey: null })
   return record.id
+}
+
+/**
+ * The caller's battle that is still in flight, if any.
+ *
+ * Exists so that killing the app is not the same as losing the battle: the server keeps
+ * the state, but without this the user has no route back to it — the only entry point
+ * is "new battle", which would start a second one. A plain collection read; the list
+ * rule already narrows it to battles the caller created or joined.
+ */
+export async function findMyActiveBattle(): Promise<Battle | null> {
+  const page = await pb.collection('battles').getList(1, 1, {
+    filter: "status = 'draft' || status = 'lobby' || status = 'ready' || status = 'live'",
+    sort: '-updated',
+    requestKey: null,
+  })
+  return (page.items[0] as unknown as Battle) ?? null
 }
 
 export function getBattleSnapshot(battleId: string): Promise<BattleSnapshot> {

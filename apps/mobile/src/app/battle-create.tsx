@@ -5,7 +5,7 @@
  * (la createRule lo fija a `draft` con `revision = 0`); publicar y todo lo demás pasa
  * por la API del servidor.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -17,7 +17,13 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { BATTLE_PRESETS } from '@calistenia/core/data/battle-presets'
-import { createBattleDraft, publishBattle, newIdempotencyKey } from '@calistenia/core/lib/battleApi'
+import {
+  createBattleDraft,
+  findMyActiveBattle,
+  publishBattle,
+  newIdempotencyKey,
+} from '@calistenia/core/lib/battleApi'
+import type { Battle } from '@calistenia/core/types/battle'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 export default function BattleCreateScreen() {
@@ -28,6 +34,18 @@ export default function BattleCreateScreen() {
   const [selected, setSelected] = useState(BATTLE_PRESETS[0].id)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Una batalla en curso sobrevive a que se mate la app —el estado vive en el servidor—
+  // pero sin esto no habría forma de volver a ella: esta pantalla era el único acceso y
+  // solo sabía crear una nueva.
+  const [active, setActive] = useState<Battle | null>(null)
+  useEffect(() => {
+    let alive = true
+    findMyActiveBattle()
+      .then(battle => { if (alive) setActive(battle) })
+      .catch(() => { /* sin batalla activa o sin conexión: la pantalla sigue sirviendo */ })
+    return () => { alive = false }
+  }, [])
 
   const handleCreate = async () => {
     const preset = BATTLE_PRESETS.find((p) => p.id === selected)
@@ -74,6 +92,20 @@ export default function BattleCreateScreen() {
           <Text className="font-bebas text-4xl leading-none text-foreground">{t('battle.newBattle')}</Text>
           <Text className="mt-2 text-center text-sm text-muted-foreground">{t('battle.createHint')}</Text>
         </View>
+
+        {active && (
+          <Pressable
+            onPress={() => router.replace(`/battle/${active.id}`)}
+            className="mb-6 rounded-xl border border-lime/40 bg-lime/5 px-4 py-3.5 active:bg-lime/10"
+          >
+            <Text className="font-mono text-[10px] uppercase tracking-[3px] text-lime">
+              {t('battle.resumeKicker')}
+            </Text>
+            <Text className="mt-1 font-bebas text-2xl leading-none text-foreground">
+              {t('battle.resumeAction')}
+            </Text>
+          </Pressable>
+        )}
 
         <Text className="mb-2 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
           {t('battle.chooseFormat')}
