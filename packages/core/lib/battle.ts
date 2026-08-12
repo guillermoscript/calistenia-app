@@ -249,6 +249,25 @@ export function battleParticipantActivity(
 }
 
 /** Whole seconds of rest left, floored at 0. */
+/**
+ * Milliseconds between two battle timestamps; 0 if either is missing or they run backwards.
+ *
+ * Used to freeze a participant's elapsed time at their own finish. A clock that keeps
+ * counting after you are done says the run is still going, which is the opposite of true.
+ */
+export function battleSpanMs(fromIso: string | null, toIso: string | null): number {
+  const from = battleTimeMs(fromIso)
+  const to = battleTimeMs(toIso)
+  if (from === null || to === null) return 0
+  return Math.max(0, to - from)
+}
+
+/** `m:ss` of workout time. Shared so the training view and the waiting view agree. */
+export function formatBattleElapsed(ms: number): string {
+  const total = Math.floor(ms / 1000)
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+}
+
 export function battleRestSecondsLeft(restingUntil: string | null, nowMs: number): number {
   const until = battleTimeMs(restingUntil)
   if (until === null) return 0
