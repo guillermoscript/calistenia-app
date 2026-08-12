@@ -60,10 +60,14 @@ export default function RaceResults() {
     try {
       const userId = pb.authStore.record?.id
       if (!userId) throw new Error('not authed')
+      // El recorrido llega por consulta, así que puede no estar todavía en
+      // `myTrack` si se pulsa nada más entrar: se pide aquí antes de rendirse,
+      // o el entreno se guardaría sin ruta por una carrera de arranque.
+      const track = myTrack.length ? myTrack : await fetchRaceRoute(me.id)
       const session = {
         user: userId,
         activity_type: 'running',
-        gps_points: myTrack.map(pt => ({
+        gps_points: track.map(pt => ({
           lat: pt.lat, lng: pt.lng, timestamp: (race.starts_at ? new Date(race.starts_at).getTime() : 0) + pt.t,
         })),
         distance_km: me.distance_km,
