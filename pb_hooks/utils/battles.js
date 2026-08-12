@@ -460,6 +460,69 @@ function displayNameFor(app, userId) {
   }
 }
 
+// ── Notificaciones ───────────────────────────────────────────────────────────
+
+/**
+ * Avisos del ciclo de vida de una batalla (#390).
+ *
+ * Van SIEMPRE fuera de la transacción y nunca dejan escapar un error: unirse a una
+ * batalla o arrancarla no puede fallar porque el aviso falle.
+ *
+ * Los tipos se mapean a la categoría de preferencias `challenges` en lugar de estrenar
+ * una `battles`. No es pereza: los campos de `notification_prefs` son booleanos y una
+ * columna nueva nace en `false` para todas las filas existentes, que es justo lo que
+ * `prefAllows` interpreta como "desactivado" — estrenar categoría silenciaría los avisos
+ * de batalla para todo el mundo salvo que se rellene la columna. Una batalla es una
+ * competición, así que quien apaga los avisos de retos apaga estos también.
+ */
+function notifyBattleJoin(app, battle, joinerId) {
+  try {
+    var notifications = require(`${__hooks}/utils/notifications.js`)
+    var creatorId = battle.getString('creator')
+    if (!creatorId || creatorId === joinerId) return
+
+    var battleId = battle.getString('id')
+    var name = notifications.getUserName(joinerId)
+    notifications.createNotification(
+      creatorId, 'challenge_join', joinerId, battleId, 'battle', { battle_id: battleId, kind: 'battle_join' },
+    )
+    notifications.sendPush(
+      creatorId,
+      name || 'Alguien',
+      'se ha unido a tu batalla',
+      '/battle/' + battleId,
+      'challenge_join',
+    )
+  } catch (err) {
+    console.log('[battle_api] notify join failed:', err)
+  }
+}
+
+function notifyBattleStart(app, battle, actorId) {
+  try {
+    var notifications = require(`${__hooks}/utils/notifications.js`)
+    var battleId = battle.getString('id')
+    var participants = findParticipants(app, battleId)
+    for (var i = 0; i < participants.length; i++) {
+      var userId = participants[i].getString('user')
+      // Nunca al que pulsó empezar: ya está mirando la pantalla.
+      if (!userId || userId === actorId) continue
+      notifications.createNotification(
+        userId, 'challenge_join', actorId, battleId, 'battle', { battle_id: battleId, kind: 'battle_start' },
+      )
+      notifications.sendPush(
+        userId,
+        'La batalla empieza',
+        'Tu batalla arranca ahora',
+        '/battle/' + battleId,
+        'challenge_join',
+      )
+    }
+  } catch (err) {
+    console.log('[battle_api] notify start failed:', err)
+  }
+}
+
 function snapshotOf(app, battle, userId) {
   var battleId = battle.getString('id')
   var participants = findParticipants(app, battleId)
@@ -731,6 +794,8 @@ module.exports = {
   dateMs: dateMs,
   isoAt: isoAt,
   filterTime: filterTime,
+  notifyBattleJoin: notifyBattleJoin,
+  notifyBattleStart: notifyBattleStart,
   nowMs: nowMs,
 
   jsonField: jsonField,
