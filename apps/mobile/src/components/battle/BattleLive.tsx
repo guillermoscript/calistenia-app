@@ -62,6 +62,27 @@ export default function BattleLive() {
   const offline = !online || (!!error && error.status === 0)
   const locked = offline || busy || !can.progress
 
+  // El descanso es puramente local: el progreso ya se reportó al confirmar el ejercicio,
+  // así que esto no toca el contrato con el servidor. Se puede saltar — el servidor no
+  // vigila el ritmo, y un temporizador obligatorio dejaría tirado a quien tenga la app
+  // en segundo plano cuando termine.
+  const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
+  const [restLeft, setRestLeft] = useState(0)
+  useEffect(() => {
+    if (restEndsAt === null) return
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((restEndsAt - Date.now()) / 1000))
+      setRestLeft(left)
+      if (left <= 0) {
+        setRestEndsAt(null)
+        void haptics.medium()
+      }
+    }
+    tick()
+    const id = setInterval(tick, 250)
+    return () => clearInterval(id)
+  }, [restEndsAt])
+
   const roundLabel = useMemo(() => {
     if (!config || !progress) return ''
     return `${Math.min(progress.completed_rounds + 1, config.rounds)} / ${config.rounds}`
@@ -74,6 +95,9 @@ export default function BattleLive() {
 
   const commit = async () => {
     const isReps = exercise.target.kind === 'reps'
+    // El descanso es el del ejercicio que se acaba de cerrar, no el del siguiente, y hay
+    // que leerlo antes de await: al volver, `exercise` ya es el siguiente del circuito.
+    const restSeconds = exercise.rest_seconds
     const next = {
       completed_rounds: isLastExercise ? progress.completed_rounds + 1 : progress.completed_rounds,
       completed_reps: progress.completed_reps + (isReps ? count : 0),
@@ -85,10 +109,14 @@ export default function BattleLive() {
         await actions.finish(next)
       } else {
         await actions.reportProgress(next)
+        // Un 0 es una decisión del formato, no un hueco: encadena sin pausa.
+        if (restSeconds > 0) setRestEndsAt(Date.now() + restSeconds * 1000)
       }
       void haptics.medium()
     } catch { /* el contexto expone el error */ }
   }
+
+  const resting = restEndsAt !== null
 
   return (
     <View className="flex-1">
@@ -117,7 +145,31 @@ export default function BattleLive() {
         </View>
       </View>
 
-      {/* Ejercicio actual + entrada */}
+      {/* Descanso: sustituye la entrada, pero deja a la vista cabecera y marcador */}
+      {resting ? (
+        <View className="items-center gap-4 py-6">
+          <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            {t('battle.rest')}
+          </Text>
+          <Text className="font-bebas text-[96px] leading-none text-lime">{restLeft}</Text>
+          <Text className="font-mono text-xs text-muted-foreground">
+            {t('battle.nextUp')}{' '}
+            {battleExerciseName(config.workout_template_id, exercise.exercise_id, i18n.language)}
+          </Text>
+          <Pressable
+            onPress={() => {
+              setRestEndsAt(null)
+              void haptics.light()
+            }}
+            className="mt-2 h-12 items-center justify-center rounded-xl border border-border px-6 active:bg-muted/40"
+          >
+            <Text className="font-mono text-[11px] uppercase tracking-[2px] text-muted-foreground">
+              {t('battle.skipRest')}
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+      /* Ejercicio actual + entrada */
       <View className="items-center gap-4 py-6">
         <Text className="font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
           {t('battle.currentExercise')}
@@ -154,19 +206,22 @@ export default function BattleLive() {
           </Pressable>
         </View>
       </View>
+      )}
 
-      <Pressable
-        onPress={() => void commit()}
-        disabled={locked}
-        className={cn(
-          'h-16 items-center justify-center rounded-xl bg-lime active:bg-lime/90',
-          locked && 'opacity-40',
-        )}
-      >
-        <Text className="font-bebas text-2xl uppercase tracking-widest text-zinc-900">
-          {willFinish ? t('battle.finish') : t('battle.nextExercise')}
-        </Text>
-      </Pressable>
+      {!resting && (
+        <Pressable
+          onPress={() => void commit()}
+          disabled={locked}
+          className={cn(
+            'h-16 items-center justify-center rounded-xl bg-lime active:bg-lime/90',
+            locked && 'opacity-40',
+          )}
+        >
+          <Text className="font-bebas text-2xl uppercase tracking-widest text-zinc-900">
+            {willFinish ? t('battle.finish') : t('battle.nextExercise')}
+          </Text>
+        </Pressable>
+      )}
 
       {/* Marcador en vivo */}
       <Text className="mb-2 mt-6 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
