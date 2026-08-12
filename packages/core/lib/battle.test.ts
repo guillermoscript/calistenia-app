@@ -11,7 +11,9 @@ import {
   battleParticipantActivity,
   battleRecordFrom,
   battleRestSecondsLeft,
+  battleSpanMs,
   createBattleScore,
+  formatBattleElapsed,
   isBattleActiveForMe,
   validateBattleConfiguration,
   BATTLE_IDLE_AFTER_MS,
@@ -297,5 +299,39 @@ describe('battle record', () => {
 
     expect(record.streak).toBe(2)
     expect(record).toMatchObject({ fought: 3, won: 2, lost: 0, left: 1 })
+  })
+})
+
+describe('battleSpanMs', () => {
+  it('measures the span between two battle timestamps', () => {
+    expect(battleSpanMs('2026-08-12T10:00:00.000Z', '2026-08-12T10:07:30.000Z')).toBe(450_000)
+  })
+
+  it('accepts the space-separated form PocketBase stores', () => {
+    expect(battleSpanMs('2026-08-12 10:00:00.000Z', '2026-08-12 10:00:05.000Z')).toBe(5_000)
+  })
+
+  it('returns 0 when either end is missing', () => {
+    // A participant who never finished has no end; the caller shows 0, not NaN.
+    expect(battleSpanMs('2026-08-12T10:00:00.000Z', null)).toBe(0)
+    expect(battleSpanMs(null, '2026-08-12T10:00:00.000Z')).toBe(0)
+  })
+
+  it('never returns a negative span', () => {
+    // Clock skew between the two writes must not render as a run that went backwards.
+    expect(battleSpanMs('2026-08-12T10:00:05.000Z', '2026-08-12T10:00:00.000Z')).toBe(0)
+  })
+})
+
+describe('formatBattleElapsed', () => {
+  it('formats as m:ss with a padded seconds field', () => {
+    expect(formatBattleElapsed(0)).toBe('0:00')
+    expect(formatBattleElapsed(9_000)).toBe('0:09')
+    expect(formatBattleElapsed(450_000)).toBe('7:30')
+  })
+
+  it('keeps counting minutes past the hour instead of wrapping', () => {
+    // A long battle should read 63:20, not 3:20 — wrapping would understate the run.
+    expect(formatBattleElapsed(3_800_000)).toBe('63:20')
   })
 })
