@@ -10,7 +10,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
-  createUser, createAs, create, update, getOne, list, waitFor, localDateString,
+  createUser, createAs, create, update, getOne, list, listAs, waitFor,
+  localDateString, expectNotifications,
 } from "./helpers/client.mjs"
 
 /** Una sesion de fuerza completada el dia indicado (offset en dias sobre hoy). */
@@ -157,4 +158,76 @@ test("los tres tipos de sesion se acumulan en el mismo contador", async () => {
   const stats = await waitForStats(user.id, (s) => s.total_sessions === 3, "cardio → 3")
 
   assert.equal(stats.workout_streak_current, 1, "tres sesiones el mismo dia = un dia de racha")
+})
+
+test("EL SINTOMA DEL ISSUE: otra cuenta ve los numeros reales en el perfil ajeno", async () => {
+  // Reproduce lo que se veia en /u/:id — "0 SESIONES 0 RACHA 0 MEJOR NIVEL 1"
+  // mientras el calendario y "Sesiones recientes" de esa misma pantalla si
+  // pintaban datos. El perfil ajeno lee por la view `public_user_stats` (#410).
+  const atleta = await createUser("Atleta Perfil")
+  const curioso = await createUser("Curioso Perfil")
+
+  await strengthSession(atleta, -1, "ayer")
+  await strengthSession(atleta, 0, "hoy")
+
+  const stats = await waitFor(async () => {
+    const [row] = await listAs(curioso, "public_user_stats", `user='${atleta.id}'`)
+    return row && row.total_sessions === 2 ? row : null
+  }, "el perfil ajeno ve 2 sesiones, no 0")
+
+  assert.equal(stats.workout_streak_current, 2, "y la racha de 2 dias")
+  assert.equal(stats.workout_streak_best, 2)
+  assert.equal(stats.last_workout_date, localDateString(0))
+  // La view sigue tapando lo que debe tapar.
+  assert.equal(stats.total_nutrition_logs, undefined, "nutricion sigue oculta")
+})
+
+test("varias sesiones a la vez no pierden cuenta ni duplican la fila", async () => {
+  // Caso real: la cola de reintentos vacia varias sesiones de golpe, o el
+  // usuario da doble toque. Sin fila previa, las 5 compiten por crearla.
+  const user = await createUser("Atleta Concurrente")
+
+  await Promise.all(
+    [1, 2, 3, 4, 5].map((i) => strengthSession(user, 0, `paralela${i}`))
+  )
+
+  const stats = await waitFor(async () => {
+    const rows = await list("user_stats", `user='${user.id}'`)
+    return rows.length === 1 && rows[0].total_sessions === 5 ? rows[0] : null
+  }, "una sola fila y las 5 sesiones contadas")
+
+  assert.equal(stats.workout_streak_current, 1, "cinco sesiones el mismo dia = racha 1")
+})
+
+test("un cardio sin fechas no rompe nada: cae al dia del servidor", async () => {
+  // `sessions.completed_at` es obligatorio, pero `started_at`/`finished_at` de
+  // cardio y circuito son texto opcional, asi que el fallback tiene que existir.
+  const user = await createUser("Atleta Sin Fecha")
+
+  await createAs(user, "cardio_sessions", {
+    user: user.id, activity_type: "run", distance_km: 3, duration_seconds: 900,
+  })
+
+  const stats = await waitForStats(
+    user.id,
+    (s) => s.total_sessions === 1,
+    "se cuenta igual",
+  )
+  assert.equal(stats.last_workout_date, localDateString(0), "usa el dia del servidor")
+})
+
+test("la racha de fuerza dispara el milestone de 7 dias (antes solo la de circuitos)", async () => {
+  const user = await createUser("Atleta Milestone")
+  await create("user_stats", {
+    user: user.id,
+    total_sessions: 6,
+    workout_streak_current: 6,
+    workout_streak_best: 6,
+    last_workout_date: localDateString(-1),
+  })
+
+  await strengthSession(user, 0, "el-septimo")
+
+  await waitForStats(user.id, (s) => s.workout_streak_current === 7, "racha 6→7")
+  await expectNotifications(user.id, "streak", 1, "el hook de milestones se entera")
 })

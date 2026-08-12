@@ -189,6 +189,26 @@ try {
   console.log("\n── C: sin sesiones ──")
   check("no se le crea fila", byUser[c.id] === undefined, true)
 
+  // ── Idempotencia: correrla otra vez no puede duplicar nada ──────────────────
+  // Importa porque si el backfill falla a medias se reintenta borrando su fila
+  // de `_migrations` y reiniciando; recomputar tiene que dar lo mismo.
+  await stopPB()
+  const del2 = spawnSync("sqlite3", [
+    join(dataDir, "data.db"), `DELETE FROM _migrations WHERE file = '${MIGRATION}';`,
+  ], { encoding: "utf8" })
+  if (del2.status !== 0) throw new Error("sqlite3 fallo: " + del2.stderr)
+
+  await startPB()
+  await authSuper()
+  const twice = await api("/api/collections/user_stats/records?perPage=200")
+  const byUser2 = Object.fromEntries(twice.items.map((r) => [r.user, r]))
+
+  console.log("\n── Segunda pasada del backfill (idempotencia) ──")
+  check("no se duplican filas", twice.items.length, after.items.length)
+  check("A total_sessions sigue igual", byUser2[a.id]?.total_sessions, 6)
+  check("A racha sigue igual", byUser2[a.id]?.workout_streak_current, 3)
+  check("B total_sessions sigue igual", byUser2[b.id]?.total_sessions, 1)
+
   const failed = results.filter((r) => !r.ok)
   console.log(`\n${failed.length === 0 ? "✓ TODO OK" : `✗ ${failed.length} comprobaciones fallaron`}`)
   process.exitCode = failed.length === 0 ? 0 : 1
