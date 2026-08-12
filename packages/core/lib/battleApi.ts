@@ -13,10 +13,25 @@ import type {
   BattleConfiguration,
   BattleInviteIssued,
   BattleInvitePreview,
+  BattleParticipant,
   BattleProgress,
   BattleSnapshot,
 } from '../types/battle'
-import { validateBattleConfiguration } from './battle'
+import { isBattleActiveForMe, validateBattleConfiguration } from './battle'
+
+/**
+ * How many open battles to look at before giving up on finding one that is still mine.
+ * A user is realistically in one; the extra rows only cover the case where a stale lobby
+ * someone else keeps alive sorts above the battle I am actually running.
+ */
+const ACTIVE_BATTLE_SCAN = 10
+
+/** A `battles` row with the caller's seat attached via the participants back-relation. */
+interface ExpandedBattle extends Battle {
+  expand?: {
+    battle_participants_via_battle?: Pick<BattleParticipant, 'user' | 'status'>[]
+  }
+}
 
 /** A refusal from the battle API, carrying the machine-readable code the server sent. */
 export class BattleApiError extends Error {
@@ -112,7 +127,10 @@ export async function createBattleDraft(
  * rule already narrows it to battles the caller created or joined.
  */
 export async function findMyActiveBattle(): Promise<Battle | null> {
-  const page = await pb.collection('battles').getList(1, 1, {
+  const userId = pb.authStore.record?.id
+  if (!userId) return null
+
+  const page = await pb.collection('battles').getList(1, ACTIVE_BATTLE_SCAN, {
     filter: "status = 'draft' || status = 'lobby' || status = 'ready' || status = 'live'",
     // `battles` has no `created`/`updated` autodate fields, and PocketBase answers 400
     // for a sort on a column that does not exist — which this swallows as "no active
@@ -120,9 +138,22 @@ export async function findMyActiveBattle(): Promise<Battle | null> {
     // arbitrary order and the caller can be sent into someone else's stale lobby
     // instead of the battle they are actually in.
     sort: '-last_activity_at',
+    // The battle status alone does not say whether *I* still have a run to go back to:
+    // a battle stays `live` while opponents work, long after I finished or left. The
+    // back-relation carries my seat, and the participants read rule already limits what
+    // comes back to rows I am allowed to see — including, always, my own.
+    expand: 'battle_participants_via_battle',
     requestKey: null,
   })
-  return (page.items[0] as unknown as Battle) ?? null
+
+  for (const item of page.items as unknown as ExpandedBattle[]) {
+    const seats = item.expand?.battle_participants_via_battle ?? []
+    const mine = seats.find((seat) => seat.user === userId) ?? null
+    if (isBattleActiveForMe(item.status, mine?.status ?? null, item.creator === userId)) {
+      return item as Battle
+    }
+  }
+  return null
 }
 
 export function getBattleSnapshot(battleId: string): Promise<BattleSnapshot> {

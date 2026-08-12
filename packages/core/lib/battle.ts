@@ -198,3 +198,27 @@ export function canViewBattle(
 ): boolean {
   return Boolean(actorUserId) && (battle.creator === actorUserId || participant?.user === actorUserId)
 }
+
+/**
+ * Whether a battle still has something in it *for me* — the question the floating bar
+ * and the resume card are really asking.
+ *
+ * It is not the same question as "is the battle open". A battle stays `live` while any
+ * opponent is still working, so the moment I finish my own run — or walk out of one —
+ * the battle is still open but there is nothing left for me to go back to. Reading the
+ * battle status alone left the bar nagging about a battle the user had already closed,
+ * with no way to dismiss it.
+ *
+ * `mySeat` is null when I hold no participant row. That is the creator of an unpublished
+ * draft (publishing is what seats them), so they keep the resume affordance; it is never
+ * a reason to advertise a battle already under way.
+ */
+export function isBattleActiveForMe(
+  status: BattleStatus,
+  mySeat: BattleParticipantStatus | null,
+  amCreator: boolean,
+): boolean {
+  if (status !== 'draft' && status !== 'lobby' && status !== 'ready' && status !== 'live') return false
+  if (mySeat === null) return amCreator && status !== 'live'
+  return mySeat !== 'finished' && mySeat !== 'left'
+}

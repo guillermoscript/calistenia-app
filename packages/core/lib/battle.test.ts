@@ -7,6 +7,7 @@ import {
   canViewBattle,
   compareBattleScores,
   createBattleScore,
+  isBattleActiveForMe,
   validateBattleConfiguration,
 } from './battle'
 
@@ -128,5 +129,40 @@ describe('battle access contract', () => {
     expect(canMutateBattle('member-1', battle, participant, { kind: 'mark_ready' })).toBe(true)
     expect(canMutateBattle('stranger', battle, participant, { kind: 'mark_ready' })).toBe(false)
     expect(canMutateBattle('member-1', battle, participant, { kind: 'update_progress' })).toBe(false)
+  })
+})
+
+describe('is a battle still mine to go back to', () => {
+  it('drops a battle I already finished, even while it is still live', () => {
+    // The bug this exists for: the floating bar read the battle status alone, so
+    // finishing a run left it advertising a battle the user had already closed —
+    // a battle stays `live` until the last opponent is done.
+    expect(isBattleActiveForMe('live', 'active', false)).toBe(true)
+    expect(isBattleActiveForMe('live', 'finished', false)).toBe(false)
+    expect(isBattleActiveForMe('live', 'left', false)).toBe(false)
+    // Being the creator changes nothing: creators train too, and a creator who has
+    // finished has as little left to do there as anyone else.
+    expect(isBattleActiveForMe('live', 'finished', true)).toBe(false)
+  })
+
+  it('drops every closed battle status', () => {
+    for (const status of ['finished', 'expired', 'cancelled'] as const) {
+      expect(isBattleActiveForMe(status, 'active', true)).toBe(false)
+    }
+  })
+
+  it('keeps the lobby phases while my seat is open', () => {
+    expect(isBattleActiveForMe('lobby', 'joined', false)).toBe(true)
+    expect(isBattleActiveForMe('ready', 'ready', false)).toBe(true)
+    expect(isBattleActiveForMe('lobby', 'invited', false)).toBe(true)
+    expect(isBattleActiveForMe('lobby', 'left', false)).toBe(false)
+  })
+
+  it('keeps an unpublished draft for its creator, who has no seat yet', () => {
+    // Publishing is what seats the creator, so a null seat on a draft is normal.
+    expect(isBattleActiveForMe('draft', null, true)).toBe(true)
+    expect(isBattleActiveForMe('draft', null, false)).toBe(false)
+    // A seatless creator is never a reason to advertise a battle already under way.
+    expect(isBattleActiveForMe('live', null, true)).toBe(false)
   })
 })

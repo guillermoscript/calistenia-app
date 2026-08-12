@@ -10,6 +10,7 @@
 import { createContext, useContext, useEffect, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { useBattle, type UseBattleResult } from '@calistenia/core/hooks/useBattle'
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -21,7 +22,18 @@ const KEEP_AWAKE_TAG = 'battle'
 export function BattleProvider({ battleId, children }: { battleId: string; children: ReactNode }) {
   const user = useAuthUser()
   const battle = useBattle(battleId, user?.id ?? null)
-  const { phase, actions } = battle
+  const { phase, actions, snapshot } = battle
+  const queryClient = useQueryClient()
+
+  // La barra flotante de las tabs cachea "mi batalla activa" y solo se refresca sola cada
+  // 45 s. Sin esto, terminar o abandonar una batalla dejaba la barra invitando a volver a
+  // una batalla ya cerrada — el usuario la tocaba y no había nada que hacer allí.
+  const battleStatus = snapshot?.battle.status
+  const mySeat = snapshot?.me?.status
+  useEffect(() => {
+    if (!battleStatus) return
+    void queryClient.invalidateQueries({ queryKey: ['battle', 'active'] })
+  }, [battleStatus, mySeat, queryClient])
 
   // El progreso hecho sin conexión no es fiable, así que al volver del segundo plano
   // NO reenviamos nada: pedimos snapshot y reemplazamos. Es la misma regla que en
