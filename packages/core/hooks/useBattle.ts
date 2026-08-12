@@ -186,7 +186,7 @@ export function useBattle(battleId: string, currentUserId: string | null): UseBa
     } catch (err) {
       const apiError = err instanceof BattleApiError
         ? err
-        : new BattleApiError(0, 'unknown', (err as Error).message)
+        : new BattleApiError(0, 'network', (err as Error).message)
       setError(apiError)
       // A refusal usually means our view of the battle is behind. Re-sync rather than
       // leaving the UI offering an action the server just rejected.

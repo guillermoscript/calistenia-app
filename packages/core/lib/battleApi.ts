@@ -63,9 +63,14 @@ function toBattleApiError(err: unknown): BattleApiError {
   const anyErr = err as { status?: number; response?: ErrorBody; message?: string }
   const status = typeof anyErr?.status === 'number' ? anyErr.status : 0
   const body = anyErr?.response ?? {}
+  // Status 0 means the request never reached the server. The SDK's own fallback message
+  // for that is the untranslated "Something went wrong.", which surfaced verbatim in the
+  // battle screen the moment the phone lost the backend. Tag it so the UI can say the one
+  // thing that is actually true and actionable: you are offline.
+  const code = status === 0 ? 'network' : body.error || 'request_failed'
   return new BattleApiError(
     status,
-    body.error || 'request_failed',
+    code,
     body.message || anyErr?.message || 'Battle request failed',
   )
 }
