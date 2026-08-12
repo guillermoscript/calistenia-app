@@ -9,6 +9,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.8.0] - 2026-08-12
+
+_Mejoras y correcciones de esta versión._
+
+### Added
+
+- **#386** — Serve cross-user reads from field-scoped public views
+- **battles** — Battle history and head-to-head comparison in Progress
+- **battles** — Show what each opponent is doing in the live standings
+- **battles** — Notify the creator when someone joins and everyone when it starts
+- **battles** — Show a floating bar while a battle is in progress
+- **#386** — A blocked user can no longer read anything from the blocker
+
 ## [1.7.1] - 2026-08-07
 
 _Fixes 1.7.0: the app rendered completely broken, with no styles or fonts. It now looks the way it should._
@@ -260,7 +273,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...HEAD
+[1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1
 [1.7.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.6.0...mobile-v1.7.0
 [1.6.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.5.0...mobile-v1.6.0
