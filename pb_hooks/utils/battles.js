@@ -385,23 +385,37 @@ function nextProgress(config, previous, incoming) {
 
 function scoreFor(participant) {
   var progress = jsonField(participant, 'progress', emptyProgress())
+  var finishedAt = participant.getString('finished_at') || null
   return {
     completed_rounds: Math.floor(progress.completed_rounds || 0),
     completed_reps: Math.floor(progress.completed_reps || 0),
     completed_time_seconds: Math.floor(progress.completed_time_seconds || 0),
+    finished_at: finishedAt,
     // The tie-break key is the participant record id: server-assigned, stable across
-    // reconnects, and not a display name.
+    // reconnects, and not a display name. Last resort only — see compareScores.
     tie_break_key: participant.getString('id'),
   }
 }
 
-/** Negative when `a` ranks ahead of `b`. */
+/** Negative when `a` ranks ahead of `b`. Mirrors `compareBattleScores` in core. */
 function compareScores(a, b) {
   if (a.completed_rounds !== b.completed_rounds) return b.completed_rounds - a.completed_rounds
   if (a.completed_reps !== b.completed_reps) return b.completed_reps - a.completed_reps
   if (a.completed_time_seconds !== b.completed_time_seconds) {
     return b.completed_time_seconds - a.completed_time_seconds
   }
+
+  // Equal work is settled by who finished first: a battle is a race, and the two
+  // all-reps circuits otherwise tie on every real component and fall through to the
+  // record id, which is arbitrary (#387).
+  var aFinished = parseMs(a.finished_at) || null
+  var bFinished = parseMs(b.finished_at) || null
+  if (aFinished !== bFinished) {
+    if (aFinished === null) return 1
+    if (bFinished === null) return -1
+    return aFinished - bFinished
+  }
+
   return a.tie_break_key < b.tie_break_key ? -1 : a.tie_break_key > b.tie_break_key ? 1 : 0
 }
 

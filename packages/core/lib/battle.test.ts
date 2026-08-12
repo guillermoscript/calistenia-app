@@ -62,6 +62,43 @@ describe('battle configuration and scoring', () => {
     })).toContain('invalid target kind for push-ups')
   })
 
+  it('settles an identical score by who finished first', () => {
+    // El caso normal en los circuitos que son solo repeticiones: los dos completan todo,
+    // así que rondas, reps y tiempo empatan y solo queda el reloj (#387).
+    const early = createBattleScore({
+      completed_rounds: 3, completed_reps: 105, completed_time_seconds: 0,
+      finished_at: '2026-08-11 20:38:14.658Z', tie_break_key: 'zzz',
+    })
+    const late = createBattleScore({
+      completed_rounds: 3, completed_reps: 105, completed_time_seconds: 0,
+      finished_at: '2026-08-11 21:03:53.818Z', tie_break_key: 'aaa',
+    })
+    // Gana el que acabó antes aunque su id ordene después.
+    expect(compareBattleScores(early, late)).toBeLessThan(0)
+    expect(compareBattleScores(late, early)).toBeGreaterThan(0)
+  })
+
+  it('ranks a finisher ahead of someone still going with the same work', () => {
+    const finished = createBattleScore({
+      completed_rounds: 3, completed_reps: 105, completed_time_seconds: 0,
+      finished_at: '2026-08-11 20:38:14.658Z', tie_break_key: 'zzz',
+    })
+    const stillActive = createBattleScore({
+      completed_rounds: 3, completed_reps: 105, completed_time_seconds: 0,
+      finished_at: null, tie_break_key: 'aaa',
+    })
+    expect(compareBattleScores(finished, stillActive)).toBeLessThan(0)
+    expect(compareBattleScores(stillActive, finished)).toBeGreaterThan(0)
+  })
+
+  it('stays deterministic when nobody has finished', () => {
+    const a = createBattleScore({ completed_rounds: 1, completed_reps: 5, completed_time_seconds: 0, tie_break_key: 'p1' })
+    const b = createBattleScore({ completed_rounds: 1, completed_reps: 5, completed_time_seconds: 0, tie_break_key: 'p2' })
+    expect(compareBattleScores(a, b)).toBeLessThan(0)
+    expect(compareBattleScores(b, a)).toBeGreaterThan(0)
+    expect(compareBattleScores(a, a)).toBe(0)
+  })
+
   it('ranks rounds, then reps, then time, then a stable id', () => {
     const winner = createBattleScore({ completed_rounds: 2, completed_reps: 4, completed_time_seconds: 10, tie_break_key: 'p2' })
     const fewerRounds = createBattleScore({ completed_rounds: 1, completed_reps: 99, completed_time_seconds: 99, tie_break_key: 'p1' })
