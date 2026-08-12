@@ -34,6 +34,25 @@ const OWNER_FIELD = {
   challenge_participants: "user",
 }
 
+/**
+ * Superficie por la que una persona ajena lee cada colección. Desde
+ * 1783500000_public_read_views.js las seis primeras son owner-only y su lectura
+ * cruzada pasa por una view `public_*`; el resto se lee de la tabla base.
+ *
+ * Los tests siembran SIEMPRE en la tabla base (es donde se escribe) y comprueban
+ * el bloqueo sobre esta superficie, que es la que ve la app.
+ */
+const READ_SURFACE = {
+  sessions: "public_sessions",
+  cardio_sessions: "public_cardio_sessions",
+  circuit_sessions: "public_circuit_sessions",
+  sets_log: "public_sets_log",
+  settings: "public_prs",
+  user_stats: "public_user_stats",
+}
+
+const surfaceOf = (collection) => READ_SURFACE[collection] || collection
+
 /** Siembra una fila de cada colección para `user`. Devuelve {colección: id}. */
 async function seedFor(user) {
   const ids = {}
@@ -102,15 +121,16 @@ async function seedFor(user) {
 /** Assert: `reader` NO ve ninguna fila de `owner` en ninguna colección. */
 async function assertHidden(reader, owner, ids, label) {
   for (const [collection, ownerField] of Object.entries(OWNER_FIELD)) {
-    const rows = await listAs(reader, collection, `${ownerField} = '${owner.id}'`)
+    const surface = surfaceOf(collection)
+    const rows = await listAs(reader, surface, `${ownerField} = '${owner.id}'`)
     assert.equal(
       rows.length, 0,
-      `${label}: ${collection} debería estar oculta y devolvió ${rows.length} fila(s)`
+      `${label}: ${surface} debería estar oculta y devolvió ${rows.length} fila(s)`
     )
-    const one = await getOneAs(reader, collection, ids[collection])
+    const one = await getOneAs(reader, surface, ids[collection])
     assert.equal(
       one, null,
-      `${label}: getOne de ${collection} debería dar 404 y devolvió el registro`
+      `${label}: getOne de ${surface} debería dar 404 y devolvió el registro`
     )
   }
 
@@ -135,19 +155,19 @@ test("antes de bloquear, B sí ve los datos de A (el test detectaría una regres
   const b = await createUser("Read B")
   const ids = await seedFor(a)
 
-  // Sanity check: sin bloqueo estas colecciones son legibles entre usuarios.
+  // Sanity check: sin bloqueo estas superficies son legibles entre usuarios.
   // Si esto fallara, el assert de "oculto" de abajo pasaría por el motivo
   // equivocado y el test no probaría nada.
-  const sessions = await listAs(b, "sessions", `user = '${a.id}'`)
+  const sessions = await listAs(b, "public_sessions", `user = '${a.id}'`)
   assert.ok(sessions.length > 0, "sin bloqueo B ve las sesiones de A")
 
-  const setsLog = await listAs(b, "sets_log", `user = '${a.id}'`)
+  const setsLog = await listAs(b, "public_sets_log", `user = '${a.id}'`)
   assert.ok(setsLog.length > 0, "sin bloqueo B ve el sets_log de A")
 
-  const settings = await listAs(b, "settings", `user = '${a.id}'`)
-  assert.ok(settings.length > 0, "sin bloqueo B ve los settings de A")
+  const prs = await listAs(b, "public_prs", `user = '${a.id}'`)
+  assert.ok(prs.length > 0, "sin bloqueo B ve los PRs de A")
 
-  assert.ok(await getOneAs(b, "sessions", ids.sessions), "sin bloqueo B abre la sesión de A")
+  assert.ok(await getOneAs(b, "public_sessions", ids.sessions), "sin bloqueo B abre la sesión de A")
 })
 
 test("tras bloquear, el bloqueado no lee NADA del que bloquea", async () => {
@@ -192,11 +212,11 @@ test("un tercero sin relación de bloqueo sigue viendo lo de siempre", async () 
 
   // El bloqueo A→B no debe afectar a C. Es el caso que rompería si la cláusula
   // se escribiera con `?=` (any-match) en vez de `!=` (all-match).
-  const sessions = await listAs(c, "sessions", `user = '${a.id}'`)
+  const sessions = await listAs(c, "public_sessions", `user = '${a.id}'`)
   assert.ok(sessions.length > 0, "C sigue viendo las sesiones de A")
-  assert.ok(await getOneAs(c, "sessions", ids.sessions), "C sigue abriendo la sesión de A")
+  assert.ok(await getOneAs(c, "public_sessions", ids.sessions), "C sigue abriendo la sesión de A")
 
-  const setsLog = await listAs(c, "sets_log", `user = '${a.id}'`)
+  const setsLog = await listAs(c, "public_sets_log", `user = '${a.id}'`)
   assert.ok(setsLog.length > 0, "C sigue viendo el sets_log de A")
 })
 

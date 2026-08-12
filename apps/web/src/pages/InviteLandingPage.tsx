@@ -87,7 +87,7 @@ export default function InviteLandingPage() {
         let currentStreak = 0
         let totalSessions = 0
         try {
-          const stats = await pb.collection('user_stats').getFirstListItem(
+          const stats = await pb.collection('public_user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid: user.id }),
             { $autoCancel: false }
           )

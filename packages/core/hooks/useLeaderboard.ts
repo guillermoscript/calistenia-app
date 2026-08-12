@@ -61,7 +61,10 @@ export function useLeaderboard(userId: string | null) {
       // No sigo a nadie → leaderboard vacío.
       if (allUserIds.length <= 1 && followedIds.length === 0) return EMPTY_ENTRIES
 
-      // 2. Stats + settings + conteos de sesiones por usuario (en paralelo).
+      // 2. Stats + PRs + conteos de sesiones por usuario (en paralelo).
+      //    Todo sale de las views `public_*` (#386): las tablas base son
+      //    owner-only y aquí se leen datos de otras personas. `public_prs`
+      //    sustituye a `settings` y `public_user_stats` a `user_stats`.
       const userDataPromises = allUserIds.map(async (uid) => {
         const [
           userRes, statsRes, settingsRes,
@@ -70,35 +73,35 @@ export function useLeaderboard(userId: string | null) {
           weekCardioRes, monthCardioRes,
         ] = await Promise.all([
           pb.collection('users').getOne(uid, { $autoCancel: false }).catch(() => null),
-          pb.collection('user_stats').getFirstListItem(
+          pb.collection('public_user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid }),
             { $autoCancel: false, fields: 'id,user,workout_streak_current,workout_streak_best,total_sessions,total_sets,xp' },
           ).catch(() => null),
-          pb.collection('settings').getFirstListItem(
+          pb.collection('public_prs').getFirstListItem(
             pb.filter('user = {:uid}', { uid }),
             { $autoCancel: false, fields: 'id,user,pr_pullups,pr_pushups,pr_lsit,pr_handstand' },
           ).catch(() => null),
-          pb.collection('sessions').getList(1, 1, {
+          pb.collection('public_sessions').getList(1, 1, {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', { uid, start: weekStartStr }),
             $autoCancel: false,
           }).catch(() => ({ totalItems: 0 })),
-          pb.collection('sessions').getList(1, 1, {
+          pb.collection('public_sessions').getList(1, 1, {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', { uid, start: monthStartStr }),
             $autoCancel: false,
           }).catch(() => ({ totalItems: 0 })),
-          pb.collection('circuit_sessions').getList(1, 1, {
+          pb.collection('public_circuit_sessions').getList(1, 1, {
             filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: weekStartStr }),
             $autoCancel: false,
           }).catch(() => ({ totalItems: 0 })),
-          pb.collection('circuit_sessions').getList(1, 1, {
+          pb.collection('public_circuit_sessions').getList(1, 1, {
             filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: monthStartStr }),
             $autoCancel: false,
           }).catch(() => ({ totalItems: 0 })),
-          pb.collection('cardio_sessions').getList(1, 1, {
+          pb.collection('public_cardio_sessions').getList(1, 1, {
             filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: weekStartStr }),
             $autoCancel: false,
           }).catch(() => ({ totalItems: 0 })),
-          pb.collection('cardio_sessions').getList(1, 1, {
+          pb.collection('public_cardio_sessions').getList(1, 1, {
             filter: pb.filter('user = {:uid} && started_at >= {:start}', { uid, start: monthStartStr }),
             $autoCancel: false,
           }).catch(() => ({ totalItems: 0 })),

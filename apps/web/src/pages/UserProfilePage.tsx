@@ -95,7 +95,7 @@ export default function UserProfilePage() {
         // Fetch user_stats
         let stats: any = {}
         try {
-          stats = await pb.collection('user_stats').getFirstListItem(
+          stats = await pb.collection('public_user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid: userId }),
             { $autoCancel: false }
           )
@@ -104,7 +104,7 @@ export default function UserProfilePage() {
         // Fetch settings
         let settings: any = {}
         try {
-          const settingsRes = await pb.collection('settings').getList(1, 1, {
+          const settingsRes = await pb.collection('public_prs').getList(1, 1, {
             filter: pb.filter('user = {:uid}', { uid: userId }),
             $autoCancel: false,
           })
@@ -124,7 +124,7 @@ export default function UserProfilePage() {
 
         let recentSessions: ProfileData['recentSessions'] = []
         try {
-          const sessions = await pb.collection('sessions').getList(1, 100, {
+          const sessions = await pb.collection('public_sessions').getList(1, 100, {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
               uid: userId,
               start: localMidnightAsUTC(`${yearMonth}-01`),
