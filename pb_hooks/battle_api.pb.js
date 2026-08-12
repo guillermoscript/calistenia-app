@@ -476,6 +476,16 @@ routerAdd("POST", "/api/battles/{id}/finish", function (e) {
       var battle = battles.findBattle(txApp, battleId)
       var participant = battles.requireParticipant(txApp, battle, userId)
 
+      // The same gate `progress` applies. Without it the two routes disagreed about when
+      // a battle has started, and `finish` is the more consequential of the two: it is
+      // terminal, it feeds `sealFinalStandings`, and finishing during the countdown
+      // ranked you first on an empty score against people who never got to move.
+      //
+      // Checked before claiming the idempotency key, so a rejected call does not burn it.
+      if (battles.dateMs(battle, "starts_at") > battles.nowMs()) {
+        battles.fail(409, "not_started", "The countdown has not finished")
+      }
+
       if (!battles.claimIdempotencyKey(txApp, battleId, userId, "finish", body.idempotency_key)) return
       if (participant.getString("status") === "finished") return
 

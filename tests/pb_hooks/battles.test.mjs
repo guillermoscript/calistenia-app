@@ -434,6 +434,44 @@ test("el progreso se acepta, incrementa revision y no se puede escribir antes de
   assert.ok(snap.battle.revision > started.battle.revision)
 })
 
+test("terminar durante la cuenta atrás se rechaza y no gasta la clave de idempotencia", async () => {
+  // `progress` y `finish` discrepaban sobre cuándo ha empezado una batalla, y `finish` es
+  // el terminal: sella la clasificación. Quien lo llamaba durante la cuenta atrás quedaba
+  // primero con marcador vacío frente a gente que aún no había podido moverse (#403).
+  const ctx = await readyLobby()
+  const started = await post(ctx.creator, `/api/battles/${ctx.battleId}/start`)
+  const key = "finish-cuenta-atras"
+
+  const temprano = await postRaw(ctx.creator, `/api/battles/${ctx.battleId}/finish`, {
+    idempotency_key: key,
+  })
+  assert.equal(temprano.status, 409, "durante la cuenta atrás no se puede terminar")
+  assert.equal((await temprano.json()).error, "not_started")
+
+  const rechazado = await api(`/api/battles/${ctx.battleId}/snapshot`, { token: await authAs(ctx.creator) })
+  assert.equal(rechazado.me.status, "active", "el rechazo deja al participante activo")
+  assert.equal(rechazado.battle.status, "live")
+
+  const wait = new Date(started.battle.starts_at).getTime() - Date.now() + 250
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait))
+
+  // La misma clave debe seguir sirviendo: la llamada rechazada no llegó a consumirla.
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`, { idempotency_key: key })
+  assert.equal(snap.me.status, "finished", "pasada la cuenta atrás sí se puede terminar")
+})
+
+test("abandonar durante la cuenta atrás sigue permitido", async () => {
+  // Irse antes de empezar es legítimo; terminar no. La guarda de #403 no puede
+  // atrapar a nadie dentro de una batalla que aún no ha arrancado.
+  const ctx = await readyLobby()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/start`)
+
+  const snap = await post(ctx.friend, `/api/battles/${ctx.battleId}/leave`, {
+    idempotency_key: "leave-cuenta-atras",
+  })
+  assert.equal(snap.me.status, "left")
+})
+
 test("el progreso no puede retroceder ni ser negativo", async () => {
   const ctx = await liveBattle()
   await post(ctx.creator, `/api/battles/${ctx.battleId}/progress`, {
