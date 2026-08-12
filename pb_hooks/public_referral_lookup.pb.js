@@ -29,6 +29,22 @@ routerAdd("GET", "/api/public/referral-lookup/{code}", (e) => {
     return e.json(404, { error: "not found" })
   }
 
+  // Bloqueo (#386): esta ruta usa $app y por tanto se salta las API rules de
+  // `users`, así que el filtro de bloqueo hay que aplicarlo a mano. Si la
+  // petición llega autenticada y hay bloqueo en cualquier dirección, se
+  // responde 404 igual que con un código inexistente — no se confirma ni que
+  // el código sea válido. Para visitantes anónimos no hay par que comprobar y
+  // la landing sigue funcionando como hasta ahora.
+  try {
+    const caller = e.auth
+    if (caller && caller.id !== user.id) {
+      const blocks = require(`${__hooks}/utils/blocks.js`)
+      if (blocks.isBlocked($app, caller.id, user.id)) {
+        return e.json(404, { error: "not found" })
+      }
+    }
+  } catch (err) { /* nunca romper la landing por el guard */ }
+
   let avatarUrl = null
   if (user.get("avatar")) {
     try {

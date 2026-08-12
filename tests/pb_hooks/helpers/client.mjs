@@ -119,6 +119,31 @@ export async function list(collection, filter) {
   return res.items
 }
 
+/**
+ * Lista autenticado como `user` — pasa por las reglas de lectura (listRule).
+ * Es lo que hace el cliente real; `list()` usa superuser y las bypassa, así que
+ * para testear reglas de lectura hay que usar esta.
+ */
+export async function listAs(user, collection, filter) {
+  const qs = filter ? `?perPage=200&filter=${encodeURIComponent(filter)}` : "?perPage=200"
+  const res = await api(`/api/collections/${collection}/records${qs}`, { token: await authAs(user) })
+  return res.items
+}
+
+/**
+ * getOne autenticado como `user` (viewRule). Devuelve null si la regla lo
+ * oculta — PocketBase responde 404 (no 403) cuando la regla no matchea, para
+ * no filtrar la existencia del registro.
+ */
+export async function getOneAs(user, collection, id) {
+  try {
+    return await api(`/api/collections/${collection}/records/${id}`, { token: await authAs(user) })
+  } catch (err) {
+    if (err.status === 404 || err.status === 403) return null
+    throw err
+  }
+}
+
 export function notificationsFor(userId, type) {
   return list("notifications", `user = '${userId}' && type = '${type}'`)
 }
