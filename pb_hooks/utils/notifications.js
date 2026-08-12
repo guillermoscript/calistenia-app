@@ -290,7 +290,41 @@ function checkReferralBonus(userId) {
   }
 }
 
+var STREAK_MILESTONES = [7, 14, 30, 50, 100, 200, 365]
+
+/**
+ * Notifica el hito de racha si `newStreak` acaba de cruzar uno.
+ *
+ * Lo llaman DOS sitios y ninguno sobra: el hook de update de `user_stats`
+ * (cualquier escritura por la API de records) y utils/workout_stats.js, que
+ * escribe con SQL atomico — sin perder incrementos en paralelo, pero tampoco
+ * disparando hooks de record. Ver #412.
+ */
+function checkStreakMilestone(userId, oldStreak, newStreak) {
+  if (!userId) return
+  if (!(newStreak > oldStreak)) return
+
+  // De mayor a menor: si un update cruza varios hitos (ej. 5 → 20) se notifica
+  // solo el mayor — una notif por update, la mas significativa.
+  for (var i = STREAK_MILESTONES.length - 1; i >= 0; i--) {
+    var milestone = STREAK_MILESTONES[i]
+    if (newStreak >= milestone && oldStreak < milestone) {
+      createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
+      sendPush(userId, milestone + " dias seguidos!", "Tu racha de entrenamiento sigue creciendo", "/progress", "streak")
+
+      // Fan-out a seguidores: "tu amigo lleva N dias seguidos"
+      notifyFollowers(userId, "friend_streak", String(milestone), { days: milestone }, {
+        title: (getUserName(userId) || "Tu amigo") + " lleva " + milestone + " dias seguidos",
+        body: "Tu amigo esta en racha",
+        url: "/u/" + userId,
+      })
+      break
+    }
+  }
+}
+
 module.exports = {
+  checkStreakMilestone: checkStreakMilestone,
   getUserName: getUserName,
   categoryForType: categoryForType,
   prefAllows: prefAllows,

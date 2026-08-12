@@ -184,19 +184,24 @@ test("EL SINTOMA DEL ISSUE: otra cuenta ve los numeros reales en el perfil ajeno
 
 test("varias sesiones a la vez no pierden cuenta ni duplican la fila", async () => {
   // Caso real: la cola de reintentos vacia varias sesiones de golpe, o el
-  // usuario da doble toque. Sin fila previa, las 5 compiten por crearla.
+  // usuario da doble toque. Sin fila previa, las 15 compiten por crearla.
+  //
+  // Este test PILLO UN BUG DE VERDAD: con el patron leer-sumar-guardar del hook
+  // viejo se perdian incrementos (falló primero en CI, luego en local subiendo a
+  // 15). Por eso `recordWorkout` escribe con un UPDATE atomico. Si alguien lo
+  // vuelve a convertir en un save() de record, este test se pone rojo.
   const user = await createUser("Atleta Concurrente")
 
   await Promise.all(
-    [1, 2, 3, 4, 5].map((i) => strengthSession(user, 0, `paralela${i}`))
+    Array.from({ length: 15 }, (_, i) => strengthSession(user, 0, `paralela${i}`))
   )
 
   const stats = await waitFor(async () => {
     const rows = await list("user_stats", `user='${user.id}'`)
-    return rows.length === 1 && rows[0].total_sessions === 5 ? rows[0] : null
-  }, "una sola fila y las 5 sesiones contadas")
+    return rows.length === 1 && rows[0].total_sessions === 15 ? rows[0] : null
+  }, "una sola fila y las 15 sesiones contadas")
 
-  assert.equal(stats.workout_streak_current, 1, "cinco sesiones el mismo dia = racha 1")
+  assert.equal(stats.workout_streak_current, 1, "quince sesiones el mismo dia = racha 1")
 })
 
 test("un cardio sin fechas no rompe nada: cae al dia del servidor", async () => {

@@ -115,18 +115,43 @@ function findOrCreateStats(userId) {
 }
 
 /**
- * Registra un entrenamiento completado el dia `day` ("YYYY-MM-DD"):
- * incrementa `total_sessions` y actualiza la racha.
+ * Racha resultante, en SQL. Se evalua contra los valores ANTERIORES de la fila
+ * (SQLite calcula todos los SET sobre la fila original), asi que sirve tanto
+ * para `workout_streak_current` como, dentro de un MAX(), para el `best`.
  *
- * La racha solo avanza si `day` es posterior a `last_workout_date`:
- *   - dia siguiente al ultimo  → racha + 1
- *   - hueco de mas de un dia   → racha vuelve a 1
- *   - mismo dia                → solo sube el total (varias sesiones al dia no
- *                                inflan la racha)
- *   - dia anterior (retroactiva) → solo sube el total. Recalcular la racha hacia
- *     atras exigiria releer todo el historial en cada create; el backfill de la
- *     migracion 1783600000 es quien hace ese recomputo completo.
- * `workout_streak_best` nunca retrocede.
+ *   - primera vez (sin last)     → 1
+ *   - dia siguiente al ultimo    → racha + 1
+ *   - hueco de mas de un dia     → vuelve a 1
+ *   - mismo dia                  → se queda igual (varias sesiones al dia no
+ *                                  inflan la racha)
+ *   - dia anterior (retroactiva) → se queda igual. Recalcularla hacia atras
+ *     exigiria releer todo el historial en cada create; el recomputo completo
+ *     es trabajo del backfill (migracion 1783600000).
+ */
+var NEW_STREAK_SQL = `
+  CASE
+    WHEN last_workout_date IS NULL OR last_workout_date = '' THEN 1
+    WHEN {:day} > last_workout_date AND last_workout_date = {:prev}
+      THEN COALESCE(workout_streak_current, 0) + 1
+    WHEN {:day} > last_workout_date THEN 1
+    ELSE COALESCE(workout_streak_current, 0)
+  END`
+
+/**
+ * Registra un entrenamiento completado el dia `day` ("YYYY-MM-DD"):
+ * incrementa `total_sessions` y actualiza la racha. `workout_streak_best` nunca
+ * retrocede.
+ *
+ * TODO EN UN SOLO UPDATE, A PROPOSITO. Leer el record, sumarle 1 y guardarlo
+ * (lo que hacia el hook viejo de circuitos) pierde incrementos cuando entran
+ * varias sesiones a la vez: la cola de reintentos de cardio vaciandose, o un
+ * doble toque. Con 15 creates en paralelo el contador se quedaba corto de
+ * verdad — hay un test que lo cubre. Un UPDATE atomico no puede perderlos.
+ *
+ * El precio es que el SQL no dispara `onRecordAfterUpdateSuccess`, asi que el
+ * hito de racha hay que notificarlo aqui a mano (misma funcion que usa el hook,
+ * no una copia). `user_stats` no tiene suscripciones realtime, comprobado, asi
+ * que saltarse la API de records no deja a nadie sin enterarse.
  */
 function recordWorkout(userId, day) {
   if (!userId) return
@@ -135,22 +160,35 @@ function recordWorkout(userId, day) {
   var stats = findOrCreateStats(userId)
   if (!stats) return
 
-  stats.set("total_sessions", (stats.getInt("total_sessions") || 0) + 1)
+  var statsId = stats.getString("id")
+  var oldStreak = stats.getInt("workout_streak_current") || 0
 
-  var last = stats.getString("last_workout_date") || ""
-  // Comparacion lexicografica: valida para fechas ISO de ancho fijo.
-  if (!last || day > last) {
-    var current = last && shiftDay(day, -1) === last
-      ? (stats.getInt("workout_streak_current") || 0) + 1
-      : 1
-    stats.set("workout_streak_current", current)
-    if (current > (stats.getInt("workout_streak_best") || 0)) {
-      stats.set("workout_streak_best", current)
-    }
-    stats.set("last_workout_date", day)
+  $app.db().newQuery(`
+    UPDATE user_stats SET
+      total_sessions = COALESCE(total_sessions, 0) + 1,
+      workout_streak_current = ${NEW_STREAK_SQL},
+      workout_streak_best = MAX(COALESCE(workout_streak_best, 0), ${NEW_STREAK_SQL}),
+      last_workout_date = CASE
+        WHEN last_workout_date IS NULL OR last_workout_date = '' OR {:day} > last_workout_date
+          THEN {:day}
+        ELSE last_workout_date
+      END,
+      updated_at = {:stamp}
+    WHERE id = {:id}
+  `).bind({
+    day: day,
+    prev: shiftDay(day, -1),
+    stamp: new Date().toISOString().replace("T", " "),
+    id: statsId,
+  }).execute()
+
+  try {
+    var fresh = $app.findRecordById("user_stats", statsId)
+    var notifications = require(`${__hooks}/utils/notifications.js`)
+    notifications.checkStreakMilestone(userId, oldStreak, fresh.getInt("workout_streak_current") || 0)
+  } catch (err) {
+    console.log("[workout_stats] milestone de racha fallido para " + userId + ":", err)
   }
-
-  $app.save(stats)
 }
 
 module.exports = {

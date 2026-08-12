@@ -427,44 +427,19 @@ onRecordAfterUpdateSuccess(function(e) {
 }, "user_achievements")
 
 // ── Streak milestone notifications ───────────────────────────────────────────
+// La lógica vive en utils/notifications.js (checkStreakMilestone) porque
+// workout_stats.js también la necesita: escribe la racha con SQL atómico para no
+// perder incrementos en paralelo, y el SQL no dispara este hook. Ver #412.
 
 onRecordAfterUpdateSuccess(function(e) {
   e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
-    var STREAK_MILESTONES = [7, 14, 30, 50, 100, 200, 365]
-
-    var currentStreak = e.record.getInt("workout_streak_current")
-    var oldStreak = e.record.original().getInt("workout_streak_current")
-
-    if (currentStreak <= oldStreak) return
-
-    var userId = e.record.getString("user")
-    if (!userId) return
-
-    // De mayor a menor: si un update cruza varios milestones (ej. 5 → 20),
-    // se notifica solo el mayor — una notif por update, la más significativa.
-    for (var i = STREAK_MILESTONES.length - 1; i >= 0; i--) {
-      var milestone = STREAK_MILESTONES[i]
-      if (currentStreak >= milestone && oldStreak < milestone) {
-        helpers.createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
-        helpers.sendPush(userId, milestone + " dias seguidos!", "Tu racha de entrenamiento sigue creciendo", "/progress", "streak")
-
-        // Fan-out a seguidores: "tu amigo lleva N días seguidos"
-        helpers.notifyFollowers(
-          userId,
-          "friend_streak",
-          String(milestone),
-          { days: milestone },
-          {
-            title: (helpers.getUserName(userId) || "Tu amigo") + " lleva " + milestone + " dias seguidos",
-            body: "Tu amigo esta en racha",
-            url: "/u/" + userId,
-          }
-        )
-        break
-      }
-    }
+    helpers.checkStreakMilestone(
+      e.record.getString("user"),
+      e.record.original().getInt("workout_streak_current"),
+      e.record.getInt("workout_streak_current")
+    )
   } catch (err) {
     console.log("[notif] streak hook error:", err)
   }
