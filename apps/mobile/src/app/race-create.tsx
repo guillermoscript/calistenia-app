@@ -58,8 +58,8 @@ export default function RaceCreateScreen() {
         ...origin,
       })
       op.track('race_created', { race_id: race.id, mode, activity_type: activity, platform: 'mobile' })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCreated, {
-        surface: 'battle', source: 'race_create', battle_id: race.id,
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceCreated, {
+        surface: 'race', source: 'race_create', race_id: race.id,
         participant_count: 1, result: 'created', mode, activity_type: activity,
       })
       void haptics.success()

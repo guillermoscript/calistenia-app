@@ -33,16 +33,16 @@ export default function RaceLobby() {
     if (navigator.share) {
       try {
         await navigator.share({ title: race.name, url: raceUrl })
-        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
-          surface: 'battle', source: 'race_lobby', battle_id: race.id,
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceShared, {
+          surface: 'race', source: 'race_lobby', race_id: race.id,
           share_type: 'invite_link', participant_count: participants.length, result: 'shared',
         })
       } catch { /* cancelled */ }
     } else {
       try {
         await navigator.clipboard.writeText(raceUrl)
-        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
-          surface: 'battle', source: 'race_lobby', battle_id: race.id,
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceShared, {
+          surface: 'race', source: 'race_lobby', race_id: race.id,
           share_type: 'invite_link', participant_count: participants.length, result: 'shared',
         })
       } catch { /* ignore */ }

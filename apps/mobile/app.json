@@ -52,6 +52,11 @@
               "scheme": "https",
               "host": "gym.guille.tech",
               "pathPrefix": "/invite"
+            },
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/battle-invite"
             }
           ],
           "category": [

@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { usePathname } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { WifiOff } from 'lucide-react-native'
 
@@ -14,11 +15,18 @@ import { isOnline, onConnectivityChange } from '@/lib/connectivity'
 export default function OfflineBanner() {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
+  const pathname = usePathname()
   const [offline, setOffline] = useState(!isOnline())
 
   useEffect(() => onConnectivityChange(now => setOffline(!now)), [])
 
   if (!offline) return null
+
+  // En las pantallas de batalla este aviso mentiría: el progreso de una batalla NO se
+  // guarda en local, se bloquea (no es verificable a posteriori). Esas pantallas ponen
+  // su propio mensaje, que además no tapa el marcador de ronda y tiempo como sí hace
+  // esta píldora flotante.
+  if (pathname.startsWith('/battle')) return null
 
   return (
     <View
