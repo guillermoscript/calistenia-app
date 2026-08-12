@@ -1,4 +1,5 @@
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { saveRaceRoute } from '@calistenia/core/lib/raceRoutes'
 import { serverNow } from './raceClock'
 import { wrapPbError, RaceNotFoundError } from './errors'
 import type {
@@ -163,6 +164,16 @@ export interface FinishParticipantInput {
   last_lng?: number
 }
 
+/**
+ * Cierra la participación y guarda el recorrido APARTE, en `race_routes` (#316).
+ *
+ * El recorrido no puede viajar dentro del registro de participación: esa fila la
+ * leen todos los corredores de la carrera y, encima, este mismo `update` se
+ * difunde entero por realtime a cuantos estén suscritos, así que escribirlo aquí
+ * equivalía a repartirlo. `saveRaceRoute` va después y se traga sus propios
+ * errores: quedarse sin recorrido degrada la pantalla de resultados, pero no
+ * cerrar la participación rompe la carrera de verdad.
+ */
 export async function finishParticipant(participantId: string, p: FinishParticipantInput): Promise<void> {
   try {
     await pb.collection('race_participants').update(participantId, {
@@ -172,11 +183,13 @@ export async function finishParticipant(participantId: string, p: FinishParticip
       status: 'finished',
       finished_at: new Date(serverNow()).toISOString(),
       last_update: new Date(serverNow()).toISOString(),
-      gps_track: p.gps_track,
       ...(p.last_lat != null ? { last_lat: p.last_lat } : {}),
       ...(p.last_lng != null ? { last_lng: p.last_lng } : {}),
     })
   } catch (e) { throw wrapPbError(e) }
+
+  const userId = pb.authStore.record?.id
+  if (userId) await saveRaceRoute(participantId, userId, p.gps_track)
 }
 
 export async function finishRace(raceId: string): Promise<void> {

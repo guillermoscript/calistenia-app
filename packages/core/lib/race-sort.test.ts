@@ -20,7 +20,6 @@ const p = (over: Partial<RaceParticipant> & { status?: ParticipantStatus } = {})
   last_lng: null,
   last_update: null,
   finished_at: null,
-  gps_track: null,
   ...over,
 })
 
