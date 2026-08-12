@@ -32,7 +32,10 @@ export default function CardioSessionDetailPage() {
     if (!id) return
     setLoading(true)
     setError(null)
-    pb.collection('cardio_sessions')
+    // View `public_*` y no la tabla base (#386): la página se abre sobre la
+    // sesión de otra persona desde el muro, y la base es owner-only. Esta vista
+    // no pinta FC ni calorías del reloj, así que no necesita la tabla base.
+    pb.collection('public_cardio_sessions')
       .getOne(id, { expand: 'user', $autoCancel: false })
       .then(record => {
         const s: CardioSession = {

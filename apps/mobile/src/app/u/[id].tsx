@@ -99,13 +99,13 @@ export default function UserProfileScreen() {
 
         let stats: any = {}
         try {
-          stats = await pb.collection('user_stats').getFirstListItem(
+          stats = await pb.collection('public_user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid: userId }), { $autoCancel: false })
         } catch { /* sin stats */ }
 
         let settings: any = {}
         try {
-          const sRes = await pb.collection('settings').getList(1, 1, {
+          const sRes = await pb.collection('public_prs').getList(1, 1, {
             filter: pb.filter('user = {:uid}', { uid: userId }), $autoCancel: false })
           if (sRes.items.length) settings = sRes.items[0]
         } catch { /* sin settings */ }
@@ -121,7 +121,7 @@ export default function UserProfileScreen() {
 
         let recentSessions: RecentSession[] = []
         try {
-          const ses = await pb.collection('sessions').getList(1, 100, {
+          const ses = await pb.collection('public_sessions').getList(1, 100, {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
               uid: userId, start: localMidnightAsUTC(`${yearMonth}-01`),
             }),

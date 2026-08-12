@@ -61,7 +61,8 @@ onRecordAfterCreateSuccess(function(e) {
       (followerName || "Alguien") + " te sigue",
       "Tienes un nuevo seguidor",
       "/u/" + followerId,
-      "follow"
+      "follow",
+      followerId
     )
   } catch (err) {
     console.log("[notif] follow hook error:", err)
@@ -111,7 +112,8 @@ onRecordAfterCreateSuccess(function(e) {
       (reactorName || "Alguien") + " " + emoji,
       "Reacciono a tu sesion",
       "/feed?session=" + sessionId,
-      "reaction"
+      "reaction",
+      reactorId
     )
   } catch (err) {
     console.log("[notif] reaction hook error:", err)
@@ -155,7 +157,8 @@ onRecordAfterCreateSuccess(function(e) {
             (authorName || "Alguien") + " respondio tu comentario",
             preview,
             "/feed?session=" + sessionId + "&comment=" + newCommentId,
-            "comment_reply"
+            "comment_reply",
+            authorId
           )
         }
       } catch (err) { /* parent not found */ }
@@ -196,7 +199,8 @@ onRecordAfterCreateSuccess(function(e) {
             (authorName || "Alguien") + " comento tu sesion",
             preview,
             "/feed?session=" + sessionId + "&comment=" + newCommentId,
-            "comment"
+            "comment",
+            authorId
           )
         }
       }
@@ -252,7 +256,8 @@ onRecordAfterCreateSuccess(function(e) {
       (reactorName || "Alguien") + " " + emoji,
       "Reaccionó a tu comentario",
       sessionId ? ("/feed?session=" + sessionId + "&comment=" + commentId) : "/feed",
-      "reaction"
+      "reaction",
+      reactorId
     )
   } catch (err) {
     console.log("[notif] comment_reaction hook error:", err)
@@ -301,7 +306,8 @@ onRecordAfterCreateSuccess(function(e) {
       (userName || "Alguien") + " se unio a tu desafio",
       challengeTitle,
       "/challenges/" + challengeId,
-      "challenge_join"
+      "challenge_join",
+      userId
     )
   } catch (err) {
     console.log("[notif] challenge_join hook error:", err)
