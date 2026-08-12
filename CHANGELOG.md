@@ -21,6 +21,10 @@ _Real-time circuit battles against your friends, plus a thorough privacy pass: y
 - **Easier challenges to start** — Ready-made challenges you can join from zero with one tap, cumulative scoring that adds up everything you do during the challenge, and a featured challenge on the home screen.
 - **Free sessions** — Train without following a program: build the session as you go and it gets logged like any other, in your history and your calendar.
 
+### Fixed
+
+- **Friend search works now** — Searching for someone by name never returned anything, because of a bug in the search itself. It finds people now.
+
 ## [1.7.1] - 2026-08-07
 
 _Fixes 1.7.0: the app rendered completely broken, with no styles or fonts. It now looks the way it should._

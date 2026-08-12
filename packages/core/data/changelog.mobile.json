@@ -68,6 +68,18 @@
             "es": "Entrena sin seguir un programa: monta la sesión sobre la marcha y queda registrada igual que el resto, en tu historial y en tu calendario.",
             "en": "Train without following a program: build the session as you go and it gets logged like any other, in your history and your calendar."
           }
+        },
+        {
+          "icon": "🔍",
+          "type": "fix",
+          "title": {
+            "es": "El buscador de amigos ya funciona",
+            "en": "Friend search works now"
+          },
+          "body": {
+            "es": "Buscar a alguien por su nombre en la app no devolvía nada nunca, por un error de la propia búsqueda. Ya encuentra.",
+            "en": "Searching for someone by name never returned anything, because of a bug in the search itself. It finds people now."
+          }
         }
       ],
       "groups": [
@@ -185,6 +197,12 @@
           "emoji": "🐛",
           "type": "fix",
           "items": [
+            {
+              "description": "Buscar usuarios por un campo que existe (#408)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "c96cedd"
+            },
             {
               "description": "A blocked user can no longer read anything from the blocker",
               "scope": "#386",

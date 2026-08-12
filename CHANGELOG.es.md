@@ -21,6 +21,10 @@ _Batallas de circuito en tiempo real contra tus amigos, y un repaso a fondo de l
 - **Retos más fáciles de empezar** — Retos preparados para empezar de cero con un toque, puntuación acumulativa que suma todo lo que haces durante el reto, y un reto destacado en la pantalla de inicio.
 - **Sesiones libres** — Entrena sin seguir un programa: monta la sesión sobre la marcha y queda registrada igual que el resto, en tu historial y en tu calendario.
 
+### Corregido
+
+- **El buscador de amigos ya funciona** — Buscar a alguien por su nombre en la app no devolvía nada nunca, por un error de la propia búsqueda. Ya encuentra.
+
 ## [1.7.1] - 2026-08-07
 
 _Arregla la 1.7.0: la app se veía completamente descolocada, sin estilos ni fuentes. Ya se muestra como debe._
