@@ -4311,6 +4311,8 @@
   "battle.finish": "Finish",
   "battle.participants": "participants",
   "battle.participantOne": "participant",
+  "battle.inviteError": "That invite could not be opened. Try again.",
+  "battle.inviteOffline": "Offline: the invite can't be opened.",
   "battle.barLive": "Battle in progress · tap to return",
   "battle.barLobby": "Your battle is waiting in the lobby",
   "battle.barLabel": "Back to your battle",

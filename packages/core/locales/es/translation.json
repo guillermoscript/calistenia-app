@@ -4311,6 +4311,8 @@
   "battle.finish": "Terminar",
   "battle.participants": "participantes",
   "battle.participantOne": "participante",
+  "battle.inviteError": "No se pudo abrir la invitación. Inténtalo otra vez.",
+  "battle.inviteOffline": "Sin conexión: no se puede abrir la invitación.",
   "battle.barLive": "Batalla en curso · toca para volver",
   "battle.barLobby": "Tu batalla te espera en la sala",
   "battle.barLabel": "Volver a tu batalla",
