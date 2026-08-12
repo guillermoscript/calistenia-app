@@ -420,19 +420,68 @@ function compareScores(a, b) {
 }
 
 /**
+ * When a participant's rest ends, or null if they are not resting (#397).
+ *
+ * Derived, never stored and never accepted from a request body. The server already holds
+ * everything it needs: which exercise they moved on to, when they confirmed it, and how
+ * long the rest after the exercise before it lasts. Anything the client asserted about
+ * its own rest would be something it could lie about to look busy while standing still.
+ *
+ * `current_exercise_position` points at what comes NEXT, so the rest that is running now
+ * belongs to the exercise before it — wrapping round to the last one between rounds.
+ */
+function restingUntilFor(participant, config) {
+  if (participant.getString('status') !== 'active') return null
+
+  var exercises = config && Array.isArray(config.exercises) ? config.exercises : []
+  if (!exercises.length) return null
+
+  var progress = jsonField(participant, 'progress', emptyProgress())
+  var position = progress.current_exercise_position
+  if (position === null || position === undefined) return null
+
+  // Before the first confirmation there is no rest to be in: the progress row is seeded
+  // with a timestamp at join time, and reading rest off that would show everyone resting
+  // the moment the battle starts.
+  var didAnything = (progress.completed_rounds || 0) > 0
+    || (progress.completed_reps || 0) > 0
+    || (progress.completed_time_seconds || 0) > 0
+  if (!didAnything) return null
+
+  var since = parseMs(progress.last_activity_at)
+  if (!since) return null
+
+  var previous = exercises[(position - 1 + exercises.length) % exercises.length]
+  var restSeconds = Math.floor((previous && previous.rest_seconds) || 0)
+  if (restSeconds <= 0) return null
+
+  var until = since + restSeconds * 1000
+  return until > nowMs() ? isoAt(until) : null
+}
+
+/**
  * Ranked standings. `left` participants keep a score and a rank so a battle result is
  * stable for everyone who took part, not only those who finished.
+ *
+ * Each row also carries where that participant is right now, so the live board can say
+ * "resting, 12s" instead of leaving a stalled counter that reads the same as someone who
+ * quietly gave up (#397).
  */
-function standingsFor(participantRecords, nameByUser) {
+function standingsFor(participantRecords, nameByUser, config) {
   var scored = []
   for (var i = 0; i < participantRecords.length; i++) {
     var user = participantRecords[i].getString('user') || null
+    var progress = jsonField(participantRecords[i], 'progress', emptyProgress())
+    var position = progress.current_exercise_position
     scored.push({
       participant_id: participantRecords[i].getString('id'),
       user: user,
       display_name: (nameByUser && user && nameByUser[user]) || '',
       status: participantRecords[i].getString('status'),
       score: scoreFor(participantRecords[i]),
+      current_exercise_position: position === undefined ? null : position,
+      last_activity_at: progress.last_activity_at || null,
+      resting_until: restingUntilFor(participantRecords[i], config),
     })
   }
   scored.sort(function (a, b) { return compareScores(a.score, b.score) })
@@ -540,7 +589,7 @@ function snapshotOf(app, battle, userId) {
     battle: serializeBattle(battle),
     participants: serialized,
     me: mine,
-    standings: standingsFor(participants, nameByUser),
+    standings: standingsFor(participants, nameByUser, jsonField(battle, 'config', null)),
     // Clients derive the countdown from this and their measured offset, never from
     // the device clock.
     server_time: isoAt(nowMs()),

@@ -4353,5 +4353,10 @@
   "battle.inviteUnavailable": "Invite unavailable",
   "battle.inviteUnavailableHint": "Ask whoever invited you for a fresh link.",
   "battle.openInApp": "Battles run in the app. Open it to join.",
-  "battle.getTheApp": "Get the app"
+  "battle.getTheApp": "Get the app",
+
+  "battle.stateResting": "Resting",
+  "battle.stateIdle": "No signal",
+  "battle.stateFinished": "Done",
+  "battle.stateStarting": "Starting"
 }

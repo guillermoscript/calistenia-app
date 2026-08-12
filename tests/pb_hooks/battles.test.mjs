@@ -802,6 +802,107 @@ test("abandonar una batalla que sigue viva la saca de mi consulta de batalla act
   assert.equal(isBattleActiveForMe(fila.status, mia.status, false), false)
 })
 
+// ── Estado en vivo del marcador (#397) ───────────────────────────────────────
+
+/** Milisegundos hasta un instante devuelto por el servidor, en formato de PocketBase. */
+function msHasta(raw) {
+  return new Date(String(raw).replace(" ", "T")).getTime() - Date.now()
+}
+
+function standingDe(snap, userId) {
+  return snap.standings.find((s) => s.user === userId)
+}
+
+async function snapshotDe(user, battleId) {
+  const res = await getRaw(user, `/api/battles/${battleId}/snapshot`)
+  return res.json()
+}
+
+test("nadie descansa antes de confirmar su primer ejercicio", async () => {
+  // La fila de progreso nace sellada con la hora de entrada. Si el descanso se leyera
+  // de ahí sin más, el marcador diría que todo el mundo descansa nada más arrancar.
+  const ctx = await liveBattle()
+  const snap = await snapshotDe(ctx.creator, ctx.battleId)
+  const mio = standingDe(snap, ctx.creator.id)
+
+  assert.equal(mio.resting_until, null, "aparece descansando sin haber hecho nada")
+  assert.equal(mio.current_exercise_position, null)
+})
+
+test("confirmar un ejercicio abre una ventana de descanso derivada del circuito", async () => {
+  // El descanso NO se guarda: sale de cuándo confirmaron y del `rest_seconds` del
+  // ejercicio anterior, que es dato del servidor. Así el cliente no puede fingir que
+  // sigue trabajando mientras está parado.
+  const ctx = await liveBattle()
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/progress`, {
+    progress: { completed_rounds: 0, completed_reps: 10, completed_time_seconds: 0, current_exercise_position: 1 },
+  })
+
+  const mio = standingDe(snap, ctx.creator.id)
+  assert.equal(mio.current_exercise_position, 1, "el marcador no dice en qué ejercicio va")
+  assert.ok(mio.resting_until, "confirmar un ejercicio con descanso no abre la ventana")
+
+  // El circuito de prueba descansa 30 s tras el ejercicio 0.
+  const restante = msHasta(mio.resting_until)
+  assert.ok(restante > 25_000 && restante <= 30_000, `ventana de descanso rara: ${restante}ms`)
+
+  // Y el rival lo ve, que es justo para lo que existe.
+  const visto = standingDe(await snapshotDe(ctx.friend, ctx.battleId), ctx.creator.id)
+  assert.equal(visto.resting_until, mio.resting_until, "el rival no ve el mismo descanso")
+})
+
+test("el descanso que manda el cliente se ignora", async () => {
+  const ctx = await liveBattle()
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/progress`, {
+    progress: {
+      completed_rounds: 0, completed_reps: 10, completed_time_seconds: 0, current_exercise_position: 1,
+      // Nada de esto debe llegar a ninguna parte.
+      resting_until: "2099-01-01 00:00:00.000Z",
+      last_activity_at: "2099-01-01 00:00:00.000Z",
+    },
+  })
+
+  const mio = standingDe(snap, ctx.creator.id)
+  assert.ok(msHasta(mio.resting_until) <= 30_000, "el cliente pudo dictar su propio descanso")
+  assert.ok(msHasta(mio.last_activity_at) <= 0, "el cliente pudo sellar su propia actividad")
+})
+
+test("quien termina o se va deja de aparecer descansando", async () => {
+  const ctx = await liveBattle()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/progress`, {
+    progress: { completed_rounds: 0, completed_reps: 10, completed_time_seconds: 0, current_exercise_position: 1 },
+  })
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`, {})
+
+  const mio = standingDe(snap, ctx.creator.id)
+  assert.equal(mio.status, "finished")
+  assert.equal(mio.resting_until, null, "un participante que ha terminado sigue 'descansando'")
+})
+
+test("un circuito sin descansos nunca marca descanso", async () => {
+  const creator = await createUser("Sin Descanso")
+  const friend = await createUser("Rival")
+  const battle = await createDraft(creator, {
+    exercises: [
+      { exercise_id: "pushup", position: 0, target: { kind: "reps", value: 10 }, rest_seconds: 0 },
+      { exercise_id: "squat", position: 1, target: { kind: "reps", value: 15 }, rest_seconds: 0 },
+    ],
+  })
+  await post(creator, `/api/battles/${battle.id}/publish`)
+  const token = await inviteToken(creator, battle.id)
+  await post(friend, "/api/battles/join", { token })
+  await post(creator, `/api/battles/${battle.id}/ready`, { ready: true })
+  await post(friend, `/api/battles/${battle.id}/ready`, { ready: true })
+  const arranque = await post(creator, `/api/battles/${battle.id}/start`)
+  const espera = new Date(arranque.battle.starts_at).getTime() - Date.now() + 250
+  if (espera > 0) await new Promise((r) => setTimeout(r, espera))
+
+  const snap = await post(creator, `/api/battles/${battle.id}/progress`, {
+    progress: { completed_rounds: 0, completed_reps: 10, completed_time_seconds: 0, current_exercise_position: 1 },
+  })
+  assert.equal(standingDe(snap, creator.id).resting_until, null)
+})
+
 test("el cron NO toca un lobby recién creado", async () => {
   // Regresión: el corte se interpolaba con `isoAt` (separador `T`) y se comparaba
   // contra el texto almacenado por PocketBase (separador espacio). Para filas del

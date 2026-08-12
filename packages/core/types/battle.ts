@@ -131,6 +131,17 @@ export interface BattleStanding {
   status: BattleParticipantStatus
   score: BattleScore
   rank: number
+  /** Which exercise they are on, or null before they start. Server-owned (#397). */
+  current_exercise_position: number | null
+  /** When they last confirmed an exercise. Server-owned (#397). */
+  last_activity_at: string | null
+  /**
+   * When their rest ends, or null if they are not resting. **Derived** by the server
+   * from the last confirmation and the circuit's own `rest_seconds` — never stored and
+   * never accepted from a client, which could otherwise claim to be working while
+   * standing still (#397).
+   */
+  resting_until: string | null
 }
 
 /**
