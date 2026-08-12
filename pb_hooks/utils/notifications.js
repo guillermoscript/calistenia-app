@@ -113,8 +113,21 @@ function createNotification(userId, type, actorId, referenceId, referenceType, d
   }
 }
 
-function sendPush(userId, title, body, url, type) {
+/**
+ * `actorId` es opcional pero debe pasarse SIEMPRE que el push hable de otro
+ * usuario (#386). `createNotification` ya cortaba el par bloqueado, pero el
+ * push se enviaba igual: quien bloquea seguía recibiendo el nombre y el texto
+ * del bloqueado por notificación, aunque la notificación in-app se suprimiera.
+ * Sin `actorId` no hay par que comprobar (push propio o del sistema).
+ */
+function sendPush(userId, title, body, url, type, actorId) {
   try {
+    if (actorId && userId !== actorId) {
+      try {
+        var blocks = require(`${__hooks}/utils/blocks.js`)
+        if (blocks.isBlocked($app, userId, actorId)) return
+      } catch (e) { /* nunca romper el push por un error del guard */ }
+    }
     if (type && !prefAllows(userId, categoryForType(type), "push")) return
     var apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
     var internalKey = $os.getenv("INTERNAL_API_KEY") || ""
@@ -165,7 +178,7 @@ function notifyFollowers(actorId, type, referenceId, data, push) {
     if (blocks && blocks.isBlocked($app, fid, actorId)) continue
     createNotification(fid, type, actorId, referenceId, "user", data)
     if (push) {
-      sendPush(fid, push.title, push.body, push.url, type)
+      sendPush(fid, push.title, push.body, push.url, type, actorId)
     }
   }
 }
@@ -269,7 +282,8 @@ function checkReferralBonus(userId) {
       "Tu referido completo su primer entrenamiento!",
       (referredName || "Tu referido") + " ya esta entrenando",
       "/referrals",
-      "referral_bonus"
+      "referral_bonus",
+      userId
     )
   } catch (err) {
     console.log("[notif] referral_bonus error:", err)

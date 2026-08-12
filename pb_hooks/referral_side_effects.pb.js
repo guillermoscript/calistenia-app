@@ -85,7 +85,8 @@ onRecordAfterCreateSuccess((e) => {
       (referredName || "Alguien") + " se registro con tu enlace",
       "Tu invitacion dio resultado",
       "/referrals",
-      "referral_signup"
+      "referral_signup",
+      referredId
     )
   } catch (err) {
     console.log("Referral notification creation failed:", err)

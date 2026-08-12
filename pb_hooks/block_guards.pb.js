@@ -14,6 +14,21 @@ onRecordCreate(function (e) {
   if (owner && blocks.isBlocked(e.app, author, owner)) {
     throw new BadRequestError("No se pudo completar la acción")
   }
+  // Una respuesta también toca al autor del comentario padre, que puede no ser
+  // el dueño de la sesión (#386). Sin esta comprobación, un bloqueado podía
+  // responder a un comentario del que le bloqueó en la sesión de un tercero:
+  // la notificación in-app se suprimía, pero el push llegaba igual con su
+  // nombre y el texto de la respuesta.
+  var parentId = e.record.getString("parent_id")
+  if (parentId) {
+    var parentAuthor = ""
+    try {
+      parentAuthor = e.app.findRecordById("comments", parentId).getString("author")
+    } catch (err) { /* comentario padre inexistente — curso normal */ }
+    if (parentAuthor && blocks.isBlocked(e.app, author, parentAuthor)) {
+      throw new BadRequestError("No se pudo completar la acción")
+    }
+  }
   e.next()
 }, "comments")
 
