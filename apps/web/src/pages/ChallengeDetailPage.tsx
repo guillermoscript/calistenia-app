@@ -116,7 +116,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
           <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="10,3 5,8 10,13" /></svg>
           {t('common.back')}
         </button>
-        <div className="text-center py-16 text-muted-foreground text-sm">Desafío no encontrado</div>
+        <div className="text-center py-16 text-muted-foreground text-sm">{t('challenge.notFound')}</div>
       </div>
     )
   }
@@ -154,7 +154,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
           </span>
           {challenge.goal && challenge.goal > 0 && (
             <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-amber-400 border border-amber-400/30 bg-amber-400/10">
-              Meta: {challenge.goal}
+              {t('challenges.goal', { value: challenge.goal })}
             </span>
           )}
           <span className={cn('text-[11px]', goalReached ? 'text-lime' : isActive ? 'text-amber-400' : 'text-muted-foreground')}>
@@ -192,7 +192,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
             onClick={() => setShowInvite(!showInvite)}
             className="text-[10px] tracking-widest h-9"
           >
-            {showInvite ? t('challenge.hide') : t('challenge.inviteFriend')}
+            {showInvite ? t('challenge.hide') : t('challenge.inviteFriends')}
           </Button>
 
           {showInvite && (
