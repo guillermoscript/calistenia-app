@@ -4,7 +4,7 @@ import { View, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Check, Activity, ChevronRight, Camera, Dumbbell, CalendarDays } from 'lucide-react-native'
+import { Check, Activity, ChevronRight, Camera, Dumbbell, CalendarDays, Swords } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { useCardioSessions } from '@calistenia/core/hooks/useCardioStats'
+import { useBattleHistory } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate, todayStr } from '@calistenia/core/lib/dateUtils'
 import { formatDuration } from '@calistenia/core/lib/geo'
 import type { SessionDone, CardioSession } from '@calistenia/core/types'
@@ -31,6 +32,7 @@ export default function HistoryScreen() {
   const { progress, settings } = useWorkoutState()
   const { getWorkout, getTotalSessions, getLongestStreak, getWeeklyDoneCount, getMonthActivity } = useWorkoutActions()
   const { sessions: cardioSessions } = useCardioSessions(user?.id ?? null)
+  const { record: battleRecord } = useBattleHistory(user?.id ?? null)
 
   // Combina entrenos (progress) y cardio (cardio_sessions) en una sola lista
   // ordenada por fecha/hora. Las stats de cabecera siguen contando solo entrenos.
@@ -123,6 +125,27 @@ export default function HistoryScreen() {
                 </View>
               </CardContent>
             </Card>
+
+            {/* Batallas (#398): el historial es lo que convierte una batalla en
+                entrenamiento y no en una anécdota que se ve una vez y desaparece. */}
+            {battleRecord.fought > 0 && (
+              <Pressable onPress={() => router.push('/battle-history')}>
+                <Card>
+                  <CardContent className="flex-row items-center gap-3 py-4">
+                    <View className="size-10 items-center justify-center rounded-full bg-lime/10">
+                      <Swords size={18} color="hsl(74 90% 57%)" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-sans-medium text-foreground">{t('battle.historyTitle')}</Text>
+                      <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+                        {battleRecord.won}/{battleRecord.fought} {t('battle.recordWon').toLowerCase()}
+                      </Text>
+                    </View>
+                    <ChevronRight size={18} color="hsl(0 0% 45%)" />
+                  </CardContent>
+                </Card>
+              </Pressable>
+            )}
 
             {/* Fotos de progreso */}
             <Pressable onPress={() => router.push('/progress-photos')}>

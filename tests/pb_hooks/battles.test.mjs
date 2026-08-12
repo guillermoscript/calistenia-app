@@ -903,6 +903,91 @@ test("un circuito sin descansos nunca marca descanso", async () => {
   assert.equal(standingDe(snap, creator.id).resting_until, null)
 })
 
+// ── Clasificación congelada al cerrar (#398) ─────────────────────────────────
+
+/** La consulta exacta de `listMyBattleHistory`. */
+const HISTORY_QS = "?perPage=30"
+  + "&filter=" + encodeURIComponent("status = 'finished' || status = 'cancelled' || status = 'expired'")
+  + "&sort=-finished_at,-last_activity_at"
+
+test("al terminar la batalla se congela la clasificación en el propio registro", async () => {
+  // Sin esto el historial no existe para quien se unió: la regla de lectura de
+  // `battle_participants` solo le deja ver su propia fila, así que reconstruir la
+  // clasificación le daría un ranking de uno.
+  const ctx = await liveBattle()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/progress`, {
+    progress: { completed_rounds: 2, completed_reps: 40, completed_time_seconds: 0, current_exercise_position: 0 },
+  })
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`)
+  const snap = await post(ctx.friend, `/api/battles/${ctx.battleId}/finish`)
+  assert.equal(snap.battle.status, "finished")
+
+  const guardada = (await getOne("battles", ctx.battleId)).final_standings
+  assert.ok(Array.isArray(guardada) && guardada.length === 2, "no se guardó la clasificación")
+  assert.equal(guardada[0].rank, 1)
+  assert.ok(guardada[0].display_name, "los nombres deben congelarse con el resultado")
+  assert.equal(guardada[0].user, ctx.creator.id, "ganó quien hizo más rondas")
+})
+
+test("quien se unió lee el resultado completo desde el historial", async () => {
+  const ctx = await liveBattle()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`)
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/finish`)
+
+  const res = await api(`/api/collections/battles/records${HISTORY_QS}`, { token: await authAs(ctx.friend) })
+  const fila = res.items.find((b) => b.id === ctx.battleId)
+
+  assert.ok(fila, "la batalla cerrada no aparece en el historial del participante")
+  assert.equal(fila.final_standings.length, 2, "el que se unió ve un ranking de uno")
+})
+
+test("un extraño no ve el historial de una batalla ajena", async () => {
+  const ctx = await liveBattle()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`)
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/finish`)
+
+  const extrano = await createUser("Curioso")
+  const res = await api(`/api/collections/battles/records${HISTORY_QS}`, { token: await authAs(extrano) })
+  assert.equal(res.items.find((b) => b.id === ctx.battleId), undefined)
+})
+
+test("cancelar y caducar también congelan el resultado", async () => {
+  const cancelada = await lobbyWithTwo()
+  await post(cancelada.creator, `/api/battles/${cancelada.battleId}/cancel`)
+  const trasCancelar = await getOne("battles", cancelada.battleId)
+  assert.equal(trasCancelar.status, "cancelled")
+  assert.ok(Array.isArray(trasCancelar.final_standings), "una batalla cancelada se queda sin resultado")
+
+  const caducada = await lobbyWithTwo()
+  await update("battles", caducada.battleId, { last_activity_at: "2020-01-01 00:00:00.000Z" })
+  await triggerCron("battles_expiry")
+  await waitFor(
+    async () => (await getOne("battles", caducada.battleId)).status === "expired",
+    "el cron no expiró el lobby rancio",
+  )
+  const trasCaducar = await getOne("battles", caducada.battleId)
+  assert.ok(Array.isArray(trasCaducar.final_standings), "una batalla caducada se queda sin resultado")
+})
+
+test("un segundo cierre no reescribe la historia", async () => {
+  // Una llamada idempotente repetida, o el cron pisando una lectura, no pueden cambiar
+  // un resultado ya sellado.
+  const ctx = await liveBattle()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`)
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/finish`)
+  const original = JSON.stringify((await getOne("battles", ctx.battleId)).final_standings)
+
+  await postRaw(ctx.creator, `/api/battles/${ctx.battleId}/finish`, {})
+  await triggerCron("battles_expiry")
+  await new Promise((resolve) => setTimeout(resolve, 1200))
+
+  assert.equal(
+    JSON.stringify((await getOne("battles", ctx.battleId)).final_standings),
+    original,
+    "el resultado sellado cambió después de cerrarse",
+  )
+})
+
 test("el cron NO toca un lobby recién creado", async () => {
   // Regresión: el corte se interpolaba con `isoAt` (separador `T`) y se comparaba
   // contra el texto almacenado por PocketBase (separador espacio). Para filas del

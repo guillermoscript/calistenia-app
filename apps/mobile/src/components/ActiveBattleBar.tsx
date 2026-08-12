@@ -16,6 +16,7 @@ import { Text } from '@/components/ui/text'
 import { useActiveSession } from '@/contexts/ActiveSessionContext'
 import { useCardioSessionContext } from '@/contexts/CardioSessionContext'
 import { findMyActiveBattle } from '@calistenia/core/lib/battleApi'
+import { qk } from '@calistenia/core/lib/query-keys'
 
 export default function ActiveBattleBar() {
   const { t } = useTranslation()
@@ -24,7 +25,7 @@ export default function ActiveBattleBar() {
   const { state: cardioState } = useCardioSessionContext()
 
   const { data: battle } = useQuery({
-    queryKey: ['battle', 'active'],
+    queryKey: qk.battles.active(),
     queryFn: findMyActiveBattle,
     // Un fallo aquí no puede tumbar las tabs: sin dato, la barra simplemente no sale.
     staleTime: 15_000,

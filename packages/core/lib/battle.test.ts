@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { BattleStanding } from '../types/battle'
 import {
   assertBattleParticipantTransition,
   assertBattleTransition,
@@ -6,7 +7,9 @@ import {
   canMutateBattle,
   canViewBattle,
   compareBattleScores,
+  battleOutcomeFor,
   battleParticipantActivity,
+  battleRecordFrom,
   battleRestSecondsLeft,
   createBattleScore,
   isBattleActiveForMe,
@@ -221,5 +224,78 @@ describe('what a participant is doing right now', () => {
     expect(battleRestSecondsLeft(at(11_400), NOW)).toBe(12)
     expect(battleRestSecondsLeft(at(-9_000), NOW)).toBe(0)
     expect(battleRestSecondsLeft(null, NOW)).toBe(0)
+  })
+})
+
+describe('battle record', () => {
+  const entry = (over: Partial<BattleStanding>): BattleStanding => ({
+    participant_id: 'p1',
+    user: 'u1',
+    display_name: 'Someone',
+    status: 'finished',
+    score: createBattleScore({
+      completed_rounds: 3, completed_reps: 30, completed_time_seconds: 0, tie_break_key: 'p1',
+    }),
+    rank: 1,
+    current_exercise_position: null,
+    last_activity_at: null,
+    resting_until: null,
+    ...over,
+  })
+
+  const closed = (standings: BattleStanding[] | null) => ({ final_standings: standings })
+
+  it('reads a win off the ranking of whoever saw it through', () => {
+    const standings = [entry({}), entry({ participant_id: 'p2', user: 'u2', rank: 2 })]
+    expect(battleOutcomeFor(standings, 'u1')).toBe('won')
+    expect(battleOutcomeFor(standings, 'u2')).toBe('lost')
+  })
+
+  it('does not hand a win to someone who was only ranked above a walk-out', () => {
+    // Ranks span everyone including those who left, so "rank 1" alone is not the
+    // question — the winner is the best of the people still in it at the end.
+    const standings = [
+      entry({ participant_id: 'p1', user: 'u1', rank: 1, status: 'left' }),
+      entry({ participant_id: 'p2', user: 'u2', rank: 2 }),
+    ]
+    expect(battleOutcomeFor(standings, 'u1')).toBe('left')
+    expect(battleOutcomeFor(standings, 'u2')).toBe('won')
+  })
+
+  it('reports no result rather than a loss when nothing was stored', () => {
+    // Every battle that closed before the ranking was sealed. Counting these as losses
+    // would invent defeats the user never had.
+    expect(battleOutcomeFor(null, 'u1')).toBe('unknown')
+    expect(battleOutcomeFor([], 'u1')).toBe('unknown')
+    expect(battleOutcomeFor([entry({ user: 'u2' })], 'u1')).toBe('unknown')
+  })
+
+  it('tallies a record and leaves unknown battles out of it entirely', () => {
+    const won = closed([entry({}), entry({ participant_id: 'p2', user: 'u2', rank: 2 })])
+    const lost = closed([entry({ participant_id: 'p2', user: 'u2', rank: 1 }), entry({ rank: 2 })])
+    const record = battleRecordFrom([won, lost, closed(null)], 'u1')
+
+    expect(record).toMatchObject({ fought: 2, won: 1, lost: 1, left: 0 })
+  })
+
+  it('walks the streak back from the newest battle and stops at the first loss', () => {
+    const won = closed([entry({}), entry({ participant_id: 'p2', user: 'u2', rank: 2 })])
+    const lost = closed([entry({ participant_id: 'p2', user: 'u2', rank: 1 }), entry({ rank: 2 })])
+    // Newest first: two wins, then a loss, then a win that no longer counts.
+    expect(battleRecordFrom([won, won, lost, won], 'u1').streak).toBe(2)
+    expect(battleRecordFrom([lost, won, won], 'u1').streak).toBe(0)
+  })
+
+  it('steps over a battle you left instead of ending the streak on it', () => {
+    // A walk-out is not a defeat, so it must not silently end a run of wins.
+    const won = closed([entry({}), entry({ participant_id: 'p2', user: 'u2', rank: 2 })])
+    const walked = closed([
+      entry({ status: 'left', rank: 2 }),
+      entry({ participant_id: 'p2', user: 'u2', rank: 1 }),
+    ])
+    const record = battleRecordFrom([won, walked, won], 'u1')
+
+    expect(record.streak).toBe(2)
+    expect(record).toMatchObject({ fought: 3, won: 2, lost: 0, left: 1 })
   })
 })

@@ -64,6 +64,12 @@ export interface Battle {
    * rather than `updated`, which moves on unrelated writes. Server-owned (#356).
    */
   last_activity_at: string | null
+  /**
+   * The ranking as it stood when the battle closed, frozen with the display names of
+   * the day. Null while the battle is open, and null forever on battles that closed
+   * before #398 — read that as "no stored result", never as an empty ranking.
+   */
+  final_standings: BattleStanding[] | null
   created: string
   updated: string
 }

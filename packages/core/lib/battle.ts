@@ -255,6 +255,78 @@ export function battleRestSecondsLeft(restingUntil: string | null, nowMs: number
   return Math.max(0, Math.ceil((until - nowMs) / 1000))
 }
 
+/**
+ * How a closed battle went for one person (#398).
+ *
+ * `left` is deliberately not `lost`. Walking out is not the same as being beaten, and a
+ * record that quietly counted it as a defeat would misstate what happened — though
+ * hiding the battle entirely would misstate it just as badly, so it still appears in
+ * history. `unknown` covers a battle with no stored ranking: everything that closed
+ * before #398, where there is no honest way to reconstruct the result.
+ */
+export type BattleOutcome = 'won' | 'lost' | 'left' | 'unknown'
+
+export function battleOutcomeFor(
+  standings: BattleStanding[] | null,
+  userId: string,
+): BattleOutcome {
+  if (!standings || standings.length === 0) return 'unknown'
+  const mine = standings.find((entry) => entry.user === userId)
+  if (!mine) return 'unknown'
+  if (mine.status === 'left') return 'left'
+
+  // Ranks are assigned across everyone including those who walked out, so "first" has to
+  // be measured among the people who actually saw it through.
+  const contenders = standings.filter((entry) => entry.status !== 'left')
+  const best = contenders.reduce<BattleStanding | null>(
+    (top, entry) => (top === null || entry.rank < top.rank ? entry : top),
+    null,
+  )
+  return best && best.participant_id === mine.participant_id ? 'won' : 'lost'
+}
+
+export interface BattleRecord {
+  fought: number
+  won: number
+  lost: number
+  left: number
+  /** Consecutive wins counting back from the most recent battle. */
+  streak: number
+}
+
+/**
+ * A person's battle record, from their closed battles **newest first**.
+ *
+ * The streak walks back from the newest battle and stops at the first loss. Battles you
+ * left are stepped over rather than counted as either outcome — same reasoning as
+ * `battleOutcomeFor`, and the alternative, a walk-out silently ending a run of wins, is
+ * the kind of detail that makes a person stop trusting the number.
+ */
+export function battleRecordFrom(
+  battles: Pick<Battle, 'final_standings'>[],
+  userId: string,
+): BattleRecord {
+  const record: BattleRecord = { fought: 0, won: 0, lost: 0, left: 0, streak: 0 }
+  let streakOpen = true
+
+  for (const battle of battles) {
+    const outcome = battleOutcomeFor(battle.final_standings, userId)
+    if (outcome === 'unknown') continue
+
+    record.fought += 1
+    if (outcome === 'won') {
+      record.won += 1
+      if (streakOpen) record.streak += 1
+    } else if (outcome === 'lost') {
+      record.lost += 1
+      streakOpen = false
+    } else {
+      record.left += 1
+    }
+  }
+  return record
+}
+
 export function isBattleActiveForMe(
   status: BattleStatus,
   mySeat: BattleParticipantStatus | null,

@@ -26,6 +26,9 @@ import { isBattleActiveForMe, validateBattleConfiguration } from './battle'
  */
 const ACTIVE_BATTLE_SCAN = 10
 
+/** How many closed battles the history reads at once. */
+const BATTLE_HISTORY_PAGE = 30
+
 /** A `battles` row with the caller's seat attached via the participants back-relation. */
 interface ExpandedBattle extends Battle {
   expand?: {
@@ -60,9 +63,14 @@ function toBattleApiError(err: unknown): BattleApiError {
   const anyErr = err as { status?: number; response?: ErrorBody; message?: string }
   const status = typeof anyErr?.status === 'number' ? anyErr.status : 0
   const body = anyErr?.response ?? {}
+  // Status 0 means the request never reached the server. The SDK's own fallback message
+  // for that is the untranslated "Something went wrong.", which surfaced verbatim in the
+  // battle screen the moment the phone lost the backend. Tag it so the UI can say the one
+  // thing that is actually true and actionable: you are offline.
+  const code = status === 0 ? 'network' : body.error || 'request_failed'
   return new BattleApiError(
     status,
-    body.error || 'request_failed',
+    code,
     body.message || anyErr?.message || 'Battle request failed',
   )
 }
@@ -154,6 +162,28 @@ export async function findMyActiveBattle(): Promise<Battle | null> {
     }
   }
   return null
+}
+
+/**
+ * My closed battles, newest first (#398).
+ *
+ * Reads the ranking straight off `final_standings` rather than calling the snapshot
+ * endpoint per battle: a closed battle is immutable, and one request per row does not
+ * survive a history list. Battles that closed before #398 come back with a null ranking
+ * and are shown as a battle without a result, never as a loss.
+ */
+export async function listMyBattleHistory(limit = BATTLE_HISTORY_PAGE): Promise<Battle[]> {
+  const userId = pb.authStore.record?.id
+  if (!userId) return []
+
+  const page = await pb.collection('battles').getList(1, limit, {
+    filter: "status = 'finished' || status = 'cancelled' || status = 'expired'",
+    // `finished_at` is only set on battles that ran; cancelled and expired ones fall
+    // back to their last activity, which is when they actually ended.
+    sort: '-finished_at,-last_activity_at',
+    requestKey: null,
+  })
+  return page.items as unknown as Battle[]
 }
 
 export function getBattleSnapshot(battleId: string): Promise<BattleSnapshot> {

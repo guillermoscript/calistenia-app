@@ -4313,6 +4313,8 @@
   "battle.participantOne": "participante",
   "battle.inviteError": "No se pudo abrir la invitación. Inténtalo otra vez.",
   "battle.inviteOffline": "Sin conexión: no se puede abrir la invitación.",
+  "battle.networkError": "Sin conexión con el servidor. La batalla sigue viva.",
+  "battle.retry": "Toca para reintentar",
   "battle.barLive": "Batalla en curso · toca para volver",
   "battle.barLobby": "Tu batalla te espera en la sala",
   "battle.barLabel": "Volver a tu batalla",
@@ -4358,5 +4360,21 @@
   "battle.stateResting": "Descanso",
   "battle.stateIdle": "Sin señal",
   "battle.stateFinished": "Terminó",
-  "battle.stateStarting": "Empezando"
+  "battle.stateStarting": "Empezando",
+
+  "battle.historyTitle": "Batallas",
+  "battle.historyKicker": "TU HISTORIAL",
+  "battle.historyRowDesc": "Historial, marcas y comparativa",
+  "battle.historyEmpty": "Aún no has peleado ninguna",
+  "battle.historyEmptyDesc": "Reta a alguien a un circuito y aquí quedará el resultado.",
+  "battle.recordFought": "Peleadas",
+  "battle.recordWon": "Ganadas",
+  "battle.recordStreak": "Racha",
+  "battle.outcomeWon": "Ganada",
+  "battle.outcomeLost": "Perdida",
+  "battle.outcomeLeft": "Abandonada",
+  "battle.outcomeUnknown": "Sin resultado",
+  "battle.noStoredResult": "Esta batalla terminó antes de que se guardaran los resultados.",
+  "battle.rankOf": "{{rank}}.º de {{total}}",
+  "battle.compare": "Comparativa"
 }

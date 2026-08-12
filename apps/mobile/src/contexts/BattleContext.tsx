@@ -28,11 +28,14 @@ export function BattleProvider({ battleId, children }: { battleId: string; child
   // La barra flotante de las tabs cachea "mi batalla activa" y solo se refresca sola cada
   // 45 s. Sin esto, terminar o abandonar una batalla dejaba la barra invitando a volver a
   // una batalla ya cerrada — el usuario la tocaba y no había nada que hacer allí.
+  //
+  // El historial cuelga del mismo prefijo: una batalla que acaba de cerrarse es
+  // justo la fila que falta en Progreso (#398).
   const battleStatus = snapshot?.battle.status
   const mySeat = snapshot?.me?.status
   useEffect(() => {
     if (!battleStatus) return
-    void queryClient.invalidateQueries({ queryKey: ['battle', 'active'] })
+    void queryClient.invalidateQueries({ queryKey: ['battle'] })
   }, [battleStatus, mySeat, queryClient])
 
   // El progreso hecho sin conexión no es fiable, así que al volver del segundo plano

@@ -23,6 +23,7 @@ import PhasePhotoTimeline from '../components/progress/PhasePhotoTimeline'
 import BodyMeasurementsTracker from '../components/progress/BodyMeasurementsTracker'
 import BodyFatPanel from '../components/progress/BodyFatPanel'
 import ExportData from '../components/progress/ExportData'
+import BattleHistory from '../components/progress/BattleHistory'
 import { Input } from '../components/ui/input'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { useBodyPhotos } from '@calistenia/core/hooks/useBodyPhotos'
@@ -182,6 +183,10 @@ export default function ProgressPage() {
                 <svg className="size-4 text-violet-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
               </button>
             )}
+
+            {/* Batallas (#398): el resultado de una batalla es progreso como cualquier
+                otro; hasta ahora solo se veía una vez y desaparecía. */}
+            <BattleHistory userId={userId || null} />
 
             {/* Recent Sessions */}
             <div className="mb-8">

@@ -15,7 +15,15 @@ import BattleResults from '@/components/battle/BattleResults'
 function BattlePhaseRouter() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { phase, error, clearError } = useBattleContext()
+  const { phase, error, clearError, actions } = useBattleContext()
+
+  // Un fallo de red al abrir la batalla dejaba la pantalla en "Cargando…" para siempre:
+  // la suscripción solo se monta una vez por batalla y nadie la volvía a intentar. Tocar
+  // el aviso reintenta, que es lo que cualquiera espera de un mensaje de error.
+  const retry = () => {
+    clearError()
+    actions.refresh()
+  }
 
   // La cuenta atrás y la sesión en vivo ocupan toda la pantalla: durante una ronda no
   // hay nada más que mirar, y un ScrollView invitaría a perder el ejercicio actual.
@@ -48,10 +56,19 @@ function BattlePhaseRouter() {
 
       {error && (
         <Pressable
-          onPress={clearError}
+          onPress={retry}
           className="mb-3 rounded-xl border border-red-400/40 bg-red-400/10 px-4 py-3 active:opacity-70"
         >
-          <Text className="text-xs text-red-400">{error.message}</Text>
+          {/* `status === 0` es todo lo que ni siquiera llegó al servidor. El SDK de
+              PocketBase lo rellena con su "Something went wrong.", en inglés y sin decir
+              nada útil. El resto sí trae mensaje del servidor, más concreto que
+              cualquier copy genérico nuestro. */}
+          <Text className="text-xs text-red-400">
+            {error.status === 0 ? t('battle.networkError') : error.message}
+          </Text>
+          <Text className="mt-1 font-mono text-[9px] uppercase tracking-[2px] text-red-400/70">
+            {t('battle.retry')}
+          </Text>
         </Pressable>
       )}
 
