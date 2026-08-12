@@ -6,13 +6,21 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent, trackShareCardShared }
 import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
 import { fillRRect, CARD_COLORS } from '../../lib/canvas-helpers'
-import type { Race, RaceParticipant } from '@calistenia/core/types/race'
+import { fitRoutePath } from '@calistenia/core/lib/static-map'
+import type { Race, RaceParticipant, RaceGpsPoint } from '@calistenia/core/types/race'
 
 interface RaceShareCardProps {
   race: Race
   participants: RaceParticipant[]
   currentUserId: string
   userName?: string
+  /**
+   * Recorrido PROPIO, ya cargado de `race_routes` por quien monta esta tarjeta
+   * (#316). Nunca el de otro participante: desde #316 el servidor solo entrega
+   * el de su dueño, y la tarjeta la genera el dueño para compartirla él mismo.
+   * Vacío o ausente: la tarjeta sale sin la zona de recorrido, sin hueco.
+   */
+  track?: RaceGpsPoint[]
 }
 
 const TIER_COLORS = {
@@ -29,7 +37,31 @@ function getTierColors(rank: number) {
   return TIER_COLORS.default
 }
 
-export default function RaceShareCard({ race, participants, currentUserId, userName }: RaceShareCardProps) {
+/** Distancia (px) desde el borde inferior de la tarjeta a la línea del pie. */
+export const FOOTER_OFFSET = 44
+/** Por debajo de esto la zona de recorrido no cabe y se omite entera. */
+export const MIN_ROUTE_PANEL_H = 90
+const MAX_ROUTE_PANEL_H = 190
+/** Aire mínimo entre el panel de recorrido y la línea del pie. */
+const ROUTE_FOOTER_GAP = 18
+
+/**
+ * Geometría de la zona de recorrido. Vive aparte y exportada porque es la única
+ * parte de la tarjeta que puede COLISIONAR: el bloque de arriba es de altura
+ * variable (el nombre de la carrera se parte en las líneas que haga falta), así
+ * que sin un tope el recorrido acabaría pisando el pie en una carrera con
+ * nombre largo. El invariante está en RaceShareCard.test.ts.
+ *
+ * `visible: false` cuando lo que queda es demasiado poco para dibujar algo que
+ * se entienda: mejor una tarjeta sin recorrido que una con un churro de 40 px.
+ */
+export function routePanelGeometry(listBottom: number, cardHeight: number) {
+  const top = listBottom + 16
+  const height = Math.min(MAX_ROUTE_PANEL_H, cardHeight - FOOTER_OFFSET - ROUTE_FOOTER_GAP - top)
+  return { top, height, visible: height >= MIN_ROUTE_PANEL_H }
+}
+
+export default function RaceShareCard({ race, participants, currentUserId, userName, track }: RaceShareCardProps) {
   const { t } = useTranslation()
 
   const handleShare = useCallback(async () => {
@@ -333,6 +365,95 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
         ctx.fillText(t('race.moreItems', { n: sorted.length - maxShow }), pad + 16, extraY + 10)
       }
 
+      // ─── ZONE 6: Recorrido propio ───
+      //
+      // Se dibuja la POLILÍNEA SOLA, sin teselas de mapa debajo, y no por
+      // simplificar: sin basemap la tarjeta enseña la FORMA de la carrera pero
+      // no DÓNDE fue. Es la diferencia entre presumir del recorrido y publicar
+      // el portal de tu casa, que es justo el problema que cierra #316. Quien
+      // quiera la versión con mapa la tiene en «guardar como entrenamiento» →
+      // tarjeta de cardio, que sí lo lleva de protagonista.
+      //
+      // De paso evita depender de CARTO en el momento de compartir: sin red que
+      // esperar ni teselas que puedan fallar.
+
+      const listBottom = y + listH + (sorted.length > maxShow ? 16 : 0)
+      const { top: routeTop, height: routeH, visible: routeFits } = routePanelGeometry(listBottom, h)
+
+      if (track && track.length >= 2 && routeFits) {
+        // Sin caja a propósito. Un recorrido es casi cuadrado y esta banda es
+        // 3:1, así que dentro de un `cardBg` el glifo deja los laterales
+        // vacíos y el recuadro se lee como un fallo de maquetación. Sin caja,
+        // ese mismo aire se lee como respiración — y es lo que pide el sistema
+        // de diseño: filetes y tipografía antes que contenedores. Medido:
+        // quitando la caja el glifo pasa de 114 a 144 px de alto.
+        const rule = ctx.createLinearGradient(pad, routeTop, w - pad, routeTop)
+        rule.addColorStop(0, borderColor + '00')
+        rule.addColorStop(0.15, borderColor)
+        rule.addColorStop(0.85, borderColor)
+        rule.addColorStop(1, borderColor + '00')
+        ctx.fillStyle = rule
+        ctx.fillRect(pad, routeTop, cw, 1)
+
+        ctx.fillStyle = fgMuted
+        ctx.font = '500 8px "DM Sans", system-ui, sans-serif'
+        ctx.letterSpacing = '2px'
+        ctx.textAlign = 'center'
+        ctx.fillText(t('race.route').toUpperCase(), w / 2, routeTop + 18)
+        ctx.letterSpacing = '0px'
+        ctx.textAlign = 'left'
+
+        const glyphTop = 26
+        const glyphH = routeH - glyphTop - 8
+        const path = fitRoutePath(track, cw, glyphH, { padding: 6 })
+
+        if (path && path.length >= 2) {
+          ctx.save()
+          ctx.translate(pad, routeTop + glyphTop)
+
+          const buildPath = () => {
+            ctx.beginPath()
+            ctx.moveTo(path[0].x, path[0].y)
+            for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y)
+          }
+
+          // Contorno oscuro: mantiene la línea legible sobre el fondo de la tarjeta.
+          buildPath()
+          ctx.strokeStyle = 'rgba(0,0,0,0.55)'
+          ctx.lineWidth = 5.5
+          ctx.lineJoin = 'round'
+          ctx.lineCap = 'round'
+          ctx.stroke()
+
+          buildPath()
+          ctx.strokeStyle = tier.accent
+          ctx.lineWidth = 3
+          ctx.stroke()
+
+          // Salida (hueca) y meta (llena), igual que en la tarjeta de cardio.
+          const first = path[0]
+          const last = path[path.length - 1]
+
+          ctx.beginPath()
+          ctx.arc(first.x, first.y, 4.5, 0, Math.PI * 2)
+          ctx.fillStyle = fg
+          ctx.fill()
+          ctx.strokeStyle = tier.accent
+          ctx.lineWidth = 2
+          ctx.stroke()
+
+          ctx.beginPath()
+          ctx.arc(last.x, last.y, 4.5, 0, Math.PI * 2)
+          ctx.fillStyle = tier.accent
+          ctx.fill()
+          ctx.strokeStyle = fg
+          ctx.lineWidth = 1.5
+          ctx.stroke()
+
+          ctx.restore()
+        }
+      }
+
       // ─── FOOTER ───
 
       const fy = h - 44
@@ -380,7 +501,7 @@ export default function RaceShareCard({ race, participants, currentUserId, userN
     } catch (e) {
       console.warn('Share error:', e)
     }
-  }, [race, participants, currentUserId, userName])
+  }, [race, participants, currentUserId, userName, track, t])
 
   return (
     <Button

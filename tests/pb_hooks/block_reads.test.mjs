@@ -103,7 +103,10 @@ async function seedFor(user) {
   ids.races = race.id
   ids.race_participants = (await create("race_participants", {
     race: race.id, user: user.id, display_name: user.name, status: "running",
-    last_lat: 40.41, last_lng: -3.71, gps_track: [[40.41, -3.71]], distance_km: 2,
+    // Sin `gps_track`: el recorrido salió a `race_routes` con #316. Lo que aquí
+    // se comprueba es que el bloqueo esconde la participación (posición en vivo
+    // incluida); el recorrido lo cubre race_routes.test.mjs.
+    last_lat: 40.41, last_lng: -3.71, distance_km: 2,
   })).id
 
   const challenge = await create("challenges", {

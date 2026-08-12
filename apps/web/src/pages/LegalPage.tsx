@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 
-const UPDATED = '3 de agosto de 2026'
+const UPDATED = '12 de agosto de 2026'
 
 /**
  * Política de privacidad y condiciones (issue #295).
@@ -27,10 +27,11 @@ const UPDATED = '3 de agosto de 2026'
  *   `cardio_sessions` a la colección owner-only `cardio_routes` (1782500000),
  *   con las cinco reglas atadas al dueño. El muro sigue abierto pero ya no
  *   arrastra la ruta.
- * - Rutas GPS de carreras: SIGUE ABIERTO (#316). `race_participants.gps_track`
- *   (1776000002:19-22) es un campo json normal de una colección legible por
- *   cualquier cuenta autenticada (1775200002:27,28), sin filtro de bloqueo.
- *   Mismo agujero que tenía el cardio, en la colección de al lado.
+ * - Rutas GPS de carreras: RESUELTO en #316. `gps_track` salió de
+ *   `race_participants` a la colección owner-only `race_routes` (1783600000),
+ *   con las cinco reglas atadas al dueño. La participación sigue abierta —la
+ *   carrera en vivo la necesita— pero ya no arrastra el recorrido, ni siquiera
+ *   por el payload de realtime, que difundía la fila entera al terminar.
  * - Ficheros con `protected: false`: fotos de progreso (1774000008:50) y de
  *   comida (1774000064:18) -> URL larga sin comprobación de sesión.
  * - Desde #300 todas las relaciones a `users` cascadean: las 7 que faltaban
@@ -176,7 +177,7 @@ export default function LegalPage() {
                 />
                 <VisibilityRow
                   what="Series, repeticiones y marcas personales"
-                  who="Cualquier persona con una cuenta: son los datos que hacen funcionar la clasificación y los retos. El bloqueo no las oculta."
+                  who="Cualquier persona con una cuenta: son los datos que hacen funcionar la clasificación y los retos. Se ocultan a quien hayas bloqueado y a quien te haya bloqueado."
                 />
                 <VisibilityRow
                   what="Sesiones de cardio: distancia, ritmo y duración"
@@ -187,8 +188,12 @@ export default function LegalPage() {
                   who="Solo tú. Se guarda aparte del resto de la sesión, precisamente para que el muro pueda mostrar la actividad sin exponer por dónde pasaste."
                 />
                 <VisibilityRow
-                  what="Participaciones en carreras, incluido el recorrido registrado"
-                  who="Cualquier persona con una cuenta. El bloqueo no las oculta. Lo explicamos con detalle más abajo."
+                  what="Participaciones en carreras: posición en vivo, distancia y ritmo"
+                  who="Cualquier persona con una cuenta. Mientras la carrera está en marcha, tu posición es lo que permite al resto de participantes verte avanzar. Se ocultan a quien hayas bloqueado y a quien te haya bloqueado."
+                />
+                <VisibilityRow
+                  what="El recorrido GPS de tus carreras"
+                  who="Solo tú. Se guarda aparte de la participación, igual que la ruta de cardio, para que la carrera pueda mostrar tu posición sin exponer por dónde pasaste."
                 />
                 <VisibilityRow
                   what="Tu nombre, tu foto y tus estadísticas"
@@ -207,20 +212,21 @@ export default function LegalPage() {
             si esa dirección se filtrara.
           </p>
 
-          <h3 className="text-lg font-semibold mt-6 mb-2">Rutas GPS de carreras: limitación conocida</h3>
+          <h3 className="text-lg font-semibold mt-6 mb-2">Dónde se guardan tus recorridos GPS</h3>
           <p className="mb-4">
-            Preferimos decírtelo a que lo descubras por tu cuenta. Cuando corres una <strong>carrera</strong>,
-            el recorrido que registra tu móvil se guarda junto al resto de tu participación, y las
-            participaciones son legibles por cualquier cuenta con la sesión iniciada. Ninguna pantalla de la
-            aplicación dibuja el recorrido de otra persona, pero el servidor tampoco impide leerlo. Como un
-            recorrido suele empezar y terminar en tu casa, lo consideramos un fallo y estamos trabajando en
-            cerrarlo. Mientras tanto, si no quieres que quede legible, no participes en carreras desde tu
-            domicilio.
+            Ni el recorrido de tus sesiones de cardio ni el de tus carreras se guardan junto al resto de la
+            actividad: viven en un sitio aparte al que solo llega tu cuenta. Es lo que permite que el muro
+            muestre que has salido a correr, y que una carrera muestre tu posición al resto de
+            participantes, sin que nadie pueda reconstruir por dónde pasaste. Como un recorrido suele
+            empezar y terminar en tu casa, nos parece la diferencia importante.
           </p>
           <p className="mb-4">
-            Esto <strong>ya no ocurre</strong> con las rutas de tus sesiones de cardio normales: desde el 3
-            de agosto de 2026 se guardan en un sitio aparte al que solo llega tu cuenta. Las rutas que
-            grabaste antes de esa fecha también se movieron allí.
+            Antes no era así, y preferimos decírtelo: hasta el 3 de agosto de 2026 en el caso del cardio, y
+            hasta el 12 de agosto de 2026 en el de las carreras, el recorrido se guardaba dentro del propio
+            registro de la actividad, y ese registro es legible por cualquier cuenta con la sesión iniciada.
+            Ninguna pantalla de la aplicación dibujaba el recorrido de otra persona, pero el servidor
+            tampoco lo impedía. Los recorridos que grabaste antes de esas fechas se movieron al sitio nuevo,
+            así que hoy ya no están al alcance de nadie más.
           </p>
 
           <h2 className="text-xl font-semibold mt-8 mb-3">4. Proveedores con los que compartimos datos</h2>
@@ -251,7 +257,7 @@ export default function LegalPage() {
           <ul className="list-disc pl-6 mb-4 space-y-1">
             <li>No borramos nada automáticamente. Mientras tu cuenta exista, se conserva todo lo que registres.</li>
             <li>Puedes eliminar tu cuenta tú mismo desde tu perfil, tanto en la web como en la aplicación de Android, sin pedírnoslo. Te pedimos escribir tu correo para confirmar y el borrado es inmediato. Si prefieres que lo hagamos nosotros, escríbenos a la dirección de la sección 12.</li>
-            <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, sesiones de cardio con su ruta GPS, circuitos, participaciones en carreras y las carreras que hayas creado, tus comentarios y reacciones, retos, ajustes, marcas personales y estadísticas.</li>
+            <li>Al eliminar la cuenta se borran con ella tus fotos de progreso, medidas, peso, sueño, comidas y sus fotos, condiciones médicas y lesiones, datos de Health Connect, resúmenes generados por IA, entrenos, series, sesiones de cardio con su ruta GPS, circuitos, participaciones en carreras con su recorrido y las carreras que hayas creado, tus comentarios y reacciones, retos, ajustes, marcas personales y estadísticas.</li>
             <li>No guardamos ninguna copia tras el borrado, así que una cuenta eliminada no se puede recuperar.</li>
           </ul>
 
