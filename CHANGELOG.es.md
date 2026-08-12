@@ -11,16 +11,15 @@ _Nada por ahora._
 
 ## [1.8.0] - 2026-08-12
 
-_Mejoras y correcciones de esta versión._
+_Batallas de circuito en tiempo real contra tus amigos, y un repaso a fondo de la privacidad: tus datos de salud dejan de ser visibles para el resto._
 
 ### Añadido
 
-- **#386** — Serve cross-user reads from field-scoped public views
-- **battles** — Battle history and head-to-head comparison in Progress
-- **battles** — Show what each opponent is doing in the live standings
-- **battles** — Notify the creator when someone joins and everyone when it starts
-- **battles** — Show a floating bar while a battle is in progress
-- **#386** — A blocked user can no longer read anything from the blocker
+- **Batallas de circuito** — Reta a tus amigos a un circuito y competid a la vez, viendo en directo por dónde va cada uno. Con barra flotante mientras dura, aviso cuando alguien se une o cuando empieza, descanso entre ejercicios y un historial con la comparación cara a cara en Progreso.
+- **Tus datos de salud, solo tuyos** — La frecuencia cardiaca y las calorías que mide tu reloj, tus objetivos de agua y entrenamiento semanal y tus registros de comida y peso ya no son visibles para otras personas. El muro y el ranking siguen igual: solo se comparte lo que se ve en pantalla.
+- **Bloquear ahora bloquea de verdad** — Al bloquear a alguien, esa persona deja de ver tu perfil, tus entrenamientos y tu ubicación en una carrera, y deja de llegarte cualquier notificación suya. Antes solo se le impedía interactuar.
+- **Retos más fáciles de empezar** — Retos preparados para empezar de cero con un toque, puntuación acumulativa que suma todo lo que haces durante el reto, y un reto destacado en la pantalla de inicio.
+- **Sesiones libres** — Entrena sin seguir un programa: monta la sesión sobre la marcha y queda registrada igual que el resto, en tu historial y en tu calendario.
 
 ## [1.7.1] - 2026-08-07
 

@@ -5,80 +5,68 @@
       "version": "1.8.0",
       "date": "2026-08-12",
       "summary": {
-        "es": "Mejoras y correcciones de esta versión.",
-        "en": "Mejoras y correcciones de esta versión."
+        "es": "Batallas de circuito en tiempo real contra tus amigos, y un repaso a fondo de la privacidad: tus datos de salud dejan de ser visibles para el resto.",
+        "en": "Real-time circuit battles against your friends, plus a thorough privacy pass: your health data is no longer visible to anyone else."
       },
       "highlights": [
         {
-          "icon": "✨",
+          "icon": "⚔️",
           "type": "feat",
           "title": {
-            "es": "#386",
-            "en": "#386"
+            "es": "Batallas de circuito",
+            "en": "Circuit battles"
           },
           "body": {
-            "es": "Serve cross-user reads from field-scoped public views",
-            "en": "Serve cross-user reads from field-scoped public views"
+            "es": "Reta a tus amigos a un circuito y competid a la vez, viendo en directo por dónde va cada uno. Con barra flotante mientras dura, aviso cuando alguien se une o cuando empieza, descanso entre ejercicios y un historial con la comparación cara a cara en Progreso.",
+            "en": "Challenge your friends to a circuit and race them live, seeing where everyone is in real time. Floating bar while it runs, alerts when someone joins or it starts, rest between exercises, and a history with head-to-head comparison in Progress."
           }
         },
         {
-          "icon": "✨",
+          "icon": "🔒",
           "type": "feat",
           "title": {
-            "es": "battles",
-            "en": "battles"
+            "es": "Tus datos de salud, solo tuyos",
+            "en": "Your health data stays yours"
           },
           "body": {
-            "es": "Battle history and head-to-head comparison in Progress",
-            "en": "Battle history and head-to-head comparison in Progress"
+            "es": "La frecuencia cardiaca y las calorías que mide tu reloj, tus objetivos de agua y entrenamiento semanal y tus registros de comida y peso ya no son visibles para otras personas. El muro y el ranking siguen igual: solo se comparte lo que se ve en pantalla.",
+            "en": "The heart rate and calories your watch measures, your water and weekly training goals, and your food and weight logs are no longer visible to other people. The wall and the ranking work exactly as before: only what you see on screen is shared."
           }
         },
         {
-          "icon": "✨",
+          "icon": "🚫",
           "type": "feat",
           "title": {
-            "es": "battles",
-            "en": "battles"
+            "es": "Bloquear ahora bloquea de verdad",
+            "en": "Blocking now really blocks"
           },
           "body": {
-            "es": "Show what each opponent is doing in the live standings",
-            "en": "Show what each opponent is doing in the live standings"
+            "es": "Al bloquear a alguien, esa persona deja de ver tu perfil, tus entrenamientos y tu ubicación en una carrera, y deja de llegarte cualquier notificación suya. Antes solo se le impedía interactuar.",
+            "en": "When you block someone, they can no longer see your profile, your workouts or your live position in a race, and none of their notifications reach you. Before, they were only stopped from interacting."
           }
         },
         {
-          "icon": "✨",
+          "icon": "🏆",
           "type": "feat",
           "title": {
-            "es": "battles",
-            "en": "battles"
+            "es": "Retos más fáciles de empezar",
+            "en": "Easier challenges to start"
           },
           "body": {
-            "es": "Notify the creator when someone joins and everyone when it starts",
-            "en": "Notify the creator when someone joins and everyone when it starts"
+            "es": "Retos preparados para empezar de cero con un toque, puntuación acumulativa que suma todo lo que haces durante el reto, y un reto destacado en la pantalla de inicio.",
+            "en": "Ready-made challenges you can join from zero with one tap, cumulative scoring that adds up everything you do during the challenge, and a featured challenge on the home screen."
           }
         },
         {
-          "icon": "✨",
+          "icon": "🏋️",
           "type": "feat",
           "title": {
-            "es": "battles",
-            "en": "battles"
+            "es": "Sesiones libres",
+            "en": "Free sessions"
           },
           "body": {
-            "es": "Show a floating bar while a battle is in progress",
-            "en": "Show a floating bar while a battle is in progress"
-          }
-        },
-        {
-          "icon": "✨",
-          "type": "feat",
-          "title": {
-            "es": "#386",
-            "en": "#386"
-          },
-          "body": {
-            "es": "A blocked user can no longer read anything from the blocker",
-            "en": "A blocked user can no longer read anything from the blocker"
+            "es": "Entrena sin seguir un programa: monta la sesión sobre la marcha y queda registrada igual que el resto, en tu historial y en tu calendario.",
+            "en": "Train without following a program: build the session as you go and it gets logged like any other, in your history and your calendar."
           }
         }
       ],
