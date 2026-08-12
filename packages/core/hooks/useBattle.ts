@@ -261,15 +261,19 @@ export function useBattle(battleId: string, currentUserId: string | null): UseBa
       ready: me?.status === 'joined' && canMutateBattle(currentUserId, battle, mine, { kind: 'mark_ready' }),
       unready: me?.status === 'ready' && (battle.status === 'lobby' || battle.status === 'ready'),
       start: battle.creator === currentUserId && battle.status === 'ready' && readyCount >= 2,
+      // `phase`, not `msUntil(starts_at)`: the countdown lapsing changes nothing on the
+      // server, so a memo keyed only on the snapshot kept the controls disabled after the
+      // countdown ended and only unstuck itself when some unrelated snapshot arrived. With
+      // no other participant still moving, none ever did and the battle was unplayable.
       progress: canMutateBattle(currentUserId, battle, mine, { kind: 'update_progress' }) &&
-        battle.status === 'live' && msUntil(battle.starts_at) <= 0,
-      finish: me?.status === 'active' && battle.status === 'live',
+        phase === 'live',
+      finish: me?.status === 'active' && phase === 'live',
       leave: canMutateBattle(currentUserId, battle, mine, { kind: 'leave' }),
       cancel: battle.creator === currentUserId &&
         ['draft', 'lobby', 'ready', 'live'].includes(battle.status),
       invite: battle.creator === currentUserId && battle.status === 'lobby',
     }
-  }, [snapshot, currentUserId])
+  }, [snapshot, currentUserId, phase])
 
   const clearError = useCallback(() => setError(null), [])
 
