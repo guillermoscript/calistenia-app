@@ -6,6 +6,7 @@ import {
   pointToPixel,
   tilesForViewport,
   cartoTileUrl,
+  fitRoutePath,
   ROUTE_COLOR,
   TILE_PIXEL_SIZE,
 } from './static-map'
@@ -242,5 +243,103 @@ describe('constantes exportadas', () => {
       walking: '#f59e0b',
       cycling: '#0ea5e9',
     })
+  })
+})
+
+// ── fitRoutePath ──────────────────────────────────────────────────────────────
+
+describe('fitRoutePath', () => {
+  const BOX = { w: 400, h: 200, padding: 20 }
+  const fit = (pts: { lat: number; lng: number }[], w = BOX.w, h = BOX.h) =>
+    fitRoutePath(pts, w, h, { padding: BOX.padding })
+
+  it('devuelve null sin puntos', () => {
+    expect(fitRoutePath([], 400, 200)).toBeNull()
+  })
+
+  it('mantiene todos los puntos dentro de la caja, respetando el padding', () => {
+    // Ruta cuadrada: el eje corto queda centrado, el largo toca el padding.
+    const out = fit([
+      { lat: 40.40, lng: -3.70 },
+      { lat: 40.42, lng: -3.70 },
+      { lat: 40.42, lng: -3.68 },
+      { lat: 40.40, lng: -3.68 },
+    ])!
+    expect(out).toHaveLength(4)
+    for (const p of out) {
+      expect(p.x).toBeGreaterThanOrEqual(BOX.padding - 0.001)
+      expect(p.x).toBeLessThanOrEqual(BOX.w - BOX.padding + 0.001)
+      expect(p.y).toBeGreaterThanOrEqual(BOX.padding - 0.001)
+      expect(p.y).toBeLessThanOrEqual(BOX.h - BOX.padding + 0.001)
+    }
+  })
+
+  it('llena el eje limitante: sin snapping a zooms de tile no se desperdicia caja', () => {
+    // Ruta MUY ancha y plana → debe tocar el padding izquierdo y derecho.
+    const out = fit([
+      { lat: 40.40, lng: -3.80 },
+      { lat: 40.40, lng: -3.60 },
+    ])!
+    expect(out[0].x).toBeCloseTo(BOX.padding, 6)
+    expect(out[1].x).toBeCloseTo(BOX.w - BOX.padding, 6)
+  })
+
+  it('preserva la relación de aspecto: una ruta cuadrada no se estira al ancho', () => {
+    const out = fit([
+      { lat: 40.40, lng: -3.70 },
+      { lat: 40.42, lng: -3.70 },
+      { lat: 40.42, lng: -3.68 },
+      { lat: 40.40, lng: -3.68 },
+    ])!
+    const spanX = Math.max(...out.map((p) => p.x)) - Math.min(...out.map((p) => p.x))
+    const spanY = Math.max(...out.map((p) => p.y)) - Math.min(...out.map((p) => p.y))
+    // A esta latitud un grado de longitud es más corto que uno de latitud, pero
+    // el dibujo debe quedar aproximadamente cuadrado, nunca 2:1 como la caja.
+    expect(spanX / spanY).toBeGreaterThan(0.6)
+    expect(spanX / spanY).toBeLessThan(1.7)
+  })
+
+  it('centra el eje no limitante', () => {
+    const out = fit([
+      { lat: 40.40, lng: -3.80 },
+      { lat: 40.40, lng: -3.60 },
+    ])!
+    // Ruta sin altura: ambos puntos en el centro vertical de la caja.
+    expect(out[0].y).toBeCloseTo(BOX.h / 2, 6)
+    expect(out[1].y).toBeCloseTo(BOX.h / 2, 6)
+  })
+
+  it('respeta la orientación Mercator: más latitud es más arriba (y menor)', () => {
+    const out = fit([
+      { lat: 40.40, lng: -3.70 },
+      { lat: 40.44, lng: -3.70 },
+    ])!
+    expect(out[1].y).toBeLessThan(out[0].y)
+  })
+
+  it('una ruta degenerada (todos los puntos iguales) cae en el centro, sin NaN', () => {
+    const out = fitRoutePath(
+      [{ lat: 40.4, lng: -3.7 }, { lat: 40.4, lng: -3.7 }],
+      400, 200, { padding: 20 },
+    )!
+    expect(out).toEqual([{ x: 200, y: 100 }, { x: 200, y: 100 }])
+  })
+
+  it('un solo punto no revienta', () => {
+    const out = fitRoutePath([{ lat: 40.4, lng: -3.7 }], 400, 200)!
+    expect(out).toHaveLength(1)
+    expect(Number.isNaN(out[0].x)).toBe(false)
+    expect(Number.isNaN(out[0].y)).toBe(false)
+  })
+
+  it('un padding mayor que la caja no produce coordenadas NaN ni infinitas', () => {
+    const out = fitRoutePath(
+      [{ lat: 40.40, lng: -3.70 }, { lat: 40.42, lng: -3.68 }],
+      100, 100, { padding: 200 },
+    )!
+    for (const p of out) {
+      expect(Number.isFinite(p.x)).toBe(true)
+      expect(Number.isFinite(p.y)).toBe(true)
+    }
   })
 })

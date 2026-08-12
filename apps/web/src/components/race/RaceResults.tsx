@@ -169,6 +169,7 @@ export default function RaceResults() {
           participants={participants}
           currentUserId={me.user}
           userName={userName}
+          track={myTrack}
         />
       )}
 
