@@ -13,6 +13,7 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   inviteSent: 'invite_sent',
   inviteLandingViewed: 'invite_landing_viewed',
   referralConverted: 'referral_converted',
+  referralStatusViewed: 'referral_status_viewed',
   featuredChallengeViewed: 'featured_challenge_viewed',
   challengeViewed: 'challenge_viewed',
   challengeJoined: 'challenge_joined',

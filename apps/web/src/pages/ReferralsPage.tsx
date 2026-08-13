@@ -1,14 +1,23 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useReferrals } from '@calistenia/core/hooks/useReferrals'
+import {
+  useReferrals,
+  REFERRAL_SIGNUP_POINTS,
+} from '@calistenia/core/hooks/useReferrals'
 import { useReferralPoints, type PointTransaction } from '@calistenia/core/hooks/useReferralPoints'
 import { useChallengeExpress } from '@calistenia/core/hooks/useChallengeExpress'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import {
+  CANONICAL_ANALYTICS_EVENTS,
+  trackCanonicalEvent,
+} from '@calistenia/core/lib/analytics'
 import { ReferralStats } from '../components/referrals/ReferralStats'
 import { ReferralList } from '../components/referrals/ReferralList'
 import { InviteButton } from '../components/referrals/InviteButton'
 import { ChallengeExpressForm } from '../components/referrals/ChallengeExpressForm'
+import { ReferralHowItWorks } from '../components/referrals/ReferralHowItWorks'
+import { ReferralErrorState } from '../components/referrals/ReferralErrorState'
 import { Loader } from '../components/ui/loader'
 import { cn } from '../lib/utils'
 import { Copy, Check, Share2 } from 'lucide-react'
@@ -19,19 +28,43 @@ interface ReferralsPageProps {
 
 export default function ReferralsPage({ userId }: ReferralsPageProps) {
   const { t } = useTranslation()
-  const { referrals, stats, loading: refLoading, getReferrals, getReferralStats } = useReferrals(userId)
-  const { transactions, loading: ptsLoading, getTransactions } = useReferralPoints(userId)
+  const {
+    referrals,
+    stats,
+    loading: refLoading,
+    error: refError,
+    refresh: refreshReferrals,
+    getReferrals,
+    getReferralStats,
+    generateReferralCode,
+  } = useReferrals(userId)
+  const {
+    transactions,
+    loading: ptsLoading,
+    error: ptsError,
+    refresh: refreshPoints,
+    getTransactions,
+  } = useReferralPoints(userId)
   const { createExpress } = useChallengeExpress(userId)
   const [showChallenge, setShowChallenge] = useState(false)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [tab, setTab] = useState<'referrals' | 'history'>('referrals')
+  const trackedView = useRef(false)
 
   useEffect(() => {
     // Load referral code from user record
     const loadCode = async () => {
       try {
         const user = await pb.collection('users').getOne(userId, { $autoCancel: false })
-        setReferralCode((user as any).referral_code || null)
+        const existing = (user as any).referral_code || null
+        if (existing) {
+          setReferralCode(existing)
+          return
+        }
+        // Sin código no hay nada que compartir: lo generamos antes de habilitar
+        // las acciones de invitación.
+        const generated = await generateReferralCode((user as any).display_name || 'USER')
+        setReferralCode(generated)
       } catch { /* */ }
     }
     loadCode()
@@ -41,6 +74,24 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loading = refLoading || ptsLoading
+  const error = refError ?? ptsError ?? null
+
+  // Una sola vez por montaje, y solo cuando ya sabemos qué se está viendo.
+  useEffect(() => {
+    if (trackedView.current || loading || error) return
+    trackedView.current = true
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.referralStatusViewed, {
+      surface: 'referrals',
+      source: 'web',
+      result: 'viewed',
+      referral_count: stats.totalReferred,
+      pending_rewards: referrals.filter(r => r.rewardStatus === 'pending').length,
+    })
+  }, [loading, error, stats.totalReferred, referrals])
+
+  const retry = useCallback(() => {
+    void Promise.all([refreshReferrals(), refreshPoints()])
+  }, [refreshReferrals, refreshPoints])
 
   if (loading && referrals.length === 0) {
     return (
@@ -55,14 +106,21 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-bebas text-3xl sm:text-4xl leading-none">Mis Referidos</h1>
-          <p className="text-xs text-muted-foreground mt-1">Invita amigos y gana puntos</p>
+          <h1 className="font-bebas text-3xl sm:text-4xl leading-none">{t('referrals.title')}</h1>
+          <p className="text-xs text-muted-foreground mt-1">{t('referrals.subtitle')}</p>
         </div>
         <InviteButton
           referralCode={referralCode}
           onCreateChallenge={() => setShowChallenge(true)}
         />
       </div>
+
+      {/* Fallo de carga: reintentar en vez de fingir que no hay datos */}
+      {error && (
+        <div className="mb-6">
+          <ReferralErrorState error={error} onRetry={retry} retrying={loading} />
+        </div>
+      )}
 
       {/* Invite link */}
       {referralCode && (
@@ -73,6 +131,9 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
       <div className="mb-6">
         <ReferralStats stats={stats} />
       </div>
+
+      {/* Qué cuenta como referido y cuándo llegan los puntos */}
+      <ReferralHowItWorks />
 
       {/* Challenge express form */}
       {showChallenge && (
@@ -99,7 +160,7 @@ export default function ReferralsPage({ userId }: ReferralsPageProps) {
                 : 'text-muted-foreground border-transparent hover:text-foreground/70'
             )}
           >
-            {tabKey === 'referrals' ? 'Referidos' : 'Historial'}
+            {tabKey === 'referrals' ? t('referrals.tabReferrals') : t('referrals.tabHistory')}
           </button>
         ))}
       </div>
@@ -153,7 +214,7 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
 
   return (
     <div className="mb-6 p-4 rounded-xl border border-border bg-card">
-      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">Tu link de invitación</div>
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">{t('referrals.linkLabel')}</div>
       <div className="flex items-center gap-2">
         <div className="flex-1 min-w-0 px-3 py-2.5 rounded-lg bg-muted border border-border text-sm text-muted-foreground truncate font-mono select-all">
           {inviteUrl}
@@ -178,7 +239,9 @@ function ReferralLinkCard({ referralCode }: { referralCode: string }) {
           <Share2 className="size-4" />
         </button>
       </div>
-      <p className="text-[10px] text-muted-foreground mt-2">Comparte este link y gana 100 puntos por cada amigo que se registre</p>
+      <p className="text-[10px] text-muted-foreground mt-2">
+        {t('referrals.linkHelp', { points: REFERRAL_SIGNUP_POINTS })}
+      </p>
     </div>
   )
 }
