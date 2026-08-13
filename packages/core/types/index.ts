@@ -753,6 +753,16 @@ export type {
   BattleScore,
 } from './battle'
 
+// ─── Programas de comunidad (#353) ──────────────────────────────────────────
+// Distintos de los programas de entrenamiento (`ProgramMeta` y compañía).
+export type {
+  CommunityMilestoneKind,
+  CommunityMembershipStatus,
+  CommunityProgram,
+  CommunityProgramMilestone,
+  CommunityProgramMember,
+} from './community-program'
+
 // ─── Pantry ─────────────────────────────────────────────────────────────────
 export type {
   PantryCategory, PantryUnit, PantryConfidence, PantryStatus, PantrySource,

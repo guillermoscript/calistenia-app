@@ -19,8 +19,25 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   challengeJoined: 'challenge_joined',
   challengeProgressUpdated: 'challenge_progress_updated',
   challengeCompleted: 'challenge_completed',
+  /**
+   * Training-program curriculum (`programs` / `user_programs`). NOT the
+   * community programs below — these two were deliberately kept apart so the
+   * funnel can tell a curriculum enrollment from a community cohort.
+   */
   programJoined: 'program_joined',
   programMilestoneCompleted: 'program_milestone_completed',
+  /**
+   * Community programs with weekly milestones (#353, `community_programs`).
+   * They got their own event family instead of reusing `program_*` with a
+   * different `surface`: overloading the existing names would have entangled
+   * the two features in every funnel query forever, and the `race_*`/`battle_*`
+   * split below is the precedent for why that is worth avoiding.
+   */
+  communityProgramViewed: 'community_program_viewed',
+  communityProgramJoined: 'community_program_joined',
+  communityProgramLeft: 'community_program_left',
+  communityProgramMilestoneCompleted: 'community_program_milestone_completed',
+  communityProgramCompleted: 'community_program_completed',
   /**
    * GPS/cardio races. These used to be emitted under the `battle_*` names, which
    * collided with collaborative circuit battles (#356) and made the funnel mix two
@@ -48,7 +65,12 @@ export interface CanonicalAnalyticsProperties {
   source?: string
   workout_id?: string
   challenge_id?: string
+  /** `programs` record id — the training-program curriculum. */
   program_id?: string
+  /** `community_programs` record id. Only on `community_program_*` events. */
+  community_program_id?: string
+  /** `community_program_milestones` record id, or `phase_{n}` for `program_*`. */
+  milestone_id?: string
   /** `races` record id. Only on `race_*` events. */
   race_id?: string
   /** `battles` record id. Only on `battle_*` events. */

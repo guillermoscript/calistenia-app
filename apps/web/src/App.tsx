@@ -55,6 +55,9 @@ const ActivityFeedPage = lazy(() => import('./pages/ActivityFeedPage'))
 const ChallengesPage = lazy(() => import('./pages/ChallengesPage'))
 const ChallengeDetailPage = lazy(() => import('./pages/ChallengeDetailPage'))
 const CreateChallengePage = lazy(() => import('./pages/CreateChallengePage'))
+// Programas de COMUNIDAD (#353) — distintos de los programas de entrenamiento.
+const CommunityProgramsPage = lazy(() => import('./pages/CommunityProgramsPage'))
+const CommunityProgramDetailPage = lazy(() => import('./pages/CommunityProgramDetailPage'))
 const RoutineViewPage = lazy(() => import('./pages/RoutineViewPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotificationSettingsPage = lazy(() => import('./pages/NotificationSettingsPage'))
@@ -171,6 +174,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/friends',   labelKey: 'nav.friends',         icon: FriendsIcon },
   { path: '/leaderboard', labelKey: 'nav.leaderboard',   icon: TrophyIcon },
   { path: '/challenges', labelKey: 'nav.challenges',     icon: ChallengeIcon },
+  { path: '/community-programs', labelKey: 'nav.communityPrograms', icon: CalendarNavIcon },
   { path: '/referrals', labelKey: 'nav.referrals',       icon: ReferralIcon },
   { path: '/notifications', labelKey: 'nav.notifications', icon: BellIcon },
   { path: '/profile',   labelKey: 'nav.profile',         icon: ProfileIcon },
@@ -182,6 +186,7 @@ const RE_PROGRAM_DETAIL = /^\/programs\/[^/]+$/
 const RE_EXERCISE_DETAIL = /^\/exercises\/[^/]+$/
 const RE_SESSION_DETAIL = /^\/session\/[^/]+\/[^/]+$/
 const RE_CHALLENGE_DETAIL = /^\/challenges\/[^/]+$/
+const RE_COMMUNITY_PROGRAM_DETAIL = /^\/community-programs\/[^/]+$/
 const RE_ADD_FRIEND = /^\/add\/[^/]+$/
 const RE_SHARED_PROGRAM = /^\/shared\/[^/]+$/
 const RE_USER_PROFILE = /^\/u\/[^/]+$/
@@ -196,6 +201,7 @@ function getBreadcrumbKey(pathname: string): string {
   if (RE_SESSION_DETAIL.test(pathname)) return 'breadcrumb.sessionDetail'
   if (pathname === '/challenges/new') return 'breadcrumb.newChallenge'
   if (RE_CHALLENGE_DETAIL.test(pathname)) return 'breadcrumb.challengeDetail'
+  if (RE_COMMUNITY_PROGRAM_DETAIL.test(pathname)) return 'breadcrumb.communityProgramDetail'
   if (RE_ADD_FRIEND.test(pathname)) return 'breadcrumb.addFriend'
   if (pathname === '/log-workout') return 'breadcrumb.logWorkout'
   if (pathname === '/nutrition/log') return 'breadcrumb.logMeal'
@@ -307,6 +313,7 @@ const NAV_SECTIONS: { labelKey: string; items: NavItem[] }[] = [
   { labelKey: 'nav.sectionSocial', items: [
     { path: '/friends', labelKey: 'nav.friends', icon: FriendsIcon },
     { path: '/challenges', labelKey: 'nav.challenges', icon: ChallengeIcon },
+    { path: '/community-programs', labelKey: 'nav.communityPrograms', icon: CalendarNavIcon },
     { path: '/leaderboard', labelKey: 'nav.leaderboard', icon: TrophyIcon },
     { path: '/referrals', labelKey: 'nav.referrals', icon: ReferralIcon },
   ]},
@@ -700,6 +707,8 @@ function AuthenticatedApp({
             <Route path="/s/:id" element={<PublicSessionDetailPage />} />
             <Route path="/cardio/session/:id" element={<CardioSessionDetailPage />} />
             <Route path="/feed" element={<ActivityFeedPage userId={userId!} />} />
+            <Route path="/community-programs" element={<CommunityProgramsPage userId={userId!} />} />
+            <Route path="/community-programs/:id" element={<CommunityProgramDetailPage userId={userId!} />} />
             <Route path="/challenges" element={<ChallengesPage userId={userId!} />} />
             <Route path="/challenges/new" element={<CreateChallengePage userId={userId!} />} />
             <Route path="/challenges/:id" element={<ChallengeDetailPage userId={userId!} />} />
