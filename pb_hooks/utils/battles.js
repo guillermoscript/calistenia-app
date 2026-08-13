@@ -744,12 +744,17 @@ function battleHasBlockWith(app, battle, userId) {
   if (!userId) return false
   var blocks = require(`${__hooks}/utils/blocks.js`)
 
-  if (blocks.isBlocked(app, userId, battle.getString('creator'))) return true
+  // Una sola consulta a `user_blocks` en vez de una por candidato: el lobby no tiene tope
+  // de participantes en el servidor, así que el coste de este guard no debe crecer con él.
+  var counterparts = blocks.blockedCounterparts(app, userId)
+
+  var creatorId = battle.getString('creator')
+  if (creatorId && counterparts[creatorId]) return true
 
   var participants = findParticipants(app, battle.getString('id'))
   for (var i = 0; i < participants.length; i++) {
     var other = participants[i].getString('user')
-    if (other && blocks.isBlocked(app, userId, other)) return true
+    if (other && counterparts[other]) return true
   }
   return false
 }

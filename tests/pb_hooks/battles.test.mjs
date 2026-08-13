@@ -10,8 +10,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
-  api, authAs, createUser, createAs, expectNotifications, getOne, getOneAs, list, listAs,
-  triggerCron, uniq, update, waitFor,
+  api, authAs, create, createUser, createAs, expectNotifications, getOne, getOneAs, list,
+  listAs, triggerCron, uniq, update, waitFor,
 } from "./helpers/client.mjs"
 
 // ── Utilidades ───────────────────────────────────────────────────────────────
@@ -1178,4 +1178,36 @@ test("quien ya está dentro conserva su plaza aunque le bloqueen después", asyn
     token: await inviteToken(ctx.creator, ctx.battleId),
   })
   assert.equal(res.already_joined, true, "al participante de siempre se le negó su propia plaza")
+})
+
+test("una fila de participante sin usuario no rompe la lectura del creador", async () => {
+  // `battle_participants.user` no es `required`, así que la rama del creador de la regla
+  // nueva puede evaluar la cláusula de bloqueo contra una relación NULA. Una fila así no
+  // es alcanzable desde un cliente (todas las reglas de mutación son `null`: solo la API
+  // custom y el superuser escriben, y ambos ponen `user`), pero si apareciera —por un
+  // arreglo a mano, un import— la regla tiene que fallar CERRADA: esconder la fila, no
+  // reventar la consulta del creador ni colarla en el listado.
+  const ctx = await lobbyWithTwo("Anfitriona Nula", "Amiga Nula")
+  const huerfana = await create("battle_participants", {
+    battle: ctx.battleId,
+    status: "joined",
+    progress: {
+      completed_rounds: 0,
+      completed_reps: 0,
+      completed_time_seconds: 0,
+      current_exercise_position: null,
+      last_activity_at: null,
+    },
+  })
+
+  const filas = await listAs(ctx.creator, "battle_participants", `battle = '${ctx.battleId}'`)
+  assert.ok(
+    !filas.some((f) => f.id === huerfana.id),
+    "una fila sin usuario se colaría en la lista del creador",
+  )
+  assert.deepEqual(
+    filas.map((f) => f.user).sort(),
+    [ctx.creator.id, ctx.friend.id].sort(),
+    "la fila huérfana alteró lo que ve el creador",
+  )
 })
