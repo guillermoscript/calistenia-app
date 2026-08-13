@@ -10,8 +10,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
-  api, authAs, createUser, createAs, expectNotifications, getOne, list, triggerCron, uniq,
-  update, waitFor,
+  api, authAs, createUser, createAs, expectNotifications, getOne, getOneAs, list, listAs,
+  triggerCron, uniq, update, waitFor,
 } from "./helpers/client.mjs"
 
 // ── Utilidades ───────────────────────────────────────────────────────────────
@@ -1042,4 +1042,140 @@ test("el cron NO toca un lobby recién creado", async () => {
   const despues = await getOne("battles", ctx.battleId)
   assert.equal(despues.status, "lobby", "el cron expiró un lobby dentro de su TTL")
   assert.equal(despues.revision, antes.revision, "el cron tocó la revisión de un lobby vivo")
+})
+
+// ── Bloqueo de usuarios (#413) ───────────────────────────────────────────────
+
+/**
+ * Estos tests leen SIEMPRE con `listAs`/`getOneAs` (token del usuario). `list`/`getOne`
+ * usan superuser y se saltan las API rules, así que un test escrito con esos pasaría
+ * aunque la regla de bloqueo no existiera.
+ */
+
+/** Bloquea `blocked` desde `blocker` y espera a que el espejo `blocked_users` cuaje. */
+async function bloquear(blocker, blocked) {
+  await createAs(blocker, "user_blocks", { blocker: blocker.id, blocked: blocked.id })
+  await waitFor(async () => {
+    const rec = await getOne("users", blocker.id)
+    return rec.blocked_users.includes(blocked.id)
+  }, "espejo blocked_users poblado")
+}
+
+test("el creador deja de ver la fila del participante que bloquea", async () => {
+  const ctx = await lobbyWithTwo("Anfitriona Bloqueo", "Amigo Bloqueado")
+
+  const antes = await listAs(ctx.creator, "battle_participants", `battle = '${ctx.battleId}'`)
+  assert.equal(antes.length, 2, "el creador veía las dos filas antes del bloqueo")
+
+  await bloquear(ctx.creator, ctx.friend)
+
+  const filas = await listAs(ctx.creator, "battle_participants", `battle = '${ctx.battleId}'`)
+  assert.deepEqual(
+    filas.map((f) => f.user),
+    [ctx.creator.id],
+    "el creador sigue viendo el progreso en vivo de quien ha bloqueado",
+  )
+
+  // La fila propia nunca se recorta: la primera rama de la regla va sin cláusula.
+  const mia = filas.find((f) => f.user === ctx.creator.id)
+  const directa = await getOneAs(ctx.creator, "battle_participants", mia.id)
+  assert.equal(directa.user, ctx.creator.id, "el creador perdió de vista su propia fila")
+
+  // Simétrico: el bloqueado tampoco ve la del creador (ya era así por la regla vieja,
+  // que solo le deja su propia fila, pero es la mitad del contrato que #386 exige).
+  const suyas = await listAs(ctx.friend, "battle_participants", `battle = '${ctx.battleId}'`)
+  assert.deepEqual(suyas.map((f) => f.user), [ctx.friend.id])
+})
+
+test("el expand de battles deja de incluir al participante bloqueado", async () => {
+  // La sala se pinta con `expand=battle_participants_via_battle`, y un expand se filtra
+  // con la viewRule de la colección expandida: si la regla no lleva bloqueo, el nombre
+  // y el estado del bloqueado siguen llegando por aquí.
+  const ctx = await lobbyWithTwo("Anfitriona Expand", "Amigo Expand")
+  await bloquear(ctx.creator, ctx.friend)
+
+  const res = await api("/api/collections/battles/records" + ACTIVE_QS, {
+    token: await authAs(ctx.creator),
+  })
+  const fila = res.items.find((b) => b.id === ctx.battleId)
+  const butacas = fila?.expand?.battle_participants_via_battle ?? []
+  assert.deepEqual(butacas.map((b) => b.user), [ctx.creator.id])
+})
+
+test("una batalla ya en marcha no se rompe por un bloqueo a mitad", async () => {
+  // La decisión de #413: se bloquea la ENTRADA, no una batalla en curso. El marcador lo
+  // sirve /snapshot con `$app`, que no pasa por las API rules, así que sigue completo y
+  // el ranking cuadra para todo el mundo.
+  const ctx = await liveBattle()
+  await bloquear(ctx.creator, ctx.friend)
+
+  const snap = await api(`/api/battles/${ctx.battleId}/snapshot`, {
+    token: await authAs(ctx.creator),
+  })
+  assert.equal(snap.participants.length, 2, "el bloqueo dejó al creador sin marcador")
+  assert.equal(snap.standings.length, 2)
+
+  // Y el bloqueado puede seguir entrenando: su progreso no se rechaza.
+  const progreso = await post(ctx.friend, `/api/battles/${ctx.battleId}/progress`, {
+    progress: { completed_rounds: 1, completed_reps: 10, completed_time_seconds: 5, current_exercise_position: 0 },
+  })
+  assert.equal(progreso.battle.status, "live")
+})
+
+test("un usuario bloqueado por el creador no puede consumir la invitación", async () => {
+  const creator = await createUser("Anfitriona Puerta")
+  const friend = await createUser("Amigo Puerta")
+  await bloquear(creator, friend)
+
+  const battle = await createDraft(creator)
+  await post(creator, `/api/battles/${battle.id}/publish`)
+  const token = await inviteToken(creator, battle.id)
+
+  const res = await postRaw(friend, "/api/battles/join", { token })
+  assert.equal(res.status, 409, "un par bloqueado entró en la misma batalla")
+  // Indistinguible de un enlace revocado: el join no revela que existe un bloqueo.
+  assert.equal((await res.json()).error, "invite_invalid")
+
+  const filas = await list("battle_participants", `battle = '${battle.id}' && user = '${friend.id}'`)
+  assert.equal(filas.length, 0, "se creó la fila del participante bloqueado")
+})
+
+test("el bloqueo también corta la entrada entre participantes, no solo con el creador", async () => {
+  // C monta la batalla e invita a A y a B, que se bloquean entre ellos. Sin mirar a los
+  // participantes ya dentro, el par acabaría junto viéndose el progreso en vivo sin que
+  // ninguno sea el creador.
+  const creator = await createUser("Anfitriona Tercera")
+  const a = await createUser("Participante A")
+  const b = await createUser("Participante B")
+  await bloquear(a, b)
+
+  const battle = await createDraft(creator)
+  await post(creator, `/api/battles/${battle.id}/publish`)
+
+  const primero = await post(a, "/api/battles/join", { token: await inviteToken(creator, battle.id) })
+  assert.equal(primero.already_joined, false, "A no pudo entrar y el test no prueba nada")
+
+  const res = await postRaw(b, "/api/battles/join", { token: await inviteToken(creator, battle.id) })
+  assert.equal(res.status, 409, "B entró en una batalla donde ya estaba alguien a quien bloqueó")
+  assert.equal((await res.json()).error, "invite_invalid")
+})
+
+test("sin bloqueos el join sigue funcionando igual", async () => {
+  // Guardarraíl: la comprobación nueva corre en TODOS los joins, así que un fallo suyo
+  // (por ejemplo un throw dentro de la transacción) rompería la funcionalidad entera.
+  const ctx = await lobbyWithTwo("Anfitriona Sana", "Amiga Sana")
+  const filas = await list("battle_participants", `battle = '${ctx.battleId}'`)
+  assert.equal(filas.length, 2)
+})
+
+test("quien ya está dentro conserva su plaza aunque le bloqueen después", async () => {
+  // La comprobación va después de la rama de plaza existente: reabrir el enlace no
+  // puede echar de la sala a quien ya entró.
+  const ctx = await lobbyWithTwo("Anfitriona Plaza", "Amiga Plaza")
+  await bloquear(ctx.creator, ctx.friend)
+
+  const res = await post(ctx.friend, "/api/battles/join", {
+    token: await inviteToken(ctx.creator, ctx.battleId),
+  })
+  assert.equal(res.already_joined, true, "al participante de siempre se le negó su propia plaza")
 })
