@@ -3,6 +3,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { captureReferralCode } from '@calistenia/core/hooks/useAuth'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import {
+  CANONICAL_ANALYTICS_EVENTS,
+  trackCanonicalEvent,
+} from '@calistenia/core/lib/analytics'
 
 /** Captura la atribución del enlace universal antes de entrar al registro. */
 export default function InviteLinkScreen() {
@@ -17,7 +21,18 @@ export default function InviteLinkScreen() {
       return
     }
 
-    if (referralCode) captureReferralCode(referralCode)
+    if (referralCode) {
+      captureReferralCode(referralCode)
+      // La web ya emitía este evento en InviteLandingPage; en nativo la ruta
+      // redirigía sin emitirlo, así que el embudo perdía el paso «opened».
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.inviteLandingViewed, {
+        surface: 'invite_landing',
+        source: 'referral_link',
+        result: 'viewed',
+        code: referralCode,
+        platform: 'mobile',
+      })
+    }
     router.replace({ pathname: '/login', params: { mode: 'signup' } })
   }, [code, router])
 

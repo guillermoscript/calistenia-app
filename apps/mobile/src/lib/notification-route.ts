@@ -14,7 +14,7 @@
  *
  * Rutas nativas existentes (expo-router): `/` (home), `/social`, `/u/[id]`,
  * `/challenges`, `/challenges/[id]`, `/friends`, `/history`, `/profile`,
- * `/nutrition`, `/notifications`, `/cardio/[id]`, `/program/[id]`.
+ * `/nutrition`, `/notifications`, `/referrals`, `/cardio/[id]`, `/program/[id]`.
  * Aún NO existe una vista de post individual, así que ese caso cae al feed
  * (ver comentario en `reaction`/`comment`/`comment_reply`).
  */
@@ -58,8 +58,7 @@ export function getNotifRoute(n: AppNotification): NotifRoute {
 
     case 'referral_signup':
     case 'referral_bonus':
-      // No hay /referrals en nativo; amigos es lo más cercano.
-      return '/friends'
+      return '/referrals'
 
     case 'friend_streak':
     case 'friend_achievement':
@@ -93,7 +92,7 @@ export function resolveNotifUrl(url: string | undefined | null): NotifRoute | nu
   if (path === '/notifications') return '/notifications'
   if (path.startsWith('/challenges/')) return `${path}${query}`
   if (path === '/challenges') return '/challenges'
-  if (path === '/referrals') return '/friends'
+  if (path === '/referrals') return '/referrals'
   if (path.startsWith('/nutrition')) return '/nutrition'
 
   return '/notifications'

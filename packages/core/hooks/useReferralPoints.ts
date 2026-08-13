@@ -147,6 +147,11 @@ export function useReferralPoints(userId: string | null) {
     }
   }, [awardMutation])
 
+  /** Reintenta balance e historial a la vez (botón de reintentar / pull-to-refresh). */
+  const refresh = useCallback(async () => {
+    await Promise.all([balanceQuery.refetch(), transactionsQuery.refetch()])
+  }, [balanceQuery, transactionsQuery])
+
   return {
     // Estado derivado de las queries — forma idéntica a la versión anterior
     balance: balanceQuery.data ?? 0,
@@ -154,8 +159,12 @@ export function useReferralPoints(userId: string | null) {
     // loading = primera carga únicamente; refreshing = refetch de fondo
     loading: transactionsQuery.isPending,
     refreshing: transactionsQuery.isFetching && !transactionsQuery.isPending,
+    /** `null` salvo que el balance o el historial hayan fallado. Permite ofrecer reintentar
+     *  en vez de mostrar un saldo de 0 que parece un dato real. */
+    error: (balanceQuery.error ?? transactionsQuery.error ?? null) as Error | null,
 
     // Funciones de la API pública
+    refresh,
     getBalance,
     getTransactions,
     awardPoints,
