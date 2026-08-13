@@ -132,8 +132,7 @@ async function ensureMembership(programId: string, userId: string): Promise<Comm
   const existing = await findMembership(programId, userId)
   if (existing) {
     if (existing.status === 'active') return existing
-    const reactivated = await pb.collection('community_program_members').update(existing.id, { status: 'active' })
-    return normalizeMember(reactivated)
+    return normalizeMember(await reactivate(existing.id))
   }
 
   try {
@@ -148,9 +147,18 @@ async function ensureMembership(programId: string, userId: string): Promise<Comm
     const raced = await findMembership(programId, userId)
     if (!raced) throw error
     if (raced.status === 'active') return raced
-    const reactivated = await pb.collection('community_program_members').update(raced.id, { status: 'active' })
-    return normalizeMember(reactivated)
+    return normalizeMember(await reactivate(raced.id))
   }
+}
+
+/**
+ * Reactiva una pertenencia abandonada. Limpia `left_at`: dejarlo puesto deja
+ * filas activas con fecha de abandono, que es un dato que se contradice a sí
+ * mismo y que engañaría a lo primero que lo lea (analítica, soporte…).
+ * `started_at` NO se toca: es lo que hace que volver reanude.
+ */
+function reactivate(membershipId: string) {
+  return pb.collection('community_program_members').update(membershipId, { status: 'active', left_at: null })
 }
 
 // ─── Listado / descubrimiento ────────────────────────────────────────────────

@@ -166,9 +166,11 @@ test("abandonar y volver reanuda: solo cambia el estado, nunca el día de inicio
   assert.equal(left.status, "left")
   assert.ok(left.started_at.startsWith("2026-08-01"), "el día de inicio sobrevive al abandono")
 
-  // Volver: la misma fila se reactiva.
-  const back = await updateAs(member, "community_program_members", row.id, { status: "active" })
+  // Volver: la misma fila se reactiva y `left_at` se limpia — una fila activa
+  // con fecha de abandono se contradice a sí misma y engaña a quien la lea.
+  const back = await updateAs(member, "community_program_members", row.id, { status: "active", left_at: null })
   assert.equal(back.status, "active")
+  assert.ok(!back.left_at, "al reactivar, left_at queda vacío")
   assert.ok(back.started_at.startsWith("2026-08-01"), "al volver se reanuda, no se reinicia")
 
   // Mover el inicio queda prohibido por la regla: si no, cualquiera podría

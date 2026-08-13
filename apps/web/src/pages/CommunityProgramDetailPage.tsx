@@ -7,6 +7,7 @@ import {
   useCommunityPrograms,
   type MilestoneChallengeLink,
 } from '@calistenia/core/hooks/useCommunityPrograms'
+import { useChallenges } from '@calistenia/core/hooks/useChallenges'
 import {
   getMilestoneState,
   type MilestoneProgress,
@@ -33,9 +34,22 @@ export default function CommunityProgramDetailPage({ userId }: CommunityProgramD
   const { id = '' } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { program, milestones, membership, progress, challengeLinks, loading } =
+  const { program, milestones, membership, progress, challengeLinks, loading, refetch } =
     useCommunityProgramDetail(id, userId)
   const { join, leave, joining, leaving } = useCommunityPrograms(userId)
+  // Los hitos de tipo reto se unen con la maquinaria de presets ya existente
+  // (#350), que es idempotente y a prueba de carreras; no se duplica aquí.
+  const { joinPreset } = useChallenges(userId)
+
+  const handleJoinChallenge = useCallback(async (presetKey: string) => {
+    try {
+      const result = await joinPreset(presetKey)
+      await refetch()
+      navigate(`/challenges/${result.challengeId}`)
+    } catch {
+      toast.error(t('communityProgram.joinError'))
+    }
+  }, [joinPreset, refetch, navigate, t])
 
   const handleJoin = useCallback(async () => {
     try {
@@ -123,6 +137,7 @@ export default function CommunityProgramDetailPage({ userId }: CommunityProgramD
                   state={getMilestoneState(item, today)}
                   link={challengeLinks[item.milestone.id]}
                   onOpenChallenge={(challengeId) => navigate(`/challenges/${challengeId}`)}
+                  onJoinChallenge={handleJoinChallenge}
                 />
               ))
             : milestones.map(milestone => (
@@ -217,11 +232,13 @@ function MilestoneRow({
   state,
   link,
   onOpenChallenge,
+  onJoinChallenge,
 }: {
   item: MilestoneProgress
   state: MilestoneState
   link?: MilestoneChallengeLink
   onOpenChallenge: (challengeId: string) => void
+  onJoinChallenge: (presetKey: string) => void
 }) {
   const { t } = useTranslation()
   const styles = STATE_STYLES[state]
@@ -259,13 +276,26 @@ function MilestoneRow({
         </div>
       )}
 
-      {link && link.presetKnown && link.challengeId ? (
+      {/*
+        Hito de reto: si ya está unido se abre; si el preset existe pero aún no
+        se ha unido, se ofrece unirse. Sin este segundo caso el hito enlazaba a
+        un reto al que el usuario no tenía forma de entrar desde aquí.
+      */}
+      {link?.presetKnown && link.challengeId ? (
         <button
           type="button"
           onClick={() => onOpenChallenge(link.challengeId!)}
           className="mt-2 text-[10px] uppercase tracking-widest text-lime hover:underline"
         >
           {t('communityProgram.openChallenge')}
+        </button>
+      ) : link?.presetKnown && item.milestone.preset_key ? (
+        <button
+          type="button"
+          onClick={() => onJoinChallenge(item.milestone.preset_key!)}
+          className="mt-2 text-[10px] uppercase tracking-widest text-lime hover:underline"
+        >
+          {t('communityProgram.joinChallenge')}
         </button>
       ) : null}
     </li>

@@ -20,6 +20,7 @@ import {
   useCommunityPrograms,
   type MilestoneChallengeLink,
 } from '@calistenia/core/hooks/useCommunityPrograms'
+import { useChallenges } from '@calistenia/core/hooks/useChallenges'
 import {
   getMilestoneState,
   type CommunityProgramProgress,
@@ -45,10 +46,23 @@ export default function CommunityProgramDetailScreen() {
   const user = useAuthUser()
   const userId = user?.id ?? null
 
-  const { program, milestones, membership, progress, challengeLinks, loading } =
+  const { program, milestones, membership, progress, challengeLinks, loading, refetch } =
     useCommunityProgramDetail(programId, userId)
   const { join, leave } = useCommunityPrograms(userId)
+  // Los hitos de tipo reto reutilizan la unión de presets (#350), idempotente y
+  // a prueba de carreras; no se duplica la lógica aquí.
+  const { joinPreset } = useChallenges(userId)
   const [busy, setBusy] = useState(false)
+
+  const handleJoinChallenge = useCallback(async (presetKey: string) => {
+    try {
+      const result = await joinPreset(presetKey)
+      await refetch()
+      router.push(`/challenges/${result.challengeId}`)
+    } catch {
+      Alert.alert(t('communityProgram.joinError'))
+    }
+  }, [joinPreset, refetch, router, t])
 
   const handleJoin = useCallback(async () => {
     setBusy(true)
@@ -162,6 +176,7 @@ export default function CommunityProgramDetailScreen() {
               state={getMilestoneState(item, today)}
               link={challengeLinks[item.milestone.id]}
               onOpenChallenge={(challengeId) => router.push(`/challenges/${challengeId}`)}
+              onJoinChallenge={handleJoinChallenge}
             />
           ))
         ) : (
@@ -253,11 +268,13 @@ function MilestoneRow({
   state,
   link,
   onOpenChallenge,
+  onJoinChallenge,
 }: {
   item: MilestoneProgress
   state: MilestoneState
   link?: MilestoneChallengeLink
   onOpenChallenge: (challengeId: string) => void
+  onJoinChallenge: (presetKey: string) => void
 }) {
   const { t } = useTranslation()
   const styles = STATE_STYLES[state]
@@ -295,6 +312,11 @@ function MilestoneRow({
         </View>
       )}
 
+      {/*
+        Hito de reto: si ya está unido se abre; si el preset existe pero aún no
+        se ha unido, se ofrece unirse. Sin el segundo caso el hito enlazaba a un
+        reto al que no había forma de entrar desde aquí.
+      */}
       {link?.presetKnown && link.challengeId ? (
         <Pressable
           onPress={() => onOpenChallenge(link.challengeId!)}
@@ -302,6 +324,15 @@ function MilestoneRow({
         >
           <Text className="font-mono text-[10px] uppercase tracking-[2px] text-lime">
             {t('communityProgram.openChallenge')}
+          </Text>
+        </Pressable>
+      ) : link?.presetKnown && item.milestone.preset_key ? (
+        <Pressable
+          onPress={() => onJoinChallenge(item.milestone.preset_key!)}
+          className="mt-2 active:opacity-70"
+        >
+          <Text className="font-mono text-[10px] uppercase tracking-[2px] text-lime">
+            {t('communityProgram.joinChallenge')}
           </Text>
         </Pressable>
       ) : null}
