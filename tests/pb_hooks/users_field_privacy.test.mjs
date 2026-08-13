@@ -25,7 +25,7 @@
  */
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { createUser, create, update, api, authAs, superToken, uniq } from "./helpers/client.mjs"
+import { createUser, create, update, api, authAs, superToken, uniq, USER_PASS } from "./helpers/client.mjs"
 
 /** Todo lo que un tercero no tiene por qué ver de otra persona. */
 const PRIVATE_FIELDS = [
@@ -158,6 +158,30 @@ test("#411 el dueño sigue viendo su fila entera", async () => {
   const { owner } = await seed()
   const rec = await api(`/api/collections/users/records/${owner.id}`, { token: await authAs(owner) })
   assertComplete(rec, "el propio dueño")
+})
+
+/**
+ * La respuesta de login/refresh es la que acaba en `pb.authStore.record`, y de
+ * ahí saca `useAuth` el `role`, el `tier` y la `timezone` del propio usuario. Si
+ * en ese momento `requestInfo.auth` no estuviera puesto, el hook recortaría al
+ * dueño su propia fila y se caerían `isAdmin`/`userTier` y la zona horaria — sin
+ * un solo error por consola.
+ */
+test("#411 el login y el refresh devuelven la fila entera del propio usuario", async () => {
+  const { owner, profile } = await seed()
+
+  const login = await api("/api/collections/users/auth-with-password", {
+    method: "POST",
+    body: { identity: owner.email, password: USER_PASS },
+  })
+  assertComplete(login.record, "respuesta de auth-with-password")
+  assert.equal(login.record.referral_code, profile.referral_code, "auth-with-password: referral_code")
+
+  const refreshed = await api("/api/collections/users/auth-refresh", {
+    method: "POST",
+    token: login.token,
+  })
+  assertComplete(refreshed.record, "respuesta de auth-refresh")
 })
 
 test("#411 el superusuario sigue viendo la fila entera (cron de recordatorios)", async () => {
