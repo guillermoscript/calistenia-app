@@ -1126,7 +1126,9 @@
   "challenges.participants_other": "{{count}} participants",
   "challenges.emptyActive": "No active challenges",
   "challenges.emptyPast": "No past challenges",
-  "challenges.emptyBody": "For now challenges are created on the web — open it in your browser or ask a friend to invite you.",
+  "challenges.emptyBodyActive": "Pick one of the challenges above and your next workout already counts.",
+  "challenges.emptyBodyPast": "When a challenge you joined ends, it stays here with its final standings.",
+  "challenges.notFound": "This challenge no longer exists or you can't see it.",
 
   "featuredChallenge.kicker": "Featured challenge",
   "featuredChallenge.join": "Join",

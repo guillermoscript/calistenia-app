@@ -1126,7 +1126,9 @@
   "challenges.participants_other": "{{count}} participantes",
   "challenges.emptyActive": "No hay retos activos",
   "challenges.emptyPast": "No hay retos pasados",
-  "challenges.emptyBody": "Por ahora los retos se crean desde la versión web — entra desde el navegador o pide a un amigo que te invite.",
+  "challenges.emptyBodyActive": "Elige uno de los retos de arriba y tu próximo entrenamiento ya cuenta.",
+  "challenges.emptyBodyPast": "Cuando termine un reto en el que participes, se quedará aquí con su clasificación final.",
+  "challenges.notFound": "Este reto ya no existe o no puedes verlo.",
 
   "featuredChallenge.kicker": "Reto destacado",
   "featuredChallenge.join": "Unirse",
