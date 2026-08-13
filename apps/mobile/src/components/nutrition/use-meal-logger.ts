@@ -17,9 +17,9 @@ import {
 import { op } from '@calistenia/core/lib/analytics'
 import { localHour, nowLocalForPB, todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
 import { isMidnightEatenAt, parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
-import { createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
+import { calcMacros, createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
 import { useFoodHistory } from '@calistenia/core/hooks/useFoodHistory'
-import type { FoodItem, MealType, NutritionEntry } from '@calistenia/core/types'
+import type { FoodItem, MealType, NutritionEntry, PortionUnit } from '@calistenia/core/types'
 
 import {
   type AnalysisQuality,
@@ -340,6 +340,20 @@ export function useMealLogger({
     setFoods((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
+  // Porción → recálculo automático de macros desde las bases por 100g
+  // (espejo del handlePortionChange de web, MealLoggerContent).
+  const handlePortionChange = useCallback(
+    (index: number, amount: number, unit: PortionUnit, unitWeight: number) => {
+      setFoods((prev) =>
+        prev.map((f, i) => {
+          if (i !== index) return f
+          return calcMacros({ ...f, portionAmount: amount, portionUnit: unit, unitWeightInGrams: unitWeight })
+        }),
+      )
+    },
+    [],
+  )
+
   const addFood = () => {
     setFoods((prev) => [...prev, createEmptyFood()])
   }
@@ -577,6 +591,7 @@ export function useMealLogger({
     backFromReview,
     updateFood,
     removeFood,
+    handlePortionChange,
     addFood,
     addRecentFood,
     commitMacroEdit,

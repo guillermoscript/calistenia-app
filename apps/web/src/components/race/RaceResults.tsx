@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuthState } from '../../contexts/AuthContext'
@@ -8,6 +8,9 @@ import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
 import { formatPace, formatDuration, pointsToGPX } from '@calistenia/core/lib/geo'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
+import { splitRoute, saveCardioRoute } from '@calistenia/core/lib/cardioRoutes'
+import { fetchRaceRoute } from '@calistenia/core/lib/raceRoutes'
+import type { RaceGpsPoint } from '@calistenia/core/types/race'
 import RaceShareCard from './RaceShareCard'
 
 export default function RaceResults() {
@@ -21,10 +24,21 @@ export default function RaceResults() {
   const [savedId, setSavedId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
+  // El recorrido ya no viaja dentro de la participación: vive en `race_routes`,
+  // owner-only, y solo lo alcanza su dueño (#316). Una consulta más en la
+  // pantalla de resultados, que es la única que lo dibuja.
+  const [myTrack, setMyTrack] = useState<RaceGpsPoint[]>([])
+  useEffect(() => {
+    if (!me?.id) { setMyTrack([]); return }
+    let cancelled = false
+    fetchRaceRoute(me.id).then(points => { if (!cancelled) setMyTrack(points) })
+    return () => { cancelled = true }
+  }, [me?.id])
+
   const handleExportGPX = () => {
-    if (!me || !race || !me.gps_track || me.gps_track.length === 0) return
+    if (!me || !race || myTrack.length === 0) return
     const startMs = race.starts_at ? new Date(race.starts_at).getTime() : Date.now()
-    const gpsPoints = me.gps_track.map(pt => ({
+    const gpsPoints = myTrack.map(pt => ({
       lat: pt.lat,
       lng: pt.lng,
       timestamp: startMs + pt.t,
@@ -46,10 +60,14 @@ export default function RaceResults() {
     try {
       const userId = pb.authStore.record?.id
       if (!userId) throw new Error('not authed')
+      // El recorrido llega por consulta, así que puede no estar todavía en
+      // `myTrack` si se pulsa nada más entrar: se pide aquí antes de rendirse,
+      // o el entreno se guardaría sin ruta por una carrera de arranque.
+      const track = myTrack.length ? myTrack : await fetchRaceRoute(me.id)
       const session = {
         user: userId,
         activity_type: 'running',
-        gps_points: (me.gps_track || []).map(pt => ({
+        gps_points: track.map(pt => ({
           lat: pt.lat, lng: pt.lng, timestamp: (race.starts_at ? new Date(race.starts_at).getTime() : 0) + pt.t,
         })),
         distance_km: me.distance_km,
@@ -60,7 +78,9 @@ export default function RaceResults() {
         finished_at: me.finished_at || race.finished_at || new Date().toISOString(),
         note: `Race: ${race.name}`,
       }
-      const saved = await pb.collection('cardio_sessions').create(session)
+      const { record, points } = splitRoute(session)
+      const saved = await pb.collection('cardio_sessions').create(record)
+      await saveCardioRoute(saved.id, userId, points)
       setSavedId(saved.id)
     } catch (e) {
       console.warn('save as workout failed:', e)
@@ -149,6 +169,7 @@ export default function RaceResults() {
           participants={participants}
           currentUserId={me.user}
           userName={userName}
+          track={myTrack}
         />
       )}
 
@@ -163,7 +184,7 @@ export default function RaceResults() {
         </Button>
       )}
 
-      {me && me.gps_track && me.gps_track.length > 1 && (
+      {me && myTrack.length > 1 && (
         <Button
           onClick={handleExportGPX}
           variant="outline"

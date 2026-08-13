@@ -23,14 +23,17 @@ import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb, tryRefreshAuth, verifyAuth } from '@calistenia/core/lib/pocketbase'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
+import { consumeBattleInviteToken } from '@calistenia/core/lib/battleInviteHandoff'
 
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
 import { resolveNotifUrl } from '@/lib/notification-route'
+import { cancelLegacyLocalReminders } from '@/lib/reminder-scheduler'
 import { pbAuthHydration, trackScreen } from '@/lib/init-core'
 import { hydrateStorage } from '@/lib/storage'
 import { applyThemeMode, getThemeMode } from '@/lib/theme-mode'
 import { initI18n } from '@/lib/i18n'
+import { verifyStylesRegistered } from '@/lib/style-selfcheck'
 import { NAV_THEME } from '@/lib/theme'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { WorkoutProvider } from '@/contexts/WorkoutContext'
@@ -93,6 +96,32 @@ function CircuitRestoreNavigator() {
   return null
 }
 
+/**
+ * Recupera una invitación a batalla que quedó pendiente antes del registro (#356).
+ *
+ * El amigo desconectado que toca el enlace pasa por instalar la app y crear cuenta; el
+ * token se guardó en `battle-invite/[token]` y aquí, ya con sesión, se consume una sola
+ * vez y se le lleva al aterrizaje autenticado para que vea a qué entra y confirme.
+ * Nunca se une solo: unirse es una decisión suya.
+ */
+function BattleInviteRedeemer() {
+  const router = useRouter()
+  const user = useAuthUser()
+  const redeemed = useRef(false)
+
+  // Depende del usuario, no solo del montaje: el registro ocurre con este layout ya
+  // montado, así que el disparo útil es la transición a sesión válida.
+  useEffect(() => {
+    if (redeemed.current || !user?.id) return
+    const token = consumeBattleInviteToken()
+    if (!token) return
+    redeemed.current = true
+    router.push(`/battle-invite/${token}`)
+  }, [router, user?.id])
+
+  return null
+}
+
 function RootLayout() {
   const { colorScheme } = useColorScheme()
   const [ready, setReady] = useState(false)
@@ -137,6 +166,14 @@ function RootLayout() {
     return () => sub.remove()
   }, [])  // intentionally empty — runs once on mount
 
+  // ── Recordatorios: limpiar la programación local antigua ──────────────────
+  // Los recordatorios ahora llegan por push del servidor. Quien actualice desde
+  // una versión anterior tiene notificaciones WEEKLY locales ya programadas;
+  // si no se cancelan, cada recordatorio sonaría dos veces.
+  useEffect(() => {
+    cancelLegacyLocalReminders()
+  }, [])
+
   // ── Sesión fantasma (#254): expulsión en caliente + revalidación ──────────
   const readyRef = useRef(false)
   useEffect(() => {
@@ -178,6 +215,10 @@ function RootLayout() {
       // Storage ya hidratado → aplica la preferencia de tema guardada (claro/oscuro/sistema).
       applyThemeMode(getThemeMode())
       initI18n()
+      // El CSS de NativeWind se inyecta al importar '../global.css' (arriba del
+      // todo). Si no llegó al registro, la app sale sin un solo estilo y sin
+      // lanzar nada: esto lo convierte en un evento de Sentry (ver #1.7.0).
+      verifyStylesRegistered()
       readyRef.current = true
       if (!cancelled) setReady(true)
     }
@@ -221,6 +262,7 @@ function RootLayout() {
             <Stack.Screen name="circuit" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           </Stack>
           <CircuitRestoreNavigator />
+          <BattleInviteRedeemer />
         </Providers>
         <OfflineBanner />
         <PortalHost />

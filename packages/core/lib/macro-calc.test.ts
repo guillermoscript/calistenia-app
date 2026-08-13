@@ -5,6 +5,8 @@ import {
   calcMacros,
   migrateLegacyFood,
   createEmptyFood,
+  parsePortionAmountInput,
+  resolveUnitWeight,
 } from './macro-calc'
 import type { FoodItem } from '../types'
 
@@ -149,6 +151,70 @@ describe('migrateLegacyFood', () => {
     expect(result.portionAmount).toBe(150)
   })
 
+  it('"1 unidad" + portionGrams 55 → 1 unidad × 55 g/ud con bases por 100g correctas', () => {
+    const result = migrateLegacyFood({
+      name: 'Huevo frito', portion: '1 unidad', portionGrams: 55, calories: 90, protein: 6.3, carbs: 0.4, fat: 7,
+    })
+    expect(result.portionAmount).toBe(1)
+    expect(result.portionUnit).toBe('unidad')
+    expect(result.unitWeightInGrams).toBe(55)
+    // 90 kcal en 55g → 163.6 por 100g
+    expect(result.baseCal100).toBeCloseTo(163.6, 1)
+  })
+
+  it('"5 unidades" + portionGrams 590 → 5 unidad × 118 g/ud', () => {
+    const result = migrateLegacyFood({
+      name: 'Banana', portion: '5 unidades', portionGrams: 590, calories: 525, protein: 6.5, carbs: 135, fat: 2,
+    })
+    expect(result.portionAmount).toBe(5)
+    expect(result.portionUnit).toBe('unidad')
+    expect(result.unitWeightInGrams).toBe(118)
+    expect(result.baseCal100).toBeCloseTo(89, 1)
+  })
+
+  it('"175g" + portionGrams 175 → comportamiento de peso sin cambios', () => {
+    const result = migrateLegacyFood({
+      name: 'Arroz', portion: '175g', portionGrams: 175, calories: 227, protein: 4.7, carbs: 49, fat: 0.6,
+    })
+    expect(result.portionAmount).toBe(175)
+    expect(result.portionUnit).toBe('g')
+    expect(result.unitWeightInGrams).toBe(1)
+  })
+
+  it('unidades sin portionGrams → cantidad parseada + peso default por unidad', () => {
+    const result = migrateLegacyFood({
+      name: 'Huevo', portion: '2 unidad', calories: 180, protein: 12.6, carbs: 0.8, fat: 14,
+    })
+    expect(result.portionAmount).toBe(2)
+    expect(result.unitWeightInGrams).toBe(100)
+  })
+
+  it('"0 unidades" + portionGrams → sin división por cero, bases quedan en 0', () => {
+    const result = migrateLegacyFood({
+      name: 'X', portion: '0 unidades', portionGrams: 55, calories: 90, protein: 6, carbs: 0, fat: 7,
+    })
+    expect(result.portionAmount).toBe(0)
+    expect(result.unitWeightInGrams).toBe(100)
+    expect(Number.isFinite(result.unitWeightInGrams)).toBe(true)
+    expect(result.baseCal100).toBe(0)
+  })
+
+  it('calcMacros tras migrar es idempotente para porciones en unidades', () => {
+    const huevo = migrateLegacyFood({
+      name: 'Huevo frito', portion: '1 unidad', portionGrams: 55, calories: 90, protein: 6.3, carbs: 0.4, fat: 7,
+    })
+    const huevoRound = calcMacros(huevo)
+    expect(huevoRound.calories).toBe(90)
+    expect(huevoRound.protein).toBeCloseTo(6.3, 1)
+    expect(huevoRound.carbs).toBeCloseTo(0.4, 1)
+    expect(huevoRound.fat).toBeCloseTo(7, 1)
+
+    const banana = migrateLegacyFood({
+      name: 'Banana', portion: '5 unidades', portionGrams: 590, calories: 525, protein: 6.5, carbs: 135, fat: 2,
+    })
+    expect(calcMacros(banana).calories).toBe(525)
+  })
+
   it('sin portion string → default "100g"', () => {
     const result = migrateLegacyFood({ name: 'Manzana', calories: 52, protein: 0.3, carbs: 14, fat: 0.2 })
     expect(result.portionAmount).toBe(100)
@@ -181,5 +247,52 @@ describe('createEmptyFood', () => {
       calories: 0, protein: 0, carbs: 0, fat: 0,
       baseCal100: 0, baseProt100: 0, baseCarbs100: 0, baseFat100: 0,
     })
+  })
+})
+
+describe('parsePortionAmountInput', () => {
+  it('entero simple "300" → 300', () => {
+    expect(parsePortionAmountInput('300')).toBe(300)
+  })
+
+  it('decimal con coma "2,5" → 2.5', () => {
+    expect(parsePortionAmountInput('2,5')).toBe(2.5)
+  })
+
+  it('decimal con punto "2.5" → 2.5', () => {
+    expect(parsePortionAmountInput('2.5')).toBe(2.5)
+  })
+
+  it('vacío o basura → 0', () => {
+    expect(parsePortionAmountInput('')).toBe(0)
+    expect(parsePortionAmountInput('abc')).toBe(0)
+  })
+
+  it('negativos → 0 (no hay porciones negativas)', () => {
+    expect(parsePortionAmountInput('-5')).toBe(0)
+  })
+
+  it('decimal a medio teclear "3." → 3', () => {
+    expect(parsePortionAmountInput('3.')).toBe(3)
+  })
+})
+
+describe('resolveUnitWeight', () => {
+  it('unidades estándar imponen su peso, ignorando el actual', () => {
+    expect(resolveUnitWeight('g', 100)).toBe(1)
+    expect(resolveUnitWeight('kg', 1)).toBe(1000)
+    expect(resolveUnitWeight('ml', 50)).toBe(1)
+    expect(resolveUnitWeight('L', 1)).toBe(1000)
+    expect(resolveUnitWeight('oz', 1)).toBe(28.35)
+  })
+
+  it('"unidad" conserva el peso por unidad actual', () => {
+    expect(resolveUnitWeight('unidad', 120)).toBe(120)
+  })
+
+  it('"unidad" sin peso válido cae a 100 g', () => {
+    expect(resolveUnitWeight('unidad', 0)).toBe(100)
+    expect(resolveUnitWeight('unidad', NaN)).toBe(100)
+    expect(resolveUnitWeight('unidad', -3)).toBe(100)
   })
 })

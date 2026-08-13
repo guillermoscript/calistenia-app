@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
@@ -7,12 +7,23 @@ import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { getMetricUnit, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
+import { isCumulativeMetric } from '@calistenia/core/lib/cumulative-scoring'
+import {
+  resolvePresetChallengeDescription,
+  resolvePresetChallengeTitle,
+} from '@calistenia/core/lib/challenge-presets'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import { ShareButton } from '../components/ShareButton'
 import { shareChallenge } from '../lib/share'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 
 const MEDALS = ['🥇', '🥈', '🥉']
+
+// Métricas con semántica de ventana (cuentan lo registrado entre inicio y fin
+// del reto). PR-style ('most_pullups', 'most_lsit'...) y 'custom' no la tienen.
+const WINDOW_METRICS = new Set(['most_sessions', 'longest_streak', 'exercise'])
+const hasWindowSemantics = (metric: string) => WINDOW_METRICS.has(metric) || isCumulativeMetric(metric)
 
 interface ChallengeDetailPageProps {
   userId: string
@@ -29,6 +40,54 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   const [inviting, setInviting] = useState<string | null>(null)
 
   useEffect(() => { load() }, [load])
+
+  // Solo cuenta como vista cuando el reto se ha cargado y se pinta: un enlace a
+  // un reto borrado o sin permiso llega hasta aquí y no debe inflar el embudo.
+  // El ref evita repetirla en cada refetch del leaderboard.
+  const viewedIdRef = useRef<string | null>(null)
+  const progressTrackedRef = useRef<string | null>(null)
+  const completionTrackedRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!id || loading || !challenge) return
+    if (viewedIdRef.current === id) return
+    viewedIdRef.current = id
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeViewed, {
+      surface: 'challenge_detail',
+      source: 'challenge_route',
+      challenge_id: id,
+      result: 'viewed',
+    })
+  }, [id, loading, challenge])
+
+  useEffect(() => {
+    if (!id || loading) return
+    const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+    if (!currentEntry) return
+    const key = `${id}:${currentEntry.value}`
+    if (progressTrackedRef.current === key) return
+    progressTrackedRef.current = key
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeProgressUpdated, {
+      surface: 'challenge_detail',
+      source: 'challenge_route',
+      challenge_id: id,
+      progress_value: currentEntry.value,
+      result: 'updated',
+    })
+  }, [id, loading, leaderboard])
+
+  useEffect(() => {
+    if (!id || loading || !challenge?.goal || challenge.goal <= 0) return
+    const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+    if (!currentEntry || currentEntry.value < challenge.goal || completionTrackedRef.current === id) return
+    completionTrackedRef.current = id
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeCompleted, {
+      surface: 'challenge_detail',
+      source: 'challenge_goal_reached',
+      challenge_id: id,
+      result: 'completed',
+    })
+  }, [id, loading, challenge, leaderboard])
 
   if (!id) return null
 
@@ -59,7 +118,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
           <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="10,3 5,8 10,13" /></svg>
           {t('common.back')}
         </button>
-        <div className="text-center py-16 text-muted-foreground text-sm">Desafío no encontrado</div>
+        <div className="text-center py-16 text-muted-foreground text-sm">{t('challenge.notFound')}</div>
       </div>
     )
   }
@@ -67,6 +126,8 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   const isCreator = challenge.creator === userId
   const isActive = challenge.status === 'active'
   const isExpress = challenge.type === 'express'
+  const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
+  const goalReached = !!challenge.goal && !!currentEntry && currentEntry.value >= challenge.goal
   const unit = getMetricUnit(challenge.metric, challenge.exercise_slug)
   const metricLabel = getMetricLabel(challenge.metric, challenge.custom_metric, challenge.exercise_slug)
   const invitableUsers = following.filter(u => !participantIds.has(u.id))
@@ -89,7 +150,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
       {/* Header */}
       <div className="mb-6 motion-safe:animate-fade-in">
-        <h1 className="font-bebas text-3xl md:text-4xl leading-none mb-2">{challenge.title}</h1>
+        <h1 className="font-bebas text-3xl md:text-4xl leading-none mb-2">{resolvePresetChallengeTitle(challenge)}</h1>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-lime border border-lime/30 bg-lime/10">
             {metricLabel}
@@ -101,16 +162,20 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
           )}
           {!isExpress && (challenge.goal ?? 0) > 0 && (
             <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-amber-400 border border-amber-400/30 bg-amber-400/10">
-              Meta: {challenge.goal}
+              {t('challenges.goal', { value: challenge.goal })}
             </span>
           )}
-          <span className={cn('text-[11px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
-            {daysRemaining(challenge.ends_at)}
+          <span className={cn('text-[11px]', goalReached ? 'text-lime' : isActive ? 'text-amber-400' : 'text-muted-foreground')}>
+            {goalReached ? t('challenge.preset.completed') : isActive ? daysRemaining(challenge.ends_at) : t('challenge.preset.expired')}
           </span>
         </div>
         {challenge.description && (
-          <div className="text-xs text-muted-foreground mt-2 leading-relaxed">{challenge.description}</div>
+          <div className="text-xs text-muted-foreground mt-2 leading-relaxed">{resolvePresetChallengeDescription(challenge)}</div>
         )}
+        <div className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+          {t(`challenge.metricDesc.${challenge.metric}`)}
+          {hasWindowSemantics(challenge.metric) && <> · {t('challenge.scoreWindowNote')}</>}
+        </div>
         <div className="text-[10px] text-muted-foreground mt-2 opacity-70">
           {challenge.starts_at} → {challenge.ends_at}
         </div>
@@ -120,7 +185,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
       {isActive && (
         <div className="mb-6">
           <ShareButton
-            onShare={(method) => shareChallenge(challenge.title, challengeId, method)}
+            onShare={(method) => shareChallenge(resolvePresetChallengeTitle(challenge), challengeId, method)}
             className="hover:border-[hsl(var(--lime))] hover:text-[hsl(var(--lime))]"
           />
         </div>
@@ -135,7 +200,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
             onClick={() => setShowInvite(!showInvite)}
             className="text-[10px] tracking-widest h-9"
           >
-            {showInvite ? t('challenge.hide') : t('challenge.inviteFriend')}
+            {showInvite ? t('challenge.hide') : t('challenge.inviteFriends')}
           </Button>
 
           {showInvite && (

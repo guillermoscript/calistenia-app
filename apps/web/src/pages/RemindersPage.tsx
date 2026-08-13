@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { useMealReminders } from '@calistenia/core/hooks/useMealReminders'
 import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
 import { subscribeToPush, getSubscriptionStatus, getNotificationSupport, requestNotificationPermission } from '../lib/push-subscription'
-import { scheduleAll, buildSchedulableReminders, setupVisibilityRescheduler } from '../lib/reminder-scheduler'
+import { cancelAllScheduled } from '../lib/reminder-scheduler'
 import { localMinutesSinceMidnight } from '@calistenia/core/lib/dateUtils'
 import type { MealType } from '@calistenia/core/types'
 
@@ -193,25 +193,18 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     return items
   }, [mealReminders, workoutReminders, MEAL_META, t])
 
-  // ── Schedule local notifications for all reminders ───────────────────────
-  const visibilitySetup = useRef(false)
-  const mealRemindersRef = useRef(mealReminders)
-  const workoutRemindersRef = useRef(workoutReminders)
-  mealRemindersRef.current = mealReminders
-  workoutRemindersRef.current = workoutReminders
-
-  const reschedule = useCallback(() => {
-    const schedulable = buildSchedulableReminders(mealRemindersRef.current, workoutRemindersRef.current)
-    scheduleAll(schedulable)
-  }, [])
-
+  // ── Entrega: push del servidor ───────────────────────────────────────────
+  // Los recordatorios los envía mcp-server/src/api/reminder-dispatcher.ts (Web
+  // Push vía `push_subscriptions`), que es lo único que funciona con la pestaña
+  // cerrada. Ya NO se programan notificaciones locales con setTimeout: con el
+  // dispatcher enviando a la hora correcta, cada recordatorio sonaría dos veces
+  // con la pestaña abierta.
+  //
+  // `cancelAllScheduled()` limpia lo que dejara programado una versión anterior
+  // (timers de la página + los del service worker, que sobreviven a la recarga).
   useEffect(() => {
-    if (!visibilitySetup.current) {
-      visibilitySetup.current = true
-      setupVisibilityRescheduler()
-    }
-    reschedule()
-  }, [mealReminders, workoutReminders, reschedule])
+    cancelAllScheduled()
+  }, [])
 
   // ── Notifications ─────────────────────────────────────────────────────────
   const setupNotifications = async (): Promise<void> => {
@@ -288,9 +281,9 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       const clampedH = Math.min(23, Math.max(0, h))
       const clampedM = Math.min(59, Math.max(0, m))
 
-      // Ensure notification permission is granted BEFORE saving so the
-      // useEffect → reschedule → scheduleAll chain won't bail out on the
-      // Notification.permission !== 'granted' guard.
+      // Pedir permiso + suscripción de Web Push ANTES de guardar: el
+      // recordatorio lo envía el servidor, así que sin suscripción en
+      // `push_subscriptions` no habría a dónde entregarlo.
       await setupNotifications()
 
       if (showForm === 'meal') {
@@ -314,10 +307,6 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       }
 
       setShowForm(null)
-      // Use setTimeout(0) instead of queueMicrotask so the callback runs
-      // after React's synchronous render/commit phase, ensuring the refs
-      // contain the newly created reminders.
-      setTimeout(reschedule, 0)
     } catch {
       setError(t('reminders.saveError'))
     } finally {

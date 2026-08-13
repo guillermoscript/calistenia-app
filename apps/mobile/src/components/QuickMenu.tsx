@@ -43,6 +43,7 @@ import {
   Users,
   Trophy,
   Flag,
+  Swords,
   Route as RouteIcon,
   Bell,
   AlarmClock,
@@ -88,6 +89,7 @@ const SECTIONS: MenuSection[] = [
       { labelKey: 'nav.friends', href: '/friends', icon: Users },
       { labelKey: 'nav.leaderboard', href: '/leaderboard', icon: Trophy },
       { labelKey: 'nav.challenges', href: '/challenges', icon: Flag },
+      { labelKey: 'nav.battles', href: '/battle-create', icon: Swords },
     ],
   },
   {

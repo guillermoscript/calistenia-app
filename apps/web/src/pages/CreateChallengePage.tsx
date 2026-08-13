@@ -21,6 +21,9 @@ const METRIC_IDS: { id: ChallengeMetric; icon: string }[] = [
   { id: 'most_lsit', icon: '🧘' },
   { id: 'most_handstand', icon: '🤸' },
   { id: 'exercise', icon: '🎯' },
+  { id: 'total_workouts', icon: '🏋️' },
+  { id: 'total_exercise', icon: '🔢' },
+  { id: 'total_distance', icon: '🛣️' },
   { id: 'custom', icon: '✏️' },
 ]
 
@@ -98,7 +101,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   }
 
   const isCustomMetric = metric === 'custom'
-  const isExerciseMetric = metric === 'exercise'
+  const isExerciseMetric = metric === 'exercise' || metric === 'total_exercise'
   const selectedExercise = exerciseSlug ? getCatalogEntry(exerciseSlug) : undefined
 
   const exerciseResults = useMemo(() => {
@@ -142,7 +145,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   }
 
   const shareWhatsApp = () => {
-    const msg = `🎯 Te reto a "${title || 'un desafío'}" en Calistenia App!\n${window.location.origin}/challenges`
+    const msg = `${t('challenge.shareWhatsAppText', { title: title || t('challenge.shareFallbackTitle') })}\n${window.location.origin}/challenges`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -151,15 +154,15 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
       {/* Back */}
       <button onClick={() => navigate('/challenges')} className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
         <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="10,3 5,8 10,13" /></svg>
-        Volver
+        {t('common.back')}
       </button>
 
-      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">Nuevo</div>
-      <h1 className="font-bebas text-3xl md:text-4xl mb-6">CREAR DESAFIO</h1>
+      <div className="text-[10px] text-muted-foreground tracking-[0.3em] mb-2 uppercase">{t('challenge.new')}</div>
+      <h1 className="font-bebas text-3xl md:text-4xl mb-6">{t('challenge.createTitle')}</h1>
 
       {/* Title */}
       <div className="mb-5">
-        <label htmlFor="challenge-title" className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2 block">Nombre del desafío</label>
+        <label htmlFor="challenge-title" className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2 block">{t('challenge.nameLabel')}</label>
         <Input
           id="challenge-title"
           value={title}
@@ -172,13 +175,13 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
       {/* Description */}
       <div className="mb-5">
         <label htmlFor="challenge-desc" className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2 block">
-          Descripción <span className="opacity-50">(opcional)</span>
+          {t('challenge.descriptionLabel')} <span className="opacity-50">({t('challenge.optional')})</span>
         </label>
         <textarea
           id="challenge-desc"
           value={description}
           onChange={e => setDescription(e.target.value)}
-          placeholder="Reglas, contexto o motivación del desafío..."
+          placeholder={t('challenge.descriptionPlaceholder')}
           maxLength={300}
           rows={2}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
@@ -213,7 +216,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
         {/* Custom metric input */}
         {isCustomMetric && (
           <div className="mt-3 motion-safe:animate-fade-in">
-            <label htmlFor="challenge-custom-metric" className="sr-only">Métrica personalizada</label>
+            <label htmlFor="challenge-custom-metric" className="sr-only">{t('challenge.customMetricLabel')}</label>
             <Input
               id="challenge-custom-metric"
               value={customMetric}
@@ -244,7 +247,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
               </div>
             ) : (
               <>
-                <label htmlFor="challenge-exercise" className="sr-only">{t('challenge.metric.exercise')}</label>
+                <label htmlFor="challenge-exercise" className="sr-only">{t(`challenge.metric.${metric}`)}</label>
                 <Input
                   id="challenge-exercise"
                   value={exerciseQuery}
@@ -296,8 +299,10 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
             {isCustomMetric
               ? (customMetric || t('challenge.units'))
               : isExerciseMetric
-                ? getMetricUnit('exercise', exerciseSlug ?? undefined)
-                : t(`challenge.metric.${metric}`).toLowerCase()}
+                ? getMetricUnit(metric, exerciseSlug ?? undefined)
+                : metric === 'total_distance'
+                  ? getMetricUnit(metric)
+                  : t(`challenge.metric.${metric}`).toLowerCase()}
           </span>
         </div>
       </div>
@@ -326,11 +331,11 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
         {/* Date pickers */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="challenge-start" className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1.5 block">Inicio</label>
+            <label htmlFor="challenge-start" className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1.5 block">{t('challenge.startLabel')}</label>
             <Input id="challenge-start" type="date" value={startsAt} onChange={e => handleStartChange(e.target.value)} min={today} />
           </div>
           <div>
-            <label htmlFor="challenge-end" className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1.5 block">Fin</label>
+            <label htmlFor="challenge-end" className="text-[10px] text-muted-foreground tracking-widest uppercase mb-1.5 block">{t('challenge.endLabel')}</label>
             <Input
               id="challenge-end"
               type="date"
@@ -383,7 +388,7 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5" role="group" aria-label="Seleccionar amigos para invitar">
+          <div className="flex flex-col gap-1.5" role="group" aria-label={t('challenge.inviteFriendsAriaLabel')}>
             {following.map(user => {
               const selected = selectedFriends.has(user.id)
               return (

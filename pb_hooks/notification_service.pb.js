@@ -14,6 +14,14 @@
  * dentro de su cuerpo. (Antes eran globales → "ReferenceError: X is not defined"
  * en cada handler → atrapado (200 sin notif) o propagado (400). Ver utils/.)
  *
+ * IMPORTANTE (2): cada handler abre con `e.next()`. Los hooks de PocketBase son
+ * una cadena tipo middleware — un handler que no encadena corta la cadena y los
+ * handlers que OTROS ficheros registraron para esa misma coleccion no corren
+ * jamas, sin un solo error en el log. Este fichero se carga antes que el resto
+ * por orden alfabetico, asi que se los comia todos: se descubrio en #412, cuando
+ * los tres hooks de `workout_stats.pb.js` no se ejecutaban nunca. Va al
+ * principio del cuerpo y no al final porque casi todos tienen `return` tempranos.
+ *
  * To add a new notification type:
  * 1. Add a handler function below (require the helpers inside its body).
  *    - 1-to-1 (notify a single target): helpers.createNotification / createSelfNotification + sendPush
@@ -38,6 +46,7 @@ console.log("[notification_service] hook file loaded")
 // ── Follow notifications ─────────────────────────────────────────────────────
 
 onRecordAfterCreateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var followerId = e.record.getString("follower")
@@ -61,7 +70,8 @@ onRecordAfterCreateSuccess(function(e) {
       (followerName || "Alguien") + " te sigue",
       "Tienes un nuevo seguidor",
       "/u/" + followerId,
-      "follow"
+      "follow",
+      followerId
     )
   } catch (err) {
     console.log("[notif] follow hook error:", err)
@@ -71,6 +81,7 @@ onRecordAfterCreateSuccess(function(e) {
 // ── Reaction notifications ───────────────────────────────────────────────────
 
 onRecordAfterCreateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var reactorId = e.record.getString("reactor")
@@ -111,7 +122,8 @@ onRecordAfterCreateSuccess(function(e) {
       (reactorName || "Alguien") + " " + emoji,
       "Reacciono a tu sesion",
       "/feed?session=" + sessionId,
-      "reaction"
+      "reaction",
+      reactorId
     )
   } catch (err) {
     console.log("[notif] reaction hook error:", err)
@@ -121,6 +133,7 @@ onRecordAfterCreateSuccess(function(e) {
 // ── Comment notifications ────────────────────────────────────────────────────
 
 onRecordAfterCreateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var authorId = e.record.getString("author")
@@ -155,7 +168,8 @@ onRecordAfterCreateSuccess(function(e) {
             (authorName || "Alguien") + " respondio tu comentario",
             preview,
             "/feed?session=" + sessionId + "&comment=" + newCommentId,
-            "comment_reply"
+            "comment_reply",
+            authorId
           )
         }
       } catch (err) { /* parent not found */ }
@@ -196,7 +210,8 @@ onRecordAfterCreateSuccess(function(e) {
             (authorName || "Alguien") + " comento tu sesion",
             preview,
             "/feed?session=" + sessionId + "&comment=" + newCommentId,
-            "comment"
+            "comment",
+            authorId
           )
         }
       }
@@ -209,6 +224,7 @@ onRecordAfterCreateSuccess(function(e) {
 // ── Comment reaction notifications ──────────────────────────────────────────
 
 onRecordAfterCreateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     const helpers = require(`${__hooks}/utils/notifications.js`)
     const reactorId = e.record.getString("reactor")
@@ -252,7 +268,8 @@ onRecordAfterCreateSuccess(function(e) {
       (reactorName || "Alguien") + " " + emoji,
       "Reaccionó a tu comentario",
       sessionId ? ("/feed?session=" + sessionId + "&comment=" + commentId) : "/feed",
-      "reaction"
+      "reaction",
+      reactorId
     )
   } catch (err) {
     console.log("[notif] comment_reaction hook error:", err)
@@ -265,6 +282,7 @@ onRecordAfterCreateSuccess(function(e) {
 // invitación por terceros — ver #261 si algún día se implementa de verdad.
 
 onRecordAfterCreateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var userId = e.record.getString("user")
@@ -301,7 +319,8 @@ onRecordAfterCreateSuccess(function(e) {
       (userName || "Alguien") + " se unio a tu desafio",
       challengeTitle,
       "/challenges/" + challengeId,
-      "challenge_join"
+      "challenge_join",
+      userId
     )
   } catch (err) {
     console.log("[notif] challenge_join hook error:", err)
@@ -311,12 +330,16 @@ onRecordAfterCreateSuccess(function(e) {
 // ── Challenge complete notifications ─────────────────────────────────────────
 
 onRecordAfterUpdateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var status = e.record.getString("status")
     var oldStatus = e.record.original().getString("status")
 
-    if (status !== "completed" || oldStatus === "completed") return
+    // 'ended' es el valor del dominio (ChallengeStatus en core); "completed"
+    // solo pudo llegar escrito a mano — tratarlo como ya-terminado evita
+    // re-notificar si una fila legacy se normaliza a 'ended' (#312).
+    if (status !== "ended" || oldStatus === "ended" || oldStatus === "completed") return
 
     // getString("id"), no getId(): el JSVM de PB no expone getId() en Record
     // (mismo gotcha que el handler de comments más arriba).
@@ -360,6 +383,7 @@ onRecordAfterUpdateSuccess(function(e) {
 // ── Achievement unlocked notifications ───────────────────────────────────────
 
 onRecordAfterUpdateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var unlocked = e.record.getBool("unlocked")
@@ -403,134 +427,35 @@ onRecordAfterUpdateSuccess(function(e) {
 }, "user_achievements")
 
 // ── Streak milestone notifications ───────────────────────────────────────────
+// La lógica vive en utils/notifications.js (checkStreakMilestone) porque
+// workout_stats.js también la necesita: escribe la racha con SQL atómico para no
+// perder incrementos en paralelo, y el SQL no dispara este hook. Ver #412.
 
 onRecordAfterUpdateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
-    var STREAK_MILESTONES = [7, 14, 30, 50, 100, 200, 365]
-
-    var currentStreak = e.record.getInt("workout_streak_current")
-    var oldStreak = e.record.original().getInt("workout_streak_current")
-
-    if (currentStreak <= oldStreak) return
-
-    var userId = e.record.getString("user")
-    if (!userId) return
-
-    // De mayor a menor: si un update cruza varios milestones (ej. 5 → 20),
-    // se notifica solo el mayor — una notif por update, la más significativa.
-    for (var i = STREAK_MILESTONES.length - 1; i >= 0; i--) {
-      var milestone = STREAK_MILESTONES[i]
-      if (currentStreak >= milestone && oldStreak < milestone) {
-        helpers.createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
-        helpers.sendPush(userId, milestone + " dias seguidos!", "Tu racha de entrenamiento sigue creciendo", "/progress", "streak")
-
-        // Fan-out a seguidores: "tu amigo lleva N días seguidos"
-        helpers.notifyFollowers(
-          userId,
-          "friend_streak",
-          String(milestone),
-          { days: milestone },
-          {
-            title: (helpers.getUserName(userId) || "Tu amigo") + " lleva " + milestone + " dias seguidos",
-            body: "Tu amigo esta en racha",
-            url: "/u/" + userId,
-          }
-        )
-        break
-      }
-    }
+    helpers.checkStreakMilestone(
+      e.record.getString("user"),
+      e.record.original().getInt("workout_streak_current"),
+      e.record.getInt("workout_streak_current")
+    )
   } catch (err) {
     console.log("[notif] streak hook error:", err)
   }
 }, "user_stats")
 
-// ── Circuit session streak + total_sessions update ──────────────────────────
-// When a circuit_sessions record is created, update user_stats:
-// - Increment total_sessions
-// - Update workout_streak_current using date-checking logic
-//
-// NOTE: There is no existing hook for regular `sessions` that does this —
-// the same pattern should be added for `sessions` and `cardio_sessions`
-// when those collections need server-side streak tracking.
-// (No usa helpers externos — solo $app inline — así que funciona tal cual.)
-
-onRecordAfterCreateSuccess(function(e) {
-  try {
-    var userId = e.record.getString("user")
-    if (!userId) return
-
-    var stats = null
-    try {
-      var records = $app.findRecordsByFilter(
-        "user_stats",
-        "user = '" + userId + "'",
-        "",
-        1,
-        0
-      )
-      if (records && records.length > 0) {
-        stats = records[0]
-      }
-    } catch (err) {
-      console.log("[circuit_streak] user_stats lookup failed:", err)
-      return
-    }
-
-    if (!stats) {
-      console.log("[circuit_streak] no user_stats record for user " + userId)
-      return
-    }
-
-    // Increment total_sessions
-    var totalSessions = stats.getInt("total_sessions") || 0
-    stats.set("total_sessions", totalSessions + 1)
-
-    // Update streak: check if last workout was yesterday or today
-    var currentStreak = stats.getInt("workout_streak_current") || 0
-    var bestStreak = stats.getInt("workout_streak_best") || 0
-    var lastWorkoutDate = stats.getString("last_workout_date") || ""
-
-    var now = new Date()
-    var todayStr = now.getFullYear() + "-" +
-      String(now.getMonth() + 1).padStart(2, "0") + "-" +
-      String(now.getDate()).padStart(2, "0")
-
-    if (lastWorkoutDate === todayStr) {
-      // Already worked out today — no streak change, just save total_sessions
-    } else {
-      // Check if last workout was yesterday
-      var yesterday = new Date(now)
-      yesterday.setDate(yesterday.getDate() - 1)
-      var yesterdayStr = yesterday.getFullYear() + "-" +
-        String(yesterday.getMonth() + 1).padStart(2, "0") + "-" +
-        String(yesterday.getDate()).padStart(2, "0")
-
-      if (lastWorkoutDate === yesterdayStr) {
-        currentStreak += 1
-      } else {
-        // Streak broken — start at 1
-        currentStreak = 1
-      }
-
-      stats.set("workout_streak_current", currentStreak)
-      if (currentStreak > bestStreak) {
-        stats.set("workout_streak_best", currentStreak)
-      }
-      stats.set("last_workout_date", todayStr)
-    }
-
-    $app.save(stats)
-  } catch (err) {
-    console.log("[circuit_streak] hook error:", err)
-  }
-}, "circuit_sessions")
+// ── Racha + total_sessions server-side ──────────────────────────────────────
+// Vivia aqui, solo para `circuit_sessions`. Se movio a workout_stats.pb.js
+// (+ utils/workout_stats.js) al cubrir tambien `sessions` y `cardio_sessions`
+// y crear la fila de user_stats si falta — issue #412.
 
 // ── Referral bonus notifications (first workout) ────────────────────────────
 // When a referred user completes their first session, notify the referrer.
 // checkReferralBonus vive en ./utils/notifications.js (require dentro del handler).
 
 onRecordAfterCreateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var userId = e.record.getString("user")
@@ -544,6 +469,7 @@ onRecordAfterCreateSuccess(function(e) {
 }, "sessions")
 
 onRecordAfterCreateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var userId = e.record.getString("user")
@@ -557,6 +483,7 @@ onRecordAfterCreateSuccess(function(e) {
 }, "circuit_sessions")
 
 onRecordAfterCreateSuccess(function(e) {
+  e.next() // encadenar primero — ver la nota de la cabecera (#412)
   try {
     var helpers = require(`${__hooks}/utils/notifications.js`)
     var userId = e.record.getString("user")

@@ -19,9 +19,8 @@ import {
   DialogFooter,
 } from './ui/dialog'
 import { cn } from '../lib/utils'
-import WorkoutShareCard from './WorkoutShareCard'
 import PRCelebration from './PRCelebration'
-import ReferralPrompt, { isReferralPromptShown } from './ReferralPrompt'
+import PostWorkoutActions from './PostWorkoutActions'
 import { getCurrentSection } from '../contexts/ActiveSessionContext'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import * as sounds from '../lib/sounds'
@@ -30,6 +29,7 @@ import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
 import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming, ExerciseTempo } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 
 /** Format a structured tempo object into a compact human-readable string.
  *  e.g. { eccentric: 5, pauseTop: 2 } → "baja 5s · pausa 2s arriba"
@@ -691,6 +691,7 @@ function NoteScreen({ workoutTitle, totalSetsLogged, durationMin, onSave }: Note
 
 interface CelebrateScreenProps {
   workoutTitle: string
+  workoutKey: string
   totalSetsLogged: number
   durationMin: number
   exercises: Exercise[]
@@ -699,20 +700,23 @@ interface CelebrateScreenProps {
   avatarUrl?: string | null
   userId?: string
   referralCode?: string | null
-  totalSessions?: number
   timings: ExerciseTiming[]
+  onRepeat?: () => void
+  onNavigateAway: (path: string) => void
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl, userId, referralCode, totalSessions, timings }: CelebrateScreenProps) {
+function CelebrateScreen({ workoutTitle, workoutKey, totalSetsLogged, durationMin, exercises, onDone, userName, avatarUrl, userId, referralCode, timings, onRepeat, onNavigateAway }: CelebrateScreenProps) {
   const [quote, setQuote] = useState<Quote>(getLocalQuote)
-  const [showReferral, setShowReferral] = useState(false)
   const timingBreakdown = useMemo(() => prepareTimingBreakdown(timings), [timings])
 
   useEffect(() => {
-    if (userId && referralCode && (totalSessions ?? 0) >= 3 && !isReferralPromptShown(userId)) {
-      setShowReferral(true)
-    }
-  }, [userId, referralCode, totalSessions])
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.postWorkoutActionViewed, {
+      surface: 'post_workout',
+      source: 'workout_completion',
+      workout_id: workoutKey,
+      result: 'viewed',
+    })
+  }, [workoutKey])
 
   useEffect(() => {
     const ctrl = new AbortController()
@@ -798,27 +802,29 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
         </div>
       )}
 
-      <div style={{ animation: 'fadeUp 0.5s 0.5s ease-out both' }} className="flex flex-col items-center gap-3">
-        <div className="flex gap-3 items-center">
-          <Button
-            onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDone() }}
-            className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5 bg-lime text-lime-foreground hover:bg-lime/90"
-          >
-            IR AL DASHBOARD
-          </Button>
-          <WorkoutShareCard workoutTitle={workoutTitle} totalSets={totalSetsLogged} durationMin={durationMin} exercises={exercises} quote={quote} userName={userName} avatarUrl={avatarUrl} referralCode={referralCode} />
-        </div>
-        <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
+      <PostWorkoutActions
+        workoutKey={workoutKey}
+        workoutTitle={workoutTitle}
+        totalSets={totalSetsLogged}
+        durationMin={durationMin}
+        exercises={exercises}
+        quote={quote}
+        userName={userName}
+        avatarUrl={avatarUrl}
+        userId={userId}
+        referralCode={referralCode}
+        onRepeat={onRepeat}
+        onNavigateAway={onNavigateAway}
+      />
 
-        {/* Referral prompt after 3rd workout */}
-        {showReferral && referralCode && userId && (
-          <ReferralPrompt
-            userId={userId}
-            displayName={userName || ''}
-            referralCode={referralCode}
-            onDismiss={() => setShowReferral(false)}
-          />
-        )}
+      <div style={{ animation: 'fadeUp 0.5s 0.7s ease-out both' }} className="flex flex-col items-center gap-3">
+        <Button
+          onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDone() }}
+          className="min-w-[160px] sm:min-w-[200px] font-bebas text-xl tracking-[2px] px-9 py-3.5 bg-lime text-lime-foreground hover:bg-lime/90"
+        >
+          IR AL DASHBOARD
+        </Button>
+        <div className="text-[11px] text-muted-foreground/50 font-mono tracking-wide">o toca en cualquier lugar</div>
       </div>
     </div>
   )
@@ -841,6 +847,10 @@ interface SessionViewProps {
   onLogSet: (exerciseId: string, workoutKey: string, data: { reps: string; note: string; weight?: number; rpe?: number }) => Promise<PREvent | null>
   onMarkDone: (workoutKey: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => void
   onGoToDashboard: () => void
+  /** Reinicia la misma rutina desde el panel post-entreno (paridad con móvil). */
+  onRepeat?: () => void
+  /** Cierra la sesión activa y navega a una ruta del panel post-entreno. */
+  onNavigateAway: (path: string) => void
   onExitSession: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
   getRestForExercise?: (exerciseId: string, defaultRest: number) => number
@@ -854,10 +864,9 @@ interface SessionViewProps {
   /** User profile for share card */
   userName?: string
   avatarUrl?: string | null
-  /** For referral prompt */
+  /** Para el panel post-entreno (invitar, retos) */
   userId?: string
   referralCode?: string | null
-  getTotalSessions?: () => number
   /** Warmup/cooldown section skip handlers */
   onSkipWarmup?: () => void
   onSkipCooldown?: () => void
@@ -873,6 +882,8 @@ export default function SessionView({
   onLogSet,
   onMarkDone,
   onGoToDashboard,
+  onRepeat,
+  onNavigateAway,
   onExitSession,
   getExerciseLogs,
   getRestForExercise,
@@ -884,7 +895,6 @@ export default function SessionView({
   avatarUrl,
   userId,
   referralCode,
-  getTotalSessions,
   onSkipWarmup,
   onSkipCooldown,
   onSkipRemainingCooldown,
@@ -1277,6 +1287,7 @@ export default function SessionView({
       {phase === 'celebrate' && (
         <CelebrateScreen
           workoutTitle={workout.title}
+          workoutKey={workoutKey}
           totalSetsLogged={setsCount}
           durationMin={Math.round((Date.now() - sessionStartTime.current) / 60000)}
           exercises={workout.exercises}
@@ -1285,8 +1296,9 @@ export default function SessionView({
           avatarUrl={avatarUrl}
           userId={userId}
           referralCode={referralCode}
-          totalSessions={getTotalSessions?.() ?? 0}
           timings={finalTimings ?? []}
+          onRepeat={onRepeat}
+          onNavigateAway={onNavigateAway}
         />
       )}
 

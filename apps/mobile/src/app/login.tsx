@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { Image } from 'expo-image'
 
-import { useAuth } from '@calistenia/core/hooks/useAuth'
+import {
+  completeNewUserRegistration,
+  discardCapturedReferralCode,
+  useAuth,
+} from '@calistenia/core/hooks/useAuth'
+import { op } from '@calistenia/core/lib/analytics'
 import { pb } from '@calistenia/core/lib/pocketbase'
 
 import { Sentry } from '@/lib/instrument'
@@ -22,9 +27,10 @@ import { loginWithGoogle, isAuthCancelled } from '@/lib/auth'
 export default function LoginScreen() {
   const { t } = useTranslation()
   const router = useRouter()
+  const { mode: requestedMode } = useLocalSearchParams<{ mode?: string }>()
   const { signInWithEmail, signUpWithEmail, isLoading, authError } = useAuth()
 
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<'login' | 'signup'>(requestedMode === 'signup' ? 'signup' : 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -56,7 +62,13 @@ export default function LoginScreen() {
     setLocalError(null)
     setGoogleLoading(true)
     try {
-      await loginWithGoogle()
+      const result = await loginWithGoogle()
+      if (result.record && !result.record.referral_code) {
+        await completeNewUserRegistration(result.record, 'google')
+      } else {
+        discardCapturedReferralCode()
+        op.track('login_completed', { method: 'google' })
+      }
       haptics.success()
       router.replace('/')
     } catch (e) {

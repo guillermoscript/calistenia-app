@@ -9,6 +9,46 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.8.0] - 2026-08-12
+
+_Batallas de circuito en tiempo real contra tus amigos, y un repaso a fondo de la privacidad: tus datos de salud dejan de ser visibles para el resto._
+
+### Añadido
+
+- **Batallas de circuito** — Reta a tus amigos a un circuito y competid a la vez, viendo en directo por dónde va cada uno. Con barra flotante mientras dura, aviso cuando alguien se une o cuando empieza, descanso entre ejercicios y un historial con la comparación cara a cara en Progreso.
+- **Tus datos de salud, solo tuyos** — La frecuencia cardiaca y las calorías que mide tu reloj, tus objetivos de agua y entrenamiento semanal y tus registros de comida y peso ya no son visibles para otras personas. El muro y el ranking siguen igual: solo se comparte lo que se ve en pantalla.
+- **Bloquear ahora bloquea de verdad** — Al bloquear a alguien, esa persona deja de ver tu perfil, tus entrenamientos y tu ubicación en una carrera, y deja de llegarte cualquier notificación suya. Antes solo se le impedía interactuar.
+- **Retos más fáciles de empezar** — Retos preparados para empezar de cero con un toque, puntuación acumulativa que suma todo lo que haces durante el reto, y un reto destacado en la pantalla de inicio.
+- **Sesiones libres** — Entrena sin seguir un programa: monta la sesión sobre la marcha y queda registrada igual que el resto, en tu historial y en tu calendario.
+
+### Corregido
+
+- **El buscador de amigos ya funciona** — Buscar a alguien por su nombre en la app no devolvía nada nunca, por un error de la propia búsqueda. Ya encuentra.
+
+## [1.7.1] - 2026-08-07
+
+_Arregla la 1.7.0: la app se veía completamente descolocada, sin estilos ni fuentes. Ya se muestra como debe._
+
+### Corregido
+
+- **La app vuelve a verse bien** — Si al actualizar a la 1.7.0 viste la app descolocada, con el texto pegado al borde y sin fuentes, ya está resuelto. No tienes que hacer nada: tus datos y tu sesión siguen intactos.
+
+## [1.7.0] - 2026-08-05
+
+_Edita la porción de cada alimento y las macros se recalculan solas, sugerencia IA más discreta, baja de cuenta desde la app y más privacidad en tus rutas de cardio._
+
+### Añadido
+
+- **Porción editable** — Ajusta la cantidad de cada alimento directamente en su card y las calorías y macros se recalculan al instante.
+- **Sugerencia IA plegable** — La sugerencia del coach al registrar una comida ahora aparece plegada: ábrela solo cuando te interese.
+- **Baja de cuenta** — Elimina tu cuenta y todos tus datos directamente desde la app, sin pasos externos.
+
+### Corregido
+
+- **Aviso de reto terminado** — La notificación de reto terminado ahora llega en el momento correcto, cuando el reto acaba de verdad.
+- **Rutas de cardio privadas** — Tus rutas GPS de cardio ahora solo son visibles para ti: nadie más puede consultarlas.
+- **Análisis de comida más limpio** — Los textos del análisis de fotos de comida ya no muestran citas ni URLs extrañas de la búsqueda web.
+
 ## [1.6.0] - 2026-07-20
 
 _Crea tus propios programas desde el móvil, registra tu sueño con resumen IA, cambia tu objetivo nutricional cuando quieras y celebra tus logros como se merece._
@@ -236,7 +276,10 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.6.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...HEAD
+[1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
+[1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1
+[1.7.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.6.0...mobile-v1.7.0
 [1.6.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.5.0...mobile-v1.6.0
 [1.5.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.4.0...mobile-v1.5.0
 [1.4.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.3.2...mobile-v1.4.0

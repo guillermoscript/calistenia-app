@@ -3,7 +3,7 @@
     "name": "Calistenia",
     "slug": "calistenia",
     "owner": "guillermouser",
-    "version": "1.6.0",
+    "version": "1.8.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "calistenia",
@@ -27,7 +27,7 @@
     "android": {
       "package": "tech.guille.calistenia",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 26,
+      "versionCode": 29,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -52,6 +52,11 @@
               "scheme": "https",
               "host": "gym.guille.tech",
               "pathPrefix": "/invite"
+            },
+            {
+              "scheme": "https",
+              "host": "gym.guille.tech",
+              "pathPrefix": "/battle-invite"
             }
           ],
           "category": [

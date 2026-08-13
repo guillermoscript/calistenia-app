@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { trackShareCardShared } from '@calistenia/core/lib/analytics'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage, CARD_COLORS } from '../lib/canvas-helpers'
 import i18n from '../lib/i18n'
@@ -198,13 +198,16 @@ export default function PRShareCard({ prEvent, exerciseName, userName, avatarUrl
       const shareText = referralCode
         ? `${exerciseName}: ${prEvent.oldValue || 0} → ${prEvent.newValue} reps 🏆\ngym.guille.tech/invite/${referralCode}`
         : `${exerciseName}: ${prEvent.oldValue || 0} → ${prEvent.newValue} reps 🏆`
-      await shareImage(
+      const outcome = await shareImage(
         blob,
         `pr_${prEvent.prKey}_${dateStr}.png`,
         `${t('pr.newRecord')} — ${exerciseName}`,
         shareText,
       )
-      op.track('share_card_shared', { card_type: 'pr' })
+      trackShareCardShared({
+        surface: 'pr_celebration', source: 'pr_achieved', share_type: 'pr',
+        platform: 'web', result: outcome, share_confirmed: outcome === 'shared', card_type: 'pr',
+      })
     } catch (e) {
       console.warn('PR share error:', e)
     }

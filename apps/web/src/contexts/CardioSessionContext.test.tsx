@@ -75,8 +75,31 @@ function makePbCollection(overrides: Record<string, unknown> = {}) {
     delete: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
     getList: vi.fn().mockResolvedValue({ items: [] }),
+    // Por defecto no hay ruta previa ni rutas que hidratar: `saveCardioRoute`
+    // cae al create y `hydrateCardioRoutes` deja los puntos vacíos.
+    getFirstListItem: vi.fn().mockRejectedValue(new Error('no encontrada')),
+    getFullList: vi.fn().mockResolvedValue([]),
     ...overrides,
   }
+}
+
+/**
+ * Mocks separados por colección: desde #299 la ruta GPS ya no viaja dentro de
+ * `cardio_sessions`, sino en `cardio_routes`, y los tests tienen que poder
+ * comprobar qué acaba exactamente en cada una.
+ */
+function mockPb(
+  sessionOverrides: Record<string, unknown> = {},
+  routeOverrides: Record<string, unknown> = {},
+) {
+  const mocks = {
+    cardio_sessions: makePbCollection(sessionOverrides),
+    cardio_routes: makePbCollection(routeOverrides),
+  } as Record<string, ReturnType<typeof makePbCollection>>
+  vi.mocked(pb.collection).mockImplementation(
+    ((name: string) => mocks[name] ?? makePbCollection()) as never,
+  )
+  return mocks
 }
 
 const STORAGE_KEY = 'calistenia_cardio_active'
@@ -106,7 +129,7 @@ beforeEach(() => {
   })
 
   vi.mocked(pb.collection).mockReset()
-  vi.mocked(pb.collection).mockReturnValue(makePbCollection() as never)
+  mockPb()
   vi.mocked(pb.filter).mockClear()
 })
 
@@ -280,7 +303,7 @@ describe('CardioSessionContext', () => {
   describe('finish', () => {
     it('guarda la sesión en PocketBase con los campos clave y limpia el estado', async () => {
       const create = vi.fn().mockResolvedValue({ id: 'sess-1' })
-      vi.mocked(pb.collection).mockReturnValue(makePbCollection({ create }) as never)
+      mockPb({ create })
       const { wrapper, invalidateSpy } = makeWrapper('user1', 80)
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
@@ -310,6 +333,47 @@ describe('CardioSessionContext', () => {
       expect(invalidateSpy).toHaveBeenCalled()
     })
 
+    // #299: `cardio_sessions` la lee cualquier cuenta autenticada (lo necesitan
+    // el muro y las carreras), así que la ruta no puede viajar dentro de ese
+    // registro. Este test fija esa frontera: si alguien vuelve a meter
+    // `gps_points` en el create de la sesión, salta aquí.
+    it('la ruta GPS va a cardio_routes y NUNCA al registro público de cardio_sessions', async () => {
+      const create = vi.fn().mockResolvedValue({ id: 'sess-1' })
+      const routeCreate = vi.fn().mockResolvedValue({ id: 'route-1' })
+      mockPb({ create }, { create: routeCreate })
+      const { wrapper } = makeWrapper('user1', 80)
+      const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
+
+      act(() => result.current.start('running'))
+      act(() => lastWatchCallback().success(makePosition(40.0, -3.0, 0)))
+      act(() => lastWatchCallback().success(makePosition(40.001, -3.0, 10_000)))
+      await act(async () => { await result.current.finish() })
+
+      expect(create).toHaveBeenCalledTimes(1)
+      expect(create.mock.calls[0][0]).not.toHaveProperty('gps_points')
+
+      expect(routeCreate).toHaveBeenCalledTimes(1)
+      const route = routeCreate.mock.calls[0][0]
+      expect(route.session).toBe('sess-1')
+      expect(route.user).toBe('user1')
+      expect(route.points).toHaveLength(2)
+      expect(route.points[0]).toEqual(expect.objectContaining({ lat: 40.0, lng: -3.0 }))
+    })
+
+    it('una sesión sin puntos GPS no crea fila de ruta', async () => {
+      const create = vi.fn().mockResolvedValue({ id: 'sess-1' })
+      const routeCreate = vi.fn().mockResolvedValue({ id: 'route-1' })
+      mockPb({ create }, { create: routeCreate })
+      const { wrapper } = makeWrapper('user1', 80)
+      const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
+
+      act(() => result.current.start('walking'))
+      await act(async () => { await result.current.finish() })
+
+      expect(create).toHaveBeenCalledTimes(1)
+      expect(routeCreate).not.toHaveBeenCalled()
+    })
+
     it('sin userId no llama a PocketBase pero igual retorna la sesión calculada', async () => {
       const { wrapper } = makeWrapper(null)
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
@@ -327,7 +391,7 @@ describe('CardioSessionContext', () => {
 
     it('si PocketBase falla, encola la sesión en la cola de reintento (unsaved)', async () => {
       const create = vi.fn().mockRejectedValue(new Error('network down'))
-      vi.mocked(pb.collection).mockReturnValue(makePbCollection({ create }) as never)
+      mockPb({ create })
       const { wrapper } = makeWrapper('user1')
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
@@ -363,7 +427,7 @@ describe('CardioSessionContext', () => {
       const getList = vi.fn().mockResolvedValue({
         items: [{ id: 'a', user: 'user1', activity_type: 'running', distance_km: 5, duration_seconds: 1800 }],
       })
-      vi.mocked(pb.collection).mockReturnValue(makePbCollection({ getList }) as never)
+      mockPb({ getList })
       const { wrapper } = makeWrapper('user1')
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
@@ -381,7 +445,7 @@ describe('CardioSessionContext', () => {
     it('deleteSession y updateSessionNote llaman a PocketBase e invalidan el query', async () => {
       const del = vi.fn().mockResolvedValue(undefined)
       const update = vi.fn().mockResolvedValue(undefined)
-      vi.mocked(pb.collection).mockReturnValue(makePbCollection({ delete: del, update }) as never)
+      mockPb({ delete: del, update })
       const { wrapper, invalidateSpy } = makeWrapper('user1')
       const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 
@@ -451,7 +515,7 @@ describe('CardioSessionContext', () => {
       JSON.stringify([{ user: 'user1', activity_type: 'running', distance_km: 1, duration_seconds: 60 }]),
     )
     const create = vi.fn().mockResolvedValue({ id: 'retried' })
-    vi.mocked(pb.collection).mockReturnValue(makePbCollection({ create }) as never)
+    mockPb({ create })
     const { wrapper } = makeWrapper('user1')
     const { result } = renderHook(() => useCardioSessionContext(), { wrapper })
 

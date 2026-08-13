@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
-import { op } from '@calistenia/core/lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { Race, RaceParticipant } from '@calistenia/core/types/race'
 
 import { useAuthUser } from '@/lib/use-auth-user'
@@ -148,6 +148,20 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
   )
   const isCreator = !!(race && userId && race.creator === userId)
   const hasJoined = !!me
+
+  // Un solo `race_completed` por carrera, no uno por cliente: cada
+  // participante ejecuta finishRaceAction en su dispositivo, y el auto-finish y
+  // el watchdog de ends_at cierran la carrera sin que nadie pulse nada. Por eso
+  // el evento cuelga de la fase 'finished' y lo emite el cliente del creador.
+  const raceCompletedRef = useRef(false)
+  useEffect(() => {
+    if (phase !== 'finished' || !isCreator || raceCompletedRef.current) return
+    raceCompletedRef.current = true
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceCompleted, {
+      surface: 'race', source: 'race_results', race_id: raceId,
+      participant_count: participants.length, result: 'completed',
+    })
+  }, [phase, isCreator, raceId, participants.length])
 
   // Deadline duro en modo tiempo (clock-only, 500ms)
   useEffect(() => {
@@ -364,11 +378,15 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
     try {
       await apiJoinRace(raceId, displayName)
       op.track('race_joined', { race_id: raceId, platform: 'mobile' })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceJoined, {
+        surface: 'race', source: 'race_lobby', race_id: raceId,
+        participant_count: participants.length + 1, result: 'joined',
+      })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })
       throw err
     }
-  }, [raceId])
+  }, [raceId, participants.length])
 
   const markReadyAction = useCallback(async () => {
     if (!me) return
@@ -387,6 +405,10 @@ export function RaceProvider({ raceId, children }: RaceProviderProps) {
         participants: participants.length,
         mode: race?.mode,
         platform: 'mobile',
+      })
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceStarted, {
+        surface: 'race', source: 'race_lobby', race_id: raceId,
+        participant_count: participants.length, result: 'started', mode: race?.mode,
       })
     } catch (err) {
       setLastError({ kind: 'push', message: (err as Error).message })

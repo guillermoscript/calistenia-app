@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { pb, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { formatDuration, formatPace, formatSpeed, assessTrackQuality } from '@calistenia/core/lib/geo'
 import { op } from '@calistenia/core/lib/analytics'
+import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
 import { useAuthState } from '../contexts/AuthContext'
 import { cn } from '../lib/utils'
 import SplitsTable from '../components/cardio/SplitsTable'
@@ -31,7 +32,10 @@ export default function CardioSessionDetailPage() {
     if (!id) return
     setLoading(true)
     setError(null)
-    pb.collection('cardio_sessions')
+    // View `public_*` y no la tabla base (#386): la página se abre sobre la
+    // sesión de otra persona desde el muro, y la base es owner-only. Esta vista
+    // no pinta FC ni calorías del reloj, así que no necesita la tabla base.
+    pb.collection('public_cardio_sessions')
       .getOne(id, { expand: 'user', $autoCancel: false })
       .then(record => {
         const s: CardioSession = {
@@ -40,7 +44,8 @@ export default function CardioSessionDetailPage() {
           program: record.program,
           program_day_key: record.program_day_key,
           activity_type: record.activity_type,
-          gps_points: Array.isArray(record.gps_points) ? record.gps_points : [],
+          // La ruta llega aparte (#299): `cardio_sessions` ya no la lleva.
+          gps_points: [],
           splits: Array.isArray(record.splits) ? record.splits : undefined,
           distance_km: record.distance_km,
           duration_seconds: record.duration_seconds,
@@ -60,10 +65,19 @@ export default function CardioSessionDetailPage() {
           setAuthorName(expandedUser.display_name || expandedUser.email?.split('@')[0] || '')
           setAuthorAvatarUrl(getUserAvatarUrl(expandedUser, '200x200'))
         }
+        // Solo el dueño puede leer su ruta, así que ni se pide para una
+        // sesión ajena abierta desde el muro: ahorra un 404 por visita.
+        if (record.user === userId) {
+          void fetchCardioRoute(record.id).then(points => {
+            if (points.length) setSession(prev => (prev && prev.id === record.id ? { ...prev, gps_points: points } : prev))
+          })
+        }
       })
       .catch(() => setError(t('common.error', 'Error loading session')))
       .finally(() => setLoading(false))
-  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+    // `userId` entra en las dependencias porque decide si se pide la ruta:
+    // si la sesión se restaura antes que el auth, hay que reintentar.
+  }, [id, userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isOwn = session?.user === userId
 

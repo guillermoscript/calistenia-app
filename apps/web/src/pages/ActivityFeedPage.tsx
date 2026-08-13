@@ -137,7 +137,7 @@ export default function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
                   item={item}
                   isOwnPost={item.userId === userId}
                   highlight={item.id === highlightId}
-                  onTap={() => navigate(`/u/${item.userId}`)}
+                  onTap={() => navigate(`/s/${item.id}`)}
                   onTapUser={() => navigate(`/u/${item.userId}`)}
                   reactions={reactions}
                   onReact={(emoji) => toggleReaction(item.id, emoji, item.userId)}
@@ -293,9 +293,11 @@ function FeedCard({ item, isOwnPost, highlight, onTap, onTapUser, reactions, onR
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{item.workoutTitle}</div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">{t('feed.phase')} {item.phase}</span>
-              </div>
+              {item.phase > 0 && (
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">{t('feed.phase')} {item.phase}</span>
+                </div>
+              )}
             </div>
             <svg className="size-4 text-muted-foreground shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6,3 11,8 6,13" /></svg>
           </div>

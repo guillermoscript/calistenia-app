@@ -1,12 +1,16 @@
 /**
- * Reminder notification scheduler.
+ * Reminder notification scheduler — LEGADO, solo se usa para LIMPIAR.
  *
- * Schedules local notifications for meal and workout reminders using
- * setTimeout + a periodic check as fallback. Uses Service Worker
- * showNotification when available for better background support.
+ * La entrega de recordatorios la hace el servidor
+ * (`mcp-server/src/api/reminder-dispatcher.ts` → Web Push): es lo único que
+ * llega con la pestaña cerrada, y es donde se aplica la zona horaria del
+ * usuario. `RemindersPage` solo llama a `cancelAllScheduled()`.
  *
- * Call `scheduleAll()` on app load and whenever reminders change.
- * Automatically re-schedules on visibility change (tab refocus).
+ * NO vuelvas a llamar a `scheduleAll()` / `setupVisibilityRescheduler()`: con
+ * el dispatcher activo, cada recordatorio sonaría DOS veces (la notificación
+ * local de esta pestaña + el push del servidor). Se conservan porque
+ * `cancelAllScheduled()` reutiliza sus estructuras de timers y el mensaje al
+ * service worker.
  */
 
 import { localDay, localMinutesSinceMidnight } from '@calistenia/core/lib/dateUtils'
@@ -200,6 +204,25 @@ export function scheduleAll(reminders: SchedulableReminder[]): void {
 
   // Also post to service worker for mobile background reliability
   postToServiceWorker(reminders)
+}
+
+/**
+ * Cancel every locally-scheduled reminder: page timers, the periodic safety
+ * net, and the copy held by the service worker.
+ *
+ * Reminders are delivered by the server now
+ * (`mcp-server/src/api/reminder-dispatcher.ts` → Web Push), which is the only
+ * path that works with the tab closed. Anything still scheduled locally would
+ * fire a *second* notification for the same reminder, so this clears whatever a
+ * previous version of the app left behind.
+ */
+export function cancelAllScheduled(): void {
+  for (const timer of activeTimers.values()) clearTimeout(timer)
+  activeTimers.clear()
+  currentReminders = []
+  stopPeriodicCheck()
+  // An empty list makes the SW clear its own timers and interval.
+  postToServiceWorker([])
 }
 
 /**

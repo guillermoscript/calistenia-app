@@ -22,7 +22,7 @@ import {
   getWorkout as fallbackGetWorkout,
 } from '../data/workouts'
 import { nowLocalForPB } from '../lib/dateUtils'
-import { op } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import type { Phase, WeekDay, Workout, WorkoutsMap, Exercise, ProgramMeta, DayId, CardioDayConfig, CardioActivityType } from '../types'
 import i18n from 'i18next'
@@ -328,6 +328,7 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
           pb.filter('user = {:uid} && program = {:pid}', { uid: userId, pid: programId }),
         )
       } catch { /* not found */ }
+      const wasAlreadyCurrent = existing?.is_current === true
 
       if (existing) {
         await pb.collection('user_programs').update(existing.id, { is_current: true, status: 'active', ended_at: '' })
@@ -357,6 +358,14 @@ export function usePrograms(userId: string | null = null): UseProgramsReturn {
 
       const newActive = (qc.getQueryData<ProgramMeta[]>(qk.programs.catalog) || []).find(p => p.id === programId) || null
       op.track('program_selected', { program_id: programId, program_name: newActive?.name || '' })
+      if (!wasAlreadyCurrent) {
+        trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.programJoined, {
+          surface: 'programs',
+          source: 'program_picker',
+          program_id: programId,
+          result: 'joined',
+        })
+      }
       return true
     } catch (e) {
       console.error('usePrograms: selectProgram error', e)

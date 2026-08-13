@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import i18n from '../lib/i18n'
 import { Button } from './ui/button'
 import { shareImage, canvasToBlob, loadLogo } from '../lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { trackShareCardShared } from '@calistenia/core/lib/analytics'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 import { fillRRect, strokeRRect, drawCircleImage, drawInitialAvatar, loadImage } from '../lib/canvas-helpers'
 import type { Exercise } from '@calistenia/core/types'
@@ -19,9 +19,16 @@ interface WorkoutShareCardProps {
   userName?: string
   avatarUrl?: string | null
   referralCode?: string | null
+  /** Etiqueta del disparador; por defecto "COMPARTIR". */
+  label?: string
+  /** 'outline' (por defecto) o 'default' para usarlo como CTA primario. */
+  variant?: 'outline' | 'default'
+  className?: string
+  /** Se invoca al pulsar, antes de generar la imagen (analítica del que lo aloja). */
+  onPress?: () => void
 }
 
-export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin, date, exercises, quote, userName, avatarUrl, referralCode }: WorkoutShareCardProps) {
+export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin, date, exercises, quote, userName, avatarUrl, referralCode, label, variant = 'outline', className, onPress }: WorkoutShareCardProps) {
   const dateStr = date || todayStr()
 
   const handleShare = useCallback(async () => {
@@ -313,13 +320,21 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
       const shareText = referralCode
         ? `${workoutTitle} — ${totalSets} series en ${durationMin} min 💪\ngym.guille.tech/invite/${referralCode}`
         : `${workoutTitle} — ${totalSets} series en ${durationMin} min 💪`
-      await shareImage(
+      const outcome = await shareImage(
         blob,
         `workout_${dateStr}.png`,
         `${workoutTitle} - ${formatDate(dateStr)}`,
         shareText,
       )
-      op.track('share_card_shared', { card_type: 'workout' })
+      // Cancelar la hoja nativa cae al descargador, así que `share_confirmed`
+      // distingue un envío real de una simple exportación del PNG.
+      trackShareCardShared({
+        surface: 'post_workout', source: 'workout_completion', share_type: 'workout',
+        platform: 'web',
+        result: outcome,
+        share_confirmed: outcome === 'shared',
+        card_type: 'workout',
+      })
     } catch (e) {
       console.warn('Share error:', e)
     }
@@ -327,11 +342,11 @@ export default function WorkoutShareCard({ workoutTitle, totalSets, durationMin,
 
   return (
     <Button
-      variant="outline"
-      onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleShare() }}
-      className="font-mono text-[10px] tracking-[2px] border-lime/25 text-lime hover:bg-lime/10 h-11 px-5"
+      variant={variant}
+      onClick={(e: React.MouseEvent) => { e.stopPropagation(); onPress?.(); handleShare() }}
+      className={className ?? 'font-mono text-[10px] tracking-[2px] border-lime/25 text-lime hover:bg-lime/10 h-11 px-5'}
     >
-      COMPARTIR
+      {label ?? 'COMPARTIR'}
     </Button>
   )
 }

@@ -15,6 +15,7 @@ import AuthPage from './pages/AuthPage'
 import LandingPage from './pages/LandingPage'
 import { MarketingUnmask } from './components/MarketingUnmask'
 // Lazy loaded: secondary pages (split into separate chunks)
+const BattleInviteLandingPage = lazy(() => import('./pages/BattleInviteLandingPage'))
 const ProgressPage = lazy(() => import('./pages/ProgressPage'))
 const NutritionPage = lazy(() => import('./pages/NutritionPage'))
 const MealLoggerPage = lazy(() => import('./pages/MealLoggerPage'))
@@ -45,6 +46,7 @@ const CircuitSessionDetailPage = lazy(() => import('./pages/CircuitSessionDetail
 const RacePage = lazy(() => import('./pages/RacePage'))
 const RacesDiscoverPage = lazy(() => import('./pages/RacesDiscoverPage'))
 const SessionDetailPage = lazy(() => import('./pages/SessionDetailPage'))
+const PublicSessionDetailPage = lazy(() => import('./pages/PublicSessionDetailPage'))
 const CardioSessionDetailPage = lazy(() => import('./pages/CardioSessionDetailPage'))
 const FriendsPage = lazy(() => import('./pages/FriendsPage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
@@ -63,7 +65,6 @@ const InviteLandingPage = lazy(() => import('./pages/InviteLandingPage'))
 const ReferralsPage = lazy(() => import('./pages/ReferralsPage'))
 const BlogPage = lazy(() => import('./pages/BlogPage'))
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage'))
-const BlogEditorPage = lazy(() => import('./pages/BlogEditorPage'))
 const BlogLayout = lazy(() => import('./components/blog/BlogLayout'))
 const DownloadPage = lazy(() => import('./pages/DownloadPage'))
 const FeaturesPage = lazy(() => import('./pages/FeaturesPage'))
@@ -695,6 +696,8 @@ function AuthenticatedApp({
             <Route path="/sleep" element={<SleepPage userId={userId!} />} />
             <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
             <Route path="/session/:date/:workoutKey" element={<SessionDetailPage />} />
+            {/* Detalle por id de sesión: sirve también para sesiones ajenas (muro, actividad). */}
+            <Route path="/s/:id" element={<PublicSessionDetailPage />} />
             <Route path="/cardio/session/:id" element={<CardioSessionDetailPage />} />
             <Route path="/feed" element={<ActivityFeedPage userId={userId!} />} />
             <Route path="/challenges" element={<ChallengesPage userId={userId!} />} />
@@ -710,7 +713,6 @@ function AuthenticatedApp({
             <Route path="/referrals" element={<ReferralsPage userId={userId!} />} />
             {userRole === 'admin' ? <Route path="/admin" element={<AdminPage />} /> : null}
             {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor" element={<EditorPage />} /> : null}
-            {(userRole === 'editor' || userRole === 'admin') ? <Route path="/editor/blog" element={<BlogEditorPage />} /> : null}
             <Route path="/u/:userId" element={<UserProfilePage />} />
             <Route path="/shared/:shareCode" element={<SharedProgramPageRoute userId={userId} />} />
             <Route path="/legal" element={<LegalPage />} />
@@ -810,6 +812,13 @@ function AppInner() {
   // Public invite landing — accessible both logged-in and logged-out
   if (location.pathname.startsWith('/invite/')) {
     return <Suspense fallback={<Loader />}><Routes><Route path="/invite/:code/challenge/:challengeId" element={<InviteLandingPage />} /><Route path="/invite/:code" element={<InviteLandingPage />} /></Routes></Suspense>
+  }
+
+  // Battle invite landing — the shared link is a web URL, so it must resolve to
+  // something on desktop and on phones without the app installed. Where the app IS
+  // installed the app link intercepts it and this never renders.
+  if (location.pathname.startsWith('/battle-invite/')) {
+    return <Suspense fallback={<Loader />}><Routes><Route path="/battle-invite/:token" element={<BattleInviteLandingPage />} /></Routes></Suspense>
   }
 
   // Public race page — accessible pre-auth (shows login prompt if not authenticated)

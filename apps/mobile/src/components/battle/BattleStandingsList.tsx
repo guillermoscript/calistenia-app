@@ -1,0 +1,113 @@
+/**
+ * Marcador en vivo de una batalla.
+ *
+ * Vive aparte porque lo comparten la vista de entreno y la de espera (#404): quien ha
+ * terminado sigue queriendo ver si le alcanzan, y sin extraerlo no había forma barata de
+ * enseñar "todo menos la entrada de ejercicio".
+ */
+import { useEffect, useState } from 'react'
+import { View, ScrollView } from 'react-native'
+import { useTranslation } from 'react-i18next'
+
+import { Text } from '@/components/ui/text'
+import { cn } from '@/lib/utils'
+import { battleExerciseName } from '@calistenia/core/data/battle-presets'
+import { battleParticipantActivity, battleRestSecondsLeft } from '@calistenia/core/lib/battle'
+import { serverNow } from '@calistenia/core/lib/serverClock'
+import type { BattleConfiguration, BattleStanding } from '@calistenia/core/types/battle'
+
+/**
+ * Dónde está cada rival ahora mismo (#397).
+ *
+ * Sin esto el marcador solo dice cuánto lleva cada uno, y un contador parado se lee
+ * igual tanto si está descansando como si se ha ido: justo la diferencia que importa
+ * cuando quieres saber quién está a punto de terminar.
+ */
+function activityLine(
+  entry: BattleStanding,
+  config: BattleConfiguration,
+  now: number,
+  language: string,
+  t: (key: string) => string,
+): string | null {
+  const activity = battleParticipantActivity(entry, now)
+  if (activity === 'finished' || activity === 'left') return null
+  if (activity === 'resting') {
+    const left = battleRestSecondsLeft(entry.resting_until, now)
+    return `${t('battle.stateResting')} ${left}s`
+  }
+  if (activity === 'idle') return t('battle.stateIdle')
+
+  const position = entry.current_exercise_position
+  if (position === null) return t('battle.stateStarting')
+  const exercise = config.exercises.find((ex) => ex.position === position)
+  if (!exercise) return t('battle.stateStarting')
+
+  // La ronda es la que está en curso, no la que ya cerró.
+  const round = entry.score.completed_rounds + 1
+  return `${t('battle.roundsShort')}${round} · `
+    + battleExerciseName(config.workout_template_id, exercise.exercise_id, language)
+}
+
+interface BattleStandingsListProps {
+  standings: BattleStanding[]
+  config: BattleConfiguration
+  meUserId: string | null
+}
+
+export default function BattleStandingsList({
+  standings,
+  config,
+  meUserId,
+}: BattleStandingsListProps) {
+  const { t, i18n } = useTranslation()
+
+  // `resting_until` es hora del servidor, así que la cuenta atrás se compara contra el
+  // reloj corregido y no contra el del dispositivo (#397).
+  const [now, setNow] = useState(() => serverNow())
+  useEffect(() => {
+    const id = setInterval(() => setNow(serverNow()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <ScrollView className="flex-1">
+      {standings.map((entry) => {
+        const activity = activityLine(entry, config, now, i18n.language, t)
+        return (
+          <View
+            key={entry.participant_id}
+            className={cn(
+              'flex-row items-center gap-3 border-b border-border py-2.5',
+              entry.user === meUserId && 'bg-lime/5',
+            )}
+          >
+            <Text className="w-6 font-bebas text-lg text-muted-foreground">{entry.rank}</Text>
+            <View className="flex-1">
+              <Text className="font-sans-medium text-foreground" numberOfLines={1}>
+                {entry.display_name || t('battle.someone')}
+                {entry.status === 'left' ? `  ${t('battle.leftTag')}` : ''}
+                {entry.status === 'finished' ? '  ✓' : ''}
+              </Text>
+              {activity ? (
+                <Text
+                  className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground"
+                  numberOfLines={1}
+                >
+                  {activity}
+                </Text>
+              ) : null}
+            </View>
+            <Text className="font-mono text-xs text-muted-foreground">
+              {entry.score.completed_rounds}
+              <Text className="text-[10px]">{t('battle.roundsShort')}</Text>
+              {'  '}
+              {entry.score.completed_reps}
+              <Text className="text-[10px]">{t('battle.repsShort')}</Text>
+            </Text>
+          </View>
+        )
+      })}
+    </ScrollView>
+  )
+}

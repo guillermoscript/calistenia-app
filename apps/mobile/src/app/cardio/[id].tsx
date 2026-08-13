@@ -16,6 +16,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { formatPace, formatDuration, formatSpeed } from '@calistenia/core/lib/geo'
 import { CARDIO_ACTIVITY } from '@calistenia/core/lib/style-tokens'
+import { fetchCardioRoute } from '@calistenia/core/lib/cardioRoutes'
 import RouteMap from '@/components/cardio/RouteMap'
 import ElevationProfile from '@/components/cardio/ElevationProfile'
 import SplitsTable from '@/components/cardio/SplitsTable'
@@ -30,7 +31,8 @@ function toCardioSession(raw: Record<string, unknown>): CardioSession {
     id: raw.id as string,
     user: raw.user as string | undefined,
     activity_type: (raw.activity_type as CardioSession['activity_type']) ?? 'running',
-    gps_points: Array.isArray(raw.gps_points) ? (raw.gps_points as CardioSession['gps_points']) : [],
+    // La ruta ya no viaja en el registro: llega de `cardio_routes` (#299).
+    gps_points: [],
     distance_km: (raw.distance_km as number) ?? 0,
     duration_seconds: (raw.duration_seconds as number) ?? 0,
     avg_pace: (raw.avg_pace as number) ?? 0,
@@ -66,7 +68,11 @@ export default function CardioDetailScreen() {
       setLoading(true)
       setError(null)
       try {
-        const raw = await pb.collection('cardio_sessions').getOne(id, {
+        // `public_cardio_sessions` y no la tabla base (#386): esta pantalla se
+        // abre desde el muro sobre la sesión de otra persona, y la tabla base
+        // pasó a owner-only. La view no lleva FC ni calorías del reloj — se
+        // piden aparte más abajo, solo si la sesión es propia.
+        const raw = await pb.collection('public_cardio_sessions').getOne(id, {
           expand: 'user',
           $autoCancel: false,
         })
@@ -84,6 +90,29 @@ export default function CardioDetailScreen() {
               undefined,
           )
         }
+
+        // Solo el dueño puede leer su ruta y su frecuencia cardiaca, así que ni
+        // se piden para una sesión ajena abierta desde el muro: ahorra un 404
+        // por visita.
+        if (cs.user && cs.user === me?.id) {
+          const points = await fetchCardioRoute(cs.id as string)
+          if (!cancelled && points.length) setSession((prev) => (prev ? { ...prev, gps_points: points } : prev))
+
+          try {
+            const priv = await pb.collection('cardio_sessions').getOne(cs.id as string, {
+              $autoCancel: false,
+              fields: 'hr_avg,hr_max,calories_actual',
+            })
+            if (!cancelled) {
+              setSession((prev) => (prev ? {
+                ...prev,
+                hr_avg: priv.hr_avg as number | undefined,
+                hr_max: priv.hr_max as number | undefined,
+                calories_actual: priv.calories_actual as number | undefined,
+              } : prev))
+            }
+          } catch { /* sesión sin métricas de reloj */ }
+        }
       } catch (e) {
         if (!cancelled) setError('No se pudo cargar la sesión.')
       } finally {
@@ -92,7 +121,9 @@ export default function CardioDetailScreen() {
     }
     void load()
     return () => { cancelled = true }
-  }, [id])
+    // `me?.id` decide si se pide la ruta: si la pantalla monta antes que el
+    // auth, hay que reintentar cuando llegue.
+  }, [id, me?.id])
 
   const isOwnSession = !!me && !!session?.user && me.id === session.user
   const shareUserName = authorName

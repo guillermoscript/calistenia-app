@@ -125,7 +125,12 @@ async function fetchExpressProgress(challenge: Challenge): Promise<ExpressProgre
 
       let sets: Array<{ date: string; reps: string | null }> = []
       try {
-        const rows = await pb.collection('sets_log').getFullList({
+        // `public_sets_log` y no `sets_log`: desde #410 la tabla base es
+        // owner-only, así que leerla aquí devolvería cero filas para TODOS los
+        // participantes menos uno mismo — y sin error, con el ranking entero a
+        // cero. La view expone user, exercise_id, reps y logged_at, que es
+        // exactamente lo que se pide aquí.
+        const rows = await pb.collection('public_sets_log').getFullList({
           filter: pb.filter(
             'user = {:uid} && exercise_id = {:slug} && logged_at >= {:start} && logged_at <= {:end}',
             { uid: p.user, slug, start: startStr, end: endStr },

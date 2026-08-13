@@ -2,12 +2,14 @@
  * Presentational sub-components for the MealLogger. Pure: they take data + callbacks
  * (and `t`) as props and render — no state machine knowledge.
  */
+import { useEffect, useState } from 'react'
 import { View, ScrollView, TextInput, Pressable } from 'react-native'
 import { X, ChevronLeft, Search } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
-import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealType } from '@calistenia/core/types'
+import type { FoodItem, NutritionEntry, DailyTotals, NutritionGoal, MealType, PortionUnit } from '@calistenia/core/types'
+import { parsePortionAmountInput, resolveUnitWeight } from '@calistenia/core/lib/macro-calc'
 
 import { type EditingMacro, type MacroField, type MealTotals, MEAL_OPTIONS } from './meal-logger-shared'
 
@@ -292,6 +294,198 @@ export function RepeatMealView({
   )
 }
 
+// ── Portion editor (cantidad + unidad + presets) ───────────────────────────────
+
+const PORTION_UNITS: { value: PortionUnit; label: string }[] = [
+  { value: 'g', label: 'g' },
+  { value: 'kg', label: 'kg' },
+  { value: 'ml', label: 'ml' },
+  { value: 'L', label: 'L' },
+  { value: 'oz', label: 'oz' },
+  { value: 'unidad', label: 'ud' },
+]
+
+const PORTION_PRESETS: Record<PortionUnit, number[]> = {
+  g: [50, 100, 150, 200, 250],
+  kg: [0.5, 1, 1.5, 2],
+  ml: [100, 200, 250, 330, 500],
+  L: [0.25, 0.5, 1, 1.5],
+  oz: [2, 4, 6, 8],
+  unidad: [1, 2, 3, 4, 5],
+}
+
+/** Cantidad para el input, sin ceros colgantes ("2.50" → "2.5"). */
+const fmtAmount = (v: number) => String(Math.round((Number(v) || 0) * 100) / 100)
+
+/**
+ * Control primario de la card: el usuario edita la porción (cantidad + unidad
+ * + g/ud cuando la unidad es `unidad`) y los macros se recalculan solos vía
+ * `onPortionChange` → `calcMacros`. Puerto nativo del PortionInput de web,
+ * sin slider (cantidad + presets bastan en móvil).
+ */
+function PortionEditor({
+  food,
+  index,
+  onPortionChange,
+  t,
+}: {
+  food: FoodItem
+  index: number
+  onPortionChange: (index: number, amount: number, unit: PortionUnit, unitWeight: number) => void
+  t: Translate
+}) {
+  const [showUnits, setShowUnits] = useState(false)
+  // Texto local de los inputs: deja teclear "2," o borrar sin que el valor
+  // controlado pelee; se propaga el número parseado en cada cambio.
+  const [amountText, setAmountText] = useState(() => fmtAmount(food.portionAmount))
+  const [weightText, setWeightText] = useState(() => fmtAmount(food.unitWeightInGrams))
+
+  const amount = Number(food.portionAmount) || 0
+  const unitWeight = Number(food.unitWeightInGrams) || 0
+
+  // Sincroniza el texto local cuando la porción cambia desde fuera (presets,
+  // selección de alimento, carga para edición).
+  useEffect(() => {
+    if (parsePortionAmountInput(amountText) !== (Number(food.portionAmount) || 0)) {
+      setAmountText(fmtAmount(food.portionAmount))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [food.portionAmount])
+
+  useEffect(() => {
+    if (parsePortionAmountInput(weightText) !== (Number(food.unitWeightInGrams) || 0)) {
+      setWeightText(fmtAmount(food.unitWeightInGrams))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [food.unitWeightInGrams])
+
+  const unitLabel = PORTION_UNITS.find((u) => u.value === food.portionUnit)?.label ?? food.portionUnit
+  const presets = PORTION_PRESETS[food.portionUnit] ?? PORTION_PRESETS.g
+  const totalGrams = amount * unitWeight
+
+  return (
+    <View className="px-3 pb-2 gap-1.5">
+      {/* Fila principal: cantidad (control primario, a la izquierda) + unidad + g/ud */}
+      <View className="flex-row items-center gap-2">
+        <TextInput
+          value={amountText}
+          onChangeText={(v) => {
+            const clean = v.replace(/[^0-9.,]/g, '')
+            setAmountText(clean)
+            onPortionChange(index, parsePortionAmountInput(clean), food.portionUnit, food.unitWeightInGrams)
+          }}
+          onBlur={() => setAmountText(fmtAmount(food.portionAmount))}
+          keyboardType="decimal-pad"
+          selectTextOnFocus
+          accessibilityLabel={t('nutrition.logger.portionAmount')}
+          className="w-20 h-10 text-center rounded-lg bg-background border border-border text-foreground font-bebas tabular-nums"
+          style={{ fontSize: 18 }}
+        />
+        <Pressable
+          onPress={() => setShowUnits((s) => !s)}
+          accessibilityRole="button"
+          accessibilityLabel={t('nutrition.logger.portionUnit')}
+          className={cn(
+            'h-10 min-w-[44px] px-3 items-center justify-center rounded-lg border active:bg-muted/50',
+            showUnits ? 'border-lime-400/50 bg-lime-400/10' : 'border-border',
+          )}
+        >
+          <Text className={cn('font-mono text-xs tracking-wide', showUnits ? 'text-lime-400' : 'text-muted-foreground')}>
+            {unitLabel}
+          </Text>
+        </Pressable>
+        {food.portionUnit === 'unidad' && (
+          <View className="flex-row items-center gap-1">
+            <TextInput
+              value={weightText}
+              onChangeText={(v) => {
+                const clean = v.replace(/[^0-9.,]/g, '')
+                setWeightText(clean)
+                // Solo propaga pesos válidos: 0 mientras se teclea dejaría los macros en 0.
+                const parsed = parsePortionAmountInput(clean)
+                if (parsed > 0) onPortionChange(index, amount, food.portionUnit, parsed)
+              }}
+              onBlur={() => setWeightText(fmtAmount(food.unitWeightInGrams))}
+              keyboardType="decimal-pad"
+              selectTextOnFocus
+              accessibilityLabel="g/ud"
+              className="w-14 h-10 text-center rounded-lg bg-background border border-border text-foreground font-sans text-sm tabular-nums"
+              style={{ fontSize: 13 }}
+            />
+            <Text className="font-mono text-[10px] text-muted-foreground">g/ud</Text>
+          </View>
+        )}
+        {food.portionUnit === 'unidad' && totalGrams > 0 ? (
+          <Text className="font-mono text-[10px] text-muted-foreground/60 ml-auto tabular-nums">
+            ≈ {Math.round(totalGrams)}g
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Selector de unidad (chips inline — sin overlay flotante, robusto en el Modal nativo) */}
+      {showUnits && (
+        <View className="flex-row gap-1.5 flex-wrap">
+          {PORTION_UNITS.map((u) => (
+            <Pressable
+              key={u.value}
+              onPress={() => {
+                onPortionChange(index, amount, u.value, resolveUnitWeight(u.value, unitWeight))
+                setShowUnits(false)
+              }}
+              className={cn(
+                'px-3 rounded-lg border active:bg-muted/50',
+                food.portionUnit === u.value ? 'border-lime-400/50 bg-lime-400/10' : 'border-border',
+              )}
+              style={{ minHeight: 36, justifyContent: 'center' }}
+            >
+              <Text
+                className={cn(
+                  'font-mono text-xs',
+                  food.portionUnit === u.value ? 'text-lime-400' : 'text-muted-foreground',
+                )}
+              >
+                {u.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      {/* Presets por unidad */}
+      <View className="flex-row gap-1.5 flex-wrap">
+        {presets.map((preset) => (
+          <Pressable
+            key={preset}
+            onPress={() => onPortionChange(index, preset, food.portionUnit, food.unitWeightInGrams)}
+            className={cn(
+              'px-3 rounded-full border active:bg-muted/50',
+              amount === preset ? 'border-lime-400 bg-lime-400/10' : 'border-border',
+            )}
+            style={{ minHeight: 32, justifyContent: 'center' }}
+          >
+            <Text
+              className={cn(
+                'font-mono text-[11px] tabular-nums',
+                amount === preset ? 'text-lime-400' : 'text-muted-foreground',
+              )}
+            >
+              {preset}
+              {unitLabel}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Nota de porción de la IA — truncada (#336): datos viejos pueden traer citas largas */}
+      {food.portionNote ? (
+        <Text numberOfLines={2} className="font-sans text-[11px] text-muted-foreground/60 italic">
+          {food.portionNote}
+        </Text>
+      ) : null}
+    </View>
+  )
+}
+
 // ── Food item card (editable) ──────────────────────────────────────────────────
 
 const FOOD_CARD_MACROS = [
@@ -310,6 +504,7 @@ interface FoodItemCardProps {
   onEditingMacroValueChange: (v: string) => void
   onCommitMacro: (index: number, field: MacroField, raw: string) => void
   onUpdateFood: (index: number, field: keyof FoodItem, value: string | number) => void
+  onPortionChange: (index: number, amount: number, unit: PortionUnit, unitWeight: number) => void
   onRemove: (index: number) => void
   t: Translate
 }
@@ -323,6 +518,7 @@ export function FoodItemCard({
   onEditingMacroValueChange,
   onCommitMacro,
   onUpdateFood,
+  onPortionChange,
   onRemove,
   t,
 }: FoodItemCardProps) {
@@ -347,17 +543,10 @@ export function FoodItemCard({
         </Pressable>
       </View>
 
-      {/* Portion info (read-only display — portion editing is simplified for mobile) */}
-      <View className="px-3 pb-2 flex-row items-center gap-1">
-        <Text className="font-mono text-[11px] text-muted-foreground">
-          {food.portionAmount}{food.portionUnit}
-        </Text>
-        {food.portionNote ? (
-          <Text className="font-sans text-[11px] text-muted-foreground/60">· {food.portionNote}</Text>
-        ) : null}
-      </View>
+      {/* Porción editable — control primario: cambiarla recalcula los macros */}
+      <PortionEditor food={food} index={index} onPortionChange={onPortionChange} t={t} />
 
-      {/* Macros row — tappable to edit */}
+      {/* Macros row — resultado derivado; tappable como edición secundaria */}
       <View className="px-3 py-2 bg-muted/30 border-t border-border/50 flex-row items-center gap-1 flex-wrap">
         {FOOD_CARD_MACROS.map((macro) => {
           const isEditing = editingMacro?.index === index && editingMacro?.field === macro.field

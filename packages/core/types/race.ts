@@ -39,7 +39,9 @@ export interface RaceParticipant {
   last_lng: number | null
   last_update: string | null
   finished_at: string | null
-  gps_track: Array<RaceGpsPoint> | null
+  // El recorrido NO vive aquí: esta fila la leen todos los corredores de la
+  // carrera y se difunde entera por realtime. Vive en `race_routes`, owner-only
+  // (#316); se lee con `fetchRaceRoute` de `lib/raceRoutes`.
 }
 
 export interface RaceGpsPoint {

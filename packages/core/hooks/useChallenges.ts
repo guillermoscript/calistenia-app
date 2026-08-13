@@ -1,9 +1,17 @@
 import { useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { op } from '../lib/analytics'
+import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
 import { todayStr } from '../lib/dateUtils'
 import { qk } from '../lib/query-keys'
+import {
+  findExistingPresetChallenge,
+  getBeginnerChallengePreset,
+  getPresetDateRange,
+  getPresetDescription,
+  getPresetTitle,
+  type PresetParticipantRecord,
+} from '../lib/challenge-presets'
 import type { Challenge, ChallengeMetric, ChallengeStatus } from '../types'
 
 export interface ChallengeWithMeta extends Challenge {
@@ -28,6 +36,51 @@ interface ChallengesQueryResult {
   past: ChallengeWithMeta[]
   /** IDs de retos que están en estado 'active' pero ya pasaron su ends_at. */
   expiredIds: string[]
+}
+
+export interface PresetJoinResult {
+  challengeId: string
+  alreadyJoined: boolean
+  startsAt: string
+  endsAt: string
+}
+
+async function findUserPresetChallenge(userId: string, presetId: string) {
+  const records = await pb.collection('challenge_participants').getFullList({
+    filter: pb.filter('user = {:uid}', { uid: userId }),
+    expand: 'challenge',
+    $autoCancel: false,
+  })
+  return findExistingPresetChallenge(records as PresetParticipantRecord[], presetId)
+}
+
+async function findOwnedPresetChallenge(userId: string, presetId: string) {
+  try {
+    return await pb.collection('challenges').getFirstListItem(
+      pb.filter('creator = {:uid} && preset_key = {:preset} && status = "active"', { uid: userId, preset: presetId }),
+      { $autoCancel: false },
+    ) as any
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Garantiza la fila de participante. Un create duplicado es benigno (otra
+ * pestaña/dispositivo ganó la carrera), pero solo podemos ignorarlo si la fila
+ * existe de verdad: tragarse el error a ciegas deja al usuario "unido" a un reto
+ * en el que no participa y sin progreso posible.
+ */
+async function ensureParticipant(challengeId: string, userId: string) {
+  try {
+    await pb.collection('challenge_participants').create({ challenge: challengeId, user: userId })
+  } catch (error) {
+    const existing = await pb.collection('challenge_participants').getList(1, 1, {
+      filter: pb.filter('challenge = {:cid} && user = {:uid}', { cid: challengeId, uid: userId }),
+      $autoCancel: false,
+    }).catch(() => null)
+    if (!existing?.totalItems) throw error
+  }
 }
 
 /** queryFn pura: lee participaciones, cuenta participantes y clasifica retos. */
@@ -70,6 +123,7 @@ async function fetchChallenges(userId: string): Promise<ChallengesQueryResult> {
         starts_at: c.starts_at,
         ends_at: c.ends_at,
         status: c.status as ChallengeStatus,
+        preset_key: c.preset_key || undefined,
         participantCount: 0,
       })
     }
@@ -128,7 +182,12 @@ export function useChallenges(userId: string | null) {
         if (cancelled) return
         try {
           await pb.collection('challenges').update(id, { status: 'ended' })
-          op.track('challenge_completed', { challenge_id: id })
+          trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeCompleted, {
+            surface: 'challenge',
+            source: 'challenge_expired',
+            challenge_id: id,
+            result: 'completed',
+          })
         } catch { /* solo el creador puede actualizar; ignorar si no lo es */ }
       }
       if (!cancelled) {
@@ -189,6 +248,97 @@ export function useChallenges(userId: string | null) {
     },
   })
 
+  // ── Mutación: unirse a un preset de principiante ─────────────────────────
+  const joinPresetMutation = useMutation({
+    mutationFn: async (presetId: string): Promise<PresetJoinResult> => {
+      if (!userId) throw new Error('Usuario no autenticado')
+
+      const preset = getBeginnerChallengePreset(presetId)
+      if (!preset || !preset.enabled) throw new Error('Preset no disponible')
+      const dates = getPresetDateRange(preset)
+
+      const existing = await findUserPresetChallenge(userId, preset.id)
+      if (existing) {
+        return {
+          challengeId: existing.id,
+          alreadyJoined: true,
+          startsAt: existing.starts_at || '',
+          endsAt: existing.ends_at || '',
+        }
+      }
+
+      // Repair a challenge created by a previous interrupted request before
+      // creating another record. The participant unique index makes this safe
+      // if another device repaired it first.
+      const owned = await findOwnedPresetChallenge(userId, preset.id)
+      if (owned) {
+        await ensureParticipant(owned.id, userId)
+        return {
+          challengeId: owned.id,
+          alreadyJoined: true,
+          startsAt: owned.starts_at || dates.startsAt,
+          endsAt: owned.ends_at || dates.endsAt,
+        }
+      }
+
+      let challenge: any
+      try {
+        challenge = await pb.collection('challenges').create({
+          creator: userId,
+          title: getPresetTitle(preset),
+          metric: preset.metric,
+          description: getPresetDescription(preset),
+          goal: preset.goal,
+          starts_at: dates.startsAt,
+          ends_at: dates.endsAt,
+          status: 'active',
+          type: 'standard',
+          preset_key: preset.id,
+        })
+      } catch (error) {
+        // A second tap/device can win the unique creator+preset race. Re-read
+        // the participant list and turn that race into an idempotent result.
+        const raced = await findUserPresetChallenge(userId, preset.id) || await findOwnedPresetChallenge(userId, preset.id)
+        if (raced) {
+          await ensureParticipant(raced.id, userId)
+          return {
+            challengeId: raced.id,
+            alreadyJoined: true,
+            startsAt: raced.starts_at || dates.startsAt,
+            endsAt: raced.ends_at || dates.endsAt,
+          }
+        }
+        throw error
+      }
+
+      try {
+        await ensureParticipant(challenge.id, userId)
+      } catch (error) {
+        // Avoid leaving a user-owned orphan when the participant write fails.
+        await pb.collection('challenges').delete(challenge.id).catch(() => {})
+        throw error
+      }
+
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeJoined, {
+        surface: 'challenge_preset_catalog',
+        source: preset.id,
+        challenge_id: challenge.id,
+        participant_count: 1,
+        result: 'joined',
+      })
+
+      return {
+        challengeId: challenge.id,
+        alreadyJoined: false,
+        startsAt: dates.startsAt,
+        endsAt: dates.endsAt,
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.challenges(userId) })
+    },
+  })
+
   // ── API pública (forma idéntica al hook original) ──────────────────────────
   /** Equivale al `load` del hook original; permite refetch manual. */
   const load = useCallback(() => {
@@ -204,11 +354,20 @@ export function useChallenges(userId: string | null) {
     }
   }, [createMutation])
 
+  /**
+   * Propaga el error a propósito: quien llama tiene que poder avisar al usuario.
+   * Devolver null en silencio convertía un fallo de unión en un botón mudo.
+   */
+  const joinPreset = useCallback(async (presetId: string): Promise<PresetJoinResult> => {
+    return await joinPresetMutation.mutateAsync(presetId)
+  }, [joinPresetMutation])
+
   return {
     active,
     past,
     loading: isLoading,
     load,
     createChallenge,
+    joinPreset,
   }
 }

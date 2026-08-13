@@ -71,6 +71,10 @@ export const qk = {
   sessions: (userId: string | null, activeProgramId: string | null) =>
     ['sessions', userId, activeProgramId] as const,
   setsLog: (userId: string | null) => ['sets_log', userId] as const,
+  // Detalle de una sesión de fuerza por id de registro (propia o de otro
+  // usuario, abierta desde el muro / actividad reciente).
+  publicSession: (sessionId: string | null) =>
+    ['public-session', sessionId] as const,
   userSettings: (userId: string | null) => ['user_settings', userId] as const,
   restPreferences: (userId: string | null) =>
     ['restPreferences', userId] as const,
@@ -94,6 +98,8 @@ export const qk = {
     ['challenge-leaderboard', id, currentUserId] as const,
   expressProgress: (challengeId: string) =>
     ['express-progress', challengeId] as const,
+  // Reto destacado en Home (#351): depende del usuario por el estado de participación
+  featuredChallenge: (userId: string | null) => ['featured-challenge', userId] as const,
 
   // — Cuerpo / salud —
   bodyMeasurements: (userId: string | null) =>
@@ -189,11 +195,8 @@ export const qk = {
     wins: (userId: string | null) => ['races', 'wins', userId] as const,
   },
 
-  // — Contenido —
-  blogPosts: (page: number, category: string | null) =>
-    ['blog_posts', page, category] as const,
-  blogPost: (slug: string, locale: string) =>
-    ['blog_post', slug, locale] as const,
+  // Nota: el blog ya no usa React Query — los artículos son ficheros MDX
+  // compilados en el bundle (`apps/web/src/lib/blog-content.ts`).
 
   // — Despensa (pantry, épica #153/#170) —
   pantry: {
@@ -214,5 +217,12 @@ export const qk = {
   // — Recetas guardadas (issue #179) —
   savedRecipes: {
     list: (userId: string | null) => ['savedRecipes', 'list', userId] as const,
+  },
+
+  // — Batallas de circuito (issue #356) —
+  battles: {
+    // La barra flotante de las tabs; se invalida al terminar o salir de una batalla.
+    active: () => ['battle', 'active'] as const,
+    history: (userId: string | null) => ['battle', 'history', userId] as const,
   },
 } as const

@@ -93,7 +93,8 @@ Tracking GPS completo para sesiones de running, caminata y ciclismo con mapa de 
 
 ### Archivos creados
 - `pb_migrations/1774000029_created_cardio_sessions.js` — Colección `cardio_sessions`:
-  - Campos: user (relation), activity_type, gps_points (JSON), distance_km, duration_seconds, avg_pace, elevation_gain, started_at, finished_at, note
+  - Campos: user (relation), activity_type, distance_km, duration_seconds, avg_pace, elevation_gain, started_at, finished_at, note
+  - La ruta GPS vive aparte, en la colección owner-only `cardio_routes` (#299)
   - Auth rules: solo el propio usuario puede CRUD
   - Índice en `user + started_at`
 - `src/lib/geo.ts` — Utilidades geográficas:

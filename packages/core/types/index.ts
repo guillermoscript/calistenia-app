@@ -532,7 +532,19 @@ export interface CardioSession {
 
 // ─── Challenges ──────────────────────────────────────────────────────────────
 
-export type ChallengeMetric = 'most_sessions' | 'most_pullups' | 'most_pushups' | 'longest_streak' | 'most_lsit' | 'most_handstand' | 'exercise' | 'custom'
+export type ChallengeMetric =
+  | 'most_sessions'
+  | 'most_pullups'
+  | 'most_pushups'
+  | 'longest_streak'
+  | 'most_lsit'
+  | 'most_handstand'
+  | 'exercise'
+  | 'custom'
+  /** Acumulativas (#352): totales derivados de registros canónicos en la ventana del reto. */
+  | 'total_workouts'
+  | 'total_exercise'
+  | 'total_distance'
 export type ChallengeStatus = 'active' | 'ended'
 
 export interface Challenge {
@@ -541,16 +553,25 @@ export interface Challenge {
   title: string
   metric: ChallengeMetric
   custom_metric?: string
-  /** Catalog slug when metric === 'exercise' (matches sets_log.exercise_id). */
+  /** Catalog slug when metric === 'exercise' or 'total_exercise' (matches sets_log.exercise_id). */
   exercise_slug?: string
   description?: string
   goal?: number
   starts_at: string
   ends_at: string
   status: ChallengeStatus
+  /** Curado por admin/editor para la card de Home (#351); false por defecto. */
+  is_featured?: boolean
+  /** Stable catalog identity for a beginner preset enrollment. */
+  preset_key?: string
   /** 'express' = reto de referidos: daily_target reps/día durante duration_days. */
   type?: 'standard' | 'express'
-  /** Relation id a exercises_catalog (solo retos express). */
+  /**
+   * Relation id a exercises_catalog. Solo retos express, y solo los ANTIGUOS:
+   * los nuevos identifican el ejercicio por `exercise_slug` como el resto de
+   * retos con metric 'exercise'. Se conserva para poder resolver el slug de los
+   * que ya existen (ver `useChallengeExpress`).
+   */
   exercise_id?: string
   daily_target?: number
   duration_days?: number
@@ -715,6 +736,22 @@ export type {
   RaceParticipant,
   RaceGpsPoint,
 } from './race'
+
+// ─── Collaborative circuit battles ────────────────────────────────────────
+export type {
+  BattleStatus,
+  BattleParticipantStatus,
+  BattleTarget,
+  BattleExerciseTarget,
+  BattleScoringMode,
+  BattleConfiguration,
+  Battle,
+  BattleProgress,
+  BattleParticipant,
+  BattleInvite,
+  BattleScoreInput,
+  BattleScore,
+} from './battle'
 
 // ─── Pantry ─────────────────────────────────────────────────────────────────
 export type {

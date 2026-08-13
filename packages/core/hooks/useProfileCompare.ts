@@ -29,8 +29,13 @@ const EMPTY_STATS: CompareStats = {
  * dos instancias del hook). `load` guarda el userId en estado local, lo que
  * habilita la query — RQ cachea por usuario/semana/mes.
  *
- * Solo consulta colecciones de lectura pública (sessions, settings,
- * sleep_entries, nutrition_entries).
+ * Compara al usuario actual con OTRO, así que las sesiones y la fase salen de
+ * las views `public_sessions` / `public_prs` (#386).
+ *
+ * OJO: `sleep_entries` y `nutrition_entries` son owner-only desde antes de este
+ * cambio, así que `sleepAvgQuality` y `nutritionAdherence` ya salían null para
+ * el perfil ajeno (los `.catch` lo tapan). No es una regresión de #386; queda
+ * anotado aquí para que no se busque la causa en las views.
  */
 export function useProfileCompare() {
   const [userId, setUserId] = useState<string | null>(null)
@@ -62,7 +67,7 @@ export function useProfileCompare() {
       const [weekSessions, monthSessions, settingsRes, sleepRes, nutritionRes] =
         await Promise.all([
           pb
-            .collection('sessions')
+            .collection('public_sessions')
             .getList(1, 1, {
               filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
                 uid: userId!,
@@ -72,7 +77,7 @@ export function useProfileCompare() {
             })
             .catch(() => ({ totalItems: 0 })),
           pb
-            .collection('sessions')
+            .collection('public_sessions')
             .getList(1, 1, {
               filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
                 uid: userId!,
@@ -82,7 +87,7 @@ export function useProfileCompare() {
             })
             .catch(() => ({ totalItems: 0 })),
           pb
-            .collection('settings')
+            .collection('public_prs')
             .getFirstListItem(pb.filter('user = {:uid}', { uid: userId! }), {
               $autoCancel: false,
             })

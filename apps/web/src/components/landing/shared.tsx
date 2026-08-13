@@ -3,9 +3,9 @@
  * Mantienen un mismo lenguaje visual (brutalist-athletic oscuro, acento lima).
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, Check, ChevronRight } from 'lucide-react'
+import { ArrowRight, Check, ChevronRight, Menu, X } from 'lucide-react'
 import { op } from '@calistenia/core/lib/analytics'
 
 export function usePrefersReducedMotion() {
@@ -126,36 +126,93 @@ export function LandingStyles() {
   )
 }
 
-/** Cabecera pública. En la landing el CTA es un botón; en el resto navega a /auth. */
+/**
+ * Cabecera pública. En la landing el CTA es un botón; en el resto navega a /auth.
+ *
+ * Los enlaces van en línea desde `sm`. Por debajo no caben —el logotipo solo ya
+ * ocupa media pantalla en un móvil de 390px— así que se pliegan en un panel
+ * desplegable. Antes se ocultaban sin más: en móvil no había navegación alguna.
+ */
 export function PublicHeader({ onGetStarted }: { onGetStarted?: () => void }) {
   const { t } = useTranslation()
-  return (
-    <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-6 md:px-10">
-      <Link to="/" className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
-        <img src="/logo.png" alt="" className="h-8 w-8 rounded-lg" />
-        <span className="font-bebas text-2xl tracking-[.15em]">CALISTENIA</span>
+  const location = useLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const navLinks = [
+    { to: '/features', label: t('feature.navLink') },
+    { to: '/blog', label: t('blog.title') },
+    { to: '/download', label: t('landing.navDownload') },
+  ]
+
+  // Al navegar, el panel debe cerrarse solo: si no, queda abierto sobre la
+  // página nueva.
+  useEffect(() => { setMenuOpen(false) }, [location.pathname])
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [menuOpen])
+
+  const linkClass = 'text-sm font-semibold text-white/65 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white'
+
+  const webCta = (className: string) =>
+    onGetStarted ? (
+      <button
+        onClick={() => { op.track('cta_clicked', { location: 'header', intent: 'web_start' }); onGetStarted() }}
+        className={className}
+      >
+        {t('landing.webCta')} <ChevronRight className="h-4 w-4" />
+      </button>
+    ) : (
+      <Link
+        to="/auth"
+        onClick={() => op.track('cta_clicked', { location: 'header', intent: 'web_start' })}
+        className={className}
+      >
+        {t('landing.webCta')} <ChevronRight className="h-4 w-4" />
       </Link>
-      <div className="flex items-center gap-6">
-        <Link to="/features" className="hidden text-sm font-semibold text-white/65 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:inline">
-          {t('feature.navLink')}
+    )
+
+  return (
+    <header className="absolute inset-x-0 top-0 z-20 px-6 py-6 md:px-10">
+      <div className="flex items-center justify-between gap-4">
+        <Link to="/" className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+          <img src="/logo.png" alt="" className="h-8 w-8 rounded-lg" />
+          <span className="font-bebas text-2xl tracking-[.15em]">CALISTENIA</span>
         </Link>
-        {onGetStarted ? (
-          <button
-            onClick={() => { op.track('cta_clicked', { location: 'header', intent: 'web_start' }); onGetStarted() }}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/65 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          >
-            {t('landing.webCta')} <ChevronRight className="h-4 w-4" />
-          </button>
-        ) : (
-          <Link
-            to="/auth"
-            onClick={() => op.track('cta_clicked', { location: 'header', intent: 'web_start' })}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/65 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          >
-            {t('landing.webCta')} <ChevronRight className="h-4 w-4" />
-          </Link>
-        )}
+
+        <nav className="hidden items-center gap-6 sm:flex">
+          {navLinks.map(link => (
+            <Link key={link.to} to={link.to} className={linkClass}>{link.label}</Link>
+          ))}
+          {webCta(`inline-flex items-center gap-1.5 ${linkClass}`)}
+        </nav>
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen(open => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="public-nav"
+          aria-label={t('landing.navMenu')}
+          className="-mr-2 grid h-10 w-10 place-items-center text-white/70 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:hidden"
+        >
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
+
+      {menuOpen && (
+        <nav
+          id="public-nav"
+          className="mt-4 grid gap-1 border border-white/10 bg-[hsl(75_6%_6%)] p-2 sm:hidden"
+        >
+          {navLinks.map(link => (
+            <Link key={link.to} to={link.to} className={`px-3 py-2.5 ${linkClass}`}>{link.label}</Link>
+          ))}
+          {webCta(`inline-flex items-center gap-1.5 border-t border-white/10 px-3 py-2.5 text-left ${linkClass}`)}
+        </nav>
+      )}
     </header>
   )
 }
@@ -174,7 +231,9 @@ export function PublicFooter({ featureLinks }: { featureLinks: Array<{ slug: str
           <p className="mt-3 max-w-xs leading-relaxed">{t('landing.footerAbout')}</p>
           <p className="mt-2 max-w-xs leading-relaxed text-white/30">{t('landing.footerBuiltDesc')}</p>
         </div>
-        <div className="grid gap-8 sm:grid-cols-2">
+        {/* Producto y Legal iban mezclados bajo el título "Legal": el índice del
+            sitio quedaba escondido bajo una etiqueta que no le correspondía. */}
+        <div className="grid gap-8 sm:grid-cols-3">
           <div>
             <p className="text-[10px] uppercase tracking-[.2em] text-white/35">{t('feature.footerTitle')}</p>
             <ul className="mt-4 grid gap-2.5">
@@ -186,11 +245,17 @@ export function PublicFooter({ featureLinks }: { featureLinks: Array<{ slug: str
             </ul>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[.2em] text-white/35">{t('landing.footerLinksTitle')}</p>
+            <p className="text-[10px] uppercase tracking-[.2em] text-white/35">{t('landing.footerProductTitle')}</p>
             <ul className="mt-4 grid gap-2.5">
               <li><Link to="/features" className="transition hover:text-white">{t('feature.allFeatures')}</Link></li>
+              <li><Link to="/blog" className="transition hover:text-white">{t('blog.title')}</Link></li>
               <li><Link to="/download" className="transition hover:text-white">{t('landing.androidCta')}</Link></li>
-              <li><Link to="/blog" className="transition hover:text-white">Blog</Link></li>
+              <li><Link to="/auth" className="transition hover:text-white">{t('landing.webCta')}</Link></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[.2em] text-white/35">{t('landing.footerLinksTitle')}</p>
+            <ul className="mt-4 grid gap-2.5">
               <li><Link to="/legal#privacy" className="transition hover:text-white">{t('landing.privacy')}</Link></li>
               <li><Link to="/legal#terms" className="transition hover:text-white">{t('landing.terms')}</Link></li>
             </ul>

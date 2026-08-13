@@ -11,7 +11,7 @@ import { useRef } from 'react'
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
 import { haptics } from '@/lib/haptics'
-import { shareText, shareImage, shareReferralInvite } from '@/lib/share'
+import { MOBILE_SHARE_CARD_CONTEXTS, shareText, shareCardImage, shareReferralInvite } from '@/lib/share'
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import StreakShareCard from '@/components/share/StreakShareCard'
 import {
@@ -92,7 +92,10 @@ export default function StreakMilestone({
       await new Promise((r) => requestAnimationFrame(() => r(null)))
       const uri = await captureRef.current?.capture()
       if (uri) {
-        await shareImage(uri, { message, title: 'Compartir racha' })
+        await shareCardImage(uri, { message, title: 'Compartir racha' }, {
+          ...MOBILE_SHARE_CARD_CONTEXTS.streak,
+          streak_days: milestone,
+        })
       } else {
         await shareText({ message, url: 'https://gym.guille.tech' })
       }

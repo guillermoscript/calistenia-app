@@ -4,6 +4,7 @@ import { pb, getUserAvatarUrl } from '../lib/pocketbase'
 import { utcToLocalDateStr } from '../lib/dateUtils'
 import { WORKOUTS } from '../data/workouts'
 import { qk } from '../lib/query-keys'
+import { NO_PHASE, sessionKeyLabel, sessionKeyParts } from '../lib/session-key'
 
 export interface FeedItem {
   id: string
@@ -16,6 +17,11 @@ export interface FeedItem {
   // workout-only (type==='workout'): keep existing semantics
   workoutKey: string
   workoutTitle: string
+  /**
+   * 1-4 para sesiones de programa. `NO_PHASE` (0) cuando la actividad no tiene
+   * fase: cardio y —desde #376— sesiones libres/manuales. Quien lo pinte debe
+   * ocultar la etiqueta "Fase" en ese caso.
+   */
   phase: number
   note: string
   // cardio-only (type==='cardio'); undefined for workouts
@@ -44,6 +50,7 @@ function cardioTitle(activityType: string): string {
 
 function mapSession(s: any, userMap: Record<string, UserInfo>): FeedItem {
   const workout = WORKOUTS[s.workout_key]
+  const { isFree } = sessionKeyParts(s.workout_key || '')
   return {
     id: s.id,
     type: 'workout',
@@ -55,8 +62,12 @@ function mapSession(s: any, userMap: Record<string, UserInfo>): FeedItem {
     completedAt: (s.completed_at || '').replace(' ', 'T'),
     date: utcToLocalDateStr(s.completed_at || s.created || ''),
     workoutKey: s.workout_key,
-    workoutTitle: workout?.title || s.workout_key,
-    phase: s.phase || 1,
+    // Sin este fallback, una sesión libre aparecería en el feed con su clave
+    // cruda (`free_1783000000`) como título.
+    workoutTitle: workout?.title || sessionKeyLabel(s.workout_key || ''),
+    // `?? 1` y no `|| 1`: el 0 de una sesión libre es un valor legítimo que no
+    // debe degradarse a "Fase 1".
+    phase: isFree ? NO_PHASE : (s.phase ?? 1),
     note: s.note || '',
   }
 }
@@ -74,7 +85,7 @@ function mapCardio(c: any, userMap: Record<string, UserInfo>): FeedItem {
     date: utcToLocalDateStr(completedAt),
     workoutKey: '',
     workoutTitle: cardioTitle(c.activity_type || ''),
-    phase: 0,
+    phase: NO_PHASE,
     note: c.note || '',
     cardio: {
       activityType: c.activity_type || '',
@@ -86,6 +97,11 @@ function mapCardio(c: any, userMap: Record<string, UserInfo>): FeedItem {
 }
 
 /**
+ * Lee de `public_sessions` / `public_cardio_sessions`, no de las tablas base:
+ * desde #386 estas son owner-only y la lectura ajena va por las views, que
+ * exponen solo las columnas del muro (sin frecuencia cardiaca ni calorías del
+ * reloj). Ver pb_migrations/1783500000_public_read_views.js.
+ *
  * Feed de actividad de seguidos. Migrado a paginación por cursor de timestamp
  * para poder unir sessions + cardio_sessions en un feed ordenado cronológicamente.
  *
@@ -147,17 +163,18 @@ export function useActivityFeed(userId: string | null) {
       const sessionsFilter = pageParam
         ? `(${uidFilter}) && (${pb.filter('completed_at < {:c}', { c: pageParam })})`
         : uidFilter
-      const sessionsRes = await pb.collection('sessions').getList(1, PAGE_SIZE, {
+      const sessionsRes = await pb.collection('public_sessions').getList(1, PAGE_SIZE, {
         filter: sessionsFilter,
         sort: '-completed_at',
         $autoCancel: false,
       }).catch(() => ({ items: [] as any[] }))
 
-      // — cardio_sessions (sin gps_points; ordena por finished_at, no existe `created`) —
+      // — cardio (ordena por finished_at, no existe `created`). La ruta ya ni
+      //   siquiera está en el registro: vive en `cardio_routes` (#299). —
       const cardioFilter = pageParam
         ? `(${uidFilter}) && (${pb.filter('finished_at < {:c}', { c: pageParam })})`
         : uidFilter
-      const cardioRes = await pb.collection('cardio_sessions').getList(1, PAGE_SIZE, {
+      const cardioRes = await pb.collection('public_cardio_sessions').getList(1, PAGE_SIZE, {
         filter: cardioFilter,
         sort: '-finished_at',
         $autoCancel: false,

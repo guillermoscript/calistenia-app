@@ -21,8 +21,7 @@ import { useWindowDimensions } from 'react-native'
 
 import { Text } from '@/components/ui/text'
 import { Button } from '@/components/ui/button'
-import { shareImage, shareWorkoutSession } from '@/lib/share'
-import { op } from '@calistenia/core/lib/analytics'
+import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage, shareWorkoutSession } from '@/lib/share'
 import type { Exercise, ExerciseTiming } from '@calistenia/core/types'
 
 import ShareCardCapture, {
@@ -79,9 +78,10 @@ export default function WorkoutShareButton({
         referralCode,
       })
 
-      await shareImage(uri, { message, title: 'Compartir sesión' })
-
-      op.track('share_card_shared', { card_type: 'workout' })
+      await shareCardImage(uri, { message, title: 'Compartir sesión' }, {
+        ...MOBILE_SHARE_CARD_CONTEXTS.workoutHistory,
+        workout_id: workoutKey,
+      })
     } catch {
       // User cancelled the share sheet or capture failed — no-op.
     } finally {

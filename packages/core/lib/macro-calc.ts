@@ -83,12 +83,19 @@ export function migrateLegacyFood(legacy: {
   tags?: string[]
 }): FoodItem {
   const parsed = parsePortionString(legacy.portion || '100g')
-  const unitWeight = UNIT_WEIGHT_GRAMS[parsed.unit]
+  let unitWeight = UNIT_WEIGHT_GRAMS[parsed.unit]
+  let portionAmount = parsed.amount
 
-  // Use portionGrams from AI when available (more reliable than parsing string)
-  const portionAmount = legacy.portionGrams && legacy.portionGrams > 0
-    ? legacy.portionGrams
-    : parsed.amount
+  // portionGrams from the AI is the TOTAL weight of the portion. For weight/volume
+  // units it can replace the parsed amount directly, but for 'unidad' it must become
+  // the per-unit weight — otherwise 55 (grams) ends up as 55 units ("55unidad").
+  if (legacy.portionGrams && legacy.portionGrams > 0) {
+    if (parsed.unit === 'unidad') {
+      if (parsed.amount > 0) unitWeight = legacy.portionGrams / parsed.amount
+    } else {
+      portionAmount = legacy.portionGrams
+    }
+  }
 
   const food: FoodItem = {
     name: legacy.name,
@@ -109,6 +116,24 @@ export function migrateLegacyFood(legacy: {
   }
 
   return normalizeToBase100(food)
+}
+
+/**
+ * Parse a free-typed portion amount ("2,5", "300") into a finite number ≥ 0.
+ */
+export function parsePortionAmountInput(text: string): number {
+  const n = parseFloat(String(text).replace(',', '.'))
+  return Number.isFinite(n) && n >= 0 ? n : 0
+}
+
+/**
+ * Unit weight to apply when the portion unit changes: standard units impose
+ * their own weight; `unidad` keeps the current per-unit weight (100 g fallback).
+ */
+export function resolveUnitWeight(unit: PortionUnit, currentWeight: number): number {
+  if (unit !== 'unidad') return UNIT_WEIGHT_GRAMS[unit]
+  const w = Number(currentWeight)
+  return Number.isFinite(w) && w > 0 ? w : UNIT_WEIGHT_GRAMS.unidad
 }
 
 /**

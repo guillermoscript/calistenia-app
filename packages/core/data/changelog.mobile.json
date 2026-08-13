@@ -1,6 +1,660 @@
 {
-  "generated": "2026-07-20T19:39:36.098Z",
+  "generated": "2026-08-12T15:22:52.986Z",
   "versions": [
+    {
+      "version": "1.8.0",
+      "date": "2026-08-12",
+      "summary": {
+        "es": "Batallas de circuito en tiempo real contra tus amigos, y un repaso a fondo de la privacidad: tus datos de salud dejan de ser visibles para el resto.",
+        "en": "Real-time circuit battles against your friends, plus a thorough privacy pass: your health data is no longer visible to anyone else."
+      },
+      "highlights": [
+        {
+          "icon": "⚔️",
+          "type": "feat",
+          "title": {
+            "es": "Batallas de circuito",
+            "en": "Circuit battles"
+          },
+          "body": {
+            "es": "Reta a tus amigos a un circuito y competid a la vez, viendo en directo por dónde va cada uno. Con barra flotante mientras dura, aviso cuando alguien se une o cuando empieza, descanso entre ejercicios y un historial con la comparación cara a cara en Progreso.",
+            "en": "Challenge your friends to a circuit and race them live, seeing where everyone is in real time. Floating bar while it runs, alerts when someone joins or it starts, rest between exercises, and a history with head-to-head comparison in Progress."
+          }
+        },
+        {
+          "icon": "🔒",
+          "type": "feat",
+          "title": {
+            "es": "Tus datos de salud, solo tuyos",
+            "en": "Your health data stays yours"
+          },
+          "body": {
+            "es": "La frecuencia cardiaca y las calorías que mide tu reloj, tus objetivos de agua y entrenamiento semanal y tus registros de comida y peso ya no son visibles para otras personas. El muro y el ranking siguen igual: solo se comparte lo que se ve en pantalla.",
+            "en": "The heart rate and calories your watch measures, your water and weekly training goals, and your food and weight logs are no longer visible to other people. The wall and the ranking work exactly as before: only what you see on screen is shared."
+          }
+        },
+        {
+          "icon": "🚫",
+          "type": "feat",
+          "title": {
+            "es": "Bloquear ahora bloquea de verdad",
+            "en": "Blocking now really blocks"
+          },
+          "body": {
+            "es": "Al bloquear a alguien, esa persona deja de ver tu perfil, tus entrenamientos y tu ubicación en una carrera, y deja de llegarte cualquier notificación suya. Antes solo se le impedía interactuar.",
+            "en": "When you block someone, they can no longer see your profile, your workouts or your live position in a race, and none of their notifications reach you. Before, they were only stopped from interacting."
+          }
+        },
+        {
+          "icon": "🏆",
+          "type": "feat",
+          "title": {
+            "es": "Retos más fáciles de empezar",
+            "en": "Easier challenges to start"
+          },
+          "body": {
+            "es": "Retos preparados para empezar de cero con un toque, puntuación acumulativa que suma todo lo que haces durante el reto, y un reto destacado en la pantalla de inicio.",
+            "en": "Ready-made challenges you can join from zero with one tap, cumulative scoring that adds up everything you do during the challenge, and a featured challenge on the home screen."
+          }
+        },
+        {
+          "icon": "🏋️",
+          "type": "feat",
+          "title": {
+            "es": "Sesiones libres",
+            "en": "Free sessions"
+          },
+          "body": {
+            "es": "Entrena sin seguir un programa: monta la sesión sobre la marcha y queda registrada igual que el resto, en tu historial y en tu calendario.",
+            "en": "Train without following a program: build the session as you go and it gets logged like any other, in your history and your calendar."
+          }
+        },
+        {
+          "icon": "🔍",
+          "type": "fix",
+          "title": {
+            "es": "El buscador de amigos ya funciona",
+            "en": "Friend search works now"
+          },
+          "body": {
+            "es": "Buscar a alguien por su nombre en la app no devolvía nada nunca, por un error de la propia búsqueda. Ya encuentra.",
+            "en": "Searching for someone by name never returned anything, because of a bug in the search itself. It finds people now."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Serve cross-user reads from field-scoped public views",
+              "scope": "#386",
+              "breaking": false,
+              "hash": "da0cf06"
+            },
+            {
+              "description": "Battle history and head-to-head comparison in Progress",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "a1c84ee"
+            },
+            {
+              "description": "Show what each opponent is doing in the live standings",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "576f34d"
+            },
+            {
+              "description": "Notify the creator when someone joins and everyone when it starts",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "ae081dc"
+            },
+            {
+              "description": "Show a floating bar while a battle is in progress",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "446a7aa"
+            },
+            {
+              "description": "Rest between exercises, as the circuits already specify",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "6dace68"
+            },
+            {
+              "description": "Server-authoritative battle API and mobile circuit battle MVP",
+              "scope": "#356",
+              "breaking": false,
+              "hash": "03a920f"
+            },
+            {
+              "description": "Reto comunitario destacado en Home (web + móvil) (#373)",
+              "scope": "#351",
+              "breaking": false,
+              "hash": "a382ada"
+            },
+            {
+              "description": "Add cumulative scoring metrics (#352) (#374)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "1eb2523"
+            },
+            {
+              "description": "Beginner challenge presets and one-tap join (#370)",
+              "scope": "#350",
+              "breaking": false,
+              "hash": "53b8901"
+            },
+            {
+              "description": "Define collaborative circuit battle contract (#372)",
+              "scope": "#355",
+              "breaking": false,
+              "hash": "f40f1dc"
+            },
+            {
+              "description": "Track share-card outcomes (#349) (#368)",
+              "scope": "analytics",
+              "breaking": false,
+              "hash": "97beacc"
+            },
+            {
+              "description": "Add mobile third-workout referral prompt (#369)",
+              "scope": "#348",
+              "breaking": false,
+              "hash": "3c31c9d"
+            },
+            {
+              "description": "Panel de acciones post-entreno en web y móvil (#347) (#367)",
+              "scope": "growth",
+              "breaking": false,
+              "hash": "df3136d"
+            },
+            {
+              "description": "Define canonical growth events (#346) (#358)",
+              "scope": "analytics",
+              "breaking": false,
+              "hash": "31a9de4"
+            },
+            {
+              "description": "Blog en MDX, rediseño con el lenguaje de la landing y navegación pública (#343)",
+              "scope": "blog",
+              "breaking": false,
+              "hash": "8276b26"
+            },
+            {
+              "description": "Abrir el detalle de una sesión ajena desde el muro y la actividad reciente (#342)",
+              "scope": "social",
+              "breaking": false,
+              "hash": "401a38a"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Buscar usuarios por un campo que existe (#408)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "c96cedd"
+            },
+            {
+              "description": "A blocked user can no longer read anything from the blocker",
+              "scope": "#386",
+              "breaking": false,
+              "hash": "d01caf1"
+            },
+            {
+              "description": "Enforce block filter on settings and sets_log reads",
+              "scope": "#386",
+              "breaking": false,
+              "hash": "8f2117c"
+            },
+            {
+              "description": "Reject finish while the countdown is still running",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "603a45f"
+            },
+            {
+              "description": "Show a waiting state when your circuit ends before the battle does",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "2447739"
+            },
+            {
+              "description": "Recover from a lost connection instead of hanging on \"Cargando…\"",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "fdfdeea"
+            },
+            {
+              "description": "Unlock the live controls when the countdown lapses",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "489780d"
+            },
+            {
+              "description": "Decide the floating bar on my seat, not the battle status",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "e6a2b1e"
+            },
+            {
+              "description": "Stop showing raw error text on the invite screen",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "2b17f1b"
+            },
+            {
+              "description": "Rank equal scores by who finished first",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "989ec16"
+            },
+            {
+              "description": "Sort the active-battle lookup by a field that exists",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "4c13be2"
+            },
+            {
+              "description": "Stop promising offline buffering a battle does not do",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "eaa7679"
+            },
+            {
+              "description": "Give the user a way back into a battle after an app kill",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "a6cb4a7"
+            },
+            {
+              "description": "Say \"1 participante\", not \"1 participantes\"",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "1ca69bb"
+            },
+            {
+              "description": "Stop the expiry sweep from killing fresh lobbies",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "8919568"
+            },
+            {
+              "description": "Translate the challenges screens and unify on \"reto\" (#375) (#378)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "838ef51"
+            },
+            {
+              "description": "Log when the expiry sweep hits its batch cap",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "ee6d5e7"
+            },
+            {
+              "description": "Guardar las sesiones libres en PocketBase (#377)",
+              "scope": "#376",
+              "breaking": false,
+              "hash": "8377f03"
+            },
+            {
+              "description": "Enviar los recordatorios en la hora local del usuario (#344)",
+              "scope": "reminders",
+              "breaking": false,
+              "hash": "5797f3d"
+            }
+          ]
+        },
+        {
+          "label": "Mejoras internas",
+          "emoji": "♻️",
+          "type": "refactor",
+          "items": [
+            {
+              "description": "Use requestKey instead of the deprecated $autoCancel",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "2a88474"
+            },
+            {
+              "description": "Move GPS races off the battle_* event names",
+              "scope": "analytics",
+              "breaking": true,
+              "hash": "0ef11bc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.7.1",
+      "date": "2026-08-07",
+      "summary": {
+        "es": "Arregla la 1.7.0: la app se veía completamente descolocada, sin estilos ni fuentes. Ya se muestra como debe.",
+        "en": "Fixes 1.7.0: the app rendered completely broken, with no styles or fonts. It now looks the way it should."
+      },
+      "highlights": [
+        {
+          "icon": "🩹",
+          "type": "fix",
+          "title": {
+            "es": "La app vuelve a verse bien",
+            "en": "The app looks right again"
+          },
+          "body": {
+            "es": "Si al actualizar a la 1.7.0 viste la app descolocada, con el texto pegado al borde y sin fuentes, ya está resuelto. No tienes que hacer nada: tus datos y tu sesión siguen intactos.",
+            "en": "If the app looked broken after updating to 1.7.0 — text stuck to the edge, no fonts — it is fixed now. Nothing for you to do: your data and session are untouched."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Deduplicar react-native-css-interop (v1.7.0 salía sin estilos)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "15ef4fa"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.7.0",
+      "date": "2026-08-05",
+      "summary": {
+        "es": "Edita la porción de cada alimento y las macros se recalculan solas, sugerencia IA más discreta, baja de cuenta desde la app y más privacidad en tus rutas de cardio.",
+        "en": "Edit each food portion and macros recalculate automatically, a tidier AI suggestion, in-app account deletion, and more privacy for your cardio routes."
+      },
+      "highlights": [
+        {
+          "icon": "⚖️",
+          "type": "feat",
+          "title": {
+            "es": "Porción editable",
+            "en": "Editable portion"
+          },
+          "body": {
+            "es": "Ajusta la cantidad de cada alimento directamente en su card y las calorías y macros se recalculan al instante.",
+            "en": "Adjust each food amount right on its card and calories and macros recalculate instantly."
+          }
+        },
+        {
+          "icon": "💡",
+          "type": "feat",
+          "title": {
+            "es": "Sugerencia IA plegable",
+            "en": "Collapsible AI suggestion"
+          },
+          "body": {
+            "es": "La sugerencia del coach al registrar una comida ahora aparece plegada: ábrela solo cuando te interese.",
+            "en": "The coach suggestion when logging a meal now starts collapsed: open it only when you want it."
+          }
+        },
+        {
+          "icon": "👋",
+          "type": "feat",
+          "title": {
+            "es": "Baja de cuenta",
+            "en": "Account deletion"
+          },
+          "body": {
+            "es": "Elimina tu cuenta y todos tus datos directamente desde la app, sin pasos externos.",
+            "en": "Delete your account and all your data right from the app, no external steps."
+          }
+        },
+        {
+          "icon": "🔔",
+          "type": "fix",
+          "title": {
+            "es": "Aviso de reto terminado",
+            "en": "Challenge-ended alert"
+          },
+          "body": {
+            "es": "La notificación de reto terminado ahora llega en el momento correcto, cuando el reto acaba de verdad.",
+            "en": "The challenge-ended notification now arrives at the right moment, when the challenge actually ends."
+          }
+        },
+        {
+          "icon": "🔒",
+          "type": "fix",
+          "title": {
+            "es": "Rutas de cardio privadas",
+            "en": "Private cardio routes"
+          },
+          "body": {
+            "es": "Tus rutas GPS de cardio ahora solo son visibles para ti: nadie más puede consultarlas.",
+            "en": "Your cardio GPS routes are now visible only to you: no one else can look them up."
+          }
+        },
+        {
+          "icon": "🧹",
+          "type": "fix",
+          "title": {
+            "es": "Análisis de comida más limpio",
+            "en": "Cleaner meal analysis"
+          },
+          "body": {
+            "es": "Los textos del análisis de fotos de comida ya no muestran citas ni URLs extrañas de la búsqueda web.",
+            "en": "Meal photo analysis texts no longer show odd citations or URLs from web search."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Porción editable en la card de alimento con recálculo automático de macros (#335) (#339)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "8454aed"
+            },
+            {
+              "description": "Colapsar la sugerencia IA tras un disclosure cerrado por defecto (#337) (#341)",
+              "scope": "nutrition",
+              "breaking": false,
+              "hash": "325a2be"
+            },
+            {
+              "description": "Baja de cuenta autoservicio en web y Android (#300) (#315)",
+              "scope": "account",
+              "breaking": false,
+              "hash": "dbfa791"
+            },
+            {
+              "description": "Página propia de /features/challenges, reencuadrada como meta con fecha (#311)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "6d0bbef"
+            },
+            {
+              "description": "Activar el session replay de OpenPanel, enmascarado por defecto (#310)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "00c7c36"
+            },
+            {
+              "description": "Página propia de /features/circuits con demo del cronómetro (#309)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "69d5e6e"
+            },
+            {
+              "description": "Página propia de /features/offline (closes #288) (#303)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "ee786d2"
+            },
+            {
+              "description": "Página propia de /features/comunidad (closes #287) (#297)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "444c728"
+            },
+            {
+              "description": "Página propia de /features/progress (closes #282) (#296)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "06ec278"
+            },
+            {
+              "description": "Página propia de /features/nutrition (closes #281) (#293)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "48d3170"
+            },
+            {
+              "description": "Página propia de /features/races (closes #285) (#292)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "46ee716"
+            },
+            {
+              "description": "PLANIFICAR con dos ejes, un presupuesto y un CTA",
+              "scope": "web",
+              "breaking": false,
+              "hash": "1103578"
+            },
+            {
+              "description": "Primitivo Kicker y JetBrains Mono en la config de tailwind",
+              "scope": "web",
+              "breaking": false,
+              "hash": "ef869fc"
+            },
+            {
+              "description": "Página propia de /features/training (closes #280) (#291)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "9513b09"
+            },
+            {
+              "description": "Página propia de /features/cardio (closes #283) (#290)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "aeaac3b"
+            },
+            {
+              "description": "Modelo y lógica pura de PLANIFICAR (meal_day_plans + spec)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "82a5349"
+            },
+            {
+              "description": "Recetas con ingredientes en el plan libre + budget_kind explícito",
+              "scope": "mcp",
+              "breaking": false,
+              "hash": "007a7a6"
+            },
+            {
+              "description": "Páginas públicas /features con plantilla compartida (#279)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "892ba39"
+            },
+            {
+              "description": "Upgrade a Vite 8 (Rolldown) con strictExecutionOrder",
+              "scope": "web",
+              "breaking": false,
+              "hash": "9855ede"
+            },
+            {
+              "description": "% grasa corporal método Navy + medidas corporales en mobile (#227)",
+              "scope": null,
+              "breaking": false,
+              "hash": "fe8b2c0"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Sanitizar citas/URLs de web_search en portionNote y demás textos del meal-analyzer (#336) (#340)",
+              "scope": "ai",
+              "breaking": false,
+              "hash": "2728a7a"
+            },
+            {
+              "description": "No pisar portionAmount con portionGrams cuando la unidad es 'unidad' (#334) (#338)",
+              "scope": "core",
+              "breaking": false,
+              "hash": "18383b3"
+            },
+            {
+              "description": "Disparar la notificación de reto terminado con 'ended', no 'completed' (#312) (#331)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "eecfeeb"
+            },
+            {
+              "description": "Sacar la ruta GPS de cardio a una colección owner-only (#299) (#314)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "158e012"
+            },
+            {
+              "description": "El smoke e2e desactiva el InstallPrompt antes de que arranque la app (#305)",
+              "scope": "web",
+              "breaking": false,
+              "hash": "8f4502e"
+            },
+            {
+              "description": "Ocultar el FAB de registro en PLANIFICAR",
+              "scope": "web",
+              "breaking": false,
+              "hash": "198b59e"
+            },
+            {
+              "description": "La card de cambio de objetivo solo en HOY",
+              "scope": "web",
+              "breaking": false,
+              "hash": "4a4434f"
+            },
+            {
+              "description": "Eliminar challenge_invite, código muerto inalcanzable (closes #261)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "4cecfd1"
+            },
+            {
+              "description": "Racha que cruza varios milestones notifica el mayor (closes #260)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "2d9be8f"
+            },
+            {
+              "description": "Hooks que fallaban en silencio en produccion (4 bugs)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "82c12db"
+            },
+            {
+              "description": "Detectar sesión fantasma cuando el server invalida el token (#254)",
+              "scope": "auth",
+              "breaking": false,
+              "hash": "c586880"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.6.0",
       "date": "2026-07-20",

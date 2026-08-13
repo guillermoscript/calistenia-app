@@ -20,6 +20,7 @@ import SleepDashboardWidget from '../components/sleep/SleepDashboardWidget'
 import type { SleepLastEntry } from '../components/sleep/SleepDashboardWidget'
 import LeaderboardWidget from '../components/friends/LeaderboardWidget'
 import ActivityFeedWidget from '../components/friends/ActivityFeedWidget'
+import FeaturedChallengeCard from '../components/FeaturedChallengeCard'
 import PhasePhotoBanner from '../components/progress/PhasePhotoBanner'
 import InsightsCard from '../components/insights/InsightsCard'
 import InsightsHistory from '../components/insights/InsightsHistory'
@@ -441,6 +442,11 @@ export default function DashboardPage({
         </div>
       </div>
 
+      {/* ═══ RETO DESTACADO ══════════════════════════════════════════════════ */}
+      <div className="mb-6">
+        <FeaturedChallengeCard userId={userId ?? null} onNavigate={navigate} />
+      </div>
+
       {/* ═══ TODAY'S SNAPSHOT ═════════════════════════════════════════════════ */}
       <div className={cn('grid grid-cols-1 gap-4 mb-6', 'sm:grid-cols-2 lg:grid-cols-3')}>
         {onGoToNutrition && (
@@ -519,6 +525,10 @@ export default function DashboardPage({
             <ActivityFeedWidget
               items={feedItems}
               onNavigate={() => navigate('/feed')}
+              onOpenSession={(item) => navigate(
+                item.type === 'cardio' ? `/cardio/session/${item.id}` : `/s/${item.id}`,
+              )}
+              onOpenUser={(uid) => navigate(`/u/${uid}`)}
             />
           )}
         </div>

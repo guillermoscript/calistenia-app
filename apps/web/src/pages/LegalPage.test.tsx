@@ -57,19 +57,39 @@ describe('LegalPage · privacidad', () => {
     expect(fila).toHaveTextContent(/Cualquier persona con una cuenta, no solo quienes te siguen/)
   })
 
-  it('avisa de que el bloqueo no oculta series, marcas ni carreras', () => {
+  // Desde la pila de #386 (1783400000/1783400001) el bloqueo SÍ oculta series,
+  // marcas y participaciones en carreras. La tabla decía lo contrario.
+  it('dice que el bloqueo oculta series, marcas y carreras', () => {
     renderPage()
     const tabla = visibilityTable()
     expect(within(tabla).getByRole('row', { name: /Series, repeticiones y marcas/ }))
-      .toHaveTextContent(/El bloqueo no las oculta/)
+      .toHaveTextContent(/Se ocultan a quien hayas bloqueado/)
     expect(within(tabla).getByRole('row', { name: /Participaciones en carreras/ }))
-      .toHaveTextContent(/El bloqueo no las oculta/)
+      .toHaveTextContent(/Se ocultan a quien hayas bloqueado/)
   })
 
-  it('publica la limitacion de las rutas GPS en vez de omitirla', () => {
+  // #316 cerró el último agujero de rutas GPS: `gps_track` salió de
+  // `race_participants` a `race_routes`, owner-only. La página ya no anuncia
+  // una limitación vigente, pero SÍ tiene que seguir contando que existió.
+  it('ya no anuncia la limitacion de las rutas GPS de carreras como vigente', () => {
     renderPage()
-    expect(screen.getByRole('heading', { name: /Rutas GPS: limitación conocida/ })).toBeInTheDocument()
-    expect(screen.getByText(/el servidor no impide leerla/)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /limitación conocida/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Dónde se guardan tus recorridos GPS/ })).toBeInTheDocument()
+  })
+
+  it('cuenta que el recorrido de carreras estuvo expuesto hasta el 12 de agosto de 2026', () => {
+    renderPage()
+    expect(screen.getByText(/hasta el 12 de agosto de 2026 en el de las carreras/)).toBeInTheDocument()
+    expect(screen.getByText(/el servidor tampoco lo impedía/)).toBeInTheDocument()
+  })
+
+  it('deja claro que las rutas de cardio y de carreras ya solo las ve su dueño', () => {
+    renderPage()
+    const tabla = visibilityTable()
+    expect(within(tabla).getByRole('row', { name: /La ruta GPS de tus sesiones de cardio/ }))
+      .toHaveTextContent(/Solo tú/)
+    expect(within(tabla).getByRole('row', { name: /El recorrido GPS de tus carreras/ }))
+      .toHaveTextContent(/Solo tú/)
   })
 
   it('explica que las fotos se sirven por una direccion no adivinable', () => {
@@ -136,6 +156,6 @@ describe('LegalPage · frases retiradas', () => {
 
   it('ambas secciones llevan la misma fecha de actualizacion', () => {
     renderPage()
-    expect(screen.getAllByText(/Última actualización: 31 de julio de 2026/)).toHaveLength(2)
+    expect(screen.getAllByText(/Última actualización: 12 de agosto de 2026/)).toHaveLength(2)
   })
 })

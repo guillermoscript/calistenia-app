@@ -39,14 +39,15 @@ import type { Exercise, Workout, ExerciseLog, SetData, ExerciseTiming, ExerciseT
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { getCelebrationTagline } from '@calistenia/core/lib/celebration'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
+import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import Confetti from '@/components/Confetti'
 import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { useAuthUser } from '@/lib/use-auth-user'
-import { shareImage, shareWorkoutSession } from '@/lib/share'
+import { MOBILE_SHARE_CARD_CONTEXTS, shareCardImage, shareWorkoutSession } from '@/lib/share'
 import WorkoutShareCard from '@/components/share/WorkoutShareCard'
 import ShareCardCapture, { type ShareCardCaptureHandle } from '@/components/share/ShareCardCapture'
 import PRCelebration from '@/components/share/PRCelebration'
-import { RepeatTrainingButton } from '@/components/RepeatTrainingButton'
+import { PostWorkoutActions } from '@/components/session/PostWorkoutActions'
 import { buildSteps, computeExerciseBoundaries, findCurrentExerciseIndex, nextPhaseAfterSet, type Step } from '@/lib/session-machine'
 import { LIME, MUTED } from '@/components/session/constants'
 import { RestScreen } from '@/components/session/RestScreen'
@@ -500,15 +501,17 @@ function TimingBar({ name, pct, seconds, isMax, delay, animate }: {
   )
 }
 
-function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, onDone, onRepeat }: {
+function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises, workoutKey, timings, totalSessions, onDone, onRepeat, onNavigateAway }: {
   workoutTitle: string
   totalSetsLogged: number
   durationMin: number
   exercises: Exercise[]
   workoutKey: string
   timings: ExerciseTiming[]
+  totalSessions: number
   onDone: () => void
   onRepeat?: () => void
+  onNavigateAway: (path: string) => void
 }) {
   const { t } = useTranslation()
   const reduced = useReducedMotion()
@@ -525,6 +528,16 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
   const captureRef = useRef<ShareCardCaptureHandle>(null)
   const today = useRef<string>(new Date().toISOString().slice(0, 10)).current
   const [sharing, setSharing] = useState(false)
+  const exerciseIds = useMemo(() => exercises.map(e => e.id), [exercises])
+
+  useEffect(() => {
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.postWorkoutActionViewed, {
+      surface: 'post_workout',
+      source: 'workout_completion',
+      workout_id: workoutKey,
+      result: 'viewed',
+    })
+  }, [workoutKey])
 
   const userName = (user?.display_name as string) || (user?.name as string) || 'Atleta'
   const avatarUrl = user ? getUserAvatarUrl(user, '200x200') : null
@@ -552,7 +565,10 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           workoutKey,
           referralCode,
         })
-        await shareImage(uri, { message, title: 'Compartir sesión' })
+        await shareCardImage(uri, { message, title: 'Compartir sesión' }, {
+          ...MOBILE_SHARE_CARD_CONTEXTS.workoutCompletion,
+          workout_id: workoutKey,
+        })
       }
     } catch {
       // User cancelled the share sheet or capture failed — no-op.
@@ -614,23 +630,6 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
         </Animated.View>
       )}
 
-      <Animated.View entering={reduced ? undefined : FadeInDown.delay(540).duration(450)} className="w-full max-w-[280px] gap-2.5">
-        <Button size="lg" className="w-full bg-lime active:bg-lime/90" onPress={() => { haptic.medium(); onDone() }}>
-          <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
-        </Button>
-        <Button variant="outline" size="lg" className="w-full" disabled={sharing} onPress={handleShare}>
-          <Text className="font-bebas text-lg tracking-[2px] text-foreground">{sharing ? 'GENERANDO…' : 'COMPARTIR'}</Text>
-        </Button>
-        {onRepeat && <RepeatTrainingButton tone="outline" onPress={onRepeat} />}
-      </Animated.View>
-
-      <Animated.Text
-        entering={reduced ? undefined : FadeIn.delay(800).duration(400)}
-        className="font-mono text-[11px] tracking-wide text-muted-foreground/50"
-      >
-        o toca en cualquier lugar
-      </Animated.Text>
-
       {/* Off-screen share card (captured to PNG on demand). Sized to the device
           screen for a full-bleed story image. */}
       <ShareCardCapture ref={captureRef} width={screenW} height={screenH}>
@@ -649,6 +648,36 @@ function CelebrateScreen({ workoutTitle, totalSetsLogged, durationMin, exercises
           height={screenH}
         />
       </ShareCardCapture>
+    </Pressable>
+
+    {/* Fuera del Pressable de arriba: sus pulsaciones no deben cerrar la
+        celebración. */}
+    <PostWorkoutActions
+      workoutKey={workoutKey}
+      userId={user?.id}
+      exerciseIds={exerciseIds}
+      referralCode={referralCode}
+      userName={userName}
+      totalSessions={totalSessions}
+      sharing={sharing}
+      onShare={handleShare}
+      onRepeat={onRepeat}
+      onNavigateAway={onNavigateAway}
+    />
+
+    <Pressable onPress={onDone} className="items-center gap-2.5 pt-7">
+      <Animated.View entering={reduced ? undefined : FadeInDown.delay(720).duration(450)} className="w-full max-w-[280px]">
+        <Button size="lg" className="w-full bg-lime active:bg-lime/90" onPress={() => { haptic.medium(); onDone() }}>
+          <Text className="font-bebas text-xl tracking-[2px] text-lime-foreground">{t('nav.dashboard').toUpperCase()}</Text>
+        </Button>
+      </Animated.View>
+
+      <Animated.Text
+        entering={reduced ? undefined : FadeIn.delay(800).duration(400)}
+        className="font-mono text-[11px] tracking-wide text-muted-foreground/50"
+      >
+        o toca en cualquier lugar
+      </Animated.Text>
     </Pressable>
       </ScrollView>
     </View>
@@ -673,6 +702,8 @@ interface SessionViewProps {
   onMarkDone: (workoutKey: string, note: string, timing?: { durationSeconds?: number; exerciseTimings?: ExerciseTiming[] }) => void
   onGoToDashboard: () => void
   onRepeat?: () => void
+  /** Cierra la sesión activa y navega a una ruta del panel post-entreno. */
+  onNavigateAway: (path: string) => void
   onExitSession: () => void
   onBack: () => void
   getExerciseLogs: (exerciseId: string) => ExerciseLog[]
@@ -681,6 +712,7 @@ interface SessionViewProps {
   initialProgress?: SessionProgress
   onProgressChange?: (update: Partial<SessionProgress>) => void
   startedAt?: number
+  totalSessions: number
   onSkipWarmup?: () => void
   onSkipCooldown?: () => void
   onSectionStartTimeChange?: (time: number | null) => void
@@ -693,6 +725,7 @@ export default function SessionView({
   onMarkDone,
   onGoToDashboard,
   onRepeat,
+  onNavigateAway,
   onExitSession,
   onBack,
   getExerciseLogs,
@@ -701,6 +734,7 @@ export default function SessionView({
   initialProgress,
   onProgressChange,
   startedAt,
+  totalSessions,
   onSkipWarmup,
   onSkipCooldown,
   onSectionStartTimeChange,
@@ -1071,8 +1105,10 @@ export default function SessionView({
           exercises={workout.exercises}
           workoutKey={workoutKey}
           timings={finalTimings ?? []}
+          totalSessions={totalSessions}
           onDone={onGoToDashboard}
           onRepeat={onRepeat}
+          onNavigateAway={onNavigateAway}
         />
       )}
 
@@ -1083,6 +1119,7 @@ export default function SessionView({
           userName={(sessionUser?.display_name as string) || (sessionUser?.name as string) || 'Atleta'}
           avatarUrl={sessionUser ? getUserAvatarUrl(sessionUser, '200x200') : null}
           referralCode={(sessionUser?.referral_code as string) || null}
+          workoutId={workoutKey}
           onDismiss={() => setPrCelebration(null)}
         />
       )}

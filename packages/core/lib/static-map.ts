@@ -202,3 +202,72 @@ export const ROUTE_COLOR: Record<string, string> = {
   walking: '#f59e0b',
   cycling: '#0ea5e9',
 }
+
+export interface FitRoutePathOpts {
+  /** inner padding (px) kept clear of the route on every side. Default 16. */
+  padding?: number
+}
+
+/**
+ * Fit a route into a `width`×`height` box as bare pixel coordinates, with NO
+ * tiles behind it — the "route glyph" used by share cards that draw the shape
+ * of the run rather than a map of where it happened.
+ *
+ * Differs from `fitViewport` in one thing that matters: the scale is
+ * CONTINUOUS, not snapped to integer tile zooms. `fitViewport` has to snap
+ * because raster tiles only exist at integer zooms, and the price is up to
+ * ~50% of the box wasted — invisible on a full-bleed hero, glaring in a small
+ * panel. Without tiles there is nothing to snap to, so the route fills its box.
+ *
+ * Aspect ratio is preserved (one scale for both axes) and the result is
+ * centered: a route is a shape, and stretching it to fill would lie about it.
+ *
+ * Returns pixel coordinates relative to the box's own origin (0,0) — the
+ * caller translates. Null when there is nothing to draw. A degenerate route
+ * (every point identical, or a single point) yields points at the exact center
+ * rather than a division by zero.
+ */
+export function fitRoutePath(
+  points: Pick<GpsPoint, 'lat' | 'lng'>[],
+  width: number,
+  height: number,
+  opts: FitRoutePathOpts = {},
+): { x: number; y: number }[] | null {
+  if (!points?.length) return null
+
+  const padding = opts.padding ?? 16
+  const availW = Math.max(1, width - padding * 2)
+  const availH = Math.max(1, height - padding * 2)
+
+  const projected = points.map((p) => projectNormalized(p.lat, p.lng))
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const p of projected) {
+    if (p.x < minX) minX = p.x
+    if (p.x > maxX) maxX = p.x
+    if (p.y < minY) minY = p.y
+    if (p.y > maxY) maxY = p.y
+  }
+  if (!isFinite(minX) || !isFinite(minY)) return null
+
+  const spanX = maxX - minX
+  const spanY = maxY - minY
+
+  // Ruta degenerada (un punto, o todos iguales): centrar en vez de dividir por 0.
+  if (spanX < 1e-12 && spanY < 1e-12) {
+    return projected.map(() => ({ x: width / 2, y: height / 2 }))
+  }
+
+  const scale = Math.min(
+    spanX > 0 ? availW / spanX : Infinity,
+    spanY > 0 ? availH / spanY : Infinity,
+  )
+  const drawnW = spanX * scale
+  const drawnH = spanY * scale
+  const offsetX = (width - drawnW) / 2
+  const offsetY = (height - drawnH) / 2
+
+  return projected.map((p) => ({
+    x: offsetX + (p.x - minX) * scale,
+    y: offsetY + (p.y - minY) * scale,
+  }))
+}

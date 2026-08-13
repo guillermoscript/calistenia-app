@@ -40,6 +40,9 @@ export const USER_SCOPED_STORAGE_KEYS: readonly string[] = [
   'calistenia_exercise_favorites',
   // useHealthSync — last successful health-hub (Health Connect/HealthKit) sync, per data type
   'calistenia_health_last_sync',
+  // battleInviteHandoff — token de invitación pendiente. Es una credencial de un solo
+  // uso para una plaza: no puede sobrevivir a un cambio de cuenta.
+  'calistenia_battle_invite_token',
   // React Query persister (caché serializado offline)
   'calistenia_rq_cache',
 ]

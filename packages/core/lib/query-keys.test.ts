@@ -159,7 +159,7 @@ describe('qk — unicidad de prefijos raíz entre dominios', () => {
       qk.mealTemplates('u')[0], qk.freeSessionTemplates('u')[0],
       qk.mealReminders('u')[0], qk.weeklyMealPlan.active('u')[0],
       qk.mealDayPlans.all[0],
-      qk.races.discover({})[0], qk.blogPosts(1, null)[0], qk.blogPost('s', 'es')[0],
+      qk.races.discover({})[0],
       qk.pantry.list('u')[0], qk.shopping.active('u')[0], qk.savedRecipes.list('u')[0],
     ]
     const unique = new Set(prefixes)

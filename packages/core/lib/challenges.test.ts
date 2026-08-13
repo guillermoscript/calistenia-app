@@ -20,6 +20,12 @@ describe('getMetricUnit', () => {
     expect(getMetricUnit('most_pullups')).toBe('reps')
     expect(getMetricUnit('most_lsit')).toBe('s')
   })
+
+  it('scores cumulative metrics (#352)', () => {
+    expect(getMetricUnit('total_distance')).toBe('km')
+    expect(getMetricUnit('total_workouts')).toBe('')
+    expect(getMetricUnit('total_exercise', 'pushup_std')).toBe('reps')
+  })
 })
 
 describe('getMetricLabel (exercise)', () => {

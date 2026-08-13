@@ -161,6 +161,14 @@ import('@calistenia/core/lib/pocketbase').then(({ pb }) => {
       const user = (pb.authStore as any).record ?? (pb.authStore as any).model
       if (user?.id) {
         registerPushTokenAsync(pb, user.id).catch((e) => { Sentry.captureException(e, { tags: { feature: 'push', op: 'register_push_token' } }) /* silenciar */ })
+        // Zona horaria: el servidor la necesita para enviar los recordatorios a
+        // la hora local correcta. Va AQUÍ y no en useAuth porque en móvil
+        // useAuth solo se monta en la pantalla de login (mismo motivo que la
+        // identidad de analytics de más abajo): con sesión ya iniciada nunca
+        // llegaría a ejecutarse y `users.timezone` se quedaría vacío.
+        import('@calistenia/core/lib/timezone-sync').then(({ syncUserTimezone }) =>
+          syncUserTimezone(user.id, user.timezone),
+        ).catch((e) => { Sentry.captureException(e, { tags: { feature: 'reminders', op: 'sync_timezone' } }) /* silenciar */ })
       }
     }
   }

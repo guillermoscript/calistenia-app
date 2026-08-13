@@ -113,8 +113,21 @@ function createNotification(userId, type, actorId, referenceId, referenceType, d
   }
 }
 
-function sendPush(userId, title, body, url, type) {
+/**
+ * `actorId` es opcional pero debe pasarse SIEMPRE que el push hable de otro
+ * usuario (#386). `createNotification` ya cortaba el par bloqueado, pero el
+ * push se enviaba igual: quien bloquea seguía recibiendo el nombre y el texto
+ * del bloqueado por notificación, aunque la notificación in-app se suprimiera.
+ * Sin `actorId` no hay par que comprobar (push propio o del sistema).
+ */
+function sendPush(userId, title, body, url, type, actorId) {
   try {
+    if (actorId && userId !== actorId) {
+      try {
+        var blocks = require(`${__hooks}/utils/blocks.js`)
+        if (blocks.isBlocked($app, userId, actorId)) return
+      } catch (e) { /* nunca romper el push por un error del guard */ }
+    }
     if (type && !prefAllows(userId, categoryForType(type), "push")) return
     var apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
     var internalKey = $os.getenv("INTERNAL_API_KEY") || ""
@@ -165,7 +178,7 @@ function notifyFollowers(actorId, type, referenceId, data, push) {
     if (blocks && blocks.isBlocked($app, fid, actorId)) continue
     createNotification(fid, type, actorId, referenceId, "user", data)
     if (push) {
-      sendPush(fid, push.title, push.body, push.url, type)
+      sendPush(fid, push.title, push.body, push.url, type, actorId)
     }
   }
 }
@@ -269,14 +282,49 @@ function checkReferralBonus(userId) {
       "Tu referido completo su primer entrenamiento!",
       (referredName || "Tu referido") + " ya esta entrenando",
       "/referrals",
-      "referral_bonus"
+      "referral_bonus",
+      userId
     )
   } catch (err) {
     console.log("[notif] referral_bonus error:", err)
   }
 }
 
+var STREAK_MILESTONES = [7, 14, 30, 50, 100, 200, 365]
+
+/**
+ * Notifica el hito de racha si `newStreak` acaba de cruzar uno.
+ *
+ * Lo llaman DOS sitios y ninguno sobra: el hook de update de `user_stats`
+ * (cualquier escritura por la API de records) y utils/workout_stats.js, que
+ * escribe con SQL atomico — sin perder incrementos en paralelo, pero tampoco
+ * disparando hooks de record. Ver #412.
+ */
+function checkStreakMilestone(userId, oldStreak, newStreak) {
+  if (!userId) return
+  if (!(newStreak > oldStreak)) return
+
+  // De mayor a menor: si un update cruza varios hitos (ej. 5 → 20) se notifica
+  // solo el mayor — una notif por update, la mas significativa.
+  for (var i = STREAK_MILESTONES.length - 1; i >= 0; i--) {
+    var milestone = STREAK_MILESTONES[i]
+    if (newStreak >= milestone && oldStreak < milestone) {
+      createSelfNotification(userId, "streak", String(milestone), "streak", { days: milestone })
+      sendPush(userId, milestone + " dias seguidos!", "Tu racha de entrenamiento sigue creciendo", "/progress", "streak")
+
+      // Fan-out a seguidores: "tu amigo lleva N dias seguidos"
+      notifyFollowers(userId, "friend_streak", String(milestone), { days: milestone }, {
+        title: (getUserName(userId) || "Tu amigo") + " lleva " + milestone + " dias seguidos",
+        body: "Tu amigo esta en racha",
+        url: "/u/" + userId,
+      })
+      break
+    }
+  }
+}
+
 module.exports = {
+  checkStreakMilestone: checkStreakMilestone,
   getUserName: getUserName,
   categoryForType: categoryForType,
   prefAllows: prefAllows,
