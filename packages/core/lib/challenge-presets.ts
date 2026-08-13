@@ -69,6 +69,23 @@ export function getBeginnerChallengePreset(id: string): BeginnerChallengePreset 
   return BEGINNER_CHALLENGE_PRESETS.find((preset) => preset.id === id) ?? null
 }
 
+/**
+ * Los presets que el catálogo debe pintar (#384).
+ *
+ * Una tarjeta que no se puede pulsar no informa de nada, sólo ocupa sitio y
+ * frustra, así que un preset deshabilitado se esconde en vez de enseñarse con
+ * un "PRÓXIMAMENTE". El flag `enabled` sigue en el modelo: activar
+ * `pushup_builder` el día que su puntuación acumulada exista es ponerlo a
+ * `true`, sin tocar ninguna de las dos pantallas.
+ *
+ * `getBeginnerChallengePreset` sigue resolviendo los deshabilitados a propósito:
+ * un reto ya creado desde un preset debe poder resolver su título aunque el
+ * preset salga luego del catálogo.
+ */
+export function getVisibleBeginnerChallengePresets(): readonly BeginnerChallengePreset[] {
+  return BEGINNER_CHALLENGE_PRESETS.filter((preset) => preset.enabled)
+}
+
 export interface PresetChallengeRecord {
   id: string
   preset_key?: string

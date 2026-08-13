@@ -15,6 +15,7 @@ import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import { isCumulativeMetric } from '@calistenia/core/lib/cumulative-scoring'
 import {
   BEGINNER_CHALLENGE_PRESETS,
+  getVisibleBeginnerChallengePresets,
   getPresetDateRange,
   getPresetTargetLabel,
   resolvePresetChallengeDescription,
@@ -304,7 +305,7 @@ function BeginnerPresetCatalog({
       <Text className="font-sans text-xs leading-relaxed text-muted-foreground">
         {t('challenge.preset.catalogDescription')}
       </Text>
-      {BEGINNER_CHALLENGE_PRESETS.map(preset => {
+      {getVisibleBeginnerChallengePresets().map(preset => {
         const joined = joinedPresets.get(preset.id)
         return (
           <View key={preset.id} className={cn('rounded-xl border bg-card p-4 gap-3', preset.enabled ? 'border-border' : 'border-border/60 opacity-70')}>
