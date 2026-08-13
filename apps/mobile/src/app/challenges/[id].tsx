@@ -131,7 +131,7 @@ export default function ChallengeDetailScreen() {
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-2xl">😕</Text>
           <Text className="mt-2 text-center text-sm text-muted-foreground">
-            {t('challenges.emptyBody')}
+            {t('challenges.notFound')}
           </Text>
         </View>
       </SafeAreaView>

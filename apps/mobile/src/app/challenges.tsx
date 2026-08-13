@@ -185,7 +185,12 @@ export default function ChallengesScreen() {
             <EmptyState
               icon={Target}
               title={filter === 'active' ? t('challenges.emptyActive') : t('challenges.emptyPast')}
-              body={t('challenges.emptyBody')}
+              /*
+                Un cuerpo por pestaña: en «Activos» el catálogo de presets va
+                como cabecera de esta misma lista (justo encima), así que el
+                texto remite ahí; en «Finalizados» no hay catálogo que señalar.
+              */
+              body={filter === 'active' ? t('challenges.emptyBodyActive') : t('challenges.emptyBodyPast')}
             />
           )
         }
