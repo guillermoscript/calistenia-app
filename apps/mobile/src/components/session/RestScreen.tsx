@@ -44,7 +44,7 @@ export function RestScreen({
   const initialSeconds = savedRest || defaultSeconds
 
   // La sesión es dueña de su ventana de descanso; `useCountdown` solo la lee.
-  const [window, setWindow] = useState<CountdownWindow>(() => ({
+  const [restWindow, setRestWindow] = useState<CountdownWindow>(() => ({
     endAt: Date.now() + initialSeconds * 1000,
     totalSeconds: initialSeconds,
   }))
@@ -76,8 +76,8 @@ export function RestScreen({
 
   useEffect(() => {
     restCues('start')
-    scheduleEnd(window.endAt)
-    updateLiveRest(window.endAt)
+    scheduleEnd(restWindow.endAt)
+    updateLiveRest(restWindow.endAt)
     return () => { cancelScheduled(notifIdRef.current) }
     // Solo al montar: SessionView remonta esta pantalla en cada descanso (`key`).
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,8 +97,8 @@ export function RestScreen({
   const handleComplete = useCallback(() => { onSkip() }, [onSkip])
 
   const { secondsLeft, progress, resync } = useCountdown({
-    endAt: window.endAt,
-    totalSeconds: window.totalSeconds,
+    endAt: restWindow.endAt,
+    totalSeconds: restWindow.totalSeconds,
     onCue: restCues,
     onComplete: handleComplete,
     // Estable a propósito: ajustar el descanso alarga la cuenta, no la rearma, así que
@@ -114,14 +114,14 @@ export function RestScreen({
     return () => { sub.remove() }
   }, [resync])
 
-  const windowRef = useRef(window)
-  windowRef.current = window
+  const windowRef = useRef(restWindow)
+  windowRef.current = restWindow
 
   const handleAdjust = useCallback((delta: number) => {
     // Fuera del updater de `setWindow`: reprogramar la notificación es un efecto, y un
     // updater se ejecuta dos veces en modo estricto.
     const next = adjustCountdown(windowRef.current, delta, Date.now())
-    setWindow(next)
+    setRestWindow(next)
     cancelScheduled(notifIdRef.current)
     scheduleEnd(next.endAt)
     updateLiveRest(next.endAt)
@@ -133,7 +133,7 @@ export function RestScreen({
       <RestPanel
         secondsLeft={secondsLeft}
         progress={progress}
-        endAt={window.endAt}
+        endAt={restWindow.endAt}
         label={t('session.resting')}
         skipLabel={t('session.skipRest')}
         onSkip={handleSkip}
