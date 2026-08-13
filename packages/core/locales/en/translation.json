@@ -2465,6 +2465,8 @@
   "challenge.metricTotalDistance": "Total distance",
   "challenge.metricTotalOf": "Total · {{name}}",
   "challenge.scoreWindowNote": "Counts what you log between the challenge start and end (full days, in your timezone).",
+  "challenge.expressTarget": "{{target}} reps/day · {{days}} days",
+  "challenge.expressStreak": "{{n}}d streak",
   "challenge.unitDays": "days",
   "challenge.finished": "Finished",
   "challenge.oneDayLeft": "1 day left",

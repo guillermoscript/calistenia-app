@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
+import { useExpressProgress, type ExpressProgress } from '@calistenia/core/hooks/useChallengeExpress'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
@@ -33,6 +34,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { challenge, leaderboard, loading, participantIds, load, inviteUser } = useChallengeDetail(id || null, userId)
+  const { progress: expressProgress, loading: expressLoading } = useExpressProgress(challenge)
   const { following } = useFollows(userId)
   const [showInvite, setShowInvite] = useState(false)
   const [inviting, setInviting] = useState<string | null>(null)
@@ -123,6 +125,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
 
   const isCreator = challenge.creator === userId
   const isActive = challenge.status === 'active'
+  const isExpress = challenge.type === 'express'
   const currentEntry = leaderboard.find(entry => entry.isCurrentUser)
   const goalReached = !!challenge.goal && !!currentEntry && currentEntry.value >= challenge.goal
   const unit = getMetricUnit(challenge.metric, challenge.exercise_slug)
@@ -152,7 +155,12 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
           <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-lime border border-lime/30 bg-lime/10">
             {metricLabel}
           </span>
-          {challenge.goal && challenge.goal > 0 && (
+          {isExpress && (challenge.daily_target ?? 0) > 0 && (
+            <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-amber-400 border border-amber-400/30 bg-amber-400/10">
+              {t('challenge.expressTarget', { target: challenge.daily_target, days: challenge.duration_days })}
+            </span>
+          )}
+          {!isExpress && (challenge.goal ?? 0) > 0 && (
             <span className="px-2 py-0.5 rounded text-[10px] tracking-wide font-medium text-amber-400 border border-amber-400/30 bg-amber-400/10">
               {t('challenges.goal', { value: challenge.goal })}
             </span>
@@ -218,8 +226,28 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
         </div>
       )}
 
-      {/* Ranking */}
-      {leaderboard.length > 0 && (
+      {/* Progreso diario (retos express) */}
+      {isExpress && expressProgress.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          {expressProgress.map((entry, i) => (
+            <div
+              key={entry.participantId}
+              className="motion-safe:animate-fade-in"
+              style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
+            >
+              <ExpressRow
+                entry={entry}
+                position={i + 1}
+                isCurrentUser={entry.participantId === userId}
+                onTap={() => navigate(`/u/${entry.participantId}`)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Ranking (retos estándar) */}
+      {!isExpress && leaderboard.length > 0 && (
         <div className="flex flex-col gap-1.5">
           {leaderboard.map((entry, i) => (
             <div
@@ -233,7 +261,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
         </div>
       )}
 
-      {leaderboard.length === 0 && !loading && (
+      {(isExpress ? expressProgress.length === 0 && !expressLoading : leaderboard.length === 0 && !loading) && (
         <div className="text-center py-12 text-sm text-muted-foreground">{t('challenge.noParticipants')}</div>
       )}
     </div>
@@ -274,6 +302,63 @@ function RankRow({ entry, position, unit, onTap }: { entry: LeaderboardEntry; po
       <div className="text-right shrink-0">
         <span className={cn('font-bebas text-2xl', entry.isCurrentUser ? 'text-lime' : 'text-foreground')}>{entry.value}</span>
         {unit && <span className="text-[10px] text-muted-foreground ml-1">{unit}</span>}
+      </div>
+    </button>
+  )
+}
+
+// ── Express Row (progreso diario) ────────────────────────────────────────────
+
+function ExpressRow({ entry, position, isCurrentUser, onTap }: { entry: ExpressProgress; position: number; isCurrentUser: boolean; onTap: () => void }) {
+  const { t } = useTranslation()
+  const medal = MEDALS[position - 1]
+
+  return (
+    <button
+      onClick={onTap}
+      className={cn(
+        'w-full text-left px-4 py-3 rounded-lg flex flex-col gap-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        isCurrentUser
+          ? 'bg-lime/10 border border-lime/30 border-l-[3px] border-l-lime'
+          : 'bg-card border border-border hover:border-lime/20',
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-8 text-center shrink-0">
+          {medal ? <span className="text-lg">{medal}</span> : <span className="text-sm text-muted-foreground font-mono">{position}</span>}
+        </div>
+        {entry.avatarUrl ? (
+          <img src={entry.avatarUrl} alt={entry.participantName} className="size-9 rounded-full object-cover shrink-0" />
+        ) : (
+          <div className="size-9 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-foreground shrink-0">
+            {entry.participantName[0]?.toUpperCase() || '?'}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className={cn('text-sm font-medium truncate', isCurrentUser && 'text-lime')}>
+            {entry.participantName}
+            {isCurrentUser && <span className="text-xs text-muted-foreground ml-1">(tu)</span>}
+          </div>
+          {entry.currentStreak > 0 && (
+            <div className="text-[10px] text-amber-400">🔥 {t('challenge.expressStreak', { n: entry.currentStreak })}</div>
+          )}
+        </div>
+        <div className="text-right shrink-0">
+          <span className={cn('font-bebas text-2xl', isCurrentUser ? 'text-lime' : 'text-foreground')}>{entry.daysCompleted}</span>
+          <span className="text-[10px] text-muted-foreground ml-1">/ {entry.totalDays} {t('challenge.unitDays')}</span>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1 pl-11">
+        {entry.dailyProgress.map(day => (
+          <span
+            key={day.date}
+            title={`${day.date}: ${day.value}`}
+            className={cn(
+              'size-2.5 rounded-[3px]',
+              day.completed ? 'bg-lime' : 'bg-muted',
+            )}
+          />
+        ))}
       </div>
     </button>
   )

@@ -1,27 +1,25 @@
-import { useState, useCallback } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
-import { todayStr, toLocalDateStr } from '../lib/dateUtils'
+import { useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '../lib/pocketbase'
+import { todayStr, toLocalDateStr, utcToLocalDateStr, localMidnightAsUTC, addDays } from '../lib/dateUtils'
 import { localize } from '../lib/i18n-db'
+import { computeExpressProgress, type ExpressProgressStats } from '../lib/express-progress'
 import { qk } from '../lib/query-keys'
+import type { Challenge } from '../types'
 
-export interface ExpressProgress {
+export interface ExpressProgress extends ExpressProgressStats {
   participantId: string
   participantName: string
-  daysCompleted: number
-  totalDays: number
-  currentStreak: number
-  dailyProgress: Array<{ date: string; value: number; completed: boolean }>
+  avatarUrl: string | null
 }
 
 /**
- * Retos express. Migrado a TanStack Query conservando la forma pública
- * { loading, createExpress, getProgress }. createExpress es una mutation que
- * invalida challenges; getProgress lee vía qc.fetchQuery (dedup + staleTime 30s).
+ * Retos express (gancho de referidos): "X reps de un ejercicio al día durante
+ * N días". createExpress crea el reto con metric 'exercise' + exercise_slug,
+ * así el leaderboard estándar de useChallengeDetail también puntúa (#313).
  */
 export function useChallengeExpress(userId: string | null) {
   const qc = useQueryClient()
-  const [loading, setLoading] = useState(false)
 
   const createMutation = useMutation<string | null, Error, {
     exerciseId: string; durationDays: number; dailyTarget: number; title?: string
@@ -32,13 +30,15 @@ export function useChallengeExpress(userId: string | null) {
       if (!available) return null
 
       let challengeTitle = title
-      if (!challengeTitle) {
-        try {
-          const exercise = await pb.collection('exercises_catalog').getOne(exerciseId, { $autoCancel: false })
+      let exerciseSlug = ''
+      try {
+        const exercise = await pb.collection('exercises_catalog').getOne(exerciseId, { $autoCancel: false })
+        exerciseSlug = (exercise as any).slug || ''
+        if (!challengeTitle) {
           challengeTitle = `Challenge de ${localize((exercise as any).name, 'es')} — ${dailyTarget} x ${durationDays}d`
-        } catch {
-          challengeTitle = `Challenge express — ${dailyTarget} x ${durationDays}d`
         }
+      } catch {
+        if (!challengeTitle) challengeTitle = `Challenge express — ${dailyTarget} x ${durationDays}d`
       }
 
       const today = new Date()
@@ -48,7 +48,8 @@ export function useChallengeExpress(userId: string | null) {
       const challenge = await pb.collection('challenges').create({
         creator: userId,
         title: challengeTitle,
-        metric: 'reps',
+        metric: 'exercise',
+        exercise_slug: exerciseSlug,
         starts_at: toLocalDateStr(today),
         ends_at: toLocalDateStr(endDate),
         status: 'active',
@@ -82,86 +83,87 @@ export function useChallengeExpress(userId: string | null) {
     [createMutation],
   )
 
-  const getProgress = useCallback(async (challengeId: string): Promise<ExpressProgress[]> => {
-    const available = await isPocketBaseAvailable()
-    if (!available) return []
-    setLoading(true)
+  return { createExpress }
+}
+
+// ── Progreso diario por participante ─────────────────────────────────────────
+
+async function fetchExpressProgress(challenge: Challenge): Promise<ExpressProgress[]> {
+  const available = await isPocketBaseAvailable()
+  if (!available) return []
+
+  // Los retos express nuevos guardan exercise_slug; los antiguos solo la
+  // relación exercise_id, así que se resuelve el slug desde el catálogo.
+  let slug = challenge.exercise_slug || ''
+  if (!slug && challenge.exercise_id) {
     try {
-      return await qc.fetchQuery({
-        queryKey: qk.expressProgress(challengeId),
-        staleTime: 30_000,
-        queryFn: async (): Promise<ExpressProgress[]> => {
-          const challenge = await pb.collection('challenges').getOne(challengeId, { $autoCancel: false }) as any
-          if (challenge.type !== 'express' || !challenge.exercise_id) return []
+      const ex = await pb.collection('exercises_catalog').getOne(challenge.exercise_id, { $autoCancel: false })
+      slug = (ex as any).slug || ''
+    } catch { /* catálogo no disponible */ }
+  }
+  if (!slug) return []
 
-          const participants = await pb.collection('challenge_participants').getFullList({
-            filter: pb.filter('challenge = {:cid}', { cid: challengeId }),
-            expand: 'user',
-            $autoCancel: false,
-          })
+  const participants = await pb.collection('challenge_participants').getFullList({
+    filter: pb.filter('challenge = {:cid}', { cid: challenge.id }),
+    expand: 'user',
+    $autoCancel: false,
+  })
 
-          const startsAt = challenge.starts_at
-          const endsAt = challenge.ends_at
-          const dailyTarget = challenge.daily_target || 0
-          const exerciseId = challenge.exercise_id
+  const startStr = localMidnightAsUTC(challenge.starts_at)
+  const endStr = localMidnightAsUTC(addDays(challenge.ends_at, 1))
+  // ends_at = starts_at + duration_days (createExpress); el diff es el
+  // fallback para retos antiguos sin duration_days.
+  const durationDays = challenge.duration_days
+    || Math.max(0, Math.round((new Date(challenge.ends_at).getTime() - new Date(challenge.starts_at).getTime()) / 86400000))
+  const dailyTarget = challenge.daily_target || 0
+  const today = todayStr()
 
-          return Promise.all(
-            participants.map(async (p: any) => {
-              const participantUser = p.expand?.user
-              const participantName = participantUser?.display_name || participantUser?.email?.split('@')[0] || '?'
+  const entries = await Promise.all(
+    participants.map(async (p: any) => {
+      const user = p.expand?.user
+      const participantName = user?.display_name || user?.email?.split('@')[0] || '?'
 
-              const sessions = await pb.collection('public_sessions').getFullList({
-                filter: pb.filter('user = {:uid} && date >= {:start} && date <= {:end}', { uid: p.user, start: startsAt, end: endsAt }),
-                $autoCancel: false,
-              })
+      let sets: Array<{ date: string; reps: string | null }> = []
+      try {
+        // `public_sets_log` y no `sets_log`: desde #410 la tabla base es
+        // owner-only, así que leerla aquí devolvería cero filas para TODOS los
+        // participantes menos uno mismo — y sin error, con el ranking entero a
+        // cero. La view expone user, exercise_id, reps y logged_at, que es
+        // exactamente lo que se pide aquí.
+        const rows = await pb.collection('public_sets_log').getFullList({
+          filter: pb.filter(
+            'user = {:uid} && exercise_id = {:slug} && logged_at >= {:start} && logged_at <= {:end}',
+            { uid: p.user, slug, start: startStr, end: endStr },
+          ),
+          fields: 'reps,logged_at',
+          $autoCancel: false,
+        })
+        sets = rows.map((s: any) => ({ date: utcToLocalDateStr(s.logged_at), reps: s.reps || null }))
+      } catch { /* sin sets */ }
 
-              const dailyMap = new Map<string, number>()
-              for (const session of sessions) {
-                try {
-                  const sets = await pb.collection('public_sets_log').getFullList({
-                    filter: pb.filter('session = {:sid} && exercise = {:eid}', { sid: (session as any).id, eid: exerciseId }),
-                    $autoCancel: false,
-                  })
-                  const date = (session as any).date
-                  const dayTotal = sets.reduce((sum, s: any) => sum + (s.reps || 0), 0)
-                  dailyMap.set(date, (dailyMap.get(date) || 0) + dayTotal)
-                } catch { /* sin sets para esta sesión/ejercicio */ }
-              }
+      return {
+        participantId: p.user as string,
+        participantName,
+        avatarUrl: user ? getUserAvatarUrl(user, '100x100') : null,
+        ...computeExpressProgress(sets, challenge.starts_at, durationDays, dailyTarget, today),
+      } satisfies ExpressProgress
+    }),
+  )
 
-              const dailyProgress: Array<{ date: string; value: number; completed: boolean }> = []
-              const start = new Date(startsAt)
-              const end = new Date(endsAt)
-              let daysCompleted = 0
-              let currentStreak = 0
-              let streakBroken = false
+  return entries.sort((a, b) => b.daysCompleted - a.daysCompleted || b.currentStreak - a.currentStreak)
+}
 
-              for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                const dateStr = toLocalDateStr(d)
-                const value = dailyMap.get(dateStr) || 0
-                const completed = value >= dailyTarget
-                dailyProgress.push({ date: dateStr, value, completed })
-                if (completed) {
-                  daysCompleted++
-                  if (!streakBroken) currentStreak++
-                } else {
-                  if (dateStr < todayStr()) streakBroken = true
-                }
-              }
-
-              const totalDays = challenge.duration_days || Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-
-              return { participantId: p.user, participantName, daysCompleted, totalDays, currentStreak, dailyProgress }
-            }),
-          )
-        },
-      })
-    } catch (e: any) {
-      console.warn('Get express progress error:', e)
-      return []
-    } finally {
-      setLoading(false)
-    }
-  }, [qc])
-
-  return { loading, createExpress, getProgress }
+/**
+ * Progreso diario de un reto express, por participante. Solo se activa cuando
+ * el reto cargado es de tipo express con ejercicio asociado.
+ */
+export function useExpressProgress(challenge: Challenge | null) {
+  const isExpress = !!challenge && challenge.type === 'express' && !!(challenge.exercise_slug || challenge.exercise_id)
+  const query = useQuery({
+    queryKey: qk.expressProgress(challenge?.id ?? ''),
+    enabled: isExpress,
+    queryFn: () => fetchExpressProgress(challenge!),
+    staleTime: 30_000,
+  })
+  return { progress: query.data ?? [], loading: query.isLoading && isExpress }
 }

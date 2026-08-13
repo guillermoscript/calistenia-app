@@ -564,6 +564,17 @@ export interface Challenge {
   is_featured?: boolean
   /** Stable catalog identity for a beginner preset enrollment. */
   preset_key?: string
+  /** 'express' = reto de referidos: daily_target reps/día durante duration_days. */
+  type?: 'standard' | 'express'
+  /**
+   * Relation id a exercises_catalog. Solo retos express, y solo los ANTIGUOS:
+   * los nuevos identifican el ejercicio por `exercise_slug` como el resto de
+   * retos con metric 'exercise'. Se conserva para poder resolver el slug de los
+   * que ya existen (ver `useChallengeExpress`).
+   */
+  exercise_id?: string
+  daily_target?: number
+  duration_days?: number
 }
 
 export interface ChallengeParticipant {
