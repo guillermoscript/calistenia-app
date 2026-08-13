@@ -23,6 +23,7 @@ import {
   diffDays,
   timeAgo,
   relativeDate,
+  formatDateRange,
 } from './dateUtils'
 
 // relativeDate/timeAgo usan i18n.t() — igual que en producción (apps/web y
@@ -342,5 +343,87 @@ describe('relativeDate', () => {
     i18n.changeLanguage('en')
     expect(relativeDate('2026-07-08')).toBe('Today')
     expect(relativeDate(daysAgoStr(3))).toBe('3 days ago')
+  })
+})
+
+describe('formatDateRange', () => {
+  // Los meses cortos los decide ICU, y su abreviatura puede cambiar entre
+  // versiones de Node (p. ej. "sep" vs "sept"), así que los tests fijan el
+  // dato — días, orden, presencia del año — y toleran la abreviatura.
+  beforeEach(() => {
+    setTimezone('UTC')
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-08T12:00:00Z')) // "año actual" = 2026
+  })
+
+  it('no deja escapar nada del formato de PocketBase', () => {
+    const result = formatDateRange('2026-08-09 00:00:00.000Z', '2026-08-23 00:00:00.000Z')
+    expect(result).not.toMatch(/\d{4}-\d{2}-\d{2}/) // sin fecha ISO
+    expect(result).not.toMatch(/\d{2}:\d{2}/) // sin hora
+    expect(result).not.toMatch(/Z\b/) // sin marca Zulu
+    expect(result).not.toContain('→')
+  })
+
+  it('mismo mes: colapsa el mes y no repite el año (es)', () => {
+    expect(formatDateRange('2026-08-09 00:00:00.000Z', '2026-08-23 00:00:00.000Z')).toMatch(
+      /^9\s*[–-]\s*23 ago\.?$/,
+    )
+  })
+
+  it('mismo mes en inglés: el mes va delante, según el locale', async () => {
+    await i18n.changeLanguage('en')
+    expect(formatDateRange('2026-08-09 00:00:00.000Z', '2026-08-23 00:00:00.000Z')).toMatch(
+      /^Aug\s+9\s*[–-]\s*23$/,
+    )
+  })
+
+  it('cruza mes: repite el mes en los dos extremos', () => {
+    const result = formatDateRange('2026-08-30 00:00:00.000Z', '2026-09-05 00:00:00.000Z')
+    expect(result).toMatch(/^30 ago\.?\s*[–-]\s*5 sept?\.?$/)
+  })
+
+  it('cruza fin de año: añade el año a los dos extremos', () => {
+    const result = formatDateRange('2026-12-28 00:00:00.000Z', '2027-01-04 00:00:00.000Z')
+    expect(result).toContain('2026')
+    expect(result).toContain('2027')
+  })
+
+  it('reto enteramente de un año pasado: también lleva el año', () => {
+    // Sin esto un reto de 2025 se leería igual que uno de este año.
+    expect(formatDateRange('2025-03-01 00:00:00.000Z', '2025-03-15 00:00:00.000Z')).toContain('2025')
+  })
+
+  it('reto de este año: no gasta ancho en el año', () => {
+    expect(formatDateRange('2026-08-09 00:00:00.000Z', '2026-08-23 00:00:00.000Z')).not.toContain(
+      '2026',
+    )
+  })
+
+  it('no desplaza el día para un usuario al oeste de UTC', () => {
+    // La regresión que este helper tiene que evitar: starts_at es medianoche
+    // UTC, así que convertirlo a la zona local mostraría el día anterior.
+    setTimezone('America/New_York') // UTC-4/-5
+    // Si se formateara en la zona local saldría "8–22 ago".
+    expect(formatDateRange('2026-08-09 00:00:00.000Z', '2026-08-23 00:00:00.000Z')).toMatch(
+      /^9\s*[–-]\s*23 ago\.?$/,
+    )
+  })
+
+  it('acepta el separador con T además del espacio de PocketBase', () => {
+    const conEspacio = formatDateRange('2026-08-09 00:00:00.000Z', '2026-08-23 00:00:00.000Z')
+    const conT = formatDateRange('2026-08-09T00:00:00.000Z', '2026-08-23T00:00:00.000Z')
+    expect(conT).toBe(conEspacio)
+  })
+
+  it('mismo día de inicio y fin: una sola fecha, no un rango', () => {
+    const result = formatDateRange('2026-08-09 00:00:00.000Z', '2026-08-09 00:00:00.000Z')
+    expect(result).toMatch(/^9 ago\.?$/)
+  })
+
+  it('entradas vacías o inválidas -> "" (la línea desaparece, no muestra basura)', () => {
+    expect(formatDateRange('', '2026-08-23 00:00:00.000Z')).toBe('')
+    expect(formatDateRange('2026-08-09 00:00:00.000Z', '')).toBe('')
+    expect(formatDateRange('garbage', '2026-08-23 00:00:00.000Z')).toBe('')
+    expect(formatDateRange('2026-08-09 00:00:00.000Z', 'garbage')).toBe('')
   })
 })

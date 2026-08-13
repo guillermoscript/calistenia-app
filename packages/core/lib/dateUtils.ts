@@ -199,3 +199,69 @@ export function relativeDate(dateStr: string): string {
   if (diff >= 2 && diff <= 7) return i18n.t('common.daysAgo', { count: diff })
   return dayjs.tz(dateStr, _tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
+
+/** Cache of range formatters, keyed by locale + whether the year is shown. */
+const _rangeFormatters = new Map<string, Intl.DateTimeFormat>()
+
+function rangeFormatter(withYear: boolean): Intl.DateTimeFormat {
+  const locale = i18n.language || 'es'
+  const key = `${locale}|${withYear}`
+  const cached = _rangeFormatters.get(key)
+  if (cached) return cached
+
+  const options: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'short',
+    // Calendar dates, not instants — see formatDateRange.
+    timeZone: 'UTC',
+    ...(withYear ? { year: 'numeric' as const } : {}),
+  }
+  let fmt: Intl.DateTimeFormat
+  try {
+    fmt = new Intl.DateTimeFormat(locale, options)
+  } catch {
+    // The browser language detector can hand us a tag Intl rejects.
+    fmt = new Intl.DateTimeFormat('es', options)
+  }
+  _rangeFormatters.set(key, fmt)
+  return fmt
+}
+
+/**
+ * Format a start/end pair as a short, localized date range.
+ *
+ *   es → "9–23 ago", "30 ago – 5 sept", "28 dic 2026 – 4 ene 2027"
+ *   en → "Aug 9 – 23", "Aug 30 – Sep 5", "Dec 28, 2026 – Jan 4, 2027"
+ *
+ * Intended for PocketBase date fields that mean a *calendar date* rather than
+ * an instant — challenge `starts_at` / `ends_at` are stored at midnight UTC.
+ * Those are formatted in UTC on purpose: shifting them into the user's
+ * timezone would render the previous day for anyone west of UTC (midnight UTC
+ * on Aug 9 is Aug 8 at UTC-5), so the day that was stored is the day shown.
+ *
+ * The year appears whenever either end falls outside the current year, which
+ * covers ranges crossing new year as well as challenges from earlier years.
+ */
+export function formatDateRange(startTs: string, endTs: string): string {
+  if (!startTs || !endTs) return ''
+  const start = parsePBTimestamp(startTs)
+  const end = parsePBTimestamp(endTs)
+  if (!start.isValid() || !end.isValid()) return ''
+
+  const currentYear = now().year()
+  const withYear = start.year() !== currentYear || end.year() !== currentYear
+  const fmt = rangeFormatter(withYear)
+
+  const startDate = start.toDate()
+  const endDate = end.toDate()
+
+  // Same calendar day: a range would read "9 ago – 9 ago".
+  if (start.isSame(end, 'day')) return fmt.format(startDate)
+
+  // formatRange needs full ICU; Hermes builds may not have it, and core is
+  // shared with the native app.
+  if (typeof fmt.formatRange === 'function') {
+    return fmt.formatRange(startDate, endDate)
+  }
+  return `${fmt.format(startDate)} – ${fmt.format(endDate)}`
+}

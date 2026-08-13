@@ -8,6 +8,7 @@ import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { getMetricUnit, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import { isCumulativeMetric } from '@calistenia/core/lib/cumulative-scoring'
+import { formatDateRange } from '@calistenia/core/lib/dateUtils'
 import {
   resolvePresetChallengeDescription,
   resolvePresetChallengeTitle,
@@ -177,7 +178,7 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
           {hasWindowSemantics(challenge.metric) && <> · {t('challenge.scoreWindowNote')}</>}
         </div>
         <div className="text-[10px] text-muted-foreground mt-2 opacity-70">
-          {challenge.starts_at} → {challenge.ends_at}
+          {formatDateRange(challenge.starts_at, challenge.ends_at)}
         </div>
       </div>
 
