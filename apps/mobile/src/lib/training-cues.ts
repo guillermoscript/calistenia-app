@@ -38,6 +38,31 @@ export const restCues: TrainingCueHandler = (cue) => {
   }
 }
 
+/**
+ * Circuito (paridad con el `CountdownRing` histórico de `components/circuit`).
+ *
+ * Igual que el descanso salvo el final: un circuito cierra con la campana de
+ * completado, no con el "vamos" que anuncia la serie siguiente.
+ */
+export const circuitCues: TrainingCueHandler = (cue) => {
+  switch (cue) {
+    case 'warning':
+      sounds.playWarning()
+      void haptics.warning()
+      break
+    case 'tick':
+      sounds.playCountdownTick()
+      void haptics.light()
+      break
+    case 'complete':
+      sounds.playTimerComplete()
+      void haptics.success()
+      break
+    default:
+      break
+  }
+}
+
 /** Ejercicio por tiempo (paridad con el `ExerciseTimer` histórico). */
 export const timerCues: TrainingCueHandler = (cue) => {
   switch (cue) {

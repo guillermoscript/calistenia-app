@@ -14,7 +14,9 @@ import {
 } from '../ui/dialog'
 import { useCircuitSession } from '../../contexts/CircuitSessionContext'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
+import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
 import * as sounds from '../../lib/sounds'
+import { circuitCues } from '../../lib/training-cues'
 import type { CircuitDefinition } from '@calistenia/core/types'
 import { getLocalQuote } from '@calistenia/core/lib/quotes'
 
@@ -96,41 +98,15 @@ interface CountdownRingProps {
 }
 
 function CountdownRing({ seconds: initialSeconds, totalSeconds, isPaused, label, labelColor, onComplete }: CountdownRingProps) {
-  const [remaining, setRemaining] = useState(initialSeconds)
-  const onCompleteRef = useRef(onComplete)
-  onCompleteRef.current = onComplete
-  const completedRef = useRef(false)
-
-  // Reset when initialSeconds changes (new exercise/phase)
-  useEffect(() => {
-    setRemaining(initialSeconds)
-    completedRef.current = false
-  }, [initialSeconds])
-
-  useEffect(() => {
-    if (isPaused || remaining <= 0) return
-
-    const id = setInterval(() => {
-      setRemaining(prev => {
-        if (prev === 11) { sounds.playWarning(); sounds.vibrate([100]) }
-        if (prev <= 4 && prev > 1) { sounds.playCountdownTick(); sounds.vibrate([50]) }
-        if (prev <= 1) {
-          clearInterval(id)
-          sounds.playTimerComplete()
-          sounds.vibrate([200, 100, 200])
-          if (!completedRef.current) {
-            completedRef.current = true
-            // Defer to avoid setState during render
-            setTimeout(() => onCompleteRef.current(), 0)
-          }
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(id)
-  }, [isPaused, remaining])
+  // La cuenta y los umbrales de sonido son los compartidos con el móvil (#402): este
+  // componente ya solo dibuja. Antes tenía su propio `setInterval` que decrementaba un
+  // contador, así que se desfasaba si la pestaña se dormía.
+  const { secondsLeft: remaining } = usePausableCountdown({
+    seconds: initialSeconds,
+    paused: isPaused,
+    onCue: circuitCues,
+    onComplete,
+  })
 
   const pct = totalSeconds > 0 ? remaining / totalSeconds : 0
   const strokeOffset = RING_CIRC * (1 - pct)
