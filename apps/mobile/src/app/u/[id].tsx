@@ -21,6 +21,7 @@ import { useReports } from '@calistenia/core/hooks/useReports'
 import { ReportReasonSheet } from '@/components/social/ReportReasonSheet'
 import { useLocalize } from '@calistenia/core/hooks/useLocalize'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
+import { NO_PHASE, sessionKeyLabel, sessionKeyParts } from '@calistenia/core/lib/session-key'
 import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 
 interface RecentSession {
@@ -98,13 +99,13 @@ export default function UserProfileScreen() {
 
         let stats: any = {}
         try {
-          stats = await pb.collection('user_stats').getFirstListItem(
+          stats = await pb.collection('public_user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid: userId }), { $autoCancel: false })
         } catch { /* sin stats */ }
 
         let settings: any = {}
         try {
-          const sRes = await pb.collection('settings').getList(1, 1, {
+          const sRes = await pb.collection('public_prs').getList(1, 1, {
             filter: pb.filter('user = {:uid}', { uid: userId }), $autoCancel: false })
           if (sRes.items.length) settings = sRes.items[0]
         } catch { /* sin settings */ }
@@ -120,7 +121,7 @@ export default function UserProfileScreen() {
 
         let recentSessions: RecentSession[] = []
         try {
-          const ses = await pb.collection('sessions').getList(1, 100, {
+          const ses = await pb.collection('public_sessions').getList(1, 100, {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
               uid: userId, start: localMidnightAsUTC(`${yearMonth}-01`),
             }),
@@ -132,11 +133,14 @@ export default function UserProfileScreen() {
           }
           recentSessions = ses.items.slice(0, 10).map((s: any) => {
             const w = WORKOUTS[s.workout_key]
-            const rawTitle = w?.title || s.workout_key || 'Sesión'
+            // Sesiones libres (#376): etiqueta genérica en vez de la clave
+            // cruda, y sin fase que enseñar.
+            const { isFree } = sessionKeyParts(s.workout_key || '')
+            const rawTitle = w?.title || sessionKeyLabel(s.workout_key || '') || 'Sesión'
             return {
               id: s.id,
               workoutTitle: typeof rawTitle === 'string' ? rawTitle : l(rawTitle),
-              phase: s.phase || 1,
+              phase: isFree ? NO_PHASE : (s.phase ?? 1),
               completedAt: s.completed_at || s.created,
               note: typeof s.note === 'string' ? s.note : l(s.note) || '',
             }
@@ -453,7 +457,9 @@ export default function UserProfileScreen() {
                       <ChevronRight size={15} color="hsl(0 0% 40%)" />
                     </View>
                     <View className="mt-0.5 flex-row items-center gap-2">
-                      <Text className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Fase {s.phase}</Text>
+                      {s.phase > 0 && (
+                        <Text className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Fase {s.phase}</Text>
+                      )}
                       <Text className="text-[10px] text-muted-foreground">{fdate}</Text>
                     </View>
                     {s.note ? (

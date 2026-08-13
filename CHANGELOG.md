@@ -9,6 +9,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.8.0] - 2026-08-12
+
+_Real-time circuit battles against your friends, plus a thorough privacy pass: your health data is no longer visible to anyone else._
+
+### Added
+
+- **Circuit battles** — Challenge your friends to a circuit and race them live, seeing where everyone is in real time. Floating bar while it runs, alerts when someone joins or it starts, rest between exercises, and a history with head-to-head comparison in Progress.
+- **Your health data stays yours** — The heart rate and calories your watch measures, your water and weekly training goals, and your food and weight logs are no longer visible to other people. The wall and the ranking work exactly as before: only what you see on screen is shared.
+- **Blocking now really blocks** — When you block someone, they can no longer see your profile, your workouts or your live position in a race, and none of their notifications reach you. Before, they were only stopped from interacting.
+- **Easier challenges to start** — Ready-made challenges you can join from zero with one tap, cumulative scoring that adds up everything you do during the challenge, and a featured challenge on the home screen.
+- **Free sessions** — Train without following a program: build the session as you go and it gets logged like any other, in your history and your calendar.
+
+### Fixed
+
+- **Friend search works now** — Searching for someone by name never returned anything, because of a bug in the search itself. It finds people now.
+
 ## [1.7.1] - 2026-08-07
 
 _Fixes 1.7.0: the app rendered completely broken, with no styles or fonts. It now looks the way it should._
@@ -260,7 +276,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...HEAD
+[1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1
 [1.7.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.6.0...mobile-v1.7.0
 [1.6.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.5.0...mobile-v1.6.0

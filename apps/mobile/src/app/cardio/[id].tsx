@@ -68,7 +68,11 @@ export default function CardioDetailScreen() {
       setLoading(true)
       setError(null)
       try {
-        const raw = await pb.collection('cardio_sessions').getOne(id, {
+        // `public_cardio_sessions` y no la tabla base (#386): esta pantalla se
+        // abre desde el muro sobre la sesión de otra persona, y la tabla base
+        // pasó a owner-only. La view no lleva FC ni calorías del reloj — se
+        // piden aparte más abajo, solo si la sesión es propia.
+        const raw = await pb.collection('public_cardio_sessions').getOne(id, {
           expand: 'user',
           $autoCancel: false,
         })
@@ -87,11 +91,27 @@ export default function CardioDetailScreen() {
           )
         }
 
-        // Solo el dueño puede leer su ruta, así que ni se pide para una sesión
-        // ajena abierta desde el muro: ahorra un 404 por visita.
+        // Solo el dueño puede leer su ruta y su frecuencia cardiaca, así que ni
+        // se piden para una sesión ajena abierta desde el muro: ahorra un 404
+        // por visita.
         if (cs.user && cs.user === me?.id) {
           const points = await fetchCardioRoute(cs.id as string)
           if (!cancelled && points.length) setSession((prev) => (prev ? { ...prev, gps_points: points } : prev))
+
+          try {
+            const priv = await pb.collection('cardio_sessions').getOne(cs.id as string, {
+              $autoCancel: false,
+              fields: 'hr_avg,hr_max,calories_actual',
+            })
+            if (!cancelled) {
+              setSession((prev) => (prev ? {
+                ...prev,
+                hr_avg: priv.hr_avg as number | undefined,
+                hr_max: priv.hr_max as number | undefined,
+                calories_actual: priv.calories_actual as number | undefined,
+              } : prev))
+            }
+          } catch { /* sesión sin métricas de reloj */ }
         }
       } catch (e) {
         if (!cancelled) setError('No se pudo cargar la sesión.')

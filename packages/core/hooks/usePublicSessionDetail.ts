@@ -46,8 +46,9 @@ function pbDateTime(ms: number): string {
  * sesión pedida, y comparte la reconstrucción vía `buildSessionDetail` para que
  * ambas vistas muestren exactamente los mismos datos.
  *
- * Requiere reglas de lectura abiertas en `sessions` (con gate de bloqueos) y en
- * `sets_log`; ambas ya lo están para el muro y los leaderboards de retos.
+ * Lee de las views `public_sessions` / `public_sets_log` (#386): las tablas base
+ * son owner-only y esta pantalla se abre sobre la sesión de otra persona. La
+ * view expone lo que este detalle pinta y deja fuera la frecuencia cardiaca.
  */
 export function usePublicSessionDetail(
   sessionId: string | null,
@@ -58,7 +59,7 @@ export function usePublicSessionDetail(
     enabled: !!sessionId,
     staleTime: 60_000,
     queryFn: async () => {
-      const rec: any = await pb.collection('sessions').getOne(sessionId!, {
+      const rec: any = await pb.collection('public_sessions').getOne(sessionId!, {
         expand: 'user',
         $autoCancel: false,
       })
@@ -98,7 +99,7 @@ export function usePublicSessionDetail(
 
       // Sets del dueño para ese workout_key en la ventana del día.
       const completedMs = new Date(completedRaw).getTime()
-      const setsRes = await pb.collection('sets_log').getFullList({
+      const setsRes = await pb.collection('public_sets_log').getFullList({
         filter: pb.filter(
           'user = {:uid} && workout_key = {:wk} && logged_at >= {:from} && logged_at <= {:to}',
           {

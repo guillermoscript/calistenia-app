@@ -21,6 +21,18 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   challengeCompleted: 'challenge_completed',
   programJoined: 'program_joined',
   programMilestoneCompleted: 'program_milestone_completed',
+  /**
+   * GPS/cardio races. These used to be emitted under the `battle_*` names, which
+   * collided with collaborative circuit battles (#356) and made the funnel mix two
+   * unrelated features. Races moved to their own names on 2026-08-11; the `battle_*`
+   * names below now mean circuit battles only.
+   */
+  raceCreated: 'race_created',
+  raceJoined: 'race_joined',
+  raceStarted: 'race_started',
+  raceCompleted: 'race_completed',
+  raceShared: 'race_shared',
+  /** Collaborative circuit battles (`battles` collection). Never races. */
   battleCreated: 'battle_created',
   battleJoined: 'battle_joined',
   battleStarted: 'battle_started',
@@ -37,6 +49,9 @@ export interface CanonicalAnalyticsProperties {
   workout_id?: string
   challenge_id?: string
   program_id?: string
+  /** `races` record id. Only on `race_*` events. */
+  race_id?: string
+  /** `battles` record id. Only on `battle_*` events. */
   battle_id?: string
   share_type?: string
   participant_count?: number

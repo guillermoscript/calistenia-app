@@ -17,6 +17,16 @@ pnpm test:pb-hooks crons                # solo los archivos que matcheen "crons"
 Sin dependencias nuevas: usa el test runner nativo de Node (`node --test`) y
 `fetch`. En CI corre en el job `e2e-smoke` con el binario cacheado en `/tmp/pb`.
 
+### Comprobaciones manuales (`manual/`)
+
+Lo que esta suite no puede cubrir porque necesita reiniciar PocketBase — las
+migraciones corren al arrancar, cuando aún no hay datos que migrar. No van en
+CI; se corren a mano al tocar la migración correspondiente.
+
+```bash
+node tests/pb_hooks/manual/verify-backfill.mjs   # backfill de user_stats (#412)
+```
+
 ## Cómo funciona (`run.mjs`)
 
 1. Levanta un **mock del AI API** (`helpers/push-mock.mjs`) y expone lo
@@ -43,6 +53,13 @@ autenticado como un usuario → pasa por API rules y `requestInfo()` reales),
 - `findRecordsByFilter` con sort sobre un campo inexistente (p.ej. `-created`
   en colecciones sin autodate) lanza GoError — y si está en try/catch, falla
   en silencio.
+- **Los hooks son una cadena tipo middleware: si no llamas a `e.next()`, los
+  handlers que OTROS ficheros registraron para esa misma colección no corren.**
+  Y no hay ni un error en el log: simplemente no pasa nada. Se descubrió en #412
+  al mover el hook de racha a `workout_stats.pb.js`, que se carga después de
+  `notification_service.pb.js` (orden alfabético) — ninguno de sus tres handlers
+  llegaba a ejecutarse. Si el cuerpo tiene `return` tempranos, `e.next()` va al
+  principio, no al final.
 
 Los cuatro se descubrieron con esta suite: eran bugs reales en producción
 (challenge_complete, weekly_cross_insight y ambos crons de push_reminders

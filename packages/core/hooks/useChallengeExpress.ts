@@ -110,7 +110,7 @@ export function useChallengeExpress(userId: string | null) {
               const participantUser = p.expand?.user
               const participantName = participantUser?.display_name || participantUser?.email?.split('@')[0] || '?'
 
-              const sessions = await pb.collection('sessions').getFullList({
+              const sessions = await pb.collection('public_sessions').getFullList({
                 filter: pb.filter('user = {:uid} && date >= {:start} && date <= {:end}', { uid: p.user, start: startsAt, end: endsAt }),
                 $autoCancel: false,
               })
@@ -118,7 +118,7 @@ export function useChallengeExpress(userId: string | null) {
               const dailyMap = new Map<string, number>()
               for (const session of sessions) {
                 try {
-                  const sets = await pb.collection('sets_log').getFullList({
+                  const sets = await pb.collection('public_sets_log').getFullList({
                     filter: pb.filter('session = {:sid} && exercise = {:eid}', { sid: (session as any).id, eid: exerciseId }),
                     $autoCancel: false,
                   })

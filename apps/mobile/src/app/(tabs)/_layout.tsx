@@ -8,6 +8,7 @@ import { useAuthUser } from '@/lib/use-auth-user'
 import { NAV_THEME } from '@/lib/theme'
 import ActiveCardioBar from '@/components/cardio/ActiveCardioBar'
 import ActiveSessionBar from '@/components/ActiveSessionBar'
+import ActiveBattleBar from '@/components/ActiveBattleBar'
 import { QuickMenuProvider } from '@/components/QuickMenu'
 import { haptics } from '@/lib/haptics'
 
@@ -99,6 +100,8 @@ export default function TabsLayout() {
     <ActiveCardioBar />
     {/* Sesión de fuerza en curso: barra flotante para volver a /session */}
     <ActiveSessionBar />
+    {/* Batalla en curso: barra flotante para volver a /battle/[id] */}
+    <ActiveBattleBar />
     </View>
     </QuickMenuProvider>
   )

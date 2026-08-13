@@ -83,8 +83,15 @@ test("la ruta es legible por su dueño y NO por otra cuenta autenticada", async 
   })
   assert.equal(res.status, 404, "view por id de una ruta ajena devuelve 404")
 
-  // Pero la sesión en sí sigue siendo visible: el muro no se rompe.
-  const feed = await api(`/api/collections/cardio_sessions/records/${session.id}`, {
+  // La tabla base pasó a owner-only con #386: ahí ya no llega nadie más.
+  const base = await api(`/api/collections/cardio_sessions/records/${session.id}`, {
+    token: await authAs(fisgon),
+    raw: true,
+  })
+  assert.equal(base.status, 404, "la tabla base de cardio es owner-only")
+
+  // Pero la sesión sigue siendo visible por la view pública: el muro no se rompe.
+  const feed = await api(`/api/collections/public_cardio_sessions/records/${session.id}`, {
     token: await authAs(fisgon),
   })
   assert.equal(feed.id, session.id, "la sesión ajena sigue siendo legible para el muro")

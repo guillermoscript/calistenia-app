@@ -5,6 +5,7 @@ import type {
   BattleParticipantStatus,
   BattleScore,
   BattleScoreInput,
+  BattleStanding,
   BattleStatus,
 } from '../types/battle'
 
@@ -121,8 +122,21 @@ export function createBattleScore(input: BattleScoreInput): BattleScore {
     completed_rounds: Math.floor(input.completed_rounds),
     completed_reps: Math.floor(input.completed_reps),
     completed_time_seconds: Math.floor(input.completed_time_seconds),
+    finished_at: input.finished_at ?? null,
     tie_break_key: input.tie_break_key,
   }
+}
+
+/**
+ * PocketBase hands back `2026-08-11 20:38:14.658Z`; `Date.parse` wants the `T`.
+ * Returns `null` for anything unparseable so a bad timestamp reads as "we do not know"
+ * instead of as the epoch — which would rank a finisher last, or make a resting
+ * participant look idle since 1970.
+ */
+function battleTimeMs(raw: string | null): number | null {
+  if (!raw) return null
+  const ms = Date.parse(raw.replace(' ', 'T'))
+  return Number.isNaN(ms) ? null : ms
 }
 
 /** Returns a negative number when `a` ranks ahead of `b`. */
@@ -132,6 +146,19 @@ export function compareBattleScores(a: BattleScore, b: BattleScore): number {
   if (a.completed_time_seconds !== b.completed_time_seconds) {
     return b.completed_time_seconds - a.completed_time_seconds
   }
+
+  // A battle is a race, so equal work is settled by who got there first. Without this the
+  // two all-reps circuits rank everyone who completes them by record id, which is
+  // arbitrary: in testing the participant who finished 25 minutes later won (#387).
+  const aFinished = battleTimeMs(a.finished_at)
+  const bFinished = battleTimeMs(b.finished_at)
+  if (aFinished !== bFinished) {
+    // Finishing beats not finishing at equal work; among finishers, earlier wins.
+    if (aFinished === null) return 1
+    if (bFinished === null) return -1
+    return aFinished - bFinished
+  }
+
   return a.tie_break_key < b.tie_break_key ? -1 : a.tie_break_key > b.tie_break_key ? 1 : 0
 }
 
@@ -172,4 +199,159 @@ export function canViewBattle(
   participant: Pick<BattleParticipant, 'user'> | null,
 ): boolean {
   return Boolean(actorUserId) && (battle.creator === actorUserId || participant?.user === actorUserId)
+}
+
+/**
+ * Whether a battle still has something in it *for me* — the question the floating bar
+ * and the resume card are really asking.
+ *
+ * It is not the same question as "is the battle open". A battle stays `live` while any
+ * opponent is still working, so the moment I finish my own run — or walk out of one —
+ * the battle is still open but there is nothing left for me to go back to. Reading the
+ * battle status alone left the bar nagging about a battle the user had already closed,
+ * with no way to dismiss it.
+ *
+ * `mySeat` is null when I hold no participant row. That is the creator of an unpublished
+ * draft (publishing is what seats them), so they keep the resume affordance; it is never
+ * a reason to advertise a battle already under way.
+ */
+/**
+ * What a participant is doing right now, as far as the server can honestly tell (#397).
+ *
+ * `idle` is the important one. A live board that only shows scores makes someone who is
+ * resting look identical to someone who lost signal or quietly gave up — the counter
+ * simply stops in both cases. Splitting them is the whole point: `resting` has a
+ * deadline you can watch tick down, `idle` is "we have not heard from them in a while".
+ */
+export type BattleParticipantActivity = 'resting' | 'working' | 'idle' | 'finished' | 'left'
+
+/**
+ * How long a participant may go without confirming an exercise before the board stops
+ * calling it work. Generous on purpose: a held plank plus getting set up for the next
+ * exercise is a legitimately long silence, and calling a training partner idle while
+ * they are mid-effort is worse than being slow to notice they stopped.
+ */
+export const BATTLE_IDLE_AFTER_MS = 180_000
+
+export function battleParticipantActivity(
+  standing: Pick<BattleStanding, 'status' | 'resting_until' | 'last_activity_at'>,
+  nowMs: number,
+): BattleParticipantActivity {
+  if (standing.status === 'finished') return 'finished'
+  if (standing.status === 'left') return 'left'
+
+  const restingUntil = battleTimeMs(standing.resting_until)
+  if (restingUntil !== null && restingUntil > nowMs) return 'resting'
+
+  const lastActivity = battleTimeMs(standing.last_activity_at)
+  if (lastActivity !== null && nowMs - lastActivity > BATTLE_IDLE_AFTER_MS) return 'idle'
+  return 'working'
+}
+
+/** Whole seconds of rest left, floored at 0. */
+/**
+ * Milliseconds between two battle timestamps; 0 if either is missing or they run backwards.
+ *
+ * Used to freeze a participant's elapsed time at their own finish. A clock that keeps
+ * counting after you are done says the run is still going, which is the opposite of true.
+ */
+export function battleSpanMs(fromIso: string | null, toIso: string | null): number {
+  const from = battleTimeMs(fromIso)
+  const to = battleTimeMs(toIso)
+  if (from === null || to === null) return 0
+  return Math.max(0, to - from)
+}
+
+/** `m:ss` of workout time. Shared so the training view and the waiting view agree. */
+export function formatBattleElapsed(ms: number): string {
+  const total = Math.floor(ms / 1000)
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+}
+
+export function battleRestSecondsLeft(restingUntil: string | null, nowMs: number): number {
+  const until = battleTimeMs(restingUntil)
+  if (until === null) return 0
+  return Math.max(0, Math.ceil((until - nowMs) / 1000))
+}
+
+/**
+ * How a closed battle went for one person (#398).
+ *
+ * `left` is deliberately not `lost`. Walking out is not the same as being beaten, and a
+ * record that quietly counted it as a defeat would misstate what happened — though
+ * hiding the battle entirely would misstate it just as badly, so it still appears in
+ * history. `unknown` covers a battle with no stored ranking: everything that closed
+ * before #398, where there is no honest way to reconstruct the result.
+ */
+export type BattleOutcome = 'won' | 'lost' | 'left' | 'unknown'
+
+export function battleOutcomeFor(
+  standings: BattleStanding[] | null,
+  userId: string,
+): BattleOutcome {
+  if (!standings || standings.length === 0) return 'unknown'
+  const mine = standings.find((entry) => entry.user === userId)
+  if (!mine) return 'unknown'
+  if (mine.status === 'left') return 'left'
+
+  // Ranks are assigned across everyone including those who walked out, so "first" has to
+  // be measured among the people who actually saw it through.
+  const contenders = standings.filter((entry) => entry.status !== 'left')
+  const best = contenders.reduce<BattleStanding | null>(
+    (top, entry) => (top === null || entry.rank < top.rank ? entry : top),
+    null,
+  )
+  return best && best.participant_id === mine.participant_id ? 'won' : 'lost'
+}
+
+export interface BattleRecord {
+  fought: number
+  won: number
+  lost: number
+  left: number
+  /** Consecutive wins counting back from the most recent battle. */
+  streak: number
+}
+
+/**
+ * A person's battle record, from their closed battles **newest first**.
+ *
+ * The streak walks back from the newest battle and stops at the first loss. Battles you
+ * left are stepped over rather than counted as either outcome — same reasoning as
+ * `battleOutcomeFor`, and the alternative, a walk-out silently ending a run of wins, is
+ * the kind of detail that makes a person stop trusting the number.
+ */
+export function battleRecordFrom(
+  battles: Pick<Battle, 'final_standings'>[],
+  userId: string,
+): BattleRecord {
+  const record: BattleRecord = { fought: 0, won: 0, lost: 0, left: 0, streak: 0 }
+  let streakOpen = true
+
+  for (const battle of battles) {
+    const outcome = battleOutcomeFor(battle.final_standings, userId)
+    if (outcome === 'unknown') continue
+
+    record.fought += 1
+    if (outcome === 'won') {
+      record.won += 1
+      if (streakOpen) record.streak += 1
+    } else if (outcome === 'lost') {
+      record.lost += 1
+      streakOpen = false
+    } else {
+      record.left += 1
+    }
+  }
+  return record
+}
+
+export function isBattleActiveForMe(
+  status: BattleStatus,
+  mySeat: BattleParticipantStatus | null,
+  amCreator: boolean,
+): boolean {
+  if (status !== 'draft' && status !== 'lobby' && status !== 'ready' && status !== 'live') return false
+  if (mySeat === null) return amCreator && status !== 'live'
+  return mySeat !== 'finished' && mySeat !== 'left'
 }

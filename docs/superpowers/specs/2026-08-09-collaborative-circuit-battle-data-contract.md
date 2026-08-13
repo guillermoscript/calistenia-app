@@ -2,6 +2,11 @@
 
 Version: 1 · Issue #355 · Data/UI boundary for the MVP
 
+> **Superseded in part by [the #356 MVP spec](./2026-08-11-collaborative-circuit-battle-mvp.md)**,
+> which records the decisions this document deferred (where the API lives, invite TTL,
+> idempotency, countdown tolerance, edge-case policies) and fixes a `revision` field bug
+> that made battle creation impossible. The data model below is still accurate.
+
 ## Decision
 
 Use new `battles`, `battle_participants`, and `battle_invites` collections.

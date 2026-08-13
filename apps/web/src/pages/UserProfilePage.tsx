@@ -13,6 +13,7 @@ import { cn } from '../lib/utils'
 import { todayStr, localMidnightAsUTC, utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { PHASE_COLORS } from '@calistenia/core/lib/style-tokens'
+import { NO_PHASE, sessionKeyLabel, sessionKeyParts } from '@calistenia/core/lib/session-key'
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { useBlocks } from '@calistenia/core/hooks/useBlocks'
 import { useReports } from '@calistenia/core/hooks/useReports'
@@ -94,7 +95,7 @@ export default function UserProfilePage() {
         // Fetch user_stats
         let stats: any = {}
         try {
-          stats = await pb.collection('user_stats').getFirstListItem(
+          stats = await pb.collection('public_user_stats').getFirstListItem(
             pb.filter('user = {:uid}', { uid: userId }),
             { $autoCancel: false }
           )
@@ -103,7 +104,7 @@ export default function UserProfilePage() {
         // Fetch settings
         let settings: any = {}
         try {
-          const settingsRes = await pb.collection('settings').getList(1, 1, {
+          const settingsRes = await pb.collection('public_prs').getList(1, 1, {
             filter: pb.filter('user = {:uid}', { uid: userId }),
             $autoCancel: false,
           })
@@ -123,7 +124,7 @@ export default function UserProfilePage() {
 
         let recentSessions: ProfileData['recentSessions'] = []
         try {
-          const sessions = await pb.collection('sessions').getList(1, 100, {
+          const sessions = await pb.collection('public_sessions').getList(1, 100, {
             filter: pb.filter('user = {:uid} && completed_at >= {:start}', {
               uid: userId,
               start: localMidnightAsUTC(`${yearMonth}-01`),
@@ -143,12 +144,15 @@ export default function UserProfilePage() {
             .slice(0, 10)
             .map((s: any) => {
               const workout = WORKOUTS[s.workout_key]
-              const rawTitle = workout?.title || s.workout_key || 'Sesión'
+              // Sesiones libres (#376): etiqueta genérica en vez de la clave
+              // cruda, y sin fase que enseñar.
+              const { isFree } = sessionKeyParts(s.workout_key || '')
+              const rawTitle = workout?.title || sessionKeyLabel(s.workout_key || '') || 'Sesión'
               return {
                 id: s.id,
                 workoutKey: s.workout_key,
                 workoutTitle: typeof rawTitle === 'string' ? rawTitle : l(rawTitle),
-                phase: s.phase || 1,
+                phase: isFree ? NO_PHASE : (s.phase ?? 1),
                 completedAt: s.completed_at || s.created,
                 note: typeof s.note === 'string' ? s.note : l(s.note) || '',
               }
@@ -554,7 +558,9 @@ export default function UserProfilePage() {
                     <div className="min-w-0">
                       <div className={cn('text-sm font-medium truncate', phaseColor?.text)}>{session.workoutTitle}</div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">Fase {session.phase}</span>
+                        {session.phase > 0 && (
+                          <span className="text-[10px] text-muted-foreground font-mono tracking-wider uppercase">Fase {session.phase}</span>
+                        )}
                         <span className="text-[10px] text-muted-foreground">{formattedDate}</span>
                       </div>
                     </div>

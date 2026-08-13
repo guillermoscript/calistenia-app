@@ -15,6 +15,7 @@ import { formatPace, formatDuration } from '@calistenia/core/lib/geo'
 import { estimateCalories } from '@calistenia/core/lib/calories'
 import { sortRaceParticipants } from '@calistenia/core/lib/race-sort'
 import { splitRoute, saveCardioRoute } from '@calistenia/core/lib/cardioRoutes'
+import { fetchRaceRoute } from '@calistenia/core/lib/raceRoutes'
 
 export default function RaceResults({ celebrate = false }: { celebrate?: boolean }) {
   const { t } = useTranslation()
@@ -42,7 +43,10 @@ export default function RaceResults({ celebrate = false }: { celebrate?: boolean
     if (!me || !user?.id || saving) return
     setSaving(true)
     try {
-      const track = me.gps_track ?? []
+      // El recorrido ya no viaja dentro de la participación (#316): vive en
+      // `race_routes`, owner-only. Se pide aquí y no al montar porque esta es la
+      // única pantalla que lo usa y solo si se pulsa el botón.
+      const track = await fetchRaceRoute(me.id)
       const startMs = race.starts_at ? new Date(race.starts_at).getTime() : Date.now()
       const { record, points } = splitRoute({
         user: user.id,

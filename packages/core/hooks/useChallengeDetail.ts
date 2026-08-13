@@ -196,10 +196,12 @@ export function useChallengeDetail(challengeId: string | null, currentUserId: st
 async function getScore(uid: string, metric: ChallengeMetric, startStr: string, endStr: string, exerciseSlug?: string): Promise<number> {
   switch (metric) {
     case 'exercise': {
-      // Mejor set del ejercicio del reto dentro de la ventana (sets_log es
-      // legible por cualquier usuario autenticado desde la migración 1777000005).
+      // Mejor set del ejercicio del reto dentro de la ventana. Los scores se
+      // calculan sobre datos de OTROS participantes, así que todo este bloque
+      // lee de las views `public_*` (#386) y no de las tablas base, que desde
+      // 1783500000_public_read_views.js son owner-only.
       if (!exerciseSlug) return 0
-      const sets = await pb.collection('sets_log').getFullList({
+      const sets = await pb.collection('public_sets_log').getFullList({
         filter: pb.filter(
           'user = {:uid} && exercise_id = {:eid} && logged_at >= {:start} && logged_at <= {:end}',
           { uid, eid: exerciseSlug, start: startStr, end: endStr },
@@ -215,7 +217,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
       return best
     }
     case 'most_sessions': {
-      const res = await pb.collection('sessions').getList(1, 1, {
+      const res = await pb.collection('public_sessions').getList(1, 1, {
         filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: startStr, end: endStr }),
         $autoCancel: false,
       })
@@ -231,7 +233,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
         most_lsit: 'pr_lsit',
         most_handstand: 'pr_handstand',
       }
-      const settings = await pb.collection('settings').getFirstListItem(
+      const settings = await pb.collection('public_prs').getFirstListItem(
         pb.filter('user = {:uid}', { uid }),
         { $autoCancel: false },
       )
@@ -242,7 +244,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
     // idempotentes. La ventana es la misma que el resto del leaderboard.
     case 'total_exercise': {
       if (!exerciseSlug) return 0
-      const sets = await pb.collection('sets_log').getFullList({
+      const sets = await pb.collection('public_sets_log').getFullList({
         filter: pb.filter(
           'user = {:uid} && exercise_id = {:eid} && logged_at >= {:start} && logged_at <= {:end}',
           { uid, eid: exerciseSlug, start: startStr, end: endStr },
@@ -255,12 +257,12 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
     }
     case 'total_workouts': {
       const [sessions, cardio] = await Promise.all([
-        pb.collection('sessions').getFullList({
+        pb.collection('public_sessions').getFullList({
           filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: startStr, end: endStr }),
           fields: 'workout_key,completed_at',
           $autoCancel: false,
         }),
-        pb.collection('cardio_sessions').getFullList({
+        pb.collection('public_cardio_sessions').getFullList({
           filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at <= {:end}', { uid, start: startStr, end: endStr }),
           fields: 'id,started_at',
           $autoCancel: false,
@@ -269,7 +271,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
       return countWorkouts(sessions as any, cardio as any, utcToLocalDateStr)
     }
     case 'total_distance': {
-      const cardio = await pb.collection('cardio_sessions').getFullList({
+      const cardio = await pb.collection('public_cardio_sessions').getFullList({
         filter: pb.filter('user = {:uid} && started_at >= {:start} && started_at <= {:end}', { uid, start: startStr, end: endStr }),
         fields: 'id,distance_km',
         $autoCancel: false,
@@ -277,7 +279,7 @@ async function getScore(uid: string, metric: ChallengeMetric, startStr: string, 
       return sumDistanceKm(cardio as any)
     }
     case 'longest_streak': {
-      const sessions = await pb.collection('sessions').getFullList({
+      const sessions = await pb.collection('public_sessions').getFullList({
         filter: pb.filter('user = {:uid} && completed_at >= {:start} && completed_at <= {:end}', { uid, start: startStr, end: endStr }),
         sort: 'completed_at',
         $autoCancel: false,

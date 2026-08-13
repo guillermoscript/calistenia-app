@@ -70,8 +70,8 @@ export default function CreateRaceDialog({ open, onOpenChange, onCreated }: Prop
         target_duration_seconds: race.target_duration_seconds,
         has_route: routePoints.length > 0,
       })
-      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleCreated, {
-        surface: 'battle', source: 'race_create', battle_id: race.id,
+      trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.raceCreated, {
+        surface: 'race', source: 'race_create', race_id: race.id,
         participant_count: 1, result: 'created', mode, activity_type: activityType,
       })
       onCreated(race)

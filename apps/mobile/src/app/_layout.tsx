@@ -23,6 +23,7 @@ import { useRestPreferences } from '@calistenia/core/hooks/useRestPreferences'
 import { useWeight } from '@calistenia/core/hooks/useWeight'
 import { pb, tryRefreshAuth, verifyAuth } from '@calistenia/core/lib/pocketbase'
 import { setupAutoSync } from '@calistenia/core/lib/offlineQueue'
+import { consumeBattleInviteToken } from '@calistenia/core/lib/battleInviteHandoff'
 
 import { Sentry } from '@/lib/instrument'
 import { FONTS } from '@/lib/fonts'
@@ -91,6 +92,32 @@ function CircuitRestoreNavigator() {
       router.push('/circuit')
     }
   }, [router])
+
+  return null
+}
+
+/**
+ * Recupera una invitación a batalla que quedó pendiente antes del registro (#356).
+ *
+ * El amigo desconectado que toca el enlace pasa por instalar la app y crear cuenta; el
+ * token se guardó en `battle-invite/[token]` y aquí, ya con sesión, se consume una sola
+ * vez y se le lleva al aterrizaje autenticado para que vea a qué entra y confirme.
+ * Nunca se une solo: unirse es una decisión suya.
+ */
+function BattleInviteRedeemer() {
+  const router = useRouter()
+  const user = useAuthUser()
+  const redeemed = useRef(false)
+
+  // Depende del usuario, no solo del montaje: el registro ocurre con este layout ya
+  // montado, así que el disparo útil es la transición a sesión válida.
+  useEffect(() => {
+    if (redeemed.current || !user?.id) return
+    const token = consumeBattleInviteToken()
+    if (!token) return
+    redeemed.current = true
+    router.push(`/battle-invite/${token}`)
+  }, [router, user?.id])
 
   return null
 }
@@ -235,6 +262,7 @@ function RootLayout() {
             <Stack.Screen name="circuit" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           </Stack>
           <CircuitRestoreNavigator />
+          <BattleInviteRedeemer />
         </Providers>
         <OfflineBanner />
         <PortalHost />
