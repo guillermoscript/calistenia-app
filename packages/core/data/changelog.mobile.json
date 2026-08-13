@@ -1,6 +1,195 @@
 {
-  "generated": "2026-08-12T15:22:52.986Z",
+  "generated": "2026-08-13T22:16:54.884Z",
   "versions": [
+    {
+      "version": "1.9.0",
+      "date": "2026-08-14",
+      "summary": {
+        "es": "Programas de comunidad con hitos semanales para seguir un plan de verdad, estadísticas de perfil que por fin cuentan todos tus entrenos, y las batallas con la misma pantalla de entreno que una sesión normal.",
+        "en": "Community programs with weekly milestones so you can follow a real plan, profile stats that finally count every workout you do, and battles that now use the same training screen as a regular session."
+      },
+      "highlights": [
+        {
+          "icon": "🗓️",
+          "type": "feat",
+          "title": {
+            "es": "Programas de comunidad",
+            "en": "Community programs"
+          },
+          "body": {
+            "es": "Apúntate a «30 días de calistenia» y sigue un plan con hitos semanales. Tu semana 1 empieza el día en que te apuntas, no hay que esperar a ningún lunes, y el progreso se calcula solo a partir de lo que entrenas: si editas o borras una sesión, el hito se corrige solo. Puedes dejarlo y volver sin perder por dónde ibas.",
+            "en": "Join \"30 days of calisthenics\" and follow a plan with weekly milestones. Your week 1 starts the day you join — no waiting for a Monday — and progress is worked out from what you actually train: edit or delete a session and the milestone corrects itself. You can leave and come back without losing your place."
+          }
+        },
+        {
+          "icon": "📊",
+          "type": "fix",
+          "title": {
+            "es": "Tus estadísticas vuelven a contar",
+            "en": "Your stats count again"
+          },
+          "body": {
+            "es": "Tu perfil y la Clasificación enseñaban 0 sesiones y 0 racha si entrenabas con sesiones de fuerza, aunque el calendario de esa misma pantalla sí tuviera datos. Ahora los tres tipos de sesión —fuerza, circuito y cardio— suman en el total y en la racha.",
+            "en": "Your profile and the Leaderboard showed 0 sessions and a 0-day streak if you trained with strength sessions, even when the calendar on that same screen had your data. All three session types — strength, circuit and cardio — now count towards your total and your streak."
+          }
+        },
+        {
+          "icon": "⚔️",
+          "type": "feat",
+          "title": {
+            "es": "Batallas con la pantalla de entreno de verdad",
+            "en": "Battles with the real training screen"
+          },
+          "body": {
+            "es": "Las batallas de circuito ya usan el mismo descanso y el mismo temporizador que una sesión normal, con sus avisos y sus vibraciones, en vez de una pantalla aparte a medias. Además, a quien has bloqueado ya no puede entrar en tu batalla ni ver el marcador en vivo.",
+            "en": "Circuit battles now use the same rest screen and timer as a regular session, with the same cues and haptics, instead of a half-built screen of their own. On top of that, anyone you have blocked can no longer join your battle or watch the live scoreboard."
+          }
+        },
+        {
+          "icon": "🏃",
+          "type": "feat",
+          "title": {
+            "es": "Tu recorrido en la tarjeta de resultados",
+            "en": "Your route on the results card"
+          },
+          "body": {
+            "es": "Al terminar una carrera, la tarjeta de resultados dibuja el recorrido que hiciste. Y si le das a guardar antes de que la ruta haya cargado, ya no se guarda el entreno sin ella.",
+            "en": "When you finish a race, the results card now draws the route you ran. And if you hit save before the route has loaded, the workout is no longer saved without it."
+          }
+        },
+        {
+          "icon": "🎯",
+          "type": "feat",
+          "title": {
+            "es": "Crear y seguir retos, más simple",
+            "en": "Creating and following challenges, simpler"
+          },
+          "body": {
+            "es": "El selector de métricas enseña las 4 de siempre y esconde el resto tras «Más métricas», así que crear un reto ya no es una pared de opciones. Las fechas del reto se ven como fechas y no como horas sueltas, el estado vacío ya no te saca al navegador, y los retos express funcionan de punta a punta.",
+            "en": "The metric picker shows the four common ones and tucks the rest behind \"More metrics\", so creating a challenge is no longer a wall of options. Challenge dates read as dates instead of stray times, the empty state no longer kicks you out to the browser, and express challenges work end to end."
+          }
+        },
+        {
+          "icon": "🔒",
+          "type": "feat",
+          "title": {
+            "es": "Un poco más de privacidad",
+            "en": "A bit more privacy"
+          },
+          "body": {
+            "es": "El recorrido GPS de tus carreras pasa a ser solo tuyo: el resto ve tu posición y tu resultado, pero no por dónde has ido. Y los datos privados de tu cuenta dejan de viajar a otras personas cuando aparecen tu nombre y tu foto en un muro o un ranking.",
+            "en": "The GPS track of your races is now yours alone: other people see your position and your result, but not the streets you ran. And your account’s private data no longer travels to other people when your name and photo show up on a wall or a leaderboard."
+          }
+        },
+        {
+          "icon": "🎁",
+          "type": "feat",
+          "title": {
+            "es": "Referidos: estado y recompensa a la vista",
+            "en": "Referrals: status and reward in plain sight"
+          },
+          "body": {
+            "es": "Ahora puedes ver a quién has invitado, en qué estado está cada invitación y qué recompensa te toca, tanto en la app como en la web.",
+            "en": "You can now see who you invited, what state each invitation is in and which reward you have earned, both in the app and on the web."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Programas de comunidad con hitos semanales (#353) (#425)",
+              "scope": "community-programs",
+              "breaking": false,
+              "hash": "cd9a4ff"
+            },
+            {
+              "description": "Agrupar el selector de métricas tras \"Más métricas\" (#384) (#423)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "dd430c2"
+            },
+            {
+              "description": "Dibujar el recorrido propio en la tarjeta de resultados",
+              "scope": "race",
+              "breaking": false,
+              "hash": "18d7702"
+            },
+            {
+              "description": "Referral status and reward visibility on web + mobile",
+              "scope": "#354",
+              "breaking": false,
+              "hash": "86ccfc7"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Mostrar el rango de fechas del reto como fechas, no timestamps (#417)",
+              "scope": "#381",
+              "breaking": false,
+              "hash": "5d29f5a"
+            },
+            {
+              "description": "Borrar las 25 claves duplicadas de los locales (closes #379) (#419)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "d263e65"
+            },
+            {
+              "description": "Estado vacío de retos ya no manda al navegador",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "3dbdbdf"
+            },
+            {
+              "description": "Mantener user_stats con los tres tipos de sesión (#415)",
+              "scope": "#412",
+              "breaking": false,
+              "hash": "9098c50"
+            },
+            {
+              "description": "No guardar el entreno sin ruta si se pulsa antes de cargarla",
+              "scope": "race",
+              "breaking": false,
+              "hash": "357afec"
+            },
+            {
+              "description": "Sacar el recorrido de las carreras a una colección owner-only (#316)",
+              "scope": "pb",
+              "breaking": false,
+              "hash": "ffc87bd"
+            },
+            {
+              "description": "Completar el flujo de retos express de punta a punta (#313)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "0e06662"
+            }
+          ]
+        },
+        {
+          "label": "Mejoras internas",
+          "emoji": "♻️",
+          "type": "refactor",
+          "items": [
+            {
+              "description": "Reutilizar la UI de entreno en las batallas (closes #402) (#424)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "3ab6c21"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.8.0",
       "date": "2026-08-12",

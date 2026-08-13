@@ -9,6 +9,23 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.9.0] - 2026-08-14
+
+_Programas de comunidad con hitos semanales para seguir un plan de verdad, estadísticas de perfil que por fin cuentan todos tus entrenos, y las batallas con la misma pantalla de entreno que una sesión normal._
+
+### Añadido
+
+- **Programas de comunidad** — Apúntate a «30 días de calistenia» y sigue un plan con hitos semanales. Tu semana 1 empieza el día en que te apuntas, no hay que esperar a ningún lunes, y el progreso se calcula solo a partir de lo que entrenas: si editas o borras una sesión, el hito se corrige solo. Puedes dejarlo y volver sin perder por dónde ibas.
+- **Batallas con la pantalla de entreno de verdad** — Las batallas de circuito ya usan el mismo descanso y el mismo temporizador que una sesión normal, con sus avisos y sus vibraciones, en vez de una pantalla aparte a medias. Además, a quien has bloqueado ya no puede entrar en tu batalla ni ver el marcador en vivo.
+- **Tu recorrido en la tarjeta de resultados** — Al terminar una carrera, la tarjeta de resultados dibuja el recorrido que hiciste. Y si le das a guardar antes de que la ruta haya cargado, ya no se guarda el entreno sin ella.
+- **Crear y seguir retos, más simple** — El selector de métricas enseña las 4 de siempre y esconde el resto tras «Más métricas», así que crear un reto ya no es una pared de opciones. Las fechas del reto se ven como fechas y no como horas sueltas, el estado vacío ya no te saca al navegador, y los retos express funcionan de punta a punta.
+- **Un poco más de privacidad** — El recorrido GPS de tus carreras pasa a ser solo tuyo: el resto ve tu posición y tu resultado, pero no por dónde has ido. Y los datos privados de tu cuenta dejan de viajar a otras personas cuando aparecen tu nombre y tu foto en un muro o un ranking.
+- **Referidos: estado y recompensa a la vista** — Ahora puedes ver a quién has invitado, en qué estado está cada invitación y qué recompensa te toca, tanto en la app como en la web.
+
+### Corregido
+
+- **Tus estadísticas vuelven a contar** — Tu perfil y la Clasificación enseñaban 0 sesiones y 0 racha si entrenabas con sesiones de fuerza, aunque el calendario de esa misma pantalla sí tuviera datos. Ahora los tres tipos de sesión —fuerza, circuito y cardio— suman en el total y en la racha.
+
 ## [1.8.0] - 2026-08-12
 
 _Batallas de circuito en tiempo real contra tus amigos, y un repaso a fondo de la privacidad: tus datos de salud dejan de ser visibles para el resto._
@@ -276,7 +293,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...HEAD
+[1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
 [1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1
 [1.7.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.6.0...mobile-v1.7.0
