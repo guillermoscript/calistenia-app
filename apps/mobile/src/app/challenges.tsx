@@ -216,7 +216,7 @@ function ChallengeCard({ challenge: ch, onOpen }: ChallengeCardProps) {
   const { t } = useTranslation()
   const isActive = ch.status === 'active'
   const metricLabel = getMetricLabel(ch.metric, ch.custom_metric, ch.exercise_slug)
-  const daysLeft = daysRemaining(ch.ends_at)
+  const daysLeft = daysRemaining(ch.ends_at, ch.starts_at)
 
   return (
     <Pressable onPress={onOpen} className="rounded-xl border border-border bg-card px-4 py-3.5 gap-2 active:opacity-80">

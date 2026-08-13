@@ -2448,6 +2448,8 @@
   "challenge.finished": "Finalizado",
   "challenge.oneDayLeft": "1 día restante",
   "challenge.daysLeft": "{{count}} días restantes",
+  "challenge.startsTomorrow": "Empieza mañana",
+  "challenge.startsInDays": "Empieza en {{count}} días",
 
   "notify.restStart": "Descanso — {{time}}",
   "notify.nextExercise": "Siguiente: {{name}}",

@@ -273,7 +273,7 @@ function ChallengeCard({ challenge: ch, onTap }: { challenge: ChallengeWithMeta;
           )}
           <span className="text-[10px] text-muted-foreground">·</span>
           <span className={cn('text-[10px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
-            {daysRemaining(ch.ends_at)}
+            {daysRemaining(ch.ends_at, ch.starts_at)}
           </span>
         </div>
       </div>

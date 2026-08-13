@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
 import { getMetricLabel, getMetricUnit, daysRemaining } from '@calistenia/core/lib/challenges'
+import { formatDateRange } from '@calistenia/core/lib/dateUtils'
 import {
   resolvePresetChallengeDescription,
   resolvePresetChallengeTitle,
@@ -143,6 +144,11 @@ export default function ChallengeDetailScreen() {
   // viven en i18n (#350), así que se resuelven aquí en vez de usar el campo crudo.
   const title = resolvePresetChallengeTitle(challenge)
   const description = resolvePresetChallengeDescription(challenge)
+  // El "N días restantes" de al lado no dice cuándo empieza ni acaba, y en un reto
+  // ya terminado no queda ninguna fecha. Va en la misma fila meta a propósito: es
+  // la misma pregunta ("¿cuándo va esto?"), y suelto bajo la descripción se leía
+  // como un resto. Vacío si los campos no son válidos.
+  const dateRange = formatDateRange(challenge.starts_at, challenge.ends_at)
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -153,27 +159,30 @@ export default function ChallengeDetailScreen() {
         <View className="gap-2">
           <Text className="font-bebas text-3xl leading-none text-foreground">{title}</Text>
 
+          {/* El "· " va pegado a la etiqueta que separa, en el mismo string: como
+              Text suelto, la fila envolvía y lo dejaba colgado al final de la línea;
+              y anidando un Text para teñirlo de gris, RN se come el espacio que lo
+              sigue y queda "·30 ago". El separador toma el color de lo que separa. */}
           <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1.5">
             <Text className="font-mono text-[10px] tracking-wide text-lime">{metricLabel}</Text>
             {(challenge.goal ?? 0) > 0 && (
-              <>
-                <Text className="font-mono text-[10px] text-muted-foreground">·</Text>
-                <Text className="font-mono text-[10px] text-amber-400">
-                  {t('challenges.goal', { value: challenge.goal })}
-                </Text>
-              </>
+              <Text className="font-mono text-[10px] text-amber-400">
+                · {t('challenges.goal', { value: challenge.goal })}
+              </Text>
             )}
-            <Text className="font-mono text-[10px] text-muted-foreground">·</Text>
+            {dateRange ? (
+              <Text className="font-mono text-[10px] text-foreground">· {dateRange}</Text>
+            ) : null}
             <Text className={cn('font-mono text-[10px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
+              ·{' '}
               {goalReached
                 ? t('challenge.preset.completed')
                 : isActive
-                  ? daysRemaining(challenge.ends_at)
+                  ? daysRemaining(challenge.ends_at, challenge.starts_at)
                   : t('challenge.preset.expired')}
             </Text>
-            <Text className="font-mono text-[10px] text-muted-foreground">·</Text>
             <Text className="font-mono text-[10px] text-muted-foreground">
-              {t('challenges.participants', { count: leaderboard.length })}
+              · {t('challenges.participants', { count: leaderboard.length })}
             </Text>
           </View>
 
