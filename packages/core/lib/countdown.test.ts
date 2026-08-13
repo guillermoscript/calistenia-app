@@ -4,10 +4,12 @@ import {
   adjustCountdown,
   countdownCues,
   countdownProgress,
+  createCountdownRunner,
   formatCountdown,
   REST_CUE_THRESHOLDS,
   secondsLeft,
   TIMER_CUE_THRESHOLDS,
+  type CountdownCue,
 } from './countdown'
 
 describe('secondsLeft', () => {
@@ -128,5 +130,113 @@ describe('adjustCountdown', () => {
     const next = adjustCountdown({ endAt: now + 6_000, totalSeconds: 6 }, -15, now, 5)
     expect(next.totalSeconds).toBe(5)
     expect(next.endAt).toBe(now + 5_000)
+  })
+})
+
+/**
+ * El intervalo real del descanso, simulado.
+ *
+ * Recorre una cuenta completa a la cadencia de verdad (un paso cada 250 ms) y devuelve
+ * todas las señales que habrían sonado, con el segundo en que sonaron. Es lo más cerca
+ * que se puede estar de probar el hook sin poder renderizar React en este repo.
+ */
+function runCountdown(
+  runner: ReturnType<typeof createCountdownRunner>,
+  endAt: number,
+  fromMs: number,
+  toMs: number,
+  stepMs = 250,
+): { cue: CountdownCue; at: number }[] {
+  const fired: { cue: CountdownCue; at: number }[] = []
+  for (let now = fromMs; now <= toMs; now += stepMs) {
+    const step = runner.step(endAt, now)
+    for (const cue of step.cues) fired.push({ cue, at: step.secondsLeft })
+  }
+  return fired
+}
+
+describe('createCountdownRunner — una cuenta de descanso completa', () => {
+  const t0 = 1_000_000
+
+  it('avisa una vez, hace tic en 3-2-1 y termina una vez', () => {
+    const runner = createCountdownRunner(90)
+    const fired = runCountdown(runner, t0 + 90_000, t0, t0 + 92_000)
+
+    expect(fired).toEqual([
+      { cue: 'warning', at: 10 },
+      { cue: 'tick', at: 3 },
+      { cue: 'tick', at: 2 },
+      { cue: 'tick', at: 1 },
+      { cue: 'complete', at: 0 },
+    ])
+  })
+
+  it('no repite el fin aunque el intervalo siga latiendo', () => {
+    const runner = createCountdownRunner(5)
+    // Ocho segundos de más: el intervalo sigue vivo hasta que el componente se desmonta.
+    const fired = runCountdown(runner, t0 + 5_000, t0, t0 + 13_000)
+    expect(fired.filter((f) => f.cue === 'complete')).toHaveLength(1)
+  })
+
+  it('solo cambia el segundo mostrado una vez por segundo, no en cada tic', () => {
+    const runner = createCountdownRunner(3)
+    let changes = 0
+    for (let now = t0; now <= t0 + 3_000; now += 250) {
+      if (runner.step(t0 + 3_000, now).changed) changes += 1
+    }
+    // 3 → 2 → 1 → 0: tres fronteras en trece pasos del intervalo.
+    expect(changes).toBe(3)
+  })
+
+  it('alargar el descanso tras el aviso NO lo vuelve a disparar', () => {
+    // Comportamiento histórico del RestScreen: `hasPlayedWarning` no se rearmaba.
+    const runner = createCountdownRunner(20)
+    const first = runCountdown(runner, t0 + 20_000, t0, t0 + 12_000)
+    expect(first.map((f) => f.cue)).toEqual(['warning'])
+
+    // +30 s a los 12 s transcurridos: la cuenta sube y vuelve a cruzar el umbral.
+    const extended = adjustCountdown({ endAt: t0 + 20_000, totalSeconds: 20 }, 30, t0 + 12_000)
+    const second = runCountdown(runner, extended.endAt, t0 + 12_000, t0 + 52_000)
+    expect(second.filter((f) => f.cue === 'warning')).toHaveLength(0)
+    expect(second.filter((f) => f.cue === 'complete')).toHaveLength(1)
+  })
+
+  it('con warnOnce desactivado sí vuelve a avisar al recruzar', () => {
+    const runner = createCountdownRunner(20, { warnOnce: false })
+    runCountdown(runner, t0 + 20_000, t0, t0 + 12_000)
+    const extended = adjustCountdown({ endAt: t0 + 20_000, totalSeconds: 20 }, 30, t0 + 12_000)
+    const second = runCountdown(runner, extended.endAt, t0 + 12_000, t0 + 52_000)
+    expect(second.filter((f) => f.cue === 'warning')).toHaveLength(1)
+  })
+
+  it('volver de segundo plano no suelta los tics atrasados de golpe', () => {
+    const runner = createCountdownRunner(90)
+    // La app duerme: el siguiente vistazo llega cuando ya solo quedan 2 s.
+    const step = runner.step(t0 + 90_000, t0 + 88_000)
+    expect(step.secondsLeft).toBe(2)
+    expect(step.cues).toEqual(['warning'])
+  })
+
+  it('una cuenta que nace vencida termina en el primer vistazo', () => {
+    const runner = createCountdownRunner(0)
+    const step = runner.step(t0 - 5_000, t0)
+    expect(step.cues).toEqual(['complete'])
+    expect(step.changed).toBe(false)
+  })
+
+  it('reset rearma el aviso y el fin para el siguiente descanso', () => {
+    const runner = createCountdownRunner(15)
+    expect(runCountdown(runner, t0 + 15_000, t0, t0 + 16_000).map((f) => f.cue))
+      .toEqual(['warning', 'tick', 'tick', 'tick', 'complete'])
+
+    runner.reset(15)
+    expect(runCountdown(runner, t0 + 100_000, t0 + 85_000, t0 + 101_000).map((f) => f.cue))
+      .toEqual(['warning', 'tick', 'tick', 'tick', 'complete'])
+  })
+
+  it('el temporizador avisa a los 11 s, no a los 10', () => {
+    const runner = createCountdownRunner(30, { thresholds: TIMER_CUE_THRESHOLDS })
+    const fired = runCountdown(runner, t0 + 30_000, t0, t0 + 31_000)
+    expect(fired[0]).toEqual({ cue: 'warning', at: 11 })
   })
 })

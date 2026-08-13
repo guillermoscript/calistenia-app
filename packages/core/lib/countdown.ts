@@ -93,6 +93,93 @@ export function countdownCues(
   return cues
 }
 
+export interface CountdownRunnerOptions {
+  thresholds?: CountdownCueThresholds
+  /**
+   * Si el aviso suena una sola vez por cuenta. Con `false`, alargar el descanso por
+   * encima del umbral hace que vuelva a avisar al cruzarlo.
+   */
+  warnOnce?: boolean
+}
+
+export interface CountdownStep {
+  secondsLeft: number
+  /** Si el segundo que se muestra ha cambiado respecto al paso anterior. */
+  changed: boolean
+  /** Señales ya filtradas: el aviso y el fin no se repiten. */
+  cues: CountdownCue[]
+}
+
+export interface CountdownRunner {
+  /** Mira el reloj y devuelve qué ha pasado desde el paso anterior. */
+  step(endAtMs: number, nowMs: number): CountdownStep
+  /** Rearma la cuenta: el aviso y el fin vuelven a estar disponibles. */
+  reset(secondsLeft: number): void
+  /** El último segundo conocido, sin volver a mirar el reloj. */
+  current(): number
+}
+
+/**
+ * El estado de una cuenta atrás en marcha, fuera de React.
+ *
+ * Lo que hace peligroso a un temporizador no es la aritmética —eso es
+ * `countdownCues`— sino el "solo una vez": que el aviso de los 10 s no suene dos veces
+ * si alargas el descanso, y que el fin no dispare dos veces el salto al siguiente
+ * ejercicio. Eso vivía en tres `useRef` dentro del componente, donde no se puede
+ * probar sin renderizar React, cosa que este repo no puede hacer.
+ *
+ * Al ser una fábrica con estado interno se puede simular una cuenta entera tick a tick
+ * en un test, que es exactamente lo que hace `countdown.test.ts`.
+ */
+export function createCountdownRunner(
+  initialSeconds: number,
+  options: CountdownRunnerOptions = {},
+): CountdownRunner {
+  const { thresholds = REST_CUE_THRESHOLDS, warnOnce = true } = options
+  let last = Math.max(0, initialSeconds)
+  let warned = false
+  let finished = false
+
+  return {
+    step(endAtMs, nowMs) {
+      const left = secondsLeft(endAtMs, nowMs)
+      const changed = left !== last
+      const cues: CountdownCue[] = []
+
+      if (changed) {
+        for (const cue of countdownCues(last, left, thresholds)) {
+          if (cue === 'warning') {
+            if (warnOnce && warned) continue
+            warned = true
+          }
+          if (cue === 'complete') {
+            if (finished) continue
+            finished = true
+          }
+          cues.push(cue)
+        }
+        last = left
+      }
+
+      // Una cuenta que nace ya vencida no cruza ninguna frontera, pero ha terminado.
+      if (left <= 0 && !finished) {
+        finished = true
+        cues.push('complete')
+      }
+
+      return { secondsLeft: left, changed, cues }
+    },
+    reset(secondsLeft) {
+      last = Math.max(0, secondsLeft)
+      warned = false
+      finished = false
+    },
+    current() {
+      return last
+    },
+  }
+}
+
 /**
  * Alarga o acorta una cuenta atrás en marcha.
  *

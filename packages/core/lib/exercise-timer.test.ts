@@ -6,6 +6,7 @@ import {
   canTimerTransition,
   nextTimerPhase,
   TIMER_MIN_SECONDS,
+  type TimerAction,
   type TimerPhase,
 } from './exercise-timer'
 
@@ -40,6 +41,39 @@ describe('nextTimerPhase', () => {
     const phases: TimerPhase[] = ['countdown', 'running', 'paused', 'done']
     for (const phase of phases) expect(nextTimerPhase(phase, 'reset')).toBe('idle')
     expect(canTimerTransition('idle', 'reset')).toBe(false)
+  })
+})
+
+describe('una sesión de temporizador de principio a fin', () => {
+  /** Encadena acciones desde `idle` y devuelve la fase tras cada una. */
+  function walk(...actions: TimerAction[]): TimerPhase[] {
+    let phase: TimerPhase = 'idle'
+    return actions.map((action) => (phase = nextTimerPhase(phase, action)))
+  }
+
+  it('el recorrido normal: arrancar, correr, terminar', () => {
+    expect(walk('start', 'ready', 'complete')).toEqual(['countdown', 'running', 'done'])
+  })
+
+  it('pausar a mitad y reanudar no se salta el crono', () => {
+    expect(walk('start', 'ready', 'pause', 'resume', 'complete'))
+      .toEqual(['countdown', 'running', 'paused', 'running', 'done'])
+  })
+
+  it('repetir al terminar vuelve a pasar por el 3-2-1', () => {
+    expect(walk('start', 'ready', 'complete', 'repeat', 'ready'))
+      .toEqual(['countdown', 'running', 'done', 'countdown', 'running'])
+  })
+
+  it('una acción fuera de sitio no descoloca la máquina', () => {
+    // Doble toque en EMPEZAR, y un `complete` tardío que llega con el crono pausado.
+    expect(walk('start', 'start', 'ready', 'pause', 'complete', 'resume'))
+      .toEqual(['countdown', 'countdown', 'running', 'paused', 'paused', 'running'])
+  })
+
+  it('el fin no puede dispararse dos veces', () => {
+    expect(walk('start', 'ready', 'complete', 'complete'))
+      .toEqual(['countdown', 'running', 'done', 'done'])
   })
 })
 

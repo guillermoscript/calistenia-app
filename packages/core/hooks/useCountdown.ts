@@ -12,8 +12,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
-  countdownCues,
   countdownProgress,
+  createCountdownRunner,
   secondsLeft,
   REST_CUE_THRESHOLDS,
   type CountdownCue,
@@ -30,10 +30,11 @@ export interface UseCountdownOptions {
   now?: () => number
   /** Cada cuánto se mira el reloj. 250 ms basta para no perder ninguna frontera. */
   intervalMs?: number
+  /** Se lee una vez, al montar: pásale una constante, no un objeto de render. */
   thresholds?: CountdownCueThresholds
   /**
    * Si el aviso suena una sola vez por cuenta. Con `false`, alargar el descanso por
-   * encima del umbral hace que vuelva a avisar al cruzarlo.
+   * encima del umbral hace que vuelva a avisar al cruzarlo. Se lee una vez, al montar.
    */
   warnOnce?: boolean
   onCue?: (cue: CountdownCue) => void
@@ -67,54 +68,38 @@ export function useCountdown(options: UseCountdownOptions): UseCountdownResult {
   const nowRef = useLatest(options.now ?? Date.now)
   const onCueRef = useLatest(options.onCue)
   const onCompleteRef = useLatest(options.onComplete)
-  const thresholdsRef = useLatest(thresholds)
   const endAtRef = useLatest(endAt)
 
   const [remaining, setRemaining] = useState(() =>
     endAt === null ? 0 : secondsLeft(endAt, (options.now ?? Date.now)()),
   )
-  const lastRef = useRef(remaining)
-  const warnedRef = useRef(false)
-  const finishedRef = useRef(false)
 
-  const emit = useCallback(
-    (cue: CountdownCue) => {
-      if (cue === 'warning') {
-        if (warnOnce && warnedRef.current) return
-        warnedRef.current = true
-      }
-      if (cue === 'complete') {
-        if (finishedRef.current) return
-        finishedRef.current = true
-      }
-      onCueRef.current?.(cue)
-      if (cue === 'complete') onCompleteRef.current?.()
-    },
-    [warnOnce, onCueRef, onCompleteRef],
+  /**
+   * Todo el "solo una vez" vive en el runner, que es puro y está cubierto por
+   * `countdown.test.ts` simulando cuentas enteras. Aquí solo queda el cableado con
+   * React: un intervalo y un `setState`.
+   */
+  const runnerRef = useRef(
+    createCountdownRunner(remaining, { thresholds, warnOnce }),
   )
 
   const resync = useCallback(() => {
     const end = endAtRef.current
     if (end === null) return
-    const rem = secondsLeft(end, nowRef.current())
-    const prev = lastRef.current
-    if (rem !== prev) {
-      for (const cue of countdownCues(prev, rem, thresholdsRef.current)) emit(cue)
-      lastRef.current = rem
-      setRemaining(rem)
+    const step = runnerRef.current.step(end, nowRef.current())
+    for (const cue of step.cues) {
+      onCueRef.current?.(cue)
+      if (cue === 'complete') onCompleteRef.current?.()
     }
-    // También cuando la cuenta ya nacía en cero, que no cruza ninguna frontera.
-    if (rem <= 0) emit('complete')
-  }, [emit, endAtRef, nowRef, thresholdsRef])
+    if (step.changed) setRemaining(step.secondsLeft)
+  }, [endAtRef, nowRef, onCueRef, onCompleteRef])
 
   // Rearme: una cuenta nueva vuelve a tener derecho a avisar y a terminar.
   const resetKey = options.resetKey === undefined ? endAt : options.resetKey
   useEffect(() => {
-    warnedRef.current = false
-    finishedRef.current = false
     const end = endAtRef.current
     const rem = end === null ? 0 : secondsLeft(end, nowRef.current())
-    lastRef.current = rem
+    runnerRef.current.reset(rem)
     setRemaining(rem)
   }, [resetKey, endAtRef, nowRef])
 
