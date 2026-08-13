@@ -131,6 +131,9 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
   const goalReached = !!challenge.goal && !!currentEntry && currentEntry.value >= challenge.goal
   const unit = getMetricUnit(challenge.metric, challenge.exercise_slug)
   const metricLabel = getMetricLabel(challenge.metric, challenge.custom_metric, challenge.exercise_slug)
+  // Va en la fila meta, junto al estado: es la misma pregunta ("¿cuándo va esto?").
+  // Vacío si los campos no son válidos.
+  const dateRange = formatDateRange(challenge.starts_at, challenge.ends_at)
   const invitableUsers = following.filter(u => !participantIds.has(u.id))
 
   const handleInvite = async (targetId: string) => {
@@ -166,8 +169,9 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
               {t('challenges.goal', { value: challenge.goal })}
             </span>
           )}
+          {dateRange && <span className="text-[11px] text-foreground">{dateRange}</span>}
           <span className={cn('text-[11px]', goalReached ? 'text-lime' : isActive ? 'text-amber-400' : 'text-muted-foreground')}>
-            {goalReached ? t('challenge.preset.completed') : isActive ? daysRemaining(challenge.ends_at) : t('challenge.preset.expired')}
+            {goalReached ? t('challenge.preset.completed') : isActive ? daysRemaining(challenge.ends_at, challenge.starts_at) : t('challenge.preset.expired')}
           </span>
         </div>
         {challenge.description && (
@@ -176,9 +180,6 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
         <div className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
           {t(`challenge.metricDesc.${challenge.metric}`)}
           {hasWindowSemantics(challenge.metric) && <> · {t('challenge.scoreWindowNote')}</>}
-        </div>
-        <div className="text-[10px] text-muted-foreground mt-2 opacity-70">
-          {formatDateRange(challenge.starts_at, challenge.ends_at)}
         </div>
       </div>
 

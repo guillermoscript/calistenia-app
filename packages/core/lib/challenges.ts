@@ -47,7 +47,20 @@ export const METRIC_UNITS: Record<ChallengeMetric, string> = {
   total_distance: 'km',
 }
 
-export function daysRemaining(endsAt: string): string {
+/**
+ * Human status for a challenge window.
+ *
+ * Pass `startsAt` whenever it's available: a challenge that hasn't started yet
+ * used to report "N days left" counting to its end, which reads as if it were
+ * already running — and next to a visible date range that says it starts in a
+ * fortnight, the two contradict each other outright.
+ */
+export function daysRemaining(endsAt: string, startsAt?: string): string {
+  if (startsAt) {
+    const untilStart = Math.ceil((new Date(startsAt).getTime() - Date.now()) / 86400000)
+    if (untilStart === 1) return i18n.t('challenge.startsTomorrow')
+    if (untilStart > 1) return i18n.t('challenge.startsInDays', { count: untilStart })
+  }
   const diff = Math.ceil((new Date(endsAt).getTime() - Date.now()) / 86400000)
   if (diff <= 0) return i18n.t('challenge.finished')
   if (diff === 1) return i18n.t('challenge.oneDayLeft')
