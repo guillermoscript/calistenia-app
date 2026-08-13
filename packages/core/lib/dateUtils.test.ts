@@ -420,6 +420,35 @@ describe('formatDateRange', () => {
     expect(result).toMatch(/^9 ago\.?$/)
   })
 
+  it('sin formatRange (ICU incompleto, tipo Hermes) formatea los dos extremos', () => {
+    // La app nativa comparte este helper y el ICU de Hermes no siempre trae
+    // formatRange. El fallback no colapsa el mes: "9 ago – 23 ago" en vez de
+    // "9–23 ago". Menos bonito, pero legible y nunca revienta.
+    //
+    // OJO con dos cosas de este test:
+    // 1. Los fake timers de vitest SUSTITUYEN `Intl.DateTimeFormat` por su propio
+    //    wrapper, así que un formatter creado con ellos activos no hereda del
+    //    prototipo real y borrarle `formatRange` no le afecta. Por eso vuelve a
+    //    timers reales antes de tocar el prototipo. (Y por eso `rangeFormatter`
+    //    no cachea: una instancia cacheada del wrapper se colaría aquí.)
+    // 2. Al usar timers reales, el "año actual" es el de verdad, así que las
+    //    fechas se construyen con ese mismo año para que no salga el año en la
+    //    cadena y el test no caduque al cambiar de año.
+    vi.useRealTimers()
+    const year = new Date().getUTCFullYear()
+    const proto = Intl.DateTimeFormat.prototype as unknown as Record<string, unknown>
+    const original = proto.formatRange
+    delete proto.formatRange
+    try {
+      expect(typeof new Intl.DateTimeFormat('es').formatRange).toBe('undefined') // el delete llegó
+      expect(formatDateRange(`${year}-08-09 00:00:00.000Z`, `${year}-08-23 00:00:00.000Z`)).toMatch(
+        /^9 ago\.? – 23 ago\.?$/,
+      )
+    } finally {
+      proto.formatRange = original
+    }
+  })
+
   it('entradas vacías o inválidas -> "" (la línea desaparece, no muestra basura)', () => {
     expect(formatDateRange('', '2026-08-23 00:00:00.000Z')).toBe('')
     expect(formatDateRange('2026-08-09 00:00:00.000Z', '')).toBe('')

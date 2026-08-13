@@ -200,15 +200,13 @@ export function relativeDate(dateStr: string): string {
   return dayjs.tz(dateStr, _tz).toDate().toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
 }
 
-/** Cache of range formatters, keyed by locale + whether the year is shown. */
-const _rangeFormatters = new Map<string, Intl.DateTimeFormat>()
-
+/**
+ * Build a short date formatter for the active locale. Not cached on purpose:
+ * this renders once or twice per screen, so the allocation is irrelevant, and a
+ * cached formatter would have to be invalidated on every language change.
+ */
 function rangeFormatter(withYear: boolean): Intl.DateTimeFormat {
   const locale = i18n.language || 'es'
-  const key = `${locale}|${withYear}`
-  const cached = _rangeFormatters.get(key)
-  if (cached) return cached
-
   const options: Intl.DateTimeFormatOptions = {
     day: 'numeric',
     month: 'short',
@@ -216,15 +214,12 @@ function rangeFormatter(withYear: boolean): Intl.DateTimeFormat {
     timeZone: 'UTC',
     ...(withYear ? { year: 'numeric' as const } : {}),
   }
-  let fmt: Intl.DateTimeFormat
   try {
-    fmt = new Intl.DateTimeFormat(locale, options)
+    return new Intl.DateTimeFormat(locale, options)
   } catch {
     // The browser language detector can hand us a tag Intl rejects.
-    fmt = new Intl.DateTimeFormat('es', options)
+    return new Intl.DateTimeFormat('es', options)
   }
-  _rangeFormatters.set(key, fmt)
-  return fmt
 }
 
 /**

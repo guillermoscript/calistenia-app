@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
 import { getMetricLabel, getMetricUnit, daysRemaining } from '@calistenia/core/lib/challenges'
+import { formatDateRange } from '@calistenia/core/lib/dateUtils'
 import {
   resolvePresetChallengeDescription,
   resolvePresetChallengeTitle,
@@ -143,6 +144,9 @@ export default function ChallengeDetailScreen() {
   // viven en i18n (#350), así que se resuelven aquí en vez de usar el campo crudo.
   const title = resolvePresetChallengeTitle(challenge)
   const description = resolvePresetChallengeDescription(challenge)
+  // El "N días restantes" de arriba no dice cuándo empieza ni acaba, y en un reto
+  // ya terminado no queda ninguna fecha. Vacío si los campos no son válidos.
+  const dateRange = formatDateRange(challenge.starts_at, challenge.ends_at)
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -179,6 +183,10 @@ export default function ChallengeDetailScreen() {
 
           {description ? (
             <Text className="text-sm leading-relaxed text-muted-foreground">{description}</Text>
+          ) : null}
+
+          {dateRange ? (
+            <Text className="font-mono text-[10px] text-muted-foreground">{dateRange}</Text>
           ) : null}
         </View>
 
