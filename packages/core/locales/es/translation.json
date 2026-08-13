@@ -2541,6 +2541,8 @@
   "challenge.duration.custom": "Personalizado",
   "challenge.units": "unidades",
   "challenge.whatToCompete": "Qué se compite",
+  "challenge.moreMetrics": "Más métricas ({{n}})",
+  "challenge.fewerMetrics": "Menos métricas",
   "challenge.deselectAll": "Deseleccionar todos",
   "challenge.selectAll": "Seleccionar todos",
   "challenge.goal": "Meta",

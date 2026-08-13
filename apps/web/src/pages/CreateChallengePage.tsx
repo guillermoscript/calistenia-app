@@ -13,19 +13,42 @@ import { Input } from '../components/ui/input'
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon'
 import type { ChallengeMetric } from '@calistenia/core/types'
 
-const METRIC_IDS: { id: ChallengeMetric; icon: string }[] = [
+interface MetricOption {
+  id: ChallengeMetric
+  icon: string
+}
+
+/**
+ * Las cuatro que se usan de verdad (#384). El corte sale de los presets de
+ * #370 —`most_sessions` en tres de los cuatro, `most_pushups` en el otro— más
+ * las dos métricas clásicas que se eligen de un solo toque.
+ */
+const PRIMARY_METRICS: MetricOption[] = [
   { id: 'most_sessions', icon: '💪' },
+  { id: 'longest_streak', icon: '🔥' },
   { id: 'most_pullups', icon: '🏋️' },
   { id: 'most_pushups', icon: '🫸' },
-  { id: 'longest_streak', icon: '🔥' },
-  { id: 'most_lsit', icon: '🧘' },
-  { id: 'most_handstand', icon: '🤸' },
+]
+
+/**
+ * El resto, tras "Más métricas". Ninguna desaparece del producto: todas piden
+ * un paso extra (elegir ejercicio del catálogo, una unidad ajena como los km)
+ * o son la salida de emergencia (`custom`, la última de todas).
+ */
+const SECONDARY_METRICS: MetricOption[] = [
   { id: 'exercise', icon: '🎯' },
   { id: 'total_workouts', icon: '🏋️' },
   { id: 'total_exercise', icon: '🔢' },
   { id: 'total_distance', icon: '🛣️' },
+  { id: 'most_lsit', icon: '🧘' },
+  { id: 'most_handstand', icon: '🤸' },
   { id: 'custom', icon: '✏️' },
 ]
+
+const ALL_METRICS: MetricOption[] = [...PRIMARY_METRICS, ...SECONDARY_METRICS]
+
+const isSecondaryMetric = (metric: ChallengeMetric) =>
+  SECONDARY_METRICS.some(m => m.id === metric)
 
 const stripAccents = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
@@ -59,6 +82,9 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
   )
   const [description, setDescription] = useState('')
   const [metric, setMetric] = useState<ChallengeMetric>(prefilledExercise ? 'exercise' : 'most_sessions')
+  // `?exercise=<slug>` preselecciona `exercise`, que vive en el desplegable: si
+  // no lo abrimos, el paso arrancaría con la métrica activa fuera de la vista.
+  const [showAllMetrics, setShowAllMetrics] = useState(() => isSecondaryMetric(prefilledExercise ? 'exercise' : 'most_sessions'))
   const [customMetric, setCustomMetric] = useState('')
   const [exerciseSlug, setExerciseSlug] = useState<string | null>(prefilledExercise?.id ?? null)
   const [exerciseQuery, setExerciseQuery] = useState('')
@@ -102,6 +128,16 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
 
   const isCustomMetric = metric === 'custom'
   const isExerciseMetric = metric === 'exercise' || metric === 'total_exercise'
+
+  // Plegado enseñamos las principales y, si la elegida está en el desplegable,
+  // también esa: plegar nunca puede esconder la métrica que está seleccionada.
+  const selectedSecondary = SECONDARY_METRICS.find(m => m.id === metric)
+  const visibleMetrics = showAllMetrics
+    ? ALL_METRICS
+    : selectedSecondary
+      ? [...PRIMARY_METRICS, selectedSecondary]
+      : PRIMARY_METRICS
+  const hiddenMetricCount = ALL_METRICS.length - visibleMetrics.length
   const selectedExercise = exerciseSlug ? getCatalogEntry(exerciseSlug) : undefined
 
   const exerciseResults = useMemo(() => {
@@ -191,10 +227,11 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
       {/* Metric */}
       <fieldset className="mb-5">
         <legend className="text-[10px] text-muted-foreground tracking-widest uppercase mb-2">{t('challenge.whatToCompete')}</legend>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {METRIC_IDS.map(m => (
+        <div id="challenge-metric-grid" className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {visibleMetrics.map(m => (
             <button
               key={m.id}
+              type="button"
               onClick={() => setMetric(m.id)}
               aria-pressed={metric === m.id}
               className={cn(
@@ -205,13 +242,28 @@ export default function CreateChallengePage({ userId }: CreateChallengePageProps
               )}
             >
               <div className="text-[11px] font-medium">
-                <span className="mr-1.5">{m.icon}</span>
+                <span className="mr-1.5" aria-hidden="true">{m.icon}</span>
                 {t(`challenge.metric.${m.id}`)}
               </div>
               <div className="text-[9px] opacity-60 mt-0.5">{t(`challenge.metricDesc.${m.id}`)}</div>
             </button>
           ))}
         </div>
+
+        {(showAllMetrics || hiddenMetricCount > 0) && (
+          <button
+            type="button"
+            onClick={() => setShowAllMetrics(v => !v)}
+            aria-expanded={showAllMetrics}
+            aria-controls="challenge-metric-grid"
+            className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground tracking-widest uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-1.5 min-h-[32px]"
+          >
+            <span aria-hidden="true">{showAllMetrics ? '▾' : '▸'}</span>
+            {showAllMetrics
+              ? t('challenge.fewerMetrics')
+              : t('challenge.moreMetrics', { n: hiddenMetricCount })}
+          </button>
+        )}
 
         {/* Custom metric input */}
         {isCustomMetric && (

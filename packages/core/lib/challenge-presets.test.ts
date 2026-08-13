@@ -5,8 +5,10 @@ import es from '../locales/es/translation.json'
 import {
   BEGINNER_CHALLENGE_PRESETS,
   findExistingPresetChallenge,
+  getBeginnerChallengePreset,
   getPresetDateRange,
   getPresetTargetLabel,
+  getVisibleBeginnerChallengePresets,
   resolvePresetChallengeTitle,
 } from './challenge-presets'
 
@@ -29,6 +31,19 @@ describe('beginner challenge presets', () => {
       'pushup_builder',
     ])
     expect(BEGINNER_CHALLENGE_PRESETS.find((preset) => preset.id === 'pushup_builder')?.enabled).toBe(false)
+  })
+
+  // #384: una tarjeta con "PRÓXIMAMENTE" que no se puede pulsar no informa,
+  // sólo ocupa sitio — el catálogo esconde los presets deshabilitados.
+  it('hides disabled presets from the catalog but keeps resolving them by id', () => {
+    expect(getVisibleBeginnerChallengePresets().map((preset) => preset.id)).toEqual([
+      'starter_7_day',
+      'consistency_30_day',
+      'first_10_workouts',
+    ])
+    expect(getVisibleBeginnerChallengePresets().every((preset) => preset.enabled)).toBe(true)
+    // Un reto ya creado desde un preset escondido tiene que seguir resolviendo.
+    expect(getBeginnerChallengePreset('pushup_builder')?.id).toBe('pushup_builder')
   })
 
   it('uses inclusive start/end dates for a preset duration', () => {

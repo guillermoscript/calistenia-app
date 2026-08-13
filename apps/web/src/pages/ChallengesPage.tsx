@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button'
 import { daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
 import {
   BEGINNER_CHALLENGE_PRESETS,
+  getVisibleBeginnerChallengePresets,
   getPresetDateRange,
   getPresetTargetLabel,
   resolvePresetChallengeTitle,
@@ -99,7 +100,7 @@ export default function ChallengesPage({ userId }: ChallengesPageProps) {
           <h2 className="font-bebas text-2xl mb-1">{t('challenge.preset.catalogTitle')}</h2>
           <p className="text-xs text-muted-foreground mb-4">{t('challenge.preset.catalogDescription')}</p>
           <div className="grid gap-2 md:grid-cols-2">
-            {BEGINNER_CHALLENGE_PRESETS.map(preset => (
+            {getVisibleBeginnerChallengePresets().map(preset => (
               <BeginnerPresetCard
                 key={preset.id}
                 preset={preset}
