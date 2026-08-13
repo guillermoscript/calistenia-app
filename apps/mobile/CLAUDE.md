@@ -35,9 +35,15 @@ barra de navegación de Android; la ventana del Modal nativo queda por encima.
   (`index`, `history`, `library`, `nutrition`, `profile`, `programs`) y rutas
   apiladas (`cardio`, `session`, `social`, `friends`, `race`, `reminders`, …).
   `app/_layout.tsx` es la raíz.
-- `components/` — componentes UI. Subcarpetas: `ui/` (primitivos), `cardio/`,
-  `home/`, `nutrition/`, `session/`, `social/`, `race/`, `share/`,
-  `onboarding/`, `free-session/`, `ai-elements/`.
+- `components/` — componentes UI. Subcarpetas: `ui/` (primitivos), `training/`
+  (piezas de entreno sin dominio), `cardio/`, `home/`, `nutrition/`, `session/`,
+  `battle/`, `social/`, `race/`, `share/`, `onboarding/`, `free-session/`,
+  `ai-elements/`.
+  **`training/` es compartido**: `CountdownRing`, `RestPanel`, `TimerPanel` y
+  `RepStepper` solo aceptan primitivas y callbacks. No les pases un `Step`, un
+  `BattleSnapshot` ni ningún tipo de feature — lo que quieras enseñar dentro va
+  por `children`. Los sonidos y las hápticas se inyectan desde
+  `lib/training-cues.ts`; estos componentes no los importan.
 - `contexts/` — hubs de estado (ver "Módulos críticos").
 - `lib/` — "platform glue": adaptadores entre RN/Expo y core (storage, sonidos,
   haptics, i18n, notifications, GPS tracker, push, Sentry/analytics init…).
@@ -66,6 +72,16 @@ Instalar deps: `pnpm install` desde la raíz del repo.
   compartir. La lógica pura de pasos/fases vive en `lib/session-machine.ts`
   (testeada); `RestScreen`/`ExerciseTimer` en `components/session/`. Cambios
   aquí son delicados; toca lo mínimo.
+  Desde el #402 esos dos son solo la **composición** de la sesión: la cuenta
+  atrás y la máquina del temporizador son `useCountdown`/`useExerciseTimer` en
+  `packages/core/hooks` (lógica pura testeada en `core/lib/countdown.ts` y
+  `exercise-timer.ts`), y los píxeles son `components/training/`. Lo que queda
+  en `session/` es lo que de verdad es de la sesión: la notificación local de
+  fin de descanso, la persistente en vivo y el descanso guardado por ejercicio.
+  `components/battle/BattleLive.tsx` usa las mismas piezas sin heredar nada de
+  eso. **Ojo**: `components/circuit/CountdownRing.tsx` sigue siendo una copia
+  propia del patrón (su intervalo, sus señales); si lo tocas, migra a
+  `training/` en vez de ampliarlo.
 - `contexts/ActiveSessionContext.tsx` — hub de la sesión de fuerza.
   **SessionView es dueño del estado local (`stepIdx`/`phase`) y lo empuja al
   context; el context nunca se lee de vuelta durante la sesión, solo para

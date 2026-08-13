@@ -1,3 +1,4 @@
-// Constantes compartidas por las vistas de sesión (RestScreen, TimerScreen, SessionView).
-export const LIME = 'hsl(74 90% 45%)'
-export const MUTED = 'hsl(0 0% 55%)'
+// Los colores del entreno viven ahora en `components/training/constants`, que no sabe
+// nada de sesiones ni de batallas. Se reexportan aquí para no tocar a quien ya los
+// importaba desde la sesión.
+export { LIME, MUTED } from '@/components/training/constants'

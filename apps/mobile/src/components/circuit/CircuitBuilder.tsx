@@ -477,10 +477,13 @@ export default function CircuitBuilder({ initialPreset, onStart }: CircuitBuilde
         <Button
           className="w-full"
           size="lg"
+          variant="limeSolid"
           disabled={exercises.length === 0}
           onPress={handleStart}
         >
-          <Play size={16} color={COLORS.lime} fill={COLORS.lime} />
+          {/* Icono en negro, no lime: sobre el relleno lime sólido el lime
+              desaparece (el mismo motivo por el que la variante usa text-black). */}
+          <Play size={16} color="#000" fill="#000" />
           <Text>{t('circuit.start')}</Text>
         </Button>
         <Text className="mt-1.5 text-center font-mono text-xs text-muted-foreground">
