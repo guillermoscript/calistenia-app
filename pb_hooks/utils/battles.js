@@ -730,11 +730,46 @@ function findInviteByToken(app, token) {
 }
 
 /**
+ * ¿Hay bloqueo entre `userId` y alguien que ya está dentro de la batalla — el creador
+ * o cualquier participante (#413)?
+ *
+ * Una batalla es un evento de grupo, así que no basta con mirar al creador: si C monta
+ * la batalla e invita a A y a B, que se bloquean entre ellos, el par acabaría junto
+ * viéndose el progreso en vivo sin que ninguno sea el creador.
+ *
+ * `app` es el App del contexto de llamada (txApp dentro de la transacción del join,
+ * nunca $app mezclado con ella).
+ */
+function battleHasBlockWith(app, battle, userId) {
+  if (!userId) return false
+  var blocks = require(`${__hooks}/utils/blocks.js`)
+
+  // Una sola consulta a `user_blocks` en vez de una por candidato: el lobby no tiene tope
+  // de participantes en el servidor, así que el coste de este guard no debe crecer con él.
+  var counterparts = blocks.blockedCounterparts(app, userId)
+
+  var creatorId = battle.getString('creator')
+  if (creatorId && counterparts[creatorId]) return true
+
+  var participants = findParticipants(app, battle.getString('id'))
+  for (var i = 0; i < participants.length; i++) {
+    var other = participants[i].getString('user')
+    if (other && counterparts[other]) return true
+  }
+  return false
+}
+
+/**
  * Why an invite cannot be used right now, or an empty string if it can.
  *
  * The reasons are deliberately coarse (`invalid` / `expired` / `closed`) and never
  * mention who else is in the lobby: an attacker holding a guessed token must not learn
  * anything about the participants from the landing endpoint.
+ *
+ * El bloqueo NO se comprueba aquí sino en el handler del join, después de resolver si
+ * quien llega ya tiene plaza: esta función también la usa la landing sin auth, que no
+ * tiene identidad, y a un participante que ya está dentro no se le echa por un bloqueo
+ * posterior (decisión de #413: se bloquea la entrada, no una batalla en marcha).
  */
 function inviteRejection(app, invite) {
   if (!invite) return 'invalid'
@@ -918,6 +953,7 @@ module.exports = {
   issueInvite: issueInvite,
   findInviteByToken: findInviteByToken,
   inviteRejection: inviteRejection,
+  battleHasBlockWith: battleHasBlockWith,
 
   lobbyParticipants: lobbyParticipants,
   countWithStatus: countWithStatus,

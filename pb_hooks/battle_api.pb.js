@@ -263,6 +263,18 @@ routerAdd("POST", "/api/battles/join", function (e) {
         return
       }
 
+      // Un par bloqueado no entra en la misma batalla (#413). Esta ruta corre con
+      // `$app`, así que se salta las API rules: sin esta comprobación el bloqueado
+      // podría unirse igual y la regla de lectura solo lo esconderá después, que a
+      // mitad de batalla es peor experiencia que no dejarle entrar.
+      //
+      // El 409 es exactamente el de un token revocado: quien llega no debe poder
+      // distinguir un bloqueo de un enlace caducado. Va DESPUÉS de la rama de plaza
+      // existente a propósito — a quien ya está dentro no se le echa.
+      if (battles.battleHasBlockWith(txApp, battle, userId)) {
+        battles.fail(409, "invite_invalid", "This invite cannot be used")
+      }
+
       if (!battles.claimIdempotencyKey(txApp, battleId, userId, "join", body.idempotency_key)) {
         outcome.alreadyJoined = true
         return
