@@ -101,6 +101,14 @@ export const qk = {
   // Reto destacado en Home (#351): depende del usuario por el estado de participación
   featuredChallenge: (userId: string | null) => ['featured-challenge', userId] as const,
 
+  // — Programas de comunidad (#353) —
+  // Ojo: NO son los programas de entrenamiento de `qk.programs`. Aquí van las
+  // cohortes con hitos semanales; las claves llevan `community-` para que
+  // invalidar una familia no toque la otra.
+  communityPrograms: (userId: string | null) => ['community-programs', userId] as const,
+  communityProgram: (programId: string, userId: string | null) =>
+    ['community-program', programId, userId] as const,
+
   // — Cuerpo / salud —
   bodyMeasurements: (userId: string | null) =>
     ['body_measurements', userId] as const,

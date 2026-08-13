@@ -31,7 +31,9 @@ Use the same property names and meanings on both platforms:
 | `source` | Immediate trigger or entry point | `workout_completion`, `quick_invite`, `race_lobby` |
 | `workout_id` | Stable workout key, not title or note content | `p2_lun`, `free_1712345678` |
 | `challenge_id` | PocketBase challenge id | `abc123` |
-| `program_id` | PocketBase program id | `prog123` |
+| `program_id` | PocketBase `programs` id — the training-program curriculum | `prog123` |
+| `community_program_id` | PocketBase `community_programs` id. Only on `community_program_*` events | `cprog123` |
+| `milestone_id` | `community_program_milestones` id, or `phase_{n}` for `program_milestone_completed` | `ms123`, `phase_2` |
 | `race_id` | PocketBase `races` id. Only on `race_*` events | `race123` |
 | `battle_id` | PocketBase `battles` id. Only on `battle_*` events | `btl123` |
 | `share_type` | Asset or link shared | `workout`, `nutrition`, `race_result`, `invite_link` |
@@ -61,6 +63,11 @@ GPS coordinates, or unnecessary personal data.
 | `challenge_completed` | Expired challenge is closed | `surface`, `source`, `challenge_id`, `result` | Web + mobile core | Challenge status changes to `ended` |
 | `program_joined` | Program enrollment becomes active | `surface`, `source`, `program_id`, `result` | Web + mobile core | Enrollment is created or reactivated |
 | `program_milestone_completed` | All configured non-rest days in a program phase are complete | `surface`, `source`, `program_id`, `workout_id`, `milestone_id`, `result` | Web + mobile core | Phase completion is detected once per user/program/phase, from PocketBase rows scoped to that program (strength days in `sessions`, cardio days in `cardio_sessions`) |
+| `community_program_viewed` | Community program detail finishes loading | `surface=community_program`, `source`, `community_program_id`, `result` | Web + mobile core | Emitted once per program per screen visit, only after the program actually resolves. `result` distinguishes a member (`joined`) from a browser (`viewed`) |
+| `community_program_joined` | Membership becomes active | `surface=community_program`, `source`, `community_program_id`, `result` | Web + mobile core | The `(program, user)` row is created or reactivated. A repeat tap on an already-active membership emits nothing, so the event counts joins and not taps. `result` is `joined` for a first join and `resumed` when a previously-left membership is reactivated — a resume keeps the original `started_at`, so it is not a fresh cohort entry |
+| `community_program_left` | Member leaves a community program | `surface=community_program`, `source`, `community_program_id`, `result` | Web + mobile core | Membership status flips to `left`. The row is never deleted, so leaving twice emits once |
+| `community_program_milestone_completed` | A weekly milestone's target is met inside its own week window | `surface=community_program`, `source`, `community_program_id`, `milestone_id`, `result` | Web + mobile core | Detected on recompute, then suppressed by a local marker so it fires once per user/program/milestone. Because milestone completion is derived rather than stored, a later deletion of the qualifying workout lowers the displayed progress but does not re-arm the event |
+| `community_program_completed` | Every milestone in the program is complete | `surface=community_program`, `source`, `community_program_id`, `result` | Web + mobile core | Fires once per user/program, on the recompute that first observes all milestones complete. A program with zero milestones never completes |
 | `race_created` | GPS race is created | `surface=race`, `source`, `race_id`, `participant_count`, `result` | Web + mobile | Race record is created |
 | `race_joined` | User joins an existing GPS race | `surface=race`, `source`, `race_id`, `participant_count`, `result` | Web + mobile | Participant record is created |
 | `race_started` | Race countdown starts | `surface=race`, `source`, `race_id`, `participant_count`, `result` | Web + mobile | Race enters its active state |
