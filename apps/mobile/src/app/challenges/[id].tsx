@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -50,6 +50,10 @@ export default function ChallengeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const user = useAuthUser()
   const userId = user?.id ?? null
+  // El SafeAreaView mete el inset como padding, y un hijo `absolute bottom-0` se
+  // posiciona contra la caja de padding: sin esto la fila anclada queda DEBAJO de
+  // la barra de navegación de Android.
+  const insets = useSafeAreaInsets()
 
   const { challenge, leaderboard, loading, participantIds, load } = useChallengeDetail(id ?? null, userId)
   const [joining, setJoining] = useState(false)
@@ -307,11 +311,13 @@ export default function ChallengeDetailScreen() {
               <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 {t('challenge.leaderboard')} · {t('challenges.participants', { count: leaderboard.length })}
               </Text>
-              <ChevronDown
-                size={16}
-                color="hsl(0 0% 55%)"
-                style={{ transform: [{ rotate: leaderboardOpen ? '180deg' : '0deg' }] }}
-              />
+              {/* El giro va en la View, no en el icono: react-native-svg se queda
+                  el `transform` del style y lo aplica como transformación SVG con
+                  origen en (0,0), así que el chevron rota fuera de su viewBox y
+                  desaparece en vez de darse la vuelta. */}
+              <View style={{ transform: [{ rotate: leaderboardOpen ? '180deg' : '0deg' }] }}>
+                <ChevronDown size={16} color="hsl(0 0% 55%)" />
+              </View>
             </Pressable>
             {leaderboardOpen && (
               <View className="gap-1.5">
@@ -337,7 +343,11 @@ export default function ChallengeDetailScreen() {
 
       {/* Tu fila, anclada abajo mientras la de verdad está fuera de la vista. */}
       {showPinnedOwnRow && currentEntry && (
-        <View className="absolute inset-x-0 bottom-0 border-t border-lime/40 bg-background" pointerEvents="box-none">
+        <View
+          className="absolute inset-x-0 bottom-0 border-t border-lime/40 bg-background"
+          style={{ paddingBottom: insets.bottom }}
+          pointerEvents="box-none"
+        >
           <RankRow entry={currentEntry} position={ownPosition} unit={unit} variant="flat" />
         </View>
       )}
