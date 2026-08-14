@@ -195,8 +195,14 @@ export default function ChallengeDetailPage({ userId }: ChallengeDetailPageProps
             </span>
           )}
           {dateRange && <span className="text-[11px] text-foreground">{dateRange}</span>}
-          <span className={cn('text-[11px]', goalReached ? 'text-lime' : isActive ? 'text-amber-400' : 'text-muted-foreground')}>
-            {goalReached ? t('challenge.preset.completed') : isActive ? daysRemaining(challenge.ends_at, challenge.starts_at) : t('challenge.preset.expired')}
+          {/* En la rama con meta el héroe ya dice si está completado, así que esta
+              ranura vuelve a lo suyo (cuánto tiempo queda) en vez de repetirlo. */}
+          <span className={cn('text-[11px]', !isGoalLayout && goalReached ? 'text-lime' : isActive ? 'text-amber-400' : 'text-muted-foreground')}>
+            {!isGoalLayout && goalReached
+              ? t('challenge.preset.completed')
+              : isActive
+                ? daysRemaining(challenge.ends_at, challenge.starts_at)
+                : t('challenge.preset.expired')}
           </span>
         </div>
         {/* En la rama de ranking la cabecera se encoge para que la lista empiece

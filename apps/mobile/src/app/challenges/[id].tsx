@@ -253,9 +253,11 @@ export default function ChallengeDetailScreen() {
             {dateRange ? (
               <Text className="font-mono text-[10px] text-foreground">· {dateRange}</Text>
             ) : null}
+            {/* En la rama con meta el héroe ya dice si está completado, así que
+                esta ranura vuelve a lo suyo (cuánto queda) en vez de repetirlo. */}
             <Text className={cn('font-mono text-[10px]', isActive ? 'text-amber-400' : 'text-muted-foreground')}>
               ·{' '}
-              {goalReached
+              {!isGoalLayout && goalReached
                 ? t('challenge.preset.completed')
                 : isActive
                   ? daysRemaining(challenge.ends_at, challenge.starts_at)
