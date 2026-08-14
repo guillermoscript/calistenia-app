@@ -2601,6 +2601,8 @@
   "challenge.preset.expired": "Challenge ended",
   "challenge.preset.noProgress": "Log a workout to see progress here.",
   "challenge.noParticipants": "No participants yet.",
+  "challenge.leaderboard": "Leaderboard",
+  "challenge.goalRemaining": "{{value}} to go",
 
   "communityProgram.nav": "Programs",
   "communityProgram.kicker": "COMMUNITY",
