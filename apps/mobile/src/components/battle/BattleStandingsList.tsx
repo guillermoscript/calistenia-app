@@ -134,12 +134,19 @@ interface BattleStandingsListProps {
   standings: BattleStanding[]
   config: BattleConfiguration
   meUserId: string | null
+  /**
+   * Quién se queda el scroll. En la vista de entreno lo tiene la lista, que es lo único
+   * que crece; en la de espera lo tiene la pantalla entera (#432), porque una lista
+   * estirada a `flex-1` con dos participantes dejaba un vacío enorme bajo la última fila.
+   */
+  scroll?: boolean
 }
 
 export default function BattleStandingsList({
   standings,
   config,
   meUserId,
+  scroll = true,
 }: BattleStandingsListProps) {
   const { t, i18n } = useTranslation()
 
@@ -169,26 +176,32 @@ export default function BattleStandingsList({
 
   const leftTag = t('battle.leftTag')
   const someone = t('battle.someone')
+  // El servidor manda cadena vacía cuando la cuenta no tiene `display_name`, así que el
+  // relleno es cosa del cliente. Caer en el mismo "Alguien" que el rival dejaba una
+  // pantalla cara a cara donde solo te distinguía un fondo lime al 5 % (#432).
+  const youName = t('battle.youName')
 
-  return (
-    <ScrollView className="flex-1">
-      {rows.map(({ entry, activity }) => (
-        <BattleStandingsRow
-          key={entry.participant_id}
-          rank={entry.rank}
-          displayName={entry.display_name || someone}
-          activity={activity}
-          isMe={entry.user === meUserId}
-          hasLeft={entry.status === 'left'}
-          hasFinished={entry.status === 'finished'}
-          completedRounds={entry.score.completed_rounds}
-          completedReps={entry.score.completed_reps}
-          completedTimeSeconds={entry.score.completed_time_seconds}
-          showReps={columns.reps}
-          showSeconds={columns.seconds}
-          leftTag={leftTag}
-        />
-      ))}
-    </ScrollView>
-  )
+  const rowNodes = rows.map(({ entry, activity }) => {
+    const isMe = entry.user === meUserId
+    return (
+      <BattleStandingsRow
+        key={entry.participant_id}
+        rank={entry.rank}
+        displayName={entry.display_name || (isMe ? youName : someone)}
+        activity={activity}
+        isMe={isMe}
+        hasLeft={entry.status === 'left'}
+        hasFinished={entry.status === 'finished'}
+        completedRounds={entry.score.completed_rounds}
+        completedReps={entry.score.completed_reps}
+        completedTimeSeconds={entry.score.completed_time_seconds}
+        showReps={columns.reps}
+        showSeconds={columns.seconds}
+        leftTag={leftTag}
+      />
+    )
+  })
+
+  if (!scroll) return <View>{rowNodes}</View>
+  return <ScrollView className="flex-1">{rowNodes}</ScrollView>
 }

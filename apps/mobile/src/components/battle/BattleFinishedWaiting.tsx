@@ -6,8 +6,18 @@
  * Aquí el reloj se congela en tu final, el marcador sigue vivo —que es justo lo
  * interesante mientras esperas— y hay una salida, porque la batalla no te necesita
  * mirando para seguir su curso.
+ *
+ * El orden de la pantalla se rehízo en #432: enseñaba los datos correctos con la
+ * jerarquía invertida. Lo más grande era "HAS TERMINADO", que es lo único que el usuario
+ * ya sabe —acaba de pulsar el botón que abre esta pantalla—; el puesto, que es la
+ * noticia, era una celda más entre cinco números idénticos y sin denominador; y el
+ * marcador vivo iba el último, detrás del texto de espera, un botón y una nota al pie.
+ * Ahora manda el puesto (con denominador, en lime cuando vas primero), el marcador sube
+ * justo debajo y tu marca congelada cierra la pantalla. La salida ya no imita un botón
+ * primario fallido: es un enlace, y dice a dónde va en lugar de nombrar el mecanismo.
  */
-import { View, Pressable } from 'react-native'
+import { View, Pressable, ScrollView } from 'react-native'
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 
@@ -19,11 +29,11 @@ import { battleSpanMs, battleWorkColumns, formatBattleElapsed } from '@calisteni
 
 function Stat({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <View className={cn('flex-1', className)}>
+    <View className={className}>
       <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
         {label}
       </Text>
-      <Text className="font-bebas text-3xl leading-none text-foreground">{value}</Text>
+      <Text className="font-bebas text-2xl leading-none text-foreground">{value}</Text>
     </View>
   )
 }
@@ -31,6 +41,7 @@ function Stat({ label, value, className }: { label: string; value: string; class
 export default function BattleFinishedWaiting() {
   const { t } = useTranslation()
   const router = useRouter()
+  const reduced = useReducedMotion()
   const { snapshot, standings } = useBattleContext()
 
   const me = snapshot?.me ?? null
@@ -43,20 +54,35 @@ export default function BattleFinishedWaiting() {
   const elapsed = battleSpanMs(snapshot.battle.starts_at, walkedAway ? me.left_at : me.finished_at)
   const stillGoing = standings.filter((entry) => entry.status === 'active').length
 
+  // Ser primero de dos y primero de ocho no son la misma noticia, así que el puesto va
+  // con denominador reutilizando la misma fórmula que el historial (#432). Quien se sale
+  // no tiene puesto que enseñar, y la cabecera vuelve a nombrar el estado.
+  const myStanding = walkedAway ? null : mine
+  const title = myStanding
+    ? t('battle.rankOf', { rank: myStanding.rank, total: standings.length })
+    : walkedAway ? t('battle.youLeftTitle') : t('battle.youFinishedTitle')
+  const kicker = myStanding ? t('battle.position') : t('battle.stillLive')
+  const leading = myStanding?.rank === 1
+
   // El resumen enseña las unidades del circuito, no siempre reps: tras una batalla de
   // plancha, "REPS 0" contaba el esfuerzo como si no hubiera existido (#426).
+  //
+  // El puesto ya no está aquí —es el titular—, así que como mucho quedan cuatro celdas y
+  // la fila vuelve a tener una rejilla estable: tres o menos reparten a partes iguales,
+  // cuatro caen en dos filas de dos con la misma anchura de columna (#432).
   const columns = battleWorkColumns(config)
-  const stats = mine
+  const stats = myStanding
     ? [
-      { label: t('battle.position'), value: `#${mine.rank}` },
-      { label: t('battle.roundsDone'), value: String(mine.score.completed_rounds) },
+      { label: t('battle.roundsDone'), value: String(myStanding.score.completed_rounds) },
       ...(columns.reps
-        ? [{ label: t('battle.reps'), value: String(mine.score.completed_reps) }]
+        ? [{ label: t('battle.reps'), value: String(myStanding.score.completed_reps) }]
         : []),
+      // "SEGUNDOS 150s" repetía la unidad y se leía igual que el cronómetro de al lado,
+      // que no puntúa. Las etiquetas dicen ahora cuál es trabajo y cuál es reloj.
       ...(columns.seconds
-        ? [{ label: t('battle.timeDone'), value: `${mine.score.completed_time_seconds}s` }]
+        ? [{ label: t('battle.workDone'), value: `${myStanding.score.completed_time_seconds}s` }]
         : []),
-      { label: t('battle.elapsed'), value: formatBattleElapsed(elapsed) },
+      { label: t('battle.duration'), value: formatBattleElapsed(elapsed) },
     ]
     : []
 
@@ -67,52 +93,64 @@ export default function BattleFinishedWaiting() {
   }
 
   return (
-    <View className="flex-1">
-      <View className="border-b border-border pb-4 pt-2">
-        <Text className="font-mono text-[9px] uppercase tracking-[3px] text-lime">
-          {t('battle.stillLive')}
+    // El scroll es de la pantalla, no del marcador: con dos participantes un marcador
+    // estirado dejaba un vacío enorme entre la última fila y el resto (#432).
+    <ScrollView className="flex-1" contentContainerClassName="pb-6" showsVerticalScrollIndicator={false}>
+      <Animated.View
+        entering={reduced ? undefined : FadeInDown.duration(420)}
+        className="border-b border-border pb-4 pt-2"
+      >
+        <Text className="font-mono text-[9px] uppercase tracking-[3px] text-lime">{kicker}</Text>
+        <Text
+          className={cn(
+            'font-bebas text-5xl leading-none',
+            leading ? 'text-lime' : 'text-foreground',
+          )}
+        >
+          {title}
         </Text>
-        <Text className="font-bebas text-5xl leading-none text-foreground">
-          {walkedAway ? t('battle.youLeftTitle') : t('battle.youFinishedTitle')}
+        <Text className="mt-2 font-sans text-sm text-muted-foreground">
+          {stillGoing > 0 ? t('battle.waitingForOthers') : t('battle.waitingClosing')}
         </Text>
-      </View>
+      </Animated.View>
 
-      {!walkedAway && mine ? (
-        // Cinco stats no caben en una fila de móvil, así que con circuito mixto se les
-        // pone un ancho mínimo y bajan a dos filas (#426). Uno todo-reps sigue en cuatro
-        // columnas, exactamente como hasta ahora.
-        <View className="flex-row flex-wrap gap-3 border-b border-border py-4">
-          {stats.map((stat) => (
-            <Stat
-              key={stat.label}
-              label={stat.label}
-              value={stat.value}
-              className={stats.length > 4 ? 'min-w-[28%]' : undefined}
-            />
-          ))}
+      <Text className="mb-2 mt-5 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+        {t('battle.liveStandings')}
+      </Text>
+      <BattleStandingsList standings={standings} config={config} meUserId={me.user} scroll={false} />
+
+      {myStanding ? (
+        <View className="mt-5">
+          <Text className="mb-3 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
+            {t('battle.yourScore')}
+          </Text>
+          <View className="flex-row flex-wrap gap-x-3 gap-y-4">
+            {stats.map((stat) => (
+              <Stat
+                key={stat.label}
+                label={stat.label}
+                value={stat.value}
+                className={stats.length > 3 ? 'w-[47%]' : 'flex-1'}
+              />
+            ))}
+          </View>
         </View>
       ) : null}
 
-      <Text className="py-4 font-sans text-sm text-muted-foreground">
-        {stillGoing > 0 ? t('battle.waitingForOthers') : t('battle.waitingClosing')}
-      </Text>
-
+      {/* "Salir" es la palabra que en el lobby significa abandonar la batalla, así que
+          aquí el verbo nombra el destino y no el mecanismo. Enlace y no botón: lo que
+          hay que hacer en esta pantalla es esperar, no salir. */}
       <Pressable
         onPress={leave}
-        className="h-14 items-center justify-center rounded-xl border border-border active:bg-muted/40"
+        className="mt-6 h-14 items-center justify-center border-t border-border active:bg-lime/10"
       >
-        <Text className="font-bebas text-xl uppercase tracking-widest text-foreground">
+        <Text className="font-bebas text-xl uppercase tracking-widest text-lime">
           {t('battle.leaveScreen')}
         </Text>
       </Pressable>
-      <Text className="mt-2 text-center font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
+      <Text className="text-center font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
         {t('battle.leaveScreenHint')}
       </Text>
-
-      <Text className="mb-2 mt-6 font-mono text-[10px] uppercase tracking-[3px] text-muted-foreground">
-        {t('battle.liveStandings')}
-      </Text>
-      <BattleStandingsList standings={standings} config={config} meUserId={me.user} />
-    </View>
+    </ScrollView>
   )
 }
