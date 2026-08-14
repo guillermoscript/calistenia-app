@@ -210,7 +210,10 @@ export default function SleepScreen() {
                       {isLastNight ? t('sleep.lastNight') : dateLabel(targetDate)}
                     </Text>
                     <View className="flex-row items-center justify-between gap-4">
-                      <View>
+                      {/* flex-1 + shrink-0: en RN `flexShrink` es 0 por defecto, así que sin
+                          esto la columna izquierda se queda con todo el ancho y empuja la
+                          etiqueta de calidad fuera de la tarjeta. */}
+                      <View className="flex-1">
                         <Text className="font-bebas text-2xl leading-none text-foreground">{formatDuration(targetEntry.duration_minutes)}</Text>
                         <Text className="mt-1 text-sm text-muted-foreground">
                           {targetEntry.bedtime} - {targetEntry.wake_time}
@@ -218,7 +221,7 @@ export default function SleepScreen() {
                           {targetEntry.awakenings > 0 ? ` · ${t('sleep.awakeningsCount', { count: targetEntry.awakenings })}` : ''}
                         </Text>
                       </View>
-                      <Text className="font-mono text-xs" style={{ color: qualityColor(targetEntry.quality) }}>
+                      <Text className="shrink-0 font-mono text-xs" style={{ color: qualityColor(targetEntry.quality) }}>
                         {t(QUALITY_LABEL_KEYS[targetEntry.quality])}
                       </Text>
                     </View>
