@@ -34,6 +34,7 @@ import Constants from 'expo-constants'
 import { ChevronDown, X } from 'lucide-react-native'
 
 import { Text } from '@/components/ui/text'
+import { DisclosureChevron } from '@/components/ui/disclosure-chevron'
 import { haptics } from '@/lib/haptics'
 import { syncStorage } from '@/lib/storage'
 import {
@@ -377,11 +378,7 @@ function WhatsNewSheet({
                         className="flex-row items-center gap-2 py-1 active:opacity-70"
                         accessibilityRole="button"
                       >
-                        <ChevronDown
-                          size={14}
-                          color="hsl(0 0% 55%)"
-                          style={{ transform: [{ rotate: showDetails ? '180deg' : '0deg' }] }}
-                        />
+                        <DisclosureChevron open={showDetails} size={14} />
                         <Text className="font-mono text-[10px] uppercase tracking-[2px] text-muted-foreground">
                           {t('whatsNew.details')}
                         </Text>

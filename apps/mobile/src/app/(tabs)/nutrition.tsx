@@ -18,6 +18,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { runOnJS } from 'react-native-reanimated'
 
 import { Text } from '@/components/ui/text'
+import { DisclosureChevron } from '@/components/ui/disclosure-chevron'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { MenuButton } from '@/components/QuickMenu'
@@ -1034,11 +1035,7 @@ export default function NutritionTab() {
                   <Text className="font-mono text-[9px] text-amber-400">{badges.length} 🏅</Text>
                 )}
               </View>
-              <ChevronLeft
-                size={16}
-                color="rgba(255,255,255,0.45)"
-                style={{ transform: [{ rotate: showCoach ? '-90deg' : '90deg' }] }}
-              />
+              <DisclosureChevron open={showCoach} size={16} color="rgba(255,255,255,0.45)" />
             </Pressable>
 
             {showCoach && (

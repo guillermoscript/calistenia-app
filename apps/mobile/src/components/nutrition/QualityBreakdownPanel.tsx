@@ -13,7 +13,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft } from 'lucide-react-native'
+import { DisclosureChevron } from '@/components/ui/disclosure-chevron'
 
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
@@ -155,11 +155,7 @@ export default function QualityBreakdownPanel({
               <Text className="font-mono text-[9px] uppercase tracking-[2px] text-lime">
                 {t('nutrition.logger.suggestionToggle', { defaultValue: 'Sugerencia de platos' })}
               </Text>
-              <ChevronLeft
-                size={14}
-                color="rgba(255,255,255,0.45)"
-                style={{ transform: [{ rotate: showSuggestion ? '-90deg' : '90deg' }] }}
-              />
+              <DisclosureChevron open={showSuggestion} size={14} color="rgba(255,255,255,0.45)" />
             </Pressable>
             {showSuggestion && (
               <>

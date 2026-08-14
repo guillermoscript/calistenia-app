@@ -1,8 +1,9 @@
 import { Response } from '@/components/ai-elements/response'
+import { DisclosureChevron } from '@/components/ui/disclosure-chevron'
 import { Text } from '@/components/ui/text'
 import { COLORS } from '@/lib/theme'
 import { cn } from '@/lib/utils'
-import { BrainIcon, ChevronDownIcon } from 'lucide-react-native'
+import { BrainIcon } from 'lucide-react-native'
 import * as React from 'react'
 import { Pressable, View } from 'react-native'
 
@@ -91,11 +92,7 @@ export function ReasoningTrigger({ className }: ReasoningTriggerProps) {
       className={cn('flex-row items-center gap-2', className)}>
       <BrainIcon size={16} color={COLORS.mutedIcon} />
       <Text className="text-sm text-muted-foreground">{label}</Text>
-      <ChevronDownIcon
-        size={16}
-        color={COLORS.mutedIcon}
-        style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
-      />
+      <DisclosureChevron open={isOpen} size={16} color={COLORS.mutedIcon} />
     </Pressable>
   )
 }
