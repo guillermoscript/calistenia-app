@@ -12,6 +12,7 @@ import {
   battleRecordFrom,
   battleRestSecondsLeft,
   battleSpanMs,
+  battleWorkColumns,
   createBattleScore,
   formatBattleElapsed,
   isBattleActiveForMe,
@@ -115,6 +116,45 @@ describe('battle configuration and scoring', () => {
     expect(compareBattleScores(winner, fewerRounds)).toBeLessThan(0)
     expect(compareBattleScores(sameScoreEarlierId, winner)).toBeLessThan(0)
     expect(() => createBattleScore({ completed_rounds: -1, completed_reps: 0, completed_time_seconds: 0, tie_break_key: 'p1' })).toThrow()
+  })
+
+  // Hasta #426 ningún caso dejaba que el tiempo fuera lo que decide: o cambiaban las
+  // rondas, o ambos lados llevaban 0 segundos. La dirección de esa comparación —aguantar
+  // más va por delante— estaba sin cubrir, justo la duda que abrió el issue.
+  it('ranks holding longer ahead when rounds and reps tie', () => {
+    const heldLonger = createBattleScore({ completed_rounds: 2, completed_reps: 40, completed_time_seconds: 90, tie_break_key: 'zzz' })
+    const heldLess = createBattleScore({ completed_rounds: 2, completed_reps: 40, completed_time_seconds: 30, tie_break_key: 'aaa' })
+    expect(compareBattleScores(heldLonger, heldLess)).toBeLessThan(0)
+    expect(compareBattleScores(heldLess, heldLonger)).toBeGreaterThan(0)
+  })
+})
+
+describe('battle work columns', () => {
+  const exercise = (kind: 'reps' | 'seconds', position: number) => ({
+    exercise_id: `ex-${position}`,
+    position,
+    target: { kind, value: 30 } as const,
+    rest_seconds: 20,
+  })
+
+  it('shows only reps for an all-reps circuit', () => {
+    expect(battleWorkColumns({ exercises: [exercise('reps', 0), exercise('reps', 1)] }))
+      .toEqual({ reps: true, seconds: false })
+  })
+
+  it('shows both units for a mixed circuit like CORE', () => {
+    expect(battleWorkColumns({ exercises: [exercise('seconds', 0), exercise('reps', 1)] }))
+      .toEqual({ reps: true, seconds: true })
+  })
+
+  it('drops the reps column when nothing in the circuit counts reps', () => {
+    expect(battleWorkColumns({ exercises: [exercise('seconds', 0)] }))
+      .toEqual({ reps: false, seconds: true })
+  })
+
+  it('falls back to the familiar reps column when there is nothing to read', () => {
+    expect(battleWorkColumns({ exercises: [] })).toEqual({ reps: true, seconds: false })
+    expect(battleWorkColumns(null)).toEqual({ reps: true, seconds: false })
   })
 })
 

@@ -41,6 +41,15 @@ export interface BattleExerciseTarget {
 
 export type BattleScoringMode = 'rounds_then_reps_then_time'
 
+/**
+ * Qué unidades de trabajo tiene sentido enseñar en el marcador de un circuito (#426).
+ * Se deriva de la configuración, no de los números de cada fila — ver `battleWorkColumns`.
+ */
+export interface BattleWorkColumns {
+  reps: boolean
+  seconds: boolean
+}
+
 export interface BattleConfiguration {
   workout_template_id: string
   rounds: number

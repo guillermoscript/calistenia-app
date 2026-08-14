@@ -12,13 +12,14 @@ import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
+import { cn } from '@/lib/utils'
 import { useBattleContext } from '@/contexts/BattleContext'
 import BattleStandingsList from '@/components/battle/BattleStandingsList'
-import { battleSpanMs, formatBattleElapsed } from '@calistenia/core/lib/battle'
+import { battleSpanMs, battleWorkColumns, formatBattleElapsed } from '@calistenia/core/lib/battle'
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <View className="flex-1">
+    <View className={cn('flex-1', className)}>
       <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground">
         {label}
       </Text>
@@ -42,6 +43,23 @@ export default function BattleFinishedWaiting() {
   const elapsed = battleSpanMs(snapshot.battle.starts_at, walkedAway ? me.left_at : me.finished_at)
   const stillGoing = standings.filter((entry) => entry.status === 'active').length
 
+  // El resumen enseña las unidades del circuito, no siempre reps: tras una batalla de
+  // plancha, "REPS 0" contaba el esfuerzo como si no hubiera existido (#426).
+  const columns = battleWorkColumns(config)
+  const stats = mine
+    ? [
+      { label: t('battle.position'), value: `#${mine.rank}` },
+      { label: t('battle.roundsDone'), value: String(mine.score.completed_rounds) },
+      ...(columns.reps
+        ? [{ label: t('battle.reps'), value: String(mine.score.completed_reps) }]
+        : []),
+      ...(columns.seconds
+        ? [{ label: t('battle.timeDone'), value: `${mine.score.completed_time_seconds}s` }]
+        : []),
+      { label: t('battle.elapsed'), value: formatBattleElapsed(elapsed) },
+    ]
+    : []
+
   // Una batalla abierta por deep link puede no tener a dónde volver.
   const leave = () => {
     if (router.canGoBack()) router.back()
@@ -60,11 +78,18 @@ export default function BattleFinishedWaiting() {
       </View>
 
       {!walkedAway && mine ? (
-        <View className="flex-row gap-3 border-b border-border py-4">
-          <Stat label={t('battle.position')} value={`#${mine.rank}`} />
-          <Stat label={t('battle.roundsDone')} value={String(mine.score.completed_rounds)} />
-          <Stat label={t('battle.reps')} value={String(mine.score.completed_reps)} />
-          <Stat label={t('battle.elapsed')} value={formatBattleElapsed(elapsed)} />
+        // Cinco stats no caben en una fila de móvil, así que con circuito mixto se les
+        // pone un ancho mínimo y bajan a dos filas (#426). Uno todo-reps sigue en cuatro
+        // columnas, exactamente como hasta ahora.
+        <View className="flex-row flex-wrap gap-3 border-b border-border py-4">
+          {stats.map((stat) => (
+            <Stat
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              className={stats.length > 4 ? 'min-w-[28%]' : undefined}
+            />
+          ))}
         </View>
       ) : null}
 
