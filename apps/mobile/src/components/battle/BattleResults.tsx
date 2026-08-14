@@ -14,7 +14,9 @@ import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { useBattleContext } from '@/contexts/BattleContext'
+import BattleScoreCell from '@/components/battle/BattleScoreCell'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { battleWorkColumns } from '@calistenia/core/lib/battle'
 
 export default function BattleResults() {
   const { t } = useTranslation()
@@ -32,6 +34,10 @@ export default function BattleResults() {
       participant_count: snapshot.participants.length, result: 'completed',
     })
   }, [phase, isCreator, snapshot])
+
+  // Las columnas del marcador salen del circuito, no de los números (#426): una batalla
+  // con plancha enseña los segundos que aguantó cada uno.
+  const columns = battleWorkColumns(snapshot?.battle.config)
 
   const heading = phase === 'cancelled'
     ? t('battle.cancelledTitle')
@@ -73,13 +79,13 @@ export default function BattleResults() {
                 {entry.display_name || t('battle.someone')}
                 {entry.status === 'left' ? `  ${t('battle.leftTag')}` : ''}
               </Text>
-              <Text className="font-mono text-xs text-muted-foreground">
-                {entry.score.completed_rounds}
-                <Text className="text-[10px]">{t('battle.roundsShort')}</Text>
-                {'  '}
-                {entry.score.completed_reps}
-                <Text className="text-[10px]">{t('battle.repsShort')}</Text>
-              </Text>
+              <BattleScoreCell
+                rounds={entry.score.completed_rounds}
+                reps={entry.score.completed_reps}
+                seconds={entry.score.completed_time_seconds}
+                showReps={columns.reps}
+                showSeconds={columns.seconds}
+              />
             </View>
           ))}
         </ScrollView>

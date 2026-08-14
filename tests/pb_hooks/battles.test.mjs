@@ -577,6 +577,25 @@ test("la clasificación sigue el orden rondas → reps → tiempo del contrato",
   assert.equal(snap.standings[1].rank, 2)
 })
 
+test("con las rondas y las reps empatadas decide quién aguantó más segundos", async () => {
+  // El test de arriba se resuelve en las rondas y nunca llega al tiempo, así que hasta
+  // #426 nadie comprobaba la dirección de esta comparación: en un circuito por tiempo
+  // —la plancha del preset CORE— aguantar MÁS tiene que ir por delante, no por detrás.
+  const ctx = await liveBattle()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/progress`, {
+    progress: { completed_rounds: 2, completed_reps: 40, completed_time_seconds: 30, current_exercise_position: 0 },
+  })
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/progress`, {
+    progress: { completed_rounds: 2, completed_reps: 40, completed_time_seconds: 90, current_exercise_position: 0 },
+  })
+
+  const snap = await api(`/api/battles/${ctx.battleId}/snapshot`, { token: await authAs(ctx.creator) })
+  assert.equal(snap.standings[0].user, ctx.friend.id, "90 s de plancha ganan a 30 s con el mismo trabajo")
+  assert.equal(snap.standings[0].score.completed_time_seconds, 90)
+  assert.equal(snap.standings[1].user, ctx.creator.id)
+  assert.equal(snap.standings[1].score.completed_time_seconds, 30)
+})
+
 test("con la misma puntuación gana quien terminó antes", async () => {
   // Reproduce lo que pasó en el test de dispositivo: los dos completan el circuito
   // entero, así que rondas y reps empatan y el tiempo es 0 en un circuito de solo

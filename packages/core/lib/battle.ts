@@ -7,6 +7,7 @@ import type {
   BattleScoreInput,
   BattleStanding,
   BattleStatus,
+  BattleWorkColumns,
 } from '../types/battle'
 
 export const BATTLE_STATUS_TRANSITIONS: Readonly<Record<BattleStatus, readonly BattleStatus[]>> = {
@@ -160,6 +161,26 @@ export function compareBattleScores(a: BattleScore, b: BattleScore): number {
   }
 
   return a.tie_break_key < b.tie_break_key ? -1 : a.tie_break_key > b.tie_break_key ? 1 : 0
+}
+
+/**
+ * Qué columnas de trabajo enseña el marcador de este circuito (#426).
+ *
+ * Se decide por la configuración, no por los números de cada fila: si dependiera del
+ * valor, a una fila le aparecería una columna a mitad de batalla y dos filas de la misma
+ * tabla tendrían columnas distintas. Un circuito todo-reps se ve como siempre; uno con
+ * plancha enseña los segundos desde el minuto cero, aunque todavía marquen 0.
+ */
+export function battleWorkColumns(
+  config: Pick<BattleConfiguration, 'exercises'> | null | undefined,
+): BattleWorkColumns {
+  const exercises = config?.exercises ?? []
+  const reps = exercises.some(exercise => exercise.target?.kind === 'reps')
+  const seconds = exercises.some(exercise => exercise.target?.kind === 'seconds')
+  // Sin ejercicios legibles se cae al estado neutro que ya se conoce (`0R 0reps`), en vez
+  // de dejar la fila sin ningún número.
+  if (!reps && !seconds) return { reps: true, seconds: false }
+  return { reps, seconds }
 }
 
 export type BattleMutation =

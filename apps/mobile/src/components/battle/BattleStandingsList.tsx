@@ -16,8 +16,13 @@ import { useTranslation } from 'react-i18next'
 
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
+import BattleScoreCell from '@/components/battle/BattleScoreCell'
 import { battleExerciseName } from '@calistenia/core/data/battle-presets'
-import { battleParticipantActivity, battleRestSecondsLeft } from '@calistenia/core/lib/battle'
+import {
+  battleParticipantActivity,
+  battleRestSecondsLeft,
+  battleWorkColumns,
+} from '@calistenia/core/lib/battle'
 import { serverNow } from '@calistenia/core/lib/serverClock'
 import type { BattleConfiguration, BattleStanding } from '@calistenia/core/types/battle'
 
@@ -68,8 +73,10 @@ interface BattleStandingsRowProps {
   hasFinished: boolean
   completedRounds: number
   completedReps: number
-  roundsShort: string
-  repsShort: string
+  completedTimeSeconds: number
+  /** Del circuito, no de la fila: todas las filas enseñan las mismas columnas (#426). */
+  showReps: boolean
+  showSeconds: boolean
   leftTag: string
 }
 
@@ -82,8 +89,9 @@ function BattleStandingsRowComponent({
   hasFinished,
   completedRounds,
   completedReps,
-  roundsShort,
-  repsShort,
+  completedTimeSeconds,
+  showReps,
+  showSeconds,
   leftTag,
 }: BattleStandingsRowProps) {
   return (
@@ -109,13 +117,13 @@ function BattleStandingsRowComponent({
           </Text>
         ) : null}
       </View>
-      <Text className="font-mono text-xs text-muted-foreground">
-        {completedRounds}
-        <Text className="text-[10px]">{roundsShort}</Text>
-        {'  '}
-        {completedReps}
-        <Text className="text-[10px]">{repsShort}</Text>
-      </Text>
+      <BattleScoreCell
+        rounds={completedRounds}
+        reps={completedReps}
+        seconds={completedTimeSeconds}
+        showReps={showReps}
+        showSeconds={showSeconds}
+      />
     </View>
   )
 }
@@ -155,8 +163,10 @@ export default function BattleStandingsList({
     [standings, config, now, i18n.language, t],
   )
 
-  const roundsShort = t('battle.roundsShort')
-  const repsShort = t('battle.repsShort')
+  // Un circuito con plancha enseña los segundos desde el minuto cero; uno todo-reps sigue
+  // con sus dos columnas de siempre (#426).
+  const columns = useMemo(() => battleWorkColumns(config), [config])
+
   const leftTag = t('battle.leftTag')
   const someone = t('battle.someone')
 
@@ -173,8 +183,9 @@ export default function BattleStandingsList({
           hasFinished={entry.status === 'finished'}
           completedRounds={entry.score.completed_rounds}
           completedReps={entry.score.completed_reps}
-          roundsShort={roundsShort}
-          repsShort={repsShort}
+          completedTimeSeconds={entry.score.completed_time_seconds}
+          showReps={columns.reps}
+          showSeconds={columns.seconds}
           leftTag={leftTag}
         />
       ))}

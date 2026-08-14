@@ -20,9 +20,10 @@ import { Text } from '@/components/ui/text'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
+import BattleScoreCell from '@/components/battle/BattleScoreCell'
 import { useBattleHistory, type BattleHistoryEntry } from '@calistenia/core/hooks/useBattleHistory'
 import { relativeDate } from '@calistenia/core/lib/dateUtils'
-import type { BattleOutcome } from '@calistenia/core/lib/battle'
+import { battleWorkColumns, type BattleOutcome } from '@calistenia/core/lib/battle'
 
 const OUTCOME_KEY: Record<BattleOutcome, string> = {
   won: 'battle.outcomeWon',
@@ -50,6 +51,10 @@ function HistoryRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string |
   // Una batalla cancelada o caducada no tiene `finished_at`; la última actividad es
   // cuando realmente terminó.
   const when = battle.finished_at || battle.last_activity_at || battle.created
+
+  // Cada batalla del historial tiene su propio circuito, así que sus columnas también
+  // (#426): una de plancha enseña segundos aunque la de al lado no.
+  const columns = battleWorkColumns(battle.config)
 
   return (
     <Pressable
@@ -104,13 +109,14 @@ function HistoryRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string |
                   {standing.display_name || t('battle.someone')}
                   {standing.status === 'left' ? `  ${t('battle.leftTag')}` : ''}
                 </Text>
-                <Text className="font-mono text-[11px] text-muted-foreground">
-                  {standing.score.completed_rounds}
-                  <Text className="text-[9px]">{t('battle.roundsShort')}</Text>
-                  {'  '}
-                  {standing.score.completed_reps}
-                  <Text className="text-[9px]">{t('battle.repsShort')}</Text>
-                </Text>
+                <BattleScoreCell
+                  size="sm"
+                  rounds={standing.score.completed_rounds}
+                  reps={standing.score.completed_reps}
+                  seconds={standing.score.completed_time_seconds}
+                  showReps={columns.reps}
+                  showSeconds={columns.seconds}
+                />
               </View>
             ))
           )}
