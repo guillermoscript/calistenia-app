@@ -2611,6 +2611,8 @@
   "challenge.preset.expired": "Reto finalizado",
   "challenge.preset.noProgress": "Registra un entrenamiento para ver tu progreso aquí.",
   "challenge.noParticipants": "Todavía no hay participantes.",
+  "challenge.leaderboard": "Clasificación",
+  "challenge.goalRemaining": "Te faltan {{value}}",
 
   "communityProgram.nav": "Programas",
   "communityProgram.kicker": "COMUNIDAD",
