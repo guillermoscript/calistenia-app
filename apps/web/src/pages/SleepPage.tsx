@@ -101,7 +101,7 @@ function SleepEntryRow({ entry, onEdit, onDelete }: SleepEntryRowProps) {
         <div className="text-[11px] text-muted-foreground">
           {entry.bedtime} - {entry.wake_time} · {formatDuration(entry.duration_minutes)}
           {entry.awake_minutes ? ` (${formatDuration(entry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()})` : ''}
-          {' · '}{entry.awakenings} {t('sleep.awakenings')}
+          {' · '}{t('sleep.awakeningsCount', { count: entry.awakenings })}
         </div>
       </div>
 
@@ -250,7 +250,7 @@ export default function SleepPage({ userId }: SleepPageProps) {
                 <div className="text-sm text-muted-foreground">
                   {todayEntry.bedtime} - {todayEntry.wake_time}
                   {todayEntry.awake_minutes ? ` · ${formatDuration(todayEntry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()}` : ''}
-                  {todayEntry.awakenings > 0 && ` · ${todayEntry.awakenings} ${t('sleep.awakenings')}`}
+                  {todayEntry.awakenings > 0 && ` · ${t('sleep.awakeningsCount', { count: todayEntry.awakenings })}`}
                 </div>
               </div>
               <div className="text-right">

@@ -2277,6 +2277,8 @@
   "sleep.bedtime": "Bedtime",
   "sleep.wakeTime": "Wake time",
   "sleep.awakenings": "Night awakenings",
+  "sleep.awakeningsCount_one": "{{count}} awakening",
+  "sleep.awakeningsCount_other": "{{count}} awakenings",
   "sleep.none": "None",
   "sleep.times": "{{count}} time",
   "sleep.times_other": "{{count}} times",
