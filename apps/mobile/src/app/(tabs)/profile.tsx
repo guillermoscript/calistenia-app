@@ -20,6 +20,7 @@ import { getThemeMode, setThemeMode, type ThemeMode } from '@/lib/theme-mode'
 import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { DiscoverSheet } from '@/components/DiscoverSheet'
 import { DeleteAccountModal } from '@/components/profile/DeleteAccountModal'
+import { AvatarPicker } from '@/components/profile/AvatarPicker'
 import { BASE_URL } from '@/lib/share'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
@@ -191,9 +192,7 @@ export default function ProfileScreen() {
         <Card>
           <CardContent className="gap-4 py-5">
             <View className="flex-row items-center gap-4">
-              <View className="size-16 items-center justify-center rounded-full border border-border bg-muted">
-                <Text className="font-bebas text-3xl leading-none text-foreground">{initial}</Text>
-              </View>
+              <AvatarPicker user={user} initial={initial} />
               <View className="flex-1">
                 <Text className="font-sans-medium text-foreground" numberOfLines={1}>
                   {name || t('profile.namePlaceholder')}
