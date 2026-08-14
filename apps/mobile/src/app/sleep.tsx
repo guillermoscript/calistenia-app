@@ -215,7 +215,7 @@ export default function SleepScreen() {
                         <Text className="mt-1 text-sm text-muted-foreground">
                           {targetEntry.bedtime} - {targetEntry.wake_time}
                           {targetEntry.awake_minutes ? ` · ${formatDuration(targetEntry.awake_minutes)} ${t('sleep.awakeFor').toLowerCase()}` : ''}
-                          {targetEntry.awakenings > 0 ? ` · ${targetEntry.awakenings} ${t('sleep.awakenings')}` : ''}
+                          {targetEntry.awakenings > 0 ? ` · ${t('sleep.awakeningsCount', { count: targetEntry.awakenings })}` : ''}
                         </Text>
                       </View>
                       <Text className="font-mono text-xs" style={{ color: qualityColor(targetEntry.quality) }}>
