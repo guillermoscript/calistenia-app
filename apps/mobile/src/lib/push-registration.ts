@@ -92,13 +92,23 @@ export async function registerPushTokenAsync(
 
     // ── 5. Upsert en PocketBase ───────────────────────────────────────────────
     // Si el token ya existe (mismo dispositivo/reinstalación), no duplicamos.
+    //
+    // OJO: esta búsqueda solo puede encontrar tokens PROPIOS — `expo_push_tokens`
+    // es owner-only en `listRule`, así que el registro de otra cuenta no aparece
+    // (0 filas, sin error). Cuando el dispositivo cambia de dueño caemos al
+    // `create` de abajo a propósito: el hook `pb_hooks/push_token_takeover.pb.js`
+    // lo intercepta, borra el registro del dueño anterior y deja que el alta siga
+    // su curso. La reasignación NO se puede hacer desde aquí (ni la lectura ni el
+    // update de un registro ajeno pasan las reglas), así que no muevas esa lógica
+    // al cliente.
     try {
       const existing = await pb.collection('expo_push_tokens').getFirstListItem(
         `token = "${token}"`,
       )
-      // Token ya registrado; verificar que pertenece a este usuario.
+      // Solo llega aquí si el token ya era de este usuario.
       if (existing.user !== userId) {
-        // Raro (token reasignado a otro usuario): actualizar el propietario.
+        // Inalcanzable con la listRule actual; se deja como red de seguridad por
+        // si algún día la colección se abre en lectura.
         await pb.collection('expo_push_tokens').update(existing.id, {
           user: userId,
           platform: Platform.OS,
