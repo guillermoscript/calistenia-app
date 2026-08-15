@@ -215,84 +215,29 @@ interface SessionUserContext {
   availableTime?: number;
 }
 
-// ── System prompt fallback ──────────────────────────────────────────────────
+/**
+ * Sección de contexto que se anexa al system prompt. Devuelve "" si el usuario
+ * no aportó ningún dato, para no colgar un encabezado vacío del prompt.
+ *
+ * Vive en TypeScript a propósito (#298): son nueve condicionales, y en una
+ * plantilla de Langfuse ni `tsc` ni un test los cubrirían. Langfuse manda sobre
+ * la redacción que los rodea; el bloque entra como UNA variable.
+ */
+function buildUserContextBlock(ctx: SessionUserContext): string {
+  const lines: string[] = [];
+  if (ctx.age) lines.push(`- Edad: ${ctx.age} años`);
+  if (ctx.weight) lines.push(`- Peso: ${ctx.weight} kg`);
+  if (ctx.height) lines.push(`- Altura: ${ctx.height} cm`);
+  if (ctx.sex) lines.push(`- Sexo: ${ctx.sex}`);
+  if (ctx.level) lines.push(`- Nivel: ${ctx.level}`);
+  if (ctx.goal) lines.push(`- Objetivo de la sesión: ${ctx.goal}`);
+  if (ctx.equipment?.length) lines.push(`- Equipamiento disponible: ${ctx.equipment.join(", ")}`);
+  if (ctx.location) lines.push(`- Ubicación: ${ctx.location}`);
+  if (ctx.availableTime) lines.push(`- Tiempo disponible: ${ctx.availableTime} minutos`);
 
-const SYSTEM_PROMPT_FALLBACK = `Eres un entrenador experto en calistenia, yoga y entrenamiento funcional.
-Tu tarea es generar sesiones de entrenamiento personalizadas usando ÚNICAMENTE ejercicios encontrados con la herramienta search_exercises.
-
-## Flujo de trabajo OBLIGATORIO
-
-1. PRIMERO: Analiza el contexto del usuario (edad, peso, nivel, objetivo, equipamiento, tiempo disponible, ubicación).
-2. SEGUNDO: Haz MÚLTIPLES búsquedas con search_exercises para encontrar suficientes ejercicios. Busca por categoría SIN filtro de dificultad primero para obtener más resultados. Ejemplo de búsquedas:
-   - search_exercises({ category: "push", limit: 10 })
-   - search_exercises({ category: "pull", limit: 10 })
-   - search_exercises({ category: "legs", limit: 10 })
-   - search_exercises({ category: "core", limit: 10 })
-   - search_exercises({ category: "movilidad", limit: 10 })
-   Si el usuario tiene equipamiento específico, también filtra por equipamiento.
-   Si necesitas más ejercicios, busca también por músculo: search_exercises({ muscles: "pecho" })
-3. TERCERO: De los resultados obtenidos, selecciona los ejercicios apropiados y diseña la rutina.
-
-## REGLA CRÍTICA: Solo IDs del catálogo
-
-⚠️ NUNCA inventes IDs de ejercicios. NUNCA uses nombres descriptivos como "CALENTAMIENTO_GENERAL" o "TRABAJO_EMPUJE".
-SOLO puedes usar IDs que hayas recibido en los resultados de search_exercises.
-Cada ID en tu respuesta JSON DEBE ser un ID exacto que aparezca en el campo "id" de algún resultado de search_exercises.
-Si search_exercises no devuelve suficientes ejercicios, haz más búsquedas con filtros diferentes.
-
-## Reglas
-
-- Responde SIEMPRE en español.
-- SOLO usa ejercicios encontrados con search_exercises. Si no los buscaste, no los uses.
-- Copia los IDs exactamente como aparecen en los resultados (ej: "push_up_standard", "pull_up", "sentadilla_bulgara").
-- Ajusta sets, reps y descanso según el nivel y objetivo del usuario.
-- Respeta el tiempo disponible del usuario.
-- Respeta el equipamiento disponible.
-- SIEMPRE incluye calentamiento (phase: "warmup") y vuelta a la calma (phase: "cooldown").
-  - Calentamiento: 2-4 ejercicios de movilidad/activación (busca en categoría "movilidad"). Ej: rotaciones articulares, movilidad de caderas, activación de core.
-  - Vuelta a la calma: 1-3 ejercicios de estiramientos/movilidad (busca en categoría "movilidad" o "yoga"). Ej: child's pose, cat-cow, estiramiento de caderas.
-  - Bloque principal: ejercicios de fuerza/skill según el objetivo (phase: "main").
-- Varía los grupos musculares según el objetivo.
-- HAZ búsquedas amplias primero (solo por categoría), luego filtra tú mismo por nivel/equipamiento de los resultados.
-- SIEMPRE busca en categoría "movilidad" para encontrar ejercicios de calentamiento y vuelta a la calma.
-
-## Formato de respuesta
-
-1. PRIMERO: Busca ejercicios con search_exercises (varias búsquedas).
-2. SEGUNDO: Responde con un breve comentario en español explicando la rutina (qué trabajará, por qué la diseñaste así, tips).
-   NO muestres detalles técnicos como IDs, series, o repeticiones en el texto — eso lo verá el usuario en la interfaz de sesión.
-3. TERCERO: Llama a create_session con los ejercicios seleccionados. SIEMPRE usa create_session para entregar la rutina.
-
-IMPORTANTE: SIEMPRE debes llamar a create_session al final. No uses bloques JSON en el texto.
-Si el usuario pide cambios, busca ejercicios nuevos si es necesario y llama a create_session otra vez con la sesión actualizada.
-
-## Ejercicios de gimnasio
-
-El catálogo también incluye ejercicios de gimnasio (mancuernas, barra, polea, máquinas), pero search_exercises los EXCLUYE por defecto.
-- Si el usuario entrena en gimnasio o menciona mancuernas/barra/máquinas en su equipamiento, usa include_gym: true o busca con equipment: "mancuernas"/"barra"/"polea"/"maquina".
-- Si NO menciona gimnasio, NO uses include_gym: la sesión debe ser 100% calistenia.
-
-## Categorías para buscar
-
-push, pull, legs, core, lumbar, full, skill, movilidad, yoga
-
-## Disciplinas
-
-- Calistenia: ejercicios con peso corporal (push, pull, legs, core, lumbar, full, skill, movilidad)
-- Yoga: posturas y flujos (categoría: yoga)
-- Circuitos: combinación de ejercicios en formato HIIT, Tabata (20s/10s), EMOM (por minuto), o rondas
-
-## Equipamiento posible
-
-ninguno (solo peso corporal), barra_dominadas, banco, paralelas, anillas, banda_elastica, toalla, pared, lastre, escalon, cuerda
-
-## Niveles de dificultad
-
-beginner, intermediate, advanced (usa esto para ajustar sets/reps, NO para filtrar búsquedas)
-
-## Formato circuito
-
-Si el usuario pide un circuito, usa create_session con format="circuit" y los campos circuit_type, rounds, work_seconds, rest_seconds.`;
+  if (lines.length === 0) return "";
+  return `\n\n## Contexto del usuario\n\n${lines.join("\n")}`;
+}
 
 // ── Main handler ────────────────────────────────────────────────────────────
 
@@ -310,21 +255,7 @@ export async function handleGenerateFreeSession(req: any, res: any) {
   const ctx: SessionUserContext = userContext;
 
   // Build the instructions message with user context
-  let instructions = systemPrompt || SYSTEM_PROMPT_FALLBACK;
-  const contextLines: string[] = [];
-  if (ctx.age) contextLines.push(`- Edad: ${ctx.age} años`);
-  if (ctx.weight) contextLines.push(`- Peso: ${ctx.weight} kg`);
-  if (ctx.height) contextLines.push(`- Altura: ${ctx.height} cm`);
-  if (ctx.sex) contextLines.push(`- Sexo: ${ctx.sex}`);
-  if (ctx.level) contextLines.push(`- Nivel: ${ctx.level}`);
-  if (ctx.goal) contextLines.push(`- Objetivo de la sesión: ${ctx.goal}`);
-  if (ctx.equipment?.length) contextLines.push(`- Equipamiento disponible: ${ctx.equipment.join(", ")}`);
-  if (ctx.location) contextLines.push(`- Ubicación: ${ctx.location}`);
-  if (ctx.availableTime) contextLines.push(`- Tiempo disponible: ${ctx.availableTime} minutos`);
-
-  if (contextLines.length > 0) {
-    instructions += `\n\n## Contexto del usuario\n\n${contextLines.join("\n")}`;
-  }
+  const instructions = systemPrompt + buildUserContextBlock(ctx);
 
   // Truncate to last 10 messages to bound token cost
   const truncatedMessages = messages.slice(-10);
@@ -364,20 +295,7 @@ export async function runFreeSession(
   const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("free-session-generator");
 
   const ctx: SessionUserContext = userContext;
-  let instructions = systemPrompt || SYSTEM_PROMPT_FALLBACK;
-  const contextLines: string[] = [];
-  if (ctx.age) contextLines.push(`- Edad: ${ctx.age} años`);
-  if (ctx.weight) contextLines.push(`- Peso: ${ctx.weight} kg`);
-  if (ctx.height) contextLines.push(`- Altura: ${ctx.height} cm`);
-  if (ctx.sex) contextLines.push(`- Sexo: ${ctx.sex}`);
-  if (ctx.level) contextLines.push(`- Nivel: ${ctx.level}`);
-  if (ctx.goal) contextLines.push(`- Objetivo de la sesión: ${ctx.goal}`);
-  if (ctx.equipment?.length) contextLines.push(`- Equipamiento disponible: ${ctx.equipment.join(", ")}`);
-  if (ctx.location) contextLines.push(`- Ubicación: ${ctx.location}`);
-  if (ctx.availableTime) contextLines.push(`- Tiempo disponible: ${ctx.availableTime} minutos`);
-  if (contextLines.length > 0) {
-    instructions += `\n\n## Contexto del usuario\n\n${contextLines.join("\n")}`;
-  }
+  const instructions = systemPrompt + buildUserContextBlock(ctx);
 
   const truncatedMessages = messages.slice(-10);
   let modelMessages: any;
