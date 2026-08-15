@@ -1,0 +1,40 @@
+# Disparador de CI para la app nativa (#437).
+#
+# `ci.yml` es `on: workflow_call`: no se dispara solo, hay que invocarlo. Sus
+# únicos invocadores eran `build-app.yml` (apps/web, packages, pb_*) y
+# `build-ai-api.yml` (mcp-server), y ninguna de esas listas de `paths` incluye
+# `apps/mobile/**` — así que un PR exclusivo de móvil se mezclaba a main sin que
+# ninguna máquina hubiera corrido typecheck, lint ni tests.
+#
+# El agujero era del disparador, no de la cobertura: los pasos de `ci.yml` ya
+# cubren el móvil de sobra (`pnpm -r typecheck` lo incluye, el lint es
+# literalmente `--filter @calistenia/mobile`, y `pnpm -r test` corre core +
+# mobile). Por eso este workflow no repite ni un comando: solo invoca el que ya
+# existe. Duplicarlos habría creado dos sitios que mantener en paralelo.
+#
+# `packages/**` NO va en los `paths`: esa ruta ya la cubre `build-app.yml`,
+# que llama a este mismo workflow reutilizable.
+name: CI (mobile)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/ci-mobile.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/ci-mobile.yml'
+
+jobs:
+  # El nombre de este job es lo que desambigua el check en la UI de GitHub: el
+  # nombre final se compone como `<job invocador> / <job invocado>`, así que
+  # desde `build-app.yml` se lee `CI / Typecheck, lint, test` y desde aquí
+  # `CI (mobile) / Typecheck, lint, test`. Si algún día se activan required
+  # status checks en la protección de main (hoy no hay ninguno), las dos
+  # entradas son distinguibles.
+  ci-mobile:
+    name: CI (mobile)
+    uses: ./.github/workflows/ci.yml
