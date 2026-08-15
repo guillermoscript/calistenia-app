@@ -24,7 +24,7 @@ export function subscribeRace(raceId: string, handlers: RaceRealtimeHandlers): (
   const emitParticipants = () => handlers.onParticipants([...participants])
 
   pb.collection('race_participants').getFullList<RaceParticipant>({
-    filter: `race = "${raceId}"`,
+    filter: pb.filter('race = {:rid}', { rid: raceId }),
     sort: '-distance_km',
     requestKey: null,
   }).then(initial => {

@@ -52,7 +52,7 @@ export function useRacePRs(userId: string | null): { prs: RacePRs; loading: bool
       const rows = await pb
         .collection('race_participants')
         .getFullList<RaceParticipant & { expand?: { race?: Race } }>({
-          filter: `user = "${userId}" && status = "finished"`,
+          filter: pb.filter('user = {:uid} && status = "finished"', { uid: userId }),
           expand: 'race',
           sort: '-created',
           requestKey: null,
@@ -128,7 +128,7 @@ export function useRacePRs(userId: string | null): { prs: RacePRs; loading: bool
           pb
             .collection('race_participants')
             .getFullList<RaceParticipant>({
-              filter: `race = "${id}" && status = "finished"`,
+              filter: pb.filter('race = {:rid} && status = "finished"', { rid: id }),
               sort: 'finished_at',
               requestKey: null,
             })

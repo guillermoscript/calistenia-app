@@ -52,7 +52,7 @@ export async function loadRace(raceId: string): Promise<{ race: Race; participan
     const [race, participants] = await Promise.all([
       pb.collection('races').getOne<Race>(raceId, { requestKey: null }),
       pb.collection('race_participants').getFullList<RaceParticipant>({
-        filter: `race = "${raceId}"`,
+        filter: pb.filter('race = {:rid}', { rid: raceId }),
         sort: '-distance_km',
         requestKey: null,
       }),
@@ -74,7 +74,7 @@ export async function joinRace(raceId: string, displayName: string): Promise<Rac
   if (!userId) throw wrapPbError({ status: 401, message: 'Not authenticated' })
   try {
     const existing = await pb.collection('race_participants').getFirstListItem<RaceParticipant>(
-      `race = "${raceId}" && user = "${userId}"`,
+      pb.filter('race = {:rid} && user = {:uid}', { rid: raceId, uid: userId }),
       { requestKey: null },
     )
     if (existing) return existing
@@ -98,7 +98,7 @@ export async function joinRace(raceId: string, displayName: string): Promise<Rac
       // Unique-index conflict: another request inserted it first
       try {
         return await pb.collection('race_participants').getFirstListItem<RaceParticipant>(
-          `race = "${raceId}" && user = "${userId}"`,
+          pb.filter('race = {:rid} && user = {:uid}', { rid: raceId, uid: userId }),
           { requestKey: null },
         )
       } catch (inner) {

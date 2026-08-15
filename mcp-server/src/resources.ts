@@ -19,9 +19,9 @@ export function registerResources(server: AppServer, pbUrl: string) {
       const userId = auth.getUserId();
 
       const [settings, userPrograms] = await Promise.all([
-        pb.collection("settings").getFirstListItem(`user = "${userId}"`).catch(() => null),
+        pb.collection("settings").getFirstListItem(pb.filter("user = {:userId}", { userId })).catch(() => null),
         pb.collection("user_programs").getFullList({
-          filter: `user = "${userId}" && is_current = true`,
+          filter: pb.filter("user = {:userId} && is_current = true", { userId }),
           expand: "program",
         }),
       ]);
@@ -85,10 +85,14 @@ export function registerResources(server: AppServer, pbUrl: string) {
 
       const [entries, goals] = await Promise.all([
         pb.collection("nutrition_entries").getFullList({
-          filter: `user = "${userId}" && logged_at >= "${todayStr}" && logged_at <= "${todayStr} 23:59:59"`,
+          filter: pb.filter("user = {:userId} && logged_at >= {:from} && logged_at <= {:to}", {
+            userId,
+            from: todayStr,
+            to: `${todayStr} 23:59:59`,
+          }),
           sort: "logged_at",
         }),
-        pb.collection("nutrition_goals").getFirstListItem(`user = "${userId}"`).catch(() => null),
+        pb.collection("nutrition_goals").getFirstListItem(pb.filter("user = {:userId}", { userId })).catch(() => null),
       ]);
 
       const totals = entries.reduce(
@@ -169,10 +173,10 @@ export function registerResources(server: AppServer, pbUrl: string) {
 
       const [sessions, settings] = await Promise.all([
         pb.collection("sessions").getFullList({
-          filter: `user = "${userId}" && completed_at >= "${weekStart}"`,
+          filter: pb.filter("user = {:userId} && completed_at >= {:weekStart}", { userId, weekStart }),
           sort: "completed_at",
         }),
-        pb.collection("settings").getFirstListItem(`user = "${userId}"`).catch(() => null),
+        pb.collection("settings").getFirstListItem(pb.filter("user = {:userId}", { userId })).catch(() => null),
       ]);
 
       const weeklyGoal = settings?.weekly_goal ?? null;

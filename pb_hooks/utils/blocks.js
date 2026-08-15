@@ -14,8 +14,8 @@ function isBlocked(app, a, b) {
   try {
     var recs = app.findRecordsByFilter(
       "user_blocks",
-      "(blocker = '" + a + "' && blocked = '" + b + "') || (blocker = '" + b + "' && blocked = '" + a + "')",
-      "", 1, 0
+      "(blocker = {:a} && blocked = {:b}) || (blocker = {:b} && blocked = {:a})",
+      "", 1, 0, { a: a, b: b }
     )
     return recs.length > 0
   } catch (e) {

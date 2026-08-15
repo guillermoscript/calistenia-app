@@ -250,7 +250,10 @@ async function loadTimezones(pb: any, userIds: string[]): Promise<Map<string, st
   const CHUNK = 40;
   for (let i = 0; i < userIds.length; i += CHUNK) {
     const chunk = userIds.slice(i, i + CHUNK);
-    const filter = chunk.map((id) => `id = "${id}"`).join(" || ");
+    const filter = pb.filter(
+      chunk.map((_, n) => `id = {:id${n}}`).join(" || "),
+      Object.fromEntries(chunk.map((id, n) => [`id${n}`, id])),
+    );
     try {
       const users = await pb.collection("users").getFullList({ filter });
       for (const u of users) map.set(u.id, safeTimeZone(u.timezone));

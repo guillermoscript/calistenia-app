@@ -84,7 +84,7 @@ function shiftDay(day, delta) {
  */
 function findOrCreateStats(userId) {
   try {
-    var found = $app.findRecordsByFilter("user_stats", "user = '" + userId + "'", "", 1, 0)
+    var found = $app.findRecordsByFilter("user_stats", "user = {:u}", "", 1, 0, { u: userId })
     if (found && found.length > 0) return found[0]
   } catch (err) {
     console.log("[workout_stats] lookup fallido para " + userId + ":", err)
@@ -105,7 +105,7 @@ function findOrCreateStats(userId) {
     // al segundo create. Releer es la recuperacion correcta.
     console.log("[workout_stats] create fallido para " + userId + ", reintentando lectura:", err)
     try {
-      var retry = $app.findRecordsByFilter("user_stats", "user = '" + userId + "'", "", 1, 0)
+      var retry = $app.findRecordsByFilter("user_stats", "user = {:u}", "", 1, 0, { u: userId })
       if (retry && retry.length > 0) return retry[0]
     } catch (err2) {
       console.log("[workout_stats] relectura fallida para " + userId + ":", err2)

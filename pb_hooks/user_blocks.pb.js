@@ -18,8 +18,8 @@ onRecordCreate(function (e) {
   // 1. Unfollow mutuo
   var follows = txApp.findRecordsByFilter(
     "follows",
-    "(follower = '" + blocker + "' && following = '" + blocked + "') || (follower = '" + blocked + "' && following = '" + blocker + "')",
-    "", 10, 0
+    "(follower = {:blocker} && following = {:blocked}) || (follower = {:blocked} && following = {:blocker})",
+    "", 10, 0, { blocker: blocker, blocked: blocked }
   )
   for (var i = 0; i < follows.length; i++) {
     txApp.delete(follows[i])
@@ -37,8 +37,8 @@ onRecordCreate(function (e) {
   // 3. Borrar notificaciones existentes entre el par (ambas direcciones)
   var notifs = txApp.findRecordsByFilter(
     "notifications",
-    "(user = '" + blocker + "' && actor = '" + blocked + "') || (user = '" + blocked + "' && actor = '" + blocker + "')",
-    "", 500, 0
+    "(user = {:blocker} && actor = {:blocked}) || (user = {:blocked} && actor = {:blocker})",
+    "", 500, 0, { blocker: blocker, blocked: blocked }
   )
   for (var j = 0; j < notifs.length; j++) {
     txApp.delete(notifs[j])

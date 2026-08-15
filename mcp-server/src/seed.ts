@@ -62,11 +62,11 @@ async function main() {
   console.log("\nComputing user stats...");
 
   const [sessions, sets, nutrition, lumbar, weight] = await Promise.all([
-    pb.collection("sessions").getFullList({ filter: `user = "${userId}"`, fields: "id" }),
-    pb.collection("sets_log").getFullList({ filter: `user = "${userId}"`, fields: "id" }),
-    pb.collection("nutrition_entries").getFullList({ filter: `user = "${userId}"`, fields: "id" }),
-    pb.collection("lumbar_checks").getFullList({ filter: `user = "${userId}"`, fields: "id" }),
-    pb.collection("weight_entries").getFullList({ filter: `user = "${userId}"`, fields: "id" }),
+    pb.collection("sessions").getFullList({ filter: pb.filter("user = {:userId}", { userId }), fields: "id" }),
+    pb.collection("sets_log").getFullList({ filter: pb.filter("user = {:userId}", { userId }), fields: "id" }),
+    pb.collection("nutrition_entries").getFullList({ filter: pb.filter("user = {:userId}", { userId }), fields: "id" }),
+    pb.collection("lumbar_checks").getFullList({ filter: pb.filter("user = {:userId}", { userId }), fields: "id" }),
+    pb.collection("weight_entries").getFullList({ filter: pb.filter("user = {:userId}", { userId }), fields: "id" }),
   ]);
 
   const xp =
@@ -99,7 +99,7 @@ async function main() {
 
   const existingStats = await pb
     .collection("user_stats")
-    .getFirstListItem(`user = "${userId}"`)
+    .getFirstListItem(pb.filter("user = {:userId}", { userId }))
     .catch(() => null);
 
   if (existingStats) {
@@ -142,7 +142,7 @@ async function main() {
 
     const existingUA = await pb
       .collection("user_achievements")
-      .getFirstListItem(`user = "${userId}" && achievement = "${ach.id}"`)
+      .getFirstListItem(pb.filter("user = {:userId} && achievement = {:achievementId}", { userId, achievementId: ach.id }))
       .catch(() => null);
 
     if (existingUA) {

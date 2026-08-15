@@ -97,7 +97,11 @@ export function useReactions(userId: string | null) {
     }) => {
       if (hasReacted) {
         const existing = await pb.collection('feed_reactions').getFirstListItem(
-          `session_id = '${sessionId}' && reactor = '${userId}' && emoji = '${emoji}'`,
+          pb.filter('session_id = {:sid} && reactor = {:uid} && emoji = {:emoji}', {
+            sid: sessionId,
+            uid: userId,
+            emoji,
+          }),
           { $autoCancel: false },
         )
         await pb.collection('feed_reactions').delete(existing.id)

@@ -52,7 +52,7 @@ function toBody(userId: string, p: RemoteActiveSession) {
 
 async function findRecordId(userId: string): Promise<string | null> {
   try {
-    const rec = await pb.collection(COLLECTION).getFirstListItem(`user = "${userId}"`, { requestKey: null })
+    const rec = await pb.collection(COLLECTION).getFirstListItem(pb.filter('user = {:uid}', { uid: userId }), { requestKey: null })
     return rec.id
   } catch {
     return null
@@ -124,7 +124,7 @@ export async function fetchRemoteActiveSession<TW = unknown, TP = unknown>(): Pr
   const userId = authedUserId()
   if (!userId) return null
   try {
-    const rec = await pb.collection(COLLECTION).getFirstListItem(`user = "${userId}"`, { requestKey: null })
+    const rec = await pb.collection(COLLECTION).getFirstListItem(pb.filter('user = {:uid}', { uid: userId }), { requestKey: null })
     recordId = rec.id
     const session: RemoteActiveSession<TW, TP> = {
       workout: rec.workout,

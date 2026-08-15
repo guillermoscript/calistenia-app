@@ -66,7 +66,7 @@ export default function AdminPage() {
     try {
       const q = searchQuery.trim()
       const res = await pb.collection('users').getList(1, 50, {
-        filter: `email ~ "${q}" || display_name ~ "${q}"`,
+        filter: pb.filter('email ~ {:q} || display_name ~ {:q}', { q }),
         sort: '-created',
       })
       setUsers(res.items.map(u => ({
