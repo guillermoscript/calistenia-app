@@ -1,6 +1,189 @@
 {
-  "generated": "2026-08-13T22:16:54.884Z",
+  "generated": "2026-08-15T19:36:07.366Z",
   "versions": [
+    {
+      "version": "1.10.0",
+      "date": "2026-08-15",
+      "summary": {
+        "es": "Resultados de batalla de verdad con revancha y tarjeta para compartir, foto de perfil desde el móvil, entrenos sin cobertura que ya no se pierden y el reto Push-up Builder activado.",
+        "en": "Real battle results with rematch and a share card, profile photo from your phone, workouts without signal that no longer get lost, and the Push-up Builder challenge switched on."
+      },
+      "highlights": [
+        {
+          "icon": "🏆",
+          "type": "feat",
+          "title": {
+            "es": "Resultados de batalla, revancha y tarjeta",
+            "en": "Battle results, rematch and share card"
+          },
+          "body": {
+            "es": "Al acabar una batalla ves una pantalla de resultado pensada para ti: si ganaste, si empataste (los empates comparten puesto, ya no se corona a uno al azar) o si te retiraste. Puedes pedir la revancha con un toque —el rival recibe la invitación por notificación— y compartir el resultado como una tarjeta con nombres y marcas, sin enlaces a la batalla.",
+            "en": "When a battle ends you get a results screen written for you: whether you won, tied (ties now share a rank instead of crowning a random winner) or left. Ask for a rematch with one tap — your rival gets the invite as a notification — and share the result as a card with names and scores, with no links into the battle."
+          }
+        },
+        {
+          "icon": "📶",
+          "type": "fix",
+          "title": {
+            "es": "Entrenar sin cobertura ya no se pierde",
+            "en": "Training without signal no longer gets lost"
+          },
+          "body": {
+            "es": "Las series y los entrenos completados que apuntabas sin conexión se quedaban solo en el móvil y desaparecían al recargar. Ahora entran en la cola de reintentos y se suben solos al volver la conexión, sin duplicarse aunque el primer intento sí hubiera llegado.",
+            "en": "Sets and completed workouts logged with no connection used to stay only on your phone and vanish on the next load. They now go through the retry queue and upload themselves when you are back online, with no duplicates even if the first attempt actually made it."
+          }
+        },
+        {
+          "icon": "📸",
+          "type": "feat",
+          "title": {
+            "es": "Foto de perfil desde la app",
+            "en": "Profile photo from the app"
+          },
+          "body": {
+            "es": "Toca el círculo de tu perfil para poner una foto desde la cámara o la galería, con recorte cuadrado incluido, o quitarla. Antes solo se podía desde la web.",
+            "en": "Tap the circle on your profile to set a photo from the camera or your gallery, square crop included, or remove it. Until now this was web-only."
+          }
+        },
+        {
+          "icon": "💪",
+          "type": "feat",
+          "title": {
+            "es": "Reto Push-up Builder activado",
+            "en": "Push-up Builder challenge switched on"
+          },
+          "body": {
+            "es": "El preset para principiantes que estaba en gris ya se puede empezar: suma todas las flexiones estándar que registres durante 30 días hasta llegar a 100. Además, el detalle de cualquier reto se adapta a su forma: con meta, tu progreso es lo primero; sin meta, la clasificación llena la pantalla y tu fila se queda a la vista mientras haces scroll.",
+            "en": "The beginner preset that was greyed out can now be started: it adds up every standard push-up you log over 30 days until you hit 100. Challenge details also adapt to their shape: with a goal, your progress comes first; without one, the leaderboard fills the screen and your row stays in view while you scroll."
+          }
+        },
+        {
+          "icon": "⚔️",
+          "type": "fix",
+          "title": {
+            "es": "El marcador cuenta el tiempo de plancha",
+            "en": "The scoreboard counts plank time"
+          },
+          "body": {
+            "es": "Aguantar 30 s de plancha en una batalla dejaba tu fila en 0: el dato se guardaba, pero no se pintaba. Ahora la clasificación en vivo, el resultado, el historial y la pantalla de espera enseñan los segundos de trabajo. La pantalla de «has terminado» ahora titula tu puesto («1.º de 2») y pone el marcador en vivo arriba.",
+            "en": "Holding a 30 s plank in a battle left your row at 0: the data was saved but never shown. The live leaderboard, the result, the history and the waiting screen now show your work seconds. The \"you're done\" screen now leads with your rank (\"1st of 2\") and puts the live scoreboard first."
+          }
+        },
+        {
+          "icon": "🔧",
+          "type": "fix",
+          "title": {
+            "es": "Pequeños arreglos",
+            "en": "Small fixes"
+          },
+          "body": {
+            "es": "Los chevrons de las secciones plegables giran en vez de desaparecer (en Nutrición ni siquiera se veían). Los avisos push llegan a la cuenta correcta si cambias de sesión en el mismo móvil. Textos que salían en crudo (como «workout.skip») ya están traducidos, y «1 despertar» ya no dice «Despertares nocturnos».",
+            "en": "Collapsible section chevrons now rotate instead of vanishing (in Nutrition they were not visible at all). Push notifications reach the right account when you switch users on the same phone. Labels that showed up raw (like \"workout.skip\") are translated, and \"1 awakening\" no longer reads as a plural."
+          }
+        }
+      ],
+      "groups": [
+        {
+          "label": "Nuevas funciones",
+          "emoji": "✨",
+          "type": "feat",
+          "items": [
+            {
+              "description": "Activar el preset Push-up Builder con puntuación acumulada (refs #345) (#446)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "4fffa71"
+            },
+            {
+              "description": "Battle results, rematch, share card and analytics (#443)",
+              "scope": "battles",
+              "breaking": false,
+              "hash": "a5aa7c8"
+            },
+            {
+              "description": "Ramificar el detalle en dos layouts, meta y ranking (#383) (#431)",
+              "scope": "challenges",
+              "breaking": false,
+              "hash": "0293bf8"
+            },
+            {
+              "description": "Subir la foto de perfil desde la app (#434)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "880e2f0"
+            }
+          ]
+        },
+        {
+          "label": "Correcciones",
+          "emoji": "🐛",
+          "type": "fix",
+          "items": [
+            {
+              "description": "Añadir las claves que se pintaban en crudo y un guardarraíl código→locales (closes #444) (#445)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "91c0b1e"
+            },
+            {
+              "description": "Reintentar las series y las sesiones por la cola offline (closes #301) (#441)",
+              "scope": "offline",
+              "breaking": false,
+              "hash": "01b1712"
+            },
+            {
+              "description": "Que los chevrons plegables se vean al girarlos (#435) (#436)",
+              "scope": "mobile",
+              "breaking": false,
+              "hash": "ec1d9f6"
+            },
+            {
+              "description": "Mostrar el trabajo por tiempo en el marcador de una batalla (#426) (#429)",
+              "scope": "battle",
+              "breaking": false,
+              "hash": "8ad68c7"
+            },
+            {
+              "description": "Separar la etiqueta de despertares del sufijo con número (#420) (#430)",
+              "scope": "i18n",
+              "breaking": false,
+              "hash": "503e178"
+            },
+            {
+              "description": "Reasignar el token cuando el dispositivo cambia de cuenta (#428)",
+              "scope": "push",
+              "breaking": false,
+              "hash": "3ec0f96"
+            }
+          ]
+        },
+        {
+          "label": "Mejoras internas",
+          "emoji": "♻️",
+          "type": "refactor",
+          "items": [
+            {
+              "description": "Migrar mcp-use v1.34.6 → v2.2.3 (widgets → Views) (closes #442) (#447)",
+              "scope": "mcp-server",
+              "breaking": false,
+              "hash": "2bbff25"
+            },
+            {
+              "description": "Compilar prompts de Langfuse con variables (#298)",
+              "scope": "ai",
+              "breaking": false,
+              "hash": "1323536"
+            },
+            {
+              "description": "Titular el puesto en la pantalla de espera (#432) (#433)",
+              "scope": "battle",
+              "breaking": false,
+              "hash": "39afc55"
+            }
+          ]
+        }
+      ]
+    },
     {
       "version": "1.9.0",
       "date": "2026-08-14",

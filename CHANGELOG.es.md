@@ -9,6 +9,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 _Nada por ahora._
 
+## [1.10.0] - 2026-08-15
+
+_Resultados de batalla de verdad con revancha y tarjeta para compartir, foto de perfil desde el móvil, entrenos sin cobertura que ya no se pierden y el reto Push-up Builder activado._
+
+### Añadido
+
+- **Resultados de batalla, revancha y tarjeta** — Al acabar una batalla ves una pantalla de resultado pensada para ti: si ganaste, si empataste (los empates comparten puesto, ya no se corona a uno al azar) o si te retiraste. Puedes pedir la revancha con un toque —el rival recibe la invitación por notificación— y compartir el resultado como una tarjeta con nombres y marcas, sin enlaces a la batalla.
+- **Foto de perfil desde la app** — Toca el círculo de tu perfil para poner una foto desde la cámara o la galería, con recorte cuadrado incluido, o quitarla. Antes solo se podía desde la web.
+- **Reto Push-up Builder activado** — El preset para principiantes que estaba en gris ya se puede empezar: suma todas las flexiones estándar que registres durante 30 días hasta llegar a 100. Además, el detalle de cualquier reto se adapta a su forma: con meta, tu progreso es lo primero; sin meta, la clasificación llena la pantalla y tu fila se queda a la vista mientras haces scroll.
+
+### Corregido
+
+- **Entrenar sin cobertura ya no se pierde** — Las series y los entrenos completados que apuntabas sin conexión se quedaban solo en el móvil y desaparecían al recargar. Ahora entran en la cola de reintentos y se suben solos al volver la conexión, sin duplicarse aunque el primer intento sí hubiera llegado.
+- **El marcador cuenta el tiempo de plancha** — Aguantar 30 s de plancha en una batalla dejaba tu fila en 0: el dato se guardaba, pero no se pintaba. Ahora la clasificación en vivo, el resultado, el historial y la pantalla de espera enseñan los segundos de trabajo. La pantalla de «has terminado» ahora titula tu puesto («1.º de 2») y pone el marcador en vivo arriba.
+- **Pequeños arreglos** — Los chevrons de las secciones plegables giran en vez de desaparecer (en Nutrición ni siquiera se veían). Los avisos push llegan a la cuenta correcta si cambias de sesión en el mismo móvil. Textos que salían en crudo (como «workout.skip») ya están traducidos, y «1 despertar» ya no dice «Despertares nocturnos».
+
 ## [1.9.0] - 2026-08-14
 
 _Programas de comunidad con hitos semanales para seguir un plan de verdad, estadísticas de perfil que por fin cuentan todos tus entrenos, y las batallas con la misma pantalla de entreno que una sesión normal._
@@ -293,7 +309,8 @@ _Primera versión de la app móvil: onboarding, programas, nutrición con IA y s
 - **Registro de comidas con IA** — Registra comidas describiéndolas en texto y deja que la IA calcule los macros.
 - **Sesiones guiadas** — Entrena con sesiones paso a paso que respetan tus articulaciones lesionadas.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.0...HEAD
+[1.10.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.0
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
 [1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1

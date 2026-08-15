@@ -9,6 +9,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 _Nothing yet._
 
+## [1.10.0] - 2026-08-15
+
+_Real battle results with rematch and a share card, profile photo from your phone, workouts without signal that no longer get lost, and the Push-up Builder challenge switched on._
+
+### Added
+
+- **Battle results, rematch and share card** — When a battle ends you get a results screen written for you: whether you won, tied (ties now share a rank instead of crowning a random winner) or left. Ask for a rematch with one tap — your rival gets the invite as a notification — and share the result as a card with names and scores, with no links into the battle.
+- **Profile photo from the app** — Tap the circle on your profile to set a photo from the camera or your gallery, square crop included, or remove it. Until now this was web-only.
+- **Push-up Builder challenge switched on** — The beginner preset that was greyed out can now be started: it adds up every standard push-up you log over 30 days until you hit 100. Challenge details also adapt to their shape: with a goal, your progress comes first; without one, the leaderboard fills the screen and your row stays in view while you scroll.
+
+### Fixed
+
+- **Training without signal no longer gets lost** — Sets and completed workouts logged with no connection used to stay only on your phone and vanish on the next load. They now go through the retry queue and upload themselves when you are back online, with no duplicates even if the first attempt actually made it.
+- **The scoreboard counts plank time** — Holding a 30 s plank in a battle left your row at 0: the data was saved but never shown. The live leaderboard, the result, the history and the waiting screen now show your work seconds. The "you're done" screen now leads with your rank ("1st of 2") and puts the live scoreboard first.
+- **Small fixes** — Collapsible section chevrons now rotate instead of vanishing (in Nutrition they were not visible at all). Push notifications reach the right account when you switch users on the same phone. Labels that showed up raw (like "workout.skip") are translated, and "1 awakening" no longer reads as a plural.
+
 ## [1.9.0] - 2026-08-14
 
 _Community programs with weekly milestones so you can follow a real plan, profile stats that finally count every workout you do, and battles that now use the same training screen as a regular session._
@@ -293,7 +309,8 @@ _The first mobile release: onboarding, programs, AI nutrition and guided session
 - **AI meal logging** — Log meals by describing them in text and let AI estimate the macros.
 - **Guided sessions** — Train with step-by-step sessions that respect your injured joints.
 
-[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...HEAD
+[unreleased]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.10.0...HEAD
+[1.10.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.9.0...mobile-v1.10.0
 [1.9.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.8.0...mobile-v1.9.0
 [1.8.0]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.1...mobile-v1.8.0
 [1.7.1]: https://github.com/guillermoscript/calistenia-app/compare/mobile-v1.7.0...mobile-v1.7.1
