@@ -1,8 +1,8 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
-import { widget, text } from "mcp-use";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
+import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
+import { exerciseHistoryPropsSchema } from "../views/exercise-history.schema.js";
 
 export function registerWorkoutTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -366,7 +366,8 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
       title: "Get Exercise History",
       description:
         "Get full history for a specific exercise — all logged sets grouped by date. Great for spotting progression and personal records over time.",
-      widget: { name: "exercise-history", invoking: "Cargando historial…", invoked: "Historial listo" },
+      view: { name: "exercise-history" },
+      outputSchema: exerciseHistoryPropsSchema,
       schema: z
         .object({
           exercise_id: z.string().describe("Exercise identifier (e.g. 'push-up', 'pull-up')"),
@@ -399,9 +400,10 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
         });
 
         if (result.length === 0) {
-          return {
-            content: [{ type: "text", text: `No se encontró historial para '${exercise_id}' en los últimos ${days} días.` }],
-          };
+          return viewResult(
+            { exercise_id, days, total_sets: 0, sessions: [] },
+            `No se encontró historial para '${exercise_id}' en los últimos ${days} días.`
+          );
         }
 
         // Group by date — keep reps and note separate for the widget
@@ -426,21 +428,19 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
         const summaryText = summaryLines.join("\n");
 
         if (response_format === ResponseFormat.JSON) {
-          return {
-            content: [{ type: "text", text: JSON.stringify({ exercise_id, days_looked_back: days, total_sets: result.length, sessions }, null, 2) }],
-            structuredContent: { exercise_id, days_looked_back: days, total_sets: result.length, sessions },
-          };
+          const jsonProps = { exercise_id, days, total_sets: result.length, sessions };
+          return viewResult(jsonProps, JSON.stringify(jsonProps, null, 2));
         }
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             exercise_id,
             days,
             total_sets: result.length,
             sessions,
           },
-          output: text(summaryText),
-        });
+          summaryText
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

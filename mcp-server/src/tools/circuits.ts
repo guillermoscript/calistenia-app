@@ -1,8 +1,8 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
-import { widget, text } from "mcp-use";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
+import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
+import { circuitResultPropsSchema } from "../views/circuit-result.schema.js";
 
 export function registerCircuitTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -110,7 +110,8 @@ export function registerCircuitTools(server: AppServer, pbUrl: string) {
       title: "Get Circuit Session Details",
       description:
         "Get full details of a specific circuit session including exercises, timing config, rounds completed, and notes.",
-      widget: { name: "circuit-result", invoking: "Cargando circuito…", invoked: "Circuito listo" },
+      view: { name: "circuit-result" },
+      outputSchema: circuitResultPropsSchema,
       schema: z
         .object({
           session_id: z.string().describe("The circuit session record ID"),
@@ -147,13 +148,14 @@ export function registerCircuitTools(server: AppServer, pbUrl: string) {
           note: s.note || null,
           exercises: exercises.map((ex: Record<string, unknown>) => {
             const exName = typeof ex.name === "object" ? (ex.name as Record<string, string>).en ?? (ex.name as Record<string, string>).es ?? "" : String(ex.name ?? "");
-            return { exerciseId: ex.exerciseId, name: exName, reps: ex.reps ?? null };
+            const reps = ex.reps != null ? String(ex.reps) : null;
+            return { exerciseId: ex.exerciseId, name: exName, reps };
           }),
           config: config ? {
-            work_seconds: config.workSeconds ?? null,
-            rest_seconds: config.restSeconds ?? null,
-            rest_between_exercises: config.restBetweenExercises ?? null,
-            rest_between_rounds: config.restBetweenRounds ?? null,
+            work_seconds: (config.workSeconds as number | undefined) ?? null,
+            rest_seconds: (config.restSeconds as number | undefined) ?? null,
+            rest_between_exercises: (config.restBetweenExercises as number | undefined) ?? null,
+            rest_between_rounds: (config.restBetweenRounds as number | undefined) ?? null,
           } : null,
         };
 
@@ -189,8 +191,8 @@ export function registerCircuitTools(server: AppServer, pbUrl: string) {
           summaryText = lines.join("\n");
         }
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             circuit_name: output.name,
             mode: output.mode,
             rounds_completed: output.rounds_completed,
@@ -202,8 +204,8 @@ export function registerCircuitTools(server: AppServer, pbUrl: string) {
             exercises: output.exercises,
             config: output.config,
           },
-          output: text(summaryText),
-        });
+          summaryText
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

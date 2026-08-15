@@ -1,0 +1,218 @@
+import { useToolContext, useSendFollowUp } from "mcp-use/react";
+import { useAppColors, FONT, FONT_DISPLAY, trafficColor, type AppColors } from "../lib/theme";
+import { WidgetLoading, WidgetError, Kicker, DisplayTitle, ghostButtonStyle } from "../lib/ui";
+import { WidgetFonts } from "../lib/fonts";
+import type { NutritionSummaryProps as Props } from "../../src/views/nutrition-summary.schema";
+
+function MacroBar({
+  label,
+  avg,
+  goal,
+  color,
+  unit,
+  c,
+}: {
+  label: string;
+  avg: number;
+  goal: number | null;
+  color: string;
+  unit: string;
+  c: AppColors;
+}) {
+  const pct = goal && goal > 0 ? Math.min(avg / goal, 1) : null;
+  const pctNum = goal && goal > 0 ? Math.round((avg / goal) * 100) : null;
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>{label}</span>
+        <span style={{ fontSize: 12, color: c.sub }}>
+          {goal !== null ? (
+            <>
+              <span style={{ color: color, fontWeight: 700 }}>{avg}{unit}</span>
+              <span> / {goal}{unit}</span>
+              {pctNum !== null && (
+                <span style={{ marginLeft: 6, fontWeight: 700, color: trafficColor(pctNum, 70, 90, c) }}>
+                  {pctNum}%
+                </span>
+              )}
+            </>
+          ) : (
+            <span style={{ color: color, fontWeight: 700 }}>{avg}{unit}</span>
+          )}
+        </span>
+      </div>
+      <div style={{ height: 8, borderRadius: 4, backgroundColor: c.chip, overflow: "hidden" }}>
+        {pct !== null && (
+          <div
+            style={{
+              width: `${Math.min(pct * 100, 100)}%`,
+              height: "100%",
+              backgroundColor: color,
+              borderRadius: 4,
+              transition: "width 0.4s ease",
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function NutritionSummary() {
+  const view = useToolContext();
+  const sendFollowUp = useSendFollowUp();
+  const c = useAppColors();
+
+  if (view.status === "pending") {
+    return <WidgetLoading text="Calculando resumen de nutrición…" />;
+  }
+  if (view.status === "error") {
+    return <WidgetError message={view.error.message} />;
+  }
+  const props = view.toolOutput as Props;
+
+  const { from, to, days_logged, total_entries, adherence_pct, daily_avg, goals, most_logged_meals } = props;
+
+  const adherenceColor =
+    adherence_pct === null ? c.sub : trafficColor(adherence_pct, 70, 90, c);
+
+  const dateLabel = from === to ? from : `${from} → ${to}`;
+
+  return (
+    <>
+      <WidgetFonts />
+      <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 480 }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
+          <div>
+            <Kicker>{dateLabel}</Kicker>
+            <DisplayTitle size={22} style={{ marginTop: 2 }}>Resumen nutricional</DisplayTitle>
+            <div style={{ fontSize: 12, color: c.sub, marginTop: 2 }}>
+              {days_logged} día{days_logged !== 1 ? "s" : ""} registrado{days_logged !== 1 ? "s" : ""} · {total_entries} comida{total_entries !== 1 ? "s" : ""}
+            </div>
+          </div>
+
+          {/* Adherence badge */}
+          {adherence_pct !== null && (
+            <div
+              style={{
+                backgroundColor: c.card,
+                border: `1px solid ${c.border}`,
+                borderRadius: 8,
+                padding: "8px 14px",
+                textAlign: "center",
+                minWidth: 64,
+              }}
+            >
+              <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, fontSize: 26, color: adherenceColor, lineHeight: 1 }}>
+                {adherence_pct}%
+              </div>
+              <div style={{ fontSize: 10, color: c.sub, marginTop: 2 }}>adherencia</div>
+            </div>
+          )}
+        </div>
+
+        {/* Macro bars */}
+        <div
+          style={{
+            backgroundColor: c.card,
+            borderRadius: 8,
+            padding: "12px 16px",
+            marginBottom: 12,
+            border: `1px solid ${c.border}`,
+          }}
+        >
+          <Kicker style={{ marginBottom: 10 }}>
+            Promedio diario{goals ? " vs meta" : ""}
+          </Kicker>
+
+          <MacroBar
+            label="Calorías"
+            avg={daily_avg.calories}
+            goal={goals?.calories ?? null}
+            color={c.kcal}
+            unit=" kcal"
+            c={c}
+          />
+          <MacroBar
+            label="Proteína"
+            avg={daily_avg.protein}
+            goal={goals?.protein ?? null}
+            color={c.protein}
+            unit="g"
+            c={c}
+          />
+          <MacroBar
+            label="Carbohidratos"
+            avg={daily_avg.carbs}
+            goal={goals?.carbs ?? null}
+            color={c.carbs}
+            unit="g"
+            c={c}
+          />
+          <MacroBar
+            label="Grasa"
+            avg={daily_avg.fat}
+            goal={goals?.fat ?? null}
+            color={c.fat}
+            unit="g"
+            c={c}
+          />
+        </div>
+
+        {/* Most logged meals */}
+        {most_logged_meals.length > 0 && (
+          <div
+            style={{
+              backgroundColor: c.card,
+              borderRadius: 8,
+              padding: "12px 16px",
+              marginBottom: 14,
+              border: `1px solid ${c.border}`,
+            }}
+          >
+            <Kicker style={{ marginBottom: 8 }}>Más registrados</Kicker>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {most_logged_meals.map((meal, i) => (
+                <span
+                  key={i}
+                  style={{
+                    fontSize: 12,
+                    padding: "4px 10px",
+                    borderRadius: 14,
+                    backgroundColor: c.chip,
+                    color: c.text,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                  }}
+                >
+                  {meal.name}
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: c.sub,
+                    }}
+                  >
+                    ×{meal.count}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action button */}
+        <button
+          onClick={() => void sendFollowUp({ prompt: "Dame consejos para mejorar mi nutrición basándote en este resumen" })}
+          style={{ ...ghostButtonStyle(c), width: "100%", textAlign: "left" }}
+        >
+          Dame consejos para mejorar mi nutrición
+        </button>
+      </div>
+    </>
+  );
+}

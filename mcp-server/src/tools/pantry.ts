@@ -1,9 +1,8 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
-import { widget, text } from "mcp-use";
 import type PocketBase from "pocketbase";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, ResponseFormat, today } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat, today } from "../utils.js";
 import {
   generatePantryPlan,
   type PantryPlanGoals,
@@ -14,6 +13,13 @@ import { resolveTier } from "../api/model-resolver.js";
 import { parsePantryText, matchConsumption, parseReceipt } from "../api/pantry-parser.js";
 import { normalizeName, canonCurrency } from "../api/receipt-sanitizer.js";
 import { PANTRY_CATEGORIES, PANTRY_UNITS } from "../api/schemas.js";
+import { pantryDayPlanPropsSchema } from "../views/pantry-day-plan.schema.js";
+import { howManyMealsPropsSchema } from "../views/how-many-meals.schema.js";
+import { pantryParsePreviewPropsSchema } from "../views/pantry-parse-preview.schema.js";
+import { pantryItemsAddedPropsSchema } from "../views/pantry-items-added.schema.js";
+import { receiptScanResultPropsSchema } from "../views/receipt-scan-result.schema.js";
+import { pantryConsumptionMatchPropsSchema } from "../views/pantry-consumption-match.schema.js";
+import { pantryConsumedPropsSchema } from "../views/pantry-consumed.schema.js";
 
 function mapPantryItems(records: Array<Record<string, unknown>>): PantrySnapshotItem[] {
   return records.slice(0, 200).map((r) => ({
@@ -126,11 +132,8 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
       title: "Generate Pantry-Aware Day Plan",
       description:
         "Generate a full day of meals (desayuno, almuerzo, cena, snack) with recipes, using only what's currently in the user's pantry. Synchronous — calls an AI model, so it can take a few seconds. Returns a visual widget with the meals, macros and recipes.",
-      widget: {
-        name: "pantry-day-plan",
-        invoking: "Cocinando tu plan del día…",
-        invoked: "Plan del día listo",
-      },
+      view: { name: "pantry-day-plan" },
+      outputSchema: pantryDayPlanPropsSchema,
       schema: z
         .object({
           target_date: z.string().optional().describe("Target date for the plan (YYYY-MM-DD). Defaults to tomorrow."),
@@ -165,7 +168,7 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
           tier,
         });
 
-        const meals = (result.meals as Array<Record<string, any>>) ?? [];
+        const meals = (result.meals as z.infer<typeof pantryDayPlanPropsSchema>["meals"]) ?? [];
         const notes = (result.notes as string) ?? "";
 
         let out: string;
@@ -189,10 +192,7 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
           out = lines.join("\n");
         }
 
-        return widget({
-          props: { target_date: target_date ?? null, meals, notes },
-          output: text(out),
-        });
+        return viewResult({ target_date: target_date ?? null, meals, notes }, out);
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -208,11 +208,8 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
       title: "How Many Meals Left in Pantry",
       description:
         "Estimate how many complete meals the user's current pantry can produce, broken down by meal type, and which ingredient runs out first for each. Does not generate a plan. Returns a visual widget with the breakdown.",
-      widget: {
-        name: "how-many-meals",
-        invoking: "Contando lo que alcanza tu despensa…",
-        invoked: "Estimación lista",
-      },
+      view: { name: "how-many-meals" },
+      outputSchema: howManyMealsPropsSchema,
       schema: z
         .object({
           response_format: z
@@ -246,7 +243,7 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
           tier,
         });
 
-        const breakdown = (result.breakdown as Array<Record<string, any>>) ?? [];
+        const breakdown = (result.breakdown as z.infer<typeof howManyMealsPropsSchema>["breakdown"]) ?? [];
 
         let out: string;
         if (response_format === ResponseFormat.JSON) {
@@ -264,15 +261,15 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
           out = lines.join("\n");
         }
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             total_meals: result.total_meals ?? 0,
             days_covered: result.days_covered ?? 0,
             breakdown,
             summary: (result.summary as string) ?? "",
           },
-          output: text(out),
-        });
+          out
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -427,11 +424,8 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
       title: "Parse Pantry Chat Message",
       description:
         "Parse a free-text message about the user's pantry (e.g. 'compré 2kg de arroz y pollo', 'se me acabó el aceite') into structured items and an intent (add/consume/discard/query/unknown). PARSE-ONLY — does not write anything. Returns a visual preview widget. After confirming the parsed items with the user, call `cal_add_pantry_items` to persist them.",
-      widget: {
-        name: "pantry-parse-preview",
-        invoking: "Leyendo tu mensaje de despensa…",
-        invoked: "Items detectados",
-      },
+      view: { name: "pantry-parse-preview" },
+      outputSchema: pantryParsePreviewPropsSchema,
       schema: z
         .object({
           text: z.string().min(1).max(1000).describe("The user's message about their pantry, in Spanish"),
@@ -461,7 +455,7 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
         }
         lines.push("", "_Confirma con el usuario antes de guardar. Para persistir, usa `cal_add_pantry_items`._");
 
-        return widget({ props: result, output: text(lines.join("\n")) });
+        return viewResult(result, lines.join("\n"));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -477,11 +471,8 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
       title: "Add Pantry Items",
       description:
         "Persist one or more items into the user's pantry (creates pantry_items + a matching pantry_events 'add' record for each). Use this after the user confirms items parsed by cal_parse_pantry_message or cal_scan_receipt. Returns a visual confirmation widget.",
-      widget: {
-        name: "pantry-items-added",
-        invoking: "Guardando en tu despensa…",
-        invoked: "Despensa actualizada",
-      },
+      view: { name: "pantry-items-added" },
+      outputSchema: pantryItemsAddedPropsSchema,
       schema: z
         .object({
           items: z.array(PantryItemInputSchema).min(1).max(50),
@@ -591,7 +582,7 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
           for (const f of failed) lines.push(`- ${f.name}: ${f.error}`);
         }
 
-        return widget({ props: { created, failed, source }, output: text(lines.join("\n")) });
+        return viewResult({ created, failed, source }, lines.join("\n"));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -607,11 +598,8 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
       title: "Scan Grocery Receipt",
       description:
         "Parse photo(s) of a grocery receipt into pantry items with prices, store name, purchase date and currency (with exchange rate to USD if printed on the receipt). PARSE-ONLY — does not write anything. Returns a visual preview widget. After confirming with the user, call `cal_add_pantry_items` with source 'receipt' to persist.",
-      widget: {
-        name: "receipt-scan-result",
-        invoking: "Escaneando recibo…",
-        invoked: "Recibo escaneado",
-      },
+      view: { name: "receipt-scan-result" },
+      outputSchema: receiptScanResultPropsSchema,
       schema: z
         .object({
           images: z
@@ -676,7 +664,7 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
         const priced = result.items.filter((it) => it.price_total != null);
         const total = priced.length > 0 ? priced.reduce((acc, it) => acc + (it.price_total ?? 0), 0) : null;
 
-        return widget({ props: { ...result, total }, output: text(lines.join("\n")) });
+        return viewResult({ ...result, total }, lines.join("\n"));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -692,11 +680,8 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
       title: "Match Logged Food to Pantry Items",
       description:
         "Given a list of foods just logged as eaten, match them against the user's active pantry items to propose how much of each should be consumed. READ-ONLY — shows the proposal in a widget; the user confirms there (or in chat) and only then call `cal_consume_pantry_matches` to actually deduct from the pantry. NEVER call cal_consume_pantry_matches without user confirmation.",
-      widget: {
-        name: "pantry-consumption-match",
-        invoking: "Cruzando tu comida con la despensa…",
-        invoked: "Matches propuestos",
-      },
+      view: { name: "pantry-consumption-match" },
+      outputSchema: pantryConsumptionMatchPropsSchema,
       schema: z
         .object({
           foods: z
@@ -759,10 +744,7 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
           pantry_item_unit: itemById.get(m.pantry_item_id)?.unit ?? null,
         }));
 
-        return widget({
-          props: { matches, unmatched_foods: result.unmatched_foods },
-          output: text(lines.join("\n")),
-        });
+        return viewResult({ matches, unmatched_foods: result.unmatched_foods }, lines.join("\n"));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -778,11 +760,8 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
       title: "Consume Matched Pantry Items",
       description:
         "Deduct confirmed quantities from the user's pantry after they've confirmed matches from cal_match_pantry_consumption. Depletes items to 0 and marks them 'depleted' when they run out. Requires explicit user confirmation before calling — this mutates the pantry. Returns a visual result widget.",
-      widget: {
-        name: "pantry-consumed",
-        invoking: "Descontando de tu despensa…",
-        invoked: "Despensa descontada",
-      },
+      view: { name: "pantry-consumed" },
+      outputSchema: pantryConsumedPropsSchema,
       schema: z
         .object({
           matches: z
@@ -871,7 +850,7 @@ export function registerPantryTools(server: AppServer, pbUrl: string) {
           for (const f of failed) lines.push(`- \`${f.item_id}\`: ${f.error}`);
         }
 
-        return widget({ props: { results, failed }, output: text(lines.join("\n")) });
+        return viewResult({ results, failed }, lines.join("\n"));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

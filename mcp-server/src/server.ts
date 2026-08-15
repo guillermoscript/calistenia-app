@@ -116,11 +116,11 @@ server.tool(
 // ── Tools (85) — auth resolved per request from ctx.auth ─────────────────────
 registerExerciseTools(server, PB_URL);
 registerWorkoutTools(server, PB_URL);
-registerProgramTools(server, PB_URL);
+const { setCurrentProgram } = registerProgramTools(server, PB_URL);
 registerProgressTools(server, PB_URL);
 registerNutritionTools(server, PB_URL);
 registerHealthTools(server, PB_URL);
-registerSmartTools(server, PB_URL);
+const { logFullWorkout } = registerSmartTools(server, PB_URL);
 registerGamificationTools(server, PB_URL);
 registerMediaTools(server, PB_URL);
 registerCircuitTools(server, PB_URL);
@@ -153,5 +153,10 @@ registerApiRoutes(server, PB_URL);
 // ── Process lifecycle: reminder scheduler + graceful shutdown ─────────────────
 // Side-effect import; `listen()` itself belongs to the mcp-use CLI.
 import "./bootstrap.js";
+
+// Tool refs the Views call through useCallTool(). Exporting them lets `mcp-use
+// build|dev|typecheck` register their input/output types (generated mcp-env.d.ts),
+// so `useCallTool("cal_log_full_workout")` is type-checked against the tool.
+export { logFullWorkout, setCurrentProgram };
 
 export default server;

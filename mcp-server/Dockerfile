@@ -7,7 +7,12 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY src/ ./src/
-COPY resources/ ./resources/
+COPY views/ ./views/
+COPY public/ ./public/
+# `mcp-use build` bundles src/server.ts + every views/<name>/view.tsx into
+# .mcp-use/build/ (index.js + manifest.json + views/<name>/assets + views/public).
+# It evaluates the entry module while doing so, so it must not need any
+# runtime secret (see src/bootstrap.ts for the scheduler guard).
 RUN npm run build
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
@@ -21,20 +26,23 @@ FROM node:22-alpine
 ARG SERVER_URL=http://localhost:3001
 ENV SERVER_URL=${SERVER_URL}
 
-# Run mcp-use in production mode. Without this it mounts widgets in DEV mode,
-# which tries to `mkdir /app/resources` as the non-root user and crashes the
-# container on boot (EACCES) — leaving the old container serving stale config.
 ENV NODE_ENV=production
+# `mcp-use start` binds 127.0.0.1 unless HOST says otherwise, and reads PORT
+# (defaulting to 3000) — both must be explicit inside a container.
+ENV HOST=0.0.0.0
+ENV PORT=3001
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci --production
+# mcp-use (and its CLI, which owns `start`) is a regular dependency, so the
+# production install is enough to serve the build.
+RUN npm ci --omit=dev
 
-COPY --from=builder /app/build ./build
-# Prebuilt widgets + manifest read by mcp-use production mode (dist/mcp-use.json,
-# dist/resources/widgets/*). Required or no interactive widgets are served.
-COPY --from=builder /app/dist ./dist
+# Prebuilt server + views (see builder). `mcp-use start` reads
+# .mcp-use/build/manifest.json and serves the view assets from there; the
+# `public/` fonts are copied into .mcp-use/build/views/public by the build.
+COPY --from=builder /app/.mcp-use/build ./.mcp-use/build
 COPY data/ ./data/
 
 RUN adduser -D -u 1001 apiuser
@@ -45,4 +53,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://localhost:3001/api/health').then(r=>{if(!r.ok)throw r.status;process.exit(0)}).catch(()=>process.exit(1))"
 
-CMD ["node", "build/server.js"]
+CMD ["npx", "mcp-use", "start", "--path", "."]

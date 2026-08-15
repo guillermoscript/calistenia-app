@@ -56,8 +56,33 @@ export default function SessionTracker() {
   };
 
   const handleLog = () => {
+    // workout_key/day_id are only absent in the all-complete variant, which
+    // never renders this button — but the typed useCallTool() now insists.
+    if (!props.workout_key || !props.day_id) return;
+    // Build what cal_log_full_workout actually expects: one entry per exercise
+    // with the reps of the sets the user ticked (all planned sets if none were
+    // ticked, so a quick "log it all" still works). Before v2 this sent
+    // `{ workout_key, notes }`, which the tool's input schema rejected — the
+    // typed hook is what surfaced it.
+    const exercisesPayload = exercises
+      .map((ex, ei) => {
+        const ticked = Array.from({ length: ex.sets }, (_, si) => completedSets[`${ei}-${si}`]);
+        const count = ticked.some(Boolean) ? ticked.filter(Boolean).length : ex.sets;
+        return {
+          exercise_id: ex.exercise_id ?? ex.name.toLowerCase().replace(/\s+/g, "-"),
+          sets: Array.from({ length: count }, () => ex.reps),
+        };
+      })
+      .filter((ex) => ex.sets.length > 0);
+    if (exercisesPayload.length === 0) return;
     // callTool rejects on tool error; the handle's `error` already reflects it.
-    void logWorkout({ workout_key: props.workout_key, notes: `Sesión completada — ${props.day_name}` }).catch(() => {});
+    void logWorkout({
+      workout_key: props.workout_key,
+      phase: props.phase ?? 0,
+      day: props.day_id,
+      exercises: exercisesPayload,
+      session_note: `Sesión completada — ${props.day_name}`,
+    }).catch(() => {});
   };
 
   return (

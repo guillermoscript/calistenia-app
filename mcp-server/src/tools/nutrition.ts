@@ -1,8 +1,9 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
-import { widget, text } from "mcp-use";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
+import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
+import { nutritionLogResultPropsSchema } from "../views/nutrition-log-result.schema.js";
+import { nutritionSummaryPropsSchema } from "../views/nutrition-summary.schema.js";
 
 export function registerNutritionTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -286,11 +287,8 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
       title: "Add Nutrition Entry",
       description:
         "Log a meal with foods and macros. Use after analyzing a food image or when the user describes what they ate. Returns a visual widget showing the logged meal and today's macro progress.",
-      widget: {
-        name: "nutrition-log-result",
-        invoking: "Logging meal…",
-        invoked: "Meal logged",
-      },
+      view: { name: "nutrition-log-result" },
+      outputSchema: nutritionLogResultPropsSchema,
       schema: z
         .object({
           meal_type: z
@@ -373,8 +371,8 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
           `**${Math.round(totals.calories)} kcal** | P: ${totals.protein.toFixed(1)}g | C: ${totals.carbs.toFixed(1)}g | G: ${totals.fat.toFixed(1)}g`,
         ].join("\n");
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             entry_id: record.id,
             meal_type,
             foods,
@@ -392,8 +390,8 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
             },
             goals: goalData,
           },
-          output: text(fallbackText),
-        });
+          fallbackText
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -439,11 +437,8 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
       title: "Get Nutrition Summary",
       description:
         "Get a nutrition summary for a date range: daily averages vs goals, most-logged meals, and consistency. Great for weekly/monthly nutrition reviews.",
-      widget: {
-        name: "nutrition-summary",
-        invoking: "Calculando resumen…",
-        invoked: "Resumen listo",
-      },
+      view: { name: "nutrition-summary" },
+      outputSchema: nutritionSummaryPropsSchema,
       schema: z
         .object({
           from_date: z.string().optional().describe("Start date (YYYY-MM-DD). Defaults to 7 days ago."),
@@ -475,7 +470,7 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
         ]);
 
         if (entries.length === 0) {
-          return { content: [{ type: "text", text: `No se encontraron registros de nutrición entre ${from} y ${to}.` }] };
+          return { content: [{ type: "text", text: `No se encontraron registros de nutrición entre ${from} y ${to}.` }], isError: true };
         }
 
         // Group by day
@@ -580,10 +575,7 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
           summaryText = lines.filter(Boolean).join("\n");
         }
 
-        return widget({
-          props: widgetProps,
-          output: text(summaryText),
-        });
+        return viewResult(widgetProps, summaryText);
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

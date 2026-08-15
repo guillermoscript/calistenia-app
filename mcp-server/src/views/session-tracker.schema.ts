@@ -7,6 +7,9 @@
 import { z } from "zod";
 
 const exerciseSchema = z.object({
+  // Catalog id of the exercise (program_exercises.exercise_id) — what
+  // cal_log_full_workout wants back; may be missing for legacy rows.
+  exercise_id: z.string().optional(),
   name: z.string(),
   sets: z.number(),
   reps: z.string(),

@@ -1,8 +1,8 @@
 import type { AppServer } from "../mcpuse/auth-bridge.js";
-import { widget, text } from "mcp-use";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
+import { achievementsGridPropsSchema } from "../views/achievements-grid.schema.js";
 import { localize } from "../lib/i18n.js";
 import {
   ACHIEVEMENTS,
@@ -452,7 +452,8 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
       title: "Get Achievements",
       description:
         "View all achievements with your progress toward each. Filter by category or see only unlocked/locked ones.",
-      widget: { name: "achievements-grid", invoking: "Cargando logros…", invoked: "Logros listos" },
+      view: { name: "achievements-grid" },
+      outputSchema: achievementsGridPropsSchema,
       schema: z
         .object({
           category: z
@@ -574,8 +575,8 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
           summaryText = lines.join("\n");
         }
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             total_unlocked: totalUnlocked,
             total: achievements.length,
             xp,
@@ -595,8 +596,8 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
               unlocked_at: a.unlocked_at,
             })),
           },
-          output: text(summaryText),
-        });
+          summaryText
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
