@@ -26,9 +26,9 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
   const { t } = useTranslation()
 
   const DURATION_OPTIONS = [
-    { value: 7, label: t('challenge.duration7') },
-    { value: 14, label: t('challenge.duration14') },
-    { value: 30, label: t('challenge.duration30') },
+    { value: 7, label: t('challenge.durationDays', { count: 7 }) },
+    { value: 14, label: t('challenge.durationDays', { count: 14 }) },
+    { value: 30, label: t('challenge.durationDays', { count: 30 }) },
   ]
 
   const [exercises, setExercises] = useState<Exercise[]>([])
@@ -131,7 +131,7 @@ export function ChallengeExpressForm({ referralCode, userId, onCreateChallenge, 
 
         {/* Duration chips */}
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs tracking-widest uppercase text-muted-foreground">{t('challenge.duration')}</Label>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground">{t('challenge.duration.label')}</Label>
           <div className="flex gap-2">
             {DURATION_OPTIONS.map(opt => (
               <button

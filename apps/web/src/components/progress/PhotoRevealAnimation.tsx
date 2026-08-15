@@ -62,7 +62,7 @@ export default function PhotoRevealAnimation({
   return (
     <div
       role="dialog"
-      aria-label={t('progress.phasePhotos.savedTitle', { defaultValue: 'Checkpoint guardado' })}
+      aria-label={t('progress.phasePhotos.savedTitle')}
       onClick={dismiss}
       className={cn(
         'fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center cursor-pointer px-4',
@@ -76,7 +76,7 @@ export default function PhotoRevealAnimation({
       )}>
         <div className="font-bebas text-2xl sm:text-3xl text-white mb-1">
           {stage === 'success'
-            ? t('progress.phasePhotos.savedTitle', { defaultValue: 'Checkpoint guardado' })
+            ? t('progress.phasePhotos.savedTitle')
             : t('progress.phasePhotos.revealTitle')}
         </div>
       </div>
@@ -156,8 +156,8 @@ export default function PhotoRevealAnimation({
       )}>
         <div className="text-sm text-white/70">
           {!before
-            ? t('progress.phasePhotos.firstCheckpoint', { defaultValue: 'Primer checkpoint registrado. Vas a ver tu progreso fase a fase.' })
-            : t('progress.phasePhotos.comparisonSaved', { defaultValue: 'Tu progreso queda registrado.' })}
+            ? t('progress.phasePhotos.firstCheckpoint')
+            : t('progress.phasePhotos.comparisonSaved')}
         </div>
       </div>
 

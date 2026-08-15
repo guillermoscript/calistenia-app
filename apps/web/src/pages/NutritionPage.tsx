@@ -684,7 +684,7 @@ export default function NutritionPage({ userId, trainingPhase }: NutritionPagePr
               className="w-full flex items-center justify-between border-t border-border py-3 text-[10px] tracking-[0.3em] text-muted-foreground uppercase hover:text-foreground transition-colors"
             >
               <span className="flex items-center gap-2">
-                <span>{t('nutrition.coach.title', 'Coach')}</span>
+                <span>{t('nutrition.coach.title')}</span>
                 {dailyInsight?.overallScore && (
                   <QualityScoreBadge score={dailyInsight.overallScore} size="sm" />
                 )}

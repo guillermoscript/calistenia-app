@@ -34,9 +34,7 @@ export default function PhasePhotoUploadModal({
     setSizeError(null)
     setError(null)
     if (file && file.size > MAX_FILE_SIZE) {
-      setSizeError(t('progress.phasePhotos.fileTooLarge', {
-        defaultValue: 'El archivo es demasiado grande (máx 10 MB)',
-      }))
+      setSizeError(t('progress.phasePhotos.fileTooLarge'))
       return
     }
     setFiles(prev => ({ ...prev, [category]: file }))
@@ -66,9 +64,7 @@ export default function PhasePhotoUploadModal({
       const uploaded = await onUpload(toUpload, phase)
       onComplete(uploaded)
     } catch {
-      setError(t('progress.phasePhotos.uploadError', {
-        defaultValue: 'Error al subir las fotos. Intenta de nuevo.',
-      }))
+      setError(t('progress.phasePhotos.uploadError'))
     } finally {
       setUploading(false)
     }
@@ -130,7 +126,7 @@ export default function PhasePhotoUploadModal({
                       <button
                         onClick={(e) => { e.stopPropagation(); handleFileSelect(cat, null) }}
                         className="absolute top-0.5 right-0.5 size-7 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-colors"
-                        aria-label={t('progress.phasePhotos.removePhoto', { defaultValue: 'Quitar foto' })}
+                        aria-label={t('progress.phasePhotos.removePhoto')}
                       >
                         <svg className="size-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                           <line x1="2" y1="2" x2="10" y2="10" /><line x1="10" y1="2" x2="2" y2="10" />

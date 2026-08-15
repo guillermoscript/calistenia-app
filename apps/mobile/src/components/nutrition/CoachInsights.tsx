@@ -75,7 +75,7 @@ function WeeklyView({
     return (
       <View className="items-center gap-3 py-4">
         <Text className="font-sans text-sm text-muted-foreground text-center">
-          {t('nutrition.coach.noWeeklyData', 'No hay suficientes datos para el resumen semanal')}
+          {t('nutrition.coach.noWeeklyData')}
         </Text>
         {onGenerate && (
           <Pressable
@@ -83,7 +83,7 @@ function WeeklyView({
             className="rounded-lg border border-lime-400/30 px-4 py-2 active:bg-lime-400/10"
           >
             <Text className="font-bebas tracking-widest text-lime-400">
-              {t('nutrition.coach.generateWeekly', 'Generar análisis semanal')}
+              {t('nutrition.coach.generateWeekly')}
             </Text>
           </Pressable>
         )}
@@ -98,7 +98,7 @@ function WeeklyView({
         <View className="flex-row items-center gap-3">
           <ScoreBadge score={insight.overallScore} size="lg" />
           <Text className="font-sans-medium text-sm text-foreground">
-            {t('nutrition.coach.weekScore', 'Score de la semana')}
+            {t('nutrition.coach.weekScore')}
           </Text>
         </View>
       )}
@@ -137,7 +137,7 @@ function WeeklyView({
           className="items-center rounded-xl border border-border py-2.5 active:bg-muted/40"
         >
           <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            {t('nutrition.coach.regenerateWeekly', 'Regenerar análisis')}
+            {t('nutrition.coach.regenerateWeekly')}
           </Text>
         </Pressable>
       )}
@@ -177,12 +177,12 @@ function DailyView({
           <ScoreBadge score={dailyInsight.overallScore} size="lg" />
           <View className="gap-0.5">
             <Text className="font-sans-medium text-sm text-foreground">
-              {t('nutrition.coach.dayScore', 'Score del día')}
+              {t('nutrition.coach.dayScore')}
             </Text>
             {dailyInsight.streaks && dailyInsight.streaks.currentGood > 1 && (
               <Text className="font-mono text-[10px] text-emerald-400">
-                🔥 {t('nutrition.coach.streak', 'Racha')} {dailyInsight.streaks.currentGood}{' '}
-                {t('nutrition.coach.days', 'días')}
+                🔥 {t('nutrition.coach.streak')} {dailyInsight.streaks.currentGood}{' '}
+                {t('nutrition.coach.days')}
               </Text>
             )}
           </View>
@@ -193,7 +193,7 @@ function DailyView({
       {coachMessages.length > 0 && (
         <View className="gap-2">
           <Text className="font-mono text-[9px] uppercase tracking-[0.3em] text-muted-foreground">
-            {t('nutrition.coach.feedback', 'Feedback')}
+            {t('nutrition.coach.feedback')}
           </Text>
           {coachMessages.map((msg, i) => {
             const mealColors = MEAL_TYPE_COLORS[msg.mealType] || MEAL_TYPE_COLORS.snack
@@ -235,7 +235,7 @@ function DailyView({
       {badges.length > 0 && (
         <View className="gap-2">
           <Text className="font-mono text-[9px] uppercase tracking-[0.3em] text-muted-foreground">
-            {t('nutrition.coach.badges', 'Logros recientes')}
+            {t('nutrition.coach.badges')}
           </Text>
           <View className="flex-row flex-wrap gap-2">
             {badges.slice(0, 6).map((badge, i) => {
@@ -260,7 +260,7 @@ function DailyView({
       {/* Empty state */}
       {!dailyInsight && coachMessages.length === 0 && badges.length === 0 && (
         <Text className="font-sans text-sm text-muted-foreground text-center py-2">
-          {t('nutrition.coach.noData', 'Registra comidas para recibir feedback del coach.')}
+          {t('nutrition.coach.noData')}
         </Text>
       )}
     </View>

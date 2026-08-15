@@ -73,7 +73,7 @@ export default function PhasePhotoBanner({ currentPhase, userId, hasCompletedWor
           </Button>
           <button
             onClick={handleDismiss}
-            aria-label={t('common.dismiss', { defaultValue: 'Cerrar' })}
+            aria-label={t('common.close')}
             className="size-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md"
           >
             <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">

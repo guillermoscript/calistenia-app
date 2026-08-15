@@ -235,11 +235,11 @@ export default function NutritionShareButton({
         size="sm"
         className="self-start"
         onPress={openModal}
-        accessibilityLabel={t('common.share', { defaultValue: 'Compartir' })}
+        accessibilityLabel={t('common.share')}
       >
         <Share2 size={14} color={triggerLime} strokeWidth={2.2} />
         <Text className="font-mono text-[11px] tracking-[3px] text-lime uppercase">
-          {t('common.share', { defaultValue: 'Compartir' })}
+          {t('common.share')}
         </Text>
       </Button>
 

@@ -169,7 +169,7 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
           {unsavedCount > 0 && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-mono">
               <span>⚠</span>
-              <span>{t('cardio.unsavedSessions', '{{count}} session(s) pending upload', { count: unsavedCount })}</span>
+              <span>{t('cardio.unsavedSessions', { count: unsavedCount })}</span>
             </div>
           )}
           {/* Program banner */}
@@ -476,8 +476,8 @@ export default function CardioSessionPage({ userId }: CardioSessionPageProps) {
               <span>{trackQuality.grade === 'poor' ? '⚠' : 'ℹ'}</span>
               <span>
                 {trackQuality.grade === 'poor'
-                  ? t('cardio.trackingIssues', 'GPS tracking had issues — distance is approximate')
-                  : t('cardio.estimatedDistance', '~{{km}} km estimated from {{gaps}} GPS gap(s)', { km: trackQuality.gapDistanceKm, gaps: trackQuality.gapCount })}
+                  ? t('cardio.trackingIssues')
+                  : t('cardio.estimatedDistance', { km: trackQuality.gapDistanceKm, gaps: trackQuality.gapCount })}
               </span>
             </div>
           )}

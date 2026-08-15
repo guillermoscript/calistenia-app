@@ -146,7 +146,7 @@ export default function WorkoutReminderWidget({ userId }: WorkoutReminderWidgetP
           </div>
         ) : !showForm && (
           <div className="text-[11px] text-muted-foreground">
-            {t('reminders.noReminders')}
+            {t('reminders.emptyTitle')}
           </div>
         )}
       </CardContent>

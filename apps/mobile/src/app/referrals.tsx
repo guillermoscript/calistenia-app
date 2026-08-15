@@ -208,7 +208,7 @@ export default function ReferralsScreen() {
               <View className="mt-3 flex-row gap-2">
                 <ShareAction
                   icon={Copy}
-                  label={copied ? t('common.copied', { defaultValue: 'Copiado' }) : t('referrals.copyLink')}
+                  label={copied ? t('common.copied') : t('referrals.copyLink')}
                   active={copied}
                   onPress={() => onShare('copy')}
                 />

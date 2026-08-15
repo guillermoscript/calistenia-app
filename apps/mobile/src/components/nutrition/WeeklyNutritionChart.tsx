@@ -43,7 +43,7 @@ export default function WeeklyNutritionChart({ history, calorieGoal }: WeeklyNut
     <View className="rounded-xl border border-border bg-card px-4 py-3 gap-3">
       {/* Section header */}
       <Text className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-        {t('nutrition.weeklyChart.title', 'Historial semanal')}
+        {t('nutrition.weeklyChart.title')}
       </Text>
 
       {/* Chart area */}
@@ -135,13 +135,13 @@ export default function WeeklyNutritionChart({ history, calorieGoal }: WeeklyNut
         <View className="flex-row items-center gap-1">
           <View className="w-3 h-0.5 bg-lime-400 opacity-50" style={{ borderStyle: 'dashed' }} />
           <Text className="font-mono text-[8px] uppercase tracking-wide text-muted-foreground">
-            {t('nutrition.weeklyChart.goal', 'Meta')} {Math.round(calorieGoal)} kcal
+            {t('nutrition.weeklyChart.goal')} {Math.round(calorieGoal)} kcal
           </Text>
         </View>
         <View className="flex-row items-center gap-1">
           <View className="w-2 h-2 rounded-sm bg-red-400" />
           <Text className="font-mono text-[8px] uppercase tracking-wide text-muted-foreground">
-            {t('nutrition.weeklyChart.over', 'Excedido')}
+            {t('nutrition.weeklyChart.over')}
           </Text>
         </View>
       </View>

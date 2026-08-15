@@ -388,7 +388,7 @@ export function SuccessStep({ model }: StepProps) {
         </View>
         {model.goals && (
           <Text className="font-sans text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
-            {Math.round(model.dailyTotals.calories + model.totals.calories)} / {Math.round(model.goals.dailyCalories)} kcal {t('nutrition.today') || 'hoy'}
+            {Math.round(model.dailyTotals.calories + model.totals.calories)} / {Math.round(model.goals.dailyCalories)} kcal {t('nutrition.today')}
           </Text>
         )}
       </View>

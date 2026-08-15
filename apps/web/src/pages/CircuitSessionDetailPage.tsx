@@ -169,7 +169,7 @@ export default function CircuitSessionDetailPage() {
           value={`${session.rounds_completed} / ${session.rounds_target}`}
         />
         <StatCard
-          label={t('session.duration', { defaultValue: 'Duration' })}
+          label={t('session.duration')}
           value={formatDuration(session.duration_seconds)}
         />
         <StatCard
@@ -177,7 +177,7 @@ export default function CircuitSessionDetailPage() {
           value={String(exercises.length)}
         />
         <StatCard
-          label={t('common.mode', { defaultValue: 'Mode' })}
+          label={t('common.mode')}
           value={isTimed ? t('circuit.modes.timed') : t('circuit.modes.circuit')}
         />
       </div>
@@ -208,7 +208,7 @@ export default function CircuitSessionDetailPage() {
       {config && (
         <div className="mb-6">
           <h2 className="text-[10px] text-muted-foreground tracking-widest uppercase mb-3">
-            {t('common.settings', { defaultValue: 'Settings' })}
+            {t('common.settings')}
           </h2>
           <div className="space-y-2 text-sm">
             {isTimed && config.workSeconds != null && (

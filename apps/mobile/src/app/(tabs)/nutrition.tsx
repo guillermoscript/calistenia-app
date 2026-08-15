@@ -1024,7 +1024,7 @@ export default function NutritionTab() {
             >
               <View className="flex-row items-center gap-2">
                 <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground">
-                  {t('nutrition.coach.title', 'Coach')}
+                  {t('nutrition.coach.title')}
                 </Text>
                 {dailyInsight?.overallScore && (
                   <View className={cn('rounded px-1.5 py-0.5', SCORE_COLORS[dailyInsight.overallScore])}>

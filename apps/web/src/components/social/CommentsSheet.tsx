@@ -499,7 +499,7 @@ function CommentBubble({ comment, currentUserId, onReply, onDelete, onReport, co
               onClick={() => setShowReactionPicker(prev => !prev)}
               className="text-[11px] text-muted-foreground/50 hover:text-lime transition-colors"
             >
-              {hasAnyReaction ? '😊' : '+'} {!hasAnyReaction && t('social.react', { defaultValue: 'React' })}
+              {hasAnyReaction ? '😊' : '+'} {!hasAnyReaction && t('social.react')}
             </button>
             {/* Reaction picker popover */}
             {showReactionPicker && (
