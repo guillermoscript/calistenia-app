@@ -1,0 +1,2 @@
+Fichero desechable para verificar el disparador de .github/workflows/ci-mobile.yml (#437).
+Este PR se cierra y su rama se borra en cuanto el check aparece.
