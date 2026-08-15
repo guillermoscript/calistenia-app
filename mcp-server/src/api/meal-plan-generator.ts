@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { z } from "zod";
 import { resolveModel, type Tier } from "./model-resolver.js";
-import { getPromptWithMeta } from "./prompts.js";
+import { compilePrompt, getPromptWithMeta } from "./prompts.js";
 import { langfuseTelemetry } from "./telemetry.js";
 import { RecipeSchema } from "./schemas.js";
 import type { PantrySnapshotItem } from "./pantry-plan-generator.js";
@@ -82,6 +82,31 @@ ${lines.join("\n")}
 Regla: un ingrediente lleva from:"pantry" solo si aparece arriba en cantidad suficiente; en cualquier otro caso lleva from:"buy".`;
 }
 
+/**
+ * Variables del mensaje `user` del plan diario (#298, fase 2). Los condicionales
+ * (`taggingBlock`) se quedan en TypeScript y entran como UNA variable ya
+ * redactada; Langfuse manda sobre el texto que las rodea.
+ *
+ * Exportado solo para que `prompts.test.ts` pueda probar que el compilado es
+ * idéntico, byte a byte, al string que producía el código antes de migrar.
+ */
+export function dailyMealPlanVars({
+  remainingCalories,
+  remainingProtein,
+  remainingCarbs,
+  remainingFat,
+  loggedMealTypes,
+  pantryItems,
+}: Omit<MealPlanInput, "tier">): Record<string, string> {
+  const pendingMeals = MEAL_ORDER.filter((m) => !loggedMealTypes.includes(m));
+  return {
+    pendingLabel:
+      pendingMeals.length > 0 ? pendingMeals.join(", ") : "snack o comida adicional",
+    macros: `${remainingCalories}kcal, ${remainingProtein}g prot, ${remainingCarbs}g carbs, ${remainingFat}g grasa`,
+    pantryTagging: taggingBlock(pantryItems),
+  };
+}
+
 export async function generateDailyMealPlan({
   remainingCalories,
   remainingProtein,
@@ -94,24 +119,27 @@ export async function generateDailyMealPlan({
   const { model, name: modelName } = resolveModel(tier);
   const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("meal-plan-generator");
 
-  const pendingMeals = MEAL_ORDER.filter((m) => !loggedMealTypes.includes(m));
-  const pendingLabel =
-    pendingMeals.length > 0
-      ? pendingMeals.join(", ")
-      : "snack o comida adicional";
-
-  const prompt = `Diseña comidas para: ${pendingLabel}.
-Macros restantes: ${remainingCalories}kcal, ${remainingProtein}g prot, ${remainingCarbs}g carbs, ${remainingFat}g grasa.
-Usa alimentos comunes, porciones realistas, en español. Sé conciso.
-
-${taggingBlock(pantryItems)}
-
-Cada comida debe traer su receta con la lista completa de ingredientes y su etiqueta from.`;
+  const { prompt, usedFallback } = await compilePrompt(
+    "meal-plan-generator-user",
+    dailyMealPlanVars({
+      remainingCalories,
+      remainingProtein,
+      remainingCarbs,
+      remainingFat,
+      loggedMealTypes,
+      pantryItems,
+    })
+  );
 
   const { object, usage } = await generateObject({
     model,
     schema: MealPlanSchema,
-    telemetry: langfuseTelemetry("meal-plan-generator", { prompt: langfusePrompt, metadata: { tier, modelName } }),
+    telemetry: langfuseTelemetry("meal-plan-generator", {
+      prompt: langfusePrompt,
+      // `userPromptFallback` deja el fallo del guard visible en la traza, que es
+      // donde este tipo de fallo se mira. El AI API no tiene Sentry hoy.
+      metadata: { tier, modelName, userPromptFallback: usedFallback },
+    }),
     instructions: systemPrompt,
     messages: [
       { role: "user", content: prompt },

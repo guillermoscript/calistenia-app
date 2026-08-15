@@ -1,0 +1,15 @@
+// Typecheck-only. `tsconfig.json` excluye los `*.test.ts` a propósito (no deben
+// acabar en `build/`), y el efecto colateral era que NADIE los typechequeaba:
+// `text-sanitizer.test.ts` y `reminder-dispatcher.test.ts` llevaban desde su
+// commit sin compilar ni ejecutarse. Esta config los incluye, sin emitir nada.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "build"]
+}

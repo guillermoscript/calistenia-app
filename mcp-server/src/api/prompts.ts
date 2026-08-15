@@ -6,6 +6,7 @@
  */
 
 import { Langfuse } from "langfuse";
+import Mustache from "mustache";
 
 import type { LangfusePromptRef } from "./telemetry.js";
 
@@ -119,6 +120,23 @@ Tu tarea es diseñar comidas para completar los macros restantes del día del us
 - Cada ingrediente lleva "from": "pantry" si el usuario ya lo tiene según el inventario que se te indique, "buy" si hay que comprarlo.
 - Si no se te da inventario, TODOS los ingredientes van con from:"buy".
 - De esta lista sale la lista de compras del usuario: sé exhaustivo con los ingredientes y honesto con las cantidades.`,
+
+  // Plantilla del mensaje `user` del plan diario (#298, fase 2 — prompt piloto).
+  //
+  // Triple llave en TODAS las variables a propósito: `{{x}}` escapa HTML
+  // (`"` → `&quot;`, `&` → `&amp;`), y `pantryTagging` lleva comillas literales
+  // (`from:"pantry"`) además de nombres de alimentos del usuario.
+  //
+  // Debe ser byte a byte igual a la versión de Langfuse; el test
+  // `prompts.test.ts` compara el compilado contra el string que producía el
+  // código antes de la migración.
+  "meal-plan-generator-user": `Diseña comidas para: {{{pendingLabel}}}.
+Macros restantes: {{{macros}}}.
+Usa alimentos comunes, porciones realistas, en español. Sé conciso.
+
+{{{pantryTagging}}}
+
+Cada comida debe traer su receta con la lista completa de ingredientes y su etiqueta from.`,
 
   "weekly-meal-plan-generator": `Eres un nutricionista deportivo experto especializado en calistenia y entrenamiento con peso corporal.
 Tu tarea es diseñar un plan de comidas completo para 7 días (lunes a domingo).
@@ -441,4 +459,163 @@ export async function getPromptWithMeta(name: string): Promise<{
     console.error(`[langfuse-prompt] Failed to fetch "${name}", using fallback:`, err);
     return { prompt: FALLBACKS[name] ?? "" };
   }
+}
+
+// ── Templated prompts (#298) ────────────────────────────────────────────────
+
+/**
+ * Langfuse NO compila con sustitución simple: `TextPromptClient.compile()` es
+ * literalmente `mustache.render(template, vars)` (langfuse-core, `lib/index.cjs.js`).
+ * Eso trae dos trampas que hacen obligatorio un guard, y ninguna es la que se
+ * supone a primera vista:
+ *
+ *  1. Una variable que FALTA no deja `{{x}}` en el texto: se sustituye por
+ *     cadena vacía. Un renombre en la UI de Langfuse borraría en silencio un
+ *     bloque entero del contexto y el modelo respondería algo plausible.
+ *     Escanear la salida buscando `{{` no lo detecta: la salida sale limpia.
+ *  2. `{{x}}` ESCAPA HTML. Nuestros bloques llevan comillas, `&`, `<` y `>`,
+ *     así que solo se admite la forma sin escapar (`{{{x}}}` / `{{&x}}`).
+ *
+ * Por eso el guard es PREVIO a compilar y compara los placeholders de la
+ * plantilla contra las claves aportadas en las dos direcciones.
+ */
+interface TemplateAudit {
+  ok: boolean;
+  reason?: string;
+}
+
+function auditTemplate(template: string, vars: Record<string, string>): TemplateAudit {
+  let tokens: unknown[];
+  try {
+    tokens = Mustache.parse(template);
+  } catch (err) {
+    return { ok: false, reason: `plantilla malformada (${(err as Error).message})` };
+  }
+
+  const found = new Set<string>();
+  const escaped = new Set<string>();
+  const unsupported = new Set<string>();
+
+  const walk = (list: unknown[]) => {
+    for (const token of list as [string, string, number, number, unknown[]?][]) {
+      const [type, value, , , sub] = token;
+      switch (type) {
+        case "text":
+        case "!":
+          break;
+        // `{{x}}` — mustache escaparía HTML aquí.
+        case "name":
+          escaped.add(value);
+          break;
+        // `{{{x}}}` y `{{&x}}` — ambos llegan como "&". La única forma admitida.
+        case "&":
+          found.add(value);
+          break;
+        // Secciones, invertidas y parciales: la política de #298 es precalcular
+        // los condicionales en TypeScript, donde `tsc` y los tests los cubren.
+        default:
+          unsupported.add(`${type}${value}`);
+          if (Array.isArray(sub)) walk(sub);
+      }
+    }
+  };
+  walk(tokens);
+
+  if (escaped.size > 0) {
+    return {
+      ok: false,
+      reason: `usa doble llave en [${[...escaped].join(", ")}]; mustache escaparía HTML, usa {{{var}}}`,
+    };
+  }
+  if (unsupported.size > 0) {
+    return {
+      ok: false,
+      reason: `usa secciones o parciales [${[...unsupported].join(", ")}]; los condicionales van en TypeScript`,
+    };
+  }
+
+  const supplied = new Set(Object.keys(vars));
+  const missing = [...found].filter((v) => !supplied.has(v));
+  if (missing.length > 0) {
+    return { ok: false, reason: `faltan variables [${missing.join(", ")}]` };
+  }
+  const extra = [...supplied].filter((v) => !found.has(v));
+  if (extra.length > 0) {
+    return { ok: false, reason: `sobran variables [${extra.join(", ")}] que la plantilla no usa` };
+  }
+
+  return { ok: true };
+}
+
+export interface CompiledPrompt {
+  prompt: string;
+  langfusePrompt?: LangfusePromptRef;
+  /** true si se sirvió el fallback local en vez de la plantilla de Langfuse. */
+  usedFallback: boolean;
+}
+
+/**
+ * Compila el fallback local. Nunca lanza: si el propio fallback no pasa el
+ * guard (bug nuestro, no de Langfuse) se devuelve la plantilla sin sustituir,
+ * porque un prompt raro es preferible a tumbar la generación.
+ */
+function compileFallback(name: string, vars: Record<string, string>): string {
+  const template = FALLBACKS[name] ?? "";
+  if (!template) {
+    console.error(`[prompt-guard] no hay fallback local para "${name}"`);
+    return "";
+  }
+  const audit = auditTemplate(template, vars);
+  if (!audit.ok) {
+    console.error(`[prompt-guard] el fallback local de "${name}" no pasa el guard: ${audit.reason}`);
+    return template;
+  }
+  return Mustache.render(template, vars);
+}
+
+/**
+ * Igual que `getPromptWithMeta`, pero para prompts con variables: valida la
+ * plantilla antes de compilarla y cae al fallback local ante cualquier duda.
+ *
+ * `FALLBACKS[name]` debe contener la MISMA plantilla que Langfuse, de modo que
+ * las dos ramas produzcan los mismos bytes (criterio de aceptación de #298).
+ */
+export async function compilePrompt(
+  name: string,
+  vars: Record<string, string>
+): Promise<CompiledPrompt> {
+  if (langfuse) {
+    try {
+      const fetched = await langfuse.getPrompt(name);
+      const template = fetched.prompt as string;
+      const audit = auditTemplate(template, vars);
+
+      if (audit.ok) {
+        const compiled = fetched.compile(vars) as string;
+
+        // Red para etiquetas que el parser aceptó pero no se sustituyeron. Se
+        // omite cuando el propio valor inyectado trae llaves (un alimento de la
+        // despensa puede llamarse cualquier cosa), para no dar falsos positivos.
+        const injectedBraces = Object.values(vars).some((v) => v.includes("{{"));
+        if (injectedBraces || !compiled.includes("{{")) {
+          return {
+            prompt: compiled,
+            langfusePrompt: { name: fetched.name, version: fetched.version },
+            usedFallback: false,
+          };
+        }
+        console.error(
+          `[prompt-guard] "${name}" v${fetched.version}: quedaron llaves sin sustituir tras compilar; se usa el fallback local`
+        );
+      } else {
+        console.error(
+          `[prompt-guard] "${name}" v${fetched.version} rechazada: ${audit.reason}; se usa el fallback local`
+        );
+      }
+    } catch (err) {
+      console.error(`[langfuse-prompt] Failed to fetch "${name}", using fallback:`, err);
+    }
+  }
+
+  return { prompt: compileFallback(name, vars), usedFallback: true };
 }
