@@ -33,7 +33,7 @@ export default function WaterTracker({
         <View className="flex-row items-center gap-2">
           <Droplets size={16} className="text-sky-400" color="#38bdf8" />
           <Text className="font-mono text-[10px] uppercase tracking-[1.5px] text-muted-foreground">
-            {t('nutrition.water', 'Agua')}
+            {t('nutrition.water')}
           </Text>
         </View>
 
@@ -41,7 +41,7 @@ export default function WaterTracker({
           {reached && (
             <View className="rounded-full bg-sky-400/15 px-2 py-0.5">
               <Text className="font-mono text-[9px] uppercase tracking-widest text-sky-400">
-                {t('nutrition.goalReached', 'Meta')} ✓
+                {t('nutrition.goalReached')} ✓
               </Text>
             </View>
           )}

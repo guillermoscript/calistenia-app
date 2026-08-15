@@ -488,7 +488,7 @@ function NutritionDashboard({
             />
             {burn > 0 && (
               <Text className="mt-2 font-mono text-[11px] tracking-wide text-lime-400">
-                🔥 +{burn} kcal {t('nutrition.fromActivity', { defaultValue: 'por actividad' })}
+                🔥 +{burn} kcal {t('nutrition.fromActivity')}
               </Text>
             )}
           </View>

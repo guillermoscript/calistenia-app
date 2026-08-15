@@ -223,7 +223,7 @@ export default function CardioScreen() {
               <View className="flex-row items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2">
                 <Text className="text-amber-400">⚠</Text>
                 <Text className="font-mono text-xs text-amber-400">
-                  {t('cardio.unsavedSessions', '{{count}} sesión(es) pendientes de subir', { count: unsavedCount })}
+                  {t('cardio.unsavedSessions', { count: unsavedCount })}
                 </Text>
               </View>
             )}
@@ -449,8 +449,8 @@ export default function CardioScreen() {
                 </Text>
                 <Text className={cn('flex-1 font-mono text-xs', trackQuality.grade === 'poor' ? 'text-red-400' : 'text-amber-400')}>
                   {trackQuality.grade === 'poor'
-                    ? t('cardio.trackingIssues', 'El GPS tuvo problemas — la distancia es aproximada')
-                    : t('cardio.estimatedDistance', '~{{km}} km estimados por {{gaps}} corte(s) de GPS', {
+                    ? t('cardio.trackingIssues')
+                    : t('cardio.estimatedDistance', {
                         km: trackQuality.gapDistanceKm,
                         gaps: trackQuality.gapCount,
                       })}

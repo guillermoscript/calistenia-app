@@ -340,8 +340,8 @@ export default function TodayScreen() {
         {/* Stats */}
         <View className="flex-row gap-3">
           <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
-          <StatCard label={t('profile.streak', { defaultValue: 'Racha' })} value={getLongestStreak()} />
-          <StatCard label={t('profile.sessions', { defaultValue: 'Sesiones' })} value={getTotalSessions()} />
+          <StatCard label={t('profile.streak')} value={getLongestStreak()} />
+          <StatCard label={t('profile.sessions')} value={getTotalSessions()} />
         </View>
 
         {/* ¿Cómo dormiste? — paridad con SleepDashboardWidget del DashboardPage web (#244) */}

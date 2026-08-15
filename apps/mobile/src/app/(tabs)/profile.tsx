@@ -321,8 +321,8 @@ export default function ProfileScreen() {
 
         {/* Stats */}
         <View className="flex-row gap-3">
-          <StatCard label={t('profile.sessions', { defaultValue: 'Sesiones' })} value={String(getTotalSessions())} />
-          <StatCard label={t('profile.streak', { defaultValue: 'Racha' })} value={String(getLongestStreak())} />
+          <StatCard label={t('profile.sessions')} value={String(getTotalSessions())} />
+          <StatCard label={t('profile.streak')} value={String(getLongestStreak())} />
           <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
         </View>
 
@@ -371,10 +371,10 @@ export default function ProfileScreen() {
               </View>
               <View className="flex-1">
                 <Text className="font-sans-medium text-foreground">
-                  {t('profile.health', { defaultValue: 'Reloj y salud' })}
+                  {t('profile.health')}
                 </Text>
                 <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('profile.healthDesc', { defaultValue: 'Conecta tu reloj vía Health Connect' })}
+                  {t('profile.healthDesc')}
                 </Text>
               </View>
               <ChevronRight size={18} color="hsl(0 0% 45%)" />

@@ -111,7 +111,7 @@ export default function CardioSessionDetailPage() {
   if (error || !session) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 flex flex-col items-center gap-4">
-        <div className="text-muted-foreground font-mono text-sm">{error || t('common.notFound', 'Sesión no encontrada')}</div>
+        <div className="text-muted-foreground font-mono text-sm">{error || t('cardio.sessionNotFound')}</div>
         <button
           onClick={() => navigate(-1)}
           className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
@@ -150,7 +150,7 @@ export default function CardioSessionDetailPage() {
         </div>
         <div className="min-w-0">
           <div className="text-sm font-medium truncate">
-            {authorName || t('common.unknown', 'Usuario')}
+            {authorName || t('common.unknownUser')}
             {isOwn && <span className="ml-1.5 text-[10px] text-lime font-normal">({t('feed.you', 'Tú')})</span>}
           </div>
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-mono tracking-wide">
@@ -187,8 +187,8 @@ export default function CardioSessionDetailPage() {
           <span>{trackQuality.grade === 'poor' ? '⚠' : 'ℹ'}</span>
           <span>
             {trackQuality.grade === 'poor'
-              ? t('cardio.trackingIssues', 'GPS tracking had issues — distance is approximate')
-              : t('cardio.estimatedDistance', '~{{km}} km estimated from {{gaps}} GPS gap(s)', { km: trackQuality.gapDistanceKm, gaps: trackQuality.gapCount })}
+              ? t('cardio.trackingIssues')
+              : t('cardio.estimatedDistance', { km: trackQuality.gapDistanceKm, gaps: trackQuality.gapCount })}
           </span>
         </div>
       )}

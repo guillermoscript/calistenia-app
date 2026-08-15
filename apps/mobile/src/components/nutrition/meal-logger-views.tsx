@@ -611,7 +611,7 @@ export function DailyProgressBar({
     <View className="p-3 rounded-xl bg-muted/30 border border-border/50 gap-2">
       <View className="flex-row items-center justify-between">
         <Text className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-          {t('nutrition.today') || 'Hoy'}
+          {t('nutrition.today')}
         </Text>
         <Text className={cn('font-bebas text-sm tabular-nums', over ? 'text-red-400' : 'text-foreground')}>
           {Math.round(totalCal)} / {Math.round(goals.dailyCalories)} kcal

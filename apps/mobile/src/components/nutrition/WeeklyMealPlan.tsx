@@ -133,14 +133,14 @@ function MealCard({ meal, dayId, onLog, onDelete, onOpenRecipe }: MealCardProps)
               <ActivityIndicator size="small" color="#a3e635" />
             ) : (
               <Text className="font-mono text-[10px] uppercase tracking-widest text-lime-400">
-                {t('nutrition.weeklyPlan.logMeal', 'Registrar')}
+                {t('nutrition.weeklyPlan.logMeal')}
               </Text>
             )}
           </Pressable>
         ) : (
           <View className="flex-1 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 py-2">
             <Text className="font-mono text-[10px] uppercase tracking-widest text-emerald-400">
-              ✓ {t('nutrition.weeklyPlan.logged', 'Registrado')}
+              ✓ {t('nutrition.weeklyPlan.logged')}
             </Text>
           </View>
         )}
@@ -390,7 +390,7 @@ export default function WeeklyMealPlan({
               <ActivityIndicator size="small" color="#71717a" />
             ) : (
               <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {t('nutrition.weeklyPlan.archive', 'Archivar')}
+                {t('nutrition.weeklyPlan.archive')}
               </Text>
             )}
           </Pressable>
@@ -458,7 +458,7 @@ export default function WeeklyMealPlan({
             return (
               <View className="rounded-xl border border-border bg-card px-4 py-2.5">
                 <Text className="font-mono text-[9px] uppercase tracking-[2px] text-muted-foreground mb-1.5">
-                  {t('nutrition.weeklyPlan.loggedToday', 'Registrado hoy')}
+                  {t('nutrition.weeklyPlan.loggedToday')}
                 </Text>
                 <View className="flex-row gap-4">
                   <Text className="font-bebas text-base text-foreground">{Math.round(totals.calories)} kcal</Text>
@@ -506,7 +506,7 @@ export default function WeeklyMealPlan({
               <View className="flex-row items-center gap-2">
                 <ActivityIndicator size="small" color="#71717a" />
                 <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {t('nutrition.weeklyPlan.regeneratingDay', 'Regenerando...')}
+                  {t('nutrition.weeklyPlan.regeneratingDay')}
                 </Text>
               </View>
             ) : (

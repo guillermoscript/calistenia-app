@@ -89,7 +89,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
         if (pollSecondsRef.current >= MAX_POLL_SECONDS) {
           stopPolling()
           setLoading(false)
-          setError(t('nutrition.dailyPlan.timeout', 'El plan tardó demasiado. Inténtalo de nuevo.'))
+          setError(t('nutrition.dailyPlan.timeout'))
           return
         }
         try {
@@ -101,17 +101,17 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
           } else if (job.status === 'failed') {
             stopPolling()
             setLoading(false)
-            setError(job.error || t('nutrition.dailyPlan.error', 'Error al generar el plan'))
+            setError(job.error || t('nutrition.dailyPlan.error'))
           }
         } catch (e: any) {
           stopPolling()
           setLoading(false)
-          setError(e.message || t('nutrition.dailyPlan.error', 'Error al generar el plan'))
+          setError(e.message || t('nutrition.dailyPlan.error'))
         }
       }, POLL_INTERVAL_MS)
     } catch (e: any) {
       setLoading(false)
-      setError(e.message || t('nutrition.dailyPlan.error', 'Error al generar el plan'))
+      setError(e.message || t('nutrition.dailyPlan.error'))
     }
   }, [remaining, loggedMealTypes, stopPolling, t])
 
@@ -150,7 +150,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
             <Text className="font-bebas text-sm tracking-widest text-zinc-900">
               {plan
                 ? t('nutrition.dailyPlan.regenerate', 'Regenerar')
-                : t('nutrition.dailyPlan.generate', 'Generar plan del día')}
+                : t('nutrition.dailyPlan.generate')}
             </Text>
           )}
         </Pressable>
@@ -250,7 +250,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                         setSavedMeals(prev => new Set(prev).add(i))
                       } catch (e) {
                         Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'save_ai_plan_meal' } })
-                        setError(t('nutrition.dailyPlan.error', 'Error al guardar la comida'))
+                        setError(t('nutrition.dailyPlan.logError'))
                       } finally {
                         setSavingIndex(null)
                       }
@@ -273,8 +273,8 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
                         )}
                       >
                         {isSaved || isAlreadyLogged
-                          ? t('nutrition.dailyPlan.logged', 'Registrado')
-                          : t('nutrition.dailyPlan.log', 'Registrar')}
+                          ? t('nutrition.dailyPlan.logged')
+                          : t('nutrition.dailyPlan.log')}
                       </Text>
                     )}
                   </Pressable>
@@ -289,7 +289,7 @@ export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSav
       {plan && !loading && plan.length === 0 && (
         <View className="rounded-xl border border-border bg-card p-5 items-center">
           <Text className="font-sans text-sm text-muted-foreground text-center">
-            {t('nutrition.dailyPlan.noSuggestions', 'No se generaron sugerencias. Inténtalo de nuevo.')}
+            {t('nutrition.dailyPlan.noSuggestions')}
           </Text>
         </View>
       )}

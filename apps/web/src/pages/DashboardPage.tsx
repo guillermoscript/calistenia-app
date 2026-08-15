@@ -341,13 +341,13 @@ export default function DashboardPage({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-[10px] text-muted-foreground tracking-[3px] uppercase mb-1">
-                  {todayDone ? t('dashboard.todayWorkout') : todayIsYoga ? t('dashboard.todayYoga', { defaultValue: 'YOGA DE HOY' }) : todayIsCardio ? t('dashboard.todayCardio') : todayIsRest ? t('dashboard.todayRest') : t('dashboard.todayWorkout')}
+                  {todayDone ? t('dashboard.todayWorkout') : todayIsYoga ? t('dashboard.todayYoga') : todayIsCardio ? t('dashboard.todayCardio') : todayIsRest ? t('dashboard.todayRest') : t('dashboard.todayWorkout')}
                 </div>
                 <div className="font-bebas text-2xl md:text-3xl leading-none">
                   {todayDone ? (
                     <span className="text-emerald-500">{t('dashboard.completed')}</span>
                   ) : todayIsYoga ? (
-                    <span className="text-purple-400">{t('dashboard.yoga', { defaultValue: 'Yoga' })}</span>
+                    <span className="text-purple-400">{t('dashboard.yoga')}</span>
                   ) : todayIsCardio ? (
                     <span className="text-emerald-400">{t(`cardio.${todayDay?.cardioConfig?.activityType || 'running'}`)}</span>
                   ) : todayIsRest ? (
