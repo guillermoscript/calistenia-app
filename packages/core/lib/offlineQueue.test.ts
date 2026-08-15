@@ -4,6 +4,10 @@ import {
   getQueue,
   clearQueue,
   cancelQueuedByTempId,
+  cancelLastQueuedByTempId,
+  getPendingCreates,
+  isAlreadyPersistedError,
+  newClientId,
   patchQueuedByTempId,
   persistOrQueue,
   processQueue,
@@ -27,7 +31,7 @@ vi.mock('../platform', () => ({
 }))
 
 // — PocketBase falso con respuestas por colección configurables —
-type Resp = { ok: true; rec?: any } | { ok: false; status: number }
+type Resp = { ok: true; rec?: any } | { ok: false; status: number; body?: any }
 let responses: Record<string, Resp> = {}
 const calls: Array<{ collection: string; action: string; arg: any }> = []
 
@@ -38,6 +42,7 @@ function makePb({ authed = true }: { authed?: boolean } = {}) {
     if (!r.ok) {
       const err: any = new Error(`status ${r.status}`)
       err.status = r.status
+      if (r.body) err.response = r.body // el SDK expone ahí el cuerpo del 400
       throw err
     }
     return r.rec ?? { id: `srv_${collection}` }
@@ -81,6 +86,33 @@ describe('enqueue / getQueue / cancel / patch', () => {
     enqueue({ collection: 'sleep_entries', action: 'create', data: { hours: 7 }, tempId: 'local_1' })
     expect(patchQueuedByTempId('local_1', { hours: 8 })).toBe(true)
     expect(getQueue()[0].data).toEqual({ hours: 8 })
+  })
+
+  // #301: repetir el mismo entreno el mismo día encola DOS sesiones bajo la
+  // misma clave `done_<fecha>_<workoutKey>`. Deshacer una vez debe quitar una.
+  it('cancelLastQueuedByTempId quita solo el último que casa', () => {
+    enqueue({ collection: 'sessions', action: 'create', data: { n: 1 }, tempId: 'done_2026-08-15_p1_lun' })
+    enqueue({ collection: 'sessions', action: 'create', data: { n: 2 }, tempId: 'done_2026-08-15_p1_lun' })
+    expect(cancelLastQueuedByTempId('done_2026-08-15_p1_lun')).toBe(true)
+    const q = getQueue()
+    expect(q).toHaveLength(1)
+    expect(q[0].data).toEqual({ n: 1 }) // se fue el segundo, no el primero
+    expect(cancelLastQueuedByTempId('nope')).toBe(false)
+  })
+
+  it('getPendingCreates filtra por colección, ignora update/delete y conserva el orden', () => {
+    enqueue({ collection: 'sets_log', action: 'create', data: { reps: '8' } })
+    enqueue({ collection: 'sessions', action: 'create', data: { workout_key: 'p1_lun' } })
+    enqueue({ collection: 'sets_log', action: 'create', data: { reps: '10' } })
+    enqueue({ collection: 'sets_log', action: 'delete', recordId: 'srv_1' })
+    expect(getPendingCreates('sets_log')).toEqual([{ reps: '8' }, { reps: '10' }])
+    expect(getPendingCreates('sessions')).toEqual([{ workout_key: 'p1_lun' }])
+    expect(getPendingCreates('water_entries')).toEqual([])
+  })
+
+  it('newClientId no se repite entre llamadas', () => {
+    const ids = new Set(Array.from({ length: 500 }, () => newClientId()))
+    expect(ids.size).toBe(500)
   })
 
   it('clearQueue vacía', () => {
@@ -127,6 +159,38 @@ describe('persistOrQueue', () => {
   })
 })
 
+describe('isAlreadyPersistedError', () => {
+  const notUnique = (over: any = {}) => ({
+    status: 400,
+    response: { data: { client_id: { code: 'validation_not_unique' } } },
+    ...over,
+  })
+
+  it('reconoce el 400 de índice único', () => {
+    expect(isAlreadyPersistedError(notUnique())).toBe(true)
+  })
+
+  it('lo reconoce también cuando el SDK expone el cuerpo en `.data`', () => {
+    expect(isAlreadyPersistedError({
+      status: 400,
+      data: { data: { client_id: { code: 'validation_not_unique' } } },
+    })).toBe(true)
+  })
+
+  it('no confunde otros 400 de validación', () => {
+    expect(isAlreadyPersistedError(notUnique({
+      response: { data: { phase: { code: 'validation_required' } } },
+    }))).toBe(false)
+  })
+
+  it('no confunde un error de red ni un 403', () => {
+    expect(isAlreadyPersistedError({ status: 0 })).toBe(false)
+    expect(isAlreadyPersistedError(notUnique({ status: 403 }))).toBe(false)
+    expect(isAlreadyPersistedError(new Error('boom'))).toBe(false)
+    expect(isAlreadyPersistedError(null)).toBe(false)
+  })
+})
+
 describe('processQueue', () => {
   it('vacía la cola y devuelve true al sincronizar con éxito', async () => {
     enqueue({ collection: 'water_entries', action: 'create', data: { amount_ml: 250 } })
@@ -153,6 +217,39 @@ describe('processQueue', () => {
     responses.water_entries = { ok: false, status: 400 }
     await processQueue(pb)
     expect(getQueue()).toHaveLength(0) // no se reintenta para siempre
+    expect(reportError).toHaveBeenCalledTimes(1)
+  })
+
+  // #301: la ventana ciega. `status: 0` significa «no hubo respuesta», no «no
+  // llegó»: el create pudo procesarse entero y perderse solo la respuesta. El
+  // índice único sobre (user, client_id) rechaza entonces el replay con
+  // `validation_not_unique`, que NO es un fallo sino la prueba de que el dato
+  // está a salvo.
+  it('un replay que choca con el índice único se descarta SIN reportar y cuenta como procesado', async () => {
+    enqueue({ collection: 'sets_log', action: 'create', data: { reps: '8', client_id: 'abc' } })
+    const pb = makePb()
+    responses.sets_log = {
+      ok: false,
+      status: 400,
+      body: { data: { client_id: { code: 'validation_not_unique', message: 'Value must be unique.' } } },
+    }
+    const did = await processQueue(pb)
+    expect(did).toBe(true) // dispara onDrained → la app refresca contra el registro real
+    expect(getQueue()).toHaveLength(0) // no se reintenta para siempre
+    expect(reportError).not.toHaveBeenCalled() // no es un error que nadie deba mirar
+  })
+
+  it('un 400 de validación normal sigue siendo poison y SÍ se reporta', async () => {
+    enqueue({ collection: 'sets_log', action: 'create', data: { reps: '8' } })
+    const pb = makePb()
+    responses.sets_log = {
+      ok: false,
+      status: 400,
+      body: { data: { reps: { code: 'validation_required', message: 'Missing required value.' } } },
+    }
+    const did = await processQueue(pb)
+    expect(did).toBe(false)
+    expect(getQueue()).toHaveLength(0)
     expect(reportError).toHaveBeenCalledTimes(1)
   })
 

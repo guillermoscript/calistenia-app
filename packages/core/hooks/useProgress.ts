@@ -8,6 +8,7 @@ import { qk } from '../lib/query-keys'
 import { parseRepsForPR, estimate1RM } from '../lib/pr-utils'
 import { legacyPrKey, pickAffectedChallenges } from '../lib/challenge-scoring'
 import { isFreeSessionKey, sessionKeyParts } from '../lib/session-key'
+import { persistOrQueue, newClientId, getPendingCreates, cancelLastQueuedByTempId } from '../lib/offlineQueue'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, WeightPR } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -141,6 +142,123 @@ const computePRBackfill = (sets: any[], currentSettings: Settings): Partial<Sett
   return hasUpdates ? updates : null
 }
 
+/**
+ * Reconstruye el `ProgressMap` a partir de las filas de `sessions`, `sets_log` y
+ * `cardio_sessions`.
+ *
+ * Vive fuera del hook para poder recibir también los `create` que siguen en la
+ * cola offline: su payload usa exactamente los mismos nombres de campo que el
+ * registro de PocketBase (`workout_key`, `completed_at`, `exercise_id`,
+ * `logged_at`…), así que basta con concatenarlos delante de lo del servidor. Sin
+ * esto, `loadFromPB` sobrescribía la caché local con lo remoto y una sesión
+ * entrenada sin cobertura desaparecía también del móvil (#301).
+ *
+ * Los tests de `packages/core` corren en vitest/node sin testing-library, así
+ * que esta función es además el punto por el que se prueba la fusión.
+ */
+export function buildProgressMap(sessionRows: any[], setRows: any[], cardioRows: any[]): ProgressMap {
+  const prog: ProgressMap = {}
+
+  sessionRows.forEach((s: any) => {
+    const date = utcToLocalDateStr(s.completed_at || s.created)
+    const entry: import('../types').SessionDone = { done: true, date, workoutKey: s.workout_key, note: s.note || '' }
+    if (s.warmup_skipped || s.warmup_completed || s.warmup_duration_seconds) {
+      entry.warmupCompleted = !!s.warmup_completed
+      entry.warmupSkipped = !!s.warmup_skipped
+      entry.warmupDurationSeconds = s.warmup_duration_seconds || 0
+    }
+    if (s.cooldown_skipped || s.cooldown_completed || s.cooldown_duration_seconds) {
+      entry.cooldownCompleted = !!s.cooldown_completed
+      entry.cooldownSkipped = !!s.cooldown_skipped
+      entry.cooldownDurationSeconds = s.cooldown_duration_seconds || 0
+    }
+    if (s.duration_seconds != null || s.poses_completed != null || s.total_poses != null) {
+      entry.durationSeconds = s.duration_seconds ?? undefined
+      entry.posesCompleted = s.poses_completed ?? undefined
+      entry.totalPoses = s.total_poses ?? undefined
+    }
+    if (Array.isArray(s.exercise_timings) && s.exercise_timings.length > 0) {
+      entry.exerciseTimings = s.exercise_timings
+    }
+    // Varias sesiones del mismo día+workout (repeticiones) comparten clave:
+    // conservamos la más reciente (sort -completed_at) y acumulamos el conteo.
+    const dk = `done_${date}_${s.workout_key}`
+    const existing = prog[dk] as import('../types').SessionDone | undefined
+    if (existing?.done) {
+      existing.count = (existing.count ?? 1) + 1
+    } else {
+      entry.count = 1
+      prog[dk] = entry
+    }
+  })
+
+  setRows.forEach((s: any) => {
+    const date = utcToLocalDateStr(s.logged_at || s.created)
+    const k = `${date}_${s.workout_key}_${s.exercise_id}`
+    if (!prog[k]) prog[k] = { sets: [], date, workoutKey: s.workout_key, exerciseId: s.exercise_id }
+    const entry = prog[k] as ExerciseLog
+    entry.sets.push({
+      reps: s.reps,
+      note: s.note,
+      weight: s.weight_kg || undefined,
+      rpe: s.rpe || undefined,
+      timestamp: new Date(s.logged_at || s.created).getTime(),
+    })
+  })
+
+  // Cardio vinculado a un día de programa → marcador "done_" etiquetado con
+  // cardioSessionId. Hace que isWorkoutDone(p1_mie) sea true (checkmark del
+  // programa) y sobrevive recargas porque se reconstruye desde cardio_sessions
+  // igual que las sesiones de fuerza. Las listas/stats lo ignoran por la etiqueta.
+  cardioRows.forEach((c: any) => {
+    if (!c.program_day_key) return
+    const date = utcToLocalDateStr(c.started_at || c.created)
+    prog[`done_${date}_${c.program_day_key}`] = {
+      done: true,
+      date,
+      workoutKey: c.program_day_key,
+      note: c.note || '',
+      completedAt: new Date(c.started_at || c.created).getTime(),
+      cardioSessionId: c.id,
+    }
+  })
+
+  return prog
+}
+
+/**
+ * Descarta los payloads encolados que el servidor YA devolvió, comparando por
+ * `client_id`.
+ *
+ * Es el caso de la ventana ciega: un create se encoló tras un `status: 0` pero
+ * en realidad sí llegó. Hasta que la cola drene y descubra el
+ * `validation_not_unique`, el item sigue encolado — y superponerlo sobre la fila
+ * real del servidor pintaría la misma serie (o la misma sesión) dos veces.
+ */
+export function pendingNotYetOnServer(pending: any[], serverRows: any[]): any[] {
+  const seen = new Set(serverRows.map((r: any) => r?.client_id).filter(Boolean))
+  return pending.filter((p: any) => !p?.client_id || !seen.has(p.client_id))
+}
+
+/**
+ * Sesiones encoladas que corresponden a este usuario y al programa activo,
+ * aplicando el mismo criterio que el `sessionFilter` de `loadFromPB`
+ * (`user = uid && (program = pid || program = "")`).
+ */
+export function pendingSessionRows(uid: string, activeProgramId: string | null, serverRows: any[]): any[] {
+  const pending = getPendingCreates('sessions').filter((d: any) => {
+    if (d?.user !== uid) return false
+    if (!activeProgramId) return true
+    return !d.program || d.program === activeProgramId
+  })
+  return pendingNotYetOnServer(pending, serverRows)
+}
+
+/** Series encoladas de este usuario (`sets_log` no se filtra por programa). */
+export function pendingSetRows(uid: string, serverRows: any[]): any[] {
+  return pendingNotYetOnServer(getPendingCreates('sets_log').filter((d: any) => d?.user === uid), serverRows)
+}
+
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const lsGet = (): ProgressMap => { try { return JSON.parse(storage.getItem(LS_KEY) || '{}') } catch { return {} } }
 const lsSet = (d: ProgressMap): void => { storage.setItem(LS_KEY, JSON.stringify(d)) }
@@ -217,70 +335,15 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       }).catch(() => [] as any[]),
     ])
 
-    const prog: ProgressMap = {}
-    sessionsRes.forEach((s: any) => {
-      const date = utcToLocalDateStr(s.completed_at || s.created)
-      const entry: import('../types').SessionDone = { done: true, date, workoutKey: s.workout_key, note: s.note || '' }
-      if (s.warmup_skipped || s.warmup_completed || s.warmup_duration_seconds) {
-        entry.warmupCompleted = !!s.warmup_completed
-        entry.warmupSkipped = !!s.warmup_skipped
-        entry.warmupDurationSeconds = s.warmup_duration_seconds || 0
-      }
-      if (s.cooldown_skipped || s.cooldown_completed || s.cooldown_duration_seconds) {
-        entry.cooldownCompleted = !!s.cooldown_completed
-        entry.cooldownSkipped = !!s.cooldown_skipped
-        entry.cooldownDurationSeconds = s.cooldown_duration_seconds || 0
-      }
-      if (s.duration_seconds != null || s.poses_completed != null || s.total_poses != null) {
-        entry.durationSeconds = s.duration_seconds ?? undefined
-        entry.posesCompleted = s.poses_completed ?? undefined
-        entry.totalPoses = s.total_poses ?? undefined
-      }
-      if (Array.isArray(s.exercise_timings) && s.exercise_timings.length > 0) {
-        entry.exerciseTimings = s.exercise_timings
-      }
-      // Varias sesiones del mismo día+workout (repeticiones) comparten clave:
-      // conservamos la más reciente (sort -completed_at) y acumulamos el conteo.
-      const dk = `done_${date}_${s.workout_key}`
-      const existing = prog[dk] as import('../types').SessionDone | undefined
-      if (existing?.done) {
-        existing.count = (existing.count ?? 1) + 1
-      } else {
-        entry.count = 1
-        prog[dk] = entry
-      }
-    })
-
-    setsRes.forEach((s: any) => {
-      const date = utcToLocalDateStr(s.logged_at || s.created)
-      const k = `${date}_${s.workout_key}_${s.exercise_id}`
-      if (!prog[k]) prog[k] = { sets: [], date, workoutKey: s.workout_key, exerciseId: s.exercise_id }
-      const entry = prog[k] as ExerciseLog
-      entry.sets.push({
-        reps: s.reps,
-        note: s.note,
-        weight: s.weight_kg || undefined,
-        rpe: s.rpe || undefined,
-        timestamp: new Date(s.logged_at || s.created).getTime(),
-      })
-    })
-
-    // Cardio vinculado a un día de programa → marcador "done_" etiquetado con
-    // cardioSessionId. Hace que isWorkoutDone(p1_mie) sea true (checkmark del
-    // programa) y sobrevive recargas porque se reconstruye desde cardio_sessions
-    // igual que las sesiones de fuerza. Las listas/stats lo ignoran por la etiqueta.
-    cardioRes.forEach((c: any) => {
-      if (!c.program_day_key) return
-      const date = utcToLocalDateStr(c.started_at || c.created)
-      prog[`done_${date}_${c.program_day_key}`] = {
-        done: true,
-        date,
-        workoutKey: c.program_day_key,
-        note: c.note || '',
-        completedAt: new Date(c.started_at || c.created).getTime(),
-        cardioSessionId: c.id,
-      }
-    })
+    // Lo que sigue en la cola offline se superpone a lo del servidor ANTES de
+    // escribir la caché: si no, `lsSet` borraría del móvil el entrenamiento que
+    // aún no ha podido subir (#301). Los pendientes van delante porque son la
+    // escritura más fresca que conoce este dispositivo.
+    const prog = buildProgressMap(
+      [...pendingSessionRows(uid, activeProgramId, sessionsRes), ...sessionsRes],
+      [...pendingSetRows(uid, setsRes), ...setsRes],
+      cardioRes,
+    )
 
     lsSet(prog) // sincronizar cache local
 
@@ -391,13 +454,28 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     })
     if (usePB && userId) {
       try {
-        await pb.collection('sets_log').create({
-          user: userId, exercise_id: exerciseId, workout_key: workoutKey,
-          reps: setData.reps || '', note: setData.note || '',
-          weight_kg: setData.weight ?? null, rpe: setData.rpe ?? null,
-          logged_at: date ? localDateForPB(date) : nowLocalForPB(),
+        // #301: por la cola offline. Sin red la serie se encola y se reintenta
+        // al reconectar, en vez de perderse en un `console.warn`. El `client_id`
+        // se genera aquí y viaja con el payload encolado: es lo que impide que
+        // un reintento de una petición que sí llegó cree una fila duplicada.
+        await persistOrQueue(pb, {
+          collection: 'sets_log',
+          action: 'create',
+          data: {
+            user: userId, exercise_id: exerciseId, workout_key: workoutKey,
+            reps: setData.reps || '', note: setData.note || '',
+            weight_kg: setData.weight ?? null, rpe: setData.rpe ?? null,
+            logged_at: date ? localDateForPB(date) : nowLocalForPB(),
+            client_id: newClientId(),
+          },
         })
-      } catch (e) { console.warn('PB sets_log error:', e) }
+      } catch (e) {
+        // Solo llega aquí un 4xx/5xx del servidor (lo de red ya está encolado).
+        // El progreso local sigue siendo autoritativo, así que el usuario no ve
+        // nada raro: si esto no se reporta, nadie se entera — es exactamente
+        // como el #376 estuvo meses tirando toda sesión libre.
+        getPlatform().reportError?.(e)
+      }
     }
   }, [usePB, userId, patchProgress])
 
@@ -463,13 +541,20 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
           if (timing.durationSeconds != null) sessionData.duration_seconds = timing.durationSeconds
           if (timing.exerciseTimings?.length) sessionData.exercise_timings = timing.exerciseTimings
         }
-        await pb.collection('sessions').create(sessionData)
+        sessionData.client_id = newClientId()
+        // #301: por la cola offline, igual que las series. El `tempId` es la
+        // misma clave que usa el progreso local, para que deshacer el entreno
+        // mientras sigue encolado pueda retirarlo (ver unmarkWorkoutDone) en vez
+        // de dejar que resucite al reconectar.
+        await persistOrQueue(pb, {
+          collection: 'sessions', action: 'create', data: sessionData, tempId: k,
+        })
       } catch (e) {
         // #376: este catch se tragó durante meses un 400 que impedía guardar
         // TODA sesión libre. El progreso local sigue siendo autoritativo, así
         // que el usuario no ve nada raro — por eso el fallo tiene que llegar al
-        // monitoreo o nadie se entera.
-        console.warn('PB sessions error:', e)
+        // monitoreo o nadie se entera. Los fallos de red ya no pasan por aquí:
+        // los absorbe la cola.
         getPlatform().reportError?.(e)
       }
     }
@@ -559,6 +644,13 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
       }
       return next
     })
+
+    // #301: si la sesión que se deshace todavía está en la cola, nunca llegó al
+    // servidor: se retira de la cola y no hay nada que borrar. Sin esto, marcar
+    // el entreno sin cobertura y deshacerlo sin cobertura lo haría reaparecer al
+    // reconectar. Solo el ÚLTIMO encolado con esa clave, porque repetir el mismo
+    // entreno el mismo día encola dos bajo el mismo `done_<fecha>_<workoutKey>`.
+    if (cancelLastQueuedByTempId(k)) return
 
     if (usePB && userId) {
       try {
