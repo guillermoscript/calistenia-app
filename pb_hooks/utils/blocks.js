@@ -56,19 +56,9 @@ function blockedCounterparts(app, userId) {
   return set
 }
 
-// Dueño (userId) de un session_id de comments/feed_reactions.
-// Cascada try/catch como notification_service.pb.js, AMPLIADA con
-// circuit_sessions (la del servicio de notifs no lo incluye hoy).
 function findSessionOwner(app, sessionId) {
-  if (!sessionId) return ""
-  var cols = ["sessions", "cardio_sessions", "circuit_sessions"]
-  for (var i = 0; i < cols.length; i++) {
-    try {
-      var rec = app.findRecordById(cols[i], sessionId)
-      return rec.getString("user")
-    } catch (e) { /* probar siguiente colección */ }
-  }
-  return ""
+  var sessions = require(`${__hooks}/utils/sessions.js`)
+  return sessions.findSessionOwner(app, sessionId)
 }
 
 module.exports = {

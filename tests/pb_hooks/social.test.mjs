@@ -1,7 +1,7 @@
 /**
  * notification_service.pb.js — notificaciones sociales básicas:
- * follow, reacciones (sessions + fallback cardio + self-guard),
- * comentarios (owner, reply, dedup owner==parent-author) y
+ * follow, reacciones (sessions + cardio + circuit + self-guard),
+ * comentarios (owner, reply, dedup owner==parent-author; cardio + circuit) y
  * reacciones a comentarios.
  */
 import { test } from "node:test"
@@ -70,6 +70,20 @@ test("reacción a cardio_session usa el fallback de colección", async () => {
   assert.equal(notif.reference_id, cardio.id)
 })
 
+test("reacción a circuit_session notifica al dueño", async () => {
+  const owner = await createUser("Dueno Circuito Reaccion")
+  const reactor = await createUser("Reactor Circuito")
+  const circuit = await createAs(owner, "circuit_sessions", {
+    user: owner.id,
+    mode: "rounds",
+    rounds_completed: 3,
+  })
+
+  await createAs(reactor, "feed_reactions", { session_id: circuit.id, reactor: reactor.id, emoji: "⚡" })
+  const [notif] = await expectNotifications(owner.id, "reaction", 1, "reacción a circuito notifica al dueño")
+  assert.equal(notif.reference_id, circuit.id)
+})
+
 test("comentario en cardio_session usa el fallback de colección", async () => {
   const owner = await createUser("Dueno Cardio Com")
   const commenter = await createUser("Comentarista Cardio")
@@ -87,6 +101,24 @@ test("comentario en cardio_session usa el fallback de colección", async () => {
   })
   const [notif] = await expectNotifications(owner.id, "comment", 1, "comentario en cardio notifica al dueño")
   assert.equal(notif.reference_id, cardio.id)
+})
+
+test("comentario en circuit_session notifica al dueño", async () => {
+  const owner = await createUser("Dueno Circuito Com")
+  const commenter = await createUser("Comentarista Circuito")
+  const circuit = await createAs(owner, "circuit_sessions", {
+    user: owner.id,
+    mode: "amrap",
+    rounds_completed: 5,
+  })
+
+  await createAs(commenter, "comments", {
+    session_id: circuit.id,
+    author: commenter.id,
+    text: "Buen circuito",
+  })
+  const [notif] = await expectNotifications(owner.id, "comment", 1, "comentario en circuito notifica al dueño")
+  assert.equal(notif.reference_id, circuit.id)
 })
 
 test("comentarios: owner, reply y dedup cuando owner == autor del padre", async () => {
