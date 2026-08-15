@@ -648,9 +648,14 @@ export function useProgramEditor() {
       // Leer el estado actual. A diferencia de antes, un fallo de lectura ya no
       // se traga en un `catch` silencioso: si no sabemos qué hay en el servidor
       // no podemos reconciliar sin arriesgarnos a duplicar o borrar de más.
+      //
+      // `$autoCancel: false` por el mismo motivo que en loadProgram: el SDK
+      // cancela por defecto las peticiones duplicadas a la misma colección, y
+      // un guardado que coincida con una carga en vuelo se abortaría solo.
+      const readOpts = { filter: programFilter, $autoCancel: false }
       const [existingPhases, existingExercises] = await Promise.all([
-        pb.collection('program_phases').getFullList({ filter: programFilter }),
-        pb.collection('program_exercises').getFullList({ filter: programFilter }),
+        pb.collection('program_phases').getFullList(readOpts),
+        pb.collection('program_exercises').getFullList(readOpts),
       ])
 
       // `program_day_config` es opcional: puede no existir en despliegues
@@ -659,7 +664,7 @@ export function useProgramEditor() {
       let hasDayConfig = true
       let existingDayConfig: Array<Record<string, unknown> & { id: string }> = []
       try {
-        existingDayConfig = await pb.collection('program_day_config').getFullList({ filter: programFilter })
+        existingDayConfig = await pb.collection('program_day_config').getFullList(readOpts)
       } catch (e: any) {
         if (e?.status === 404) {
           hasDayConfig = false
