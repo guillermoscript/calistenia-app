@@ -171,19 +171,29 @@ export function useNotifications(userId: string | null) {
   // Puente realtime → RQ: nueva notificación del usuario invalida el contador.
   useEffect(() => {
     if (!userId) return
+    // subscribe() es async: si el efecto se limpia antes de que resuelva, `unsub`
+    // todavía es undefined y el cleanup no cancelaría nada — la suscripción se
+    // establecería después sin dueño (login→logout→login acumula listeners que
+    // invalidan queries del usuario anterior). `cancelled` cierra ese hueco.
+    let cancelled = false
     let unsub: (() => void) | undefined
     const subscribe = async () => {
       try {
-        unsub = await pb.collection('notifications').subscribe('*', (e) => {
+        const off = await pb.collection('notifications').subscribe('*', (e) => {
           if (e.action === 'create' && e.record.user === userId) {
             qc.invalidateQueries({ queryKey: qk.notifications.unreadCount(userId) })
             qc.invalidateQueries({ queryKey: qk.notifications.all })
           }
         })
+        if (cancelled) off()
+        else unsub = off
       } catch { /* realtime no disponible */ }
     }
     subscribe()
-    return () => { if (unsub) unsub() }
+    return () => {
+      cancelled = true
+      if (unsub) unsub()
+    }
   }, [userId, qc])
 
   return {

@@ -332,7 +332,11 @@ interface UseProgressReturn {
  */
 export function useProgress(userId: string | null = null, activeProgramId: string | null = null): UseProgressReturn {
   const qc = useQueryClient()
-  const key = qk.sessions(userId, activeProgramId)
+  // Memoizada: `key` es dep de loadFromPB/checkAndUpdatePR/patchProgress/
+  // patchSettings, y un array recreado por render haría inestables esos
+  // useCallback (y, en cascada, logSet/markWorkoutDone que dependen de
+  // patchProgress) — el mismo antipatrón que useNutrition ya arregló así.
+  const key = useMemo(() => qk.sessions(userId, activeProgramId), [userId, activeProgramId])
 
   // ─── Carga desde PocketBase → ProgressData ────────────────────────────────
   const loadFromPB = useCallback(async (uid: string): Promise<ProgressData> => {
