@@ -1,5 +1,8 @@
 node_modules
 build
+dist
+.mcp-use
+mcp-env.d.ts
 .env
 .env.*
 !.env.example

@@ -1,10 +1,10 @@
-import type { MCPServer } from "mcp-use/server";
-import { widget, text } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, ResponseFormat } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat } from "../utils.js";
 import { normalizeName } from "../api/receipt-sanitizer.js";
 import { PANTRY_UNITS } from "../api/schemas.js";
+import { savedRecipesPropsSchema } from "../views/saved-recipes.schema.js";
 
 // Shape mirrors packages/core/types/pantry.ts `Recipe` — mcp-server is outside
 // the pnpm workspace and can't import it, so the input schema replicates it.
@@ -45,7 +45,7 @@ function mapSavedRecipe(r: Record<string, unknown>) {
   };
 }
 
-export function registerRecipeTools(server: MCPServer, pbUrl: string) {
+export function registerRecipeTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST SAVED RECIPES
   // ──────────────────────────────────────────────────────────────
@@ -54,11 +54,8 @@ export function registerRecipeTools(server: MCPServer, pbUrl: string) {
       name: "cal_list_saved_recipes",
       title: "List Saved Recipes",
       description: "List the user's saved favorite recipes, most recent first. Returns a visual widget with the recipe cards.",
-      widget: {
-        name: "saved-recipes",
-        invoking: "Buscando tus recetas guardadas…",
-        invoked: "Recetas listas",
-      },
+      view: { name: "saved-recipes" },
+      outputSchema: savedRecipesPropsSchema,
       schema: z
         .object({
           response_format: z
@@ -100,13 +97,13 @@ export function registerRecipeTools(server: MCPServer, pbUrl: string) {
           out = lines.join("\n");
         }
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             count: recipes.length,
             recipes: recipes.map((r) => ({ id: r.id, label: r.label, recipe: r.recipe, times_used: r.times_used })),
           },
-          output: text(out),
-        });
+          out
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

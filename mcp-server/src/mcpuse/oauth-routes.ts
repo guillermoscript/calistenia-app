@@ -18,7 +18,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import { cors } from "hono/cors";
-import type { MCPServer } from "mcp-use/server";
+import type { AppServer } from "./auth-bridge.js";
 import type { OAuthClientInformationFull } from "@modelcontextprotocol/sdk/shared/auth.js";
 import type { AuthorizationParams } from "@modelcontextprotocol/sdk/server/auth/provider.js";
 import {
@@ -46,7 +46,7 @@ function errorPage(title: string, msg: string): string {
  * Call before `server.listen()`.
  */
 export function registerOAuthRoutes(
-  server: MCPServer,
+  server: AppServer,
   pbUrl: string,
   serverUrl: string
 ): void {

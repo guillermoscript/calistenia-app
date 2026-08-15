@@ -1,4 +1,4 @@
-import type { MCPServer } from "mcp-use/server";
+import type { AppServer } from "./mcpuse/auth-bridge.js";
 import { z } from "zod";
 
 const MEAL_LABELS: Record<string, string> = {
@@ -8,7 +8,7 @@ const MEAL_LABELS: Record<string, string> = {
   snack: "Snack",
 };
 
-export function registerPrompts(server: MCPServer) {
+export function registerPrompts(server: AppServer) {
   // ──────────────────────────────────────────────────────────────
   // PLAN TRAINING WEEK
   // ──────────────────────────────────────────────────────────────

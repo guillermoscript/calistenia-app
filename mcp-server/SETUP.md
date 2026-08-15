@@ -159,7 +159,9 @@ auth works.
 
 ## Development
 ```bash
-npm run dev        # HTTP server with hot reload
-npm run dev:stdio  # stdio mode with hot reload
-npm run build      # Compile TypeScript
+npm run dev        # mcp-use dev: HTTP server + Views with hot reload (Inspector at /mcp)
+npm run dev:simple # plain tsx process, no Views (API/OAuth/tool work)
+npm run build      # mcp-use build → .mcp-use/build (server bundle + Views)
+npm run start      # mcp-use start: serve .mcp-use/build (what the Docker image runs)
+npm run typecheck  # tsc over src/ + views/ (run `npm run build` first once: it generates mcp-env.d.ts)
 ```

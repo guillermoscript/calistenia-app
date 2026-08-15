@@ -1,9 +1,9 @@
-import type { MCPServer } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
 
-export function registerHealthTools(server: MCPServer, pbUrl: string) {
+export function registerHealthTools(server: AppServer, pbUrl: string) {
   // ══════════════════════════════════════════════════════════════
   //  SLEEP
   // ══════════════════════════════════════════════════════════════

@@ -1,11 +1,11 @@
-import type { MCPServer } from "mcp-use/server";
-import { widget, text } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, ResponseFormat, PaginationSchema } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat, PaginationSchema } from "../utils.js";
 import { localize, toTranslatable } from "../lib/i18n.js";
+import { programViewPropsSchema } from "../views/program-view.schema.js";
 
-export function registerProgramTools(server: MCPServer, pbUrl: string) {
+export function registerProgramTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST PROGRAMS
   // ──────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ export function registerProgramTools(server: MCPServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // SET CURRENT PROGRAM
   // ──────────────────────────────────────────────────────────────
-  server.tool(
+  const setCurrentProgram = server.tool(
     {
       name: "cal_set_current_program",
       title: "Set Current Training Program",
@@ -815,7 +815,8 @@ export function registerProgramTools(server: MCPServer, pbUrl: string) {
         "Create a full training program with phases, days, and exercises in one call. " +
         "This is the fastest way to build a program. Phases are numbered automatically starting from 1. " +
         "Returns a visual program card with phase breakdown and an activation button.",
-      widget: { name: "program-view", invoking: "Building program…", invoked: "Program ready" },
+      view: { name: "program-view" },
+      outputSchema: programViewPropsSchema,
       schema: z
         .object({
           name: z.string().min(2).describe("Program name"),
@@ -934,8 +935,8 @@ export function registerProgramTools(server: MCPServer, pbUrl: string) {
           input.set_as_current ? "\nSet as your current program." : "",
         ].join("\n");
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             id: program.id,
             name: input.name,
             difficulty: input.difficulty ?? "",
@@ -958,8 +959,8 @@ export function registerProgramTools(server: MCPServer, pbUrl: string) {
               })),
             })),
           },
-          output: text(fallbackText),
-        });
+          fallbackText
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -1278,4 +1279,7 @@ export function registerProgramTools(server: MCPServer, pbUrl: string) {
       }
     }
   );
+
+  // Tool ref consumed by the program-view View through useCallTool().
+  return { setCurrentProgram };
 }

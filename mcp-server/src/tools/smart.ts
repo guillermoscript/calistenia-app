@@ -1,17 +1,21 @@
-import type { MCPServer } from "mcp-use/server";
-import { widget, text } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
+import { sessionTrackerPropsSchema } from "../views/session-tracker.schema.js";
+import { readinessCheckPropsSchema } from "../views/readiness-check.schema.js";
+import { gapAnalysisPropsSchema } from "../views/gap-analysis.schema.js";
+import { trendsChartPropsSchema } from "../views/trends-chart.schema.js";
+import { todayDashboardPropsSchema } from "../views/today-dashboard.schema.js";
 import { localize } from "../lib/i18n.js";
 import { pickLocale, readiness as readinessMsg } from "../lib/tool-i18n.js";
 
-export function registerSmartTools(server: MCPServer, pbUrl: string) {
+export function registerSmartTools(server: AppServer, pbUrl: string) {
 
   // ──────────────────────────────────────────────────────────────
   // LOG FULL WORKOUT — one call instead of 7+
   // ──────────────────────────────────────────────────────────────
-  server.tool(
+  const logFullWorkout = server.tool(
     {
       name: "cal_log_full_workout",
       title: "Log Full Workout",
@@ -129,7 +133,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
       description:
         "Holistic readiness assessment: combines lumbar health, sleep, days since last workout, weekly progress vs goal, and weight trend into a single 1-10 score with a recommendation. " +
         "Use this before deciding whether/what to train today.",
-      widget: { name: "readiness-check", invoking: "Evaluando tu estado…", invoked: "Listo" },
+      view: { name: "readiness-check" },
+      outputSchema: readinessCheckPropsSchema,
       schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
@@ -320,8 +325,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
 
         const scoreLabel = score >= 8 ? "Listo" : score >= 5 ? "Con cuidado" : "Descansa";
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             score,
             label: scoreLabel,
             factors,
@@ -331,8 +336,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             already_trained_today: alreadyDoneToday,
             days_since_last_workout: daysSinceLastWorkout === 999 ? null : daysSinceLastWorkout,
           },
-          output: text(summaryText),
-        });
+          summaryText
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -488,7 +493,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
       description:
         "Compares your actual sessions against your program schedule over the last N weeks. " +
         "Identifies which workout days you skip most, muscle group imbalances, and exercises you're neglecting.",
-      widget: { name: "gap-analysis", invoking: "Analizando constancia…", invoked: "Análisis listo" },
+      view: { name: "gap-analysis" },
+      outputSchema: gapAnalysisPropsSchema,
       schema: z
         .object({
           weeks: z
@@ -523,6 +529,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         if (userPrograms.length === 0) {
           return {
             content: [{ type: "text", text: "No active program. Set one with `cal_set_current_program` first." }],
+            isError: true as const,
           };
         }
 
@@ -667,8 +674,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         const totalCompleted = sessions.length;
         const completionPct = totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             weeks,
             scheduled: totalScheduled,
             completed: totalCompleted,
@@ -681,8 +688,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             // would otherwise show a misleading "0% · bajando" against 0 expected.
             no_schedule: scheduledDays.size === 0,
           },
-          output: text(gapSummaryText),
-        });
+          gapSummaryText
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -851,7 +858,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         "Visual time-series of body weight, training volume (sets), and sessions over time. " +
         "Returns an interactive chart widget. Use this when the user asks 'show my progress', 'how's my weight trending', " +
         "'am I training more?', or wants to see graphs of their data.",
-      widget: { name: "trends-chart", invoking: "Crunching your numbers…", invoked: "Trends ready" },
+      view: { name: "trends-chart" },
+      outputSchema: trendsChartPropsSchema,
       schema: z
         .object({
           period_days: z
@@ -935,16 +943,14 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
           ? `Peso: ${props.weight.first} → ${props.weight.last} kg (${props.weight.delta >= 0 ? "+" : ""}${props.weight.delta} kg en ${period_days} días)`
           : "Peso: sin registros en el periodo";
 
-        return widget({
+        return viewResult(
           props,
-          output: text(
-            [
-              `# Tendencias — últimos ${period_days} días`,
-              weightLine,
-              `Volumen total: ${props.totals.sets} series en ${props.totals.sessions} sesiones`,
-            ].join("\n")
-          ),
-        });
+          [
+            `# Tendencias — últimos ${period_days} días`,
+            weightLine,
+            `Volumen total: ${props.totals.sets} series en ${props.totals.sessions} sesiones`,
+          ].join("\n")
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -1117,7 +1123,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
       description:
         "Shows what workout you should do today based on your current program and what you've done this week. " +
         "Identifies the next unfinished workout day in the schedule. Returns an interactive session tracker widget.",
-      widget: { name: "session-tracker", invoking: "Loading workout…", invoked: "Workout ready" },
+      view: { name: "session-tracker" },
+      outputSchema: sessionTrackerPropsSchema,
       schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
@@ -1134,7 +1141,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         });
 
         if (userPrograms.length === 0) {
-          return { content: [{ type: "text", text: "No active program. Use `cal_set_current_program` to select one." }] };
+          return { content: [{ type: "text", text: "No active program. Use `cal_set_current_program` to select one." }], isError: true };
         }
 
         const program = userPrograms[0].expand?.program as Record<string, unknown>;
@@ -1163,7 +1170,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         ]);
 
         // Group exercises by day
-        const dayMap = new Map<string, { name: string; focus: string; title: string; exercises: Array<{ name: string; sets: number; reps: string; rest: number; muscles: string }> }>();
+        const dayMap = new Map<string, { name: string; focus: string; title: string; exercises: Array<{ exercise_id?: string; name: string; sets: number; reps: string; rest: number; muscles: string }> }>();
         for (const ex of programExercises) {
           const dayId = ex.day_id as string;
           if (!dayMap.has(dayId)) {
@@ -1175,6 +1182,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             });
           }
           dayMap.get(dayId)!.exercises.push({
+            exercise_id: (ex.exercise_id as string | undefined) || undefined,
             name: localize(ex.exercise_name),
             sets: ex.sets as number,
             reps: ex.reps as string,
@@ -1191,13 +1199,13 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         const nextDay = allDays.find(([dayId]) => !completedDays.has(dayId));
 
         if (!nextDay) {
-          return widget({
-            props: {
+          return viewResult(
+            {
               all_complete: true,
               week_progress: { completed: completedDays.size, total: allDays.length },
             },
-            output: text(`All ${allDays.length} workout days completed this week! Rest or do active recovery.`),
-          });
+            `All ${allDays.length} workout days completed this week! Rest or do active recovery.`
+          );
         }
 
         const [dayId, day] = nextDay;
@@ -1216,8 +1224,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
 
         lines.push(`\nTo log this workout use \`cal_log_full_workout\` with workout_key \`p${currentPhase}_${dayId}\``);
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             day_id: dayId,
             day_name: day.name,
             day_focus: day.focus,
@@ -1227,8 +1235,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             exercises: day.exercises,
             week_progress: { completed: completedDays.size, total: allDays.length },
           },
-          output: text(lines.join("\n")),
-        });
+          lines.join("\n")
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -1245,7 +1253,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
       description:
         "One-call snapshot of today: nutrition progress vs goals, today's workout from active program, readiness score, and training streak. " +
         "Returns a visual dashboard widget. Use this when the user asks 'how's my day?', 'what should I do today?', or opens the chat without a specific request.",
-      widget: { name: "today-dashboard", invoking: "Loading your day…", invoked: "Dashboard ready" },
+      view: { name: "today-dashboard" },
+      outputSchema: todayDashboardPropsSchema,
       schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
@@ -1366,8 +1375,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
 
         const streak = (settings?.sessions_streak as number) ?? 0;
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             readiness: { score: readinessScore, label: readinessLabel, factors: readinessFactors },
             workout: workoutData,
             nutrition: {
@@ -1379,19 +1388,21 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             },
             streak,
           },
-          output: text(
-            [
-              `# Tu día — ${todayStr}`,
-              `Readiness: ${readinessScore}/10 — ${readinessLabel}`,
-              goals ? `Calorías: ${Math.round(nutrition.calories)}/${goals.calories} kcal` : `Calorías hoy: ${Math.round(nutrition.calories)} kcal`,
-              workoutData?.has_workout ? `Entrenamiento: ${workoutData.day_name} — ${workoutData.day_focus} (${workoutData.exercises.length} ejercicios)` : "Sin entrenamiento programado hoy",
-              streak > 0 ? `Racha: ${streak} días 🔥` : "",
-            ].filter(Boolean).join("\n")
-          ),
-        });
+          [
+            `# Tu día — ${todayStr}`,
+            `Readiness: ${readinessScore}/10 — ${readinessLabel}`,
+            goals ? `Calorías: ${Math.round(nutrition.calories)}/${goals.calories} kcal` : `Calorías hoy: ${Math.round(nutrition.calories)} kcal`,
+            workoutData?.has_workout ? `Entrenamiento: ${workoutData.day_name} — ${workoutData.day_focus} (${workoutData.exercises.length} ejercicios)` : "Sin entrenamiento programado hoy",
+            streak > 0 ? `Racha: ${streak} días 🔥` : "",
+          ].filter(Boolean).join("\n")
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
     }
   );
+
+  // Tool refs consumed by Views through useCallTool(); re-exported from server.ts
+  // so mcp-use can register their input/output types (mcp-env.d.ts).
+  return { logFullWorkout };
 }

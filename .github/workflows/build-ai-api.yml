@@ -44,7 +44,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck
+      # Va ANTES del typecheck a propósito: `mcp-use build` bundlea las views
+      # (Vite, sin tipar), valida el `view` ↔ `outputSchema` de cada tool al
+      # evaluar la entrada, y genera `mcp-env.d.ts` — que es lo que da a
+      # `tsconfig.views.json` los tipos reales de `useCallTool("…")`. Es la
+      # misma orden que corre el Dockerfile.
+      - name: Build server + views (mcp-use build)
+        run: npm run build
+
+      - name: Typecheck (src + views)
         run: npm run typecheck
 
       - name: Unit tests

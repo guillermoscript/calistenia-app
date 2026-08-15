@@ -1,4 +1,4 @@
-import type { MCPServer } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat } from "../utils.js";
@@ -15,7 +15,7 @@ function slugify(name: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-export function registerExerciseTools(server: MCPServer, pbUrl: string) {
+export function registerExerciseTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // SEARCH WGER
   // ──────────────────────────────────────────────────────────────

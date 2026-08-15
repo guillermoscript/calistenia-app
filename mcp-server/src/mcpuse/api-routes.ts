@@ -6,7 +6,7 @@
  * No Express middleware — all auth/rate-limit/upload handled inline (Hono-native).
  */
 
-import type { MCPServer } from "mcp-use/server";
+import type { AppServer } from "./auth-bridge.js";
 import PocketBase from "pocketbase";
 import config from "../api/config.js";
 import { getAvailableProviders } from "../api/model-resolver.js";
@@ -104,7 +104,7 @@ async function checkJobLimit(userId: string): Promise<boolean> {
 
 // ── Register all /api/* routes ─────────────────────────────────────────────────
 
-export function registerApiRoutes(server: MCPServer, pbUrl: string): void {
+export function registerApiRoutes(server: AppServer, pbUrl: string): void {
   const app = server.app;
 
   // ── 1. GET /api/health ────────────────────────────────────────────────────
