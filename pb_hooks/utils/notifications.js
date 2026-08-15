@@ -37,7 +37,11 @@ function categoryForType(type) {
     case "reaction": return "reactions"
     case "comment":
     case "comment_reply": return "comments"
-    case "follow": return "follows"
+    // Las solicitudes de #422 comparten categoría con el follow: quien silencia
+    // los avisos de seguidores no quiere tampoco los de solicitud.
+    case "follow":
+    case "follow_request":
+    case "follow_accepted": return "follows"
     case "challenge_join":
     case "challenge_complete": return "challenges"
     case "achievement":
@@ -150,10 +154,24 @@ function sendPush(userId, title, body, url, type, actorId) {
 // ── Fan-out a seguidores ─────────────────────────────────────────────────────
 
 // IDs de los usuarios que siguen a `userId` (los que verían su actividad).
+//
+// EXCLUYE las solicitudes pendientes (#422). Sin este filtro, quien solicita
+// seguir a una cuenta privada empieza a recibir los avisos de su actividad
+// —"Fulano ha entrenado"— sin que se le haya aceptado: la notificación se
+// convierte en el canal de fuga que las reglas de las views acaban de cerrar.
+//
+// `status = ''` pasa a propósito: son las filas anteriores a #422, que el
+// backfill dio por aceptadas, y las que crean los clientes viejos antes de que
+// `follow_requests.pb.js` las normalice.
 function getFollowers(userId) {
   var ids = []
   try {
-    var recs = $app.findRecordsByFilter("follows", "following = {:u}", "", 500, 0, { u: userId })
+    var recs = $app.findRecordsByFilter(
+      "follows",
+      "following = {:u} && status != 'pending'",
+      "", 500, 0,
+      { u: userId }
+    )
     for (var i = 0; i < recs.length; i++) {
       var f = recs[i].getString("follower")
       if (f) ids.push(f)

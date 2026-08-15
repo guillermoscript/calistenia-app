@@ -45,7 +45,11 @@ onRecordEnrich(function (e) {
   //    no haya puesto nombre visible sale como "?".
   //  - created/updated: marcas de tiempo del registro; PocketBase NO las marca
   //    `system`, así que hay que nombrarlas o se recortarían también.
-  var PUBLIC = ["display_name", "avatar", "level", "name", "created", "updated"]
+  //  - is_private (#422): el perfil ajeno tiene que saber si pintar "Seguir" o
+  //    "Solicitar", y el estado vacío tiene que poder decir "cuenta privada" en
+  //    vez de un ranking a cero. Que se sepa que una cuenta es privada no es la
+  //    fuga —lo es su contenido— y es lo que hacen Instagram y Strava.
+  var PUBLIC = ["display_name", "avatar", "level", "name", "created", "updated", "is_private"]
 
   // Sin petición (enriquecidos internos) o sin auth se recorta igual: cierra en fallo.
   var auth = e.requestInfo ? e.requestInfo.auth : null
