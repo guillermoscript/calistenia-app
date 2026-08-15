@@ -4465,5 +4465,16 @@
   "battle.outcomeUnknown": "No result",
   "battle.noStoredResult": "This battle ended before results were stored.",
   "battle.rankOf": "{{rank}} of {{total}}",
-  "battle.compare": "Head-to-head"
+  "battle.compare": "Head-to-head",
+
+  "battle.wonTitle": "You won",
+  "battle.tiedTitle": "Tied",
+  "battle.soloTitle": "Circuit completed",
+  "battle.soloHint": "You finished on your own — the circuit counts all the same.",
+  "battle.deletedUser": "Deleted user",
+  "battle.rematch": "Rematch",
+  "battle.rematchCreating": "Creating…",
+  "battle.rematchError": "Couldn't create the rematch. Try again.",
+  "battle.shareResult": "Share result",
+  "battle.sharePreparing": "Generating…"
 }

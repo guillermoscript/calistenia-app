@@ -1,7 +1,11 @@
 import { Linking, Platform, Share, type ShareAction } from 'react-native'
 import * as Sharing from 'expo-sharing'
 import * as Clipboard from 'expo-clipboard'
-import { trackShareCardShared } from '@calistenia/core/lib/analytics'
+import {
+  CANONICAL_ANALYTICS_EVENTS,
+  trackCanonicalEvent,
+  trackShareCardShared,
+} from '@calistenia/core/lib/analytics'
 
 export const BASE_URL = 'https://gym.guille.tech'
 
@@ -70,6 +74,15 @@ export const MOBILE_SHARE_CARD_CONTEXTS = {
   progressPhoto: {
     surface: 'progress', source: 'progress_photo', share_type: 'progress_photo', card_type: 'progress_photo',
   },
+  /**
+   * El resultado de una batalla de circuito (#357). `share_type: 'result_card'` es lo
+   * que separa esta compartición de la del enlace de invitación del lobby, que sigue
+   * siendo `invite_link`: son dos momentos distintos del embudo y mezclarlos dejaría de
+   * poder distinguir "invité a alguien" de "presumí del resultado".
+   */
+  battleResult: {
+    surface: 'battle', source: 'battle_results', share_type: 'result_card', card_type: 'battle_result',
+  },
 } as const satisfies Record<string, MobileShareCardProperties>
 
 export function classifyNativeShareAction(action: ShareAction['action']): NativeShareOutcome {
@@ -124,6 +137,44 @@ export async function shareCardImage(
     trackShareCardShared({
       ...properties,
       platform: Platform.OS,
+      result: outcome.result,
+      share_confirmed: outcome.confirmed,
+    })
+  }
+  return outcome
+}
+
+/**
+ * Comparte la tarjeta de resultado de una batalla (#357).
+ *
+ * Emite DOS eventos y por el mismo camino: `share_card_shared`, que es el contrato de
+ * todas las tarjetas, y `battle_shared`, que es el paso del embudo de batallas. Los dos
+ * salen del mismo `outcome`, así que respetan la misma tabla de confirmación por
+ * plataforma y una hoja descartada no cuenta en ninguno de los dos.
+ *
+ * `shareImage` no puede saber si el envío se completó (expo-sharing no lo expone), así
+ * que el resultado honesto de una tarjeta es siempre `opened` con
+ * `share_confirmed: false`. Eso no es una carencia que tapar: contar como envío algo que
+ * no consta sería inventarse la métrica.
+ */
+export async function shareBattleResultCard(
+  uri: string,
+  options: { message?: string; title?: string } | undefined,
+  battle: { battleId: string; participantCount: number },
+): Promise<NativeShareOutcome> {
+  const outcome = await shareCardImage(uri, options, {
+    ...MOBILE_SHARE_CARD_CONTEXTS.battleResult,
+    battle_id: battle.battleId,
+  })
+
+  if (outcome.result !== 'dismissed') {
+    // El token de invitación JAMÁS viaja aquí: solo el id de la batalla.
+    trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.battleShared, {
+      surface: 'battle',
+      source: 'battle_results',
+      battle_id: battle.battleId,
+      share_type: 'result_card',
+      participant_count: battle.participantCount,
       result: outcome.result,
       share_confirmed: outcome.confirmed,
     })
@@ -244,6 +295,49 @@ export async function shareReferralInviteByChannel(
 
   const result = await Share.share({ message: content })
   return result.action === Share.sharedAction
+}
+
+export interface BattleResultShareInput {
+  userName?: string
+  circuitName: string
+  /** Puesto a mostrar, ya con los empates resueltos (`battleDisplayRanks`). */
+  rank: number
+  /** Cuánta gente llegó al final. El denominador honesto, no el de invitados. */
+  contenders: number
+  tied: boolean
+  referralCode?: string | null
+}
+
+export interface BattleResultShareResult {
+  message: string
+  url: string
+}
+
+/**
+ * El texto que acompaña a la tarjeta de resultado (#357).
+ *
+ * El enlace NUNCA apunta a la batalla. `battles.viewRule` solo deja entrar al creador y
+ * a los participantes, así que un enlace al resultado sería un 403 para cualquiera que
+ * lo reciba; y el token de invitación no puede viajar en algo que se reenvía. Va al
+ * enlace de referido si lo hay, y si no a la web, que es lo único que un desconocido
+ * puede abrir.
+ */
+export function shareBattleResult(input: BattleResultShareInput): BattleResultShareResult {
+  const { userName, circuitName, rank, contenders, tied, referralCode } = input
+  const url = referralCode ? inviteUrl(referralCode) : BASE_URL
+  const who = userName ? `${userName}: ` : ''
+
+  // Terminar en solitario no es ganar a nadie, y decirle "1.º de 1" a quien se quedó
+  // solo suena a broma. Se cuenta lo que hizo, no a quién superó.
+  let message: string
+  if (contenders <= 1) {
+    message = `${who}circuito "${circuitName}" completado 💪`
+  } else if (tied) {
+    message = `${who}empate en el ${rank}.º puesto de ${contenders} en "${circuitName}" 🤝`
+  } else {
+    message = `${who}${rank}.º de ${contenders} en "${circuitName}" 🏆`
+  }
+  return { message, url }
 }
 
 /** Deep link to the web nutrition page for a specific date. */
