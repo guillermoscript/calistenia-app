@@ -603,6 +603,71 @@ function notifyBattleStart(app, battle, actorId) {
   }
 }
 
+/**
+ * A quién se re-invita en una revancha (#357).
+ *
+ * Todos los que estuvieron en la batalla original menos quien pulsa — incluidos los que
+ * se salieron, porque "otra vez" es una invitación, no un premio por haber aguantado.
+ * Se caen del reparto dos casos:
+ *
+ *   - cuentas borradas (`user` vacío): la relación es opcional y queda a null, así que
+ *     la fila sigue en la clasificación pero no hay a quién invitar;
+ *   - cualquier bloqueo con quien pide la revancha (#413), en los dos sentidos. La
+ *     batalla original pudo montarla un tercero, así que dos personas que se han
+ *     bloqueado desde entonces no pueden acabar juntas en la nueva.
+ */
+function rematchRecipients(app, battle, actorId) {
+  var blocks = require(`${__hooks}/utils/blocks.js`)
+  var counterparts = blocks.blockedCounterparts(app, actorId)
+  var participants = findParticipants(app, battle.getString('id'))
+  var seen = {}
+  var out = []
+
+  for (var i = 0; i < participants.length; i++) {
+    var userId = participants[i].getString('user')
+    if (!userId || userId === actorId) continue
+    if (seen[userId]) continue
+    if (counterparts[userId]) continue
+    seen[userId] = true
+    out.push(userId)
+  }
+  return out
+}
+
+/**
+ * Avisar a los antiguos participantes de que hay revancha (#357).
+ *
+ * Cada uno recibe SU token, nominal y de un solo uso, en el enlace profundo. Es la razón
+ * por la que un token de revancha puede viajar en una push: aunque la notificación se
+ * filtre, `inviteBindingRejects` no deja que lo gaste nadie más.
+ *
+ * Fuera de la transacción y a prueba de fallos, como el resto de avisos: la revancha ya
+ * existe y no puede caerse porque falle una notificación.
+ */
+function notifyBattleRematch(app, newBattle, actorId, invites) {
+  try {
+    var notifications = require(`${__hooks}/utils/notifications.js`)
+    var battleId = newBattle.getString('id')
+    var name = notifications.getUserName(actorId)
+    for (var i = 0; i < invites.length; i++) {
+      var invite = invites[i]
+      notifications.createNotification(
+        invite.userId, 'challenge_join', actorId, battleId, 'battle',
+        { battle_id: battleId, kind: 'battle_rematch' },
+      )
+      notifications.sendPush(
+        invite.userId,
+        name || 'Alguien',
+        'te reta a la revancha',
+        '/battle-invite/' + invite.token,
+        'challenge_join',
+      )
+    }
+  } catch (err) {
+    console.log('[battle_api] notify rematch failed:', err)
+  }
+}
+
 function snapshotOf(app, battle, userId) {
   var battleId = battle.getString('id')
   var participants = findParticipants(app, battleId)
@@ -673,6 +738,49 @@ function claimIdempotencyKey(txApp, battleId, userId, endpoint, key) {
 }
 
 /**
+ * Guardar el resultado de una mutación en su fila del ledger (#357).
+ *
+ * El resto de endpoints no lo necesitan: su respuesta es el snapshot de ESTA batalla, y
+ * al reintentar se recalcula fresco — que es justo lo que exige el contrato de
+ * reconexión. La revancha es la excepción, porque su respuesta es una batalla DISTINTA:
+ * sin guardar cuál, el segundo toque no tiene forma de saber a dónde ir salvo creando
+ * otra, que es exactamente lo que la clave de idempotencia existe para impedir.
+ */
+function recordMutationResponse(txApp, battleId, key, payload) {
+  if (!key) return
+  try {
+    var row = txApp.findFirstRecordByFilter(
+      'battle_mutations',
+      'battle = {:b} && mutation_key = {:k}',
+      { b: battleId, k: key },
+    )
+    if (!row) return
+    row.set('response', payload)
+    txApp.save(row)
+  } catch (err) {
+    // El ledger ya impidió la doble ejecución; no poder anotar la respuesta degrada la
+    // repetición pero no puede tumbar una mutación que ya ocurrió.
+    console.log('[battle_api] could not record mutation response:', err)
+  }
+}
+
+/** Lo guardado por `recordMutationResponse`, o `null` si no hay nada legible. */
+function findMutationResponse(app, battleId, key) {
+  if (!key) return null
+  try {
+    var row = app.findFirstRecordByFilter(
+      'battle_mutations',
+      'battle = {:b} && mutation_key = {:k}',
+      { b: battleId, k: key },
+    )
+    if (!row) return null
+    return jsonField(row, 'response', null)
+  } catch (err) {
+    return null
+  }
+}
+
+/**
  * Lazy lobby expiry. The cron is the primary sweep, but a `cronAdd` callback that
  * throws dies silently in the JSVM — that is how the reminder crons stayed broken for
  * months — so the read path must not depend on it having run.
@@ -702,7 +810,7 @@ function hashToken(token) {
  * burn at most one seat. The lobby UI issues a fresh token on every share, so the
  * creator experience is still "tap share, send a link".
  */
-function issueInvite(txApp, battle, creatorId, ms) {
+function issueInvite(txApp, battle, creatorId, ms, inviteeUserId) {
   var token = $security.randomString(40)
   var collection = txApp.findCollectionByNameOrId('battle_invites')
   var record = new Record(collection)
@@ -711,9 +819,30 @@ function issueInvite(txApp, battle, creatorId, ms) {
   record.set('token_hash', hashToken(token))
   record.set('status', 'active')
   record.set('expires_at', isoAt(ms + INVITE_TTL_MS))
+  // Un invitado nominal (#357). El enlace que se comparte a mano no lo lleva y sigue
+  // siendo para quien lo reciba; el de una revancha sí, porque viaja en una push y no
+  // en una conversación. Ver `inviteBindingRejects`: un token nominal filtrado no le
+  // sirve a nadie más que a su destinatario.
+  if (inviteeUserId) record.set('invitee_user', inviteeUserId)
   txApp.save(record)
   // The raw token is returned to the caller and never stored, logged or tracked.
   return { token: token, record: record }
+}
+
+/**
+ * ¿Este token es nominal y quien lo presenta no es su destinatario? (#357)
+ *
+ * Va aparte de `inviteRejection` porque esa la usa también la landing sin auth, que no
+ * tiene identidad contra la que comparar. Devuelve un booleano y el handler responde el
+ * MISMO 409 genérico que un token revocado: quien llega no debe poder distinguir "este
+ * enlace no es para ti" de "este enlace ya no vale", o el token se vuelve un oráculo
+ * sobre quién fue invitado.
+ */
+function inviteBindingRejects(invite, userId) {
+  if (!invite) return false
+  var bound = invite.getString('invitee_user')
+  if (!bound) return false
+  return bound !== userId
 }
 
 function findInviteByToken(app, token) {
@@ -912,6 +1041,8 @@ module.exports = {
   filterTime: filterTime,
   notifyBattleJoin: notifyBattleJoin,
   notifyBattleStart: notifyBattleStart,
+  notifyBattleRematch: notifyBattleRematch,
+  rematchRecipients: rematchRecipients,
   nowMs: nowMs,
 
   jsonField: jsonField,
@@ -947,12 +1078,15 @@ module.exports = {
   touch: touch,
   bumpRevision: bumpRevision,
   claimIdempotencyKey: claimIdempotencyKey,
+  recordMutationResponse: recordMutationResponse,
+  findMutationResponse: findMutationResponse,
   expireIfStale: expireIfStale,
 
   hashToken: hashToken,
   issueInvite: issueInvite,
   findInviteByToken: findInviteByToken,
   inviteRejection: inviteRejection,
+  inviteBindingRejects: inviteBindingRejects,
   battleHasBlockWith: battleHasBlockWith,
 
   lobbyParticipants: lobbyParticipants,

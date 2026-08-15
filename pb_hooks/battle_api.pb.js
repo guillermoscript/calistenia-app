@@ -275,6 +275,15 @@ routerAdd("POST", "/api/battles/join", function (e) {
         battles.fail(409, "invite_invalid", "This invite cannot be used")
       }
 
+      // Un token nominal solo lo gasta su destinatario (#357). Hoy solo los emite la
+      // revancha, que los manda por push en vez de por una conversación; el error es a
+      // propósito el mismo que el de un token revocado, para que no se pueda usar como
+      // oráculo de a quién invitaron. Igual que el bloqueo, va DESPUÉS de la rama de
+      // plaza existente: a quien ya está dentro no se le echa.
+      if (battles.inviteBindingRejects(invite, userId)) {
+        battles.fail(409, "invite_invalid", "This invite cannot be used")
+      }
+
       if (!battles.claimIdempotencyKey(txApp, battleId, userId, "join", body.idempotency_key)) {
         outcome.alreadyJoined = true
         return
@@ -619,6 +628,108 @@ routerAdd("POST", "/api/battles/{id}/cancel", function (e) {
 
     var fresh = battles.findBattle($app, battleId)
     return e.json(200, battles.snapshotOf($app, fresh, userId))
+  } catch (err) {
+    return battles.respondError(e, err)
+  }
+}, $apis.requireAuth())
+
+// ── POST /api/battles/{id}/rematch — play the same circuit again ─────────────
+
+/**
+ * Revancha (#357).
+ *
+ * Crea una batalla NUEVA con la misma configuración y no toca la original ni un byte: un
+ * resultado es un registro de lo que pasó, y reutilizar la fila para una segunda ronda
+ * destruiría la primera. De ahí salen gratis dos de los criterios del issue — la nueva
+ * nace con `revision: 0` y con su propia identidad, así que los tokens viejos, que están
+ * atados por hash al id de la batalla vieja, no pueden abrirla.
+ *
+ * La puede pedir CUALQUIER antiguo participante, no solo quien la creó: si "otra vez con
+ * los mismos" dependiera del creador, una batalla cuyo creador ya no está sería un
+ * callejón sin salida. Quien la pide se convierte en creador de la nueva.
+ *
+ * Se permite desde `cancelled` y `expired` además de `finished`. Una sala que caducó sin
+ * llegar a empezar es el caso en el que más sentido tiene volver a intentarlo.
+ */
+routerAdd("POST", "/api/battles/{id}/rematch", function (e) {
+  var battles = require(`${__hooks}/utils/battles.js`)
+  try {
+    var userId = battles.requireUserId(e)
+    var sourceId = e.request.pathValue("id")
+    var body = battles.readBody(e)
+    var outcome = { battleId: "", replayed: false, invites: [] }
+
+    battles.runGuarded($app, function (txApp) {
+      var source = battles.findBattle(txApp, sourceId)
+      battles.requireViewer(txApp, source, userId)
+
+      if (!battles.isTerminal(source.getString("status"))) {
+        battles.fail(409, "battle_open", "This battle has not finished yet")
+      }
+
+      // La respuesta de esta mutación es OTRA batalla, así que repetir la clave no puede
+      // contestar con el snapshot de la de siempre: se devuelve la que creó el primer
+      // toque. Sin esto, el segundo toque de un doble toque crearía una segunda batalla.
+      if (!battles.claimIdempotencyKey(txApp, sourceId, userId, "rematch", body.idempotency_key)) {
+        var stored = battles.findMutationResponse(txApp, sourceId, body.idempotency_key)
+        if (stored && stored.battle_id) {
+          outcome.battleId = stored.battle_id
+          outcome.replayed = true
+          return
+        }
+        battles.fail(409, "rematch_in_flight", "A rematch for this battle is already being created")
+      }
+
+      var now = battles.nowMs()
+      var collection = txApp.findCollectionByNameOrId("battles")
+      var battle = new Record(collection)
+      battle.set("creator", userId)
+      // Directo a `lobby`: `draft` existe para que el creador ajuste el circuito antes de
+      // publicarlo, y una revancha ya sabe qué circuito es.
+      battle.set("status", "lobby")
+      battle.set("config", battles.jsonField(source, "config", null))
+      battle.set("revision", 0)
+      battle.set("invite_expires_at", battles.isoAt(now + battles.INVITE_TTL_MS))
+      battles.touch(battle, now)
+      txApp.save(battle)
+
+      var battleId = battle.getString("id")
+      outcome.battleId = battleId
+
+      // Quien pide la revancha entrena también, igual que en `publish`.
+      var participants = txApp.findCollectionByNameOrId("battle_participants")
+      var seat = new Record(participants)
+      seat.set("battle", battleId)
+      seat.set("user", userId)
+      seat.set("status", "joined")
+      seat.set("progress", battles.emptyProgress())
+      seat.set("joined_at", battles.isoAt(now))
+      seat.set("last_seen_at", battles.isoAt(now))
+      txApp.save(seat)
+
+      // Un token nominal por cabeza. Se emiten aquí, dentro de la transacción, para que
+      // una revancha no pueda existir a medias — con batalla pero sin invitaciones.
+      var recipients = battles.rematchRecipients(txApp, source, userId)
+      for (var i = 0; i < recipients.length; i++) {
+        var issued = battles.issueInvite(txApp, battle, userId, now, recipients[i])
+        outcome.invites.push({ userId: recipients[i], token: issued.token })
+      }
+
+      battles.recordMutationResponse(txApp, sourceId, body.idempotency_key, { battle_id: battleId })
+    })
+
+    var fresh = battles.findBattle($app, outcome.battleId)
+
+    // Fuera de la transacción y a prueba de fallos. En una repetición no se vuelve a
+    // avisar: los tokens de la primera vez siguen vivos y mandar la push dos veces solo
+    // duplicaría el aviso.
+    if (!outcome.replayed && outcome.invites.length > 0) {
+      battles.notifyBattleRematch($app, fresh, userId, outcome.invites)
+    }
+
+    var snapshot = battles.snapshotOf($app, fresh, userId)
+    if (outcome.replayed) snapshot.replayed = true
+    return e.json(201, snapshot)
   } catch (err) {
     return battles.respondError(e, err)
   }
