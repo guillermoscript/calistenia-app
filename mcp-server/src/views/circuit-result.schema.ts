@@ -5,6 +5,11 @@
 import { z } from "zod";
 
 const exerciseSchema = z.object({
+  // Slug stored on the session's exercises JSON (see cal_log_circuit_session);
+  // legacy rows may lack it. Declared because the tool passes it through and
+  // hosts validate `structuredContent` against this schema with
+  // additionalProperties: false.
+  exerciseId: z.string().nullable().optional(),
   name: z.string(),
   reps: z.string().nullable(),
 });

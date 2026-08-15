@@ -149,7 +149,7 @@ export function registerCircuitTools(server: AppServer, pbUrl: string) {
           exercises: exercises.map((ex: Record<string, unknown>) => {
             const exName = typeof ex.name === "object" ? (ex.name as Record<string, string>).en ?? (ex.name as Record<string, string>).es ?? "" : String(ex.name ?? "");
             const reps = ex.reps != null ? String(ex.reps) : null;
-            return { exerciseId: ex.exerciseId, name: exName, reps };
+            return { exerciseId: typeof ex.exerciseId === "string" ? ex.exerciseId : null, name: exName, reps };
           }),
           config: config ? {
             work_seconds: (config.workSeconds as number | undefined) ?? null,
