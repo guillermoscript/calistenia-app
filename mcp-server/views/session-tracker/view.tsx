@@ -1,46 +1,14 @@
-import { McpUseProvider, useWidget, useCallTool, type WidgetMetadata } from "mcp-use/react";
+import { useToolContext, useCallTool, useSendFollowUp } from "mcp-use/react";
 import { useState } from "react";
-import { z } from "zod";
-import { useAppColors, FONT, FONT_MONO } from "./lib/theme";
-import { WidgetLoading, Banner, Kicker, DisplayTitle, primaryButtonStyle, ghostButtonStyle } from "./lib/ui";
-import { WidgetFonts } from "./lib/fonts";
-
-const exerciseSchema = z.object({
-  name: z.string(),
-  sets: z.number(),
-  reps: z.string(),
-  rest: z.number(),
-  muscles: z.string().optional(),
-});
-
-const propsSchema = z.object({
-  // All-complete variant: every workout day this week is already logged.
-  // There's no "next" day to track, so most fields below are irrelevant —
-  // the widget renders a dedicated rest-day state instead of a broken
-  // exercise tracker. See mcp-server/src/tools/smart.ts cal_todays_workout.
-  all_complete: z.boolean().optional(),
-  day_id: z.string().optional(),
-  day_name: z.string().optional(),
-  day_focus: z.string().optional(),
-  phase: z.number().optional(),
-  program_name: z.string().optional(),
-  workout_key: z.string().optional(),
-  exercises: z.array(exerciseSchema).optional(),
-  week_progress: z.object({ completed: z.number(), total: z.number() }),
-});
-
-export const widgetMetadata: WidgetMetadata = {
-  description: "Interactive session tracker — check off sets as you train and log the session when done",
-  props: propsSchema,
-  exposeAsTool: false,
-};
-
-type Props = z.infer<typeof propsSchema>;
+import { useAppColors, FONT, FONT_MONO } from "../lib/theme";
+import { WidgetLoading, WidgetError, Banner, Kicker, DisplayTitle, primaryButtonStyle, ghostButtonStyle } from "../lib/ui";
+import { WidgetFonts } from "../lib/fonts";
+import type { SessionTrackerProps as Props } from "../../src/views/session-tracker.schema";
 
 function AllCompleteState({ weekProgress }: { weekProgress: { completed: number; total: number } }) {
   const c = useAppColors();
   return (
-    <McpUseProvider autoSize>
+    <>
       <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 500 }}>
         <Kicker>Semana completa</Kicker>
@@ -53,19 +21,26 @@ function AllCompleteState({ weekProgress }: { weekProgress: { completed: number;
         </div>
         <div style={{ fontSize: 13, color: c.sub }}>Descansa o haz movilidad.</div>
       </div>
-    </McpUseProvider>
+    </>
   );
 }
 
 export default function SessionTracker() {
-  const { props, isPending, sendFollowUpMessage } = useWidget<Props>();
+  const view = useToolContext();
+  const sendFollowUp = useSendFollowUp();
   const c = useAppColors();
-  const { callTool: logWorkout, isPending: isLogging, isSuccess: isLogged, isError: logFailed } = useCallTool("cal_log_full_workout");
+  const { callTool: logWorkout, isPending: isLogging, data: logData, error: logError } = useCallTool("cal_log_full_workout");
+  const isLogged = logData !== undefined;
+  const logFailed = logError !== undefined;
   const [completedSets, setCompletedSets] = useState<Record<string, boolean>>({});
 
-  if (isPending) {
+  if (view.status === "pending") {
     return <WidgetLoading text="Cargando entrenamiento…" />;
   }
+  if (view.status === "error") {
+    return <WidgetError message={view.error.message} />;
+  }
+  const props = view.toolOutput as Props;
 
   if (props.all_complete) {
     return <AllCompleteState weekProgress={props.week_progress} />;
@@ -81,11 +56,12 @@ export default function SessionTracker() {
   };
 
   const handleLog = () => {
-    logWorkout({ workout_key: props.workout_key, notes: `Sesión completada — ${props.day_name}` });
+    // callTool rejects on tool error; the handle's `error` already reflects it.
+    void logWorkout({ workout_key: props.workout_key, notes: `Sesión completada — ${props.day_name}` }).catch(() => {});
   };
 
   return (
-    <McpUseProvider autoSize>
+    <>
       <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.text, fontFamily: FONT, maxWidth: 500 }}>
         {/* Header */}
@@ -166,13 +142,13 @@ export default function SessionTracker() {
             {isLogging ? "Guardando…" : isLogged ? "Registrada" : pct === 1 ? "Registrar sesión" : `Registrar sesión (${doneSets}/${totalSets})`}
           </button>
           <button
-            onClick={() => sendFollowUpMessage("Cambia el orden o reemplaza algún ejercicio de este entrenamiento")}
+            onClick={() => void sendFollowUp({ prompt: "Cambia el orden o reemplaza algún ejercicio de este entrenamiento" })}
             style={ghostButtonStyle(c)}
           >
             Modificar
           </button>
         </div>
       </div>
-    </McpUseProvider>
+    </>
   );
 }

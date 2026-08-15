@@ -1,9 +1,9 @@
-import type { MCPServer } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from "../utils.js";
 
-export function registerProgressTools(server: MCPServer, pbUrl: string) {
+export function registerProgressTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // GET SETTINGS
   // ──────────────────────────────────────────────────────────────

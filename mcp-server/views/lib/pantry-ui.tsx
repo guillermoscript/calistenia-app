@@ -3,7 +3,7 @@
  * formatting, confidence dots and category chips, so the whole despensa set
  * reads consistent with [[lib/ui]] and [[lib/theme]].
  *
- * Lives in resources/lib/ (no `widget.tsx`) so the mcp-use bundler ignores it
+ * Lives in views/lib/ (no `view.tsx`) so the mcp-use v2 CLI ignores it
  * as a widget entry.
  */
 import { FONT_MONO, type AppColors } from "./theme";

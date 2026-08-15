@@ -28,7 +28,22 @@ export const PaginationSchema = {
 export function errorResult(message: string) {
   return {
     content: [{ type: "text" as const, text: `Error: ${message}` }],
-    isError: true,
+    isError: true as const,
+  };
+}
+
+/**
+ * Result of a View-bound tool (one that declares `outputSchema` + `view`).
+ *
+ * mcp-use v2 types such tools as `ToolResult<TOutput>`, which demands either
+ * `structuredContent: TOutput` or `isError: true` — the legacy `widget()` /
+ * `error()` helpers type both as optional and no longer fit. `props` goes to
+ * the View as `structuredContent`; `text` is what the model reads.
+ */
+export function viewResult<TProps>(props: TProps, text: string) {
+  return {
+    content: [{ type: "text" as const, text }],
+    structuredContent: props,
   };
 }
 

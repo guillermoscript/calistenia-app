@@ -1,10 +1,10 @@
-import type { MCPServer } from "mcp-use/server";
-import { widget, text } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
+import { widget, text } from "mcp-use";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 
-export function registerCircuitTools(server: MCPServer, pbUrl: string) {
+export function registerCircuitTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST CIRCUIT SESSIONS
   // ──────────────────────────────────────────────────────────────

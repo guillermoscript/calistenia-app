@@ -6,11 +6,11 @@
  * apps/mobile/src/lib/theme.ts. The HSL tokens there are converted to hex
  * below since widgets style with inline `style={{}}` (no Tailwind/CSS vars).
  *
- * NOTE: lives in resources/lib/ (a subdirectory without a `widget.tsx`) so the
- * mcp-use widget bundler does NOT treat it as a widget entry — it only globs
- * files directly under resources/ and directories containing widget.tsx.
+ * NOTE: lives in views/lib/ (a directory without a `view.tsx`) so the mcp-use
+ * v2 CLI does NOT treat it as a View entry — it only picks up
+ * `views/<name>/view.tsx`.
  */
-import { useWidgetTheme } from "mcp-use/react";
+import { useViewTheme } from "mcp-use/react";
 
 export interface AppColors {
   /* chrome */
@@ -96,7 +96,7 @@ export function getAppColors(dark: boolean): AppColors {
 }
 
 export function useAppColors(): AppColors {
-  return getAppColors(useWidgetTheme() === "dark");
+  return getAppColors(useViewTheme() === "dark");
 }
 
 /**

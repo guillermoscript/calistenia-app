@@ -1,11 +1,11 @@
-import type { MCPServer } from "mcp-use/server";
-import { widget, text } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
+import { widget, text } from "mcp-use";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, PaginationSchema } from "../utils.js";
 import { localize, toTranslatable } from "../lib/i18n.js";
 
-export function registerProgramTools(server: MCPServer, pbUrl: string) {
+export function registerProgramTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST PROGRAMS
   // ──────────────────────────────────────────────────────────────

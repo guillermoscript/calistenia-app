@@ -2,23 +2,19 @@
  * Self-hosted @font-face injection for widgets — mirrors the app's Bebas
  * Neue / JetBrains Mono / DM Sans identity inside the sandboxed widget iframe.
  *
- * mcp-use serves files under `public/` at `{baseUrl}/mcp-use/public/*` and
- * injects `window.__mcpPublicUrl = "{baseUrl}/mcp-use/public"` into every
- * widget's HTML head (see mcp-use's processWidgetHtml). Reading that global
- * at render time — rather than guessing a relative/absolute URL against
- * `<base href>` — is the documented, robust way to address same-origin
- * public assets from widget code.
+ * mcp-use v2 serves files under `public/` at `{basePath}/_mcp-use/public/*`
+ * and injects the request-resolved prefix into every View document;
+ * `getPublicBaseUrl()` (trailing slash included) is the documented way to
+ * address same-origin public assets from View code, and stays correct behind
+ * proxies/tunnels.
  *
- * Every widget renders <WidgetFonts/> once at its root, alongside
- * <McpUseProvider>. See [[lib/theme]] for the FONT/FONT_DISPLAY/FONT_MONO
- * stacks that reference these families.
+ * Every View renders <WidgetFonts/> once at its root. See [[lib/theme]] for
+ * the FONT/FONT_DISPLAY/FONT_MONO stacks that reference these families.
  */
+import { getPublicBaseUrl } from "mcp-use/react";
+
 function publicAsset(file: string): string {
-  const base =
-    typeof window !== "undefined"
-      ? (window as unknown as { __mcpPublicUrl?: string }).__mcpPublicUrl ?? ""
-      : "";
-  return `${base}/fonts/${file}`;
+  return `${getPublicBaseUrl()}fonts/${file}`;
 }
 
 export function WidgetFonts() {

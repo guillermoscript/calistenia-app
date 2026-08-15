@@ -1,5 +1,5 @@
-import type { MCPServer } from "mcp-use/server";
-import { widget, text } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
+import { widget, text } from "mcp-use";
 import type PocketBase from "pocketbase";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
@@ -116,7 +116,7 @@ const PantryItemInputSchema = z
 
 const MAX_RECEIPT_IMAGE_BYTES = 5 * 1024 * 1024;
 
-export function registerPantryTools(server: MCPServer, pbUrl: string) {
+export function registerPantryTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // GENERATE PANTRY DAY PLAN
   // ──────────────────────────────────────────────────────────────

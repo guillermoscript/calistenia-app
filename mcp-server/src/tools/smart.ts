@@ -1,12 +1,13 @@
-import type { MCPServer } from "mcp-use/server";
-import { widget, text } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
+import { widget, text } from "mcp-use";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
-import { errorResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
+import { errorResult, viewResult, ResponseFormat, today, daysAgo, startOfWeek, toDateStr } from "../utils.js";
+import { sessionTrackerPropsSchema } from "../views/session-tracker.schema.js";
 import { localize } from "../lib/i18n.js";
 import { pickLocale, readiness as readinessMsg } from "../lib/tool-i18n.js";
 
-export function registerSmartTools(server: MCPServer, pbUrl: string) {
+export function registerSmartTools(server: AppServer, pbUrl: string) {
 
   // ──────────────────────────────────────────────────────────────
   // LOG FULL WORKOUT — one call instead of 7+
@@ -1117,7 +1118,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
       description:
         "Shows what workout you should do today based on your current program and what you've done this week. " +
         "Identifies the next unfinished workout day in the schedule. Returns an interactive session tracker widget.",
-      widget: { name: "session-tracker", invoking: "Loading workout…", invoked: "Workout ready" },
+      view: { name: "session-tracker" },
+      outputSchema: sessionTrackerPropsSchema,
       schema: z.object({}).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     },
@@ -1134,7 +1136,7 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         });
 
         if (userPrograms.length === 0) {
-          return { content: [{ type: "text", text: "No active program. Use `cal_set_current_program` to select one." }] };
+          return { content: [{ type: "text", text: "No active program. Use `cal_set_current_program` to select one." }], isError: true };
         }
 
         const program = userPrograms[0].expand?.program as Record<string, unknown>;
@@ -1191,13 +1193,13 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
         const nextDay = allDays.find(([dayId]) => !completedDays.has(dayId));
 
         if (!nextDay) {
-          return widget({
-            props: {
+          return viewResult(
+            {
               all_complete: true,
               week_progress: { completed: completedDays.size, total: allDays.length },
             },
-            output: text(`All ${allDays.length} workout days completed this week! Rest or do active recovery.`),
-          });
+            `All ${allDays.length} workout days completed this week! Rest or do active recovery.`
+          );
         }
 
         const [dayId, day] = nextDay;
@@ -1216,8 +1218,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
 
         lines.push(`\nTo log this workout use \`cal_log_full_workout\` with workout_key \`p${currentPhase}_${dayId}\``);
 
-        return widget({
-          props: {
+        return viewResult(
+          {
             day_id: dayId,
             day_name: day.name,
             day_focus: day.focus,
@@ -1227,8 +1229,8 @@ export function registerSmartTools(server: MCPServer, pbUrl: string) {
             exercises: day.exercises,
             week_progress: { completed: completedDays.size, total: allDays.length },
           },
-          output: text(lines.join("\n")),
-        });
+          lines.join("\n")
+        );
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

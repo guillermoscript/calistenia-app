@@ -1,8 +1,8 @@
-import type { MCPServer } from "mcp-use/server";
+import type { AppServer } from "./mcpuse/auth-bridge.js";
 import { getAuthManager } from "./mcpuse/auth-bridge.js";
 import { today, startOfWeek } from "./utils.js";
 
-export function registerResources(server: MCPServer, pbUrl: string) {
+export function registerResources(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // USER PROFILE RESOURCE
   // ──────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ export function registerResources(server: MCPServer, pbUrl: string) {
       description: "User profile, training settings, and current program summary",
       mimeType: "application/json",
     },
-    async (ctx) => {
+    async (_uri, ctx) => {
       const auth = getAuthManager(ctx.auth, pbUrl);
       const pb = auth.getClient();
       const userId = auth.getUserId();
@@ -77,7 +77,7 @@ export function registerResources(server: MCPServer, pbUrl: string) {
       description: "Today's logged meals and macro totals vs daily goals",
       mimeType: "application/json",
     },
-    async (ctx) => {
+    async (_uri, ctx) => {
       const auth = getAuthManager(ctx.auth, pbUrl);
       const pb = auth.getClient();
       const userId = auth.getUserId();
@@ -160,7 +160,7 @@ export function registerResources(server: MCPServer, pbUrl: string) {
       description: "This week's workout sessions and consistency vs weekly goal",
       mimeType: "application/json",
     },
-    async (ctx) => {
+    async (_uri, ctx) => {
       const auth = getAuthManager(ctx.auth, pbUrl);
       const pb = auth.getClient();
       const userId = auth.getUserId();

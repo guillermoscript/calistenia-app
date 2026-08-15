@@ -3,11 +3,11 @@
  * inline feedback banners consistent across every widget so the set reads as
  * one designed system. See [[lib/theme]] for the palette.
  *
- * Lives in resources/lib/ (no `widget.tsx`) so the mcp-use bundler ignores it
- * as a widget entry.
+ * Lives in views/lib/ (no `view.tsx`) so the mcp-use v2 CLI ignores it as a
+ * View entry. In v2 there is no provider wrapper: the runtime bootstraps the
+ * host bridge and auto-resizes the iframe, so these components render bare.
  */
 import type { CSSProperties } from "react";
-import { McpUseProvider } from "mcp-use/react";
 import { useAppColors, FONT, FONT_DISPLAY, FONT_MONO, type AppColors } from "./theme";
 import { WidgetFonts } from "./fonts";
 
@@ -15,12 +15,28 @@ import { WidgetFonts } from "./fonts";
 export function WidgetLoading({ text }: { text: string }) {
   const c = useAppColors();
   return (
-    <McpUseProvider autoSize>
+    <>
       <WidgetFonts />
       <div style={{ padding: 16, backgroundColor: c.bg, color: c.sub, fontFamily: FONT, fontSize: 13 }}>
         {text}
       </div>
-    </McpUseProvider>
+    </>
+  );
+}
+
+/**
+ * Standard error state — rendered when the tool that owns the View answered
+ * with `isError: true` (`useToolContext().status === "error"`).
+ */
+export function WidgetError({ message }: { message: string }) {
+  const c = useAppColors();
+  return (
+    <>
+      <WidgetFonts />
+      <div style={{ padding: 16, backgroundColor: c.bg, color: c.danger, fontFamily: FONT, fontSize: 13 }}>
+        {message}
+      </div>
+    </>
   );
 }
 

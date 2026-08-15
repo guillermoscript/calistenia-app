@@ -1,10 +1,10 @@
-import type { MCPServer } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat } from "../utils.js";
 import { localize } from "../lib/i18n.js";
 
-export function registerMediaTools(server: MCPServer, pbUrl: string) {
+export function registerMediaTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // LIST EXERCISE MEDIA
   // ──────────────────────────────────────────────────────────────

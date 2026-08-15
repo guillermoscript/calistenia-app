@@ -1,5 +1,5 @@
-import type { MCPServer } from "mcp-use/server";
-import { widget, text } from "mcp-use/server";
+import type { AppServer } from "../mcpuse/auth-bridge.js";
+import { widget, text } from "mcp-use";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat, today, daysAgo, toDateStr } from "../utils.js";
@@ -252,7 +252,7 @@ async function checkAchievements(
 
 // ── Tool registration ───────────────────────────────────────────────────────
 
-export function registerGamificationTools(server: MCPServer, pbUrl: string) {
+export function registerGamificationTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
   // SYNC STATS — The core engine
   // ──────────────────────────────────────────────────────────────
