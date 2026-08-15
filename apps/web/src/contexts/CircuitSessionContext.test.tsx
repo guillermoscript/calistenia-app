@@ -596,9 +596,12 @@ describe('flush de la cola al montar (retry)', () => {
 
     const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
 
-    await waitFor(() => expect(mockCreate).toHaveBeenCalled())
+    // Se espera al contador ya asentado, no a la primera llamada: entre que
+    // `create` se invoca y `setUnsavedCount` corre hay un tick, y asertar en
+    // medio hace el test flaky (falla en runners lentos y pasa en local).
+    await waitFor(() => expect(result.current.unsavedCount).toBe(0))
+    expect(mockCreate).toHaveBeenCalled()
     expect(mockCreate.mock.calls[0][0].client_id).toBeTruthy()
-    expect(result.current.unsavedCount).toBe(0)
   })
 
   it('si una falla por red y otra se guarda, deja solo la fallida en la cola', async () => {
