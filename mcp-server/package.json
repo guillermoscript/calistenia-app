@@ -17,6 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@calistenia/core": "file:../packages/core",
     "@ai-sdk/anthropic": "^4.0.27",
     "@ai-sdk/google": "^4.0.31",
     "@ai-sdk/openai": "^4.0.27",

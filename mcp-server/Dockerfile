@@ -2,13 +2,15 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY mcp-server/package.json mcp-server/package-lock.json ./mcp-server/
+COPY packages/core/ ./packages/core/
+WORKDIR /app/mcp-server
 RUN npm ci
 
-COPY tsconfig.json ./
-COPY src/ ./src/
-COPY views/ ./views/
-COPY public/ ./public/
+COPY mcp-server/tsconfig.json ./
+COPY mcp-server/src/ ./src/
+COPY mcp-server/views/ ./views/
+COPY mcp-server/public/ ./public/
 # `mcp-use build` bundles src/server.ts + every views/<name>/view.tsx into
 # .mcp-use/build/ (index.js + manifest.json + views/<name>/assets + views/public).
 # It evaluates the entry module while doing so, so it must not need any
@@ -34,7 +36,9 @@ ENV PORT=3001
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY mcp-server/package.json mcp-server/package-lock.json ./mcp-server/
+COPY packages/core/ ./packages/core/
+WORKDIR /app/mcp-server
 # mcp-use (and its CLI, which owns `start`) is a regular dependency, so the
 # production install is enough to serve the build.
 RUN npm ci --omit=dev
@@ -42,8 +46,8 @@ RUN npm ci --omit=dev
 # Prebuilt server + views (see builder). `mcp-use start` reads
 # .mcp-use/build/manifest.json and serves the view assets from there; the
 # `public/` fonts are copied into .mcp-use/build/views/public by the build.
-COPY --from=builder /app/.mcp-use/build ./.mcp-use/build
-COPY data/ ./data/
+COPY --from=builder /app/mcp-server/.mcp-use/build ./.mcp-use/build
+COPY mcp-server/data/ ./data/
 
 RUN adduser -D -u 1001 apiuser
 USER apiuser

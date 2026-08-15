@@ -9,6 +9,7 @@ import { trendsChartPropsSchema } from "../views/trends-chart.schema.js";
 import { todayDashboardPropsSchema } from "../views/today-dashboard.schema.js";
 import { localize } from "../lib/i18n.js";
 import { pickLocale, readiness as readinessMsg } from "../lib/tool-i18n.js";
+import { calculateMacroDetails, calculateMacros } from "@calistenia/core/lib/nutritionGoal";
 
 export function registerSmartTools(server: AppServer, pbUrl: string) {
 
@@ -981,72 +982,46 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
           goal: z
             .enum(["muscle_gain", "fat_loss", "recomp", "maintain"])
             .describe("Body composition goal"),
+          pace: z
+            .enum(["gradual", "balanced", "aggressive"])
+            .optional()
+            .describe("Rate for calorie adjustments. Defaults to balanced."),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async ({ weight_kg, height_cm, age, sex, activity_level, goal }, ctx) => {
+    async ({ weight_kg, height_cm, age, sex, activity_level, goal, pace }, ctx) => {
       try {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
-        // 1. BMR (Mifflin-St Jeor)
-        let bmr: number;
-        if (sex === "male") {
-          bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + 5;
-        } else {
-          bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age - 161;
-        }
+        const calculatedGoal = calculateMacros(
+          weight_kg,
+          height_cm,
+          age,
+          sex,
+          activity_level,
+          goal,
+          pace,
+        );
+        // Keep the established response metadata without recreating its formula here.
+        const calculation = calculateMacroDetails(
+          weight_kg,
+          height_cm,
+          age,
+          sex,
+          activity_level,
+          goal,
+          pace,
+        );
 
-        // 2. Activity multiplier
-        const multipliers: Record<string, number> = {
-          sedentary: 1.2,
-          light: 1.375,
-          moderate: 1.55,
-          active: 1.725,
-          very_active: 1.9,
-        };
-        const tdee = Math.round(bmr * multipliers[activity_level]);
-
-        // 3. Goal adjustment
-        let targetCalories: number;
-        let proteinPerKg: number;
-
-        switch (goal) {
-          case "muscle_gain":
-            targetCalories = tdee + 300; // ~300 kcal surplus
-            proteinPerKg = 2.0;
-            break;
-          case "fat_loss":
-            targetCalories = tdee - 400; // ~400 kcal deficit
-            proteinPerKg = 2.2; // higher protein to preserve muscle
-            break;
-          case "recomp":
-            targetCalories = tdee; // maintenance
-            proteinPerKg = 2.0;
-            break;
-          case "maintain":
-          default:
-            targetCalories = tdee;
-            proteinPerKg = 1.6;
-            break;
-        }
-
-        // 4. Macro split
-        const protein = Math.round(weight_kg * proteinPerKg);
-        const proteinCals = protein * 4;
-        const fatCals = Math.round(targetCalories * 0.25); // 25% from fat
-        const fat = Math.round(fatCals / 9);
-        const carbCals = targetCalories - proteinCals - fatCals;
-        const carbs = Math.round(carbCals / 4);
-
-        // 5. Save to nutrition_goals
+        // Save the same canonical values used by web and mobile.
         const goalData = {
           goal,
-          daily_calories: targetCalories,
-          daily_protein: protein,
-          daily_carbs: carbs,
-          daily_fat: fat,
+          daily_calories: calculatedGoal.dailyCalories,
+          daily_protein: calculatedGoal.dailyProtein,
+          daily_carbs: calculatedGoal.dailyCarbs,
+          daily_fat: calculatedGoal.dailyFat,
           weight: weight_kg,
           height: height_cm,
           age,
@@ -1066,43 +1041,43 @@ export function registerSmartTools(server: AppServer, pbUrl: string) {
         }
 
         const goalLabels: Record<string, string> = {
-          muscle_gain: "Muscle Gain (+300 kcal)",
-          fat_loss: "Fat Loss (-400 kcal)",
-          recomp: "Recomposition (maintenance)",
+          muscle_gain: "Muscle Gain",
+          fat_loss: "Fat Loss",
+          recomp: "Recomposition",
           maintain: "Maintenance",
         };
 
+        const proteinCals = calculatedGoal.dailyProtein * 4;
+        const fatCals = calculatedGoal.dailyFat * 9;
+        const carbCals = calculatedGoal.dailyCarbs * 4;
         const text = [
           `# Calculated Macros`,
           ``,
           `## Your Profile`,
           `- ${sex}, ${age}y, ${height_cm}cm, ${weight_kg}kg`,
           `- Activity: ${activity_level} | Goal: ${goalLabels[goal]}`,
-          ``,
-          `## Calculations`,
-          `- **BMR**: ${Math.round(bmr)} kcal (Mifflin-St Jeor)`,
-          `- **TDEE**: ${tdee} kcal (× ${multipliers[activity_level]} for ${activity_level})`,
-          `- **Target**: ${targetCalories} kcal/day`,
+          ...(pace ? [`- Pace: ${pace}`] : []),
           ``,
           `## Daily Macro Targets (saved)`,
+          `- **Target**: ${calculatedGoal.dailyCalories} kcal/day`,
           `| Macro | Grams | Calories | % of total |`,
           `|-------|-------|----------|------------|`,
-          `| Protein | **${protein}g** (${proteinPerKg}g/kg) | ${proteinCals} | ${Math.round((proteinCals / targetCalories) * 100)}% |`,
-          `| Carbs | **${carbs}g** | ${carbCals} | ${Math.round((carbCals / targetCalories) * 100)}% |`,
-          `| Fat | **${fat}g** | ${fatCals} | ${Math.round((fatCals / targetCalories) * 100)}% |`,
-          `| **Total** | — | **${targetCalories}** | 100% |`,
+          `| Protein | **${calculatedGoal.dailyProtein}g** | ${proteinCals} | ${Math.round((proteinCals / calculatedGoal.dailyCalories) * 100)}% |`,
+          `| Carbs | **${calculatedGoal.dailyCarbs}g** | ${carbCals} | ${Math.round((carbCals / calculatedGoal.dailyCalories) * 100)}% |`,
+          `| Fat | **${calculatedGoal.dailyFat}g** | ${fatCals} | ${Math.round((fatCals / calculatedGoal.dailyCalories) * 100)}% |`,
+          `| **Total** | — | **${calculatedGoal.dailyCalories}** | 100% |`,
         ].join("\n");
 
         return {
           content: [{ type: "text", text }],
           structuredContent: {
-            bmr: Math.round(bmr),
-            tdee,
-            target_calories: targetCalories,
-            protein_g: protein,
-            carbs_g: carbs,
-            fat_g: fat,
-            protein_per_kg: proteinPerKg,
+            bmr: calculation.bmr,
+            tdee: calculation.tdee,
+            target_calories: calculatedGoal.dailyCalories,
+            protein_g: calculatedGoal.dailyProtein,
+            carbs_g: calculatedGoal.dailyCarbs,
+            fat_g: calculatedGoal.dailyFat,
+            protein_per_kg: calculation.proteinPerKg,
             goal,
             saved: true,
           },
