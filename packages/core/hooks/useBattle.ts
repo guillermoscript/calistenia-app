@@ -20,6 +20,7 @@ import {
   leaveBattle,
   newIdempotencyKey,
   publishBattle,
+  rematchBattle,
   reportBattleProgress,
   revokeBattleInvites,
   setBattleReady,
@@ -74,6 +75,7 @@ export interface UseBattleResult {
     leave: boolean
     cancel: boolean
     invite: boolean
+    rematch: boolean
   }
   actions: {
     refresh: () => void
@@ -86,6 +88,8 @@ export interface UseBattleResult {
     finish: (progress?: ProgressInput) => Promise<void>
     leave: () => Promise<void>
     cancel: () => Promise<void>
+    /** Creates a new battle from this closed one and resolves with **its** snapshot. */
+    rematch: () => Promise<BattleSnapshot>
   }
 }
 
@@ -238,6 +242,26 @@ export function useBattle(battleId: string, currentUserId: string | null): UseBa
     await run(() => cancelBattle(battleId, newIdempotencyKey()))
   }, [battleId, run])
 
+  /**
+   * One key per intent, held until the rematch actually lands (#357).
+   *
+   * Every other action mints a key inside the callback, which is right for them: each
+   * press is a separate intent and a retry is a fresh one. Rematch is the opposite —
+   * two presses a moment apart mean one rematch, and a key minted per call would make
+   * the second press create a second battle. Keeping the key means the replay comes back
+   * pointing at the battle the first press already created.
+   */
+  const rematchKeyRef = useRef<string | null>(null)
+  const rematch = useCallback(async () => {
+    if (!rematchKeyRef.current) rematchKeyRef.current = newIdempotencyKey()
+    // `applies: false` — this snapshot belongs to a *different* battle, and feeding it
+    // into a hook bound to `battleId` would swap the results screen out from under the
+    // person reading it. The caller navigates instead.
+    const next = await run(() => rematchBattle(battleId, rematchKeyRef.current!), false)
+    rematchKeyRef.current = null
+    return next
+  }, [battleId, run])
+
   // ── Derived ────────────────────────────────────────────────────────────────
 
   const isCreator = !!(snapshot && currentUserId && snapshot.battle.creator === currentUserId)
@@ -245,7 +269,7 @@ export function useBattle(battleId: string, currentUserId: string | null): UseBa
   const can = useMemo(() => {
     const none = {
       ready: false, unready: false, start: false, progress: false,
-      finish: false, leave: false, cancel: false, invite: false,
+      finish: false, leave: false, cancel: false, invite: false, rematch: false,
     }
     if (!snapshot || !currentUserId) return none
 
@@ -272,6 +296,12 @@ export function useBattle(battleId: string, currentUserId: string | null): UseBa
       cancel: battle.creator === currentUserId &&
         ['draft', 'lobby', 'ready', 'live'].includes(battle.status),
       invite: battle.creator === currentUserId && battle.status === 'lobby',
+      // Any former participant may call it, not just the creator (#357): "play again
+      // with the same group" should not die because the person who opened the first
+      // battle has since left. A seat is the qualification; the creator keeps it even
+      // when a draft was cancelled before it seated them.
+      rematch: ['finished', 'expired', 'cancelled'].includes(battle.status) &&
+        (me !== null || battle.creator === currentUserId),
     }
   }, [snapshot, currentUserId, phase])
 
@@ -298,6 +328,7 @@ export function useBattle(battleId: string, currentUserId: string | null): UseBa
       finish,
       leave,
       cancel,
+      rematch,
     },
   }
 }

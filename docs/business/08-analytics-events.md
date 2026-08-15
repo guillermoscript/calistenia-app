@@ -1,8 +1,18 @@
 # Analytics & Growth Events
 
-Version: **2**
+Version: **3**
 Owner: Growth / Product
 Destinations: OpenPanel web project and OpenPanel mobile project
+
+> **Version 3 (2026-08-15, issue #357) — battle results and rematch.**
+> Two additions, both mobile-only and both additive: `battle_results_viewed`
+> fires once per viewer per battle when the results screen opens, and
+> `battle_rematch_created` fires when a closed battle spawns a new one.
+> `battle_shared` gains a second `share_type`: it used to mean the lobby invite
+> link and only that, so **any saved report that assumed `battle_shared` implies
+> an invite must now filter `share_type = invite_link`** — the new
+> `share_type = result_card` is someone showing off a finished battle, which is a
+> different moment in the funnel. Nothing was renamed and nothing was removed.
 
 > **Version 2 (2026-08-11, issue #356) — GPS races moved off the `battle_*` names.**
 > Until now the cardio race flow emitted `battle_created` / `battle_joined` /
@@ -77,7 +87,9 @@ GPS coordinates, or unnecessary personal data.
 | `battle_joined` | Invite token is consumed and a participant row is accepted | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | Server creates the `(battle, user)` participant row. Emitted by the joining device |
 | `battle_started` | Battle enters `live` | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | The creator's `start` call is accepted server-side. Emitted once by the creator's device, not by every client that sees the realtime update |
 | `battle_completed` | Battle enters `finished` and results are available | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | Emitted once per battle by the creator's device when it observes the terminal status |
-| `battle_shared` | Battle invite link is shared | `surface=battle`, `source`, `battle_id`, `share_type=invite_link`, `participant_count`, `result`, `share_confirmed` | Mobile | Share sheet returns; see "Share confirmation" below. **The raw invite token is never sent as an analytics property** |
+| `battle_shared` | Battle invite link (`share_type=invite_link`) or finished-result card (`share_type=result_card`) is shared | `surface=battle`, `source`, `battle_id`, `share_type`, `participant_count`, `result`, `share_confirmed` | Mobile | Share sheet returns; see "Share confirmation" below. A result-card share also emits `share_card_shared` with `card_type=battle_result`, from the same outcome, so the two can never disagree. **The raw invite token is never sent as an analytics property**, and the shared image carries no invite token either |
+| `battle_results_viewed` | The results screen of a terminal battle is opened | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | Once per viewer per battle, not once per battle — unlike `battle_completed`, the question it answers is whether anyone looks at the result they earned. `result` carries the viewer's own outcome (`won`, `tied`, `placed`, `solo`, `left`, `none`) |
+| `battle_rematch_created` | A closed battle spawns a new one | `surface=battle`, `source`, `battle_id`, `participant_count`, `result` | Mobile | The server accepted `POST /api/battles/{id}/rematch`. `battle_id` is the **new** battle; a double-tap replays the idempotency key and creates nothing, so it is emitted once per rematch. Also emits `invite_sent` with `share_type=rematch_invite` when former participants were re-invited |
 
 ## Share confirmation
 
@@ -136,6 +148,7 @@ Create a dashboard called **Growth Loop v1** with these reports:
 | Challenge activation | Funnel | `challenge_viewed` → `challenge_joined` → `challenge_progress_updated` → `challenge_completed` | `surface` |
 | Race adoption | Funnel | `race_created` → `race_joined` → `race_started` → `race_completed` | `share_type` |
 | Battle adoption | Funnel | `battle_created` → `battle_joined` → `battle_started` → `battle_completed` | `share_type` |
+| Battle replay | Funnel | `battle_completed` → `battle_results_viewed` → `battle_rematch_created` | `result` |
 | Shares by type | Bar | `share_card_shared` (filter `share_confirmed = true` for confirmed sends) | `share_type` |
 | Post-workout panel | Bar | `post_workout_action_selected` | `action` |
 | Program milestones | Line | `program_milestone_completed` | `program_id` |
@@ -186,6 +199,14 @@ dashboard and confirm the exact UI labels.
   it, and finish it; confirm `battle_created`, `battle_joined`, `battle_started`
   and `battle_completed`, each exactly once, and confirm no `battle_shared`
   payload carries the raw invite token.
+- On that finished battle, open the results screen and confirm one
+  `battle_results_viewed` per account that opens it. Share the result card and
+  confirm one `battle_shared` with `share_type=result_card` alongside one
+  `share_card_shared` with `card_type=battle_result`; cancel a share and confirm
+  neither is emitted.
+- Tap Revancha twice in quick succession and confirm exactly one
+  `battle_rematch_created`, one new battle, and that the other account gets the
+  rematch push. Confirm the old invite link no longer opens anything.
 - Open an `/invite/<code>` link while logged out and confirm one
   `invite_landing_viewed` before the signup screen appears.
 - Open Profile → Referidos and confirm one `referral_status_viewed`; copy and

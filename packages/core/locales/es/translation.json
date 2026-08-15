@@ -4465,5 +4465,16 @@
   "battle.outcomeUnknown": "Sin resultado",
   "battle.noStoredResult": "Esta batalla terminó antes de que se guardaran los resultados.",
   "battle.rankOf": "{{rank}}.º de {{total}}",
-  "battle.compare": "Comparativa"
+  "battle.compare": "Comparativa",
+
+  "battle.wonTitle": "Has ganado",
+  "battle.tiedTitle": "Empate",
+  "battle.soloTitle": "Circuito completado",
+  "battle.soloHint": "Terminaste tú solo: el circuito cuenta igual.",
+  "battle.deletedUser": "Usuario eliminado",
+  "battle.rematch": "Revancha",
+  "battle.rematchCreating": "Creando…",
+  "battle.rematchError": "No se pudo crear la revancha. Inténtalo otra vez.",
+  "battle.shareResult": "Compartir resultado",
+  "battle.sharePreparing": "Generando…"
 }

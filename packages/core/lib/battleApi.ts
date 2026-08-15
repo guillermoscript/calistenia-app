@@ -256,6 +256,23 @@ export function cancelBattle(battleId: string, idempotencyKey?: string): Promise
   })
 }
 
+/**
+ * Play the same circuit again with the same group (#357).
+ *
+ * Returns the snapshot of a **brand-new** battle: new id, `revision: 0`, fresh invites.
+ * The original is never touched — a result is a record, and rewriting it to host a
+ * second run would destroy the first. The old invite tokens are bound to the old
+ * battle's id, so they cannot open this one.
+ *
+ * Pass an idempotency key generated once per *intent*, not per call: reusing the key is
+ * what makes a double-tap return the battle the first tap created instead of a second one.
+ */
+export function rematchBattle(battleId: string, idempotencyKey?: string): Promise<BattleSnapshot> {
+  return send<BattleSnapshot>(`/api/battles/${battleId}/rematch`, 'POST', {
+    idempotency_key: idempotencyKey,
+  })
+}
+
 // ── Invites ──────────────────────────────────────────────────────────────────
 
 /**

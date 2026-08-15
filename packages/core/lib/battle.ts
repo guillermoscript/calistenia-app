@@ -296,6 +296,60 @@ export function battleRestSecondsLeft(restingUntil: string | null, nowMs: number
 }
 
 /**
+ * Whether two scores are genuinely level (#357).
+ *
+ * "Level" means nothing we can honestly measure separates them. That is every term
+ * `compareBattleScores` weighs **except** `tie_break_key`, which is the server's
+ * arbitrary last resort and the reason the results screen used to crown a winner out of
+ * a dead heat.
+ *
+ * `finished_at` stays in the test on purpose. #387 exists because ranking equal work by
+ * record id let the person who finished 25 minutes later win; treating two different
+ * finish times as a tie would quietly undo that. Two people who never finished both
+ * carry `null` and do tie, which is the case this actually comes up in.
+ */
+export function battleScoresLevel(a: BattleScore, b: BattleScore): boolean {
+  return (
+    a.completed_rounds === b.completed_rounds &&
+    a.completed_reps === b.completed_reps &&
+    a.completed_time_seconds === b.completed_time_seconds &&
+    battleTimeMs(a.finished_at) === battleTimeMs(b.finished_at)
+  )
+}
+
+/**
+ * Display ranks, with ties collapsed onto a shared number (#357).
+ *
+ * The server's `rank` is a total order — 1..N, no gaps, no repeats — and stays that way:
+ * the standings list needs a stable row sequence, and `final_standings` has been frozen
+ * with those numbers on every battle closed since #398. This derives the number a person
+ * should *read* on top of it, so it works the same on a live battle and on a ranking
+ * sealed months ago, with no migration and nothing rewritten.
+ *
+ * Ranks skip after a tie (1, 1, 3) — competition convention, and the alternative would
+ * claim three people stood on a two-person podium.
+ */
+export function battleDisplayRanks(standings: BattleStanding[]): Map<string, number> {
+  const ordered = [...standings].sort((a, b) => a.rank - b.rank)
+  const ranks = new Map<string, number>()
+  let currentRank = 0
+
+  ordered.forEach((entry, index) => {
+    const previous = index > 0 ? ordered[index - 1] : null
+    // Only the immediately preceding row can extend a tie: the list is already ordered,
+    // so anything further back is strictly better.
+    if (previous && battleScoresLevel(entry.score, previous.score)) {
+      ranks.set(entry.participant_id, currentRank)
+      return
+    }
+    currentRank = index + 1
+    ranks.set(entry.participant_id, currentRank)
+  })
+
+  return ranks
+}
+
+/**
  * How a closed battle went for one person (#398).
  *
  * `left` is deliberately not `lost`. Walking out is not the same as being beaten, and a
@@ -317,12 +371,17 @@ export function battleOutcomeFor(
 
   // Ranks are assigned across everyone including those who walked out, so "first" has to
   // be measured among the people who actually saw it through.
+  //
+  // Measured on the *display* rank, not the server's (#357): the server always breaks a
+  // dead heat with `tie_break_key`, so reading its rank made one of two level people a
+  // loser on the strength of an arbitrary string. Sharing first place means neither was
+  // beaten, and the record in Progress should not claim otherwise.
+  const displayRanks = battleDisplayRanks(standings)
+  const rankOf = (entry: BattleStanding) => displayRanks.get(entry.participant_id) ?? entry.rank
   const contenders = standings.filter((entry) => entry.status !== 'left')
-  const best = contenders.reduce<BattleStanding | null>(
-    (top, entry) => (top === null || entry.rank < top.rank ? entry : top),
-    null,
-  )
-  return best && best.participant_id === mine.participant_id ? 'won' : 'lost'
+  if (contenders.length === 0) return 'unknown'
+  const best = Math.min(...contenders.map(rankOf))
+  return rankOf(mine) === best ? 'won' : 'lost'
 }
 
 export interface BattleRecord {
@@ -365,6 +424,132 @@ export function battleRecordFrom(
     }
   }
   return record
+}
+
+// ── Results (#357) ───────────────────────────────────────────────────────────
+
+/** One row of the results screen: a standing with its tie-aware rank resolved. */
+export interface BattleResultRow extends BattleStanding {
+  /** Shared with anyone level with this row. See `battleDisplayRanks`. */
+  display_rank: number
+  /** Someone else holds the same `display_rank`. */
+  tied: boolean
+  /**
+   * The account behind this row is gone. `battle_participants.user` is an optional
+   * relation, so deleting an account nulls it and leaves the frozen ranking intact.
+   * The row must still render — the result is a record of what happened — but it
+   * renders as a deleted user rather than under a name that no longer belongs to anyone.
+   */
+  deleted_user: boolean
+}
+
+/**
+ * How the battle ended, for the whole battle rather than for one person.
+ * `no_result` covers a terminal battle with no stored ranking: everything that closed
+ * before #398, where there is no honest way to reconstruct who was where.
+ */
+export type BattleResultState = 'finished' | 'cancelled' | 'expired' | 'no_result' | 'open'
+
+/**
+ * How it went for the person looking at it.
+ *
+ * `solo` is not a lesser `won`. A battle everyone else walked out of is still a circuit
+ * somebody finished, and framing it as a victory over nobody is the kind of hollow
+ * congratulation that makes an app feel like it is not paying attention.
+ */
+export type BattleViewerOutcome = 'won' | 'tied' | 'placed' | 'left' | 'solo' | 'none'
+
+export interface BattleResultView {
+  state: BattleResultState
+  /** Ordered by rank, including everyone who left. Empty when there is no result. */
+  rows: BattleResultRow[]
+  /** The viewer's own row, or null when they were not in it. */
+  me: BattleResultRow | null
+  outcome: BattleViewerOutcome
+  /** How many people saw it through — the denominator that means something. */
+  contenders: number
+}
+
+const TERMINAL_RESULT_STATE: Partial<Record<BattleStatus, BattleResultState>> = {
+  finished: 'finished',
+  cancelled: 'cancelled',
+  expired: 'expired',
+}
+
+/**
+ * Everything the results screen needs, in one derived value (#357).
+ *
+ * The stable result is the ranking frozen onto the battle at close (`final_standings`,
+ * #398) — sealed exactly once, never rewritten by a second close. Reading it is what
+ * makes a result opened from history months later identical to the one seen the moment
+ * the battle ended, with no refetching and no subscription to leak. Live standings are
+ * the fallback only while the seal has not landed yet, which is the brief window where a
+ * viewer can arrive before the final writes.
+ */
+export function battleResultView(
+  battle: Pick<Battle, 'status' | 'final_standings'> | null,
+  liveStandings: BattleStanding[],
+  userId: string | null,
+): BattleResultView {
+  const empty: BattleResultView = {
+    state: 'open', rows: [], me: null, outcome: 'none', contenders: 0,
+  }
+  if (!battle) return empty
+
+  const state = TERMINAL_RESULT_STATE[battle.status]
+  if (!state) return empty
+
+  const sealed = battle.final_standings
+  const source = sealed && sealed.length > 0 ? sealed : liveStandings
+  if (source.length === 0) return { ...empty, state: 'no_result' }
+
+  const displayRanks = battleDisplayRanks(source)
+  const ordered = [...source].sort((a, b) => a.rank - b.rank)
+  const counts = new Map<number, number>()
+  for (const entry of ordered) {
+    const rank = displayRanks.get(entry.participant_id) ?? entry.rank
+    counts.set(rank, (counts.get(rank) ?? 0) + 1)
+  }
+
+  const rows: BattleResultRow[] = ordered.map((entry) => {
+    const display_rank = displayRanks.get(entry.participant_id) ?? entry.rank
+    return {
+      ...entry,
+      display_rank,
+      tied: (counts.get(display_rank) ?? 1) > 1,
+      deleted_user: entry.user === null || entry.user === '',
+    }
+  })
+
+  const me = userId ? rows.find((row) => row.user === userId) ?? null : null
+  const contenderRows = rows.filter((row) => row.status !== 'left')
+
+  return {
+    state,
+    rows,
+    me,
+    contenders: contenderRows.length,
+    outcome: viewerOutcome(state, contenderRows, me),
+  }
+}
+
+function viewerOutcome(
+  state: BattleResultState,
+  contenders: BattleResultRow[],
+  me: BattleResultRow | null,
+): BattleViewerOutcome {
+  // A battle nobody finished has no standing to celebrate or explain away. The heading
+  // already says it was cancelled or expired; the ranking below it is just the record.
+  if (state !== 'finished' || !me) return 'none'
+  if (me.status === 'left') return 'left'
+  if (contenders.length <= 1) return 'solo'
+
+  const best = Math.min(...contenders.map((row) => row.display_rank))
+  if (me.display_rank !== best) return 'placed'
+  // Measured among contenders, not against `me.tied`: that flag counts every row at this
+  // rank, and someone who walked out level with me did not share the win with me.
+  const sharing = contenders.filter((row) => row.display_rank === best).length
+  return sharing > 1 ? 'tied' : 'won'
 }
 
 export function isBattleActiveForMe(

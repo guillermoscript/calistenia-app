@@ -8,7 +8,7 @@ describe('canonical analytics contract', () => {
   it('defines the versioned growth-loop event set without duplicate names', () => {
     const events = Object.values(CANONICAL_ANALYTICS_EVENTS)
 
-    expect(events).toHaveLength(30)
+    expect(events).toHaveLength(32)
     expect(new Set(events).size).toBe(events.length)
     expect(events).toContain('featured_challenge_viewed')
     expect(events).toContain('post_workout_action_viewed')
@@ -17,6 +17,10 @@ describe('canonical analytics contract', () => {
     expect(events).toContain('referral_status_viewed')
     expect(events).toContain('program_milestone_completed')
     expect(events).toContain('battle_shared')
+    // #357: sin estos dos el embudo no sabe si alguien llega a mirar el resultado
+    // que se ha ganado, ni si vuelve a jugar después.
+    expect(events).toContain('battle_results_viewed')
+    expect(events).toContain('battle_rematch_created')
   })
 
   // #353: los programas de comunidad son OTRA cosa que el currículo de

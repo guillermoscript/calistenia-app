@@ -55,6 +55,14 @@ export const CANONICAL_ANALYTICS_EVENTS = {
   battleStarted: 'battle_started',
   battleCompleted: 'battle_completed',
   battleShared: 'battle_shared',
+  /**
+   * The results screen was opened (#357). Separate from `battle_completed`, which fires
+   * once per battle from the creator's device: this one fires per viewer, per visit, and
+   * is what says whether anyone actually looks at the result they earned.
+   */
+  battleResultsViewed: 'battle_results_viewed',
+  /** A rematch created a new battle from a closed one (#357). */
+  battleRematchCreated: 'battle_rematch_created',
 } as const
 
 export type CanonicalAnalyticsEvent = typeof CANONICAL_ANALYTICS_EVENTS[keyof typeof CANONICAL_ANALYTICS_EVENTS]

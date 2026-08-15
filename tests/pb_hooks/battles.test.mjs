@@ -11,7 +11,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
   api, authAs, create, createUser, createAs, expectNotifications, getOne, getOneAs, list,
-  listAs, triggerCron, uniq, update, waitFor,
+  listAs, pushesFor, triggerCron, uniq, update, waitFor,
 } from "./helpers/client.mjs"
 
 // ── Utilidades ───────────────────────────────────────────────────────────────
@@ -1229,4 +1229,190 @@ test("una fila de participante sin usuario no rompe la lectura del creador", asy
     [ctx.creator.id, ctx.friend.id].sort(),
     "la fila huérfana alteró lo que ve el creador",
   )
+})
+
+// ── Revancha (#357) ──────────────────────────────────────────────────────────
+
+/** Una batalla cerrada de dos personas, lista para pedirle la revancha. */
+async function finishedBattle() {
+  const ctx = await liveBattle()
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`)
+  const snap = await post(ctx.friend, `/api/battles/${ctx.battleId}/finish`)
+  assert.equal(snap.battle.status, "finished")
+  return ctx
+}
+
+test("la revancha crea una batalla nueva y no toca la original", async () => {
+  // Un resultado es el registro de lo que pasó. Reutilizar la fila para la segunda
+  // ronda destruiría la primera, así que esto compara la original entera antes y después.
+  const ctx = await finishedBattle()
+  const antes = JSON.stringify(await getOne("battles", ctx.battleId))
+
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/rematch`)
+
+  assert.notEqual(snap.battle.id, ctx.battleId, "la revancha reutilizó la batalla original")
+  assert.equal(snap.battle.status, "lobby")
+  assert.equal(snap.battle.revision, 0, "la nueva batalla no nace con revision 0")
+  assert.equal(snap.battle.creator, ctx.creator.id)
+  assert.deepEqual(snap.battle.config, config(), "la revancha cambió el circuito")
+  assert.equal(snap.participants.length, 1, "quien pide la revancha se sienta, y solo él")
+  assert.equal(
+    JSON.stringify(await getOne("battles", ctx.battleId)), antes,
+    "la batalla original cambió al pedir la revancha",
+  )
+})
+
+test("cualquier antiguo participante puede pedir la revancha, no solo el creador", async () => {
+  // Si dependiera del creador, una batalla cuyo creador ya no está sería un callejón
+  // sin salida. Quien la pide se convierte en creador de la nueva.
+  const ctx = await finishedBattle()
+  const snap = await post(ctx.friend, `/api/battles/${ctx.battleId}/rematch`)
+
+  assert.equal(snap.battle.creator, ctx.friend.id)
+  assert.equal(snap.me.user, ctx.friend.id, "quien pide la revancha no se sentó en ella")
+})
+
+test("un extraño no puede pedir la revancha de una batalla ajena", async () => {
+  const ctx = await finishedBattle()
+  const extrano = await createUser("Curioso Revancha")
+  const res = await postRaw(extrano, `/api/battles/${ctx.battleId}/rematch`)
+  assert.equal(res.status, 403)
+})
+
+test("no hay revancha de una batalla que sigue viva", async () => {
+  const ctx = await liveBattle()
+  const res = await postRaw(ctx.creator, `/api/battles/${ctx.battleId}/rematch`)
+  assert.equal(res.status, 409)
+  assert.equal((await res.json()).error, "battle_open")
+})
+
+test("se puede pedir la revancha de una batalla cancelada y de una caducada", async () => {
+  // Una sala que caducó sin llegar a empezar es donde más sentido tiene reintentarlo.
+  const cancelada = await lobbyWithTwo("Anfitrión Cancel", "Amigo Cancel")
+  await post(cancelada.creator, `/api/battles/${cancelada.battleId}/cancel`)
+  const trasCancelar = await post(cancelada.creator, `/api/battles/${cancelada.battleId}/rematch`)
+  assert.equal(trasCancelar.battle.status, "lobby")
+
+  const caducada = await lobbyWithTwo("Anfitrión Caduca", "Amigo Caduca")
+  await update("battles", caducada.battleId, { last_activity_at: "2020-01-01 00:00:00.000Z" })
+  await triggerCron("battles_expiry")
+  await waitFor(
+    async () => (await getOne("battles", caducada.battleId)).status === "expired",
+    "el cron no expiró el lobby rancio",
+  )
+  const trasCaducar = await post(caducada.creator, `/api/battles/${caducada.battleId}/rematch`)
+  assert.equal(trasCaducar.battle.status, "lobby")
+})
+
+test("dos toques con la misma clave dan UNA sola revancha", async () => {
+  // El criterio literal del #357. La respuesta de esta mutación es otra batalla, así que
+  // repetir la clave tiene que devolver la que creó el primer toque y no una segunda.
+  const ctx = await finishedBattle()
+  const key = "rematch-doble-toque"
+
+  const primera = await post(ctx.creator, `/api/battles/${ctx.battleId}/rematch`, { idempotency_key: key })
+  const segunda = await post(ctx.creator, `/api/battles/${ctx.battleId}/rematch`, { idempotency_key: key })
+
+  assert.equal(segunda.battle.id, primera.battle.id, "el segundo toque creó una batalla distinta")
+  assert.equal(segunda.replayed, true)
+
+  const mias = await listAs(ctx.creator, "battles", "status = 'lobby'")
+  assert.equal(
+    mias.filter((b) => b.id === primera.battle.id).length, 1,
+    "quedaron dos batallas de la misma revancha",
+  )
+})
+
+test("los tokens viejos no abren la revancha", async () => {
+  // Sale gratis del diseño: el hash del token está atado al id de la batalla vieja. El
+  // test existe porque es un criterio de aceptación y no puede romperse en silencio.
+  //
+  // El token hay que pedirlo con la sala todavía abierta: `/invites` solo lo emite en
+  // `lobby`, así que no se puede sacar de una batalla ya cerrada.
+  const ctx = await lobbyWithTwo("Anfitrión Token", "Amigo Token")
+  const viejo = await inviteToken(ctx.creator, ctx.battleId)
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/ready`, { ready: true })
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/ready`, { ready: true })
+  const arrancada = await post(ctx.creator, `/api/battles/${ctx.battleId}/start`)
+  const espera = new Date(arrancada.battle.starts_at).getTime() - Date.now() + 250
+  if (espera > 0) await new Promise((r) => setTimeout(r, espera))
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/finish`)
+  await post(ctx.friend, `/api/battles/${ctx.battleId}/finish`)
+
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/rematch`)
+  const tercero = await createUser("Con Token Viejo")
+  const res = await postRaw(tercero, "/api/battles/join", { token: viejo })
+
+  assert.ok(res.status >= 400, "un token de la batalla vieja abrió la revancha")
+  const dentro = await listAs(ctx.creator, "battle_participants", `battle = '${snap.battle.id}'`)
+  assert.equal(dentro.length, 1, "alguien entró en la revancha con un token viejo")
+})
+
+test("la revancha invita a los antiguos participantes con un token nominal", async () => {
+  const ctx = await finishedBattle()
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/rematch`)
+
+  // `battle_invites` tiene todas las reglas a null, así que se mira como admin.
+  const invitaciones = await list("battle_invites", `battle = '${snap.battle.id}'`)
+  assert.equal(invitaciones.length, 1, "no se emitió una invitación por cada antiguo rival")
+  assert.equal(invitaciones[0].invitee_user, ctx.friend.id, "la invitación no quedó a nombre del rival")
+  assert.equal(invitaciones[0].status, "active")
+})
+
+/**
+ * El token en claro no se guarda en ningún sitio — solo su hash — así que la única
+ * forma honesta de leerlo es por donde de verdad viaja: la push. El mock de
+ * `/api/send-push` captura el cuerpo entero, incluido el enlace profundo.
+ */
+async function rematchTokenFor(user) {
+  const isInvite = (p) => p.body && typeof p.body.url === "string" && p.body.url.indexOf("/battle-invite/") === 0
+  await waitFor(
+    async () => (await pushesFor(user.id)).some(isInvite),
+    "no llegó la push con la invitación de revancha",
+  )
+  const capturadas = (await pushesFor(user.id)).filter(isInvite)
+  return capturadas[capturadas.length - 1].body.url.split("/battle-invite/")[1]
+}
+
+test("la revancha avisa por push al antiguo rival con su enlace", async () => {
+  const ctx = await finishedBattle()
+  // Ya tiene una de cuando el creador arrancó la batalla original (#390); la revancha
+  // añade la segunda.
+  await expectNotifications(ctx.friend.id, "challenge_join", 1, "estado previo")
+
+  await post(ctx.creator, `/api/battles/${ctx.battleId}/rematch`)
+
+  await expectNotifications(ctx.friend.id, "challenge_join", 2, "el rival no se enteró de la revancha")
+  const token = await rematchTokenFor(ctx.friend)
+  assert.ok(token && token.length > 20, "la push no llevaba un token utilizable")
+})
+
+test("un token nominal solo lo gasta su destinatario", async () => {
+  // Es lo que permite que el token viaje en una push: filtrado, no le sirve a nadie más.
+  // El 409 es el mismo que el de un token revocado, para no delatar a quién invitaron.
+  const ctx = await finishedBattle()
+  const snap = await post(ctx.creator, `/api/battles/${ctx.battleId}/rematch`)
+  const token = await rematchTokenFor(ctx.friend)
+
+  const intruso = await createUser("Intruso Revancha")
+  const res = await postRaw(intruso, "/api/battles/join", { token })
+  assert.equal(res.status, 409)
+  assert.equal((await res.json()).error, "invite_invalid")
+
+  const aceptado = await post(ctx.friend, "/api/battles/join", { token })
+  assert.equal(aceptado.me.user, ctx.friend.id, "el destinatario no pudo usar su propia invitación")
+  assert.equal(aceptado.battle.id, snap.battle.id)
+})
+
+test("una invitación sin destinatario sigue valiendo para cualquiera", async () => {
+  // La invitación que se comparte a mano no lleva `invitee_user`, y el guard nominal no
+  // puede haberla estropeado: es el camino por el que entra todo el mundo hoy.
+  const ctx = await lobbyWithTwo("Anfitriona Abierta", "Amiga Abierta")
+  const invitaciones = await list("battle_invites", `battle = '${ctx.battleId}'`)
+  assert.ok(invitaciones.every((i) => !i.invitee_user), "la invitación compartida salió con destinatario")
+
+  const token = await inviteToken(ctx.creator, ctx.battleId)
+  const tercero = await createUser("Tercera Abierta")
+  const snap = await post(tercero, "/api/battles/join", { token })
+  assert.equal(snap.me.user, tercero.id)
 })
