@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - 'mcp-server/**'
+      - 'packages/core/**'
       - '.github/workflows/build-ai-api.yml'
   pull_request:
     branches: [main]
     paths:
       - 'mcp-server/**'
+      - 'packages/core/**'
 
 env:
   REGISTRY: ghcr.io
@@ -96,7 +98,8 @@ jobs:
       - name: Build and push AI API image
         uses: docker/build-push-action@v6
         with:
-          context: ./mcp-server
+          context: .
+          file: ./mcp-server/Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-ai.outputs.tags }}

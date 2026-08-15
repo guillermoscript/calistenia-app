@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   ONBOARDING_ACTIVITY_TO_NUTRITION,
   inferNutritionGoalType,
+  calculateMacroDetails,
   calculateMacros,
   previewNutritionGoal,
   nutritionGoalTypeToPrimaryGoal,
@@ -39,6 +40,13 @@ describe('inferNutritionGoalType', () => {
 })
 
 describe('calculateMacros', () => {
+  it('expone los metadatos del cálculo sin duplicar la fórmula para otros consumidores', () => {
+    const details = calculateMacroDetails(80, 180, 30, 'male', 'moderate', 'fat_loss', 'aggressive')
+
+    expect(details).toMatchObject({ bmr: 1780, tdee: 2759, proteinPerKg: 2.2 })
+    expect(details.goal).toEqual(calculateMacros(80, 180, 30, 'male', 'moderate', 'fat_loss', 'aggressive'))
+  })
+
   // Hombre 80 kg / 180 cm / 30 a / moderate → BMR 1780, TDEE 2759.
   it('mantenimiento: valores exactos esperados', () => {
     expect(calculateMacros(80, 180, 30, 'male', 'moderate', 'maintain')).toEqual({

@@ -13,6 +13,13 @@ import { isPrimaryGoal, primaryGoalToNutritionGoalType } from './primaryGoal'
 
 export type NutritionPace = 'gradual' | 'balanced' | 'aggressive'
 
+export interface MacroCalculationDetails {
+  goal: NutritionGoal
+  bmr: number
+  tdee: number
+  proteinPerKg: number
+}
+
 // ─── Multiplicadores de actividad (Mifflin-St Jeor) ─────────────────────────
 export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
@@ -63,6 +70,22 @@ export function calculateMacros(
   goal: NutritionGoalType,
   pace?: NutritionPace,
 ): NutritionGoal {
+  return calculateMacroDetails(weight, height, age, sex, activityLevel, goal, pace).goal
+}
+
+/**
+ * Fórmula canónica con metadatos para superficies que muestran el desglose de
+ * cálculo, además del objetivo persistible que devuelve `calculateMacros`.
+ */
+export function calculateMacroDetails(
+  weight: number,
+  height: number,
+  age: number,
+  sex: Sex,
+  activityLevel: ActivityLevel,
+  goal: NutritionGoalType,
+  pace?: NutritionPace,
+): MacroCalculationDetails {
   const bmr = sex === 'male'
     ? 10 * weight + 6.25 * height - 5 * age + 5
     : 10 * weight + 6.25 * height - 5 * age - 161
@@ -89,7 +112,12 @@ export function calculateMacros(
   const proteinCals = dailyProtein * 4
   const fatCals = dailyFat * 9
   const dailyCarbs = Math.round((dailyCalories - proteinCals - fatCals) / 4)
-  return { dailyCalories, dailyProtein, dailyCarbs, dailyFat, goal, weight, height, age, sex, activityLevel }
+  return {
+    goal: { dailyCalories, dailyProtein, dailyCarbs, dailyFat, goal, weight, height, age, sex, activityLevel },
+    bmr: Math.round(bmr),
+    tdee: Math.round(tdee),
+    proteinPerKg,
+  }
 }
 
 /** Perfil mínimo para derivar un objetivo recomendado. */
