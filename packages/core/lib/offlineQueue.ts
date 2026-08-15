@@ -22,6 +22,20 @@ function generateId(): string {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
 }
 
+/**
+ * Id de deduplicación que viaja DENTRO del payload (`client_id`) y sobrevive a
+ * los reintentos de la cola.
+ *
+ * Sin él, un `status: 0` no se puede interpretar: significa «no hubo respuesta»,
+ * no «no llegó». La petición pudo procesarse entera en el servidor y perderse
+ * solo la respuesta, así que el reintento crearía una fila duplicada. Con el id
+ * fijo, el índice único parcial de `sets_log`/`sessions` rechaza el segundo
+ * intento y `isAlreadyPersistedError` lo lee como «ya está», no como fallo.
+ */
+export function newClientId(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
+}
+
 function setQueue(queue: QueuedAction[]): void {
   storage.setItem(LS_KEY, JSON.stringify(queue))
 }
@@ -53,6 +67,26 @@ export function cancelQueuedByTempId(tempId: string): boolean {
   if (next.length === queue.length) return false
   setQueue(next)
   return true
+}
+
+/**
+ * Cancela SOLO el último create pendiente que casa con `tempId`, en vez de
+ * todos como hace `cancelQueuedByTempId`.
+ *
+ * Repetir el mismo entrenamiento el mismo día encola dos sesiones bajo la misma
+ * clave `done_<fecha>_<workoutKey>`: deshacer una vez tiene que quitar una, no
+ * las dos. Devuelve true si quitó algo.
+ */
+export function cancelLastQueuedByTempId(tempId: string): boolean {
+  const queue = getQueue()
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (queue[i].tempId === tempId) {
+      queue.splice(i, 1)
+      setQueue(queue)
+      return true
+    }
+  }
+  return false
 }
 
 /**
@@ -88,6 +122,29 @@ export function isNetworkError(error: unknown): boolean {
     return s === 0 || s === undefined
   }
   return true // sin forma de status conocido → tratar como red
+}
+
+/**
+ * ¿El servidor rechazó el replay porque el registro YA existe?
+ *
+ * `sets_log` y `sessions` llevan un índice único parcial sobre
+ * `(user, client_id)`. Si un create se encoló tras un `status: 0` pero en
+ * realidad sí llegó, el reintento choca contra ese índice y PocketBase responde
+ * 400 con `validation_not_unique`. Eso NO es un fallo: es la confirmación de que
+ * el dato está a salvo. Se descarta de la cola igual que un poison, pero sin
+ * reportar el error y contando como procesado, para que `onDrained` invalide las
+ * queries y la app reconcilie con el registro real del servidor.
+ */
+export function isAlreadyPersistedError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  if ((error as { status?: unknown }).status !== 400) return false
+  // El SDK expone el cuerpo en `.response` y (según versión) también en `.data`.
+  const body = (error as any).response ?? (error as any).data
+  const fields = body?.data ?? body
+  if (!fields || typeof fields !== 'object') return false
+  return Object.values(fields).some(
+    (v: any) => typeof v?.code === 'string' && v.code.includes('not_unique'),
+  )
 }
 
 export interface WriteSpec {
@@ -206,6 +263,11 @@ async function drainQueue(pb: PocketBase): Promise<boolean> {
     } catch (e) {
       if (isNetworkError(e)) {
         remaining.push(item) // sigue offline → reintentar luego
+      } else if (isAlreadyPersistedError(e)) {
+        // El create ya había llegado (se perdió su respuesta, no la petición):
+        // el índice único lo rechaza. Descartar sin ruido y contar como
+        // procesado para que la app refresque contra el registro real.
+        processedAny = true
       } else {
         // Respuesta del server (validación/permiso/404): no reintentar.
         getPlatform().reportError?.(e)
