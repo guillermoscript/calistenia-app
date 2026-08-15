@@ -11,6 +11,7 @@ import {
   getVisibleBeginnerChallengePresets,
   resolvePresetChallengeTitle,
 } from './challenge-presets'
+import { getCatalogEntry } from './variants'
 
 describe('beginner challenge presets', () => {
   // Las claves llevan puntos literales, así que hay que desactivar los separadores.
@@ -23,26 +24,51 @@ describe('beginner challenge presets', () => {
     })
   })
 
-  it('contains the four requested presets and keeps cumulative push-ups disabled', () => {
+  it('contains the four requested presets, all enabled now that cumulative scoring exists', () => {
     expect(BEGINNER_CHALLENGE_PRESETS.map((preset) => preset.id)).toEqual([
       'starter_7_day',
       'consistency_30_day',
       'first_10_workouts',
       'pushup_builder',
     ])
-    expect(BEGINNER_CHALLENGE_PRESETS.find((preset) => preset.id === 'pushup_builder')?.enabled).toBe(false)
+    expect(BEGINNER_CHALLENGE_PRESETS.every((preset) => preset.enabled)).toBe(true)
+  })
+
+  // #345: el Push-up Builder nació deshabilitado (#350) porque `most_pushups`
+  // es un PR, no un total; con `total_exercise` (#352) suma las reps de
+  // push-up estándar registradas en la ventana del reto.
+  it('scores the push-up builder as a cumulative total of standard push-ups', () => {
+    const pushups = getBeginnerChallengePreset('pushup_builder')!
+    expect(pushups.metric).toBe('total_exercise')
+    expect(pushups.exerciseSlug).toBe('pushup_std')
+    expect(pushups.goal).toBe(100)
+    expect(pushups.durationDays).toBe(30)
+    expect(pushups.disabledReasonKey).toBeUndefined()
+  })
+
+  it('every preset that scores one exercise names a real catalog exercise', () => {
+    for (const preset of BEGINNER_CHALLENGE_PRESETS) {
+      if (preset.metric === 'exercise' || preset.metric === 'total_exercise') {
+        expect(preset.exerciseSlug, preset.id).toBeTruthy()
+        expect(getCatalogEntry(preset.exerciseSlug!), preset.id).toBeDefined()
+      } else {
+        expect(preset.exerciseSlug, preset.id).toBeUndefined()
+      }
+    }
   })
 
   // #384: una tarjeta con "PRÓXIMAMENTE" que no se puede pulsar no informa,
   // sólo ocupa sitio — el catálogo esconde los presets deshabilitados.
-  it('hides disabled presets from the catalog but keeps resolving them by id', () => {
+  it('shows every enabled preset in the catalog and keeps resolving disabled ones by id', () => {
     expect(getVisibleBeginnerChallengePresets().map((preset) => preset.id)).toEqual([
       'starter_7_day',
       'consistency_30_day',
       'first_10_workouts',
+      'pushup_builder',
     ])
     expect(getVisibleBeginnerChallengePresets().every((preset) => preset.enabled)).toBe(true)
-    // Un reto ya creado desde un preset escondido tiene que seguir resolviendo.
+    // Un reto ya creado desde un preset tiene que seguir resolviendo por id
+    // aunque el preset se retire luego del catálogo.
     expect(getBeginnerChallengePreset('pushup_builder')?.id).toBe('pushup_builder')
   })
 

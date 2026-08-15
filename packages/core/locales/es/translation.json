@@ -2640,7 +2640,6 @@
   "challenge.preset.joining": "UNIÉNDOME...",
   "challenge.preset.open": "VER PROGRESO",
   "challenge.preset.unavailable": "PRÓXIMAMENTE",
-  "challenge.preset.pushup.disabled": "El registro acumulado de push-ups todavía no está disponible.",
   "challenge.preset.confirmTitle": "¿Empezar este reto?",
   "challenge.preset.confirmBody": "{{title}}\n\nInicio: {{startsAt}}\nFin: {{endsAt}}\n\nTu progreso se medirá con tus entrenamientos registrados.",
   "challenge.preset.alreadyJoined": "Ya te uniste a este reto.",

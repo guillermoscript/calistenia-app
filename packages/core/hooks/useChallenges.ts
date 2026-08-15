@@ -287,6 +287,9 @@ export function useChallenges(userId: string | null) {
           creator: userId,
           title: getPresetTitle(preset),
           metric: preset.metric,
+          // `total_exercise`/`exercise` puntúan un ejercicio concreto: sin el
+          // slug el detalle daría 0 para siempre (#345, Push-up Builder).
+          exercise_slug: preset.exerciseSlug ?? '',
           description: getPresetDescription(preset),
           goal: preset.goal,
           starts_at: dates.startsAt,

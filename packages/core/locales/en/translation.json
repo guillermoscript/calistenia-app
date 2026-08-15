@@ -2640,7 +2640,6 @@
   "challenge.preset.joining": "JOINING...",
   "challenge.preset.open": "VIEW PROGRESS",
   "challenge.preset.unavailable": "COMING SOON",
-  "challenge.preset.pushup.disabled": "Cumulative push-up scoring is not available yet.",
   "challenge.preset.confirmTitle": "Start this challenge?",
   "challenge.preset.confirmBody": "{{title}}\n\nStart: {{startsAt}}\nEnd: {{endsAt}}\n\nYour progress will be measured from your logged workouts.",
   "challenge.preset.alreadyJoined": "You already joined this challenge.",

@@ -14,6 +14,11 @@ export interface BeginnerChallengePreset {
   titleKey: string
   descriptionKey: string
   metric: ChallengeMetric
+  /**
+   * Ejercicio del catálogo que puntúa. Obligatorio (por contrato, no por tipo)
+   * para `exercise` y `total_exercise`; el resto de métricas lo ignoran.
+   */
+  exerciseSlug?: string
   goal: number
   durationDays: number
   difficulty: 'beginner'
@@ -53,15 +58,19 @@ export const BEGINNER_CHALLENGE_PRESETS: readonly BeginnerChallengePreset[] = [
     enabled: true,
   },
   {
+    // Suma las reps de push-up estándar registradas en la ventana (#352,
+    // `total_exercise`). Nació deshabilitado (#350) porque `most_pushups` es un
+    // PR (el máximo de una serie), no un total; con la puntuación acumulada
+    // viva ya se puede unir (#345).
     id: 'pushup_builder',
     titleKey: 'challenge.preset.pushup.title',
     descriptionKey: 'challenge.preset.pushup.description',
-    metric: 'most_pushups',
+    metric: 'total_exercise',
+    exerciseSlug: 'pushup_std',
     goal: 100,
     durationDays: 30,
     difficulty: 'beginner',
-    enabled: false,
-    disabledReasonKey: 'challenge.preset.pushup.disabled',
+    enabled: true,
   },
 ] as const
 
@@ -74,9 +83,8 @@ export function getBeginnerChallengePreset(id: string): BeginnerChallengePreset 
  *
  * Una tarjeta que no se puede pulsar no informa de nada, sólo ocupa sitio y
  * frustra, así que un preset deshabilitado se esconde en vez de enseñarse con
- * un "PRÓXIMAMENTE". El flag `enabled` sigue en el modelo: activar
- * `pushup_builder` el día que su puntuación acumulada exista es ponerlo a
- * `true`, sin tocar ninguna de las dos pantallas.
+ * un "PRÓXIMAMENTE". El flag `enabled` sigue en el modelo para poder retirar
+ * un preset del catálogo sin tocar ninguna de las dos pantallas.
  *
  * `getBeginnerChallengePreset` sigue resolviendo los deshabilitados a propósito:
  * un reto ya creado desde un preset debe poder resolver su título aunque el
@@ -148,7 +156,7 @@ export function resolvePresetChallengeDescription(challenge: { description?: str
  * diría "100 entrenamientos" cuando la meta son 100 reps.
  */
 export function getPresetTargetLabel(preset: BeginnerChallengePreset): string {
-  const unit = getMetricUnit(preset.metric)
+  const unit = getMetricUnit(preset.metric, preset.exerciseSlug)
   return unit
     ? i18n.t('challenge.preset.targetUnit', { count: preset.goal, unit })
     : i18n.t('challenge.preset.target', { count: preset.goal })
