@@ -8,7 +8,7 @@ import { qk } from '../lib/query-keys'
 import { parseRepsForPR, estimate1RM } from '../lib/pr-utils'
 import { legacyPrKey, pickAffectedChallenges } from '../lib/challenge-scoring'
 import { isFreeSessionKey, sessionKeyParts } from '../lib/session-key'
-import { persistOrQueue, newClientId, getPendingCreates, cancelLastQueuedByTempId } from '../lib/offlineQueue'
+import { persistOrQueue, newClientId, getQueue, cancelLastQueuedByTempId } from '../lib/offlineQueue'
 import type { Settings, ProgressMap, SetData, ExerciseLog, ExerciseTiming, WeightPR } from '../types'
 
 const LS_KEY = 'calistenia_progress'
@@ -241,22 +241,38 @@ export function pendingNotYetOnServer(pending: any[], serverRows: any[]): any[] 
 }
 
 /**
- * Sesiones encoladas que corresponden a este usuario y al programa activo,
- * aplicando el mismo criterio que el `sessionFilter` de `loadFromPB`
- * (`user = uid && (program = pid || program = "")`).
+ * Sesiones y series encoladas que hay que superponer a lo del servidor.
+ *
+ * Las dos salen de UNA sola lectura de la cola a propósito. `getQueue()` es un
+ * `localStorage.getItem` + `JSON.parse` del blob entero, y pedirlo dos veces no
+ * solo duplica ese coste: abre la puerta a que un drenado caiga entre ambas
+ * llamadas y las sesiones se lean de un snapshot y las series de otro.
+ *
+ * Las sesiones aplican el mismo criterio que el `sessionFilter` de `loadFromPB`
+ * (`user = uid && (program = pid || program = "")`); las series solo filtran por
+ * usuario, porque `sets_log` no se scopea por programa.
  */
-export function pendingSessionRows(uid: string, activeProgramId: string | null, serverRows: any[]): any[] {
-  const pending = getPendingCreates('sessions').filter((d: any) => {
+export function pendingProgressRows(
+  uid: string,
+  activeProgramId: string | null,
+  serverSessions: any[],
+  serverSets: any[],
+): { sessions: any[]; sets: any[] } {
+  const queue = getQueue()
+  const createsOf = (collection: string) =>
+    queue.filter(a => a.collection === collection && a.action === 'create' && a.data).map(a => a.data)
+
+  const sessions = createsOf('sessions').filter((d: any) => {
     if (d?.user !== uid) return false
     if (!activeProgramId) return true
     return !d.program || d.program === activeProgramId
   })
-  return pendingNotYetOnServer(pending, serverRows)
-}
+  const sets = createsOf('sets_log').filter((d: any) => d?.user === uid)
 
-/** Series encoladas de este usuario (`sets_log` no se filtra por programa). */
-export function pendingSetRows(uid: string, serverRows: any[]): any[] {
-  return pendingNotYetOnServer(getPendingCreates('sets_log').filter((d: any) => d?.user === uid), serverRows)
+  return {
+    sessions: pendingNotYetOnServer(sessions, serverSessions),
+    sets: pendingNotYetOnServer(sets, serverSets),
+  }
 }
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
@@ -339,9 +355,10 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
     // escribir la caché: si no, `lsSet` borraría del móvil el entrenamiento que
     // aún no ha podido subir (#301). Los pendientes van delante porque son la
     // escritura más fresca que conoce este dispositivo.
+    const pending = pendingProgressRows(uid, activeProgramId, sessionsRes, setsRes)
     const prog = buildProgressMap(
-      [...pendingSessionRows(uid, activeProgramId, sessionsRes), ...sessionsRes],
-      [...pendingSetRows(uid, setsRes), ...setsRes],
+      [...pending.sessions, ...sessionsRes],
+      [...pending.sets, ...setsRes],
       cardioRes,
     )
 

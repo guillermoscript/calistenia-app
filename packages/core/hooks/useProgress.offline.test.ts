@@ -33,9 +33,13 @@ import { clearQueue, enqueue } from '../lib/offlineQueue'
 import {
   buildProgressMap,
   pendingNotYetOnServer,
-  pendingSessionRows,
-  pendingSetRows,
+  pendingProgressRows,
 } from './useProgress'
+
+const sessionRowsOf = (uid: string, pid: string | null, server: any[] = []) =>
+  pendingProgressRows(uid, pid, server, []).sessions
+const setRowsOf = (uid: string, server: any[] = []) =>
+  pendingProgressRows(uid, null, [], server).sets
 
 const AT = '2026-08-15 09:00:00.000Z'
 const DAY = utcToLocalDateStr(AT)
@@ -101,11 +105,11 @@ describe('pendingNotYetOnServer', () => {
   })
 })
 
-describe('pendingSessionRows', () => {
+describe('pendingProgressRows · sesiones', () => {
   it('deja fuera las sesiones de otro usuario', () => {
     enqueue({ collection: 'sessions', action: 'create', data: { user: 'u1', workout_key: 'p1_lun' } })
     enqueue({ collection: 'sessions', action: 'create', data: { user: 'otro', workout_key: 'p1_mar' } })
-    expect(pendingSessionRows('u1', null, []).map(r => r.workout_key)).toEqual(['p1_lun'])
+    expect(sessionRowsOf('u1', null).map(r => r.workout_key)).toEqual(['p1_lun'])
   })
 
   // Mismo criterio que el sessionFilter de loadFromPB:
@@ -114,29 +118,40 @@ describe('pendingSessionRows', () => {
     enqueue({ collection: 'sessions', action: 'create', data: { user: 'u1', workout_key: 'a', program: 'prog1' } })
     enqueue({ collection: 'sessions', action: 'create', data: { user: 'u1', workout_key: 'b' } })
     enqueue({ collection: 'sessions', action: 'create', data: { user: 'u1', workout_key: 'c', program: 'prog2' } })
-    expect(pendingSessionRows('u1', 'prog1', []).map(r => r.workout_key)).toEqual(['a', 'b'])
+    expect(sessionRowsOf('u1', 'prog1').map(r => r.workout_key)).toEqual(['a', 'b'])
   })
 
   it('sin programa activo no filtra por programa', () => {
     enqueue({ collection: 'sessions', action: 'create', data: { user: 'u1', workout_key: 'c', program: 'prog2' } })
-    expect(pendingSessionRows('u1', null, [])).toHaveLength(1)
+    expect(sessionRowsOf('u1', null)).toHaveLength(1)
   })
 
-  it('ignora lo encolado de otras colecciones', () => {
+  it('ignora lo encolado de otras colecciones y las acciones que no son create', () => {
     enqueue({ collection: 'water_entries', action: 'create', data: { user: 'u1', amount_ml: 250 } })
-    expect(pendingSessionRows('u1', null, [])).toEqual([])
+    enqueue({ collection: 'sessions', action: 'delete', recordId: 'srv_1' })
+    expect(sessionRowsOf('u1', null)).toEqual([])
   })
 })
 
-describe('pendingSetRows', () => {
+describe('pendingProgressRows · series', () => {
   it('filtra por usuario y no por programa', () => {
     enqueue({ collection: 'sets_log', action: 'create', data: { user: 'u1', exercise_id: 'pullups' } })
     enqueue({ collection: 'sets_log', action: 'create', data: { user: 'otro', exercise_id: 'dips' } })
-    expect(pendingSetRows('u1', []).map(r => r.exercise_id)).toEqual(['pullups'])
+    expect(setRowsOf('u1').map(r => r.exercise_id)).toEqual(['pullups'])
   })
 
   it('no duplica la serie que el servidor ya devolvió', () => {
     enqueue({ collection: 'sets_log', action: 'create', data: { user: 'u1', exercise_id: 'pullups', client_id: 'k1' } })
-    expect(pendingSetRows('u1', [setRow({ client_id: 'k1' })])).toEqual([])
+    expect(setRowsOf('u1', [setRow({ client_id: 'k1' })])).toEqual([])
+  })
+
+  // Sesiones y series salen de la MISMA lectura de la cola: no puede colarse un
+  // drenado entre ambas y dejar cada mitad en un snapshot distinto.
+  it('devuelve sesiones y series de una sola pasada, cada una con su filtro', () => {
+    enqueue({ collection: 'sessions', action: 'create', data: { user: 'u1', workout_key: 'p1_lun', program: 'prog2' } })
+    enqueue({ collection: 'sets_log', action: 'create', data: { user: 'u1', exercise_id: 'pullups' } })
+    const out = pendingProgressRows('u1', 'prog1', [], [])
+    expect(out.sessions).toEqual([]) // el programa no casa
+    expect(out.sets.map(r => r.exercise_id)).toEqual(['pullups']) // las series no se filtran por programa
   })
 })

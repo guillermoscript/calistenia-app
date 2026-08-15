@@ -90,17 +90,6 @@ export function cancelLastQueuedByTempId(tempId: string): boolean {
 }
 
 /**
- * Payloads (`data`) de los `create` pendientes de una colección, en orden de
- * cola. Permite a la app pintar lo que aún no ha llegado al servidor en vez de
- * dejar que una recarga desde PocketBase lo borre de la caché local.
- */
-export function getPendingCreates(collection: string): any[] {
-  return getQueue()
-    .filter(a => a.collection === collection && a.action === 'create' && a.data)
-    .map(a => a.data)
-}
-
-/**
  * Aplica un patch al `data` de un create pendiente (el usuario editó offline un
  * registro aún no sincronizado). Devuelve true si parcheó algo.
  */

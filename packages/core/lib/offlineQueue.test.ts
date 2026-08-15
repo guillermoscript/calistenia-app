@@ -5,7 +5,6 @@ import {
   clearQueue,
   cancelQueuedByTempId,
   cancelLastQueuedByTempId,
-  getPendingCreates,
   isAlreadyPersistedError,
   newClientId,
   patchQueuedByTempId,
@@ -98,16 +97,6 @@ describe('enqueue / getQueue / cancel / patch', () => {
     expect(q).toHaveLength(1)
     expect(q[0].data).toEqual({ n: 1 }) // se fue el segundo, no el primero
     expect(cancelLastQueuedByTempId('nope')).toBe(false)
-  })
-
-  it('getPendingCreates filtra por colección, ignora update/delete y conserva el orden', () => {
-    enqueue({ collection: 'sets_log', action: 'create', data: { reps: '8' } })
-    enqueue({ collection: 'sessions', action: 'create', data: { workout_key: 'p1_lun' } })
-    enqueue({ collection: 'sets_log', action: 'create', data: { reps: '10' } })
-    enqueue({ collection: 'sets_log', action: 'delete', recordId: 'srv_1' })
-    expect(getPendingCreates('sets_log')).toEqual([{ reps: '8' }, { reps: '10' }])
-    expect(getPendingCreates('sessions')).toEqual([{ workout_key: 'p1_lun' }])
-    expect(getPendingCreates('water_entries')).toEqual([])
   })
 
   it('newClientId no se repite entre llamadas', () => {
