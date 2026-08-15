@@ -103,7 +103,7 @@ export async function registerPushTokenAsync(
     // al cliente.
     try {
       const existing = await pb.collection('expo_push_tokens').getFirstListItem(
-        `token = "${token}"`,
+        pb.filter('token = {:token}', { token }),
       )
       // Solo llega aquí si el token ya era de este usuario.
       if (existing.user !== userId) {

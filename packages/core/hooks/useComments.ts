@@ -25,7 +25,7 @@ async function fetchThread(sessionId: string): Promise<Comment[]> {
   for (const attempt of attempts) {
     try {
       records = await pb.collection('comments').getFullList({
-        filter: `session_id = '${sessionId}'`,
+        filter: pb.filter('session_id = {:sid}', { sid: sessionId }),
         ...(attempt.expand ? { expand: attempt.expand } : {}),
         $autoCancel: false,
       })
@@ -52,7 +52,10 @@ async function fetchThread(sessionId: string): Promise<Comment[]> {
   if (authorIds.length > 0) {
     try {
       const users = await pb.collection('users').getFullList({
-        filter: authorIds.map(id => `id = '${id}'`).join(' || '),
+        filter: pb.filter(
+          authorIds.map((_, i) => `id = {:a${i}}`).join(' || '),
+          Object.fromEntries(authorIds.map((id, i) => [`a${i}`, id])),
+        ),
         fields: 'id,display_name,email,avatar,collectionId,collectionName',
         $autoCancel: false,
       })
@@ -136,7 +139,10 @@ export function useComments(userId: string | null) {
         staleTime: CACHE_TTL,
         queryFn: async (): Promise<Record<string, number>> => {
           const allComments = await pb.collection('comments').getFullList({
-            filter: sorted.map(id => `session_id = '${id}'`).join(' || '),
+            filter: pb.filter(
+              sorted.map((_, i) => `session_id = {:s${i}}`).join(' || '),
+              Object.fromEntries(sorted.map((id, i) => [`s${i}`, id])),
+            ),
             fields: 'session_id',
             $autoCancel: false,
           })

@@ -351,10 +351,11 @@ onRecordAfterUpdateSuccess(function(e) {
     try {
       participants = $app.findRecordsByFilter(
         "challenge_participants",
-        "challenge = \"" + challengeId + "\"",
+        "challenge = {:cid}",
         "",
         100,
-        0
+        0,
+        { cid: challengeId }
       )
     } catch (err) {
       return

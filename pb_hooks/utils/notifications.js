@@ -57,7 +57,7 @@ function categoryForType(type) {
 function prefAllows(userId, category, channel) {
   try {
     if (!userId) return true
-    var recs = $app.findRecordsByFilter("notification_prefs", "user = '" + userId + "'", "", 1, 0)
+    var recs = $app.findRecordsByFilter("notification_prefs", "user = {:u}", "", 1, 0, { u: userId })
     var rec = (recs && recs.length > 0) ? recs[0] : null
     if (!rec) return true
     if (channel === "push" && rec.getBool("push_enabled") === false) return false
@@ -153,7 +153,7 @@ function sendPush(userId, title, body, url, type, actorId) {
 function getFollowers(userId) {
   var ids = []
   try {
-    var recs = $app.findRecordsByFilter("follows", "following = '" + userId + "'", "", 500, 0)
+    var recs = $app.findRecordsByFilter("follows", "following = {:u}", "", 500, 0, { u: userId })
     for (var i = 0; i < recs.length; i++) {
       var f = recs[i].getString("follower")
       if (f) ids.push(f)
@@ -190,9 +190,13 @@ function countSessions(userId, since) {
   var cols = ["sessions", "circuit_sessions", "cardio_sessions"]
   for (var c = 0; c < cols.length; c++) {
     try {
-      var filter = "user = '" + userId + "'"
-      if (since) filter += " && created >= '" + since + "'"
-      var recs = $app.findRecordsByFilter(cols[c], filter, "", 3, 0)
+      var filter = "user = {:u}"
+      var params = { u: userId }
+      if (since) {
+        filter += " && created >= {:since}"
+        params.since = since
+      }
+      var recs = $app.findRecordsByFilter(cols[c], filter, "", 3, 0, params)
       count += recs.length
     } catch (e) { /* la colección puede no existir */ }
   }
@@ -250,10 +254,11 @@ function checkReferralBonus(userId) {
   try {
     var referrals = $app.findRecordsByFilter(
       "referrals",
-      "referred = '" + userId + "'",
+      "referred = {:u}",
       "",
       1,
-      0
+      0,
+      { u: userId }
     )
     if (!referrals || referrals.length === 0) return
 

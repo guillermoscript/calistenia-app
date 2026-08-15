@@ -675,7 +675,10 @@ export function useProgress(userId: string | null = null, activeProgramId: strin
         const dayEndDate = new Date(new Date(`${d}T00:00:00`).getTime() + 86400000)
         const dayEnd = localMidnightAsUTC(toLocalDateStr(dayEndDate))
         const records = await pb.collection('sessions').getList(1, 1, {
-          filter: `user = "${userId}" && workout_key = "${workoutKey}" && completed_at >= "${dayStart}" && completed_at < "${dayEnd}"`,
+          filter: pb.filter(
+            'user = {:uid} && workout_key = {:key} && completed_at >= {:from} && completed_at < {:to}',
+            { uid: userId, key: workoutKey, from: dayStart, to: dayEnd },
+          ),
         })
         if (records.items.length > 0) {
           await pb.collection('sessions').delete(records.items[0].id)
