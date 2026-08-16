@@ -1,1 +1,1 @@
-export type { Step } from '@/lib/session-machine'
+export type { Step } from '@calistenia/core/lib/session-machine'

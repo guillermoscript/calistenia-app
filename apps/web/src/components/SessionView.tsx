@@ -30,6 +30,7 @@ import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming,
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
 import { ExerciseTimingTracker, formatTimingClock, prepareTimingBreakdown, type ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
+import { buildSteps, type Step } from '@calistenia/core/lib/session-machine'
 
 /** Format a structured tempo object into a compact human-readable string.
  *  e.g. { eccentric: 5, pauseTop: 2 } → "baja 5s · pausa 2s arriba"
@@ -43,27 +44,6 @@ function formatTempo(tempo: ExerciseTempo | undefined): string | null {
   if (tempo.concentric != null)  parts.push(tempo.concentric === 1 ? 'sube explosivo' : `sube ${tempo.concentric}s`)
   if (tempo.pauseTop != null)    parts.push(`pausa ${tempo.pauseTop}s arriba`)
   return parts.length > 0 ? parts.join(' · ') : null
-}
-
-interface Step {
-  exercise: Exercise
-  setNumber: number
-  totalSets: number
-  section: 'warmup' | 'main' | 'cooldown'
-}
-
-function buildSteps(exercises: Exercise[]): Step[] {
-  const steps: Step[] = []
-  exercises.forEach(ex => {
-    // sets=0 explícito → 0 steps; fallback de 1 solo para sets no parseable.
-    // Mantener en sync con flatSteps de ActiveSessionContext.tsx.
-    const parsed = parseInt(String(ex.sets), 10)
-    const total = ex.sets === 'múltiples' ? 3 : Number.isFinite(parsed) ? Math.max(0, parsed) : 1
-    for (let s = 1; s <= total; s++) {
-      steps.push({ exercise: ex, setNumber: s, totalSets: total, section: ex.section || 'main' })
-    }
-  })
-  return steps
 }
 
 const CONFETTI_COLORS = ['#c8f542', '#42c8f5', '#f54242', '#f5c842', '#f542c8', '#42f5a8']

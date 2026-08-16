@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import type { Exercise } from '@calistenia/core/types'
+import type { Exercise } from '../types'
 import {
   buildSteps,
   computeExerciseBoundaries,
   findCurrentExerciseIndex,
   nextPhaseAfterSet,
   type Step,
-} from '../session-machine'
+} from './session-machine'
 
 // Fixture mínimo: las funciones solo leen id/sets/section/supersetGroup.
 function ex(partial: Partial<Exercise> & { id: string }): Exercise {
@@ -46,6 +46,29 @@ describe('buildSteps', () => {
   it('exercise c: intentos → parseInt is NaN → totalSets 1, section defaults to main', () => {
     expect(result[5]).toMatchObject({ setNumber: 1, totalSets: 1, section: 'main' })
     expect(result[5].exercise.id).toBe('c')
+  })
+
+  // Caso #452: sets: 0 explícito daba 1 paso en móvil y 0 en web. La semántica
+  // unificada es la de web: 0 explícito → 0 pasos, el ejercicio no participa.
+  it('sets: 0 (number) → 0 steps', () => {
+    expect(buildSteps([ex({ id: 'z', sets: 0 })])).toEqual([])
+  })
+
+  it('sets: "0" (string) → 0 steps', () => {
+    expect(buildSteps([ex({ id: 'z', sets: '0' })])).toEqual([])
+  })
+
+  it('sets: 0 in the middle does not shift neighbours\' indices', () => {
+    const steps = buildSteps([
+      ex({ id: 'a', sets: 1 }),
+      ex({ id: 'z', sets: 0 }),
+      ex({ id: 'b', sets: 2 }),
+    ])
+    expect(steps.map(s => s.exercise.id)).toEqual(['a', 'b', 'b'])
+  })
+
+  it('negative sets clamp to 0 steps', () => {
+    expect(buildSteps([ex({ id: 'z', sets: -2 })])).toEqual([])
   })
 })
 
