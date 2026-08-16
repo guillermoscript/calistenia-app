@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, ResponseFormat } from "../utils.js";
 import { localize } from "../lib/i18n.js";
+import { listProgramExercises } from "../api/repos/index.js";
 
 export function registerMediaTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -70,10 +71,7 @@ export function registerMediaTools(server: AppServer, pbUrl: string) {
             video_url: video ? pb.files.getUrl(rec, video) : null,
           });
         } else if (program_id) {
-          const exercises = await pb.collection("program_exercises").getFullList({
-            filter: pb.filter('program = {:program_id}', { program_id }),
-            sort: "phase_number,sort_order",
-          });
+          const exercises = await listProgramExercises(pb, program_id, { sort: "phase_number,sort_order" });
           for (const rec of exercises) {
             const images = (rec.demo_images as string[]) || [];
             const video = (rec.demo_video as string) || null;

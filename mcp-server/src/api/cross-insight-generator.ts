@@ -1,8 +1,6 @@
-import { generateObject } from "ai";
 import { z } from "zod";
-import { resolveModel, type Tier } from "./model-resolver.js";
-import { getPromptWithMeta } from "./prompts.js";
-import { langfuseTelemetry } from "./telemetry.js";
+import type { Tier } from "./model-resolver.js";
+import { runStructuredGeneration } from "./structured-generation.js";
 
 // ── Output schema ────────────────────────────────────────────────────────────
 // Framed as OBSERVED PATTERNS, never medical advice/diagnosis. See the
@@ -210,21 +208,15 @@ function buildUserText(ctx: InsightContext): string {
 // ── Generator ────────────────────────────────────────────────────────────────
 
 export async function generateCrossInsight({ context, tier }: CrossInsightInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt } = await getPromptWithMeta("cross-metric-insight");
-
   const userText = buildUserText(context);
 
-  const { object } = await generateObject({
-    model,
+  const { object, modelName } = await runStructuredGeneration({
+    promptName: "cross-metric-insight",
+    telemetryId: "cross-insight-generator",
+    tier,
     schema: CrossInsightSchema,
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: userText },
-    ],
-    telemetry: langfuseTelemetry("cross-insight-generator", {
-      metadata: { tier, modelName, periodType: context.period.type },
-    }),
+    user: userText,
+    metadata: { periodType: context.period.type },
   });
 
   return {

@@ -1,8 +1,6 @@
-import { generateObject } from "ai";
 import { z } from "zod";
-import { resolveModel, type Tier } from "./model-resolver.js";
-import { getPromptWithMeta } from "./prompts.js";
-import { langfuseTelemetry } from "./telemetry.js";
+import type { Tier } from "./model-resolver.js";
+import { runStructuredGeneration } from "./structured-generation.js";
 
 // ── Output schema ────────────────────────────────────────────────────────────
 // Framed as OBSERVED PATTERNS, never medical advice/diagnosis. See the
@@ -137,21 +135,15 @@ function buildSleepUserText(ctx: InsightContext): string {
 // ── Generator ────────────────────────────────────────────────────────────────
 
 export async function generateSleepInsight({ context, tier }: SleepInsightInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt } = await getPromptWithMeta("sleep-pattern-summary");
-
   const userText = buildSleepUserText(context);
 
-  const { object } = await generateObject({
-    model,
+  const { object, modelName } = await runStructuredGeneration({
+    promptName: "sleep-pattern-summary",
+    telemetryId: "sleep-insight-generator",
+    tier,
     schema: SleepInsightSchema,
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: userText },
-    ],
-    telemetry: langfuseTelemetry("sleep-insight-generator", {
-      metadata: { tier, modelName, periodType: context.period.type },
-    }),
+    user: userText,
+    metadata: { periodType: context.period.type },
   });
 
   return {

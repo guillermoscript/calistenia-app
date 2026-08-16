@@ -1,9 +1,7 @@
-import { generateObject } from "ai";
 import { z } from "zod";
-import { resolveModel, type Tier } from "./model-resolver.js";
-import { getPromptWithMeta } from "./prompts.js";
-import { langfuseTelemetry } from "./telemetry.js";
+import type { Tier } from "./model-resolver.js";
 import { RecipeSchema, HowManyMealsSchema } from "./schemas.js";
+import { runStructuredGeneration } from "./structured-generation.js";
 
 const PantryPlannedMealSchema = z.object({
   meal_type: z.enum(["desayuno", "almuerzo", "cena", "snack"]),
@@ -104,9 +102,6 @@ export async function generatePantryPlan({
   budgetKind = "full",
   tier,
 }: PantryPlanInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("pantry-plan-generator");
-
   const modeLine =
     horizon === "day"
       ? `Genera el plan de comidas de UN día (${targetDate ?? "mañana"}): desayuno, almuerzo, cena y snack, cada uno con receta completa.`
@@ -116,26 +111,17 @@ export async function generatePantryPlan({
 
   const prompt = `${inventoryBlock(pantryItems)}\n\n${goalsBlock(goals, budgetKind)}\n\n${modeLine}`;
 
-  const { object, usage } = await generateObject({
-    model,
+  const { object, modelName, usage } = await runStructuredGeneration({
+    promptName: "pantry-plan-generator",
+    tier,
     schema: SCHEMA_BY_HORIZON[horizon],
-    telemetry: langfuseTelemetry("pantry-plan-generator", {
-      prompt: langfusePrompt,
-      metadata: { tier, modelName, horizon },
-    }),
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: prompt },
-    ],
+    user: prompt,
+    metadata: { horizon },
   });
 
   return {
     ...(object as Record<string, unknown>),
     model_used: modelName,
-    usage: {
-      prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
-      completion_tokens: (usage as any)?.completionTokens ?? (usage as any)?.completion_tokens,
-      total_tokens: (usage as any)?.totalTokens ?? (usage as any)?.total_tokens,
-    },
+    usage,
   };
 }

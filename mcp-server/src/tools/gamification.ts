@@ -16,6 +16,7 @@ import {
   xpForLevel,
 } from "../data/achievements.js";
 import type PocketBase from "pocketbase";
+import { getSettings, getUserStats, upsertUserStats } from "../api/repos/index.js";
 
 // ── Sync engine ─────────────────────────────────────────────────────────────
 
@@ -113,7 +114,7 @@ async function computeAllStats(pb: PocketBase, userId: string, tz?: string): Pro
     pb.collection("nutrition_entries").getFullList({ filter: userFilter, sort: "logged_at", fields: "logged_at", requestKey: null }),
     pb.collection("lumbar_checks").getFullList({ filter: userFilter, fields: "id", requestKey: null }),
     pb.collection("weight_entries").getFullList({ filter: userFilter, fields: "id", requestKey: null }),
-    pb.collection("settings").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
+    getSettings(pb, userId),
   ]);
 
   const sessionDates = sessions.map((s) => toDateStr(s.completed_at as string, tz));
@@ -293,16 +294,7 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
         stats.achievements_unlocked = finalAch.total_unlocked;
 
         // 5. Upsert user_stats
-        const existing = await pb
-          .collection("user_stats")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
-
-        if (existing) {
-          await pb.collection("user_stats").update(existing.id, stats);
-        } else {
-          await pb.collection("user_stats").create({ user: userId, ...stats });
-        }
+        await upsertUserStats(pb, userId, stats as unknown as Record<string, unknown>);
 
         const nextLevelXp = xpForLevel(stats.level + 1);
         const xpToNext = nextLevelXp - stats.xp;
@@ -366,10 +358,7 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
-        const stats = await pb
-          .collection("user_stats")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
+        const stats = await getUserStats(pb, userId);
 
         if (!stats) {
           return {
@@ -487,9 +476,7 @@ export function registerGamificationTools(server: AppServer, pbUrl: string) {
           pb.collection("user_achievements").getFullList({
             filter: pb.filter('user = {:userId}', { userId }),
           }),
-          pb.collection("user_stats")
-            .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-            .catch(() => null),
+          getUserStats(pb, userId),
         ]);
 
         const progressMap = new Map(

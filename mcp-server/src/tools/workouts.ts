@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 import { exerciseHistoryPropsSchema } from "../views/exercise-history.schema.js";
+import { listExerciseSets } from "../api/repos/index.js";
 
 export function registerWorkoutTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -393,11 +394,7 @@ export function registerWorkoutTools(server: AppServer, pbUrl: string) {
         const userId = auth.getUserId();
         const tz = auth.getTimezone();
         const from = daysAgo(days, tz);
-        const result = await pb.collection("sets_log").getFullList({
-          filter: pb.filter('user = {:userId} && exercise_id = {:exercise_id} && logged_at >= {:from}', { userId, exercise_id, from }),
-          sort: "logged_at",
-          fields: "id,exercise_id,reps,logged_at,workout_key,note",
-        });
+        const result = await listExerciseSets(pb, userId, exercise_id, { from });
 
         if (result.length === 0) {
           return viewResult(

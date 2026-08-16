@@ -4,6 +4,7 @@ import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, viewResult, PaginationSchema, ResponseFormat, daysAgo, today, toDateStr } from "../utils.js";
 import { nutritionLogResultPropsSchema } from "../views/nutrition-log-result.schema.js";
 import { nutritionSummaryPropsSchema } from "../views/nutrition-summary.schema.js";
+import { getNutritionGoals, upsertNutritionGoals, listTodayNutritionEntries, listNutritionEntries } from "../api/repos/index.js";
 
 export function registerNutritionTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -30,10 +31,7 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
-        const goals = await pb
-          .collection("nutrition_goals")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
+        const goals = await getNutritionGoals(pb, userId);
 
         if (!goals) {
           return {
@@ -141,17 +139,7 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
           return { content: [{ type: "text", text: "No fields to update." }] };
         }
 
-        const existing = await pb
-          .collection("nutrition_goals")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
-
-        let record;
-        if (existing) {
-          record = await pb.collection("nutrition_goals").update(existing.id, updates);
-        } else {
-          record = await pb.collection("nutrition_goals").create({ user: userId, ...updates });
-        }
+        const record = await upsertNutritionGoals(pb, userId, updates);
 
         const changed = Object.keys(updates).map((k) => `**${k}**: ${updates[k]}`).join(", ");
         return {
@@ -343,11 +331,8 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
             ai_model: "manual",
             logged_at: logged_at ?? new Date().toISOString(),
           }),
-          pb.collection("nutrition_entries").getFullList({
-            filter: pb.filter("user = {:userId} && logged_at >= {:from}", { userId, from: `${todayStr} 00:00:00` }),
-            requestKey: null,
-          }),
-          pb.collection("nutrition_goals").getFirstListItem(pb.filter("user = {:userId}", { userId }), { requestKey: null }).catch(() => null),
+          listTodayNutritionEntries(pb, userId, todayStr),
+          getNutritionGoals(pb, userId),
         ]);
 
         // today_totals includes the just-saved entry (it's in todayEntries since we awaited after create)
@@ -461,12 +446,8 @@ export function registerNutritionTools(server: AppServer, pbUrl: string) {
         const to = to_date ?? today(tz);
 
         const [entries, goals] = await Promise.all([
-          pb.collection("nutrition_entries").getFullList({
-            filter: pb.filter('user = {:userId} && logged_at >= {:from} && logged_at <= {:to}', { userId, from, to: `${to} 23:59:59` }),
-            sort: "logged_at",
-            requestKey: null,
-          }),
-          pb.collection("nutrition_goals").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
+          listNutritionEntries(pb, userId, { from, to: `${to} 23:59:59`, sort: "logged_at" }),
+          getNutritionGoals(pb, userId),
         ]);
 
         if (entries.length === 0) {

@@ -1,10 +1,9 @@
-import { generateObject } from "ai";
 import { z } from "zod";
-import { resolveModel, type Tier } from "./model-resolver.js";
-import { compilePrompt, getPromptWithMeta } from "./prompts.js";
-import { langfuseTelemetry } from "./telemetry.js";
+import type { Tier } from "./model-resolver.js";
+import { compilePrompt } from "./prompts.js";
 import { RecipeSchema } from "./schemas.js";
 import type { PantrySnapshotItem } from "./pantry-plan-generator.js";
+import { runStructuredGeneration } from "./structured-generation.js";
 
 // ⚠️ OpenAI strict mode: SIEMPRE .nullable(), NUNCA .optional()
 const PlannedMealSchema = z.object({
@@ -116,9 +115,6 @@ export async function generateDailyMealPlan({
   pantryItems,
   tier,
 }: MealPlanInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("meal-plan-generator");
-
   const { prompt, usedFallback } = await compilePrompt(
     "meal-plan-generator-user",
     dailyMealPlanVars({
@@ -131,30 +127,21 @@ export async function generateDailyMealPlan({
     })
   );
 
-  const { object, usage } = await generateObject({
-    model,
+  const { object, modelName, usage } = await runStructuredGeneration({
+    promptName: "meal-plan-generator",
+    tier,
     schema: MealPlanSchema,
-    telemetry: langfuseTelemetry("meal-plan-generator", {
-      prompt: langfusePrompt,
-      // `userPromptFallback` deja el fallo del guard visible en la traza, que es
-      // donde este tipo de fallo se mira. El AI API no tiene Sentry hoy.
-      metadata: { tier, modelName, userPromptFallback: usedFallback },
-    }),
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: prompt },
-    ],
+    user: prompt,
+    // `userPromptFallback` deja el fallo del guard visible en la traza, que es
+    // donde este tipo de fallo se mira. El AI API no tiene Sentry hoy.
+    metadata: { userPromptFallback: usedFallback },
   });
 
   return {
     meals: object.meals,
     notes: object.notes,
     model_used: modelName,
-    usage: {
-      prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
-      completion_tokens: (usage as any)?.completionTokens ?? (usage as any)?.completion_tokens,
-      total_tokens: (usage as any)?.totalTokens ?? (usage as any)?.total_tokens,
-    },
+    usage,
   };
 }
 
@@ -167,9 +154,6 @@ export async function generateWeeklyMealPlan({
   pantryItems,
   tier,
 }: WeeklyMealPlanInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("weekly-meal-plan-generator");
-
   const prompt = `Diseña un plan semanal (lunes a domingo) para una persona con objetivo: ${goal}.
 Macros diarios objetivo: ${dailyCalories}kcal, ${dailyProtein}g prot, ${dailyCarbs}g carbs, ${dailyFat}g grasa.
 Cada día debe tener 4 comidas (desayuno, almuerzo, cena, snack) que sumen los macros objetivo.
@@ -179,23 +163,16 @@ ${taggingBlock(pantryItems)}
 
 Cada comida debe traer su receta con la lista completa de ingredientes y su etiqueta from.`;
 
-  const { object, usage } = await generateObject({
-    model,
+  const { object, modelName, usage } = await runStructuredGeneration({
+    promptName: "weekly-meal-plan-generator",
+    tier,
     schema: WeeklyMealPlanSchema,
-    telemetry: langfuseTelemetry("weekly-meal-plan-generator", { prompt: langfusePrompt, metadata: { tier, modelName } }),
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: prompt },
-    ],
+    user: prompt,
   });
 
   return {
     days: object.days,
     model_used: modelName,
-    usage: {
-      prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
-      completion_tokens: (usage as any)?.completionTokens ?? (usage as any)?.completion_tokens,
-      total_tokens: (usage as any)?.totalTokens ?? (usage as any)?.total_tokens,
-    },
+    usage,
   };
 }

@@ -1,8 +1,6 @@
-import { generateObject } from "ai";
 import { z } from "zod";
-import { resolveModel, type Tier } from "./model-resolver.js";
-import { getPromptWithMeta } from "./prompts.js";
-import { langfuseTelemetry } from "./telemetry.js";
+import type { Tier } from "./model-resolver.js";
+import { runStructuredGeneration } from "./structured-generation.js";
 
 const PatternSchema = z.object({
   type: z.string().describe("Tipo de patrón: 'positive' o 'negative'"),
@@ -37,9 +35,6 @@ export async function generateWeeklyInsight({
   previousWeekScore,
   tier,
 }: WeeklyInsightInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt } = await getPromptWithMeta("weekly-insight-generator");
-
   let userText = `Analiza las comidas de esta semana y genera un resumen con insights:\n\n`;
 
   // Group meals by day
@@ -62,14 +57,11 @@ export async function generateWeeklyInsight({
   if (goal) userText += `\nObjetivo del usuario: ${goal}`;
   if (previousWeekScore) userText += `\nScore de la semana anterior: ${previousWeekScore}`;
 
-  const { object } = await generateObject({
-    model,
+  const { object, modelName } = await runStructuredGeneration({
+    promptName: "weekly-insight-generator",
+    tier,
     schema: WeeklyInsightSchema,
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: userText },
-    ],
-    telemetry: langfuseTelemetry("weekly-insight-generator", { metadata: { tier, modelName } }),
+    user: userText,
   });
 
   return {

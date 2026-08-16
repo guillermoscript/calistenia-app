@@ -4,6 +4,12 @@ import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, viewResult, ResponseFormat, PaginationSchema } from "../utils.js";
 import { localize, toTranslatable } from "../lib/i18n.js";
 import { programViewPropsSchema } from "../views/program-view.schema.js";
+import {
+  getCurrentProgram,
+  setCurrentProgram as setCurrentProgramRepo,
+  listProgramPhases,
+  listProgramExercises,
+} from "../api/repos/index.js";
 
 export function registerProgramTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -101,12 +107,9 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
-        const userPrograms = await pb.collection("user_programs").getFullList({
-          filter: pb.filter('user = {:userId} && is_current = true', { userId }),
-          expand: "program",
-        });
+        const current = await getCurrentProgram(pb, userId);
 
-        if (userPrograms.length === 0) {
+        if (!current) {
           return {
             content: [
               {
@@ -117,26 +120,13 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
           };
         }
 
-        const userProgram = userPrograms[0];
-        const program = userProgram.expand?.program as Record<string, unknown>;
-
-        if (!program) {
-          return errorResult("Program data not found. The linked program may have been deleted.");
-        }
+        const { userProgram, program } = current;
 
         // Load phases and exercises
         const programId = program.id as string;
         const [phases, exercises] = await Promise.all([
-          pb.collection("program_phases").getFullList({
-            filter: pb.filter('program = {:programId}', { programId }),
-            sort: "sort_order",
-            requestKey: null,
-          }),
-          pb.collection("program_exercises").getFullList({
-            filter: pb.filter('program = {:programId}', { programId }),
-            sort: "priority",
-            requestKey: null,
-          }),
+          listProgramPhases(pb, programId),
+          listProgramExercises(pb, programId, { sort: "priority" }),
         ]);
 
         // Organize exercises by phase + day
@@ -238,34 +228,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
         // Verify program exists
         const program = await pb.collection("programs").getOne(program_id);
 
-        // Deactivate current programs
-        const current = await pb.collection("user_programs").getFullList({
-          filter: pb.filter('user = {:userId} && is_current = true', { userId }),
-          fields: 'id,program,is_current',
-        });
-        for (const up of current) {
-          await pb.collection("user_programs").update(up.id, { is_current: false });
-        }
-
-        // Check if user already has this program selected
-        const existing = await pb
-          .collection("user_programs")
-          .getFirstListItem(pb.filter('user = {:userId} && program = {:program_id}', { userId, program_id }))
-          .catch(() => null);
-
-        if (existing) {
-          await pb.collection("user_programs").update(existing.id, {
-            is_current: true,
-            started_at: new Date().toISOString(),
-          });
-        } else {
-          await pb.collection("user_programs").create({
-            user: userId,
-            program: program_id,
-            is_current: true,
-            started_at: new Date().toISOString(),
-          });
-        }
+        await setCurrentProgramRepo(pb, userId, program_id);
 
         return {
           content: [
@@ -907,19 +870,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
 
         // 4. Optionally set as current program
         if (input.set_as_current) {
-          const current = await pb.collection("user_programs").getFullList({
-            filter: pb.filter('user = {:userId} && is_current = true', { userId }),
-            fields: 'id,program,is_current',
-          });
-          for (const up of current) {
-            await pb.collection("user_programs").update(up.id, { is_current: false });
-          }
-          await pb.collection("user_programs").create({
-            user: userId,
-            program: program.id,
-            is_current: true,
-            started_at: new Date().toISOString(),
-          });
+          await setCurrentProgramRepo(pb, userId, program.id);
         }
 
         const summary = input.phases.map((p, i) => {
@@ -1124,23 +1075,7 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
 
         // Optionally set as current
         if (input.set_as_current) {
-          const current = await pb.collection("user_programs").getFullList({
-            filter: pb.filter("user = {:userId} && is_current = true", { userId }),
-            fields: "id",
-          });
-          if (current.length > 0) {
-            const deactivateBatch = pb.createBatch();
-            for (const up of current) {
-              deactivateBatch.collection("user_programs").update(up.id, { is_current: false });
-            }
-            await deactivateBatch.send();
-          }
-          await pb.collection("user_programs").create({
-            user: userId,
-            program: program.id,
-            is_current: true,
-            started_at: new Date().toISOString(),
-          });
+          await setCurrentProgramRepo(pb, userId, program.id);
         }
 
         const summary = input.phases.map((p) => {
@@ -1211,16 +1146,8 @@ export function registerProgramTools(server: AppServer, pbUrl: string) {
 
         // Copy phases and exercises
         const [phases, exercises] = await Promise.all([
-          pb.collection("program_phases").getFullList({
-            filter: pb.filter('program = {:program_id}', { program_id }),
-            sort: "sort_order",
-            requestKey: null,
-          }),
-          pb.collection("program_exercises").getFullList({
-            filter: pb.filter('program = {:program_id}', { program_id }),
-            sort: "phase_number,day_id,sort_order",
-            requestKey: null,
-          }),
+          listProgramPhases(pb, program_id),
+          listProgramExercises(pb, program_id, { sort: "phase_number,day_id,sort_order" }),
         ]);
 
         const copyBatch = pb.createBatch();

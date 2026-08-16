@@ -1,9 +1,7 @@
-import { generateObject } from "ai";
-import { resolveModel, type Tier } from "./model-resolver.js";
-import { getPromptWithMeta } from "./prompts.js";
-import { langfuseTelemetry } from "./telemetry.js";
+import type { Tier } from "./model-resolver.js";
 import { PantryParseSchema, MatchConsumptionSchema, ReceiptParseSchema } from "./schemas.js";
 import { canonCurrency, sanitizeReceiptItems } from "./receipt-sanitizer.js";
+import { runStructuredGeneration } from "./structured-generation.js";
 
 interface PantryParseInput {
   text: string;
@@ -11,33 +9,23 @@ interface PantryParseInput {
 }
 
 export async function parsePantryText({ text, existingItems }: PantryParseInput) {
-  // Solo parsing, barato: free tier siempre (decisión cerrada en #153/#170)
-  const { model, name: modelName } = resolveModel("free");
-  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("pantry-parser");
-
   const inventoryBlock =
     existingItems.length > 0
       ? `Inventario actual (name_normalized): ${existingItems.join(", ")}`
       : "Inventario actual: vacío";
 
-  const { object, usage } = await generateObject({
-    model,
+  // Solo parsing, barato: free tier siempre (decisión cerrada en #153/#170)
+  const { object, modelName, usage } = await runStructuredGeneration({
+    promptName: "pantry-parser",
+    tier: "free",
     schema: PantryParseSchema,
-    telemetry: langfuseTelemetry("pantry-parser", { prompt: langfusePrompt, metadata: { modelName } }),
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: `${inventoryBlock}\n\nMensaje del usuario: ${text}` },
-    ],
+    user: `${inventoryBlock}\n\nMensaje del usuario: ${text}`,
   });
 
   return {
     ...object,
     model_used: modelName,
-    usage: {
-      prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
-      completion_tokens: (usage as any)?.completionTokens ?? (usage as any)?.completion_tokens,
-      total_tokens: (usage as any)?.totalTokens ?? (usage as any)?.total_tokens,
-    },
+    usage,
   };
 }
 
@@ -48,9 +36,6 @@ interface MatchConsumptionInput {
 
 // #173 F4: matching barato → free tier siempre (misma decisión que el parser)
 export async function matchConsumption({ foods, pantryItems }: MatchConsumptionInput) {
-  const { model, name: modelName } = resolveModel("free");
-  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("pantry-consumption-matcher");
-
   const pantryBlock = pantryItems
     .map((it) => {
       const qty = it.quantity != null ? `${it.quantity} ${it.unit ?? ""}`.trim() : "cantidad desconocida";
@@ -61,14 +46,11 @@ export async function matchConsumption({ foods, pantryItems }: MatchConsumptionI
     .map((f) => `- ${f.name}${f.quantity != null ? ` (${`${f.quantity} ${f.unit ?? ""}`.trim()})` : ""}`)
     .join("\n");
 
-  const { object, usage } = await generateObject({
-    model,
+  const { object, modelName, usage } = await runStructuredGeneration({
+    promptName: "pantry-consumption-matcher",
+    tier: "free",
     schema: MatchConsumptionSchema,
-    telemetry: langfuseTelemetry("pantry-consumption-matcher", { prompt: langfusePrompt, metadata: { modelName } }),
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: `Inventario de la despensa:\n${pantryBlock}\n\nComida logueada:\n${foodsBlock}` },
-    ],
+    user: `Inventario de la despensa:\n${pantryBlock}\n\nComida logueada:\n${foodsBlock}`,
   });
 
   // Blindaje: ids alucinados fuera del inventario no llegan al cliente
@@ -77,11 +59,7 @@ export async function matchConsumption({ foods, pantryItems }: MatchConsumptionI
     ...object,
     matches: object.matches.filter((m) => validIds.has(m.pantry_item_id)),
     model_used: modelName,
-    usage: {
-      prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
-      completion_tokens: (usage as any)?.completionTokens ?? (usage as any)?.completion_tokens,
-      total_tokens: (usage as any)?.totalTokens ?? (usage as any)?.total_tokens,
-    },
+    usage,
   };
 }
 
@@ -93,9 +71,6 @@ interface ReceiptParseInput {
 // #174 F5: visión sobre recibo (borroso, abreviado) = tarea dura → tier del
 // usuario, como analyze-meal. NO fijar "free" (eso es solo para parsing de texto).
 export async function parseReceipt({ images, tier }: ReceiptParseInput) {
-  const { model, name: modelName } = resolveModel(tier);
-  const { prompt: systemPrompt, langfusePrompt } = await getPromptWithMeta("receipt-parser");
-
   const imageContent = images.map((img) => ({
     type: "image" as const,
     image: new Uint8Array(img.buffer),
@@ -106,14 +81,11 @@ export async function parseReceipt({ images, tier }: ReceiptParseInput) {
       ? `Estas ${images.length} fotos son partes del MISMO recibo de supermercado (recibo largo). Extrae todos los items de comida con sus precios, sin duplicar los del solape entre fotos.`
       : "Extrae los items de comida y sus precios de esta foto de recibo de supermercado.";
 
-  const { object, usage } = await generateObject({
-    model,
+  const { object, modelName, usage } = await runStructuredGeneration({
+    promptName: "receipt-parser",
+    tier,
     schema: ReceiptParseSchema,
-    telemetry: langfuseTelemetry("receipt-parser", { prompt: langfusePrompt, metadata: { tier, modelName } }),
-    instructions: systemPrompt,
-    messages: [
-      { role: "user", content: [...imageContent, { type: "text" as const, text: userText }] },
-    ],
+    user: [...imageContent, { type: "text" as const, text: userText }],
   });
 
   // Post-proceso determinista: nombres limpios, name_normalized recalculado,
@@ -126,10 +98,6 @@ export async function parseReceipt({ images, tier }: ReceiptParseInput) {
     items: sanitized.items,
     ignored_lines: sanitized.ignored_lines,
     model_used: modelName,
-    usage: {
-      prompt_tokens: (usage as any)?.promptTokens ?? (usage as any)?.prompt_tokens,
-      completion_tokens: (usage as any)?.completionTokens ?? (usage as any)?.completion_tokens,
-      total_tokens: (usage as any)?.totalTokens ?? (usage as any)?.total_tokens,
-    },
+    usage,
   };
 }

@@ -2,6 +2,7 @@ import type { AppServer } from "../mcpuse/auth-bridge.js";
 import { z } from "zod";
 import { getAuthManager } from "../mcpuse/auth-bridge.js";
 import { errorResult, PaginationSchema, ResponseFormat, daysAgo, today } from "../utils.js";
+import { getSettings, upsertSettings, listSessions, listWeightEntries } from "../api/repos/index.js";
 
 export function registerProgressTools(server: AppServer, pbUrl: string) {
   // ──────────────────────────────────────────────────────────────
@@ -28,10 +29,7 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
         const auth = getAuthManager(ctx.auth, pbUrl);
         const pb = auth.getClient();
         const userId = auth.getUserId();
-        const settings = await pb
-          .collection("settings")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
+        const settings = await getSettings(pb, userId);
 
         if (!settings) {
           return {
@@ -125,17 +123,7 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
           return { content: [{ type: "text", text: "No fields to update. Provide at least one setting to change." }] };
         }
 
-        const existing = await pb
-          .collection("settings")
-          .getFirstListItem(pb.filter('user = {:userId}', { userId }))
-          .catch(() => null);
-
-        let record;
-        if (existing) {
-          record = await pb.collection("settings").update(existing.id, updates);
-        } else {
-          record = await pb.collection("settings").create({ user: userId, ...updates });
-        }
+        const record = await upsertSettings(pb, userId, updates);
 
         const changed = Object.keys(updates).map((k) => `**${k}**: ${updates[k]}`).join(", ");
         return {
@@ -459,22 +447,13 @@ export function registerProgressTools(server: AppServer, pbUrl: string) {
         const from = daysAgo(days, tz);
 
         const [sessions, weightEntries, lumbarChecks, settings] = await Promise.all([
-          pb.collection("sessions").getFullList({
-            filter: pb.filter('user = {:userId} && completed_at >= {:from}', { userId, from }),
-            sort: "completed_at",
-            fields: "id,completed_at",
-            requestKey: null,
-          }),
-          pb.collection("weight_entries").getFullList({
-            filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
-            sort: "date",
-            requestKey: null,
-          }),
+          listSessions(pb, userId, { from, sort: "completed_at", fields: "id,completed_at" }),
+          listWeightEntries(pb, userId, { from, sort: "date" }),
           pb.collection("lumbar_checks").getFullList({
             filter: pb.filter('user = {:userId} && date >= {:from}', { userId, from }),
             requestKey: null,
           }),
-          pb.collection("settings").getFirstListItem(pb.filter('user = {:userId}', { userId }), { requestKey: null }).catch(() => null),
+          getSettings(pb, userId),
         ]);
 
         // Workout consistency (sessions per week)
