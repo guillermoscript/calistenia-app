@@ -8,6 +8,12 @@ import { storage } from '@calistenia/core/platform'
 import type { CircuitDefinition } from '@calistenia/core/types'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { op } from '@calistenia/core/lib/analytics'
+import { persistOrQueue, processQueue, newClientId } from '@calistenia/core/lib/offlineQueue'
+import {
+  CIRCUIT_COLLECTION,
+  countQueuedCircuitSessions,
+  migrateLegacyCircuitQueue,
+} from '@calistenia/core/lib/circuitSessionQueue'
 import { Sentry } from '@/lib/instrument'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -55,8 +61,6 @@ interface CircuitSessionContextType {
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'calistenia_circuit_active'
-const UNSAVED_KEY = 'calistenia_circuit_unsaved'
-const MAX_UNSAVED = 5
 const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 const INITIAL_PROGRESS: CircuitProgress = {
@@ -98,29 +102,6 @@ function clearStorage() {
   try { storage.removeItem(STORAGE_KEY) } catch {}
 }
 
-// ── Unsaved session queue (retry on PocketBase failure) ─────────────────────
-
-function loadUnsaved(): Record<string, unknown>[] {
-  try {
-    const raw = storage.getItem(UNSAVED_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function pushUnsaved(session: Record<string, unknown>) {
-  try {
-    const queue = loadUnsaved()
-    queue.push(session)
-    // FIFO: drop oldest if over limit
-    while (queue.length > MAX_UNSAVED) queue.shift()
-    storage.setItem(UNSAVED_KEY, JSON.stringify(queue))
-  } catch { /* quota exceeded */ }
-}
-
-function clearUnsaved() {
-  storage.removeItem(UNSAVED_KEY)
-}
-
 // ── Complete circuit session (PB + analytics) ───────────────────────────────
 
 function buildCircuitSessionData(
@@ -151,6 +132,11 @@ function buildCircuitSessionData(
     finished_at: new Date(now).toISOString(),
     note: note || '',
     config: circuit,
+    // #464: se genera UNA sola vez, al completar, y viaja dentro del payload
+    // encolado. Es lo que hace que el reintento de una petición que sí llegó
+    // choque contra el índice único parcial de `circuit_sessions` y se lea como
+    // «ya está» en vez de crear una sesión duplicada.
+    client_id: newClientId(),
   }
 
   if (programId) data.program = programId
@@ -370,13 +356,23 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
       note,
     )
 
+    // #464: por la cola offline común. Sin red (o con `status: 0`, que es «no
+    // hubo respuesta», no «no llegó») la sesión se encola y la reintenta
+    // `setupAutoSync` al reconectar; un 4xx/5xx del servidor es determinista y
+    // se reporta en vez de encolarse para siempre.
+    let saved = true
     try {
-      await pb.collection('circuit_sessions').create(data)
+      const record = await persistOrQueue(pb, {
+        collection: CIRCUIT_COLLECTION,
+        action: 'create',
+        data,
+      })
+      if (record === null) saved = false // quedó encolada
     } catch (e) {
-      console.warn('Failed to save circuit session, queuing for retry:', e)
-      pushUnsaved(data)
-      setUnsavedCount(loadUnsaved().length)
+      Sentry.captureException(e, { tags: { feature: 'circuit', op: 'save_session' } })
+      saved = false
     }
+    setUnsavedCount(countQueuedCircuitSessions())
 
     op.track('circuit_completed', {
       mode: circuit.mode,
@@ -385,6 +381,7 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
       exercise_count: circuit.exercises.length,
       duration_seconds: data.duration_seconds as number,
       source,
+      saved,
       platform: 'mobile',
     })
 
@@ -410,56 +407,27 @@ export function CircuitSessionProvider({ userId, children }: ProviderProps) {
 
   // ── Flush de sesiones pendientes en mount + al volver a 'active' ─────────
 
+  // #464: un solo camino de drenado. `processQueue` ya serializa las pasadas
+  // concurrentes (montaje + vuelta a 'active') con su guard en memoria, así que
+  // aquí no hace falta ningún flag de cancelación.
   const flushUnsaved = useCallback(async () => {
     if (!userId) return
-    const queue = loadUnsaved()
-    if (queue.length === 0) return
-
-    const remaining: Record<string, unknown>[] = []
-    for (const session of queue) {
-      try {
-        await pb.collection('circuit_sessions').create(session)
-      } catch (e) {
-        Sentry.captureException(e, { tags: { feature: 'circuit', op: 'flush_unsaved_session' } })
-        remaining.push(session)
-      }
+    try {
+      await processQueue(pb)
+    } catch (e) {
+      Sentry.captureException(e, { tags: { feature: 'circuit', op: 'flush_unsaved_session' } })
     }
-    if (remaining.length > 0) {
-      try { storage.setItem(UNSAVED_KEY, JSON.stringify(remaining)) } catch {}
-    } else {
-      clearUnsaved()
-    }
-    setUnsavedCount(remaining.length)
+    setUnsavedCount(countQueuedCircuitSessions())
   }, [userId])
 
   useEffect(() => {
     if (!userId) return
-    const queue = loadUnsaved()
-    if (queue.length === 0) return
-    setUnsavedCount(queue.length)
-
-    let cancelled = false
-    ;(async () => {
-      const remaining: Record<string, unknown>[] = []
-      for (const session of queue) {
-        if (cancelled) { remaining.push(session); continue }
-        try {
-          await pb.collection('circuit_sessions').create(session)
-        } catch (e) {
-          Sentry.captureException(e, { tags: { feature: 'circuit', op: 'flush_unsaved_session_mount' } })
-          remaining.push(session)
-        }
-      }
-      if (cancelled) return
-      if (remaining.length > 0) {
-        try { storage.setItem(UNSAVED_KEY, JSON.stringify(remaining)) } catch {}
-      } else {
-        clearUnsaved()
-      }
-      setUnsavedCount(remaining.length)
-    })()
-    return () => { cancelled = true }
-  }, [userId])
+    // Trasvasa lo que quedara de la cola casera anterior a #464 antes de contar:
+    // si no, esas sesiones no las volvería a mirar nadie.
+    migrateLegacyCircuitQueue()
+    setUnsavedCount(countQueuedCircuitSessions())
+    flushUnsaved()
+  }, [userId, flushUnsaved])
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {

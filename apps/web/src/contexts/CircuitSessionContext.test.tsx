@@ -5,23 +5,56 @@ import type { CircuitDefinition } from '@calistenia/core/types'
 
 // pb/op se mockean: CircuitSessionContext los usa para persistir sesiones
 // completadas (pb.collection('circuit_sessions').create) y trackear eventos.
-const { mockCreate, mockTrack } = vi.hoisted(() => ({
+const { mockCreate, mockTrack, mockReportError, connectivity } = vi.hoisted(() => ({
   mockCreate: vi.fn(),
   mockTrack: vi.fn(),
+  mockReportError: vi.fn(),
+  connectivity: { online: true },
 }))
 
 vi.mock('@calistenia/core/lib/pocketbase', () => ({
-  pb: { collection: vi.fn(() => ({ create: mockCreate })) },
+  pb: {
+    // #464: la cola de core no drena sin sesión válida (evita descartar
+    // replays sin token como "poison").
+    authStore: { isValid: true, onChange: vi.fn(() => () => {}) },
+    collection: vi.fn(() => ({ create: mockCreate })),
+  },
 }))
 
 vi.mock('@calistenia/core/lib/analytics', () => ({
   op: { track: mockTrack },
 }))
 
+// #464: los circuitos pasan por `offlineQueue`, que lee el adapter de
+// plataforma de core (storage + connectivity). En tests no hay `initCore()`,
+// así que se inyecta aquí, respaldado por el localStorage de jsdom.
+vi.mock('@calistenia/core/platform', () => ({
+  storage: {
+    getItem: (k: string) => window.localStorage.getItem(k),
+    setItem: (k: string, v: string) => window.localStorage.setItem(k, v),
+    removeItem: (k: string) => window.localStorage.removeItem(k),
+  },
+  getPlatform: () => ({
+    connectivity: {
+      isOnline: () => connectivity.online,
+      onOnline: () => () => {},
+      onChange: () => () => {},
+    },
+    reportError: mockReportError,
+  }),
+}))
+
 import { CircuitSessionProvider, useCircuitSession } from './CircuitSessionContext'
+import { getQueue, clearQueue } from '@calistenia/core/lib/offlineQueue'
+import { LEGACY_CIRCUIT_UNSAVED_KEY } from '@calistenia/core/lib/circuitSessionQueue'
 
 const STORAGE_KEY = 'calistenia_circuit_active'
-const UNSAVED_KEY = 'calistenia_circuit_unsaved'
+const UNSAVED_KEY = LEGACY_CIRCUIT_UNSAVED_KEY
+
+/** Sesiones de circuito pendientes en la cola común de core. */
+function queuedCircuits() {
+  return getQueue().filter(a => a.collection === 'circuit_sessions')
+}
 
 function makeCircuit(overrides: Record<string, unknown> = {}): CircuitDefinition {
   return {
@@ -45,6 +78,9 @@ function makeWrapper(userId: string | null) {
 beforeEach(() => {
   mockCreate.mockReset().mockResolvedValue({})
   mockTrack.mockReset()
+  mockReportError.mockReset()
+  connectivity.online = true
+  clearQueue()
 })
 
 describe('useCircuitSession fuera de provider', () => {
@@ -428,17 +464,58 @@ describe('completeCircuit', () => {
     expect(result.current.circuit).toBeNull()
   })
 
-  it('si PB falla: no lanza, encola en calistenia_circuit_unsaved y actualiza unsavedCount', async () => {
-    mockCreate.mockRejectedValueOnce(new Error('network down'))
+  // #464: cada sesión lleva un `client_id` generado UNA sola vez. Es lo que
+  // permite que un reintento de una petición que sí llegó choque contra el
+  // índice único parcial en vez de crear una sesión duplicada.
+  it('la sesión se crea con un client_id no vacío', async () => {
+    const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+    act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
+
+    await act(async () => { await result.current.completeCircuit() })
+
+    expect(mockCreate.mock.calls[0][0].client_id).toBeTruthy()
+  })
+
+  it('si la red falla (status 0): no lanza, encola en la cola de core y actualiza unsavedCount', async () => {
+    const netErr: any = new Error('network down')
+    netErr.status = 0 // «no hubo respuesta», no «no llegó»
+    mockCreate.mockRejectedValueOnce(netErr)
     const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
     act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
 
     await act(async () => { await expect(result.current.completeCircuit()).resolves.toBeUndefined() })
 
     expect(result.current.unsavedCount).toBe(1)
-    const queue = JSON.parse(window.localStorage.getItem(UNSAVED_KEY) ?? '[]')
-    expect(queue).toHaveLength(1)
+    expect(queuedCircuits()).toHaveLength(1)
     // sigue desactivando la sesión aunque el guardado remoto haya fallado
+    expect(result.current.isActive).toBe(false)
+  })
+
+  it('sin red no llega a llamar a PB: encola directamente', async () => {
+    connectivity.online = false
+    const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+    act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
+
+    await act(async () => { await result.current.completeCircuit() })
+
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(queuedCircuits()).toHaveLength(1)
+    expect(result.current.unsavedCount).toBe(1)
+  })
+
+  // #464: un 4xx es respuesta del servidor (determinista). Encolarlo colgaría
+  // la cola reintentándolo para siempre; se reporta y punto.
+  it('un 4xx determinista no se encola: se reporta', async () => {
+    const httpErr: any = new Error('bad request')
+    httpErr.status = 400
+    mockCreate.mockRejectedValueOnce(httpErr)
+    const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+    act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
+
+    await act(async () => { await expect(result.current.completeCircuit()).resolves.toBeUndefined() })
+
+    expect(queuedCircuits()).toHaveLength(0)
+    expect(mockReportError).toHaveBeenCalled()
     expect(result.current.isActive).toBe(false)
   })
 
@@ -446,7 +523,9 @@ describe('completeCircuit', () => {
   // sesión queda encolada): el evento se trackea igual, pero con `saved` para
   // poder segmentar en analytics las sesiones que aún no llegaron al backend.
   it('circuit_completed se trackea con saved:false si el guardado en PB falló', async () => {
-    mockCreate.mockRejectedValueOnce(new Error('network down'))
+    const netErr: any = new Error('network down')
+    netErr.status = 0
+    mockCreate.mockRejectedValueOnce(netErr)
     const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
     act(() => { result.current.startCircuit(makeCircuit(), 'custom') })
 
@@ -475,9 +554,11 @@ describe('completeCircuit', () => {
   })
 })
 
-describe('cola de sesiones no guardadas: cap FIFO de 5', () => {
-  it('al encolar 6 sesiones fallidas, quedan las 5 más recientes (se cae la más vieja)', async () => {
-    mockCreate.mockRejectedValue(new Error('network down'))
+// #464: ya no hay cap FIFO de 5 (descartaba en silencio la sesión más antigua).
+// La cola común de core no tira entrenos.
+describe('sin cap: varias sesiones pendientes se conservan todas', () => {
+  it('seis circuitos sin red quedan los seis encolados', async () => {
+    connectivity.online = false
     const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
 
     for (let i = 0; i < 6; i++) {
@@ -485,17 +566,18 @@ describe('cola de sesiones no guardadas: cap FIFO de 5', () => {
       await act(async () => { await result.current.completeCircuit() })
     }
 
-    const queue = JSON.parse(window.localStorage.getItem(UNSAVED_KEY) ?? '[]')
-    expect(queue).toHaveLength(5)
-    expect(queue.map((s: { circuit_name: string }) => s.circuit_name)).toEqual([
-      'Circuito 1', 'Circuito 2', 'Circuito 3', 'Circuito 4', 'Circuito 5',
+    const queue = queuedCircuits()
+    expect(queue).toHaveLength(6)
+    expect(queue.map(a => a.data.circuit_name)).toEqual([
+      'Circuito 0', 'Circuito 1', 'Circuito 2', 'Circuito 3', 'Circuito 4', 'Circuito 5',
     ])
-    expect(result.current.unsavedCount).toBe(5)
+    expect(result.current.unsavedCount).toBe(6)
   })
 })
 
 describe('flush de la cola al montar (retry)', () => {
   it('reintenta crear en PB las sesiones encoladas y vacía la cola si todas se guardan', async () => {
+    // Cola vieja (pre-#464): al montar se trasvasa a la de core y se drena.
     window.localStorage.setItem(UNSAVED_KEY, JSON.stringify([
       { circuit_name: 'A', user: 'u1' },
       { circuit_name: 'B', user: 'u1' },
@@ -506,22 +588,53 @@ describe('flush de la cola al montar (retry)', () => {
     await waitFor(() => expect(result.current.unsavedCount).toBe(0))
     expect(mockCreate).toHaveBeenCalledTimes(2)
     expect(window.localStorage.getItem(UNSAVED_KEY)).toBeNull()
+    expect(queuedCircuits()).toHaveLength(0)
   })
 
-  it('si una falla y otra se guarda, deja solo la fallida en la cola', async () => {
+  it('al trasvasar la cola vieja le pone client_id a cada sesión', async () => {
+    window.localStorage.setItem(UNSAVED_KEY, JSON.stringify([{ circuit_name: 'A', user: 'u1' }]))
+
+    const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+
+    // Se espera al contador ya asentado, no a la primera llamada: entre que
+    // `create` se invoca y `setUnsavedCount` corre hay un tick, y asertar en
+    // medio hace el test flaky (falla en runners lentos y pasa en local).
+    await waitFor(() => expect(result.current.unsavedCount).toBe(0))
+    expect(mockCreate).toHaveBeenCalled()
+    expect(mockCreate.mock.calls[0][0].client_id).toBeTruthy()
+  })
+
+  it('si una falla por red y otra se guarda, deja solo la fallida en la cola', async () => {
     window.localStorage.setItem(UNSAVED_KEY, JSON.stringify([
       { circuit_name: 'ok', user: 'u1' },
       { circuit_name: 'falla', user: 'u1' },
     ]))
+    const netErr: any = new Error('network down')
+    netErr.status = 0
     mockCreate
       .mockResolvedValueOnce({})
-      .mockRejectedValueOnce(new Error('network down'))
+      .mockRejectedValueOnce(netErr)
 
     const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
 
     await waitFor(() => expect(result.current.unsavedCount).toBe(1))
-    const queue = JSON.parse(window.localStorage.getItem(UNSAVED_KEY) ?? '[]')
-    expect(queue).toEqual([{ circuit_name: 'falla', user: 'u1' }])
+    expect(queuedCircuits().map(a => a.data.circuit_name)).toEqual(['falla'])
+  })
+
+  // #464: el replay de una sesión que SÍ había llegado choca contra el índice
+  // único parcial. Eso es «ya está», no un fallo: se descarta sin duplicar.
+  it('un replay rechazado por el índice único se descarta sin duplicar', async () => {
+    window.localStorage.setItem(UNSAVED_KEY, JSON.stringify([{ circuit_name: 'A', user: 'u1' }]))
+    const dupErr: any = new Error('not unique')
+    dupErr.status = 400
+    dupErr.response = { data: { client_id: { code: 'validation_not_unique' } } }
+    mockCreate.mockRejectedValueOnce(dupErr)
+
+    const { result } = renderHook(() => useCircuitSession(), { wrapper: makeWrapper('u1') })
+
+    await waitFor(() => expect(result.current.unsavedCount).toBe(0))
+    expect(queuedCircuits()).toHaveLength(0)
+    expect(mockReportError).not.toHaveBeenCalled()
   })
 
   it('sin userId no intenta el flush', () => {
