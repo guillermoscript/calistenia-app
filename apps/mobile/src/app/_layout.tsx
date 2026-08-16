@@ -15,7 +15,6 @@ import { colorScheme as nwColorScheme, useColorScheme } from 'nativewind'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalHost } from '@rn-primitives/portal'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { createQueryClient, createCorePersister, setupOnlineManager, PERSIST_MAX_AGE } from '@calistenia/core/lib/query-client'
@@ -67,9 +66,7 @@ function Providers({ children }: { children: ReactNode }) {
     <WorkoutProvider userId={user?.id ?? null}>
       <ActiveSessionProvider getRestForExercise={getRestForExercise} setRestForExercise={setRestForExercise}>
         <CardioSessionProvider userId={user?.id ?? null} userWeight={latestWeight}>
-          <CircuitSessionProvider userId={user?.id ?? null}>
-            <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
-          </CircuitSessionProvider>
+          <CircuitSessionProvider userId={user?.id ?? null}>{children}</CircuitSessionProvider>
         </CardioSessionProvider>
       </ActiveSessionProvider>
     </WorkoutProvider>
