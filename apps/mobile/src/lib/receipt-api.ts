@@ -2,8 +2,7 @@
 import { AI_API_URL } from '@calistenia/core/lib/ai-api'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import type { ReceiptParseResult } from '@calistenia/core/types'
-import { uriToBlob } from '@/lib/image-upload'
-import type { ImageAsset } from '@/lib/nutrition-api'
+import { uriToBlob, type ImageAsset } from '@/lib/image-upload'
 
 export async function parseReceiptMobile(images: ImageAsset[]): Promise<ReceiptParseResult> {
   const formData = new FormData()

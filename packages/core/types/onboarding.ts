@@ -41,3 +41,25 @@ export interface TrainingValues {
   intensity: Intensity | ''
   goal: string
 }
+
+export type ActivityLevel = 'sedentary' | 'light' | 'active' | 'very_active'
+export type Pace = 'gradual' | 'balanced' | 'aggressive'
+
+/**
+ * Valores del paso de datos básicos. Edad/sexo no se persisten en `users`
+ * (PII; viven en `nutrition_goals`); solo alimentan heurísticas del flujo.
+ */
+export interface BasicsValues {
+  weight: string
+  height: string
+  age: string
+  sex: string
+}
+
+export interface GoalsValues {
+  primary_goal: PrimaryGoal | ''
+  goal_weight: string
+  waist: string
+  activity_level: ActivityLevel | ''
+  pace: Pace | ''
+}

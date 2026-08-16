@@ -1,26 +1,19 @@
-/** AI-generated daily meal plan suggestions — port of web DailyMealPlan. */
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { View, Pressable, ActivityIndicator, ScrollView } from 'react-native'
+/**
+ * AI-generated daily meal plan suggestions — port of web DailyMealPlan.
+ * Presentacional (#470): el job + polling viven en core `useDailyMealPlan`.
+ */
+import { useMemo, useState } from 'react'
+import { View, Pressable, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { Sentry } from '@/lib/instrument'
-import { submitMealPlanJob, fetchJobStatus } from '@calistenia/core/lib/ai-jobs-api'
-import type { MealType } from '@calistenia/core/types'
+import { useDailyMealPlan, type DailyPlannedMeal } from '@calistenia/core/hooks/useDailyMealPlan'
 
-export interface PlannedMeal {
-  meal_type: MealType
-  label: string
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-  description?: string
-}
+export type PlannedMeal = DailyPlannedMeal
 
 interface DailyMealPlanProps {
   remaining: { calories: number; protein: number; carbs: number; fat: number }
-  goals: { calories: number; protein: number; carbs: number; fat: number }
   loggedMealTypes: string[]
   onSaveMeal: (meal: PlannedMeal) => Promise<void>
 }
@@ -39,81 +32,20 @@ const MEAL_ICONS: Record<string, string> = {
   snack:    '🍎',
 }
 
-const POLL_INTERVAL_MS = 3000
-const MAX_POLL_SECONDS = 60
-
-export default function DailyMealPlan({ remaining, goals, loggedMealTypes, onSaveMeal }: DailyMealPlanProps) {
+export default function DailyMealPlan({ remaining, loggedMealTypes, onSaveMeal }: DailyMealPlanProps) {
   const { t } = useTranslation()
-  const [plan, setPlan] = useState<PlannedMeal[] | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const messages = useMemo(
+    () => ({ timeout: t('nutrition.dailyPlan.timeout'), failed: t('nutrition.dailyPlan.error') }),
+    [t],
+  )
+  const { plan, loading, error, generate: generatePlan, setError } = useDailyMealPlan({ remaining, loggedMealTypes, messages })
   const [savedMeals, setSavedMeals] = useState<Set<number>>(new Set())
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pollSecondsRef = useRef(0)
 
-  // Clean up poll on unmount
-  useEffect(() => {
-    return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-    }
-  }, [])
-
-  const stopPolling = useCallback(() => {
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current)
-      pollTimerRef.current = null
-    }
-    pollSecondsRef.current = 0
-  }, [])
-
-  const generate = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const generate = () => {
     setSavedMeals(new Set())
-    stopPolling()
-
-    try {
-      const jobId = await submitMealPlanJob({
-        remaining_calories: Math.round(remaining.calories),
-        remaining_protein: Math.round(remaining.protein),
-        remaining_carbs: Math.round(remaining.carbs),
-        remaining_fat: Math.round(remaining.fat),
-        logged_meal_types: loggedMealTypes,
-      })
-
-      // Poll for result
-      pollSecondsRef.current = 0
-      pollTimerRef.current = setInterval(async () => {
-        pollSecondsRef.current += POLL_INTERVAL_MS / 1000
-        if (pollSecondsRef.current >= MAX_POLL_SECONDS) {
-          stopPolling()
-          setLoading(false)
-          setError(t('nutrition.dailyPlan.timeout'))
-          return
-        }
-        try {
-          const job = await fetchJobStatus(jobId)
-          if (job.status === 'completed') {
-            stopPolling()
-            setPlan(job.result?.meals || [])
-            setLoading(false)
-          } else if (job.status === 'failed') {
-            stopPolling()
-            setLoading(false)
-            setError(job.error || t('nutrition.dailyPlan.error'))
-          }
-        } catch (e: any) {
-          stopPolling()
-          setLoading(false)
-          setError(e.message || t('nutrition.dailyPlan.error'))
-        }
-      }, POLL_INTERVAL_MS)
-    } catch (e: any) {
-      setLoading(false)
-      setError(e.message || t('nutrition.dailyPlan.error'))
-    }
-  }, [remaining, loggedMealTypes, stopPolling, t])
+    void generatePlan()
+  }
 
   const nothingRemaining = remaining.calories <= 50
   if (nothingRemaining) return null

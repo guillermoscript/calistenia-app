@@ -7,13 +7,9 @@ import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
+import type { BasicsValues } from '@calistenia/core/types/onboarding'
 
-export interface BasicsValues {
-  weight: string
-  height: string
-  age: string
-  sex: string
-}
+export type { BasicsValues }
 
 interface Props {
   values: BasicsValues

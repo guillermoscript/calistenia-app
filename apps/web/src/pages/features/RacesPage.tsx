@@ -4,7 +4,7 @@
  * Todo el texto sale de `feature.races.*`. Cada dato publicado aquí está
  * anclado a código real, verificado antes de escribir una línea de copy:
  *
- * - salida de 7 s y ventana de 3 h → `apps/web/src/lib/race/raceApi.ts:12-13`
+ * - salida de 7 s y ventana de 3 h → `packages/core/lib/race/raceApi.ts:13-14`
  * - push de progreso cada 3 s, reintentos 1/3/9 s, watchdog de 30 s →
  *   `apps/web/src/contexts/RaceContext.tsx:75-76,134-147`
  * - fixes peores de 30 m descartados, tramos de 0 a 500 m →
