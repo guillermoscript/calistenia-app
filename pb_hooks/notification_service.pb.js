@@ -353,21 +353,24 @@ onRecordAfterUpdateSuccess(function(e) {
       return
     }
 
-    // Collect all user IDs
+    // Collect all user IDs; el push sale en UNA llamada al final (#481) — antes
+    // era un $http.send con timeout de 10 s por participante, dentro de este hook.
     var notified = {}
+    var recipients = []
     for (var i = 0; i < participants.length; i++) {
       var uid = participants[i].getString("user")
       if (uid && !notified[uid]) {
         notified[uid] = true
         helpers.createSelfNotification(uid, "challenge_complete", challengeId, "challenge", { challengeTitle: challengeTitle })
-        helpers.sendPush(uid, "Desafio completado!", challengeTitle, "/challenges/" + challengeId, "challenge_complete")
+        recipients.push(uid)
       }
     }
     // Also notify creator if not already a participant
     if (creatorId && !notified[creatorId]) {
       helpers.createSelfNotification(creatorId, "challenge_complete", challengeId, "challenge", { challengeTitle: challengeTitle })
-      helpers.sendPush(creatorId, "Desafio completado!", challengeTitle, "/challenges/" + challengeId, "challenge_complete")
+      recipients.push(creatorId)
     }
+    helpers.sendPushBatch(recipients, "Desafio completado!", challengeTitle, "/challenges/" + challengeId, "challenge_complete")
   } catch (err) {
     console.log("[notif] challenge_complete hook error:", err)
   }

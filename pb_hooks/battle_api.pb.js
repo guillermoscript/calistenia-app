@@ -9,6 +9,12 @@
  * transition table inside the same transaction as the write, set every timestamp
  * server-side, and increment `revision` so realtime subscribers can detect gaps.
  *
+ * Los handlers viven en `pb_hooks/utils/battles/routes.js`, compuestos con el
+ * wrapper `route()` de `utils/battles/http.js` (#481). Aquí solo quedan los
+ * registros: cada callback corre en un runtime JSVM AISLADO y PocketBase lo
+ * serializa, así que una closure compuesta en este archivo perdería sus variables
+ * libres — por eso cada callback hace `require` y delega, y nada más.
+ *
  * JSVM rules that this file obeys and you must too (see tests/pb_hooks/README.md):
  *   - Each callback runs in an ISOLATED runtime. It cannot see top-level functions
  *     from this file, so every handler `require`s `utils/battles.js` in its own body.
@@ -43,696 +49,60 @@ onRecordCreate(function (e) {
   e.next()
 }, "battles")
 
-// ── GET /api/battles/{id}/snapshot ───────────────────────────────────────────
+// ── Rutas (handlers en utils/battles/routes.js) ──────────────────────────────
 
 routerAdd("GET", "/api/battles/{id}/snapshot", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battle = battles.findBattle($app, e.request.pathValue("id"))
-    battles.requireViewer($app, battle, userId)
-    battles.expireIfStale($app, battle)
-    return e.json(200, battles.snapshotOf($app, battle, userId))
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.snapshot(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/publish — draft → lobby ───────────────────────────
 
 routerAdd("POST", "/api/battles/{id}/publish", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var body = battles.readBody(e)
-    var result = null
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      battles.requireCreator(battle, userId)
-
-      if (!battles.claimIdempotencyKey(txApp, battleId, userId, "publish", body.idempotency_key)) {
-        result = { replayed: true }
-        return
-      }
-
-      battles.assertBattleTransition(battle.getString("status"), "lobby")
-
-      var now = battles.nowMs()
-      battle.set("status", "lobby")
-      battle.set("invite_expires_at", battles.isoAt(now + battles.INVITE_TTL_MS))
-      battles.touch(battle, now)
-      battles.bumpRevision(battle)
-      txApp.save(battle)
-
-      // The creator is a participant like everyone else — they train too.
-      if (!battles.findParticipantForUser(txApp, battleId, userId)) {
-        var collection = txApp.findCollectionByNameOrId("battle_participants")
-        var participant = new Record(collection)
-        participant.set("battle", battleId)
-        participant.set("user", userId)
-        participant.set("status", "joined")
-        participant.set("progress", battles.emptyProgress())
-        participant.set("joined_at", battles.isoAt(now))
-        participant.set("last_seen_at", battles.isoAt(now))
-        txApp.save(participant)
-      }
-    })
-
-    var fresh = battles.findBattle($app, battleId)
-    var snapshot = battles.snapshotOf($app, fresh, userId)
-    if (result && result.replayed) snapshot.replayed = true
-    return e.json(200, snapshot)
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.publish(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/invites — issue a single-use token ────────────────
 
 routerAdd("POST", "/api/battles/{id}/invites", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var issued = null
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      battles.requireCreator(battle, userId)
-      if (!battles.canAcceptJoin(battle.getString("status"))) {
-        battles.fail(409, "lobby_closed", "The lobby is not accepting new participants")
-      }
-
-      var now = battles.nowMs()
-      // Re-issuing after a revoke reopens invitations; otherwise the battle would be
-      // permanently uninvitable once the creator revoked once.
-      battle.set("invite_revoked_at", "")
-      battle.set("invite_expires_at", battles.isoAt(now + battles.INVITE_TTL_MS))
-      battles.touch(battle, now)
-      txApp.save(battle)
-
-      issued = battles.issueInvite(txApp, battle, userId, now)
-    })
-
-    // Deliberately NOT idempotency-keyed: a spare token is harmless (single-use,
-    // expiring) whereas replaying this call could only ever return a null token,
-    // since the raw value is never stored.
-    return e.json(201, {
-      token: issued.token,
-      invite_id: issued.record.getString("id"),
-      expires_at: issued.record.getString("expires_at"),
-    })
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.issueInvite(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/invites/revoke ────────────────────────────────────
 
 routerAdd("POST", "/api/battles/{id}/invites/revoke", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var revoked = 0
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      battles.requireCreator(battle, userId)
-
-      var outstanding = []
-      try {
-        outstanding = txApp.findRecordsByFilter(
-          "battle_invites",
-          "battle = {:b} && status = 'active'",
-          "", 0, 0, { b: battleId },
-        )
-      } catch (err) { outstanding = [] }
-
-      var now = battles.nowMs()
-      for (var i = 0; i < outstanding.length; i++) {
-        outstanding[i].set("status", "revoked")
-        txApp.save(outstanding[i])
-        revoked++
-      }
-
-      battle.set("invite_revoked_at", battles.isoAt(now))
-      battles.touch(battle, now)
-      txApp.save(battle)
-    })
-
-    return e.json(200, { revoked: revoked })
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.revokeInvites(e)
 }, $apis.requireAuth())
 
-// ── POST /api/public/battle-invite — landing metadata, no identities ─────────
-
-/**
- * Unauthenticated on purpose: a friend who is not logged in yet must be able to see
- * what they were invited to before signing up.
- *
- * POST rather than GET so the token is not written into PocketBase's request log, and
- * the response never contains a participant name, avatar or id — only counts.
- */
+// Sin auth a propósito: la landing de invitación debe funcionar para un amigo que
+// aún no tiene cuenta. Ver el comentario del handler.
 routerAdd("POST", "/api/public/battle-invite", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var body = battles.readBody(e)
-    var invite = battles.findInviteByToken($app, body.token)
-    var rejection = battles.inviteRejection($app, invite)
-    if (rejection) {
-      // Same 200 shape for "never existed", "expired" and "lobby closed": a guessed
-      // token must not become an oracle for which battles exist.
-      return e.json(200, { ok: false, reason: rejection, battle: null })
-    }
-
-    var battle = $app.findRecordById("battles", invite.getString("battle"))
-    if (battles.expireIfStale($app, battle)) {
-      return e.json(200, { ok: false, reason: "expired", battle: null })
-    }
-
-    var config = battles.jsonField(battle, "config", {}) || {}
-    var participants = battles.findParticipants($app, battle.getString("id"))
-    return e.json(200, {
-      ok: true,
-      reason: "",
-      battle: {
-        id: battle.getString("id"),
-        status: battle.getString("status"),
-        rounds: config.rounds || 0,
-        exercise_count: Array.isArray(config.exercises) ? config.exercises.length : 0,
-        workout_template_id: config.workout_template_id || "",
-        participant_count: battles.lobbyParticipants(participants).length,
-        expires_at: invite.getString("expires_at"),
-      },
-    })
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.publicInviteLanding(e)
 })
 
-// ── POST /api/battles/join — consume a token atomically ──────────────────────
-
 routerAdd("POST", "/api/battles/join", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var body = battles.readBody(e)
-    var outcome = { battleId: "", alreadyJoined: false }
-
-    battles.runGuarded($app, function (txApp) {
-      var invite = battles.findInviteByToken(txApp, body.token)
-      var rejection = battles.inviteRejection(txApp, invite)
-      if (rejection) {
-        battles.fail(rejection === "expired" ? 410 : 409, "invite_" + rejection, "This invite cannot be used")
-      }
-
-      var battleId = invite.getString("battle")
-      outcome.battleId = battleId
-      var battle = battles.findBattle(txApp, battleId)
-
-      // Someone re-opening their own link: hand them their existing seat instead of
-      // burning a second token or erroring at them.
-      var existing = battles.findParticipantForUser(txApp, battleId, userId)
-      if (existing) {
-        outcome.alreadyJoined = true
-        return
-      }
-
-      // Un par bloqueado no entra en la misma batalla (#413). Esta ruta corre con
-      // `$app`, así que se salta las API rules: sin esta comprobación el bloqueado
-      // podría unirse igual y la regla de lectura solo lo esconderá después, que a
-      // mitad de batalla es peor experiencia que no dejarle entrar.
-      //
-      // El 409 es exactamente el de un token revocado: quien llega no debe poder
-      // distinguir un bloqueo de un enlace caducado. Va DESPUÉS de la rama de plaza
-      // existente a propósito — a quien ya está dentro no se le echa.
-      if (battles.battleHasBlockWith(txApp, battle, userId)) {
-        battles.fail(409, "invite_invalid", "This invite cannot be used")
-      }
-
-      // Un token nominal solo lo gasta su destinatario (#357). Hoy solo los emite la
-      // revancha, que los manda por push en vez de por una conversación; el error es a
-      // propósito el mismo que el de un token revocado, para que no se pueda usar como
-      // oráculo de a quién invitaron. Igual que el bloqueo, va DESPUÉS de la rama de
-      // plaza existente: a quien ya está dentro no se le echa.
-      if (battles.inviteBindingRejects(invite, userId)) {
-        battles.fail(409, "invite_invalid", "This invite cannot be used")
-      }
-
-      if (!battles.claimIdempotencyKey(txApp, battleId, userId, "join", body.idempotency_key)) {
-        outcome.alreadyJoined = true
-        return
-      }
-
-      var now = battles.nowMs()
-      var collection = txApp.findCollectionByNameOrId("battle_participants")
-      var participant = new Record(collection)
-      participant.set("battle", battleId)
-      participant.set("user", userId)
-      participant.set("status", "joined")
-      participant.set("progress", battles.emptyProgress())
-      participant.set("joined_at", battles.isoAt(now))
-      participant.set("last_seen_at", battles.isoAt(now))
-      // The unique (battle, user) index is the real guard here: two devices on the
-      // same account racing this call produce one participant, not two.
-      txApp.save(participant)
-
-      invite.set("status", "consumed")
-      invite.set("used_at", battles.isoAt(now))
-      invite.set("used_by", userId)
-      txApp.save(invite)
-
-      // A new participant makes the lobby un-ready again: everyone re-confirms.
-      var participants = battles.findParticipants(txApp, battleId)
-      battles.syncLobbyStatus(txApp, battle, participants)
-      battles.touch(battle, now)
-      battles.bumpRevision(battle)
-      txApp.save(battle)
-    })
-
-    var fresh = battles.findBattle($app, outcome.battleId)
-
-    // Fuera de la transacción y a prueba de fallos: avisar al creador es útil, pero si
-    // la notificación revienta, la plaza ya está tomada y el usuario debe entrar igual.
-    if (!outcome.alreadyJoined) {
-      battles.notifyBattleJoin($app, fresh, userId)
-    }
-
-    var snapshot = battles.snapshotOf($app, fresh, userId)
-    snapshot.already_joined = outcome.alreadyJoined
-    return e.json(200, snapshot)
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.join(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/ready — joined ⇄ ready ────────────────────────────
 
 routerAdd("POST", "/api/battles/{id}/ready", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var body = battles.readBody(e)
-    var wantReady = body.ready === undefined ? true : !!body.ready
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      var participant = battles.requireParticipant(txApp, battle, userId)
-
-      var status = battle.getString("status")
-      if (status !== "lobby" && status !== "ready") {
-        battles.fail(409, "invalid_transition", "Readiness can only change in the lobby")
-      }
-
-      if (!battles.claimIdempotencyKey(txApp, battleId, userId, "ready", body.idempotency_key)) return
-
-      var from = participant.getString("status")
-      var to = wantReady ? "ready" : "joined"
-      if (from === to) return // double-tap on the same button
-
-      battles.assertParticipantTransition(from, to)
-
-      var now = battles.nowMs()
-      participant.set("status", to)
-      participant.set("ready_at", to === "ready" ? battles.isoAt(now) : "")
-      participant.set("last_seen_at", battles.isoAt(now))
-      txApp.save(participant)
-
-      var participants = battles.findParticipants(txApp, battleId)
-      battles.syncLobbyStatus(txApp, battle, participants)
-      battles.touch(battle, now)
-      battles.bumpRevision(battle)
-      txApp.save(battle)
-    })
-
-    var fresh = battles.findBattle($app, battleId)
-    return e.json(200, battles.snapshotOf($app, fresh, userId))
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.ready(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/start — ready → live ──────────────────────────────
 
 routerAdd("POST", "/api/battles/{id}/start", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var body = battles.readBody(e)
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      battles.requireCreator(battle, userId)
-
-      if (!battles.claimIdempotencyKey(txApp, battleId, userId, "start", body.idempotency_key)) return
-
-      battles.assertBattleTransition(battle.getString("status"), "live")
-
-      var participants = battles.findParticipants(txApp, battleId)
-      var ready = []
-      for (var i = 0; i < participants.length; i++) {
-        if (participants[i].getString("status") === "ready") ready.push(participants[i])
-      }
-      if (ready.length < battles.MIN_READY_TO_START) {
-        battles.fail(409, "not_enough_participants",
-          "A battle needs at least " + battles.MIN_READY_TO_START + " ready participants")
-      }
-
-      var now = battles.nowMs()
-      // `starts_at` is the single source of truth for the countdown. Clients render it
-      // against their measured server offset and never against the device clock.
-      var startsAt = now + battles.COUNTDOWN_LEAD_MS
-      battle.set("status", "live")
-      battle.set("starts_at", battles.isoAt(startsAt))
-      battles.touch(battle, now)
-      battles.bumpRevision(battle)
-      txApp.save(battle)
-
-      for (var j = 0; j < ready.length; j++) {
-        battles.assertParticipantTransition(ready[j].getString("status"), "active")
-        ready[j].set("status", "active")
-        ready[j].set("active_at", battles.isoAt(startsAt))
-        ready[j].set("last_seen_at", battles.isoAt(now))
-        txApp.save(ready[j])
-      }
-    })
-
-    var fresh = battles.findBattle($app, battleId)
-
-    // La cuenta atrás dura 5 s: quien tenga la app en segundo plano se pierde el
-    // arranque si nadie se lo dice. Fuera de la transacción, y nunca puede tumbar el
-    // arranque de la batalla.
-    battles.notifyBattleStart($app, fresh, userId)
-
-    return e.json(200, battles.snapshotOf($app, fresh, userId))
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.start(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/progress ──────────────────────────────────────────
 
 routerAdd("POST", "/api/battles/{id}/progress", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var body = battles.readBody(e)
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      var participant = battles.requireParticipant(txApp, battle, userId)
-
-      if (battle.getString("status") !== "live") {
-        battles.fail(409, "battle_not_live", "The battle is not live")
-      }
-      if (participant.getString("status") !== "active") {
-        battles.fail(409, "participant_not_active", "You are not an active participant")
-      }
-      if (battles.dateMs(battle, "starts_at") > battles.nowMs()) {
-        battles.fail(409, "not_started", "The countdown has not finished")
-      }
-
-      var config = battles.jsonField(battle, "config", null)
-      var previous = battles.jsonField(participant, "progress", battles.emptyProgress())
-      // Rejects negatives, regressions, over-count rounds and unknown exercise
-      // positions. A participant can only ever write their own row: `participant` was
-      // resolved from the caller's user id, never from the request body.
-      var next = battles.nextProgress(config, previous, body.progress)
-
-      var now = battles.nowMs()
-      participant.set("progress", next)
-      participant.set("last_seen_at", battles.isoAt(now))
-      txApp.save(participant)
-
-      battles.touch(battle, now)
-      battles.bumpRevision(battle)
-      txApp.save(battle)
-    })
-
-    var fresh = battles.findBattle($app, battleId)
-    return e.json(200, battles.snapshotOf($app, fresh, userId))
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.progress(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/finish ────────────────────────────────────────────
 
 routerAdd("POST", "/api/battles/{id}/finish", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var body = battles.readBody(e)
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      var participant = battles.requireParticipant(txApp, battle, userId)
-
-      // The same gate `progress` applies. Without it the two routes disagreed about when
-      // a battle has started, and `finish` is the more consequential of the two: it is
-      // terminal, it feeds `sealFinalStandings`, and finishing during the countdown
-      // ranked you first on an empty score against people who never got to move.
-      //
-      // Checked before claiming the idempotency key, so a rejected call does not burn it.
-      if (battles.dateMs(battle, "starts_at") > battles.nowMs()) {
-        battles.fail(409, "not_started", "The countdown has not finished")
-      }
-
-      if (!battles.claimIdempotencyKey(txApp, battleId, userId, "finish", body.idempotency_key)) return
-      if (participant.getString("status") === "finished") return
-
-      battles.assertParticipantTransition(participant.getString("status"), "finished")
-
-      var now = battles.nowMs()
-      if (body.progress) {
-        var config = battles.jsonField(battle, "config", null)
-        var previous = battles.jsonField(participant, "progress", battles.emptyProgress())
-        participant.set("progress", battles.nextProgress(config, previous, body.progress))
-      }
-      participant.set("status", "finished")
-      participant.set("finished_at", battles.isoAt(now))
-      participant.set("last_seen_at", battles.isoAt(now))
-      txApp.save(participant)
-
-      // A single participant finishing alone still produces a valid finished battle.
-      var participants = battles.findParticipants(txApp, battleId)
-      if (battles.countWithStatus(participants, "active") === 0 &&
-          battle.getString("status") === "live") {
-        battle.set("status", "finished")
-        battle.set("finished_at", battles.isoAt(now))
-        battle.set("ends_at", battles.isoAt(now))
-        battles.sealFinalStandings(txApp, battle, participants)
-      }
-      battles.touch(battle, now)
-      battles.bumpRevision(battle)
-      txApp.save(battle)
-    })
-
-    var fresh = battles.findBattle($app, battleId)
-    return e.json(200, battles.snapshotOf($app, fresh, userId))
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.finish(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/leave ─────────────────────────────────────────────
 
 routerAdd("POST", "/api/battles/{id}/leave", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var body = battles.readBody(e)
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      var participant = battles.requireParticipant(txApp, battle, userId)
-
-      if (!battles.claimIdempotencyKey(txApp, battleId, userId, "leave", body.idempotency_key)) return
-      if (participant.getString("status") === "left") return
-
-      battles.assertParticipantTransition(participant.getString("status"), "left")
-
-      var now = battles.nowMs()
-      participant.set("status", "left")
-      participant.set("left_at", battles.isoAt(now))
-      participant.set("last_seen_at", battles.isoAt(now))
-      txApp.save(participant)
-
-      var status = battle.getString("status")
-      var isCreator = battle.getString("creator") === userId
-      var participants = battles.findParticipants(txApp, battleId)
-
-      if (isCreator && (status === "draft" || status === "lobby" || status === "ready")) {
-        // Nobody else can start it, so a creator walking out of the lobby cancels the
-        // battle rather than leaving a zombie for the expiry sweep.
-        battle.set("status", "cancelled")
-        battles.sealFinalStandings(txApp, battle, participants)
-      } else if (status === "live" && battles.countWithStatus(participants, "active") === 0) {
-        // Mid-battle the creator is just another participant: the battle carries on
-        // and only closes when the last active participant is gone.
-        battle.set("status", "finished")
-        battle.set("finished_at", battles.isoAt(now))
-        battle.set("ends_at", battles.isoAt(now))
-        battles.sealFinalStandings(txApp, battle, participants)
-      } else {
-        battles.syncLobbyStatus(txApp, battle, participants)
-      }
-
-      battles.touch(battle, now)
-      battles.bumpRevision(battle)
-      txApp.save(battle)
-    })
-
-    var fresh = battles.findBattle($app, battleId)
-    return e.json(200, battles.snapshotOf($app, fresh, userId))
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.leave(e)
 }, $apis.requireAuth())
-
-// ── POST /api/battles/{id}/cancel ────────────────────────────────────────────
 
 routerAdd("POST", "/api/battles/{id}/cancel", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var battleId = e.request.pathValue("id")
-    var body = battles.readBody(e)
-
-    battles.runGuarded($app, function (txApp) {
-      var battle = battles.findBattle(txApp, battleId)
-      battles.requireCreator(battle, userId)
-
-      if (!battles.claimIdempotencyKey(txApp, battleId, userId, "cancel", body.idempotency_key)) return
-      if (battle.getString("status") === "cancelled") return
-
-      battles.assertBattleTransition(battle.getString("status"), "cancelled")
-
-      var now = battles.nowMs()
-      battle.set("status", "cancelled")
-      battles.sealFinalStandings(txApp, battle, null)
-      battles.touch(battle, now)
-      battles.bumpRevision(battle)
-      txApp.save(battle)
-    })
-
-    var fresh = battles.findBattle($app, battleId)
-    return e.json(200, battles.snapshotOf($app, fresh, userId))
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.cancel(e)
 }, $apis.requireAuth())
 
-// ── POST /api/battles/{id}/rematch — play the same circuit again ─────────────
-
-/**
- * Revancha (#357).
- *
- * Crea una batalla NUEVA con la misma configuración y no toca la original ni un byte: un
- * resultado es un registro de lo que pasó, y reutilizar la fila para una segunda ronda
- * destruiría la primera. De ahí salen gratis dos de los criterios del issue — la nueva
- * nace con `revision: 0` y con su propia identidad, así que los tokens viejos, que están
- * atados por hash al id de la batalla vieja, no pueden abrirla.
- *
- * La puede pedir CUALQUIER antiguo participante, no solo quien la creó: si "otra vez con
- * los mismos" dependiera del creador, una batalla cuyo creador ya no está sería un
- * callejón sin salida. Quien la pide se convierte en creador de la nueva.
- *
- * Se permite desde `cancelled` y `expired` además de `finished`. Una sala que caducó sin
- * llegar a empezar es el caso en el que más sentido tiene volver a intentarlo.
- */
 routerAdd("POST", "/api/battles/{id}/rematch", function (e) {
-  var battles = require(`${__hooks}/utils/battles.js`)
-  try {
-    var userId = battles.requireUserId(e)
-    var sourceId = e.request.pathValue("id")
-    var body = battles.readBody(e)
-    var outcome = { battleId: "", replayed: false, invites: [] }
-
-    battles.runGuarded($app, function (txApp) {
-      var source = battles.findBattle(txApp, sourceId)
-      battles.requireViewer(txApp, source, userId)
-
-      if (!battles.isTerminal(source.getString("status"))) {
-        battles.fail(409, "battle_open", "This battle has not finished yet")
-      }
-
-      // La respuesta de esta mutación es OTRA batalla, así que repetir la clave no puede
-      // contestar con el snapshot de la de siempre: se devuelve la que creó el primer
-      // toque. Sin esto, el segundo toque de un doble toque crearía una segunda batalla.
-      if (!battles.claimIdempotencyKey(txApp, sourceId, userId, "rematch", body.idempotency_key)) {
-        var stored = battles.findMutationResponse(txApp, sourceId, body.idempotency_key)
-        if (stored && stored.battle_id) {
-          outcome.battleId = stored.battle_id
-          outcome.replayed = true
-          return
-        }
-        battles.fail(409, "rematch_in_flight", "A rematch for this battle is already being created")
-      }
-
-      var now = battles.nowMs()
-      var collection = txApp.findCollectionByNameOrId("battles")
-      var battle = new Record(collection)
-      battle.set("creator", userId)
-      // Directo a `lobby`: `draft` existe para que el creador ajuste el circuito antes de
-      // publicarlo, y una revancha ya sabe qué circuito es.
-      battle.set("status", "lobby")
-      battle.set("config", battles.jsonField(source, "config", null))
-      battle.set("revision", 0)
-      battle.set("invite_expires_at", battles.isoAt(now + battles.INVITE_TTL_MS))
-      battles.touch(battle, now)
-      txApp.save(battle)
-
-      var battleId = battle.getString("id")
-      outcome.battleId = battleId
-
-      // Quien pide la revancha entrena también, igual que en `publish`.
-      var participants = txApp.findCollectionByNameOrId("battle_participants")
-      var seat = new Record(participants)
-      seat.set("battle", battleId)
-      seat.set("user", userId)
-      seat.set("status", "joined")
-      seat.set("progress", battles.emptyProgress())
-      seat.set("joined_at", battles.isoAt(now))
-      seat.set("last_seen_at", battles.isoAt(now))
-      txApp.save(seat)
-
-      // Un token nominal por cabeza. Se emiten aquí, dentro de la transacción, para que
-      // una revancha no pueda existir a medias — con batalla pero sin invitaciones.
-      var recipients = battles.rematchRecipients(txApp, source, userId)
-      for (var i = 0; i < recipients.length; i++) {
-        var issued = battles.issueInvite(txApp, battle, userId, now, recipients[i])
-        outcome.invites.push({ userId: recipients[i], token: issued.token })
-      }
-
-      battles.recordMutationResponse(txApp, sourceId, body.idempotency_key, { battle_id: battleId })
-    })
-
-    var fresh = battles.findBattle($app, outcome.battleId)
-
-    // Fuera de la transacción y a prueba de fallos. En una repetición no se vuelve a
-    // avisar: los tokens de la primera vez siguen vivos y mandar la push dos veces solo
-    // duplicaría el aviso.
-    if (!outcome.replayed && outcome.invites.length > 0) {
-      battles.notifyBattleRematch($app, fresh, userId, outcome.invites)
-    }
-
-    var snapshot = battles.snapshotOf($app, fresh, userId)
-    if (outcome.replayed) snapshot.replayed = true
-    return e.json(201, snapshot)
-  } catch (err) {
-    return battles.respondError(e, err)
-  }
+  return require(`${__hooks}/utils/battles.js`).handlers.rematch(e)
 }, $apis.requireAuth())
 
 // ── Cron: sweep stale lobbies and invites ────────────────────────────────────
