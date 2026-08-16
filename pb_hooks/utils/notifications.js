@@ -39,6 +39,57 @@ function getUserName(userId) {
   }
 }
 
+/**
+ * Nombres públicos de un conjunto de usuarios en LOTE: una query por cada 50 ids
+ * en vez de un `findRecordById` por cabeza (#481). Devuelve un mapa
+ * `{ userId: nombre }` con TODAS las claves pedidas presentes ("" si el usuario
+ * no existe o no tiene nombre).
+ *
+ * Esta es la resolución ÚNICA de display name del backend — `utils/battles/`
+ * también la usa (la auditoría 2026-08-15 encontró dos implementaciones
+ * divergentes). Misma precedencia y misma regla de privacidad que getUserName:
+ * `display_name || name`, nunca el email (#458).
+ *
+ * `app` es opcional: dentro de una transacción se pasa el txApp para leer con la
+ * misma conexión; por defecto usa $app, como el resto de helpers de este archivo.
+ */
+function getUserNames(userIds, app) {
+  var db = app || $app
+  var names = {}
+  var ids = []
+  var seen = {}
+  for (var i = 0; i < (userIds || []).length; i++) {
+    var id = userIds[i]
+    if (!id || seen[id]) continue
+    seen[id] = true
+    ids.push(id)
+    names[id] = ""
+  }
+
+  var CHUNK = 50
+  for (var start = 0; start < ids.length; start += CHUNK) {
+    var chunk = ids.slice(start, start + CHUNK)
+    var parts = []
+    var params = {}
+    for (var j = 0; j < chunk.length; j++) {
+      parts.push("id = {:id" + j + "}")
+      params["id" + j] = chunk[j]
+    }
+    try {
+      var recs = db.findRecordsByFilter("users", parts.join(" || "), "", 0, 0, params)
+      for (var k = 0; k < recs.length; k++) {
+        names[recs[k].getString("id")] =
+          recs[k].getString("display_name") || recs[k].getString("name") || ""
+      }
+    } catch (e) {
+      // Los ids de este chunk se quedan en "": quien llama ya trata el nombre
+      // vacío ("Alguien" / "Tu amigo").
+      console.log("[notif] getUserNames error:", e)
+    }
+  }
+  return names
+}
+
 // type → categoría de preferencia. Mantener en sync con migration
 // 1776800000_created_notification_prefs.js y useNotificationPrefs.
 function categoryForType(type) {
@@ -160,6 +211,60 @@ function sendPush(userId, title, body, url, type, actorId) {
   }
 }
 
+/**
+ * Push a MUCHOS destinatarios en UNA llamada HTTP (#481).
+ *
+ * Antes el fan-out hacía un `$http.send` (timeout 10 s) por seguidor dentro del
+ * hook de escritura: con 500 seguidores la creación de la sesión podía quedar
+ * bloqueada minutos. Ahora los filtros por destinatario (bloqueos + preferencias,
+ * queries locales) se aplican aquí y el envío real sale como una sola llamada con
+ * `user_ids`; el AI API responde 202 y despacha en segundo plano.
+ *
+ * Mismas garantías que sendPush: `actorId` corta los pares bloqueados (#386) y
+ * `type` aplica la preferencia de push por usuario. Nunca deja escapar un error.
+ * Solo sirve cuando el mensaje es idéntico para todos — un push con URL nominal
+ * por destinatario (revancha de batalla) sigue yendo por sendPush.
+ */
+function sendPushBatch(userIds, title, body, url, type, actorId) {
+  try {
+    var category = type ? categoryForType(type) : ""
+    var blocks = null
+    if (actorId) {
+      try { blocks = require(`${__hooks}/utils/blocks.js`) } catch (e) { /* guard opcional */ }
+    }
+
+    var recipients = []
+    var seen = {}
+    for (var i = 0; i < (userIds || []).length; i++) {
+      var uid = userIds[i]
+      if (!uid || seen[uid]) continue
+      seen[uid] = true
+      if (blocks && actorId && uid !== actorId) {
+        try { if (blocks.isBlocked($app, uid, actorId)) continue } catch (e) { /* nunca romper el push */ }
+      }
+      if (type && !prefAllows(uid, category, "push")) continue
+      recipients.push(uid)
+    }
+    if (recipients.length === 0) return
+
+    var apiUrl = $os.getenv("AI_API_URL") || "http://localhost:3001"
+    var internalKey = $os.getenv("INTERNAL_API_KEY") || ""
+    var headers = { "Content-Type": "application/json" }
+    if (internalKey) {
+      headers["X-Internal-Key"] = internalKey
+    }
+    $http.send({
+      url: apiUrl + "/api/send-push",
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({ user_ids: recipients, title: title, body: body, url: url }),
+      timeout: 10,
+    })
+  } catch (e) {
+    console.log("[notif] push batch error:", e)
+  }
+}
+
 // ── Fan-out a seguidores ─────────────────────────────────────────────────────
 
 // IDs de los usuarios que siguen a `userId` (los que verían su actividad).
@@ -193,20 +298,26 @@ function getFollowers(userId) {
 
 // Notifica (in-app + push) a todos los seguidores de `actorId`.
 // `push` = { title, body, url } o null para omitir el push.
-// El gate de preferencias se aplica por seguidor dentro de createNotification/sendPush.
+// El gate de preferencias se aplica por seguidor (createNotification / sendPushBatch).
+//
+// Las notificaciones in-app siguen creándose una a una (son saves locales); el
+// push sale en UNA llamada HTTP al final (#481) — antes era un POST con timeout
+// de 10 s por seguidor, dentro del hook de escritura que disparó el fan-out.
 function notifyFollowers(actorId, type, referenceId, data, push) {
   if (!actorId) return
   var blocks = null
   try { blocks = require(`${__hooks}/utils/blocks.js`) } catch (e) {}
   var followers = getFollowers(actorId)
+  var pushTargets = []
   for (var i = 0; i < followers.length; i++) {
     var fid = followers[i]
     if (!fid || fid === actorId) continue
     if (blocks && blocks.isBlocked($app, fid, actorId)) continue
     createNotification(fid, type, actorId, referenceId, "user", data)
-    if (push) {
-      sendPush(fid, push.title, push.body, push.url, type, actorId)
-    }
+    if (push) pushTargets.push(fid)
+  }
+  if (push && pushTargets.length > 0) {
+    sendPushBatch(pushTargets, push.title, push.body, push.url, type, actorId)
   }
 }
 
@@ -358,11 +469,13 @@ function checkStreakMilestone(userId, oldStreak, newStreak) {
 module.exports = {
   checkStreakMilestone: checkStreakMilestone,
   getUserName: getUserName,
+  getUserNames: getUserNames,
   categoryForType: categoryForType,
   prefAllows: prefAllows,
   createSelfNotification: createSelfNotification,
   createNotification: createNotification,
   sendPush: sendPush,
+  sendPushBatch: sendPushBatch,
   getFollowers: getFollowers,
   notifyFollowers: notifyFollowers,
   countSessions: countSessions,
