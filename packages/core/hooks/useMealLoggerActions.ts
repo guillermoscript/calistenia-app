@@ -12,8 +12,11 @@ export type AnalyzeResult = {
   }
 }
 
+/** Web passes `File[]`; mobile reads photo URIs into `Blob`s (see saveEntry). */
+export type MealPhotoFile = File | Blob
+
 type AnalyzeMealFn = (
-  imageFiles: File | File[],
+  imageFiles: MealPhotoFile | MealPhotoFile[],
   mealType: string,
   description?: string,
   userContext?: { goal?: string; remainingMacros?: DailyTotals; recentScores?: { mealType: string; score: string; loggedAt: string }[]; topFoods?: string[]; logHour?: number },
@@ -32,15 +35,21 @@ interface UseMealLoggerActionsDeps {
   entries: NutritionEntry[]
   analyzeMeal: AnalyzeMealFn
   scoreMealQuality: ScoreMealQualityFn
-  saveEntry: (entry: Omit<NutritionEntry, 'id'>, photoFiles?: File[]) => Promise<NutritionEntry>
+  saveEntry: (entry: Omit<NutritionEntry, 'id'>, photoFiles?: MealPhotoFile[]) => Promise<NutritionEntry>
   updateEntry: (id: string, updates: Partial<NutritionEntry>) => Promise<void>
   getRemainingMacros: (date?: string) => DailyTotals
+  /**
+   * Fallos de la puntuación de calidad en segundo plano (la entry ya está
+   * guardada; esto es best-effort). Opcional: mobile lo enchufa a Sentry.
+   */
+  onBackgroundError?: (error: unknown, op: 'score_meal_quality' | 'update_quality_score') => void
 }
 
 /**
  * Service hook for meal logging actions.
  * Encapsulates analyze (with quality context) and save (with async quality scoring).
- * Used by both NutritionPage (dialog) and MealLoggerPage (full page on mobile).
+ * Used by web (NutritionPage dialog, MealLoggerPage) and by mobile through the
+ * `useMobileMealLoggerActions` adapter (URI → Blob).
  */
 export function useMealLoggerActions({
   userId,
@@ -51,6 +60,7 @@ export function useMealLoggerActions({
   saveEntry,
   updateEntry,
   getRemainingMacros,
+  onBackgroundError,
 }: UseMealLoggerActionsDeps) {
   const remaining = useMemo(() => getRemainingMacros(), [getRemainingMacros])
 
@@ -71,7 +81,7 @@ export function useMealLoggerActions({
   }, [goals, remaining, entries])
 
   const handleAnalyze = useCallback(async (
-    imageFiles: File[],
+    imageFiles: MealPhotoFile[],
     mealType: string,
     description?: string,
     eatenHour?: number,
@@ -86,7 +96,7 @@ export function useMealLoggerActions({
 
   const handleSave = useCallback(async (
     entry: Omit<NutritionEntry, 'id' | 'user'>,
-    photoFiles?: File[],
+    photoFiles?: MealPhotoFile[],
   ) => {
     const saved = await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
     // Fire async quality scoring for manual/barcode entries that don't have a score yet
@@ -110,13 +120,13 @@ export function useMealLoggerActions({
             qualityBreakdown: quality.breakdown,
             qualityMessage: quality.message,
             qualitySuggestion: quality.suggestion,
-          })
+          }).catch((e) => { onBackgroundError?.(e, 'update_quality_score') })
         }
-      }).catch(() => { /* non-blocking — entry already saved, quality is best-effort */ })
+      }).catch((e) => { onBackgroundError?.(e, 'score_meal_quality') /* non-blocking — entry already saved, quality is best-effort */ })
     }
     // F4 (#173): la depleción de despensa necesita el id/foods de la entry recién guardada
     return saved
-  }, [saveEntry, userId, scoreMealQuality, goals, remaining, updateEntry])
+  }, [saveEntry, userId, scoreMealQuality, goals, remaining, updateEntry, onBackgroundError])
 
   return { handleAnalyze, handleSave }
 }

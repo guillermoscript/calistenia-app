@@ -1,22 +1,17 @@
 /**
- * useMealLogger — owns the entire MealLogger state machine (capture → analyzing →
- * review → saving → success), image picking, AI analysis, food editing and save.
- * The presentational layer (steps/views) consumes the returned model.
+ * useMealLogger — owns the MealLogger state machine (capture → analyzing →
+ * review → saving → success), food editing and navigation between sub-steps,
+ * and composes the capture/analysis/save hooks that own their respective
+ * concerns. The presentational layer (steps/views) consumes the returned model.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type TextInput } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import * as ImagePicker from 'expo-image-picker'
 
-import { haptics } from '@/lib/haptics'
 import { Sentry } from '@/lib/instrument'
-import {
-  requestCameraPermission as askCameraPermission,
-  requestMediaPermission as askMediaPermission,
-} from '@/lib/image-upload'
-import { op } from '@calistenia/core/lib/analytics'
-import { localHour, nowLocalForPB, todayStr, utcToLocalDateStr, localHMFromPB } from '@calistenia/core/lib/dateUtils'
-import { isMidnightEatenAt, parseExifDateTimeToHM } from '@calistenia/core/lib/meal-time'
+import { haptics } from '@/lib/haptics'
+import { isMidnightEatenAt } from '@calistenia/core/lib/meal-time'
+import { nowLocalForPB, localHMFromPB } from '@calistenia/core/lib/dateUtils'
 import { calcMacros, createEmptyFood, normalizeToBase100 } from '@calistenia/core/lib/macro-calc'
 import { useFoodHistory } from '@calistenia/core/hooks/useFoodHistory'
 import type { FoodItem, MealType, NutritionEntry, PortionUnit } from '@calistenia/core/types'
@@ -29,12 +24,13 @@ import {
   type MacroField,
   type MealLoggerSheetProps,
   type Step,
-  MAX_PHOTOS,
   getDefaultMealType,
   getLastMealType,
-  setLastMealType,
   normalizeEntryFoods,
 } from './meal-logger-shared'
+import { useMealCapture } from './use-meal-capture'
+import { useMealAnalysis } from './use-meal-analysis'
+import { useMealSave } from './use-meal-save'
 
 export function useMealLogger({
   visible,
@@ -76,7 +72,6 @@ export function useMealLogger({
   const [recentSearch, setRecentSearch] = useState('')
   const [recentTypeFilter, setRecentTypeFilter] = useState<MealType | ''>('')
 
-  const cancelledRef = useRef(false)
   const quickTextInputRef = useRef<TextInput>(null)
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -165,160 +160,49 @@ export function useMealLogger({
     setStep('review')
   }
 
-  // ── Image Picker ───────────────────────────────────────────────────────────
-  // Thin i18n wrappers over the shared permission helpers (which own the actual
-  // expo-image-picker permission request + denied Alert).
-  const requestCameraPermission = () =>
-    askCameraPermission({
-      title: t('common.permissionRequired') || 'Permiso requerido',
-      message: t('common.cameraPermissionMessage') || 'Se necesita acceso a la cámara para tomar fotos.',
-    })
+  // ── Composed hooks ─────────────────────────────────────────────────────────
+  const { handleCamera, handleGallery, removePhoto } = useMealCapture({
+    t,
+    editEntry,
+    imageAssets,
+    setImageAssets,
+    setEatenHour,
+    setEatenMinute,
+  })
 
-  const requestMediaPermission = () =>
-    askMediaPermission({
-      title: t('common.permissionRequired') || 'Permiso requerido',
-      message: t('common.galleryPermissionMessage') || 'Se necesita acceso a la galería.',
-    })
+  const { handleAnalyzeImages, handleAnalyzeText, cancelAnalysis } = useMealAnalysis({
+    t,
+    onAnalyze,
+    imageAssets,
+    mealType,
+    imageDescription,
+    quickText,
+    eatenHour,
+    setStep,
+    setError,
+    setFoods,
+    setMealDescription,
+    setAnalysisQuality,
+    setQuickText,
+  })
 
-  /**
-   * Apply capture time from the first asset's EXIF metadata (fresh logs only).
-   * EXIF keys differ by platform; check in priority order.
-   */
-  const applyExifTime = (asset: ImagePicker.ImagePickerAsset) => {
-    // Only seed time for fresh logs (editEntry == null handled by the caller).
-    const exif = asset.exif as Record<string, unknown> | null | undefined
-    if (!exif) return
-    const raw =
-      (exif['DateTimeOriginal'] as string | undefined) ??
-      (exif['DateTimeDigitized'] as string | undefined) ??
-      (exif['DateTime'] as string | undefined) ??
-      ((exif['{Exif}'] as Record<string, unknown> | undefined)?.['DateTimeOriginal'] as string | undefined)
-    const hm = parseExifDateTimeToHM(raw)
-    if (hm) {
-      setEatenHour(hm.hour)
-      setEatenMinute(hm.minute)
-    }
-  }
-
-  const handleCamera = async () => {
-    const ok = await requestCameraPermission()
-    if (!ok) return
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      allowsEditing: false,
-      exif: true,
-    })
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0]
-      setImageAssets((prev) =>
-        prev.length < MAX_PHOTOS
-          ? [...prev, { uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg', fileName: asset.fileName ?? undefined }]
-          : prev,
-      )
-      // For fresh logs, seed the finish-time from EXIF capture datetime.
-      if (!editEntry) {
-        applyExifTime(asset)
-      }
-    }
-  }
-
-  const handleGallery = async () => {
-    const ok = await requestMediaPermission()
-    if (!ok) return
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      allowsMultipleSelection: true,
-      selectionLimit: MAX_PHOTOS - imageAssets.length,
-      exif: true,
-    })
-    if (!result.canceled && result.assets.length > 0) {
-      const newAssets: ImageAsset[] = result.assets.map((a: ImagePicker.ImagePickerAsset) => ({
-        uri: a.uri,
-        mimeType: a.mimeType ?? 'image/jpeg',
-        fileName: a.fileName ?? undefined,
-      }))
-      setImageAssets((prev) => [...prev, ...newAssets].slice(0, MAX_PHOTOS))
-      // For fresh logs, seed the finish-time from the first asset's EXIF datetime.
-      if (!editEntry) {
-        applyExifTime(result.assets[0])
-      }
-    }
-  }
-
-  const removePhoto = (index: number) => {
-    setImageAssets((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  // ── Analysis ───────────────────────────────────────────────────────────────
-  // The finish-time field (seeded from photo EXIF, else "now") = the hour the
-  // food was eaten; feed it to the AI for timing-based quality scoring.
-  const eatenHourNum = (): number | undefined => {
-    const h = parseInt(eatenHour, 10)
-    return Number.isFinite(h) ? h : undefined
-  }
-
-  const handleAnalyzeImages = async () => {
-    if (imageAssets.length === 0) return
-    cancelledRef.current = false
-    setStep('analyzing')
-    setError(null)
-    haptics.medium()
-    try {
-      const result = await onAnalyze(imageAssets, mealType, imageDescription.trim() || undefined, eatenHourNum())
-      if (cancelledRef.current) return
-      const normalized = normalizeEntryFoods(result.foods || [])
-      if (normalized.length === 0) {
-        setError(t('nutrition.logger.noFoodsDetected'))
-        setStep('capture')
-        return
-      }
-      setFoods(normalized)
-      setMealDescription(result.meal_description || '')
-      setAnalysisQuality(result.quality)
-      setStep('review')
-    } catch (e) {
-      if (cancelledRef.current) return
-      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'analyze-images' } })
-      setError(e instanceof Error && e.message ? e.message : t('nutrition.logger.noFoodsDetected'))
-      setStep('capture')
-    }
-  }
-
-  const handleAnalyzeText = async () => {
-    const text = quickText.trim()
-    if (!text) return
-    cancelledRef.current = false
-    setStep('analyzing')
-    setError(null)
-    haptics.medium()
-    try {
-      const result = await onAnalyze([], mealType, text, eatenHourNum())
-      if (cancelledRef.current) return
-      const normalized = normalizeEntryFoods(result.foods || [])
-      if (normalized.length === 0) {
-        setError(t('nutrition.logger.noFoodsDetected'))
-        setStep('capture')
-        return
-      }
-      setFoods(normalized)
-      setMealDescription(result.meal_description || '')
-      setAnalysisQuality(result.quality)
-      setQuickText('')
-      setStep('review')
-    } catch (e) {
-      if (cancelledRef.current) return
-      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'analyze-text' } })
-      setError(e instanceof Error && e.message ? e.message : t('nutrition.logger.noFoodsDetected'))
-      setStep('capture')
-    }
-  }
-
-  const cancelAnalysis = () => {
-    cancelledRef.current = true
-    setStep('capture')
-  }
+  const { handleSave } = useMealSave({
+    t,
+    editEntry,
+    foods,
+    mealType,
+    eatenHour,
+    eatenMinute,
+    durationInput,
+    totals,
+    analysisQuality,
+    imageAssets,
+    onSave,
+    onSaved,
+    trackFood,
+    setStep,
+    setError,
+  })
 
   // Clear AI-derived artifacts (quality panel + meal description) when the review
   // step is re-entered WITHOUT a fresh analyze (Back → Manual / Repeat). Without
@@ -433,72 +317,6 @@ export function useMealLogger({
     setStep('capture')
     setFoods([])
     setImageAssets([])
-  }
-
-  // ── Save ───────────────────────────────────────────────────────────────────
-  const handleSave = async () => {
-    const validFoods = foods.filter((f) => f.name.trim())
-    if (validFoods.length === 0) {
-      setError(t('nutrition.logger.addFood'))
-      return
-    }
-    // Compose the finish time as a naive local datetime "YYYY-MM-DD HH:mm:ss":
-    // the digits are displayed verbatim (no tz conversion). Keep it on the meal's
-    // own day — today for new logs, the original day when editing.
-    const hNum = Math.min(23, Math.max(0, parseInt(eatenHour, 10) || 0))
-    const mNum = Math.min(59, Math.max(0, parseInt(eatenMinute, 10) || 0))
-    const pad = (n: number) => String(n).padStart(2, '0')
-    const baseDate = editEntry
-      ? (editEntry.eatenAt?.slice(0, 10) || utcToLocalDateStr(editEntry.loggedAt))
-      : todayStr()
-    const eatenAt = `${baseDate} ${pad(hNum)}:${pad(mNum)}:00`
-    const durNum = durationInput.trim() ? Math.max(0, parseInt(durationInput, 10) || 0) : 0
-
-    setStep('saving')
-    try {
-      const savedId = await onSave(
-        {
-          mealType,
-          foods: validFoods,
-          totalCalories: totals.calories,
-          totalProtein: totals.protein,
-          totalCarbs: totals.carbs,
-          totalFat: totals.fat,
-          loggedAt: nowLocalForPB(),
-          eatenAt,
-          ...(durNum > 0 ? { durationMin: durNum } : {}),
-          ...(analysisQuality
-            ? {
-                qualityScore: analysisQuality.score,
-                qualityBreakdown: analysisQuality.breakdown,
-                qualityMessage: analysisQuality.message,
-                qualitySuggestion: analysisQuality.suggestion,
-              }
-            : {}),
-        },
-        imageAssets.length > 0 ? imageAssets.map((a) => a.uri) : undefined,
-      )
-      const hour = localHour()
-      validFoods.forEach((f) => trackFood(f, mealType, hour))
-      // Paridad con web (MealLoggerContent): solo registros nuevos — las
-      // ediciones no cuentan como comida registrada para el funnel (#233).
-      if (!editEntry) {
-        op.track('meal_logged', { meal_type: mealType, food_count: validFoods.length, calories: totals.calories })
-      }
-      setLastMealType(mealType)
-      haptics.success()
-      setStep('success')
-      // F4: match de despensa DESPUÉS del éxito — nunca bloquea ni afecta el log.
-      // Saves offline (local_*) y ediciones no disparan (sin id de servidor / doble descuento).
-      if (typeof savedId === 'string' && !savedId.startsWith('local_') && !editEntry) {
-        onSaved?.(savedId, validFoods)
-      }
-    } catch (e) {
-      Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'save-meal' } })
-      setError(t('nutrition.logger.saveError'))
-      setStep('review')
-      haptics.error()
-    }
   }
 
   // ── Effects ────────────────────────────────────────────────────────────────

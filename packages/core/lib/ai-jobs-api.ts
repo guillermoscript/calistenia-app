@@ -138,3 +138,46 @@ export async function fetchJobStatus(jobId: string): Promise<AIJob> {
   }
   return res.json()
 }
+
+export interface PollJobOptions {
+  /** Pausa entre consultas (por defecto 3 s). */
+  intervalMs?: number
+  /** Tope total de espera; superado, lanza `timeoutMessage`. */
+  maxMs: number
+  /** Devuelve false cuando el llamador ya no quiere el resultado (unmount). */
+  isAlive?: () => boolean
+  timeoutMessage?: string
+  failedMessage?: string
+}
+
+/**
+ * Pollea un job de IA hasta `completed` / `failed` / timeout. Un blip de red
+ * transitorio NO aborta: el job sigue corriendo server-side y `maxMs` acota.
+ * Resuelve `null` (sin lanzar) si `isAlive()` pasa a false a mitad — el
+ * llamador se desmontó y no debe tocar estado.
+ */
+export async function pollJob(jobId: string, opts: PollJobOptions): Promise<AIJob | null> {
+  const {
+    intervalMs = 3000,
+    maxMs,
+    isAlive = () => true,
+    timeoutMessage = 'Tiempo de espera agotado',
+    failedMessage = 'El trabajo falló',
+  } = opts
+  const started = Date.now()
+  while (Date.now() - started < maxMs) {
+    await new Promise((r) => setTimeout(r, intervalMs))
+    if (!isAlive()) return null
+    let job: AIJob
+    try {
+      job = await fetchJobStatus(jobId)
+    } catch {
+      continue
+    }
+    if (!isAlive()) return null
+    if (job.status === 'completed') return job
+    if (job.status === 'failed') throw new Error(job.error || failedMessage)
+  }
+  if (!isAlive()) return null
+  throw new Error(timeoutMessage)
+}

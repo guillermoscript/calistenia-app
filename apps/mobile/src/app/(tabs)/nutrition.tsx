@@ -35,21 +35,24 @@ import { usePantryPlan } from '@calistenia/core/hooks/usePantryPlan'
 import { useNutritionCoach } from '@calistenia/core/hooks/useNutritionCoach'
 import { useWeeklyMealPlan } from '@calistenia/core/hooks/useWeeklyMealPlan'
 import { useWater } from '@calistenia/core/hooks/useWater'
+import { useFrequentMeals } from '@calistenia/core/hooks/useFrequentMeals'
+import { useNutritionProfilePrefill } from '@calistenia/core/hooks/useNutritionProfilePrefill'
+import { syncUserPrimaryGoal, isNutritionPace } from '@calistenia/core/lib/nutrition-profile'
 import { computeDailyQualityScore } from '@calistenia/core/lib/nutrition-quality'
-import { isPrimaryGoal, primaryGoalToNutritionGoalType } from '@calistenia/core/lib/primaryGoal'
-import { previewNutritionGoal, nutritionGoalTypeToPrimaryGoal } from '@calistenia/core/lib/nutritionGoal'
 import { op } from '@calistenia/core/lib/analytics'
 import { qk } from '@calistenia/core/lib/query-keys'
 import { useDayRollover } from '@/lib/use-day-rollover'
 import { useDailyHealth } from '@/lib/health/useDailyHealth'
-import { pb, isPocketBaseAvailable, getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
+import { getUserAvatarUrl } from '@calistenia/core/lib/pocketbase'
 import { BADGE_DEFINITIONS } from '@calistenia/core/lib/badge-definitions'
 import { BadgeCelebrationDialog } from '@/components/nutrition/BadgeCelebrationDialog'
 import { SCORE_COLORS } from '@calistenia/core/lib/style-tokens'
-import type { BadgeType, NutritionGoal, NutritionGoalType, NutritionEntry, FoodItem, QualityScore } from '@calistenia/core/types'
+import type {
+  BadgeType, NutritionGoal, NutritionGoalType, NutritionEntry, FoodItem, QualityScore, Sex, ActivityLevel,
+} from '@calistenia/core/types'
 
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { analyzeMealMobile, urisToBlobs } from '@/lib/nutrition-api'
+import { useMobileMealLoggerActions } from '@/lib/use-mobile-meal-logger-actions'
 import { syncNutritionWidget } from '@/lib/sync-nutrition-widget'
 import NutritionDashboard from '@/components/nutrition/NutritionDashboard'
 import NutritionGoalSetup from '@/components/nutrition/NutritionGoalSetup'
@@ -57,7 +60,9 @@ import MealLoggerSheet from '@/components/nutrition/MealLoggerSheet'
 import { OneShotHint } from '@/components/ui/one-shot-hint'
 import WaterTracker from '@/components/nutrition/WaterTracker'
 import WeeklyNutritionChart from '@/components/nutrition/WeeklyNutritionChart'
-import DailyMealPlan from '@/components/nutrition/DailyMealPlan'
+import DailyMealPlan, { type PlannedMeal } from '@/components/nutrition/DailyMealPlan'
+import ChangeGoalCard from '@/components/nutrition/ChangeGoalCard'
+import FrequentMealsRow from '@/components/nutrition/FrequentMealsRow'
 import WeeklyMealPlan from '@/components/nutrition/WeeklyMealPlan'
 import { PantryPlanSection } from '@/components/nutrition/PantryPlanSection'
 import { usePantryDepletion } from '@/components/pantry/use-pantry-depletion'
@@ -65,59 +70,6 @@ import { PantryDepleteSheet } from '@/components/pantry/PantryDepleteSheet'
 import CoachInsights from '@/components/nutrition/CoachInsights'
 import NutritionShareButton from '@/components/share/NutritionShareButton'
 import { Sentry } from '@/lib/instrument'
-
-type PlannedMeal = {
-  meal_type: string
-  label: string
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-  description?: string
-}
-
-interface UserProfileData {
-  weight?: number
-  height?: number
-  age?: number
-  sex?: 'male' | 'female'
-  goalWeight?: number
-  activityLevel?: string
-  pace?: string
-  goalType?: string
-}
-
-const ONBOARDING_ACTIVITY_MAP: Record<string, string> = {
-  sedentary: 'sedentary',
-  light: 'light',
-  active: 'moderate',
-  very_active: 'active',
-}
-
-// #243 F4b: mismas etiquetas/iconos que el picker inline de la web, para el
-// control "Cambiar objetivo" nativo.
-const GOAL_LABEL_KEYS: Record<NutritionGoalType, string> = {
-  muscle_gain: 'nutrition.goal.muscleGain',
-  fat_loss: 'nutrition.goal.fatLoss',
-  recomp: 'nutrition.goal.recomp',
-  maintain: 'nutrition.goal.maintain',
-}
-const GOAL_CHOICES: { id: NutritionGoalType; labelKey: string; icon: string }[] = [
-  { id: 'muscle_gain', labelKey: GOAL_LABEL_KEYS.muscle_gain, icon: '💪' },
-  { id: 'fat_loss', labelKey: GOAL_LABEL_KEYS.fat_loss, icon: '🔥' },
-  { id: 'recomp', labelKey: GOAL_LABEL_KEYS.recomp, icon: '⚖️' },
-  { id: 'maintain', labelKey: GOAL_LABEL_KEYS.maintain, icon: '✅' },
-]
-
-function inferGoalType(weight?: number, goalWeight?: number, primaryGoal?: unknown): string | undefined {
-  // Objetivo explícito del onboarding (#226); el delta de peso es solo fallback.
-  if (isPrimaryGoal(primaryGoal)) return primaryGoalToNutritionGoalType(primaryGoal)
-  if (!weight || !goalWeight) return undefined
-  const delta = goalWeight - weight
-  if (delta > 2) return 'muscle_gain'
-  if (delta < -2) return 'fat_loss'
-  return 'maintain'
-}
 
 export default function NutritionTab() {
   const { t } = useTranslation()
@@ -132,14 +84,13 @@ export default function NutritionTab() {
   const [showCoach, setShowCoach] = useState(false)
   const [loggerVisible, setLoggerVisible] = useState(false)
   const [editingEntry, setEditingEntry] = useState<NutritionEntry | null>(null)
-  const [profileData, setProfileData] = useState<UserProfileData>({})
   const [phaseChangeBanner, setPhaseChangeBanner] = useState(false)
   const trainingPhaseRef = useRef<number | null>(null)
   // #243 F4b: cambio de objetivo post-onboarding — reabre el wizard sobre goals existentes
   const [showGoalSetup, setShowGoalSetup] = useState(false)
   const [pendingGoal, setPendingGoal] = useState<NutritionGoalType | null>(null)
-  const [goalPickerOpen, setGoalPickerOpen] = useState(false)
-  const [selectedGoal, setSelectedGoal] = useState<NutritionGoalType | null>(null)
+  // Prefill del wizard desde `users` (peso/altura/actividad/ritmo/objetivo).
+  const profileData = useNutritionProfilePrefill(userId)
 
   // ─── Core hooks ─────────────────────────────────────────────────────────────
   const nutrition = useNutrition(userId)
@@ -161,6 +112,7 @@ export default function NutritionTab() {
     getRecentEntries,
     scoreMealQuality,
     getRemainingMacros,
+    analyzeMeal,
   } = nutrition
 
   const { dayTotal: waterTotal, goal: waterGoal, addWater, setGoal: setWaterGoal, adding: waterAdding } = useWater(userId, selectedDate)
@@ -202,103 +154,21 @@ export default function NutritionTab() {
     generateWeeklyInsight,
   } = useNutritionCoach(userId)
 
-  // Mobile analyze: uses URI-based API instead of File objects
-  const handleAnalyze = useCallback(async (
-    images: { uri: string; mimeType?: string; fileName?: string }[],
-    mealType: string,
-    description?: string,
-    eatenHour?: number,
-  ) => {
-    const remaining = getRemainingMacros()
-    const recentScores = allEntries
-      .filter(e => e.qualityScore)
-      .slice(0, 5)
-      .map(e => ({ mealType: e.mealType, score: e.qualityScore!, loggedAt: e.loggedAt }))
-    return analyzeMealMobile(images, mealType, description, {
-      goal: goals?.goal,
-      remainingMacros: remaining,
-      recentScores: recentScores.length > 0 ? recentScores : undefined,
-      // Hour the food was eaten (photo EXIF / finish time), else current hour.
-      logHour: eatenHour != null && Number.isFinite(eatenHour) ? eatenHour : new Date().getHours(),
-    })
-  }, [goals, allEntries, getRemainingMacros])
-
-  // Mobile save: handles photo URIs
-  const handleSaveMobileEntry = useCallback(async (
-    entry: Omit<NutritionEntry, 'id' | 'user'>,
-    photoUris?: string[],
-  ): Promise<string | void> => {
-    // Edit flow: update the existing record in place, preserving its original loggedAt.
-    if (editingEntry?.id) {
-      const { loggedAt: _loggedAt, ...patch } = entry
-      await updateEntry(editingEntry.id, patch)
-      setEditingEntry(null)
-      return
-    }
-    // Read photo URIs to Blobs and create the entry WITH them in one request, so
-    // the cached entry carries populated photoUrls right away (mirrors web's
-    // File[] path). If a Blob read fails, fall back to saving without photos
-    // rather than losing the whole meal.
-    let photoFiles: Blob[] | undefined
-    if (photoUris && photoUris.length > 0) {
-      try {
-        photoFiles = await urisToBlobs(photoUris)
-      } catch (e) {
-        Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'read_meal_photos' } })
-      }
-    }
-    const saved = await saveEntry({ ...entry, user: userId || undefined }, photoFiles)
-    // Async quality scoring for manual entries
-    if (!saved.qualityScore && saved.foods.length > 0) {
-      scoreMealQuality(
-        saved.foods.map(f => ({
-          name: f.name || '?',
-          calories: (f.baseCal100 || 0) * (f.portionAmount || 1),
-          protein: (f.baseProt100 || 0) * (f.portionAmount || 1),
-          carbs: (f.baseCarbs100 || 0) * (f.portionAmount || 1),
-          fat: (f.baseFat100 || 0) * (f.portionAmount || 1),
-        })),
-        { calories: saved.totalCalories, protein: saved.totalProtein, carbs: saved.totalCarbs, fat: saved.totalFat },
-        saved.mealType,
-        goals ? { goal: goals.goal, remainingMacros: getRemainingMacros() } : undefined,
-      ).then(async quality => {
-        if (quality && saved.id && !saved.id.startsWith('local_')) {
-          await updateEntry(saved.id, {
-            qualityScore: quality.score,
-            qualityBreakdown: quality.breakdown,
-            qualityMessage: quality.message,
-            qualitySuggestion: quality.suggestion,
-          }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'update_quality_score' } }) })
-        }
-      }).catch((e) => { Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'score_meal_quality' } }) })
-    }
-    return saved.id
-  }, [saveEntry, userId, scoreMealQuality, goals, getRemainingMacros, updateEntry, editingEntry])
-
-  // ─── Load user profile ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!userId) return
-    const load = async () => {
-      const available = await isPocketBaseAvailable()
-      if (!available) return
-      try {
-        const user = await pb.collection('users').getOne(userId)
-        const weight = user.weight || undefined
-        const goalWeight = user.goal_weight || undefined
-        // Edad/sexo ya no existen en `users` (PII → nutrition_goals); el wizard
-        // los pide y los guarda en la propia fila del objetivo.
-        setProfileData({
-          weight,
-          height: user.height || undefined,
-          goalWeight,
-          activityLevel: user.activity_level ? ONBOARDING_ACTIVITY_MAP[user.activity_level] : undefined,
-          pace: user.pace || undefined,
-          goalType: inferGoalType(weight, goalWeight, user.primary_goal),
-        })
-      } catch { /* ignore */ }
-    }
-    load()
-  }, [userId])
+  // Analizar/guardar: lógica compartida con web en core (`useMealLoggerActions`);
+  // el adaptador solo traduce URIs → Blob y conserva la edición in-place.
+  const clearEditing = useCallback(() => setEditingEntry(null), [])
+  const { handleAnalyze, handleSave: handleSaveMobileEntry } = useMobileMealLoggerActions({
+    userId,
+    goals,
+    entries: allEntries,
+    analyzeMeal,
+    scoreMealQuality,
+    saveEntry,
+    updateEntry,
+    getRemainingMacros,
+    editingEntry,
+    onEditSaved: clearEditing,
+  })
 
   // ─── Load badges on mount ────────────────────────────────────────────────────
   useEffect(() => { loadBadges() }, [loadBadges])
@@ -339,29 +209,17 @@ export default function NutritionTab() {
   }, [fetchEntriesForDateRange])
 
   // ─── Frequent meals (re-log quick-tap) ──────────────────────────────────────
-  const [frequentMeals, setFrequentMeals] = useState<NutritionEntry[]>([])
-  useEffect(() => {
-    if (!isReady || !goals) return
-    const load = async () => {
-      const recent = await getRecentEntries(20)
-      const signature = (e: NutritionEntry) => e.foods.map(f => f.name).sort().join('|')
-      const groups = new Map<string, { entry: NutritionEntry; count: number }>()
-      for (const entry of recent) {
-        const sig = signature(entry)
-        if (!sig) continue
-        const existing = groups.get(sig)
-        if (existing) existing.count++
-        else groups.set(sig, { entry, count: 1 })
-      }
-      const frequent = [...groups.values()]
-        .filter(g => g.count >= 2)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 4)
-        .map(g => g.entry)
-      setFrequentMeals(frequent)
-    }
-    load()
-  }, [isReady, goals, getRecentEntries])
+  const frequentMeals = useFrequentMeals({ enabled: isReady && !!goals, getRecentEntries })
+
+  const handleQuickAddFrequent = useCallback((entry: NutritionEntry) => handleSaveMobileEntry({
+    mealType: entry.mealType,
+    foods: entry.foods,
+    totalCalories: entry.totalCalories,
+    totalProtein: entry.totalProtein,
+    totalCarbs: entry.totalCarbs,
+    totalFat: entry.totalFat,
+    loggedAt: nowLocalForPB(),
+  }), [handleSaveMobileEntry])
 
   // ─── Daily quality score + coach badge notifications ─────────────────────────
   const entries = useMemo(() => getEntriesForDate(selectedDate), [getEntriesForDate, selectedDate])
@@ -432,10 +290,7 @@ export default function NutritionTab() {
     // Wizard saves are user-reviewed/editable on the last step → 'manual'.
     await saveGoals({ ...newGoals, source: 'manual' })
     // Best-effort sync users.primary_goal (never blocks the save on failure).
-    const pg = nutritionGoalTypeToPrimaryGoal(newGoals.goal)
-    if (pg && userId) {
-      pb.collection('users').update(userId, { primary_goal: pg }).catch(() => {})
-    }
+    void syncUserPrimaryGoal(userId, newGoals.goal)
     // Registra el cambio venga de donde venga (picker → Ajustar, o el propio wizard).
     if (goals && newGoals.goal !== goals.goal) {
       op.track('goal_changed', { from: goals.goal, to: newGoals.goal, applied_recommended: false })
@@ -445,11 +300,23 @@ export default function NutritionTab() {
     setPendingGoal(null)
   }, [saveGoals, userId, goals])
 
+  // #243 F4b: aplicar el rango recomendado tal cual (sin pasar por el wizard).
+  const handleApplyGoal = useCallback(async (goal: NutritionGoalType, preview: NutritionGoal) => {
+    await saveGoals({ ...preview, source: 'auto' })
+    void syncUserPrimaryGoal(userId, goal)
+    if (goals) op.track('goal_changed', { from: goals.goal, to: goal, applied_recommended: true })
+  }, [saveGoals, userId, goals])
+
+  const handleAdjustGoal = useCallback((goal: NutritionGoalType) => {
+    setPendingGoal(goal)
+    setShowGoalSetup(true)
+  }, [])
+
   const handleCalculateMacros = useCallback((
-    weight: number, height: number, age: number, sex: string,
-    activityLevel: string, goal: string, pace?: string,
+    weight: number, height: number, age: number, sex: Sex,
+    activityLevel: ActivityLevel, goal: NutritionGoalType, pace?: string,
   ) => {
-    const result = calculateMacros(weight, height, age, sex as any, activityLevel as any, goal as any, pace as any)
+    const result = calculateMacros(weight, height, age, sex, activityLevel, goal, isNutritionPace(pace) ? pace : undefined)
     return {
       dailyCalories: result.dailyCalories,
       dailyProtein: result.dailyProtein,
@@ -476,7 +343,7 @@ export default function NutritionTab() {
     }
     await saveEntry({
       user: userId || undefined,
-      mealType: meal.meal_type as any,
+      mealType: meal.meal_type,
       foods: [food],
       totalCalories: meal.calories,
       totalProtein: meal.protein,
@@ -630,140 +497,12 @@ export default function NutritionTab() {
         )}
 
         {/* #243 F4b: cambiar objetivo con preview de nuevo rango antes de aplicar */}
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            {!goalPickerOpen ? (
-              <View className="flex-row items-center justify-between gap-4">
-                <View className="flex-1">
-                  <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-                    {t('nutrition.changeGoal.title')}
-                  </Text>
-                  <Text className="font-bebas text-2xl text-lime-400">
-                    {t(GOAL_LABEL_KEYS[goals.goal])}
-                  </Text>
-                </View>
-                <Button
-                  variant="outline"
-                  onPress={() => { haptics.light(); setSelectedGoal(null); setGoalPickerOpen(true) }}
-                  className="h-9 shrink-0"
-                >
-                  <Text className="font-mono text-[10px] tracking-widest uppercase">{t('nutrition.changeGoal.cta')}</Text>
-                </Button>
-              </View>
-            ) : (
-              <View className="gap-4">
-                <View className="flex-row items-center justify-between">
-                  <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    {t('nutrition.changeGoal.pickPrompt')}
-                  </Text>
-                  <Pressable onPress={() => { setGoalPickerOpen(false); setSelectedGoal(null) }}>
-                    <Text className="font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
-                      {t('common.cancel')}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <View className="flex-row flex-wrap gap-2.5">
-                  {GOAL_CHOICES.map(g => (
-                    <Pressable
-                      key={g.id}
-                      onPress={() => { haptics.selection(); setSelectedGoal(g.id) }}
-                      className={cn(
-                        'min-w-[45%] flex-1 items-center rounded-lg border p-3',
-                        selectedGoal === g.id
-                          ? 'border-lime-400 bg-lime-400/15'
-                          : 'border-border bg-card',
-                      )}
-                    >
-                      <Text className="text-xl mb-1">{g.icon}</Text>
-                      <Text className={cn(
-                        'font-sans-medium text-xs',
-                        selectedGoal === g.id ? 'text-lime-400' : 'text-foreground',
-                      )}>
-                        {t(g.labelKey)}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-
-                {selectedGoal && selectedGoal !== goals.goal && (() => {
-                  const preview = previewNutritionGoal(
-                    {
-                      weight: goals.weight,
-                      height: goals.height,
-                      age: goals.age,
-                      sex: goals.sex,
-                      activityLevel: goals.activityLevel,
-                      pace: profileData.pace as any,
-                    },
-                    selectedGoal,
-                  )
-                  return (
-                    <>
-                      <View className="rounded-lg border border-lime-400/20 bg-lime-400/5 p-3 gap-3">
-                        <Text className="font-mono text-[10px] uppercase tracking-widest text-lime-400">
-                          {t('nutrition.changeGoal.newRange')}
-                        </Text>
-                        <View className="flex-row justify-around">
-                          <View className="items-center">
-                            <Text className="font-bebas text-2xl leading-none text-lime-400">{preview.dailyCalories}</Text>
-                            <Text className="font-mono text-[9px] text-muted-foreground mt-0.5">KCAL</Text>
-                          </View>
-                          <View className="items-center">
-                            <Text className="font-bebas text-2xl leading-none text-sky-400">{preview.dailyProtein}</Text>
-                            <Text className="font-mono text-[9px] text-muted-foreground mt-0.5">PROT</Text>
-                          </View>
-                          <View className="items-center">
-                            <Text className="font-bebas text-2xl leading-none text-amber-400">{preview.dailyCarbs}</Text>
-                            <Text className="font-mono text-[9px] text-muted-foreground mt-0.5">CARBS</Text>
-                          </View>
-                          <View className="items-center">
-                            <Text className="font-bebas text-2xl leading-none text-pink-400">{preview.dailyFat}</Text>
-                            <Text className="font-mono text-[9px] text-muted-foreground mt-0.5">{t('nutrition.fat').toUpperCase()}</Text>
-                          </View>
-                        </View>
-                        <Text className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground border-t border-lime-400/10 pt-2">
-                          {t('nutrition.changeGoal.current')}: {goals.dailyCalories} kcal · {goals.dailyProtein}P · {goals.dailyCarbs}C · {goals.dailyFat}F
-                        </Text>
-                      </View>
-
-                      <View className="flex-row gap-3">
-                        <Button
-                          variant="outline"
-                          onPress={() => {
-                            haptics.medium()
-                            setPendingGoal(selectedGoal)
-                            setShowGoalSetup(true)
-                            setGoalPickerOpen(false)
-                          }}
-                          className="flex-1 h-10"
-                        >
-                          <Text className="font-mono text-[10px] tracking-widest uppercase">{t('nutrition.changeGoal.adjust')}</Text>
-                        </Button>
-                        <Button
-                          onPress={async () => {
-                            haptics.success()
-                            await saveGoals({ ...preview, source: 'auto' })
-                            const pg = nutritionGoalTypeToPrimaryGoal(selectedGoal)
-                            if (pg && userId) {
-                              pb.collection('users').update(userId, { primary_goal: pg }).catch(() => {})
-                            }
-                            op.track('goal_changed', { from: goals.goal, to: selectedGoal, applied_recommended: true })
-                            setGoalPickerOpen(false)
-                            setSelectedGoal(null)
-                          }}
-                          className="flex-1 h-10 bg-lime-400"
-                        >
-                          <Text className="font-bebas text-lg tracking-wide text-zinc-900">{t('nutrition.changeGoal.apply')}</Text>
-                        </Button>
-                      </View>
-                    </>
-                  )
-                })()}
-              </View>
-            )}
-          </CardContent>
-        </Card>
+        <ChangeGoalCard
+          goals={goals}
+          pace={profileData.pace}
+          onAdjust={handleAdjustGoal}
+          onApply={handleApplyGoal}
+        />
 
         {/* Missed goals alert (US-15) */}
         {missedGoalsAlert && (
@@ -857,59 +596,8 @@ export default function NutritionTab() {
         )}
 
         {/* Frequent meals quick-tap */}
-        {activeTab === 'today' && isToday && frequentMeals.length > 0 && (
-          <View className="mb-5">
-            <Text className="font-mono text-[10px] uppercase tracking-[4px] text-muted-foreground mb-3">
-              {t('nutrition.frequentMeals')}
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerClassName="gap-2.5 px-0.5"
-            >
-              {frequentMeals.map((entry, i) => {
-                const foodNames = entry.foods.map(f => f.name).filter(Boolean)
-                const summary = foodNames.length > 2
-                  ? foodNames.slice(0, 2).join(', ') + ` +${foodNames.length - 2}`
-                  : foodNames.join(', ')
-                return (
-                  <Pressable
-                    key={i}
-                    onPress={async () => {
-                      haptics.medium()
-                      try {
-                        await handleSaveMobileEntry({
-                          mealType: entry.mealType,
-                          foods: entry.foods,
-                          totalCalories: entry.totalCalories,
-                          totalProtein: entry.totalProtein,
-                          totalCarbs: entry.totalCarbs,
-                          totalFat: entry.totalFat,
-                          loggedAt: nowLocalForPB(),
-                        })
-                      } catch (e) {
-                        Sentry.captureException(e, { tags: { feature: 'nutrition', op: 'quick_add_recent_entry' } })
-                        haptics.error()
-                        Alert.alert(t('nutrition.logger.saveError', { defaultValue: 'No se pudo guardar' }))
-                      }
-                    }}
-                    className="w-40 p-3 bg-card border border-border rounded-xl active:border-lime-400/40"
-                  >
-                    <Text className="text-xs font-sans-medium text-foreground" numberOfLines={1}>
-                      {summary || t('nutrition.noName')}
-                    </Text>
-                    <Text className="font-mono text-[10px] text-muted-foreground mt-1">
-                      {Math.round(entry.totalCalories)} kcal · {Math.round(entry.totalProtein)}g P
-                    </Text>
-                    <View className="flex-row items-center gap-1 mt-1.5">
-                      <Plus size={10} className="text-lime-400" />
-                      <Text className="font-mono text-[9px] text-lime-400 tracking-widest uppercase">{t('nutrition.register')}</Text>
-                    </View>
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
-          </View>
+        {activeTab === 'today' && isToday && (
+          <FrequentMealsRow meals={frequentMeals} onQuickAdd={handleQuickAddFrequent} />
         )}
 
         {/* Dashboard: calorie ring + macro bars + meal entries */}
@@ -986,7 +674,6 @@ export default function NutritionTab() {
             {/* Plan IA del día — siempre planifica HOY; se oculta solo sin budget */}
             <DailyMealPlan
               remaining={remaining}
-              goals={pantryGoals}
               loggedMealTypes={loggedMealTypes}
               onSaveMeal={handleSavePlannedMeal}
             />

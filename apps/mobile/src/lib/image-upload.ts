@@ -19,6 +19,13 @@ import * as ImagePicker from 'expo-image-picker'
  */
 export const MAX_PHOTO_SIZE_BYTES = 5_242_880
 
+/** Foto elegida con expo-image-picker (o cámara) tal y como la consumen las APIs multipart. */
+export interface ImageAsset {
+  uri: string
+  mimeType?: string
+  fileName?: string
+}
+
 /** Read a single local image URI into a real Blob with an explicit content-type. */
 export async function uriToBlob(uri: string, mimeType?: string): Promise<Blob> {
   const blob: Blob = await new Promise((resolve, reject) => {
