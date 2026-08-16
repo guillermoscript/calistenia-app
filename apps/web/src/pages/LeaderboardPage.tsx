@@ -9,7 +9,7 @@ import { Loader } from '../components/ui/loader'
 
 type TimeFilter = 'week' | 'month'
 
-const MEDALS = ['', '', '']
+const MEDALS = ['🥇', '🥈', '🥉']
 
 interface LeaderboardPageProps {
   userId: string
