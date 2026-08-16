@@ -572,6 +572,7 @@ function notifyBattleJoin(app, battle, joinerId) {
       'se ha unido a tu batalla',
       '/battle/' + battleId,
       'challenge_join',
+      joinerId,
     )
   } catch (err) {
     console.log('[battle_api] notify join failed:', err)
@@ -596,6 +597,7 @@ function notifyBattleStart(app, battle, actorId) {
         'Tu batalla arranca ahora',
         '/battle/' + battleId,
         'challenge_join',
+        actorId,
       )
     }
   } catch (err) {
@@ -661,6 +663,7 @@ function notifyBattleRematch(app, newBattle, actorId, invites) {
         'te reta a la revancha',
         '/battle-invite/' + invite.token,
         'challenge_join',
+        actorId,
       )
     }
   } catch (err) {

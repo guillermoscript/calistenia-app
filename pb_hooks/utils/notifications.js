@@ -21,10 +21,19 @@
  * explícitamente false. `push_enabled` es el master de push. Ver prefAllows().
  */
 
+/**
+ * Nombre PÚBLICO de un usuario: el que puede acabar en la pantalla de otro.
+ *
+ * NO cae al local-part del email (#458). Ese fallback filtraba parte de una
+ * dirección privada —`juan.perez` de `juan.perez@gmail.com`— a cualquiera que
+ * recibiera un aviso suyo, y el email no está ni en la lista blanca pública de
+ * #411. Sin nombre devuelve "" y decide quien llama: los avisos ya usan
+ * `|| "Alguien"` / `|| "Tu amigo"`.
+ */
 function getUserName(userId) {
   try {
     var user = $app.findRecordById("users", userId)
-    return user.getString("display_name") || user.getString("name") || user.getString("email").split("@")[0] || ""
+    return user.getString("display_name") || user.getString("name") || ""
   } catch (e) {
     return ""
   }
