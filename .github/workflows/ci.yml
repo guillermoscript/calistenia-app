@@ -32,6 +32,12 @@ jobs:
       - name: Unit tests (packages/core + mobile)
         run: pnpm -r test
 
+      # La app vive en Play: siempre hay versiones viejas del cliente ahí fuera.
+      # Una migración que borra un campo o cierra una regla no rompe ningún test
+      # — rompe a quien no ha actualizado, en producción y a veces en silencio.
+      - name: Schema contract (migraciones vs clientes instalados)
+        run: node scripts/check-schema-contract.mjs
+
   # Smoke E2E del golden path (#145): signup → primera sesión de entrenamiento.
   # Corre contra un PocketBase efímero recién migrado (sin seeds — el flujo usa
   # los workouts de fallback) + el dev server de Vite que levanta Playwright.

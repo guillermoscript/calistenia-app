@@ -15,6 +15,11 @@ export const qk = {
   authReady: ['auth', 'ready'] as const,
   pbAvailable: ['pb', 'available'] as const,
 
+  // — Version gate + feature flags remotos —
+  // Sin userId: es config del dispositivo, no del usuario, y tiene que
+  // resolverse aunque no haya sesión (un cliente bloqueado no llega a loguearse).
+  appConfig: ['app-config'] as const,
+
   // — Social / feed —
   follows: (userId: string | null) => ['follows', userId] as const,
   blocks: (userId: string | null) => ['blocks', userId] as const,

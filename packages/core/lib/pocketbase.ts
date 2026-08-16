@@ -1,5 +1,5 @@
 import PocketBase, { type RecordModel, type RecordAuthResponse } from 'pocketbase'
-import { getEnv, getPlatform } from '../platform'
+import { getClientInfo, getEnv, getPlatform } from '../platform'
 import { isNetworkError } from './offlineQueue'
 
 // La URL la resuelve cada plataforma en initCore() (web prod: window.location.origin).
@@ -11,6 +11,28 @@ const PB_URL: string = getEnv().pbUrl
 export const pb = new PocketBase(PB_URL, getPlatform().pbAuthStore)
 
 // pb.authStore.isValid chequea la expiración del JWT localmente.
+
+// ── Identidad del cliente en cada request ────────────────────────────────────
+// Sin esto el servidor está ciego: no sabe qué versiones hay vivas ahí fuera y
+// por tanto no se puede decidir NUNCA cuándo es seguro retirar un campo viejo
+// del esquema (la fase "contract" de expand/contract, ver docs/schema-evolution.md).
+//
+// Las cabeceras son seguras entre orígenes: PocketBase refleja el
+// `Access-Control-Request-Headers` del preflight, así que no hay que
+// registrarlas en ningún sitio. En React Native no hay CORS que valga.
+//
+// NO se toca el realtime: el SDK abre el SSE con `new EventSource(url)` directo,
+// sin pasar por beforeSend, y EventSource no admite cabeceras.
+pb.beforeSend = (url, options) => {
+  const client = getClientInfo()
+  options.headers = {
+    ...options.headers,
+    'X-App-Version': client.version,
+    'X-App-Build': String(client.build),
+    'X-App-Platform': client.platform,
+  }
+  return { url, options }
+}
 
 /**
  * Retorna true si PocketBase responde.

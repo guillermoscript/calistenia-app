@@ -40,6 +40,10 @@ const PRIVATE_FIELDS = [
   // Espejo servidor del bloqueo. Ya era `hidden` en el esquema; va aquí para que
   // la guarda de deriva de abajo cuadre con el esquema real.
   "blocked_users",
+  // Version gate: qué build usa cada quien y cuándo se le vio por última vez.
+  // Es telemetría de operación (¿puedo retirar ya este campo del esquema?), no
+  // algo que ninguna pantalla enseñe de otra persona.
+  "app_build", "app_version", "app_platform", "last_seen_at",
 ]
 
 /**
