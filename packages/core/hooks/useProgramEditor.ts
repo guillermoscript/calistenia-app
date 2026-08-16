@@ -16,8 +16,44 @@ import { getPlatform } from '../platform'
 import { PHASES as FALLBACK_PHASES, WEEK_DAYS as FALLBACK_WEEK_DAYS, WORKOUTS } from '../data/workouts'
 import i18n from 'i18next'
 import { localize, toTranslatable } from '../lib/i18n-db'
+import {
+  diffCollection,
+  executePlans,
+  phaseKey,
+  dayConfigKey,
+  exerciseKey,
+  makeExerciseKeyOf,
+  type CollectionWriter,
+  type DesiredRow,
+  type ExistingRecord,
+  type PlannedCollection,
+  type Row,
+} from '../lib/programEditorDiff'
 import { stretchTemplates } from '../data/stretch-templates'
 import type { DayType, Exercise } from '../types'
+
+/**
+ * Campos de las colecciones del programa que se guardan como `{ locale: texto }`.
+ * El diff los compara y fusiona por locale para no pisar traducciones ajenas
+ * ni marcar como «cambiada» una fila que solo se está leyendo en otro idioma.
+ */
+const PROGRAM_TRANSLATABLE_FIELDS = [
+  'name',
+  'day_name',
+  'day_focus',
+  'exercise_name',
+  'muscles',
+  'note',
+] as const
+
+/** Adapta una colección de PocketBase a la interfaz que espera executePlans. */
+function collectionWriter(collection: string): CollectionWriter {
+  return {
+    create: (data: Row) => pb.collection(collection).create(data),
+    update: (id: string, data: Row) => pb.collection(collection).update(id, data),
+    delete: (id: string) => pb.collection(collection).delete(id),
+  }
+}
 
 // ─── Editor types ────────────────────────────────────────────────────────────
 
@@ -505,29 +541,20 @@ export function useProgramEditor() {
         programId = created.id
       }
 
-      // Delete existing phases and exercises for this program
-      try {
-        const existingPhases = await pb.collection('program_phases').getList(1, 50, {
-          filter: pb.filter('program = {:pid}', { pid: programId }),
-        })
-        for (const p of existingPhases.items) {
-          await pb.collection('program_phases').delete(p.id)
-        }
-      } catch { /* no existing phases */ }
+      // ── Guardado reconciliado (issue #463) ───────────────────────────────
+      //
+      // Antes esto borraba todas las fases/días/ejercicios y los recreaba uno a
+      // uno. Si fallaba una creación a mitad, los borrados ya estaban hechos y
+      // el programa del usuario quedaba vacío. Ahora se calcula el diff contra
+      // lo que hay en el servidor y se ejecuta con los borrados al final, así
+      // que un fallo no puede destruir datos.
 
-      try {
-        const existingExercises = await pb.collection('program_exercises').getList(1, 2000, {
-          filter: pb.filter('program = {:pid}', { pid: programId }),
-        })
-        for (const e of existingExercises.items) {
-          await pb.collection('program_exercises').delete(e.id)
-        }
-      } catch { /* no existing exercises */ }
+      const programFilter = pb.filter('program = {:pid}', { pid: programId })
 
-      // Create phases
-      for (let pi = 0; pi < state.phases.length; pi++) {
-        const phase = state.phases[pi]
-        await pb.collection('program_phases').create({
+      // Construir las filas que el editor quiere que existan.
+      const desiredPhases: DesiredRow[] = state.phases.map((phase, pi) => ({
+        key: phaseKey(pi + 1),
+        data: {
           program: programId,
           phase_number: pi + 1,
           name: toTranslatable(phase.name, locale),
@@ -535,21 +562,11 @@ export function useProgramEditor() {
           color: phase.color,
           bg_color: phase.bgColor,
           sort_order: pi + 1,
-        })
-      }
+        },
+      }))
 
-      // Delete existing day config (optional collection — may not exist in older deployments)
-      let hasDayConfig = true
-      try {
-        const existingDayConfig = await pb.collection('program_day_config').getList(1, 200, {
-          filter: pb.filter('program = {:pid}', { pid: programId }),
-        })
-        for (const dc of existingDayConfig.items) {
-          await pb.collection('program_day_config').delete(dc.id)
-        }
-      } catch { hasDayConfig = false }
-
-      // Create day config for ALL days and exercises for non-cardio days
+      const desiredDayConfig: DesiredRow[] = []
+      const desiredExercises: DesiredRow[] = []
       let sortOrder = 0
       let daySortOrder = 0
       for (let pi = 0; pi < state.phases.length; pi++) {
@@ -559,34 +576,35 @@ export function useProgramEditor() {
           if (!day) continue
 
           daySortOrder++
-          if (hasDayConfig) {
-            try {
-              const dayConfigData: Record<string, unknown> = {
-                program: programId,
-                phase_number: pi + 1,
-                day_id: day.dayId,
-                day_name: toTranslatable(day.dayName, locale),
-                day_type: day.type,
-                day_focus: toTranslatable(day.focus, locale),
-                day_color: day.color,
-                sort_order: daySortOrder,
-              }
-              if (day.type === 'cardio') {
-                dayConfigData.cardio_activity_type = day.cardioActivityType || 'running'
-                if (day.cardioTargetDistanceKm) dayConfigData.cardio_target_distance_km = day.cardioTargetDistanceKm
-                if (day.cardioTargetDurationMin) dayConfigData.cardio_target_duration_min = day.cardioTargetDurationMin
-              }
-              if (day.type === 'circuit') {
-                dayConfigData.circuit_mode = day.circuitMode ?? 'circuit'
-                dayConfigData.circuit_rounds = day.circuitRounds ?? 3
-                dayConfigData.circuit_work_seconds = day.circuitWorkSeconds ?? 40
-                dayConfigData.circuit_rest_seconds = day.circuitRestSeconds ?? 20
-                dayConfigData.circuit_rest_between_exercises = day.circuitRestBetweenExercises ?? 0
-                dayConfigData.circuit_rest_between_rounds = day.circuitRestBetweenRounds ?? 60
-              }
-              await pb.collection('program_day_config').create(dayConfigData)
-            } catch { /* day config save failed — non-critical */ }
+          const dayConfigData: Record<string, unknown> = {
+            program: programId,
+            phase_number: pi + 1,
+            day_id: day.dayId,
+            day_name: toTranslatable(day.dayName, locale),
+            day_type: day.type,
+            day_focus: toTranslatable(day.focus, locale),
+            day_color: day.color,
+            sort_order: daySortOrder,
           }
+          // Los campos condicionales se escriben SIEMPRE, con valor vacío
+          // cuando no aplican. Con el borrado y recreado de antes se limpiaban
+          // solos; al reconciliar hay que decirlo explícitamente, porque el
+          // diff solo mira los campos presentes en la fila deseada y si no
+          // aparecen se quedaría el valor viejo (p. ej. un día que pasa de
+          // cardio a empuje conservaría su distancia objetivo).
+          const isCardio = day.type === 'cardio'
+          dayConfigData.cardio_activity_type = isCardio ? (day.cardioActivityType || 'running') : ''
+          dayConfigData.cardio_target_distance_km = isCardio ? (day.cardioTargetDistanceKm ?? 0) : 0
+          dayConfigData.cardio_target_duration_min = isCardio ? (day.cardioTargetDurationMin ?? 0) : 0
+
+          const isCircuit = day.type === 'circuit'
+          dayConfigData.circuit_mode = isCircuit ? (day.circuitMode ?? 'circuit') : ''
+          dayConfigData.circuit_rounds = isCircuit ? (day.circuitRounds ?? 3) : 0
+          dayConfigData.circuit_work_seconds = isCircuit ? (day.circuitWorkSeconds ?? 40) : 0
+          dayConfigData.circuit_rest_seconds = isCircuit ? (day.circuitRestSeconds ?? 20) : 0
+          dayConfigData.circuit_rest_between_exercises = isCircuit ? (day.circuitRestBetweenExercises ?? 0) : 0
+          dayConfigData.circuit_rest_between_rounds = isCircuit ? (day.circuitRestBetweenRounds ?? 60) : 0
+          desiredDayConfig.push({ key: dayConfigKey(pi + 1, day.dayId), data: dayConfigData })
 
           if (day.type === 'cardio' || day.exercises.length === 0) continue
 
@@ -596,34 +614,112 @@ export function useProgramEditor() {
             (sectionOrder[a.section || 'main'] || 1) - (sectionOrder[b.section || 'main'] || 1)
           )
 
+          // Contador de repeticiones del mismo ejercicio dentro del día, para
+          // que «dominadas» dos veces en el mismo entrenamiento sean dos filas
+          // distintas y no colisionen en la misma clave.
+          const occurrences = new Map<string, number>()
+
           for (const ex of sortedExercises) {
             sortOrder++
-            await pb.collection('program_exercises').create({
-              program: programId,
-              phase_number: pi + 1,
-              day_id: day.dayId,
-              day_name: toTranslatable(day.dayName, locale),
-              day_focus: toTranslatable(day.focus, locale),
-              day_type: day.type,
-              day_color: day.color,
-              exercise_id: ex.exerciseId,
-              exercise_name: toTranslatable(ex.name, locale),
-              sets: ex.sets,
-              reps: ex.reps,
-              rest_seconds: ex.rest,
-              muscles: toTranslatable(ex.muscles, locale),
-              note: toTranslatable(ex.note, locale),
-              youtube: ex.youtube,
-              priority: ex.priority,
-              is_timer: ex.isTimer,
-              timer_seconds: ex.timerSeconds,
-              workout_title: `${day.focus}`,
-              sort_order: sortOrder,
-              section: ex.section || 'main',
+            const occurrence = occurrences.get(ex.exerciseId) ?? 0
+            occurrences.set(ex.exerciseId, occurrence + 1)
+            desiredExercises.push({
+              key: exerciseKey(pi + 1, day.dayId, ex.exerciseId, occurrence),
+              data: {
+                program: programId,
+                phase_number: pi + 1,
+                day_id: day.dayId,
+                day_name: toTranslatable(day.dayName, locale),
+                day_focus: toTranslatable(day.focus, locale),
+                day_type: day.type,
+                day_color: day.color,
+                exercise_id: ex.exerciseId,
+                exercise_name: toTranslatable(ex.name, locale),
+                sets: ex.sets,
+                reps: ex.reps,
+                rest_seconds: ex.rest,
+                muscles: toTranslatable(ex.muscles, locale),
+                note: toTranslatable(ex.note, locale),
+                youtube: ex.youtube,
+                priority: ex.priority,
+                is_timer: ex.isTimer,
+                timer_seconds: ex.timerSeconds,
+                workout_title: `${day.focus}`,
+                sort_order: sortOrder,
+                section: ex.section || 'main',
+              },
             })
           }
         }
       }
+
+      // Leer el estado actual. A diferencia de antes, un fallo de lectura ya no
+      // se traga en un `catch` silencioso: si no sabemos qué hay en el servidor
+      // no podemos reconciliar sin arriesgarnos a duplicar o borrar de más.
+      //
+      // `$autoCancel: false` por el mismo motivo que en loadProgram: el SDK
+      // cancela por defecto las peticiones duplicadas a la misma colección, y
+      // un guardado que coincida con una carga en vuelo se abortaría solo.
+      const readOpts = { filter: programFilter, $autoCancel: false }
+      const [existingPhases, existingExercises] = await Promise.all([
+        pb.collection('program_phases').getFullList(readOpts),
+        pb.collection('program_exercises').getFullList(readOpts),
+      ])
+
+      // `program_day_config` es opcional: puede no existir en despliegues
+      // antiguos. Un 404 significa «no hay colección» y se salta; cualquier
+      // otro error sí es real y aborta el guardado.
+      let hasDayConfig = true
+      let existingDayConfig: Array<Record<string, unknown> & { id: string }> = []
+      try {
+        existingDayConfig = await pb.collection('program_day_config').getFullList(readOpts)
+      } catch (e: any) {
+        if (e?.status === 404) {
+          hasDayConfig = false
+        } else {
+          throw e
+        }
+      }
+
+      const diffOpts = { locale, translatableFields: PROGRAM_TRANSLATABLE_FIELDS }
+      const collections: PlannedCollection[] = [
+        {
+          writer: collectionWriter('program_phases'),
+          plan: diffCollection(
+            existingPhases as ExistingRecord[],
+            desiredPhases,
+            r => phaseKey(r.phase_number as number),
+            diffOpts,
+          ),
+        },
+        {
+          writer: collectionWriter('program_exercises'),
+          plan: diffCollection(
+            // Se ordena por sort_order para que el desempate por repetición
+            // cuente en el mismo orden en que se generaron las filas deseadas.
+            [...(existingExercises as ExistingRecord[])].sort(
+              (a, b) => Number(a.sort_order) - Number(b.sort_order),
+            ),
+            desiredExercises,
+            makeExerciseKeyOf(),
+            diffOpts,
+          ),
+        },
+      ]
+      if (hasDayConfig) {
+        collections.push({
+          writer: collectionWriter('program_day_config'),
+          plan: diffCollection(
+            existingDayConfig as ExistingRecord[],
+            desiredDayConfig,
+            r => dayConfigKey(r.phase_number as number, r.day_id as string),
+            diffOpts,
+          ),
+        })
+      }
+
+      // Escrituras primero, borrados al final. Ver executePlans.
+      await executePlans(collections)
 
       setState(s => ({ ...s, programId, isSaving: false, isDirty: false }))
       // Refresca catálogo/detalle de usePrograms y la caché de edición.
