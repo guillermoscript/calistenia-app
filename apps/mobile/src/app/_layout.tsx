@@ -40,6 +40,7 @@ import { ActiveSessionProvider } from '@/contexts/ActiveSessionContext'
 import { CardioSessionProvider } from '@/contexts/CardioSessionContext'
 import { CircuitSessionProvider, useCircuitSession } from '@/contexts/CircuitSessionContext'
 import OfflineBanner from '@/components/OfflineBanner'
+import UpdateGate from '@/components/UpdateGate'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -262,6 +263,9 @@ function RootLayout() {
           <BattleInviteRedeemer />
         </Providers>
         <OfflineBanner />
+        {/* Fuera de <Providers> a propósito: el gate tiene que poder bloquear
+            aunque los contexts de sesión fallen, y no depende de ninguno. */}
+        <UpdateGate />
         <PortalHost />
         </ThemeProvider>
       </KeyboardProvider>

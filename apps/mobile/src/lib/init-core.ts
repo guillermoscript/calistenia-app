@@ -4,10 +4,12 @@
  * DEBE ser el PRIMER import de app/_layout.tsx: los módulos de core
  * (pocketbase.ts, ai-api.ts) leen el platform adapter al evaluarse.
  */
+import { Platform } from 'react-native'
 import { AsyncAuthStore } from 'pocketbase'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import NetInfo from '@react-native-community/netinfo'
 import Constants from 'expo-constants'
+import * as Application from 'expo-application'
 import EventSource from 'react-native-sse'
 import { OpenPanel } from '@openpanel/react-native'
 import { initCore } from '@calistenia/core/platform'
@@ -79,6 +81,24 @@ const aiApiUrl =
   process.env.EXPO_PUBLIC_AI_API_URL ||
   (__DEV__ && devHost ? `http://${devHost}:3001` : 'https://gym-server.guille.tech')
 
+// ─── Identidad del cliente (version gate + telemetría de versiones) ──────────
+// `nativeBuildVersion` es el entero que de verdad identifica el build instalado
+// (Android: versionCode; iOS: CFBundleVersion) y llega como STRING. Es el que
+// compara el gate; `version` es solo para leerlo con ojos humanos.
+//
+// En Expo Go y en web ambos vienen null: se cae a 0 y `evaluateUpdate` trata el
+// 0 como "cliente sin identificar → nunca bloquear". El gate no puede dejar
+// tirado a nadie por un fallo de detección.
+const nativeBuild = Number.parseInt(Application.nativeBuildVersion ?? '', 10)
+const appPlatform: 'android' | 'ios' | 'web' =
+  Platform.OS === 'android' ? 'android' : Platform.OS === 'ios' ? 'ios' : 'web'
+
+const clientInfo = {
+  version: Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '0.0.0',
+  build: Number.isFinite(nativeBuild) && nativeBuild > 0 ? nativeBuild : 0,
+  platform: appPlatform,
+} as const
+
 // Promesa exportada para que el bootstrap espere la sesión persistida
 // antes de decidir login vs home.
 export const pbAuthHydration: Promise<string | null> = AsyncStorage.getItem('pb_auth')
@@ -126,6 +146,7 @@ initCore({
     pbUrl,
     aiApiUrl,
     isDev: __DEV__,
+    client: clientInfo,
   },
   analytics: {
     track: (name, properties) => {

@@ -4538,5 +4538,14 @@
   "battle.rematchCreating": "Creating…",
   "battle.rematchError": "Couldn't create the rematch. Try again.",
   "battle.shareResult": "Share result",
-  "battle.sharePreparing": "Generating…"
+  "battle.sharePreparing": "Generating…",
+
+  "update.requiredTitle": "Update the app",
+  "update.requiredBody": "This version is no longer supported. Update to keep training.",
+  "update.optionalTitle": "A new version is out",
+  "update.latestVersion": "Version {{version}}",
+  "update.cta": "Update now",
+  "update.ctaShort": "Update",
+  "update.reasonSecurity": "This version has a security issue that is already fixed. Update to keep training.",
+  "update.reasonIncompatible": "This version can no longer read your data correctly. Update to keep training."
 }

@@ -4538,5 +4538,14 @@
   "battle.rematchCreating": "Creando…",
   "battle.rematchError": "No se pudo crear la revancha. Inténtalo otra vez.",
   "battle.shareResult": "Compartir resultado",
-  "battle.sharePreparing": "Generando…"
+  "battle.sharePreparing": "Generando…",
+
+  "update.requiredTitle": "Actualiza la app",
+  "update.requiredBody": "Esta versión ya no es compatible. Actualiza para seguir entrenando.",
+  "update.optionalTitle": "Hay una versión nueva",
+  "update.latestVersion": "Versión {{version}}",
+  "update.cta": "Actualizar ahora",
+  "update.ctaShort": "Actualizar",
+  "update.reasonSecurity": "Esta versión tiene un fallo de seguridad ya corregido. Actualiza para seguir entrenando.",
+  "update.reasonIncompatible": "Esta versión ya no puede leer tus datos correctamente. Actualiza para seguir entrenando."
 }

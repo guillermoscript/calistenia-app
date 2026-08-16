@@ -46,6 +46,12 @@ initCore({
     // Vacío en dev → el proxy de Vite maneja /api/*
     aiApiUrl: import.meta.env.VITE_AI_API_URL || (import.meta.env.DEV ? '' : 'https://gym-server.guille.tech'),
     isDev: import.meta.env.DEV,
+    // Identidad del cliente → cabeceras X-App-* en cada request a PocketBase.
+    // `build: 0` a propósito: la web no tiene builds instalados que puedan
+    // quedarse atrás (el service worker en modo prompt ya la actualiza sola), y
+    // `evaluateUpdate` trata el 0 como "nunca bloquear". La versión sigue
+    // viajando para poder correlacionar un bug con un deploy concreto.
+    client: { version: __APP_VERSION__, build: 0, platform: 'web' },
   },
   analytics: {
     track: (name, properties) => op.track(name, properties),

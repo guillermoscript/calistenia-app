@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { CacheFirst, NetworkFirst } from 'workbox-strategies'
+import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
 declare let self: ServiceWorkerGlobalScope
@@ -25,6 +25,14 @@ registerRoute(
     plugins: [new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 31536000 })],
   })
 )
+
+// Version gate + feature flags — NUNCA se cachea, y va ANTES de la regla
+// genérica de /api/ porque workbox resuelve las rutas en orden de registro.
+// Su razón de ser es poder apagar algo AHORA; servirlo desde una caché de hasta
+// un día lo convertiría en un kill switch que tarda 24h en llegar.
+// El cliente ya tiene su propio fallback en disco si la red falla
+// (packages/core/lib/app-config.ts), así que NetworkOnly no lo deja sin datos.
+registerRoute(/\/api\/app-config/i, new NetworkOnly())
 
 // API calls — NetworkFirst, 5s timeout, 1 day cache
 registerRoute(
