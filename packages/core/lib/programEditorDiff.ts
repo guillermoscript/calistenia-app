@@ -247,9 +247,19 @@ export async function executePlans(collections: readonly PlannedCollection[]): P
 // ─── Claves naturales ────────────────────────────────────────────────────────
 //
 // El estado del editor no conserva los `id` de PocketBase, así que la identidad
-// entre guardados se deriva del contenido lógico. Los ejercicios se identifican
-// por su posición dentro del día: así, reordenar es un `update` de la fila que
-// ocupa esa posición y nunca un borrado seguido de una creación.
+// entre guardados se deriva del contenido lógico.
+//
+// Los ejercicios se identifican por **qué ejercicio son** dentro de su día, no
+// por la posición que ocupan. Es la diferencia entre un guardado seguro y uno
+// que puede destruir datos: con una clave posicional, mover un ejercicio hace
+// que el contenido del vecino se escriba encima de su fila, y un fallo a mitad
+// de esas escrituras deja el programa en un estado que no es ni el viejo ni el
+// nuevo (se pierde el ejercicio cuya fila ya se sobrescribió, sin que se haya
+// borrado nada). Con la clave por contenido, reordenar solo cambia el campo
+// `sort_order` de cada fila y ninguna fila recibe el contenido de otra.
+//
+// El desempate por ocurrencia permite repetir el mismo ejercicio dentro de un
+// día (dos series de dominadas en el mismo entrenamiento son filas distintas).
 
 export function phaseKey(phaseNumber: number | string): string {
   return `p${Number(phaseNumber)}`
@@ -262,7 +272,24 @@ export function dayConfigKey(phaseNumber: number | string, dayId: string): strin
 export function exerciseKey(
   phaseNumber: number | string,
   dayId: string,
-  position: number | string,
+  exerciseId: string,
+  occurrence = 0,
 ): string {
-  return `p${Number(phaseNumber)}|${dayId}|${Number(position)}`
+  return `p${Number(phaseNumber)}|${dayId}|${exerciseId}|${occurrence}`
+}
+
+/**
+ * Construye el `keyOf` de los ejercicios contando las repeticiones del mismo
+ * `exercise_id` dentro de un día. Hay que crear uno nuevo por cada recorrido
+ * (mantiene contadores internos), y recorrer los registros existentes en el
+ * mismo orden en que se generaron las filas deseadas.
+ */
+export function makeExerciseKeyOf(): (record: ExistingRecord) => string {
+  const seen = new Map<string, number>()
+  return (record: ExistingRecord) => {
+    const base = `p${Number(record.phase_number)}|${record.day_id}|${record.exercise_id}`
+    const n = seen.get(base) ?? 0
+    seen.set(base, n + 1)
+    return `${base}|${n}`
+  }
 }

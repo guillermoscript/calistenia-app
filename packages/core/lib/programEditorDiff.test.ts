@@ -8,6 +8,7 @@ import {
   phaseKey,
   dayConfigKey,
   exerciseKey,
+  makeExerciseKeyOf,
   type CollectionWriter,
   type ExistingRecord,
   type DesiredRow,
@@ -196,97 +197,112 @@ describe('diffCollection — normalización de escalares', () => {
   })
 })
 
-describe('claves naturales de ejercicios', () => {
+describe('identidad de ejercicios por contenido', () => {
+  // Los ejercicios se identifican por QUÉ ejercicio son dentro de su día, no
+  // por la posición. Con clave posicional, mover un ejercicio escribía el
+  // contenido del vecino encima de su fila, y un fallo a mitad de esas
+  // escrituras destruía datos sin haber borrado nada.
   const exRecord = (
     id: string,
     phase: number,
     dayId: string,
     pos: number,
-    name: string,
+    exerciseId: string,
+    name = exerciseId,
   ): ExistingRecord => ({
     id,
     phase_number: phase,
     day_id: dayId,
     sort_order: pos,
+    exercise_id: exerciseId,
     exercise_name: { es: name },
   })
 
-  const exRow = (phase: number, dayId: string, pos: number, name: string): DesiredRow => ({
-    key: exerciseKey(phase, dayId, pos),
-    data: { phase_number: phase, day_id: dayId, sort_order: pos, exercise_name: { es: name } },
+  const exRow = (
+    phase: number,
+    dayId: string,
+    pos: number,
+    exerciseId: string,
+    name = exerciseId,
+    occurrence = 0,
+  ): DesiredRow => ({
+    key: exerciseKey(phase, dayId, exerciseId, occurrence),
+    data: {
+      phase_number: phase,
+      day_id: dayId,
+      sort_order: pos,
+      exercise_id: exerciseId,
+      exercise_name: { es: name },
+    },
   })
 
-  const byExercise = (r: ExistingRecord) =>
-    exerciseKey(r.phase_number as number, r.day_id as string, r.sort_order as number)
-
-  it('reordenar ejercicios actualiza en sitio y nunca borra', () => {
-    // Antes: 1=Dominadas, 2=Flexiones. Después: intercambiados.
+  it('reordenar solo cambia sort_order, sin mover contenido entre filas', () => {
     const existing = [
-      exRecord('x', 1, 'lun', 1, 'Dominadas'),
-      exRecord('y', 1, 'lun', 2, 'Flexiones'),
+      exRecord('x', 1, 'lun', 1, 'dominadas'),
+      exRecord('y', 1, 'lun', 2, 'flexiones'),
     ]
-    const desired = [exRow(1, 'lun', 1, 'Flexiones'), exRow(1, 'lun', 2, 'Dominadas')]
+    // El usuario los intercambia.
+    const desired = [exRow(1, 'lun', 1, 'flexiones'), exRow(1, 'lun', 2, 'dominadas')]
 
-    const plan = diffCollection(existing, desired, byExercise, I18N)
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
 
     expect(plan.toCreate).toEqual([])
     expect(plan.toDelete).toEqual([])
+    // Cada fila conserva SU ejercicio; solo se renumera.
     expect(plan.toUpdate).toEqual([
-      { id: 'x', data: { exercise_name: { es: 'Flexiones' } } },
-      { id: 'y', data: { exercise_name: { es: 'Dominadas' } } },
+      { id: 'y', data: { sort_order: 1 } },
+      { id: 'x', data: { sort_order: 2 } },
     ])
   })
 
-  it('el mismo ejercicio en días distintos no se confunde', () => {
+  it('#463: borrar el primer ejercicio no reescribe el contenido de los demás', () => {
+    // Este es el caso que destruía datos con la clave posicional: al borrar A,
+    // B pasaba a la posición 1 y su contenido se escribía encima de la fila de
+    // A. Si fallaba justo después, A había desaparecido y B estaba duplicado.
     const existing = [
-      exRecord('x', 1, 'lun', 1, 'Sentadillas'),
-      exRecord('y', 1, 'mar', 1, 'Sentadillas'),
+      exRecord('r1', 1, 'lun', 1, 'A'),
+      exRecord('r2', 1, 'lun', 2, 'B'),
+      exRecord('r3', 1, 'lun', 3, 'C'),
     ]
-    const desired = [exRow(1, 'lun', 1, 'Sentadillas'), exRow(1, 'mar', 1, 'Sentadillas')]
+    const desired = [exRow(1, 'lun', 1, 'B'), exRow(1, 'lun', 2, 'C')]
 
-    const plan = diffCollection(existing, desired, byExercise, I18N)
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
 
-    expect(isNoop(plan)).toBe(true)
-  })
-
-  it('el mismo día en fases distintas no se confunde', () => {
-    const existing = [
-      exRecord('x', 1, 'lun', 1, 'Fondos'),
-      exRecord('y', 2, 'lun', 1, 'Fondos'),
-    ]
-    const desired = [exRow(1, 'lun', 1, 'Fondos'), exRow(2, 'lun', 1, 'Fondos')]
-
-    const plan = diffCollection(existing, desired, byExercise, I18N)
-
-    expect(isNoop(plan)).toBe(true)
-  })
-
-  it('acortar un día borra solo la cola sobrante', () => {
-    const existing = [
-      exRecord('x', 1, 'lun', 1, 'A'),
-      exRecord('y', 1, 'lun', 2, 'B'),
-      exRecord('z', 1, 'lun', 3, 'C'),
-    ]
-    const desired = [exRow(1, 'lun', 1, 'A'), exRow(1, 'lun', 2, 'B')]
-
-    const plan = diffCollection(existing, desired, byExercise, I18N)
-
+    // Solo se renumeran B y C; se borra la fila de A y de nadie más.
     expect(plan.toCreate).toEqual([])
-    expect(plan.toUpdate).toEqual([])
-    expect(plan.toDelete).toEqual(['z'])
+    expect(plan.toUpdate).toEqual([
+      { id: 'r2', data: { sort_order: 1 } },
+      { id: 'r3', data: { sort_order: 2 } },
+    ])
+    expect(plan.toDelete).toEqual(['r1'])
+
+    // Ninguna actualización escribe el nombre de un ejercicio sobre la fila de
+    // otro: ningún update toca exercise_id ni exercise_name.
+    for (const upd of plan.toUpdate) {
+      expect(upd.data).not.toHaveProperty('exercise_id')
+      expect(upd.data).not.toHaveProperty('exercise_name')
+    }
+
+    // Y aunque solo se aplicase parte del plan antes de fallar, no se pierde
+    // ningún ejercicio: los deletes van al final y los updates no destruyen.
+    const trasFalloParcial = existing.map(r => {
+      const upd = plan.toUpdate[0]
+      return upd && upd.id === r.id ? { ...r, ...upd.data } : r
+    })
+    const nombres = trasFalloParcial.map(r => (r.exercise_name as { es: string }).es)
+    expect(nombres).toContain('A')
+    expect(nombres).toContain('B')
+    expect(nombres).toContain('C')
   })
 
-  it('insertar un ejercicio al principio deja el estado final correcto pese al desplazamiento global de sort_order', () => {
-    // `sort_order` es un contador global de todo el programa, así que insertar
-    // al principio desplaza a todos los siguientes. El diff genera más updates
-    // de los mínimos, pero lo que importa es que el estado final sea el bueno.
+  it('insertar al principio no arrastra el contenido de los siguientes', () => {
     const existing = [
       exRecord('r1', 1, 'lun', 1, 'A'),
       exRecord('r2', 1, 'lun', 2, 'B'),
       exRecord('r3', 1, 'mar', 3, 'C'),
       exRecord('r4', 1, 'mar', 4, 'D'),
     ]
-    // El usuario mete X al principio del lunes.
+    // Se mete X al principio del lunes: todo lo demás se desplaza.
     const desired = [
       exRow(1, 'lun', 1, 'X'),
       exRow(1, 'lun', 2, 'A'),
@@ -295,11 +311,18 @@ describe('claves naturales de ejercicios', () => {
       exRow(1, 'mar', 5, 'D'),
     ]
 
-    const plan = diffCollection(existing, desired, byExercise, I18N)
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
 
-    // Se simula el servidor aplicando el plan.
+    // Solo se crea X; el resto se renumera sin tocar su contenido.
+    expect(plan.toCreate).toHaveLength(1)
+    expect((plan.toCreate[0] as { exercise_id: string }).exercise_id).toBe('X')
+    expect(plan.toDelete).toEqual([])
+    for (const upd of plan.toUpdate) {
+      expect(Object.keys(upd.data)).toEqual(['sort_order'])
+    }
+
+    // Los días que el usuario no tocó no generan ninguna escritura de contenido.
     const final = existing
-      .filter(r => !plan.toDelete.includes(r.id))
       .map(r => {
         const upd = plan.toUpdate.find(u => u.id === r.id)
         return upd ? { ...r, ...upd.data } : r
@@ -308,26 +331,110 @@ describe('claves naturales de ejercicios', () => {
 
     const rendered = final
       .sort((a, b) => (a.sort_order as number) - (b.sort_order as number))
-      .map(r => `${r.day_id}#${r.sort_order}:${(r.exercise_name as { es: string }).es}`)
-
-    expect(rendered).toEqual([
-      'lun#1:X',
-      'lun#2:A',
-      'lun#3:B',
-      'mar#4:C',
-      'mar#5:D',
-    ])
+      .map(r => `${r.day_id}#${r.sort_order}:${r.exercise_id}`)
+    expect(rendered).toEqual(['lun#1:X', 'lun#2:A', 'lun#3:B', 'mar#4:C', 'mar#5:D'])
   })
 
-  it('alargar un día solo crea las filas nuevas', () => {
+  it('el mismo ejercicio repetido en un día son filas distintas', () => {
+    const existing = [
+      exRecord('x', 1, 'lun', 1, 'dominadas'),
+      exRecord('y', 1, 'lun', 2, 'dominadas'),
+    ]
+    const desired = [
+      exRow(1, 'lun', 1, 'dominadas', 'dominadas', 0),
+      exRow(1, 'lun', 2, 'dominadas', 'dominadas', 1),
+    ]
+
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
+
+    expect(isNoop(plan)).toBe(true)
+  })
+
+  it('quitar una de las dos repeticiones borra una sola fila', () => {
+    const existing = [
+      exRecord('x', 1, 'lun', 1, 'dominadas'),
+      exRecord('y', 1, 'lun', 2, 'dominadas'),
+    ]
+    const desired = [exRow(1, 'lun', 1, 'dominadas', 'dominadas', 0)]
+
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
+
+    expect(plan.toCreate).toEqual([])
+    expect(plan.toDelete).toEqual(['y'])
+  })
+
+  it('el mismo ejercicio en días distintos no se confunde', () => {
+    const existing = [
+      exRecord('x', 1, 'lun', 1, 'sentadillas'),
+      exRecord('y', 1, 'mar', 2, 'sentadillas'),
+    ]
+    const desired = [exRow(1, 'lun', 1, 'sentadillas'), exRow(1, 'mar', 2, 'sentadillas')]
+
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
+
+    expect(isNoop(plan)).toBe(true)
+  })
+
+  it('el mismo día en fases distintas no se confunde', () => {
+    const existing = [
+      exRecord('x', 1, 'lun', 1, 'fondos'),
+      exRecord('y', 2, 'lun', 2, 'fondos'),
+    ]
+    const desired = [exRow(1, 'lun', 1, 'fondos'), exRow(2, 'lun', 2, 'fondos')]
+
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
+
+    expect(isNoop(plan)).toBe(true)
+  })
+
+  it('cambiar los datos de un ejercicio lo actualiza en su propia fila', () => {
+    const existing = [{ ...exRecord('x', 1, 'lun', 1, 'dominadas'), sets: 3 }]
+    const desired = [
+      {
+        key: exerciseKey(1, 'lun', 'dominadas', 0),
+        data: {
+          phase_number: 1,
+          day_id: 'lun',
+          sort_order: 1,
+          exercise_id: 'dominadas',
+          exercise_name: { es: 'dominadas' },
+          sets: 4,
+        },
+      },
+    ]
+
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
+
+    expect(plan.toUpdate).toEqual([{ id: 'x', data: { sets: 4 } }])
+    expect(plan.toDelete).toEqual([])
+  })
+
+  it('alargar un día solo crea la fila nueva', () => {
     const existing = [exRecord('x', 1, 'lun', 1, 'A')]
     const desired = [exRow(1, 'lun', 1, 'A'), exRow(1, 'lun', 2, 'B')]
 
-    const plan = diffCollection(existing, desired, byExercise, I18N)
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
 
     expect(plan.toUpdate).toEqual([])
     expect(plan.toDelete).toEqual([])
     expect(planWriteCount(plan)).toBe(1)
+  })
+
+  it('mover un ejercicio de día lo recrea, sin tocar a los demás', () => {
+    const existing = [
+      exRecord('x', 1, 'lun', 1, 'dominadas'),
+      exRecord('y', 1, 'mar', 2, 'flexiones'),
+    ]
+    // Las dominadas pasan del lunes al martes.
+    const desired = [exRow(1, 'mar', 1, 'flexiones'), exRow(1, 'mar', 2, 'dominadas')]
+
+    const plan = diffCollection(existing, desired, makeExerciseKeyOf(), I18N)
+
+    expect(plan.toCreate).toHaveLength(1)
+    expect((plan.toCreate[0] as { exercise_id: string }).exercise_id).toBe('dominadas')
+    expect(plan.toDelete).toEqual(['x'])
+    // La fila del martes que no se movió solo se renumera.
+    expect(plan.toUpdate).toEqual([{ id: 'y', data: { sort_order: 1 } }])
   })
 })
 
@@ -407,8 +514,10 @@ describe('claves naturales', () => {
     expect(dayConfigKey(1, 'lun')).not.toBe(dayConfigKey(1, 'mar'))
   })
 
-  it('exerciseKey distingue posición', () => {
-    expect(exerciseKey(1, 'lun', 1)).not.toBe(exerciseKey(1, 'lun', 2))
+  it('exerciseKey distingue ejercicio y repetición', () => {
+    expect(exerciseKey(1, 'lun', 'dominadas')).not.toBe(exerciseKey(1, 'lun', 'flexiones'))
+    // Y la repetición desempata el mismo ejercicio dentro de un día.
+    expect(exerciseKey(1, 'lun', 'dominadas', 0)).not.toBe(exerciseKey(1, 'lun', 'dominadas', 1))
   })
 })
 

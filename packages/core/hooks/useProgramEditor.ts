@@ -22,6 +22,7 @@ import {
   phaseKey,
   dayConfigKey,
   exerciseKey,
+  makeExerciseKeyOf,
   type CollectionWriter,
   type DesiredRow,
   type ExistingRecord,
@@ -613,10 +614,17 @@ export function useProgramEditor() {
             (sectionOrder[a.section || 'main'] || 1) - (sectionOrder[b.section || 'main'] || 1)
           )
 
+          // Contador de repeticiones del mismo ejercicio dentro del día, para
+          // que «dominadas» dos veces en el mismo entrenamiento sean dos filas
+          // distintas y no colisionen en la misma clave.
+          const occurrences = new Map<string, number>()
+
           for (const ex of sortedExercises) {
             sortOrder++
+            const occurrence = occurrences.get(ex.exerciseId) ?? 0
+            occurrences.set(ex.exerciseId, occurrence + 1)
             desiredExercises.push({
-              key: exerciseKey(pi + 1, day.dayId, sortOrder),
+              key: exerciseKey(pi + 1, day.dayId, ex.exerciseId, occurrence),
               data: {
                 program: programId,
                 phase_number: pi + 1,
@@ -687,9 +695,13 @@ export function useProgramEditor() {
         {
           writer: collectionWriter('program_exercises'),
           plan: diffCollection(
-            existingExercises as ExistingRecord[],
+            // Se ordena por sort_order para que el desempate por repetición
+            // cuente en el mismo orden en que se generaron las filas deseadas.
+            [...(existingExercises as ExistingRecord[])].sort(
+              (a, b) => Number(a.sort_order) - Number(b.sort_order),
+            ),
             desiredExercises,
-            r => exerciseKey(r.phase_number as number, r.day_id as string, r.sort_order as number),
+            makeExerciseKeyOf(),
             diffOpts,
           ),
         },
