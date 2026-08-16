@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useRef, useCallback, useEffect, ty
 import { useQueryClient } from '@tanstack/react-query'
 import i18n from '../lib/i18n'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { CARDIO_ACTIVE_KEY as STORAGE_KEY, CARDIO_UNSAVED_KEY as UNSAVED_KEY } from '@calistenia/core/lib/storage-keys'
 import { qk } from '@calistenia/core/lib/query-keys'
 import {
   haversineDistance, calculateElevationGain,
@@ -54,7 +55,6 @@ const CardioSessionContext = createContext<CardioSessionContextValue | null>(nul
 
 // ── localStorage backup key ──────────────────────────────────────────────────
 
-const STORAGE_KEY = 'calistenia_cardio_active'
 // Discard persisted sessions older than 24 hours — prevents zombie sessions
 const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000
 
@@ -100,7 +100,6 @@ function clearStorage() {
 
 // ── Unsaved session queue (retry on PocketBase failure) ─────────────────────
 
-const UNSAVED_KEY = 'calistenia_cardio_unsaved'
 const MAX_UNSAVED = 5
 
 function loadUnsaved(): Record<string, unknown>[] {

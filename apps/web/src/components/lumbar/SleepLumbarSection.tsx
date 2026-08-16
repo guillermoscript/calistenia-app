@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/utils'
 import { daysAgoStr, todayStr, toLocalDateStr } from '@calistenia/core/lib/dateUtils'
+import { LUMBAR_CHECKS_KEY as LS_LUMBAR_KEY } from '@calistenia/core/lib/storage-keys'
 import { useSleep, calculateDurationMinutes } from '@calistenia/core/hooks/useSleep'
 import type { SleepEntry, LumbarCheck } from '@calistenia/core/types'
 import type { SleepEntryInput } from '@calistenia/core/hooks/useSleep'
@@ -19,8 +20,6 @@ import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-const LS_LUMBAR_KEY = 'calistenia_lumbar_checks'
 
 function loadLumbarChecks(): LumbarCheck[] {
   try { return JSON.parse(localStorage.getItem(LS_LUMBAR_KEY) || '[]') } catch { return [] }

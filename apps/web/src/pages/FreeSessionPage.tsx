@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pb, isPocketBaseAvailable } from '@calistenia/core/lib/pocketbase'
+import { FREE_SESSION_QUEUE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
 import { WORKOUTS } from '@calistenia/core/data/workouts'
 import { SUPPLEMENTARY_EXERCISES } from '@calistenia/core/data/supplementary-exercises'
 import catalogData from '@calistenia/core/data/exercise-catalog.json'
@@ -63,8 +64,6 @@ const CAT_TEXT: Record<string, string> = {
   core: 'text-amber-400', lumbar: 'text-red-500', full: 'text-amber-400',
   movilidad: 'text-emerald-400', skill: 'text-violet-400',
 }
-
-const STORAGE_KEY = 'calistenia_free_session_queue'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

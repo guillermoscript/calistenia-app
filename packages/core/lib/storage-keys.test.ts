@@ -30,11 +30,18 @@ const EXPECTED_KEYS = [
   'calistenia_health_last_sync',
   'calistenia_battle_invite_token',
   'calistenia_rq_cache',
+  'calistenia_strength_active',
+  'calistenia_cardio_active',
+  'calistenia_cardio_unsaved',
+  'calistenia_circuit_active',
+  'calistenia_free_session_queue',
+  'calistenia_lumbar_checks',
+  'calistenia_circuit_unsaved',
 ]
 
 describe('USER_SCOPED_STORAGE_KEYS', () => {
-  it('contiene exactamente las 19 claves de localStorage por usuario', () => {
-    expect(USER_SCOPED_STORAGE_KEYS).toHaveLength(19)
+  it('contiene exactamente las 26 claves de localStorage por usuario', () => {
+    expect(USER_SCOPED_STORAGE_KEYS).toHaveLength(26)
     expect([...USER_SCOPED_STORAGE_KEYS].sort()).toEqual([...EXPECTED_KEYS].sort())
   })
 })
