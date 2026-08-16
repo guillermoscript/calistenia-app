@@ -22,17 +22,17 @@ interface NutritionGoalSetupProps {
     weight: number,
     height: number,
     age: number,
-    sex: string,
-    activityLevel: string,
-    goal: string,
+    sex: Sex,
+    activityLevel: ActivityLevel,
+    goal: NutritionGoalType,
     pace?: string
   ) => { dailyCalories: number; dailyProtein: number; dailyCarbs: number; dailyFat: number }
   initialWeight?: number
   initialHeight?: number
   initialAge?: number
-  initialSex?: 'male' | 'female'
-  initialActivityLevel?: string
-  initialGoal?: string
+  initialSex?: Sex
+  initialActivityLevel?: ActivityLevel
+  initialGoal?: NutritionGoalType
   initialPace?: string
 }
 
@@ -140,14 +140,10 @@ export default function NutritionGoalSetup({
   const [sex, setSex] = useState<Sex>(initialSex ?? 'male')
 
   // Step 1: activity
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(
-    (initialActivityLevel as ActivityLevel) ?? 'moderate'
-  )
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(initialActivityLevel ?? 'moderate')
 
   // Step 2: goal + pace
-  const [goal, setGoal] = useState<NutritionGoalType>(
-    (initialGoal as NutritionGoalType) ?? 'muscle_gain'
-  )
+  const [goal, setGoal] = useState<NutritionGoalType>(initialGoal ?? 'muscle_gain')
   const [pace, setPace] = useState<string>(initialPace ?? 'balanced')
 
   // Step 3: calculated macros (editable)

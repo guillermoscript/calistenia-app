@@ -301,15 +301,17 @@ export function useNutrition(userId: string | null) {
   }, [usePB, userId, appendEntries])
 
   // ─── AI analysis (sin estado — igual que antes) ───────────────────────────
+  // Web pasa File[]; mobile pasa Blob[] (URIs leídos a Blob por XHR, ver
+  // saveEntry). Ambos van al campo multipart 'images'.
   const analyzeMeal = useCallback(async (
-    imageFiles: File | File[],
+    imageFiles: File | Blob | Array<File | Blob>,
     mealType: string,
     description?: string,
     userContext?: { goal?: string; remainingMacros?: DailyTotals; recentScores?: { mealType: string; score: string; loggedAt: string }[]; topFoods?: string[]; logHour?: number },
   ): Promise<{ foods: FoodItem[]; totals: DailyTotals; meal_description: string; ai_model: string; quality?: { score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } }> => {
     const formData = new FormData()
     const files = Array.isArray(imageFiles) ? imageFiles : [imageFiles]
-    for (const file of files) formData.append('images', file)
+    for (const file of files) formData.append('images', file, (file as { name?: string }).name || 'photo.jpg')
     formData.append('meal_type', mealType)
     if (description) formData.append('description', description)
     if (userContext) {

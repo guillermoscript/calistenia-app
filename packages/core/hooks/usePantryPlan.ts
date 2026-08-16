@@ -8,7 +8,7 @@ import {
   submitPantryWeekPlanJob,
   type PantryPlanGoals,
 } from '../lib/pantry-api'
-import { fetchJobStatus } from '../lib/ai-jobs-api'
+import { pollJob } from '../lib/ai-jobs-api'
 import { qk } from '../lib/query-keys'
 import type { HowManyMealsResult, PantryDayPlanResult } from '../types'
 
@@ -18,7 +18,8 @@ const MAX_POLL_MS = 180_000
 /**
  * #171 F2: generación de planes desde la despensa.
  * day / how_many_meals: síncronos. week: job async — este hook SÍ pollea
- * (a diferencia del flujo weekly clásico) y refresca el plan activo al completar.
+ * (a diferencia del flujo weekly clásico, vía `pollJob`) y refresca el plan
+ * activo al completar.
  */
 export function usePantryPlan(userId: string | null) {
   const { data: items = [] } = usePantryItems(userId)
@@ -50,24 +51,16 @@ export function usePantryPlan(userId: string | null) {
         items: buildPantrySnapshot(items),
         goals,
       })
-      const started = Date.now()
-      while (Date.now() - started < MAX_POLL_MS) {
-        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
-        if (!alive.current) return
-        let job
-        try {
-          job = await fetchJobStatus(jobId)
-        } catch {
-          // Blip transitorio de red: el job sigue corriendo server-side; el cap de 180s acota.
-          continue
-        }
-        if (job.status === 'completed') {
-          await qc.invalidateQueries({ queryKey: qk.weeklyMealPlan.active(userId) })
-          return
-        }
-        if (job.status === 'failed') throw new Error(job.error || 'La generación del plan falló')
-      }
-      throw new Error('Tiempo de espera agotado generando el plan')
+      const job = await pollJob(jobId, {
+        intervalMs: POLL_INTERVAL_MS,
+        maxMs: MAX_POLL_MS,
+        isAlive: () => alive.current,
+        failedMessage: 'La generación del plan falló',
+        timeoutMessage: 'Tiempo de espera agotado generando el plan',
+      })
+      // null = el componente se desmontó a mitad; nadie espera el resultado.
+      if (!job) return
+      await qc.invalidateQueries({ queryKey: qk.weeklyMealPlan.active(userId) })
     },
     [items, qc, userId]
   )
