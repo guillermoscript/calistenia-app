@@ -4,13 +4,9 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { cn } from '../../lib/utils'
+import type { BasicsValues } from '@calistenia/core/types/onboarding'
 
-export interface BasicsValues {
-  weight: string
-  height: string
-  age: string
-  sex: string
-}
+export type { BasicsValues }
 
 interface Props {
   values: BasicsValues

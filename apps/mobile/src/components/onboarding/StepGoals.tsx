@@ -10,18 +10,9 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { calculateBmi, bmiCategoryKey, bmiColorClass, parseDecimal, calculateWhtr, whtrCategoryKey, whtrColorClass } from '@calistenia/core/lib/bmi'
 import { primaryGoalImpliesWeightChange } from '@calistenia/core/lib/primaryGoal'
-import type { PrimaryGoal } from '@calistenia/core/types/onboarding'
+import type { ActivityLevel, GoalsValues, Pace, PrimaryGoal } from '@calistenia/core/types/onboarding'
 
-export type ActivityLevel = 'sedentary' | 'light' | 'active' | 'very_active'
-export type Pace = 'gradual' | 'balanced' | 'aggressive'
-
-export interface GoalsValues {
-  primary_goal: PrimaryGoal | ''
-  goal_weight: string
-  waist: string
-  activity_level: ActivityLevel | ''
-  pace: Pace | ''
-}
+export type { ActivityLevel, GoalsValues, Pace }
 
 interface Props {
   values: GoalsValues
