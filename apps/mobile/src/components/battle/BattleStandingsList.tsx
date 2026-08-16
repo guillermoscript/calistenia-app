@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import BattleScoreCell from '@/components/battle/BattleScoreCell'
 import { battleExerciseName } from '@calistenia/core/data/battle-presets'
 import {
+  battleDisplayRanks,
   battleParticipantActivity,
   battleRestSecondsLeft,
   battleWorkColumns,
@@ -174,6 +175,11 @@ export default function BattleStandingsList({
   // con sus dos columnas de siempre (#426).
   const columns = useMemo(() => battleWorkColumns(config), [config])
 
+  // Dos rivales igualados comparten puesto, como ya hacía la pantalla de resultados;
+  // pintar #1/#2 en vivo y #1/#1 al terminar era la misma batalla contando dos
+  // historias (#453). El `rank` del servidor no se toca: es el desempate congelado.
+  const displayRanks = useMemo(() => battleDisplayRanks(standings), [standings])
+
   const leftTag = t('battle.leftTag')
   const someone = t('battle.someone')
   // El servidor manda cadena vacía cuando la cuenta no tiene `display_name`, así que el
@@ -186,7 +192,7 @@ export default function BattleStandingsList({
     return (
       <BattleStandingsRow
         key={entry.participant_id}
-        rank={entry.rank}
+        rank={displayRanks.get(entry.participant_id) ?? entry.rank}
         displayName={entry.display_name || (isMe ? youName : someone)}
         activity={activity}
         isMe={isMe}

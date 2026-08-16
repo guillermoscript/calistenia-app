@@ -25,7 +25,12 @@ import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { useBattleContext } from '@/contexts/BattleContext'
 import BattleStandingsList from '@/components/battle/BattleStandingsList'
-import { battleSpanMs, battleWorkColumns, formatBattleElapsed } from '@calistenia/core/lib/battle'
+import {
+  battleDisplayRanks,
+  battleSpanMs,
+  battleWorkColumns,
+  formatBattleElapsed,
+} from '@calistenia/core/lib/battle'
 
 function Stat({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
@@ -58,11 +63,15 @@ export default function BattleFinishedWaiting() {
   // con denominador reutilizando la misma fórmula que el historial (#432). Quien se sale
   // no tiene puesto que enseñar, y la cabecera vuelve a nombrar el estado.
   const myStanding = walkedAway ? null : mine
-  const title = myStanding
-    ? t('battle.rankOf', { rank: myStanding.rank, total: standings.length })
+  // Puesto con los empates resueltos, el mismo que enseñarán resultados e historial (#453).
+  const myRank = myStanding
+    ? battleDisplayRanks(standings).get(myStanding.participant_id) ?? myStanding.rank
+    : null
+  const title = myRank !== null
+    ? t('battle.rankOf', { rank: myRank, total: standings.length })
     : walkedAway ? t('battle.youLeftTitle') : t('battle.youFinishedTitle')
   const kicker = myStanding ? t('battle.position') : t('battle.stillLive')
-  const leading = myStanding?.rank === 1
+  const leading = myRank === 1
 
   // El resumen enseña las unidades del circuito, no siempre reps: tras una batalla de
   // plancha, "REPS 0" contaba el esfuerzo como si no hubiera existido (#426).
