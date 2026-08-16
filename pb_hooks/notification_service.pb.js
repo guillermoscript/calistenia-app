@@ -56,9 +56,16 @@ onRecordAfterCreateSuccess(function(e) {
 
     var followerName = helpers.getUserName(followerId)
 
+    // #422: contra una cuenta privada esto es una SOLICITUD, no un seguidor.
+    // El status lo fija `follow_requests.pb.js` en el create, así que aquí ya
+    // está normalizado. Decirle "tienes un nuevo seguidor" a quien solo ha
+    // recibido una solicitud es mentir sobre quién puede ver su actividad, que
+    // es justo lo que #422 va de arreglar.
+    var pending = e.record.getString("status") === "pending"
+
     helpers.createNotification(
       followingId,
-      "follow",
+      pending ? "follow_request" : "follow",
       followerId,
       followerId,
       "user",
@@ -67,10 +74,12 @@ onRecordAfterCreateSuccess(function(e) {
 
     helpers.sendPush(
       followingId,
-      (followerName || "Alguien") + " te sigue",
-      "Tienes un nuevo seguidor",
+      pending
+        ? (followerName || "Alguien") + " quiere seguirte"
+        : (followerName || "Alguien") + " te sigue",
+      pending ? "Toca para aceptar o rechazar" : "Tienes un nuevo seguidor",
       "/u/" + followerId,
-      "follow",
+      pending ? "follow_request" : "follow",
       followerId
     )
   } catch (err) {

@@ -47,12 +47,20 @@ const PRIVATE_FIELDS = [
  * `display_name` en el buscador de amigos, y `created`/`updated` no son campos
  * `system` en PocketBase, así que hay que nombrarlos explícitamente.
  */
-const PUBLIC_FIELDS = ["display_name", "avatar", "level", "name", "created", "updated"]
+// `is_private` (#422) es público a propósito: el perfil ajeno necesita saber si
+// ofrecer "Seguir" o "Solicitar". Lo privado es el contenido, no el estado.
+const PUBLIC_FIELDS = ["display_name", "avatar", "level", "name", "created", "updated", "is_private"]
 
 /** Valores de siembra: todos los campos privados rellenos y distinguibles de vacío. */
 const PROFILE = {
   display_name: "Dueño de la fila",
   level: "intermedio",
+  // OJO: `is_private` NO se siembra aquí, y a propósito. Este fichero comprueba
+  // el recorte por campo (#411), y para eso el dueño tiene que seguir siendo
+  // legible por un tercero; ponerlo a `true` activa el alcance de filas de #422
+  // y el test de `expand=user` se queda sin sesión que leer. Como control de
+  // "el campo viaja" basta el `false` que sirve PocketBase: si el hook lo
+  // recortara llegaría `undefined`, que es lo que el assert distingue.
   weight: 78.5,
   height: 176,
   waist: 84,
