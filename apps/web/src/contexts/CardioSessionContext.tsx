@@ -5,17 +5,11 @@ import { pb } from '@calistenia/core/lib/pocketbase'
 import { CARDIO_ACTIVE_KEY as STORAGE_KEY, CARDIO_UNSAVED_KEY as UNSAVED_KEY } from '@calistenia/core/lib/storage-keys'
 import { qk } from '@calistenia/core/lib/query-keys'
 import {
-  haversineDistance, calculateElevationGain,
+  calculateElevationGain,
   calculateSplitsAndDistance, calculateMaxPace, calculateMaxSpeed, calculateAvgSpeed,
-  kalmanUpdate, type KalmanState,
+  type KalmanState,
 } from '@calistenia/core/lib/geo'
-
-// ── Precision tuning ────────────────────────────────────────────────────────
-// Reject GPS fixes with accuracy worse than this (urban ~8-15m, open sky ~5m).
-const MAX_ACCURACY_M = 20
-// Drop points closer than this to the last stored point — GPS jitter at rest
-// inflates distance otherwise.
-const MIN_POINT_DISTANCE_M = 3
+import { processCardioFix, type CardioFixState, type CardioFixInput } from '@calistenia/core/lib/cardio-fix'
 import { estimateCalories } from '@calistenia/core/lib/calories'
 import { splitRoute, saveCardioRoute, hydrateCardioRoutes } from '@calistenia/core/lib/cardioRoutes'
 import type { GpsPoint, CardioActivityType, CardioSession } from '@calistenia/core/types'
@@ -195,6 +189,48 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     return () => clearInterval(id)
   }, [state, persistSnapshot])
 
+  // ── Pipeline de fixes GPS (compartido con mobile via core) ──────────────
+
+  // Pasa un fix por processCardioFix() de core y aplica nextState + flags a
+  // refs/estado. Devuelve true si el fix produjo un punto aceptado.
+  const applyFix = useCallback((fix: CardioFixInput): boolean => {
+    // Un fix en vuelo puede llegar después de pause()/finish() (clearWatch
+    // no es instantáneo): fuera de 'tracking' no debe mutar distancia/puntos.
+    if (stateRef.current !== 'tracking') return false
+
+    const pts = pointsRef.current
+    const fixState: CardioFixState = {
+      lastPoint: pts.length > 0 ? pts[pts.length - 1] : null,
+      kalman: kalmanRef.current,
+      distanceKm: distanceRef.current,
+      lastSplitKm: lastSplitKmRef.current,
+      lastSplitTime: lastSplitTimeRef.current,
+      startTime: startTimeRef.current,
+      maxSpeedKmh: maxSpeedRef.current,
+    }
+
+    const result = processCardioFix(fixState, fix, activityTypeRef.current)
+
+    if (result.accuracy != null) setGpsAccuracy(result.accuracy)
+    if (!result.accepted || !result.point) return false
+
+    kalmanRef.current = result.nextState.kalman
+    distanceRef.current = result.nextState.distanceKm
+    lastSplitKmRef.current = result.nextState.lastSplitKm
+    lastSplitTimeRef.current = result.nextState.lastSplitTime
+    maxSpeedRef.current = result.nextState.maxSpeedKmh
+
+    pts.push(result.point)
+    setPointsCount(pts.length)
+    setDistance(result.distanceKm)
+    if (result.split) setCurrentSplit(result.split)
+    if (result.speedKmh > 0 || result.paceMinKm > 0) {
+      setCurrentPace(result.paceMinKm)
+      setCurrentSpeed(result.speedKmh)
+    }
+    return true
+  }, [])
+
   // Also persist on visibility change (user switches app / locks screen)
   // Best-effort: grab one last GPS point before the browser suspends JS
   useEffect(() => {
@@ -206,30 +242,11 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
           navigator.geolocation.getCurrentPosition(
             (pos) => {
               const { latitude, longitude, altitude, speed, accuracy } = pos.coords
-              if (accuracy > MAX_ACCURACY_M) return
-              const pts = pointsRef.current
-              const smoothed = kalmanUpdate(kalmanRef.current, latitude, longitude, accuracy, pos.timestamp)
-              kalmanRef.current = smoothed
-              const point: GpsPoint = {
-                lat: smoothed.lat, lng: smoothed.lng,
-                alt: altitude ?? undefined,
+              const accepted = applyFix({
+                latitude, longitude, altitude, speed, accuracy,
                 timestamp: pos.timestamp,
-                speed: speed ?? undefined,
-                accuracy,
-              }
-              if (pts.length > 0) {
-                const last = pts[pts.length - 1]
-                if (point.timestamp - last.timestamp < 1000) return
-                const d = haversineDistance(last.lat, last.lng, point.lat, point.lng)
-                const timeDiff = (point.timestamp - last.timestamp) / 1000
-                if (d < MIN_POINT_DISTANCE_M) return
-                if (timeDiff > 0 && d / timeDiff > 14) return
-                distanceRef.current += d / 1000
-                setDistance(distanceRef.current)
-              }
-              pts.push(point)
-              setPointsCount(pts.length)
-              persistSnapshot()
+              })
+              if (accepted) persistSnapshot()
             },
             () => { /* ignore errors — best effort */ },
             { enableHighAccuracy: true, timeout: 3000 },
@@ -239,7 +256,7 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
     }
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
-  }, [persistSnapshot])
+  }, [persistSnapshot, applyFix])
 
   // Keep refs synced with state for use inside long-lived intervals
   useEffect(() => { durationRef.current = duration }, [duration])
@@ -281,95 +298,21 @@ export function CardioSessionProvider({ userId, userWeight, children }: Props) {
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        // Un fix en vuelo puede llegar después de pause()/finish() (clearWatch
-        // no es instantáneo): fuera de 'tracking' no debe mutar distancia/puntos.
-        if (stateRef.current !== 'tracking') return
         const { latitude, longitude, altitude, speed, accuracy } = pos.coords
-        setGpsAccuracy(accuracy)
-        if (accuracy > MAX_ACCURACY_M) return
-
-        const pts = pointsRef.current
-        const prevPt = pts.length > 0 ? pts[pts.length - 1] : null
-        const timeDiff = prevPt ? (pos.timestamp - prevPt.timestamp) / 1000 : 0
-        const isGap = prevPt !== null && timeDiff > 30
-
-        // Reset Kalman filter on gap — predicted variance would be enormous
-        // after a long pause and would bias smoothing back to the pre-gap location.
-        if (isGap) kalmanRef.current = null
-
-        // Smooth lat/lng via 1D Kalman (per-coord). Reduces jitter from poor fixes.
-        const smoothed = kalmanUpdate(kalmanRef.current, latitude, longitude, accuracy, pos.timestamp)
-        kalmanRef.current = smoothed
-
-        const point: GpsPoint = {
-          lat: smoothed.lat,
-          lng: smoothed.lng,
-          alt: altitude ?? undefined,
+        const accepted = applyFix({
+          latitude, longitude, altitude, speed, accuracy,
           timestamp: pos.timestamp,
-          speed: speed ?? undefined,
-          accuracy,
-        }
-
-        if (prevPt) {
-          const d = haversineDistance(prevPt.lat, prevPt.lng, point.lat, point.lng)
-
-          if (isGap) {
-            const maxSpeed: Record<CardioActivityType, number> = {
-              running: 6, walking: 3, cycling: 14,
-            }
-            const limit = maxSpeed[activityTypeRef.current] ?? 6
-            const plausible = timeDiff > 0 && (d / timeDiff) <= limit
-
-            if (plausible) {
-              point.gap = true
-              const newDist = distanceRef.current + d / 1000
-              distanceRef.current = newDist
-              setDistance(newDist)
-            } else {
-              point.gap = true
-            }
-          } else {
-            // Jitter filter — when stationary, GPS bounces within accuracy radius.
-            // Skip additions below the noise floor so distance doesn't drift upward.
-            if (d < MIN_POINT_DISTANCE_M) return
-
-            if (timeDiff > 0 && d / timeDiff > 14) return
-
-            const newDist = distanceRef.current + d / 1000
-            distanceRef.current = newDist
-            setDistance(newDist)
-          }
-
-          const currentKm = Math.floor(distanceRef.current)
-          if (currentKm > lastSplitKmRef.current) {
-            lastSplitKmRef.current = currentKm
-            lastSplitTimeRef.current = point.timestamp
-          }
-          const splitKm = currentKm + 1
-          const splitStartTime = lastSplitTimeRef.current || startTimeRef.current
-          const splitElapsed = Math.floor((point.timestamp - splitStartTime) / 1000)
-          setCurrentSplit({ km: splitKm, elapsed: splitElapsed })
-        }
-
-        pts.push(point)
-        setPointsCount(pts.length)
-        lastGpsTimestampRef.current = Date.now()
-
-        if (speed != null && speed > 0.5) {
-          setCurrentPace(1000 / 60 / speed)
-          const speedKmh = speed * 3.6
-          setCurrentSpeed(Math.round(speedKmh * 10) / 10)
-          if (speedKmh > maxSpeedRef.current) {
-            maxSpeedRef.current = speedKmh
-          }
-        }
+        })
+        // Solo los fixes aceptados cuentan para el health-check del GPS
+        // (mismo criterio que antes de delegar en core).
+        if (accepted) lastGpsTimestampRef.current = Date.now()
       },
       (err) => {
         setError(`Error GPS: ${err.message}`)
       },
       { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
     )
-  }, [])
+  }, [applyFix])
 
   // Keep ref in sync so startTimer health check can call it without circular deps
   startTrackingRef.current = startTracking
