@@ -4,6 +4,7 @@ import { op } from '@calistenia/core/lib/analytics'
 import type { ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import { FREE_SESSION_QUEUE_KEY as FREE_QUEUE_KEY, STRENGTH_ACTIVE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
+import { buildSteps } from '@calistenia/core/lib/session-machine'
 import {
   scheduleActiveSessionPush, flushActiveSessionPush, pushActiveSessionNow,
   fetchRemoteActiveSession, clearRemoteActiveSession,
@@ -277,20 +278,10 @@ export function ActiveSessionProvider({ children, getRestForExercise, setRestFor
     cooldownDurationSeconds: cooldownDurationRef.current,
   }), [])
 
-  // Memoized flat step list — avoids rebuilding on every skip call
-  const flatSteps = useMemo(() => {
-    if (!workout) return []
-    const steps: { exercise: Exercise }[] = []
-    workout.exercises.forEach(ex => {
-      // sets=0 explícito → 0 steps (el ejercicio no participa); el fallback de 1
-      // queda solo para sets no parseable. Debe coincidir con buildSteps de
-      // SessionView.tsx para que los índices de skipWarmup no se desincronicen.
-      const parsed = parseInt(String(ex.sets), 10)
-      const total = ex.sets === 'múltiples' ? 3 : Number.isFinite(parsed) ? Math.max(0, parsed) : 1
-      for (let s = 1; s <= total; s++) steps.push({ exercise: ex })
-    })
-    return steps
-  }, [workout])
+  // Memoized flat step list — avoids rebuilding on every skip call.
+  // Mismo buildSteps de core que usa SessionView, así los índices de
+  // skipWarmup no pueden desincronizarse.
+  const flatSteps = useMemo(() => (workout ? buildSteps(workout.exercises) : []), [workout])
 
   const skipWarmup = useCallback(() => {
     if (!workout) return

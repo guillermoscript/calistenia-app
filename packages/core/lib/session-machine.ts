@@ -1,6 +1,9 @@
-// Lógica pura de la máquina de estados de la sesión, extraída de SessionView.
-// Sin React ni hooks: funciones puras testeables. La base para el plan 007.
-import type { Exercise } from '@calistenia/core/types'
+// Lógica pura de la máquina de estados de la sesión de fuerza, compartida
+// entre web y mobile. Sin React ni hooks: funciones puras testeables.
+// Única fuente de verdad de buildSteps — antes vivían tres copias divergidas
+// (mobile lib/session-machine, web SessionView, web ActiveSessionContext) y
+// el caso sets: 0 daba 1 paso en móvil y 0 en web (#452).
+import type { Exercise } from '../types'
 
 export interface Step {
   exercise: Exercise
@@ -9,11 +12,16 @@ export interface Step {
   section: 'warmup' | 'main' | 'cooldown'
 }
 
-/** Expande cada ejercicio en una serie de "pasos" (uno por set). */
+/**
+ * Expande cada ejercicio en una serie de "pasos" (uno por set).
+ * sets=0 explícito → 0 pasos (el ejercicio no participa); 'múltiples' → 3;
+ * el fallback de 1 queda solo para sets no parseable.
+ */
 export function buildSteps(exercises: Exercise[]): Step[] {
   const steps: Step[] = []
   exercises.forEach(ex => {
-    const total = ex.sets === 'múltiples' ? 3 : (parseInt(String(ex.sets)) || 1)
+    const parsed = parseInt(String(ex.sets), 10)
+    const total = ex.sets === 'múltiples' ? 3 : Number.isFinite(parsed) ? Math.max(0, parsed) : 1
     for (let s = 1; s <= total; s++) {
       steps.push({ exercise: ex, setNumber: s, totalSets: total, section: ex.section || 'main' })
     }
