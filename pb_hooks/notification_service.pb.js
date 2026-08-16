@@ -90,19 +90,8 @@ onRecordAfterCreateSuccess(function(e) {
 
     if (!reactorId || !sessionId) return
 
-    var ownerId = ""
-    try {
-      var session = $app.findRecordById("sessions", sessionId)
-      ownerId = session.getString("user")
-    } catch (err) {
-      // sessionId may belong to a cardio_sessions record — try fallback
-      try {
-        var cardioSession = $app.findRecordById("cardio_sessions", sessionId)
-        ownerId = cardioSession.getString("user")
-      } catch (err2) {
-        return
-      }
-    }
+    var sessions = require(`${__hooks}/utils/sessions.js`)
+    var ownerId = sessions.findSessionOwner($app, sessionId)
 
     if (!ownerId || ownerId === reactorId) return
 
@@ -175,17 +164,11 @@ onRecordAfterCreateSuccess(function(e) {
       } catch (err) { /* parent not found */ }
     }
 
-    // Notify the session owner (sessions or cardio_sessions)
+    // Notify the session owner.
     try {
-      var ownerRecord = null
-      try {
-        ownerRecord = $app.findRecordById("sessions", sessionId)
-      } catch (err) {
-        // sessionId may belong to a cardio_sessions record — try fallback
-        ownerRecord = $app.findRecordById("cardio_sessions", sessionId)
-      }
-      if (!ownerRecord) return
-      var ownerId = ownerRecord.getString("user")
+      var sessions = require(`${__hooks}/utils/sessions.js`)
+      var ownerId = sessions.findSessionOwner($app, sessionId)
+      if (!ownerId) return
       if (ownerId && ownerId !== authorId) {
         // Avoid double notification if owner is also the parent comment author
         var skipOwner = false

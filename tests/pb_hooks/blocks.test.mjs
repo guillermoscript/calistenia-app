@@ -84,6 +84,27 @@ test("guards: interacciones entre bloqueados devuelven 400 genérico", async () 
   )
 })
 
+test("guards: bloquea comentarios y reacciones sobre circuit_sessions", async () => {
+  const owner = await createUser("Guard Circuit Owner")
+  const blocked = await createUser("Guard Circuit Blocked")
+  const circuit = await createAs(owner, "circuit_sessions", {
+    user: owner.id,
+    mode: "rounds",
+    rounds_completed: 3,
+  })
+
+  await createAs(owner, "user_blocks", { blocker: owner.id, blocked: blocked.id })
+
+  await expect400(
+    createAs(blocked, "comments", { session_id: circuit.id, author: blocked.id, text: "hola circuito" }),
+    "comentario de usuario bloqueado en circuito"
+  )
+  await expect400(
+    createAs(blocked, "feed_reactions", { session_id: circuit.id, reactor: blocked.id, emoji: "⚡" }),
+    "reacción de usuario bloqueado en circuito"
+  )
+})
+
 test("desbloquear limpia el espejo y vuelve a permitir interacciones", async () => {
   const a = await createUser("Unblock A")
   const b = await createUser("Unblock B")
