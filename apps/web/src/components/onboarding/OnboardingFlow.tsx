@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as Sentry from '@sentry/react'
-import { pb } from '@calistenia/core/lib/pocketbase'
-import { upsertUserHealth, useUserHealth } from '@calistenia/core/hooks/useUserHealth'
+import { useUserHealth } from '@calistenia/core/hooks/useUserHealth'
+import { useOnboardingSubmit } from '@calistenia/core/hooks/useOnboardingSubmit'
 import { op } from '@calistenia/core/lib/analytics'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
+import { markOnboardingDone } from '@calistenia/core/lib/onboarding-state'
 import type { ProgramMeta } from '@calistenia/core/types'
-import { markOnboardingDone } from './state'
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepWelcome } from './StepWelcome'
 import { StepBasics, type BasicsValues } from './StepBasics'
@@ -66,13 +66,19 @@ export default function OnboardingFlow({
   const [goals, setGoals] = useState<GoalsValues>(EMPTY_GOALS)
   const [health, setHealth] = useState<HealthValues>(EMPTY_HEALTH)
   const [training, setTraining] = useState<TrainingValues>(EMPTY_TRAINING)
-  const [savingProfile, setSavingProfile] = useState(false)
-  const [savingGoals, setSavingGoals] = useState(false)
-  const [savingHealth, setSavingHealth] = useState(false)
-  const [savingTraining, setSavingTraining] = useState(false)
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(activeProgram?.id ?? null)
   const [selecting, setSelecting] = useState(false)
-  const [saveError, setSaveError] = useState(false)
+  // Escrituras del onboarding a PocketBase, compartidas con móvil (#472).
+  // Si un guardado falla devuelven false y NO se avanza de paso (#222).
+  const {
+    savingProfile, savingGoals, savingHealth, savingTraining,
+    saveError, setSaveError,
+    saveBasics, saveGoals, saveHealth, saveTraining,
+  } = useOnboardingSubmit({
+    userId,
+    captureException: (e, stepName) =>
+      Sentry.captureException(e, { tags: { flow: 'onboarding_save', step: stepName } }),
+  })
   // Salud guardada (user_health): fallback para el matching de programas cuando
   // el flujo no pasó por el paso de salud (needsProfile=false).
   const { health: savedHealth } = useUserHealth(userId ?? null)
@@ -105,13 +111,6 @@ export default function OnboardingFlow({
     setStep(s)
   }
 
-  // Si el update falla: reportar, avisar y NO avanzar de paso (#222).
-  const handleSaveFailed = (e: unknown, stepName: string) => {
-    Sentry.captureException(e, { tags: { flow: 'onboarding_save', step: stepName } })
-    op.track('onboarding_save_failed', { step_name: stepName })
-    setSaveError(true)
-  }
-
   const handleSelectProgram = async (programId: string) => {
     setSelectedProgramId(programId)
     setSelecting(true)
@@ -123,75 +122,15 @@ export default function OnboardingFlow({
   }
 
   const handleSaveBasics = async () => {
-    if (!userId) return
-    setSavingProfile(true)
-    try {
-      // Edad/sexo ya no existen en `users` (PII; viven en `nutrition_goals`,
-      // que el wizard de nutrición pide al crear el objetivo). Aquí solo se
-      // usan para las heurísticas del propio flujo.
-      await pb.collection('users').update(userId, {
-        weight: parseDecimal(basics.weight),
-        height: parseDecimal(basics.height),
-      })
-    } catch (e) {
-      handleSaveFailed(e, 'profile')
-      setSavingProfile(false)
-      return
-    }
-    setSavingProfile(false)
-    goToStep(goalsStep)
+    if (await saveBasics(basics)) goToStep(goalsStep)
   }
 
   const handleSaveGoals = async () => {
-    if (!userId) return
-    setSavingGoals(true)
-    const waist = parseDecimal(goals.waist)
-    try {
-      await pb.collection('users').update(userId, {
-        primary_goal: goals.primary_goal || '',
-        goal_weight: parseDecimal(goals.goal_weight),
-        waist,
-        activity_level: goals.activity_level || '',
-        pace: goals.pace || '',
-      })
-    } catch (e) {
-      handleSaveFailed(e, 'goals')
-      setSavingGoals(false)
-      return
-    }
-    // La cintura también se registra como medición corporal con fecha (historial).
-    if (waist) {
-      try {
-        await pb.collection('body_measurements').create({
-          user: userId,
-          date: new Date().toISOString().slice(0, 10),
-          waist,
-        })
-      } catch (e) {
-        console.warn('Failed to save waist measurement:', e)
-      }
-    }
-    setSavingGoals(false)
-    goToStep(healthStep)
+    if (await saveGoals(goals)) goToStep(healthStep)
   }
 
-  // Salud → colección `user_health` (en `users` estos campos son PII ocultos
-  // que no se pueden escribir con token de usuario; ver #247).
   const saveHealthAnd = async (next: HealthValues, advanceTo: number) => {
-    if (!userId) return
-    setSavingHealth(true)
-    try {
-      await upsertUserHealth(userId, {
-        medical_conditions: next.medical_conditions,
-        injuries: next.injuries,
-      })
-    } catch (e) {
-      handleSaveFailed(e, 'health')
-      setSavingHealth(false)
-      return
-    }
-    setSavingHealth(false)
-    goToStep(advanceTo)
+    if (await saveHealth(next)) goToStep(advanceTo)
   }
 
   const handleSaveHealth = () => saveHealthAnd(health, trainingStep)
@@ -203,27 +142,11 @@ export default function OnboardingFlow({
   }
 
   const handleSaveTraining = async () => {
-    if (!userId) return
-    setSavingTraining(true)
-    try {
-      await pb.collection('users').update(userId, {
-        level: training.level || 'principiante',
-        focus_areas: training.focus_areas,
-        training_days: training.training_days,
-        intensity: training.intensity || '',
-        goal: training.goal || '',
-      })
-    } catch (e) {
-      handleSaveFailed(e, 'training')
-      setSavingTraining(false)
-      return
-    }
-    setSavingTraining(false)
-    goToStep(programStep)
+    if (await saveTraining(training)) goToStep(programStep)
   }
 
   const handleFinish = (destination: 'home' | 'measurements' = 'home') => {
-    markOnboardingDone(userId)
+    if (userId) markOnboardingDone(userId)
     op.track('onboarding_completed', {
       first_measurement_cta: destination === 'measurements',
       level: training.level || 'unknown',
@@ -350,7 +273,7 @@ export default function OnboardingFlow({
             }}
             onSelectProgram={handleSelectProgram}
             onCreateProgram={() => {
-              markOnboardingDone(userId)
+              if (userId) markOnboardingDone(userId)
               onCreateProgram()
             }}
             onBack={() => goToStep(needsProfile ? trainingStep : 0)}
