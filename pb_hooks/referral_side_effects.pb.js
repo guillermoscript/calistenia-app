@@ -7,8 +7,18 @@
  * 3. Notify referrer
  *
  * Runs with admin-level access ($app), bypassing API rules.
+ *
+ * OJO CON `e.next()`. Los hooks de PocketBase son una cadena tipo middleware:
+ * un handler que no lo llama corta la cadena y los handlers que otros ficheros
+ * registraron para la misma coleccion NO corren, sin un solo error en el log.
+ * Asi se perdieron los tres handlers de `workout_stats.pb.js` en #412. Hoy
+ * ningun otro `.pb.js` registra sobre `referrals`, asi que esto no se estaba
+ * comiendo nada: es la trampa para el siguiente que registre ahi (#457).
+ * Va al principio del cuerpo y no al final porque hay un `return` temprano.
  */
 onRecordAfterCreateSuccess((e) => {
+  e.next()
+
   const referrerId = e.record.getString("referrer")
   const referredId = e.record.getString("referred")
 
