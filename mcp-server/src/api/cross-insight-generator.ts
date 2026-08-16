@@ -50,57 +50,12 @@ const CrossInsightSchema = z.object({
 
 export type CrossInsight = z.infer<typeof CrossInsightSchema>;
 
-// ── Input (the compact rollup from packages/core buildInsightContext) ─────────
-// Typed locally to avoid a cross-package import; matches InsightContext's JSON shape.
+// ── Input ────────────────────────────────────────────────────────────────────
+// The compact rollup built by @calistenia/core (client) or
+// insight-context-server.ts (cron) — ONE declaration, in core (#480).
 
-interface InsightDayRow {
-  date: string;
-  workouts?: number;
-  workoutMinutes?: number;
-  cardioSessions?: number;
-  cardioKm?: number;
-  cardioMinutes?: number;
-  circuitSessions?: number;
-  meals?: number;
-  calories?: number;
-  waterMl?: number;
-  sleepMinutes?: number;
-  sleepQuality?: number;
-  weightKg?: number;
-  waistCm?: number;
-  bodyFatPct?: number;
-  steps?: number;
-  restingHr?: number;
-  hrvMs?: number;
-  vo2max?: number;
-}
-
-interface InsightSummary {
-  days: number;
-  daysWithAnyData: number;
-  workouts: { total: number; daysTrained: number };
-  cardio: { sessions: number; totalKm: number; totalMinutes: number };
-  circuits: { sessions: number };
-  nutrition: { daysLogged: number; avgCalories: number | null; avgMeals: number | null };
-  water: { daysLogged: number; avgMl: number | null };
-  sleep: { daysLogged: number; avgMinutes: number | null; avgQuality: number | null };
-  weight: { firstKg: number | null; lastKg: number | null; deltaKg: number | null };
-  // Composición corporal (#227) — puede faltar en contexts generados por cores viejos.
-  waist?: { firstCm: number | null; lastCm: number | null; deltaCm: number | null };
-  bodyFat?: { firstPct: number | null; lastPct: number | null; deltaPct: number | null };
-  watch: { available: boolean; avgSteps: number | null; avgRestingHr: number | null; avgHrvMs: number | null };
-  streaks: { currentTrainingStreak: number; longestTrainingStreak: number };
-}
-
-export interface InsightContext {
-  period: { type: "weekly" | "monthly"; days: number; start: string; end: string };
-  rows: InsightDayRow[];
-  summary: InsightSummary;
-  previousSummary?: InsightSummary;
-  watchAvailable: boolean;
-  // Objetivo principal declarado en el onboarding (#226), p. ej. "recomposicion".
-  primaryGoal?: string;
-}
+import type { InsightContext } from "@calistenia/core/lib/insightContext";
+export type { InsightContext };
 
 interface CrossInsightInput {
   context: InsightContext;

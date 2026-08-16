@@ -25,44 +25,12 @@ const SleepInsightSchema = z.object({
 
 export type SleepInsight = z.infer<typeof SleepInsightSchema>;
 
-// ── Input (the compact rollup from packages/core buildInsightContext) ─────────
-// Typed locally to avoid a cross-package import; matches InsightContext's JSON
-// shape (only the fields the sleep summary actually reads).
+// ── Input ────────────────────────────────────────────────────────────────────
+// The compact rollup built by @calistenia/core (client) or
+// insight-context-server.ts (cron) — ONE declaration, in core (#480).
 
-interface InsightDayRow {
-  date: string;
-  sleepMinutes?: number;
-  sleepQuality?: number;
-  awakenings?: number;
-  caffeine?: boolean;
-  screenBeforeBed?: boolean;
-  stressLevel?: number;
-  bedtime?: string;
-}
-
-interface InsightSummarySleep {
-  daysLogged: number;
-  avgMinutes: number | null;
-  avgQuality: number | null;
-  avgAwakenings: number;
-  pctCaffeine: number;
-  pctScreenBeforeBed: number;
-  avgStress: number;
-  bedtimeConsistencyMin: number;
-}
-
-interface InsightSummary {
-  days: number;
-  daysWithAnyData: number;
-  sleep: InsightSummarySleep;
-}
-
-export interface InsightContext {
-  period: { type: "weekly" | "monthly"; days: number; start: string; end: string };
-  rows: InsightDayRow[];
-  summary: InsightSummary;
-  previousSummary?: InsightSummary;
-}
+import type { InsightContext } from "@calistenia/core/lib/insightContext";
+export type { InsightContext };
 
 interface SleepInsightInput {
   context: InsightContext;
