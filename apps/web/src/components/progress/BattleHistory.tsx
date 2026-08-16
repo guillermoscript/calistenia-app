@@ -68,8 +68,8 @@ function BattleRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string | 
                   standing.user === meId && 'bg-lime/5',
                 )}
               >
-                <span className={cn('w-5 text-sm', standing.rank === 1 ? 'text-lime' : 'text-muted-foreground')}>
-                  {standing.rank}
+                <span className={cn('w-5 text-sm', standing.display_rank === 1 ? 'text-lime' : 'text-muted-foreground')}>
+                  {standing.display_rank}
                 </span>
                 <span className="flex-1 text-sm truncate">
                   {standing.display_name || t('battle.someone')}

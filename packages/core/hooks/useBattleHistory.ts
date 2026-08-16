@@ -13,18 +13,57 @@ import { useQuery } from '@tanstack/react-query'
 
 import { qk } from '../lib/query-keys'
 import { listMyBattleHistory } from '../lib/battleApi'
-import { battleOutcomeFor, battleRecordFrom, type BattleOutcome, type BattleRecord } from '../lib/battle'
+import {
+  battleDisplayRanks,
+  battleOutcomeFor,
+  battleRecordFrom,
+  type BattleOutcome,
+  type BattleRecord,
+} from '../lib/battle'
 import type { Battle, BattleStanding } from '../types/battle'
+
+/** A frozen standing with its tie-aware rank resolved (#453). */
+export interface BattleHistoryStanding extends BattleStanding {
+  /** Shared with anyone level with this row. See `battleDisplayRanks`. */
+  display_rank: number
+}
 
 export interface BattleHistoryEntry {
   battle: Battle
   outcome: BattleOutcome
-  /** Where I placed, or null on a battle with no stored ranking. */
+  /**
+   * Where I placed, or null on a battle with no stored ranking. Tie-aware: two level
+   * players both read `1`, the same number the results screen showed them (#453).
+   */
   rank: number | null
   /** The frozen ranking, empty when the battle closed before results were stored. */
-  standings: BattleStanding[]
+  standings: BattleHistoryStanding[]
   /** Everyone else who took part, in finishing order. */
-  opponents: BattleStanding[]
+  opponents: BattleHistoryStanding[]
+}
+
+/**
+ * One history entry from a closed battle. Pure so both platforms and the tests share it.
+ *
+ * The frozen `rank` in `final_standings` is left alone; ties are derived at read time
+ * with the same rule as `battleResultView`, otherwise the history says "#2 of 2" about
+ * a battle whose results screen said "#1 of 2" (#453).
+ */
+export function battleHistoryEntryFrom(battle: Battle, userId: string | null): BattleHistoryEntry {
+  const frozen = battle.final_standings ?? []
+  const displayRanks = battleDisplayRanks(frozen)
+  const standings: BattleHistoryStanding[] = frozen.map((entry) => ({
+    ...entry,
+    display_rank: displayRanks.get(entry.participant_id) ?? entry.rank,
+  }))
+  const mine = userId ? standings.find((entry) => entry.user === userId) ?? null : null
+  return {
+    battle,
+    outcome: userId ? battleOutcomeFor(battle.final_standings, userId) : 'unknown',
+    rank: mine?.display_rank ?? null,
+    standings,
+    opponents: standings.filter((entry) => entry.participant_id !== mine?.participant_id),
+  }
 }
 
 export interface UseBattleHistoryResult {
@@ -46,17 +85,7 @@ export function useBattleHistory(userId: string | null): UseBattleHistoryResult 
 
   return useMemo(() => {
     const battles = data ?? []
-    const entries: BattleHistoryEntry[] = battles.map((battle) => {
-      const standings = battle.final_standings ?? []
-      const mine = userId ? standings.find((entry) => entry.user === userId) ?? null : null
-      return {
-        battle,
-        outcome: userId ? battleOutcomeFor(battle.final_standings, userId) : 'unknown',
-        rank: mine?.rank ?? null,
-        standings,
-        opponents: standings.filter((entry) => entry.participant_id !== mine?.participant_id),
-      }
-    })
+    const entries = battles.map((battle) => battleHistoryEntryFrom(battle, userId))
 
     return {
       entries,

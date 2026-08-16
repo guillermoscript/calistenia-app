@@ -100,10 +100,10 @@ function HistoryRow({ entry, meId }: { entry: BattleHistoryEntry; meId: string |
                 <Text
                   className={cn(
                     'w-5 font-bebas text-base',
-                    standing.rank === 1 ? 'text-lime' : 'text-muted-foreground',
+                    standing.display_rank === 1 ? 'text-lime' : 'text-muted-foreground',
                   )}
                 >
-                  {standing.rank}
+                  {standing.display_rank}
                 </Text>
                 <Text className="flex-1 text-sm text-foreground" numberOfLines={1}>
                   {standing.display_name || t('battle.someone')}
