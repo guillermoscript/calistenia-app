@@ -13,6 +13,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import i18n from 'i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { CARDIO_ACTIVE_KEY as STORAGE_KEY, CARDIO_UNSAVED_KEY as UNSAVED_KEY } from '@calistenia/core/lib/storage-keys'
 import { qk } from '@calistenia/core/lib/query-keys'
 import {
   calculateElevationGain,
@@ -76,7 +77,6 @@ const CardioSessionContext = createContext<CardioSessionContextValue | null>(nul
 
 // ── Snapshot persistido (restaurar sesión tras matar la app) ────────────────
 
-const STORAGE_KEY = 'calistenia_cardio_active'
 const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000
 
 interface PersistedSession {
@@ -122,7 +122,6 @@ function clearStorage() {
 
 // ── Cola de sesiones sin guardar (reintento si PB falla) ────────────────────
 
-const UNSAVED_KEY = 'calistenia_cardio_unsaved'
 const MAX_UNSAVED = 5
 
 function loadUnsaved(): Record<string, unknown>[] {

@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { LUMBAR_CHECKS_KEY as LS_KEY } from '@calistenia/core/lib/storage-keys'
 import { cn } from '../lib/utils'
 import { todayStr, daysAgoStr, nowLocalForPB } from '@calistenia/core/lib/dateUtils'
 import { Button } from './ui/button'
@@ -18,8 +19,6 @@ import {
 } from './ui/dialog'
 import { useSleep } from '@calistenia/core/hooks/useSleep'
 import type { LumbarCheck } from '@calistenia/core/types'
-
-const LS_KEY = 'calistenia_lumbar_checks'
 
 type PainLevel = 1 | 2 | 3 | 4 | 5
 

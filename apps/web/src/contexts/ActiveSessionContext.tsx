@@ -3,6 +3,7 @@ import type { Exercise, Workout } from '@calistenia/core/types'
 import { op } from '@calistenia/core/lib/analytics'
 import type { ExerciseTimingState } from '@calistenia/core/lib/exerciseTiming'
 import { pb } from '@calistenia/core/lib/pocketbase'
+import { FREE_SESSION_QUEUE_KEY as FREE_QUEUE_KEY, STRENGTH_ACTIVE_KEY as STORAGE_KEY } from '@calistenia/core/lib/storage-keys'
 import {
   scheduleActiveSessionPush, flushActiveSessionPush, pushActiveSessionNow,
   fetchRemoteActiveSession, clearRemoteActiveSession,
@@ -88,8 +89,6 @@ export function getCurrentSection(exercises: Exercise[], stepIdx: number): 'warm
 
 const ActiveSessionContext = createContext<ActiveSessionContextValue | null>(null)
 
-const FREE_QUEUE_KEY = 'calistenia_free_session_queue'
-const STORAGE_KEY = 'calistenia_strength_active'
 const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 // ── Persistence helpers ─────────────────────────────────────────────────────
