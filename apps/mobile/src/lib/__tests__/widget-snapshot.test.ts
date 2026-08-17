@@ -17,6 +17,7 @@ const baseArgs = {
   todayType: 'strength',
   isDone: (key: string) => key === 'p2_lun',
   streak: 4,
+  lastSessionDate: '2026-06-10',
   weeklyDone: 2,
   weeklyGoal: 5,
 }
@@ -48,6 +49,13 @@ describe('buildWidgetSnapshot', () => {
     const snap = buildWidgetSnapshot({ ...baseArgs, programName: null, workout: null })
     expect(snap.workoutToday).toBeNull()
     expect(snap.programName).toBeNull()
+  })
+
+  it('streakToday true solo si la última sesión es de hoy', () => {
+    expect(buildWidgetSnapshot(baseArgs).streakToday).toBe(true)
+    // Racha viva pero sostenida por ayer: el widget la pinta apagada.
+    expect(buildWidgetSnapshot({ ...baseArgs, lastSessionDate: '2026-06-09' }).streakToday).toBe(false)
+    expect(buildWidgetSnapshot({ ...baseArgs, lastSessionDate: null }).streakToday).toBe(false)
   })
 
   it('día de descanso: workoutToday con type rest y title vacío si no hay workout', () => {

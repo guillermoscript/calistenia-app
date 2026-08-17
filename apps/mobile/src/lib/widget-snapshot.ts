@@ -18,7 +18,12 @@ export interface WidgetSnapshot {
     programPhase: number
   } | null
   week: { id: string; done: boolean; type: string }[]
+  /** Racha ACTIVA (termina hoy o ayer), no el récord histórico. */
   streak: number
+  /** true si hoy ya cuenta para la racha. Distingue "viva" de "en riesgo":
+   *  `workoutToday.done` no vale, porque solo mira el workout del programa y
+   *  una sesión libre en día de descanso también sostiene la racha. */
+  streakToday: boolean
   weeklyDone: number
   weeklyGoal: number
   lang: 'es' | 'en'
@@ -38,6 +43,8 @@ export function buildWidgetSnapshot(args: {
   workout: { title: string; exerciseCount: number } | null
   isDone: (key: string) => boolean
   streak: number
+  /** Última fecha con sesión ('YYYY-MM-DD'), o null si no hay ninguna. */
+  lastSessionDate: string | null
   weeklyDone: number
   weeklyGoal: number
 }): WidgetSnapshot {
@@ -62,6 +69,7 @@ export function buildWidgetSnapshot(args: {
       type: d.type,
     })),
     streak: args.streak,
+    streakToday: args.lastSessionDate === args.today,
     weeklyDone: args.weeklyDone,
     weeklyGoal: args.weeklyGoal,
     lang: args.lang,

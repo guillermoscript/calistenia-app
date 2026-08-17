@@ -13,6 +13,7 @@ export function syncWidgetSnapshot(args: {
   getWorkout: (phase: number, dayId: string) => Workout | null
   isWorkoutDone: (key: string) => boolean
   streak: number
+  lastSessionDate: string | null
   weeklyDone: number
 }): void {
   const todayId = DAY_IDS[localDay()]
@@ -32,6 +33,7 @@ export function syncWidgetSnapshot(args: {
     workout: workout ? { title: workout.title, exerciseCount: workout.exercises.length } : null,
     isDone: args.isWorkoutDone,
     streak: args.streak,
+    lastSessionDate: args.lastSessionDate,
     weeklyDone: args.weeklyDone,
     weeklyGoal: args.settings.weeklyGoal || 5,
   }))

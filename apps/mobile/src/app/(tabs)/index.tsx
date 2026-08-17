@@ -83,7 +83,7 @@ export default function TodayScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const { settings, activeProgram, weekDays, phases, programsReady, cardioDayConfigs } = useWorkoutState()
-  const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getTotalSessions } = useWorkoutActions()
+  const { getWorkout, isWorkoutDone, getWeeklyDoneCount, getLongestStreak, getCurrentStreak, getTotalSessions } = useWorkoutActions()
   const session = useActiveSession()
   const milestoneUser = useAuthUser()
   const { unreadCount, loadNotifications } = useNotifications(milestoneUser?.id ?? null)
@@ -340,7 +340,8 @@ export default function TodayScreen() {
         {/* Stats */}
         <View className="flex-row gap-3">
           <StatCard label={t('common.week')} value={`${getWeeklyDoneCount()}/${settings.weeklyGoal || 5}`} />
-          <StatCard label={t('profile.streak')} value={getLongestStreak()} />
+          {/* Racha viva, no el récord: el récord se queda en perfil (#229) */}
+          <StatCard label={t('profile.streak')} value={getCurrentStreak()} />
           <StatCard label={t('profile.sessions')} value={getTotalSessions()} />
         </View>
 

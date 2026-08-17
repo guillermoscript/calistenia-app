@@ -33,6 +33,7 @@ interface WorkoutActions {
   getWeeklyDoneCount: () => number
   getTotalSessions: () => number
   getLongestStreak: () => number
+  getCurrentStreak: () => number
   getMonthActivity: () => Record<string, boolean>
   getLastSessionDate: () => string | null
   checkAndUpdatePR: (exerciseId: string, reps: string, weight?: number) => Promise<PREvent | null>
@@ -86,7 +87,7 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
     progress, settings, usePB, pbReady,
     logSet: rawLogSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, isWorkoutDone,
     getExerciseLogs, getWeeklyDoneCount, getTotalSessions,
-    getLongestStreak, updateSettings, getMonthActivity,
+    getLongestStreak, getCurrentStreak, updateSettings, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
   } = useProgress(userId, activeProgram?.id ?? null)
 
@@ -105,13 +106,13 @@ export function WorkoutProvider({ userId, children }: WorkoutProviderProps) {
   const actions = useMemo<WorkoutActions>(() => ({
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
-    getTotalSessions, getLongestStreak, getMonthActivity,
+    getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
   }), [
     logSet, markWorkoutDone, unmarkWorkoutDone, markCardioDayDone, updateSettings,
     isWorkoutDone, getExerciseLogs, getWeeklyDoneCount,
-    getTotalSessions, getLongestStreak, getMonthActivity,
+    getTotalSessions, getLongestStreak, getCurrentStreak, getMonthActivity,
     getLastSessionDate, checkAndUpdatePR,
     getWorkout, selectProgram, abandonProgram, duplicateProgram, deleteProgram, refreshPrograms,
   ])
