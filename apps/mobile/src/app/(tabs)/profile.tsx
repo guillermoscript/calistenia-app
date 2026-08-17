@@ -21,12 +21,16 @@ import { ChangelogHistory } from '@/components/WhatsNewModal'
 import { DiscoverSheet } from '@/components/DiscoverSheet'
 import { DeleteAccountModal } from '@/components/profile/DeleteAccountModal'
 import { AvatarPicker } from '@/components/profile/AvatarPicker'
+import { ProfileLinkRow } from '@/components/profile/ProfileLinkRow'
 import { WEB_BASE_URL } from '@calistenia/core/lib/app-urls'
 import { useWorkoutState, useWorkoutActions } from '@/contexts/WorkoutContext'
 import { pb, logout } from '@calistenia/core/lib/pocketbase'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
 import { useUserCurrency } from '@calistenia/core/hooks/useUserCurrency'
 import { recomputeAutoNutritionGoal } from '@calistenia/core/hooks/useNutrition'
+import {
+  fetchProfileBody, saveBodyDemographics, bodyUserPatch, bodyFromUserRecord,
+} from '@calistenia/core/hooks/useProfileForm'
 import { SUPPORTED_CURRENCIES, currencySymbol } from '@calistenia/core/lib/money'
 import { parseDecimal } from '@calistenia/core/lib/bmi'
 import type { ActivityLevel } from '@/components/onboarding/StepGoals'
@@ -114,21 +118,18 @@ export default function ProfileScreen() {
         // Peso/altura/actividad viven en `users` (no ocultos).
         const rec: any = await pb.collection('users').getOne(user.id)
         if (cancelled) return
-        setWeight(rec.weight ? String(rec.weight) : '')
-        setHeight(rec.height ? String(rec.height) : '')
-        setActivityLevel((rec.activity_level as ActivityLevel) || '')
+        const body = bodyFromUserRecord(rec)
+        setWeight(body.weight)
+        setHeight(body.height)
+        setActivityLevel(body.activityLevel)
         // Edad/sexo desde la fila de nutrition_goals (PII protegida). Si el
         // usuario aún no tiene objetivo, quedan vacíos y solo se fijarán al
         // crear uno (el wizard los pide). (#243 F4a)
-        try {
-          const goal: any = await pb.collection('nutrition_goals').getFirstListItem(
-            pb.filter('user = {:uid}', { uid: user.id }), { $autoCancel: false },
-          )
-          if (cancelled) return
-          setBodyGoalId(goal.id)
-          setAge(goal.age ? String(goal.age) : '')
-          setSex((goal.sex as 'male' | 'female') || '')
-        } catch { /* sin objetivo todavía: edad/sexo vacíos */ }
+        const demo = await fetchProfileBody(user.id)
+        if (cancelled) return
+        setBodyGoalId(demo.bodyGoalId)
+        setAge(demo.age)
+        setSex(demo.sex as 'male' | 'female' | '')
         if (!cancelled) setBodyLoaded(true)
       } catch (e) {
         Sentry.captureException(e, { tags: { feature: 'profile', op: 'load_body_fields' } })
@@ -142,22 +143,13 @@ export default function ProfileScreen() {
     setBodySaveState('saving')
     try {
       // Peso/altura/actividad → `users` (campos no ocultos).
-      await pb.collection('users').update(user.id, {
-        weight: parseDecimal(weight),
-        height: parseDecimal(height),
-        activity_level: activityLevel || '',
-      })
+      await pb.collection('users').update(user.id, bodyUserPatch({ weight, height, activityLevel }))
       // Edad/sexo → fila de `nutrition_goals` (PII protegida; en `users` están
       // ocultos y no se pueden escribir con token de usuario). Solo si ya hay
       // objetivo; el recompute de abajo la releerá desde ahí. (#243 F4a)
-      if (bodyGoalId) {
-        await pb.collection('nutrition_goals').update(bodyGoalId, {
-          age: age ? parseInt(age, 10) : null,
-          sex: sex || '',
-        }).catch((e) => {
-          Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_age_sex' } })
-        })
-      }
+      await saveBodyDemographics(bodyGoalId, age, sex, (e) => {
+        Sentry.captureException(e, { tags: { feature: 'profile', op: 'update_body_age_sex' } })
+      })
       setBodySaveState('saved')
       setTimeout(() => setBodySaveState('idle'), 2000)
       // Reactivo (#243 F3): si el goal nutricional guardado es 'auto', refresca
@@ -327,167 +319,77 @@ export default function ProfileScreen() {
         </View>
 
         {/* Recordatorios */}
-        <Pressable onPress={() => router.push('/reminders')}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <Bell size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">{t('profile.reminders')}</Text>
-                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('profile.remindersDesc')}
-                </Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={Bell}
+          title={t('profile.reminders')}
+          description={t('profile.remindersDesc')}
+          onPress={() => router.push('/reminders')}
+        />
 
         {/* Referidos */}
-        <Pressable onPress={() => router.push('/referrals')}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <Users size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">{t('referrals.navLabel')}</Text>
-                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('referrals.subtitle')}
-                </Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={Users}
+          title={t('referrals.navLabel')}
+          description={t('referrals.subtitle')}
+          onPress={() => router.push('/referrals')}
+        />
 
         {/* Reloj y salud */}
-        <Pressable onPress={() => router.push('/health')}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <Watch size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">
-                  {t('profile.health')}
-                </Text>
-                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('profile.healthDesc')}
-                </Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={Watch}
+          title={t('profile.health')}
+          description={t('profile.healthDesc')}
+          onPress={() => router.push('/health')}
+        />
 
         {/* Fotos de progreso */}
-        <Pressable onPress={() => router.push('/progress-photos')}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <Camera size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">{t('progress.bodyPhotos.title')}</Text>
-                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('progress.bodyPhotos.rowDesc')}
-                </Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={Camera}
+          title={t('progress.bodyPhotos.title')}
+          description={t('progress.bodyPhotos.rowDesc')}
+          onPress={() => router.push('/progress-photos')}
+        />
 
         {/* Medidas corporales + % grasa (#227) */}
-        <Pressable onPress={() => router.push('/body-measurements' as never)}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <Ruler size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">{t('progress.bodyMeasurements.title')}</Text>
-                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('progress.bodyMeasurements.rowDesc')}
-                </Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={Ruler}
+          title={t('progress.bodyMeasurements.title')}
+          description={t('progress.bodyMeasurements.rowDesc')}
+          onPress={() => router.push('/body-measurements' as never)}
+        />
 
         {/* Usuarios bloqueados */}
-        <Pressable onPress={() => router.push('/blocked-users' as never)}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <UserX size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">{t('blocks.manageEntry')}</Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={UserX}
+          title={t('blocks.manageEntry')}
+          onPress={() => router.push('/blocked-users' as never)}
+        />
 
         {/* Descubre — directorio de todas las features (issue #236) */}
-        <Pressable onPress={() => setDiscoverOpen(true)}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <Compass size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">{t('profile.discover')}</Text>
-                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('profile.discoverDesc')}
-                </Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={Compass}
+          title={t('profile.discover')}
+          description={t('profile.discoverDesc')}
+          onPress={() => setDiscoverOpen(true)}
+        />
 
         {/* Novedades / historial de cambios */}
-        <Pressable onPress={() => setHistoryOpen(true)}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <Sparkles size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">{t('profile.whatsNew')}</Text>
-                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('profile.whatsNewDesc')}
-                </Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={Sparkles}
+          title={t('profile.whatsNew')}
+          description={t('profile.whatsNewDesc')}
+          onPress={() => setHistoryOpen(true)}
+        />
 
         {/* Privacidad y condiciones (#300): las tiendas exigen que la política
             sea accesible desde dentro de la app, no solo desde la ficha. Vive
             en la web, así que se abre en el navegador. */}
-        <Pressable onPress={() => Linking.openURL(`${WEB_BASE_URL}/legal#privacy`).catch(() => {})}>
-          <Card>
-            <CardContent className="flex-row items-center gap-3 py-4">
-              <View className="size-10 items-center justify-center rounded-full bg-lime/10">
-                <ShieldCheck size={18} color="hsl(74 90% 57%)" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-sans-medium text-foreground">{t('account.privacyEntry')}</Text>
-                <Text className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
-                  {t('account.privacyEntryDesc')}
-                </Text>
-              </View>
-              <ChevronRight size={18} color="hsl(0 0% 45%)" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ProfileLinkRow
+          icon={ShieldCheck}
+          title={t('account.privacyEntry')}
+          description={t('account.privacyEntryDesc')}
+          onPress={() => { Linking.openURL(`${WEB_BASE_URL}/legal#privacy`).catch(() => {}) }}
+        />
 
         {/* Idioma */}
         <Card>

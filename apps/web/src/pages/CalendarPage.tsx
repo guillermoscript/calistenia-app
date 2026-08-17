@@ -9,9 +9,9 @@ import { Badge } from '../components/ui/badge'
 import { useWorkoutState } from '../contexts/WorkoutContext'
 import { useAuthState } from '../contexts/AuthContext'
 import { utcToLocalDateStr } from '@calistenia/core/lib/dateUtils'
-import { fetchMonthActivity } from '@calistenia/core/lib/monthActivity'
-import type { DayNutritionSummary, DayWaterSummary, CircuitSessionLite, WeightEntryLite, BodyMeasurementLite, DayPhotoSummary, LumbarCheckLite } from '@calistenia/core/lib/monthActivity'
-import type { SessionDone, WeekDay, CardioSession, SleepEntry } from '@calistenia/core/types'
+import { fetchMonthActivity, emptyMonthActivity } from '@calistenia/core/lib/monthActivity'
+import type { MonthActivity } from '@calistenia/core/lib/monthActivity'
+import type { SessionDone, WeekDay } from '@calistenia/core/types'
 
 function getMonthDays(year: number, month: number) {
   const first = new Date(year, month, 1)
@@ -27,6 +27,9 @@ function getMonthDays(year: number, month: number) {
 function formatDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
+
+// Stable identity so it never triggers a re-render when used as initial state.
+const EMPTY_MONTH_ACTIVITY: MonthActivity = emptyMonthActivity()
 
 export interface CalendarEntry {
   type: 'workout' | 'cardio' | 'circuit'
@@ -58,15 +61,18 @@ export default function CalendarPage() {
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([])
-  const [circuitSessions, setCircuitSessions] = useState<CircuitSessionLite[]>([])
-  const [nutritionByDate, setNutritionByDate] = useState<Record<string, DayNutritionSummary>>({})
-  const [waterByDate, setWaterByDate] = useState<Record<string, DayWaterSummary>>({})
-  const [sleepByDate, setSleepByDate] = useState<Record<string, SleepEntry>>({})
-  const [weightByDate, setWeightByDate] = useState<Record<string, WeightEntryLite>>({})
-  const [measurementByDate, setMeasurementByDate] = useState<Record<string, BodyMeasurementLite>>({})
-  const [photosByDate, setPhotosByDate] = useState<Record<string, DayPhotoSummary>>({})
-  const [lumbarByDate, setLumbarByDate] = useState<Record<string, LumbarCheckLite>>({})
+  const [monthActivity, setMonthActivity] = useState<MonthActivity>(EMPTY_MONTH_ACTIVITY)
+  const {
+    cardio: cardioSessions,
+    circuits: circuitSessions,
+    nutritionByDate,
+    waterByDate,
+    sleepByDate,
+    weightByDate,
+    measurementByDate,
+    photosByDate,
+    lumbarByDate,
+  } = monthActivity
 
   const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate())
   const days = useMemo(() => getMonthDays(viewYear, viewMonth), [viewYear, viewMonth])
@@ -86,15 +92,7 @@ export default function CalendarPage() {
     let cancelled = false
     fetchMonthActivity(userId, viewYear, viewMonth).then(data => {
       if (cancelled) return
-      setCardioSessions(data.cardio)
-      setCircuitSessions(data.circuits)
-      setNutritionByDate(data.nutritionByDate)
-      setWaterByDate(data.waterByDate)
-      setSleepByDate(data.sleepByDate)
-      setWeightByDate(data.weightByDate)
-      setMeasurementByDate(data.measurementByDate)
-      setPhotosByDate(data.photosByDate)
-      setLumbarByDate(data.lumbarByDate)
+      setMonthActivity(data)
     })
     return () => { cancelled = true }
   }, [userId, viewYear, viewMonth, refreshKey])
