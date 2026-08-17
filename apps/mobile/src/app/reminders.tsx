@@ -18,7 +18,7 @@
  *     next   → lime   (uses className `text-lime` / bg-lime from config)
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   View,
   ScrollView,
@@ -44,8 +44,21 @@ import { cn } from '@/lib/utils'
 import { haptics } from '@/lib/haptics'
 import { useAuthUser } from '@/lib/use-auth-user'
 
-import { useMealReminders } from '@calistenia/core/hooks/useMealReminders'
-import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
+import {
+  useReminderTimeline,
+  type ReminderDayLabel,
+  type ReminderTimelineItem,
+} from '@calistenia/core/hooks/useReminderTimeline'
+import {
+  MEAL_QUICK_TIMES,
+  WORKOUT_QUICK_TIMES,
+  PAUSE_INTERVALS,
+  clampHour,
+  clampMinute,
+  parseHour,
+  parseMinute,
+  clampPauseInterval,
+} from '@calistenia/core/lib/reminders'
 import { pb } from '@calistenia/core/lib/pocketbase'
 import type { MealType } from '@calistenia/core/types'
 
@@ -61,19 +74,6 @@ import { Sentry } from '@/lib/instrument'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const DAY_LABELS_KEYS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'] as const
-
-/** JS day ids in display order: Mon(1)…Sat(6), Sun(0) */
-const DAY_LABELS_STATIC = [
-  { id: 1, label: 'L' },
-  { id: 2, label: 'M' },
-  { id: 3, label: 'X' },
-  { id: 4, label: 'J' },
-  { id: 5, label: 'V' },
-  { id: 6, label: 'S' },
-  { id: 0, label: 'D' },
-]
-
 // Inline colors (not in tailwind config)
 const ACCENT = {
   meal:    { dot: '#F59E0B', text: '#F59E0B', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.2)' },
@@ -81,44 +81,9 @@ const ACCENT = {
   pause:   { dot: '#A78BFA', text: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)' },
 } as const
 
-const MEAL_ICONS: Record<string, string> = {
-  desayuno: '☀️',
-  almuerzo: '🍽️',
-  cena:     '🌙',
-  snack:    '🍎',
-}
-
-const MEAL_QUICK_TIMES = [['07', '00'], ['12', '00'], ['15', '00'], ['20', '00']]
-const WORKOUT_QUICK_TIMES = [['06', '00'], ['07', '00'], ['08', '00'], ['18', '00']]
-const PAUSE_INTERVALS = ['25', '30', '45', '60'] as const
-
 type ReminderKind = 'meal' | 'workout' | 'pause'
 
-interface TimelineItem {
-  id: string
-  type: 'meal' | 'workout' | 'pause'
-  hour: number
-  minute: number
-  days: number[]
-  enabled: boolean
-  label: string
-  subLabel?: string
-  mealType?: string
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function clampHour(val: string): string {
-  const n = parseInt(val)
-  if (isNaN(n)) return '00'
-  return String(Math.min(23, Math.max(0, n))).padStart(2, '0')
-}
-
-function clampMinute(val: string): string {
-  const n = parseInt(val)
-  if (isNaN(n)) return '00'
-  return String(Math.min(59, Math.max(0, n))).padStart(2, '0')
-}
 
 /**
  * Traduce un fallo al guardar en un mensaje accionable.
@@ -145,8 +110,6 @@ function describeSaveError(e: unknown, t: (k: string) => string): string {
 
 // ── Shared sub-components (module-level so TextInput identity stays stable) ──────
 
-interface DayLabel { id: number; label: string; full: string }
-
 /** Hour : Minute number inputs with quick-time preset chips */
 function TimeAndDays({
   quickTimes,
@@ -166,7 +129,7 @@ function TimeAndDays({
   setMinute: (v: string) => void
   days: number[]
   toggleDay: (id: number) => void
-  dayLabels: DayLabel[]
+  dayLabels: ReminderDayLabel[]
   lime: string
 }) {
   return (
@@ -266,7 +229,7 @@ function EditForm({
   dayLabels,
   lime,
 }: {
-  item: TimelineItem
+  item: ReminderTimelineItem
   t: (k: string) => string
   onCancel: () => void
   onSave: () => void
@@ -278,7 +241,7 @@ function EditForm({
   setMinute: (v: string) => void
   days: number[]
   toggleDay: (id: number) => void
-  dayLabels: DayLabel[]
+  dayLabels: ReminderDayLabel[]
   lime: string
 }) {
   const acc = ACCENT[item.type]
@@ -358,38 +321,19 @@ export default function RemindersScreen() {
   const authUser = useAuthUser()
   const userId = authUser?.id ?? null
 
-  // ── Data hooks ───────────────────────────────────────────────────────────────
+  // ── Data + timeline (orquestación compartida en core) ───────────────────────
   const {
-    reminders: mealReminders,
-    saveReminder: saveMealReminder,
-    updateReminder: updateMealReminder,
-    toggleReminder: toggleMealReminder,
-    deleteReminder: deleteMealReminder,
-  } = useMealReminders(userId)
-
-  const {
-    reminders: workoutReminders,
-    saveReminder: saveWorkoutReminder,
-    updateReminder: updateWorkoutReminder,
-    toggleReminder: toggleWorkoutReminder,
-    deleteReminder: deleteWorkoutReminder,
-  } = useWorkoutReminders(userId)
-
-  // ── i18n computed labels ─────────────────────────────────────────────────────
-  const DAY_LABELS = useMemo(
-    () => DAY_LABELS_STATIC.map((d, i) => ({ ...d, full: t(`day.${DAY_LABELS_KEYS[i]}`) })),
-    [t],
-  )
-
-  const MEAL_META = useMemo(
-    () => ({
-      desayuno: { icon: MEAL_ICONS.desayuno, label: t('meal.desayuno') },
-      almuerzo: { icon: MEAL_ICONS.almuerzo, label: t('meal.almuerzo') },
-      cena:     { icon: MEAL_ICONS.cena,     label: t('meal.cena') },
-      snack:    { icon: MEAL_ICONS.snack,    label: t('meal.snack') },
-    } as Record<string, { icon: string; label: string }>),
-    [t],
-  )
+    timeline,
+    counts,
+    dayLabels: DAY_LABELS,
+    mealMeta: MEAL_META,
+    saveMealReminder,
+    saveWorkoutReminder,
+    savePauseSlots,
+    updateItem,
+    toggleItem,
+    deleteItem,
+  } = useReminderTimeline(userId)
 
   // ── Permission state ─────────────────────────────────────────────────────────
   const [permStatus, setPermStatus] = useState<ReminderPermStatus>('undetermined')
@@ -416,50 +360,13 @@ export default function RemindersScreen() {
     cancelLegacyLocalReminders()
   }, [])
 
-  // ── Timeline ─────────────────────────────────────────────────────────────────
-  const timeline = useMemo((): TimelineItem[] => {
-    const items: TimelineItem[] = []
-
-    mealReminders.forEach((r) => {
-      const meta = MEAL_META[r.mealType] ?? MEAL_META.almuerzo
-      items.push({
-        id: `meal-${r.id}`,
-        type: 'meal',
-        hour: r.hour,
-        minute: r.minute,
-        days: r.daysOfWeek,
-        enabled: r.enabled,
-        label: meta.label,
-        subLabel: meta.icon,
-        mealType: r.mealType,
-      })
-    })
-
-    workoutReminders.forEach((r) => {
-      const isPause = r.reminderType === 'pause'
-      items.push({
-        id: `workout-${r.id}`,
-        type: isPause ? 'pause' : 'workout',
-        hour: r.hour,
-        minute: r.minute,
-        days: r.daysOfWeek,
-        enabled: r.enabled,
-        label: isPause ? t('reminders.pauseType') : t('reminders.workoutType'),
-        subLabel: isPause ? '🧘' : undefined,
-      })
-    })
-
-    items.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute))
-    return items
-  }, [mealReminders, workoutReminders, MEAL_META, t])
-
   // ── UI state ──────────────────────────────────────────────────────────────────
   const [showForm, setShowForm] = useState<ReminderKind | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set())
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
-  const [editingItem, setEditingItem] = useState<TimelineItem | null>(null)
+  const [editingItem, setEditingItem] = useState<ReminderTimelineItem | null>(null)
 
   // Form state
   const [mealType, setMealType] = useState<MealType>('almuerzo')
@@ -526,15 +433,15 @@ export default function RemindersScreen() {
         setPermStatus(status)
       }
 
-      const h = Math.min(23, Math.max(0, parseInt(hour) || 0))
-      const m = Math.min(59, Math.max(0, parseInt(minute) || 0))
+      const h = parseHour(hour)
+      const m = parseMinute(minute)
 
       if (showForm === 'meal') {
         await saveMealReminder(mealType, h, m, days)
       } else if (showForm === 'workout') {
         await saveWorkoutReminder(h, m, days)
       } else if (showForm === 'pause') {
-        const interval = Math.max(5, parseInt(pauseInterval) || 25)
+        const interval = clampPauseInterval(pauseInterval)
         const startH = Math.min(23, Math.max(0, parseInt(pauseHourStart) || 9))
         const endH = Math.min(23, Math.max(0, parseInt(pauseHourEnd) || 18))
         if (startH >= endH) {
@@ -542,13 +449,7 @@ export default function RemindersScreen() {
           setSaving(false)
           return
         }
-        // Expand pause window into individual reminders (mirrors web logic exactly)
-        for (let hr = startH; hr < endH; hr++) {
-          for (let mn = 0; mn < 60; mn += interval) {
-            if (hr === startH && mn === 0) continue
-            await saveWorkoutReminder(hr, mn, days, 'pause')
-          }
-        }
+        await savePauseSlots(startH, endH, interval, days)
       }
 
       setShowForm(null)
@@ -560,7 +461,7 @@ export default function RemindersScreen() {
     }
   }
 
-  const startEdit = (item: TimelineItem) => {
+  const startEdit = (item: ReminderTimelineItem) => {
     haptics.selection()
     setEditingItem(item)
     setHour(String(item.hour).padStart(2, '0'))
@@ -582,14 +483,7 @@ export default function RemindersScreen() {
     setSaving(true)
     setError(null)
     try {
-      const h = Math.min(23, Math.max(0, parseInt(hour) || 0))
-      const m = Math.min(59, Math.max(0, parseInt(minute) || 0))
-      const rawId = editingItem.id.replace(/^(meal|workout)-/, '')
-      if (editingItem.type === 'meal') {
-        await updateMealReminder(rawId, h, m, days)
-      } else {
-        await updateWorkoutReminder(rawId, h, m, days)
-      }
+      await updateItem(editingItem, parseHour(hour), parseMinute(minute), days)
       setEditingItem(null)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'reminders', op: 'update_reminder' } })
@@ -599,17 +493,12 @@ export default function RemindersScreen() {
     }
   }
 
-  const handleToggle = async (item: TimelineItem) => {
+  const handleToggle = async (item: ReminderTimelineItem) => {
     if (busyIds.has(item.id)) return
     haptics.selection()
     setBusyIds((prev) => new Set(prev).add(item.id))
     try {
-      const rawId = item.id.replace(/^(meal|workout)-/, '')
-      if (item.type === 'meal') {
-        await toggleMealReminder(rawId, !item.enabled)
-      } else {
-        await toggleWorkoutReminder(rawId)
-      }
+      await toggleItem(item)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'reminders', op: 'toggle_reminder' } })
       console.warn('Error toggling reminder')
@@ -618,18 +507,13 @@ export default function RemindersScreen() {
     }
   }
 
-  const handleDelete = async (item: TimelineItem) => {
+  const handleDelete = async (item: ReminderTimelineItem) => {
     if (busyIds.has(item.id)) return
     haptics.medium()
     setBusyIds((prev) => new Set(prev).add(item.id))
     setPendingDeleteId(null)
     try {
-      const rawId = item.id.replace(/^(meal|workout)-/, '')
-      if (item.type === 'meal') {
-        await deleteMealReminder(rawId)
-      } else {
-        await deleteWorkoutReminder(rawId)
-      }
+      await deleteItem(item)
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'reminders', op: 'delete_reminder' } })
       console.warn('Error deleting reminder')
@@ -664,21 +548,19 @@ export default function RemindersScreen() {
             <View className="flex-row items-center gap-1.5">
               <View className="size-2 rounded-full" style={{ backgroundColor: ACCENT.meal.dot }} />
               <Text className="font-mono text-[10px] text-muted-foreground">
-                {mealReminders.length} {t('reminders.mealType').toLowerCase()}
+                {counts.meals} {t('reminders.mealType').toLowerCase()}
               </Text>
             </View>
             <View className="flex-row items-center gap-1.5">
               <View className="size-2 rounded-full" style={{ backgroundColor: ACCENT.workout.dot }} />
               <Text className="font-mono text-[10px] text-muted-foreground">
-                {workoutReminders.filter((r) => r.reminderType !== 'pause').length}{' '}
-                {t('reminders.workoutType').toLowerCase()}
+                {counts.workouts} {t('reminders.workoutType').toLowerCase()}
               </Text>
             </View>
             <View className="flex-row items-center gap-1.5">
               <View className="size-2 rounded-full" style={{ backgroundColor: ACCENT.pause.dot }} />
               <Text className="font-mono text-[10px] text-muted-foreground">
-                {workoutReminders.filter((r) => r.reminderType === 'pause').length}{' '}
-                {t('reminders.pauseType').toLowerCase()}
+                {counts.pauses} {t('reminders.pauseType').toLowerCase()}
               </Text>
             </View>
             <View className="flex-1 items-end">

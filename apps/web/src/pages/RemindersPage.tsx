@@ -2,25 +2,23 @@ import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import { useMealReminders } from '@calistenia/core/hooks/useMealReminders'
-import { useWorkoutReminders } from '@calistenia/core/hooks/useWorkoutReminders'
+import { useReminderTimeline, type ReminderTimelineItem } from '@calistenia/core/hooks/useReminderTimeline'
+import {
+  MEAL_QUICK_TIMES,
+  WORKOUT_QUICK_TIMES,
+  PAUSE_INTERVALS,
+  clampHour,
+  clampMinute,
+  parseHour,
+  parseMinute,
+  clampPauseInterval,
+} from '@calistenia/core/lib/reminders'
 import { subscribeToPush, getSubscriptionStatus, getNotificationSupport, requestNotificationPermission } from '../lib/push-subscription'
 import { cancelAllScheduled } from '../lib/reminder-scheduler'
 import { localMinutesSinceMidnight } from '@calistenia/core/lib/dateUtils'
 import type { MealType } from '@calistenia/core/types'
 
 // ── Constants ────────────────────────────────────────────────────────────────
-
-const DAY_LABELS_KEYS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'] as const
-const DAY_LABELS_STATIC = [
-  { id: 1, label: 'L' },
-  { id: 2, label: 'M' },
-  { id: 3, label: 'X' },
-  { id: 4, label: 'J' },
-  { id: 5, label: 'V' },
-  { id: 6, label: 'S' },
-  { id: 0, label: 'D' },
-]
 
 const TYPE_CONFIG_STYLE = {
   meal: {
@@ -46,39 +44,7 @@ const TYPE_CONFIG_STYLE = {
   },
 } as const
 
-const MEAL_ICONS: Record<string, string> = {
-  desayuno: '☀️',
-  almuerzo: '🍽️',
-  cena:     '🌙',
-  snack:    '🍎',
-}
-
 type ReminderType = 'meal' | 'workout' | 'pause'
-
-// Unified reminder shape for the timeline
-interface TimelineItem {
-  id: string
-  type: 'meal' | 'workout' | 'pause'
-  hour: number
-  minute: number
-  days: number[]
-  enabled: boolean
-  label: string
-  subLabel?: string
-  mealType?: string
-}
-
-function clampHour(val: string): string {
-  const n = parseInt(val)
-  if (isNaN(n)) return '00'
-  return String(Math.min(23, Math.max(0, n))).padStart(2, '0')
-}
-
-function clampMinute(val: string): string {
-  const n = parseInt(val)
-  if (isNaN(n)) return '00'
-  return String(Math.min(59, Math.max(0, n))).padStart(2, '0')
-}
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -89,38 +55,23 @@ interface RemindersPageProps {
 export default function RemindersPage({ userId }: RemindersPageProps) {
   const { t } = useTranslation()
   const {
-    reminders: mealReminders,
-    saveReminder: saveMealReminder,
-    updateReminder: updateMealReminder,
-    toggleReminder: toggleMealReminder,
-    deleteReminder: deleteMealReminder,
-  } = useMealReminders(userId)
-  const {
-    reminders: workoutReminders,
-    saveReminder: saveWorkoutReminder,
-    updateReminder: updateWorkoutReminder,
-    toggleReminder: toggleWorkoutReminder,
-    deleteReminder: deleteWorkoutReminder,
-  } = useWorkoutReminders(userId)
-
-  // i18n-aware computed labels
-  const DAY_LABELS = useMemo(() => DAY_LABELS_STATIC.map((d, i) => ({
-    ...d,
-    full: t(`day.${DAY_LABELS_KEYS[i]}`),
-  })), [t])
+    timeline,
+    counts,
+    dayLabels: DAY_LABELS,
+    mealMeta: MEAL_META,
+    saveMealReminder,
+    saveWorkoutReminder,
+    savePauseSlots,
+    updateItem,
+    toggleItem,
+    deleteItem,
+  } = useReminderTimeline(userId)
 
   const TYPE_CONFIG = useMemo(() => ({
     meal: { ...TYPE_CONFIG_STYLE.meal, label: t('reminders.mealType') },
     workout: { ...TYPE_CONFIG_STYLE.workout, label: t('reminders.workoutType') },
     pause: { ...TYPE_CONFIG_STYLE.pause, label: t('reminders.pauseType') },
   }), [t])
-
-  const MEAL_META = useMemo(() => ({
-    desayuno: { icon: MEAL_ICONS.desayuno, label: t('meal.desayuno') },
-    almuerzo: { icon: MEAL_ICONS.almuerzo, label: t('meal.almuerzo') },
-    cena:     { icon: MEAL_ICONS.cena,     label: t('meal.cena') },
-    snack:    { icon: MEAL_ICONS.snack,    label: t('meal.snack') },
-  } as Record<string, { icon: string; label: string }>), [t])
 
   const FORM_LABELS = useMemo(() => ({
     meal: t('reminders.newMeal'),
@@ -136,7 +87,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
   const [warning, setWarning] = useState<string | null>(null)
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set())
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
-  const [editingItem, setEditingItem] = useState<TimelineItem | null>(null)
+  const [editingItem, setEditingItem] = useState<ReminderTimelineItem | null>(null)
 
   // Form state
   const [mealType, setMealType] = useState<MealType>('almuerzo')
@@ -155,43 +106,6 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     const support = getNotificationSupport()
     setNotifPermission(support.permission)
   }, [userId])
-
-  // ── Build sorted timeline ─────────────────────────────────────────────────
-  const timeline = useMemo((): TimelineItem[] => {
-    const items: TimelineItem[] = []
-
-    mealReminders.forEach(r => {
-      const meta = MEAL_META[r.mealType] || MEAL_META.almuerzo
-      items.push({
-        id: `meal-${r.id}`,
-        type: 'meal',
-        hour: r.hour,
-        minute: r.minute,
-        days: r.daysOfWeek,
-        enabled: r.enabled,
-        label: meta.label,
-        subLabel: meta.icon,
-        mealType: r.mealType,
-      })
-    })
-
-    workoutReminders.forEach(r => {
-      const isPause = r.reminderType === 'pause'
-      items.push({
-        id: `workout-${r.id}`,
-        type: isPause ? 'pause' : 'workout',
-        hour: r.hour,
-        minute: r.minute,
-        days: r.daysOfWeek,
-        enabled: r.enabled,
-        label: isPause ? t('reminders.pauseType') : t('reminders.workoutType'),
-        subLabel: isPause ? '🧘' : undefined,
-      })
-    })
-
-    items.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute))
-    return items
-  }, [mealReminders, workoutReminders, MEAL_META, t])
 
   // ── Entrega: push del servidor ───────────────────────────────────────────
   // Los recordatorios los envía mcp-server/src/api/reminder-dispatcher.ts (Web
@@ -231,7 +145,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
   }
 
   // ── Edit ─────────────────────────────────────────────────────────────────────
-  const startEdit = (item: TimelineItem) => {
+  const startEdit = (item: ReminderTimelineItem) => {
     setEditingItem(item)
     setHour(String(item.hour).padStart(2, '0'))
     setMinute(String(item.minute).padStart(2, '0'))
@@ -252,15 +166,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     setSaving(true)
     setError(null)
     try {
-      const h = Math.min(23, Math.max(0, parseInt(hour) || 0))
-      const m = Math.min(59, Math.max(0, parseInt(minute) || 0))
-      const rawId = editingItem.id.replace(/^(meal|workout)-/, '')
-
-      if (editingItem.type === 'meal') {
-        await updateMealReminder(rawId, h, m, days)
-      } else {
-        await updateWorkoutReminder(rawId, h, m, days)
-      }
+      await updateItem(editingItem, parseHour(hour), parseMinute(minute), days)
       setEditingItem(null)
     } catch (e: any) {
       console.error('Update reminder error:', e)
@@ -276,10 +182,8 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     setError(null)
     setWarning(null)
     try {
-      const h = parseInt(hour) || 0
-      const m = parseInt(minute) || 0
-      const clampedH = Math.min(23, Math.max(0, h))
-      const clampedM = Math.min(59, Math.max(0, m))
+      const clampedH = parseHour(hour)
+      const clampedM = parseMinute(minute)
 
       // Pedir permiso + suscripción de Web Push ANTES de guardar: el
       // recordatorio lo envía el servidor, así que sin suscripción en
@@ -291,19 +195,14 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
       } else if (showForm === 'workout') {
         await saveWorkoutReminder(clampedH, clampedM, days)
       } else if (showForm === 'pause') {
-        const interval = Math.max(5, parseInt(pauseInterval) || 25)
+        const interval = clampPauseInterval(pauseInterval)
         const startH = Math.min(23, Math.max(0, parseInt(pauseHourStart) || 9))
         const endH = Math.min(23, Math.max(0, parseInt(pauseHourEnd) || 18))
         if (startH >= endH) {
           setError(t('reminders.startBeforeEnd'))
           return
         }
-        for (let hr = startH; hr < endH; hr++) {
-          for (let mn = 0; mn < 60; mn += interval) {
-            if (hr === startH && mn === 0) continue
-            await saveWorkoutReminder(hr, mn, days, 'pause')
-          }
-        }
+        await savePauseSlots(startH, endH, interval, days)
       }
 
       setShowForm(null)
@@ -314,17 +213,12 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     }
   }
 
-  const handleDelete = async (item: TimelineItem) => {
+  const handleDelete = async (item: ReminderTimelineItem) => {
     if (busyIds.has(item.id)) return
     setBusyIds(prev => new Set(prev).add(item.id))
     setPendingDeleteId(null)
     try {
-      const rawId = item.id.replace(/^(meal|workout)-/, '')
-      if (item.type === 'meal') {
-        await deleteMealReminder(rawId)
-      } else {
-        await deleteWorkoutReminder(rawId)
-      }
+      await deleteItem(item)
     } catch (e) {
       console.warn('Error deleting reminder:', e)
     } finally {
@@ -332,16 +226,11 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
     }
   }
 
-  const handleToggle = async (item: TimelineItem) => {
+  const handleToggle = async (item: ReminderTimelineItem) => {
     if (busyIds.has(item.id)) return
     setBusyIds(prev => new Set(prev).add(item.id))
     try {
-      const rawId = item.id.replace(/^(meal|workout)-/, '')
-      if (item.type === 'meal') {
-        await toggleMealReminder(rawId, !item.enabled)
-      } else {
-        await toggleWorkoutReminder(rawId)
-      }
+      await toggleItem(item)
     } catch (e) {
       console.warn('Error toggling reminder:', e)
     } finally {
@@ -429,19 +318,19 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
           <div className="flex items-center gap-1.5">
             <div className="size-2 rounded-full bg-amber-400" />
             <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-              {mealReminders.length} {t('reminders.mealType').toLowerCase()}
+              {counts.meals} {t('reminders.mealType').toLowerCase()}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="size-2 rounded-full bg-sky-400" />
             <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-              {workoutReminders.filter(r => r.reminderType !== 'pause').length} {t('reminders.workoutType').toLowerCase()}
+              {counts.workouts} {t('reminders.workoutType').toLowerCase()}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="size-2 rounded-full bg-violet-400" />
             <span className="text-[10px] font-mono tracking-wide text-muted-foreground">
-              {workoutReminders.filter(r => r.reminderType === 'pause').length} {t('reminders.pauseType').toLowerCase()}
+              {counts.pauses} {t('reminders.pauseType').toLowerCase()}
             </span>
           </div>
           {notifPermission === 'granted' ? (
@@ -550,10 +439,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
                 />
               </div>
               <div className="flex gap-1.5" role="group" aria-label="Horas predefinidas">
-                {(showForm === 'meal'
-                  ? [['07', '00'], ['12', '00'], ['15', '00'], ['20', '00']]
-                  : [['06', '00'], ['07', '00'], ['08', '00'], ['18', '00']]
-                ).map(([h, m]) => (
+                {(showForm === 'meal' ? MEAL_QUICK_TIMES : WORKOUT_QUICK_TIMES).map(([h, m]) => (
                   <button
                     key={`${h}${m}`}
                     onClick={() => { setHour(h); setMinute(m) }}
@@ -575,7 +461,7 @@ export default function RemindersPage({ userId }: RemindersPageProps) {
               <div>
                 <div className="text-[10px] text-muted-foreground/60 tracking-widest uppercase mb-2">Cada</div>
                 <div className="flex gap-1.5" role="group" aria-label="Intervalo de pausas">
-                  {['25', '30', '45', '60'].map(v => (
+                  {PAUSE_INTERVALS.map(v => (
                     <button
                       key={v}
                       onClick={() => setPauseInterval(v)}
