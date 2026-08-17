@@ -24,7 +24,8 @@ migraciones corren al arrancar, cuando aún no hay datos que migrar. No van en
 CI; se corren a mano al tocar la migración correspondiente.
 
 ```bash
-node tests/pb_hooks/manual/verify-backfill.mjs   # backfill de user_stats (#412)
+node tests/pb_hooks/manual/verify-backfill.mjs         # backfill de user_stats (#412)
+node tests/pb_hooks/manual/verify-expired-backlog.mjs  # cierre en silencio de retos caducados (#515)
 ```
 
 ## Cómo funciona (`run.mjs`)

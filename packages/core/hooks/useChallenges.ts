@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useRef } from 'react'
+import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { CANONICAL_ANALYTICS_EVENTS, op, trackCanonicalEvent } from '../lib/analytics'
@@ -30,12 +30,9 @@ interface CreateChallengeData {
   invitedUserIds: string[]
 }
 
-/** Resultado intermedio de la queryFn: retos + ids caducados detectados en lectura. */
 interface ChallengesQueryResult {
   active: ChallengeWithMeta[]
   past: ChallengeWithMeta[]
-  /** IDs de retos que están en estado 'active' pero ya pasaron su ends_at. */
-  expiredIds: string[]
 }
 
 export interface PresetJoinResult {
@@ -86,7 +83,7 @@ async function ensureParticipant(challengeId: string, userId: string) {
 /** queryFn pura: lee participaciones, cuenta participantes y clasifica retos. */
 async function fetchChallenges(userId: string): Promise<ChallengesQueryResult> {
   const available = await isPocketBaseAvailable()
-  if (!available) return { active: [], past: [], expiredIds: [] }
+  if (!available) return { active: [], past: [] }
 
   // Obtener todas las participaciones del usuario con el reto expandido
   const participations = await pb.collection('challenge_participants').getFullList({
@@ -97,16 +94,17 @@ async function fetchChallenges(userId: string): Promise<ChallengesQueryResult> {
 
   const today = todayStr()
   const challengeMap = new Map<string, ChallengeWithMeta>()
-  const expiredIds: string[] = []
 
   for (const p of participations) {
     const c = (p as any).expand?.challenge
     if (!c) continue
 
-    // Detectar retos caducados sin escribir desde la queryFn
+    // Clasificación local: el cierre real lo hace el cron `challenges_expiry` del
+    // servidor (#515), que puede tardar hasta ~36 h en escribir la fila porque
+    // espera a que el día haya terminado en todas las zonas horarias. Esto es lo
+    // que hace que el usuario vea el reto en "pasados" al instante, sin esperarlo
+    // — y ya no escribe nada: el cliente no toca `challenges` desde ningún efecto.
     if (c.status === 'active' && c.ends_at < today) {
-      expiredIds.push(c.id)
-      // Reflejar el estado futuro localmente para la clasificación
       c.status = 'ended'
     }
 
@@ -146,69 +144,7 @@ async function fetchChallenges(userId: string): Promise<ChallengesQueryResult> {
   return {
     active: all.filter(c => c.status === 'active').sort((a, b) => a.ends_at.localeCompare(b.ends_at)),
     past: all.filter(c => c.status === 'ended').sort((a, b) => b.ends_at.localeCompare(a.ends_at)),
-    expiredIds,
   }
-}
-
-/**
- * Ids caducados que todavía no se han intentado cerrar en este montaje.
- *
- * El auto-cierre es una escritura silenciosa: si el usuario no es el creador
- * PocketBase devuelve 403 y no hay nada que hacer al respecto. Reintentarlo en
- * cada fetch no arregla el permiso, solo alimenta el bucle de #451.
- */
-export function pendingExpiries(
-  expiredIds: readonly string[],
-  attempted: ReadonlySet<string>,
-): string[] {
-  const pending: string[] = []
-  for (const id of expiredIds) {
-    if (attempted.has(id) || pending.includes(id)) continue
-    pending.push(id)
-  }
-  return pending
-}
-
-export interface CloseExpiredDeps {
-  /** Escribe `status: 'ended'`. Debe rechazar si el usuario no es el creador. */
-  update: (id: string) => Promise<unknown>
-  /** Efecto por reto cerrado de verdad (analítica). */
-  onClosed?: (id: string) => void
-  /** El efecto se ha limpiado: abortar sin tocar nada más. */
-  isCancelled?: () => boolean
-  /** Devuelve al pool un id que ya no se va a intentar. */
-  release?: (id: string) => void
-}
-
-/**
- * Cierra los retos caducados y responde a una sola pregunta: ¿merece la pena
- * refrescar la lista?
- *
- * Devuelve `true` SOLO si alguna escritura funcionó. Invalidar cuando todas
- * fallan (el 403 del participante no creador) hacía refetch → mismos ids →
- * efecto → invalidate, en bucle infinito (#451).
- */
-export async function closeExpiredChallenges(
-  ids: readonly string[],
-  deps: CloseExpiredDeps,
-): Promise<boolean> {
-  let closedAny = false
-
-  for (let i = 0; i < ids.length; i++) {
-    if (deps.isCancelled?.()) {
-      // Los que no se han intentado vuelven al pool: quemarlos aquí dejaría el
-      // reto sin cerrar hasta el siguiente montaje sin haberlo intentado nunca.
-      for (let j = i; j < ids.length; j++) deps.release?.(ids[j])
-      return closedAny
-    }
-    try {
-      await deps.update(ids[i])
-      closedAny = true
-      deps.onClosed?.(ids[i])
-    } catch { /* solo el creador puede actualizar; ignorar si no lo es */ }
-  }
-
-  return closedAny
 }
 
 export function useChallenges(userId: string | null) {
@@ -221,69 +157,11 @@ export function useChallenges(userId: string | null) {
     queryFn: () => fetchChallenges(userId!),
     staleTime: 30_000,
     // Retorno vacío mientras no hay datos
-    placeholderData: { active: [], past: [], expiredIds: [] },
+    placeholderData: { active: [], past: [] },
   })
 
   const active = data?.active ?? []
   const past = data?.past ?? []
-
-  // ── Efecto de auto-cierre ─────────────────────────────────────────────────
-  // El auto-end NO puede vivir en la queryFn (que debe ser pura/sin escrituras).
-  // Este efecto corre una vez que la query resuelve y hay IDs caducados: hace las
-  // escrituras a PocketBase y solo invalida la query si alguna funcionó.
-
-  // `fetchChallenges` construye un array nuevo en cada fetch, así que la
-  // identidad de `expiredIds` cambiaba siempre y el efecto se re-disparaba con
-  // el mismo contenido. La clave por contenido lo ancla (los ids de PocketBase
-  // son alfanuméricos, la coma no aparece en ellos).
-  const expiredKey = (data?.expiredIds ?? []).join(',')
-  const expiredIds = useMemo(() => (expiredKey ? expiredKey.split(',') : []), [expiredKey])
-
-  // Ids ya intentados en este montaje, con el dueño al que pertenecen: un
-  // cambio de cuenta invalida el registro entero porque los ids son de otra
-  // sesión y el permiso de escritura puede ser el contrario.
-  const attemptedRef = useRef<{ userId: string | null; ids: Set<string> }>({ userId, ids: new Set() })
-  if (attemptedRef.current.userId !== userId) {
-    attemptedRef.current = { userId, ids: new Set() }
-  }
-
-  useEffect(() => {
-    if (!userId) return
-    const attempted = attemptedRef.current.ids
-    const pending = pendingExpiries(expiredIds, attempted)
-    if (!pending.length) return
-
-    // Marcar ANTES de escribir: la invalidación de más abajo provoca un refetch
-    // que vuelve a montar esta lista de ids, y sin la marca previa el efecto
-    // reentraría sobre updates todavía en vuelo.
-    for (const id of pending) attempted.add(id)
-
-    let cancelled = false
-
-    ;(async () => {
-      const closedAny = await closeExpiredChallenges(pending, {
-        update: (id) => pb.collection('challenges').update(id, { status: 'ended' }),
-        onClosed: (id) => {
-          trackCanonicalEvent(CANONICAL_ANALYTICS_EVENTS.challengeCompleted, {
-            surface: 'challenge',
-            source: 'challenge_expired',
-            challenge_id: id,
-            result: 'completed',
-          })
-        },
-        isCancelled: () => cancelled,
-        release: (id) => { attempted.delete(id) },
-      })
-
-      // Solo si el servidor tiene algo nuevo que contar. Invalidar tras un 403
-      // reinicia el ciclo fetch → efecto → invalidate para siempre (#451).
-      if (!cancelled && closedAny) {
-        await qc.invalidateQueries({ queryKey: qk.challenges(userId) })
-      }
-    })()
-
-    return () => { cancelled = true }
-  }, [expiredIds, userId, qc])
 
   // ── Mutación: crear reto ───────────────────────────────────────────────────
   const createMutation = useMutation({
