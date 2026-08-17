@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
-import { playTimerComplete, playCountdownTick, playWarning, vibrate } from '../lib/sounds'
+import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
+import { TIMER_CUE_THRESHOLDS, formatCountdown } from '@calistenia/core/lib/countdown'
+import { timerCues } from '../lib/training-cues'
+import { useResyncOnVisible } from '../hooks/useResyncOnVisible'
 import { notifyTimerDone } from '../lib/notifications'
-import { formatCountdown } from '@calistenia/core/lib/countdown'
 
 interface TimerProps {
   initialSeconds?: number
@@ -23,24 +25,48 @@ const HALF = SIZE / 2
 export default function Timer({ initialSeconds = 60, onComplete, autoStart = false, label }: TimerProps) {
   const { t } = useTranslation()
   const effectiveLabel = label ?? t('timer.rest')
-  const [seconds, setSeconds] = useState<number>(initialSeconds)
-  const [totalSeconds, setTotalSeconds] = useState<number>(initialSeconds)
   const [phase, setPhase] = useState<Phase>(autoStart ? 'countdown' : 'idle')
   const [countdownNum, setCountdownNum] = useState<number>(3)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  /**
+   * Duración con la que arranca la cuenta. Sale del prop, pero «↺» y «repetir» la
+   * releen del total ya ajustado: quien sumó +30 s espera repetir esos 30 s.
+   */
+  const [duration, setDuration] = useState<number>(initialSeconds)
+  /** Cambiarlo rearranca la cuenta con la misma duración (repetir sin tocar nada). */
+  const [runId, setRunId] = useState<number>(0)
   const onCompleteRef = useRef(onComplete)
+  const labelRef = useRef(effectiveLabel)
   onCompleteRef.current = onComplete
+  labelRef.current = effectiveLabel
 
-  const clearTimer = useCallback(() => {
-    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+  useEffect(() => { setDuration(initialSeconds) }, [initialSeconds])
+
+  const handleComplete = useCallback(() => {
+    setPhase('done')
+    notifyTimerDone(labelRef.current)
+    onCompleteRef.current?.()
   }, [])
+
+  // La cuenta, los umbrales y el «solo una vez» son los compartidos con el móvil: este
+  // componente ya solo dibuja. Antes descontaba de un contador con `setInterval`, así
+  // que se quedaba corto de verdad si la pestaña se dormía.
+  const { secondsLeft: seconds, totalSeconds, progress, resync, adjust } = usePausableCountdown({
+    seconds: duration,
+    paused: phase !== 'running',
+    thresholds: TIMER_CUE_THRESHOLDS,
+    minTotalSeconds: 5,
+    resetKey: runId,
+    onCue: timerCues,
+    onComplete: handleComplete,
+  })
+
+  useResyncOnVisible(resync)
 
   // 3-second countdown before exercise starts
   useEffect(() => {
     if (phase !== 'countdown') return
     setCountdownNum(3)
-    playCountdownTick()
-    vibrate([80])
+    timerCues('precount')
 
     const id = setInterval(() => {
       setCountdownNum(n => {
@@ -49,8 +75,7 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
           setPhase('running')
           return 0
         }
-        playCountdownTick()
-        vibrate([80])
+        timerCues('precount')
         return n - 1
       })
     }, 1000)
@@ -58,59 +83,27 @@ export default function Timer({ initialSeconds = 60, onComplete, autoStart = fal
     return () => clearInterval(id)
   }, [phase])
 
-  // Main exercise timer
-  useEffect(() => {
-    if (phase !== 'running') { clearTimer(); return }
-
-    intervalRef.current = setInterval(() => {
-      setSeconds(s => {
-        if (s === 11) { playWarning(); vibrate([100]) }
-        if (s >= 2 && s <= 4) { playCountdownTick(); vibrate([50]) }
-
-        if (s <= 1) {
-          clearInterval(intervalRef.current!)
-          intervalRef.current = null
-          setPhase('done')
-          playTimerComplete()
-          vibrate([200, 100, 200])
-          notifyTimerDone(effectiveLabel)
-          onCompleteRef.current?.()
-          return 0
-        }
-        return s - 1
-      })
-    }, 1000)
-
-    return clearTimer
-  }, [phase, clearTimer, effectiveLabel])
+  /** Vuelve al principio con el total que haya ahora (que puede venir de ±15/+30). */
+  const restart = (next: Phase) => {
+    setDuration(totalSeconds)
+    setRunId(n => n + 1)
+    setPhase(next)
+  }
 
   const handleStart = () => {
-    if (phase === 'done') {
-      setSeconds(totalSeconds)
-      setPhase('countdown')
-      return
-    }
+    if (phase === 'done') { restart('countdown'); return }
     if (phase === 'paused') { setPhase('running'); return }
     setPhase('countdown')
   }
 
   const handlePause = () => setPhase('paused')
 
-  const reset = () => {
-    clearTimer()
-    setSeconds(totalSeconds)
-    setPhase('idle')
-  }
+  const reset = () => restart('idle')
 
-  const adjustTime = (delta: number) => {
-    const newTotal = Math.max(5, totalSeconds + delta)
-    setTotalSeconds(newTotal)
-    setSeconds(s => Math.max(1, s + delta))
-  }
+  const adjustTime = (delta: number) => { adjust(delta) }
 
-  const remaining = phase === 'done' ? 0 : seconds
-  const pct = totalSeconds > 0 ? remaining / totalSeconds : 0
-  const strokeOffset = CIRC * (1 - pct)
+  const remaining = seconds
+  const strokeOffset = CIRC * (1 - progress)
 
   const isUrgent = remaining > 0 && remaining <= 10
   const ringColor =

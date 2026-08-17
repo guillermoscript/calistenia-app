@@ -7,6 +7,7 @@ import YoutubeModal from './YoutubeModal'
 import MediaViewer from './MediaViewer'
 import Timer from './Timer'
 import SectionTransition from './session/SectionTransition'
+import Confetti from './ui/Confetti'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -25,6 +26,10 @@ import { getCurrentSection } from '../contexts/ActiveSessionContext'
 import type { PREvent } from '@calistenia/core/hooks/useProgress'
 import * as sounds from '../lib/sounds'
 import * as notif from '../lib/notifications'
+import { restCues } from '../lib/training-cues'
+import { useResyncOnVisible } from '../hooks/useResyncOnVisible'
+import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
+import { formatCountdown, type CountdownCue } from '@calistenia/core/lib/countdown'
 import { PRIORITY_COLORS } from '@calistenia/core/lib/style-tokens'
 import type { Exercise, Workout, ExerciseLog, SetData, Priority, ExerciseTiming, ExerciseTempo } from '@calistenia/core/types'
 import { getLocalQuote, type Quote } from '@calistenia/core/lib/quotes'
@@ -46,63 +51,6 @@ function formatTempo(tempo: ExerciseTempo | undefined): string | null {
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
-const CONFETTI_COLORS = ['#c8f542', '#42c8f5', '#f54242', '#f5c842', '#f542c8', '#42f5a8']
-const CONFETTI_COUNT  = 22
-
-interface ConfettiPiece {
-  id: number
-  left: string
-  size: number
-  color: string
-  delay: string
-  dur: string
-  rot: number
-  shape: string
-}
-
-function Confetti() {
-  const pieces = useRef<ConfettiPiece[]>(
-    Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
-      id: i,
-      left:  `${5 + Math.random() * 90}%`,
-      size:  6 + Math.random() * 8,
-      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      delay: `${(Math.random() * 1.4).toFixed(2)}s`,
-      dur:   `${(2.2 + Math.random() * 1.8).toFixed(2)}s`,
-      rot:   Math.floor(Math.random() * 360),
-      shape: Math.random() > 0.5 ? '50%' : '2px',
-    }))
-  ).current
-
-  return (
-    <>
-      <style>{`
-        @keyframes confettiFall {
-          0%   { transform: translateY(-40px) rotate(0deg); opacity: 1; }
-          80%  { opacity: 1; }
-          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-      `}</style>
-      {pieces.map(p => (
-        <div key={p.id} style={{
-          position: 'fixed',
-          left: p.left,
-          top: '-30px',
-          width: p.size,
-          height: p.size,
-          background: p.color,
-          borderRadius: p.shape,
-          transform: `rotate(${p.rot}deg)`,
-          animation: `confettiFall ${p.dur} ${p.delay} ease-in forwards`,
-          willChange: 'transform, opacity',
-          zIndex: 9998,
-          pointerEvents: 'none',
-        }} />
-      ))}
-    </>
-  )
-}
-
 // ─── Rest screen ──────────────────────────────────────────────────────────────
 
 interface RestScreenProps {
@@ -117,63 +65,41 @@ interface RestScreenProps {
 function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, savedRest, onAdjust }: RestScreenProps) {
   const { t } = useTranslation()
   const initialSeconds = savedRest || defaultSeconds
-  const endAtRef = useRef<number>(Date.now() + initialSeconds * 1000)
-  const [remaining, setRemaining] = useState<number>(initialSeconds)
-  const [totalSecs, setTotalSecs] = useState<number>(initialSeconds)
   const touchStartX = useRef<number | null>(null)
-  const hasPlayedWarning = useRef<boolean>(false)
   const hasNotifiedStart = useRef<boolean>(false)
-  const hasFinished = useRef<boolean>(false)
-  const lastRemainingRef = useRef<number>(initialSeconds)
   const onSkipRef = useRef(onSkip)
   const nextStepRef = useRef(nextStep)
   onSkipRef.current = onSkip
   nextStepRef.current = nextStep
 
+  // Las notificaciones no caben en `restCues` porque dependen del siguiente ejercicio,
+  // así que se componen encima: el sonido lo pone la plataforma, el texto esta pantalla.
+  const handleCue = useCallback((cue: CountdownCue) => {
+    restCues(cue)
+    if (cue === 'warning') notif.notifyRestEnding(10)
+    if (cue === 'complete') {
+      const ns = nextStepRef.current
+      if (ns) notif.notifyRestDone(ns.exercise.name, ns.setNumber, ns.totalSets)
+    }
+  }, [])
+
+  const handleComplete = useCallback(() => { onSkipRef.current() }, [])
+
+  const { secondsLeft: remaining, progress, resync, adjust } =
+    usePausableCountdown({
+      seconds: initialSeconds,
+      onCue: handleCue,
+      onComplete: handleComplete,
+    })
+
+  useResyncOnVisible(resync)
+
   // Play rest-start sound + notification on mount
   useEffect(() => {
     if (!hasNotifiedStart.current) {
       hasNotifiedStart.current = true
-      sounds.playRestStart()
+      restCues('start')
       notif.notifyRestStart(initialSeconds, nextStep?.exercise.name)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Timestamp-based countdown — survives tab backgrounding / setInterval throttling
-  useEffect(() => {
-    const tick = () => {
-      const rem = Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000))
-      const prev = lastRemainingRef.current
-      if (rem !== prev) {
-        if (prev > 10 && rem <= 10 && rem > 0 && !hasPlayedWarning.current) {
-          hasPlayedWarning.current = true
-          sounds.playWarning()
-          sounds.vibrate([100])
-          notif.notifyRestEnding(10)
-        }
-        if (rem > 0 && rem <= 3 && prev === rem + 1 && !document.hidden) {
-          sounds.playCountdownTick()
-          sounds.vibrate([50])
-        }
-        lastRemainingRef.current = rem
-        setRemaining(rem)
-      }
-      if (rem <= 0 && !hasFinished.current) {
-        hasFinished.current = true
-        sounds.playGetReady()
-        sounds.vibrate([200, 100, 200])
-        const ns = nextStepRef.current
-        if (ns) notif.notifyRestDone(ns.exercise.name, ns.setNumber, ns.totalSets)
-        onSkipRef.current()
-      }
-    }
-
-    const id = setInterval(tick, 250)
-    const onVis = () => { if (!document.hidden) tick() }
-    document.addEventListener('visibilitychange', onVis)
-    return () => {
-      clearInterval(id)
-      document.removeEventListener('visibilitychange', onVis)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -184,18 +110,11 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
   }
 
   const adjustTime = (delta: number) => {
-    const newTotal = Math.max(10, totalSecs + delta)
-    setTotalSecs(newTotal)
-    endAtRef.current += delta * 1000
-    const rem = Math.max(1, Math.ceil((endAtRef.current - Date.now()) / 1000))
-    lastRemainingRef.current = rem
-    setRemaining(rem)
+    const newTotal = adjust(delta)
     if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
   }
 
-  const mins = Math.floor(remaining / 60)
-  const secs = String(remaining % 60).padStart(2, '0')
-  const pct  = totalSecs > 0 ? (remaining / totalSecs) : 0
+  const pct  = progress
   const ringR = 62
   const ringSize = 148
   const ringHalf = ringSize / 2
@@ -260,7 +179,7 @@ function RestScreen({ seconds: defaultSeconds, exerciseId, nextStep, onSkip, sav
             )}
             style={{ animation: 'restTickPulse 0.3s cubic-bezier(0.22, 1, 0.36, 1)' }}
           >
-            {mins}:{secs}
+            {formatCountdown(remaining)}
           </span>
         </div>
       </div>

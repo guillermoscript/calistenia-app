@@ -7,12 +7,14 @@
  * Persistence: localStorage only (instant read on mount, no PB round-trip needed).
  * Key: 'calistenia_workday_<YYYY-MM-DD>'  — one record per calendar day.
  *
- * Audio: Web Audio API oscillator pattern (same as RestTimer.jsx / Timer.jsx).
+ * Audio: los avisos salen por `lib/sounds.ts`, que ya es el único `AudioContext` de
+ * la pestaña — este hook tenía el suyo propio en paralelo sin motivo.
  * Notifications: Browser Notifications API with graceful permission request.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import i18n from '../lib/i18n'
+import { playWorkPauseLong, playWorkPauseShort } from '../lib/sounds'
 import type { Pause, PauseType, WorkDay } from '@calistenia/core/types'
 import { todayStr } from '@calistenia/core/lib/dateUtils'
 
@@ -32,45 +34,9 @@ function lsSave(date: string, data: WorkDay): void {
 }
 
 // ─── Audio helpers ────────────────────────────────────────────────────────────
-// Reuses the same AudioContext pattern from RestTimer.jsx / Timer.jsx
-let _audioCtx: AudioContext | null = null
-function getAudioCtx(): AudioContext {
-  if (!_audioCtx || _audioCtx.state === 'closed') {
-    _audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-  }
-  return _audioCtx
-}
-
-function playBeep(freq: number = 880, duration: number = 0.18, vol: number = 0.25): void {
-  try {
-    const ctx = getAudioCtx()
-    if (ctx.state === 'suspended') ctx.resume()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(freq, ctx.currentTime)
-    gain.gain.setValueAtTime(vol, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
-    osc.start(ctx.currentTime)
-    osc.stop(ctx.currentTime + duration)
-  } catch {
-    // Silently ignore if audio is blocked
-  }
-}
-
 function playPauseChime(type: 'short' | 'long' = 'short'): void {
-  // short = 25-min alert: two mid-high beeps
-  // long  = 60-min alert: three descending tones
-  if (type === 'short') {
-    playBeep(880, 0.15)
-    setTimeout(() => playBeep(1100, 0.2), 200)
-  } else {
-    playBeep(1100, 0.15)
-    setTimeout(() => playBeep(880, 0.15), 220)
-    setTimeout(() => playBeep(660, 0.25), 440)
-  }
+  if (type === 'short') playWorkPauseShort()
+  else playWorkPauseLong()
 }
 
 // ─── Notification helper ──────────────────────────────────────────────────────

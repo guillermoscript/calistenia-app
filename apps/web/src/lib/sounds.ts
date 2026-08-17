@@ -6,7 +6,8 @@
 let _ctx: AudioContext | null = null
 
 function getCtx(): AudioContext {
-  if (!_ctx) {
+  // `closed` también cuenta como «no hay contexto»: uno cerrado no vuelve a sonar.
+  if (!_ctx || _ctx.state === 'closed') {
     _ctx = new (window.AudioContext || window.webkitAudioContext)()
   }
   // Resume if suspended (autoplay policy)
@@ -106,6 +107,23 @@ export function playRankDown(): void {
   try {
     tone(440, 0, 0.15, 0.7, 'sine')
     tone(330, 0.1, 0.18, 0.7, 'sine')
+  } catch {}
+}
+
+/** Two mid-high beeps — 25-min work-day pause alert. Quieter: it fires at a desk. */
+export function playWorkPauseShort(): void {
+  try {
+    tone(880, 0, 0.15, 0.25)
+    tone(1100, 0.2, 0.2, 0.25)
+  } catch {}
+}
+
+/** Three descending tones — 60-min work-day pause alert */
+export function playWorkPauseLong(): void {
+  try {
+    tone(1100, 0, 0.15, 0.25)
+    tone(880, 0.22, 0.15, 0.25)
+    tone(660, 0.44, 0.25, 0.25)
   } catch {}
 }
 

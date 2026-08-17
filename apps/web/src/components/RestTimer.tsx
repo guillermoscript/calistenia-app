@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
-import { playRestStart, playGetReady, playCountdownTick, playWarning, vibrate } from '../lib/sounds'
+import { usePausableCountdown } from '@calistenia/core/hooks/usePausableCountdown'
 import { formatCountdown } from '@calistenia/core/lib/countdown'
+import { restCues } from '../lib/training-cues'
+import { useResyncOnVisible } from '../hooks/useResyncOnVisible'
 
 interface RestTimerProps {
   seconds?: number
@@ -15,72 +17,25 @@ interface RestTimerProps {
 export default function RestTimer({ seconds: initSecs = 90, exerciseId, onDone, onAdjust, savedRest }: RestTimerProps) {
   const { t } = useTranslation()
   const startSecs = savedRest || initSecs
-  const [s, setS] = useState<number>(startSecs)
-  const [totalSecs, setTotalSecs] = useState<number>(startSecs)
   const [running, setRunning] = useState<boolean>(true)
-  const endAtRef = useRef<number>(Date.now() + startSecs * 1000)
-  const pausedRemainingRef = useRef<number>(startSecs)
-  const lastSRef = useRef<number>(startSecs)
-  const hasWarnedRef = useRef<boolean>(false)
-  const hasFinishedRef = useRef<boolean>(false)
   const onDoneRef = useRef(onDone)
   onDoneRef.current = onDone
 
-  useEffect(() => { playRestStart() }, [])
+  const handleComplete = useCallback(() => { onDoneRef.current?.() }, [])
 
-  useEffect(() => {
-    if (!running) {
-      pausedRemainingRef.current = Math.max(1, Math.ceil((endAtRef.current - Date.now()) / 1000))
-      return
-    }
-    endAtRef.current = Date.now() + pausedRemainingRef.current * 1000
+  const { secondsLeft: s, resync, adjust } = usePausableCountdown({
+    seconds: startSecs,
+    paused: !running,
+    onCue: restCues,
+    onComplete: handleComplete,
+  })
 
-    const tick = () => {
-      const rem = Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000))
-      const prev = lastSRef.current
-      if (rem !== prev) {
-        if (prev > 10 && rem <= 10 && rem > 0 && !hasWarnedRef.current) {
-          hasWarnedRef.current = true
-          playWarning()
-          vibrate([100])
-        }
-        if (rem > 0 && rem <= 3 && prev === rem + 1 && !document.hidden) {
-          playCountdownTick()
-          vibrate([50])
-        }
-        lastSRef.current = rem
-        setS(rem)
-      }
-      if (rem <= 0 && !hasFinishedRef.current) {
-        hasFinishedRef.current = true
-        playGetReady()
-        vibrate([200, 100, 200])
-        onDoneRef.current?.()
-      }
-    }
-    const id = setInterval(tick, 250)
-    const onVis = () => { if (!document.hidden) tick() }
-    document.addEventListener('visibilitychange', onVis)
-    return () => {
-      clearInterval(id)
-      document.removeEventListener('visibilitychange', onVis)
-    }
-  }, [running]) // eslint-disable-line react-hooks/exhaustive-deps
+  useResyncOnVisible(resync)
+
+  useEffect(() => { restCues('start') }, [])
 
   const adjustTime = (delta: number) => {
-    const newTotal = Math.max(10, totalSecs + delta)
-    setTotalSecs(newTotal)
-    if (running) {
-      endAtRef.current += delta * 1000
-      const rem = Math.max(1, Math.ceil((endAtRef.current - Date.now()) / 1000))
-      lastSRef.current = rem
-      setS(rem)
-    } else {
-      const rem = Math.max(1, pausedRemainingRef.current + delta)
-      pausedRemainingRef.current = rem
-      lastSRef.current = rem
-      setS(rem)
-    }
+    const newTotal = adjust(delta)
     if (exerciseId && onAdjust) onAdjust(exerciseId, newTotal)
   }
 
