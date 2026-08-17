@@ -3,7 +3,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import i18n from 'i18next'
 import { pb } from '../lib/pocketbase'
-import { AI_API_URL } from '../lib/ai-api'
+import { aiApiFetch } from '../lib/ai-api'
 import { op } from '../lib/analytics'
 import { qk } from '../lib/query-keys'
 import { todayStr, daysAgoStr, addDays, localMidnightAsUTC, utcToLocalDateStr, nowLocalForPB } from '../lib/dateUtils'
@@ -326,9 +326,8 @@ export function useNutrition(userId: string | null) {
       if (userContext.recentScores) formData.append('recent_scores', JSON.stringify(userContext.recentScores))
       if (userContext.topFoods) formData.append('top_foods', JSON.stringify(userContext.topFoods))
     }
-    const headers: Record<string, string> = {}
-    if (pb.authStore.token) headers['Authorization'] = `Bearer ${pb.authStore.token}`
-    const res = await fetch(`${AI_API_URL}/api/analyze-meal`, { method: 'POST', headers, body: formData })
+    // FormData: sin `json:` — el Content-Type con boundary lo pone fetch.
+    const res = await aiApiFetch('/api/analyze-meal', { method: 'POST', body: formData })
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}))
       throw new Error(errBody.error || `Analyze meal failed: ${res.status}`)
@@ -352,18 +351,16 @@ export function useNutrition(userId: string | null) {
     userContext?: { goal?: string; remainingMacros?: DailyTotals; recentScores?: { mealType: string; score: string; loggedAt: string }[]; topFoods?: string[]; logHour?: number },
   ): Promise<{ score: QualityScore; breakdown: QualityBreakdown; message: string; suggestion: QualitySuggestion | null } | null> => {
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (pb.authStore.token) headers['Authorization'] = `Bearer ${pb.authStore.token}`
-      const res = await fetch(`${AI_API_URL}/api/score-meal-quality`, {
-        method: 'POST', headers,
-        body: JSON.stringify({
+      const res = await aiApiFetch('/api/score-meal-quality', {
+        method: 'POST',
+        json: {
           foods, totals, meal_type: mealType,
           ...(userContext?.goal && { goal: userContext.goal }),
           ...(userContext?.logHour != null && { log_hour: userContext.logHour }),
           ...(userContext?.remainingMacros && { remaining_macros: userContext.remainingMacros }),
           ...(userContext?.recentScores && { recent_scores: userContext.recentScores }),
           ...(userContext?.topFoods && { top_foods: userContext.topFoods }),
-        }),
+        },
       })
       if (!res.ok) return null
       const data = await res.json()

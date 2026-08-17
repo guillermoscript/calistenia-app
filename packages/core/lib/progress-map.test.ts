@@ -1,9 +1,9 @@
 /**
  * Fusión de la cola offline con el progreso del servidor (issue #301).
  *
- * Los tests de core corren en vitest/node sin testing-library, así que el hook
- * no se renderiza: se prueban las funciones puras que hacen el trabajo real —
- * la reconstrucción del `ProgressMap` y el filtrado de lo que sigue encolado.
+ * Cubre las funciones puras de `progress-map` (antes exportadas «solo para
+ * testear» desde useProgress, extraídas a lib en #476): la reconstrucción del
+ * `ProgressMap` y el filtrado de lo que sigue encolado.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 
@@ -21,20 +21,13 @@ vi.mock('../platform', () => ({
   }),
 }))
 
-// El módulo importa `pb` al evaluarse, que exige initCore(); las funciones bajo
-// test son puras, así que basta con un doble mínimo del cliente.
-vi.mock('../lib/pocketbase', () => ({
-  pb: { filter: vi.fn(), collection: vi.fn(() => ({})) },
-  isPocketBaseAvailable: vi.fn().mockResolvedValue(true),
-}))
-
-import { utcToLocalDateStr } from '../lib/dateUtils'
-import { clearQueue, enqueue } from '../lib/offlineQueue'
+import { utcToLocalDateStr } from './dateUtils'
+import { clearQueue, enqueue } from './offlineQueue'
 import {
   buildProgressMap,
   pendingNotYetOnServer,
   pendingProgressRows,
-} from './useProgress'
+} from './progress-map'
 
 const sessionRowsOf = (uid: string, pid: string | null, server: any[] = []) =>
   pendingProgressRows(uid, pid, server, []).sessions

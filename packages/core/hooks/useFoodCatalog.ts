@@ -4,7 +4,7 @@ import { pb } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import type { FoodItem } from '../types'
 import { migrateLegacyFood } from '../lib/macro-calc'
-import { AI_API_URL } from '../lib/ai-api'
+import { aiApiFetch } from '../lib/ai-api'
 import { searchOFF, mapOFFToFoodItem, isIncompleteFood } from '../lib/openfoodfacts'
 
 // ── Relation helpers ───────────────────────────────────────────────────────
@@ -203,14 +203,9 @@ export function useFoodCatalog(query?: string) {
   // ── lookupWithAI ─────────────────────────────────────────────────────────
   /** Consulta la IA por valores nutricionales del alimento, luego guarda en catálogo */
   const lookupWithAI = useCallback(async (foodName: string): Promise<FoodItem> => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (pb.authStore.token) {
-      headers['Authorization'] = `Bearer ${pb.authStore.token}`
-    }
-    const res = await fetch(`${AI_API_URL}/api/lookup-food`, {
+    const res = await aiApiFetch('/api/lookup-food', {
       method: 'POST',
-      headers,
-      body: JSON.stringify({ food_name: foodName }),
+      json: { food_name: foodName },
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
