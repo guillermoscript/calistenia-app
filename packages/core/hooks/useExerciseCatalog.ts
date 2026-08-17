@@ -17,6 +17,7 @@ import { pb, isPocketBaseAvailable } from '../lib/pocketbase'
 import { qk } from '../lib/query-keys'
 import { WORKOUTS } from '../data/workouts'
 import catalogData from '../data/exercise-catalog.json'
+import { catalogExerciseIdentity } from '../lib/exerciseCatalog'
 import type { TranslatableField } from '../lib/i18n-db'
 
 export type ExerciseCatalog = Record<string, { name: TranslatableField; muscles: TranslatableField }>
@@ -73,17 +74,24 @@ export function useExerciseCatalog(): ExerciseCatalog {
       if (!(await isPocketBaseAvailable())) return STATIC_CATALOG
 
       const items = await pb.collection('exercises_catalog').getFullList({
-        fields: 'id,name,muscles',
+        // `slug` hace falta para la identidad canónica (#474): sin él, la
+        // proyección obligaba a indexar por el `id` aleatorio de PB.
+        fields: 'id,slug,name,muscles',
         $autoCancel: false,
       })
 
       const merged: ExerciseCatalog = { ...STATIC_CATALOG }
       items.forEach(item => {
+        // Se indexa por la identidad canónica (slug primero), no por el `id`
+        // aleatorio de PocketBase: las claves de lo estático son ids canónicos,
+        // así que con `item.id` las entradas de PB quedaban inalcanzables para
+        // quien buscase por el id con el que se registran las series (#474).
+        const key = catalogExerciseIdentity(item)
         // No pisa lo estático: los nombres del bundle están revisados y
         // traducidos, los de PB pueden venir a medias.
-        if (!merged[item.id]) {
-          merged[item.id] = {
-            name: (item.name as TranslatableField) ?? item.id,
+        if (key && !merged[key]) {
+          merged[key] = {
+            name: (item.name as TranslatableField) ?? key,
             muscles: (item.muscles as TranslatableField) ?? '',
           }
         }
