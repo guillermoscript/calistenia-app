@@ -27,7 +27,7 @@ import { Text } from '@/components/ui/text'
 import { cn } from '@/lib/utils'
 import { useAuthUser } from '@/lib/use-auth-user'
 import { useChallengeDetail } from '@calistenia/core/hooks/useChallengeDetail'
-import { getMetricLabel, getMetricUnit, daysRemaining } from '@calistenia/core/lib/challenges'
+import { getMetricLabel, getMetricUnit, daysRemaining, RANK_MEDALS } from '@calistenia/core/lib/challenges'
 import { getChallengeLayout, getGoalProgress } from '@calistenia/core/lib/challenge-layout'
 import { formatDateRange } from '@calistenia/core/lib/dateUtils'
 import {
@@ -39,7 +39,6 @@ import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/cor
 import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
 
 const LIME = 'hsl(74 90% 45%)'
-const MEDALS = ['🥇', '🥈', '🥉']
 
 /** Une valor y unidad sin dejar un espacio colgando cuando la métrica no tiene unidad. */
 const withUnit = (value: number, unit: string) => (unit ? `${value} ${unit}` : `${value}`)
@@ -421,7 +420,7 @@ function RankRow({
   entry: LeaderboardEntry; position: number; unit: string; variant: 'card' | 'flat'
 }) {
   const router = useRouter()
-  const medal = MEDALS[position - 1]
+  const medal = RANK_MEDALS[position - 1]
 
   return (
     <Pressable

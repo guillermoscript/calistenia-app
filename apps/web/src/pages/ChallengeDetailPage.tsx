@@ -6,7 +6,7 @@ import { useExpressProgress, type ExpressProgress } from '@calistenia/core/hooks
 import { useFollows } from '@calistenia/core/hooks/useFollows'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import { getMetricUnit, daysRemaining, getMetricLabel } from '@calistenia/core/lib/challenges'
+import { getMetricUnit, daysRemaining, getMetricLabel, RANK_MEDALS } from '@calistenia/core/lib/challenges'
 import { getChallengeLayout, getGoalProgress } from '@calistenia/core/lib/challenge-layout'
 import { isCumulativeMetric } from '@calistenia/core/lib/cumulative-scoring'
 import { formatDateRange } from '@calistenia/core/lib/dateUtils'
@@ -19,8 +19,6 @@ import { ShareButton } from '../components/ShareButton'
 import { shareChallenge } from '../lib/share'
 import { CANONICAL_ANALYTICS_EVENTS, trackCanonicalEvent } from '@calistenia/core/lib/analytics'
 import type { LeaderboardEntry } from '@calistenia/core/hooks/useLeaderboard'
-
-const MEDALS = ['🥇', '🥈', '🥉']
 
 // Métricas con semántica de ventana (cuentan lo registrado entre inicio y fin
 // del reto). PR-style ('most_pullups', 'most_lsit'...) y 'custom' no la tienen.
@@ -384,7 +382,7 @@ function GoalHero({ value, goal, unit, pct, remaining, reached }: {
 // ── Rank Row ─────────────────────────────────────────────────────────────────
 
 function RankRow({ entry, position, unit, variant, onTap }: { entry: LeaderboardEntry; position: number; unit: string; variant: 'card' | 'flat'; onTap: () => void }) {
-  const medal = MEDALS[position - 1]
+  const medal = RANK_MEDALS[position - 1]
 
   return (
     <button
@@ -434,7 +432,7 @@ function RankRow({ entry, position, unit, variant, onTap }: { entry: Leaderboard
 
 function ExpressRow({ entry, position, isCurrentUser, onTap }: { entry: ExpressProgress; position: number; isCurrentUser: boolean; onTap: () => void }) {
   const { t } = useTranslation()
-  const medal = MEDALS[position - 1]
+  const medal = RANK_MEDALS[position - 1]
 
   return (
     <button
